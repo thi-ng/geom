@@ -92,3 +92,7 @@
   [pred f x]
   (when (pred x)
     (cons x (lazy-seq (iterate-while pred f (f x))))))
+
+(defn apply-fns
+  [fns coll]
+  (reduce (fn [coll f] (map f coll)) coll fns))
