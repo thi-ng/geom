@@ -22,7 +22,7 @@
   [canvas & opts]
   (apply context! (.getContext canvas "2d") opts))
 
-(defn draw-line
+(defn line
   [ctx [ax ay] [bx by]]
   (doto ctx
     (.beginPath)

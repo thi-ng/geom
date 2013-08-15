@@ -40,17 +40,18 @@
 
 (defrecord VerletParticle [pos prev locked? weight inv-weight force behaviors constraints]
   IBehavioral
-  (add-behavior [this b] (assoc this :behaviors (conj (:behaviors this) b)))
-  (apply-behaviors [this] (reduce #(%2 %) this (:behaviors this)))
+  (add-behavior [this b] (assoc this :behaviors (conj behaviors b)))
+  (apply-behaviors [this] (reduce #(%2 %) this behaviors))
   IConstrained
-  (add-constraint [this c] (assoc this :constraints (conj (:constraints this) c)))
-  (apply-constraints [this] (reduce #(%2 %) this (:constraints this)))
+  (add-constraint [this c] (assoc this :constraints (conj constraints c)))
+  (apply-constraints [this] (reduce #(%2 %) this constraints))
   IParticle
   (lock [this] (assoc this :locked? true))
   (unlock [this] (assoc this :locked? false))
-  (locked? [this] (:locked? this))
+  (locked? [this] locked?)
   (set-weight [this w] (assoc this :weight w :inv-weight (/ 1.0 w)))
-  (apply-force [{:keys [pos prev weight force] :as this}]
+  (add-force [this f] (assoc this :force (g/add2 force f)))
+  (apply-force [this]
     (assoc this
       :pos (-> force
                (g/scale2 weight)
@@ -59,10 +60,10 @@
       :prev pos
       :force [0.0 0.0]))
   (scale-velocity [this s]
-    (assoc this :prev (g/mix2 (:pos this) (:prev this) s)))
+    (assoc this :prev (g/mix2 pos prev s)))
   IUpdate
   (update [this]
-    (if (:locked? this)
+    (if locked?
       this
       (-> this
           apply-behaviors
@@ -71,18 +72,18 @@
 
 (defrecord VerletPhysics [particles springs behaviors constraints timestep iter drag]
   IBehavioral
-  (add-behavior [this b] (assoc this :behaviors (conj (:behaviors this) b)))
+  (add-behavior [this b] (assoc this :behaviors (conj behaviors b)))
   (apply-behaviors [this]
-    (assoc this :particles (vec (d/apply-fns (:behaviors this) (:particles this)))))
+    (assoc this :particles (vec (d/apply-fns behaviors particles))))
   IConstrained
-  (add-constraint [this c] (assoc this :constraints (conj (:constraints this) c)))
+  (add-constraint [this c] (assoc this :constraints (conj constraints c)))
   (apply-constraints [this]
-    (assoc this :particles (vec (d/apply-fns (:constraints this) (:particles this)))))
+    (assoc this :particles (vec (d/apply-fns constraints particles))))
   IPhysics
-  (update-particles [{:keys [drag particles] :as this}]
+  (update-particles [this]
     (assoc this
       :particles (vec (map #(update (scale-velocity % drag)) particles))))
-  (update-springs [{:keys [iter particles springs] :as this}]
+  (update-springs [this]
     (assoc this
       :particles
       (loop [i iter particles particles]
@@ -99,7 +100,7 @@
 
 (defrecord VerletSpring [aid bid rlen strength a-locked? b-locked?]
   ISpringUpdate
-  (update-spring [{:keys [aid bid] :as this} particles]
+  (update-spring [this particles]
     ;; (.log js/console "sup" (clj->js (map :pos particles)))
     (let [a (particles aid)
           b (particles bid)
@@ -107,12 +108,18 @@
           bw (:inv-weight b)
           delta (g/sub2 (:pos b) (:pos a))
           dist (+ (g/mag2 delta) 1e-6)
-          nd (* (/ (- dist (:rlen this)) (* dist (+ aw bw))) (:strength this))
+          nd (* (/ (- dist rlen) (* dist (+ aw bw))) strength)
           ;;_ (.log js/console (clj->js [a b delta dist nd]))
-          particles (if (or (:locked? a) (:a-locked? this))
+          particles (if (or (:locked? a) a-locked?)
                       particles
                       (update-in particles [aid :pos] #(g/fma2 delta (* nd aw) %)))
-          particles (if (or (:locked? b) (:b-locked? this))
+          particles (if (or (:locked? b) b-locked?)
                       particles
                       (update-in particles [bid :pos] #(g/fma2 delta (* (- nd) bw) %)))]
       particles)))
+
+(defn gravity
+  [force timestep]
+  (let [f-scaled (g/scale2 force (* timestep timestep))]
+    (fn [p]
+      (add-force p f-scaled))))
