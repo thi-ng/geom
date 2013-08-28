@@ -36,31 +36,43 @@
   (update-springs [this]))
 
 (defprotocol ISpringUpdate
-  (update-spring [this particles]))
+  (update-spring [this]))
 
-(defrecord VerletParticle [pos prev locked? weight inv-weight force behaviors constraints]
+(deftype VerletParticle [pos prev locked? weight inv-weight force behaviors constraints]
   IBehavioral
-  (add-behavior [this b] (assoc this :behaviors (conj behaviors b)))
+  (add-behavior [this b] (set! (.-behaviors this) (conj behaviors b)) this)
   (apply-behaviors [this] (reduce #(%2 %) this behaviors))
   IConstrained
-  (add-constraint [this c] (assoc this :constraints (conj constraints c)))
+  (add-constraint [this c] (set! (.-constraints this) (conj constraints c)) this)
   (apply-constraints [this] (reduce #(%2 %) this constraints))
   IParticle
-  (lock [this] (assoc this :locked? true))
-  (unlock [this] (assoc this :locked? false))
+  (lock [this]
+    (set! (.-locked? this) true)
+    this)
+  (unlock [this]
+    (set! (.-locked? this) false)
+    this)
   (locked? [this] locked?)
-  (set-weight [this w] (assoc this :weight w :inv-weight (/ 1.0 w)))
-  (add-force [this f] (assoc this :force (g/add2 force f)))
+  (set-weight [this w]
+    (set! (.-weight this) w)
+    (set! (.-inv-weight this) (/ 1.0 w))
+    this)
+  (add-force [this f]
+    (set! (.-force this) (g/add2 force f))
+    this)
   (apply-force [this]
-    (assoc this
-      :pos (-> force
-               (g/scale2 weight)
-               (g/add2 (g/sub2 pos prev))
-               (g/add2 pos))
-      :prev pos
-      :force [0.0 0.0]))
+    (let [t pos]
+      (set! (.-pos this)
+            (-> force
+                (g/scale2 weight)
+                (g/add2 (g/sub2 pos prev))
+                (g/add2 pos)))
+      (set! (.-prev this) t)
+      (set! (.-force this) [0.0 0.0]))
+    this)
   (scale-velocity [this s]
-    (assoc this :prev (g/mix2 pos prev s)))
+    (set! (.-prev this) (g/mix2 pos prev s))
+    this)
   IUpdate
   (update [this]
     (if locked?
@@ -74,22 +86,20 @@
   IBehavioral
   (add-behavior [this b] (assoc this :behaviors (conj behaviors b)))
   (apply-behaviors [this]
-    (assoc this :particles (vec (d/apply-fns behaviors particles))))
+    (doseq [b behaviors p particles] (b p))
+    this)
   IConstrained
   (add-constraint [this c] (assoc this :constraints (conj constraints c)))
   (apply-constraints [this]
-    (assoc this :particles (vec (d/apply-fns constraints particles))))
+    (doseq [c constraints p particles] (c p))
+    this)
   IPhysics
   (update-particles [this]
-    (assoc this
-      :particles (vec (map #(update (scale-velocity % drag)) particles))))
+    (doseq [p particles] (update (scale-velocity p drag)))
+    this)
   (update-springs [this]
-    (assoc this
-      :particles
-      (loop [i iter particles particles]
-        (if (pos? i)
-          (recur (dec i) (reduce (fn [particles s] (update-spring s particles)) particles springs))
-          particles))))
+    (doseq [i (range iter) s springs] (update-spring s))
+    this)
   IUpdate
   (update [this]
     (-> this
@@ -98,25 +108,18 @@
         update-springs
         apply-constraints)))
 
-(defrecord VerletSpring [aid bid rlen strength a-locked? b-locked?]
+(defrecord VerletSpring [a b rlen strength a-locked? b-locked?]
   ISpringUpdate
-  (update-spring [this particles]
-    ;; (.log js/console "sup" (clj->js (map :pos particles)))
-    (let [a (particles aid)
-          b (particles bid)
-          aw (:inv-weight a)
-          bw (:inv-weight b)
-          delta (g/sub2 (:pos b) (:pos a))
+  (update-spring [this]
+    (let [aw (.-inv-weight a)
+          bw (.-inv-weight b)
+          delta (g/sub2 (.-pos b) (.-pos a))
           dist (+ (g/mag2 delta) 1e-6)
-          nd (* (/ (- dist rlen) (* dist (+ aw bw))) strength)
-          ;;_ (.log js/console (clj->js [a b delta dist nd]))
-          particles (if (or (:locked? a) a-locked?)
-                      particles
-                      (update-in particles [aid :pos] #(g/fma2 delta (* nd aw) %)))
-          particles (if (or (:locked? b) b-locked?)
-                      particles
-                      (update-in particles [bid :pos] #(g/fma2 delta (* (- nd) bw) %)))]
-      particles)))
+          nd (* (/ (- dist rlen) (* dist (+ aw bw))) strength)]
+      (when-not (or (.-locked? a) a-locked?)
+        (set! (.-pos a) (g/fma2 delta (* nd aw) (.-pos a))))
+      (when-not (or (.-locked? b) b-locked?)
+        (set! (.-pos b) (g/fma2 delta (* (- nd) bw) (.-pos b)))))))
 
 (defn gravity
   [force timestep]
