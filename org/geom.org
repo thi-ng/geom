@@ -1,0 +1,842 @@
+* Namespace: thi.ng.geom
+  Providing an easy-to-use & easy-to-learn API for both common and
+  advanced geometry operations is one of this project's main focal
+  points. We attempt to realise this by defining all operations in
+  the form of protocols which are then implemented by various core
+  types.
+** thi.ng.geom.types
+*** 2D types
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (ns thi.ng.geom.types)
+#+END_SRC
+**** Line
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord Line2 [a b])
+#+END_SRC
+**** Triangle
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord Triangle2 [a b c])
+#+END_SRC
+**** Ellipse
+     Even though a circle is a specialization of an Ellipse, we define
+     an extra Circle type for performance reasons.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord Ellipse [o rx ry])
+  (defrecord Circle [o r])
+#+END_SRC
+**** Rectangle
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord Rect [p w h])
+#+END_SRC
+**** Polygon
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord Polygon [points children])
+#+END_SRC
+**** Mesh
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord Mesh2 [vertices normals fnormals vnormals edges faces attribs])
+#+END_SRC
+*** 3D types
+**** Line
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord Line3 [a b])
+#+END_SRC
+**** Plane
+      A plane in cartesian 3D space can be defined as a point =p=
+      lying on the plane and normal vector =n= standing perpendicular
+      on the plane. The latter defines the plane's orientation in space.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord Plane [p n])
+#+END_SRC
+**** Triangle
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord Triangle3 [a b c])
+#+END_SRC
+**** AABB
+      An Axis-aligned bounding box is defined as the cartesian volume
+      between points =p= and =q=.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord AABB [p q])
+#+END_SRC
+**** Sphere
+      Just like a circle in 2D, a 3D sphere is uniquely defined via
+      its center point =o= and radius =r=.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord Sphere [o r])
+#+END_SRC
+**** Mesh
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord Mesh3 [vertices normals fnormals vnormals edges faces attribs])
+#+END_SRC
+** thi.ng.geom.core
+   This namespace contains all basic vector operations and core
+   protocols related to common higher level geometric operations.
+*** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+    (ns thi.ng.geom.core
+      (:require
+       [thi.ng.math.core :as m]
+       [thi.ng.geom.types :as types])
+      (:import
+       [thi.ng.geom.types Circle Rect AABB Sphere]))
+#+END_SRC
+*** Protocols
+**** Spatial transform operations
+     The position, size and orientation of spatial entities can
+     usually be manipulated via the three basic operations: rotate,
+     scale & translate. Other, more complex transformations can be
+     achieved through combination and repetition of these.
+***** IRotatable
+       Rotation is always relative to the world origin. For 2D
+       implementations, the rotation angle \theta (theta) is always
+       interpreted clockwise and only the =rotate= method is
+       implemented.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol IRotatable
+    (rotate [this t])
+    (rotate-x [this t])
+    (rotate-y [this t])
+    (rotate-z [this t])
+    (rotate-axis [this a t]))
+#+END_SRC
+****** TODO Maybe rotate-x etc could be implemented to, but return a 3D entity instead?
+***** IScalable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol IScalable
+    (scale [this s])
+    (scale-x [this x])
+    (scale-y [this y])
+    (scale-z [this z]))
+#+END_SRC
+***** ITranslatable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol ITranslatable
+    (translate [this t])
+    (translate-x [this x])
+    (translate-y [this y])
+    (translate-z [this z]))
+#+END_SRC
+**** Shape operations
+***** IGraph
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol IGraph
+    (vertices [this] [this res])
+    (edges [this] [this res]))
+#+END_SRC
+***** IShape
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol IShape
+    (area [this])
+    (bounds [this])
+    (center [this] [this o])
+    (centroid [this])
+    (classify-point [this p]))
+#+END_SRC
+***** IShape2
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol IShape2
+    (bounding-circle [this])
+    (circumference [this]))
+#+END_SRC
+***** IShape3
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol IShape3
+    (bounding-sphere [this])
+    (volume [this]))
+#+END_SRC
+***** IBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol IBoundary
+    (closest-point [this p])
+    (contains-point? [this p])
+    (point-at [this t])
+    (random-point-inside [this])
+    (random-boundary-point [this])
+    (sample-uniform [this dist]))
+#+END_SRC
+***** IPolygonizable
+       Anything which can be turned into a 2D polygon will implement this
+       protocol consisting of just this one function: =as-polygon=.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol IPolygonizable
+    (as-polygon [this] [this res]
+      "Transforms current entity into a Polygon instance"))
+#+END_SRC
+***** IMeshable
+       Anything which can be turned into a 2D or 3D mesh will implement this
+       protocol consisting of just this one function: =as-mesh=.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol IMeshable
+    (as-mesh [this opts]
+      "Transforms the current enitity into a Mesh instance"))
+ #+END_SRC
+***** IIntersectable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol IIntersectable
+    (intersect-line [this l])
+    (intersect-ray [this r]))
+#+END_SRC
+****** TODO What about shape/shape intersections
+*** Constants
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (def ^:dynamic *resolution* 20)
+#+END_SRC
+*** Vector operations
+**** Constructors
+      The library supports 2D, 3D & 4D vectors and represents them as
+      standard Clojure vector types. To simplify vector construction
+      in some cases, factory functions are provided which coerce
+      arguments into vectors with these rules:
+
+      | Input         | Behavior                       | Examples call              | Example result  |
+      |---------------+--------------------------------+----------------------------+-----------------|
+      | Vector or Seq | select first =n= elements      | =(vec2 [1.0 2.0 3.0 4.0])= | =[1.0 2.0]=     |
+      |               |                                | =(vec4 '(1.0 2.0)=         | =[1 2 0.0 1.0]= |
+      | Map           | select values of =:x :y :z :w= | =(vec2 {:x 1.0 :y 2.0})=   | =[1.0 2.0]=     |
+      |               |                                | =(vec3 {:x 1.0 :y 2.0})=   | =[1.0 2.0 0.0]= |
+      | Single number | set all vector components      | =(vec3 1.0)=               | =[1.0 1.0 1.0]= |
+
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  ^:clj  (defn type-error
+           [t x] (throw (IllegalArgumentException. (str "can't create " t " from " x))))
+  ^:cljs (defn type-error
+           [t x] (throw (Error. (str "can't create " t " from " x))))
+
+  (defn vec2
+    ([] [0.0 0.0])
+    ([x] (cond
+          (sequential? x) (if (= 2 (count x))
+                            (if (vector? x) x (vec x))
+                            [(nth x 0 0.0) (nth x 1 0.0)])
+          (number? x) [x x]
+          (map? x) [(get x :x 0.0) (get x :y 0.0)]
+          :default (type-error "vec2" x)))
+    ([x y] [x y]))
+
+  (defn vec3
+    ([] [0.0 0.0 0.0])
+    ([x] (cond
+          (sequential? x) (if (= 3 (count x))
+                            (if (vector? x) x (vec x))
+                            [(nth x 0 0.0) (nth x 1 0.0) (nth x 2 0.0)])
+          (number? x) [x x x]
+          (map? x) [(get x :x 0.0) (get x :y 0.0) (get x :z 0.0)]
+          :default (type-error "vec3" x)))
+    ([x y] [x y 0.0])
+    ([x y z] [x y z]))
+
+  (defn vec4
+    ([] [0.0 0.0 0.0 1.0])
+    ([x] (cond
+          (sequential? x)
+          (if (= 4 (count x))
+            (if (vector? x) x (vec x))
+            [(nth x 0 0.0) (nth x 1 0.0) (nth x 2 0.0) (nth x 3 1.0)])
+          (number? x) [x x x 1.0]
+          (map? x) [(get x :x 0.0) (get x :y 0.0) (get x :z 0.0) (get x :w 1.0)]
+          :default (type-error "vec4" x)))
+    ([x y] [x y 0.0 1.0])
+    ([x y z] [x y z 1.0])
+    ([x y z w] [x y z w]))
+
+  (defn vec2? [x] (and (sequential? x) (>= (count x) 2)))
+  (defn vec3? [x] (and (sequential? x) (>= (count x) 3)))
+  (defn vec4? [x] (and (sequential? x) (>= (count x) 4)))
+#+END_SRC
+**** Vector algebra
+***** Operation builders
+       Basic vector algebra operations like addition, subtraction
+       (both a translation), scaling and others are implemented using
+       shared higher order functions to generate their
+       implementations. Each operation expects an existing vector as
+       first argument, but accepts a flexible number of other
+       arguments with the following behaviors. The table only shows
+       the 2D case, but the behavior extends for 3D & 4D as well (with
+       additional args).
+
+       | 2nd arg       | 3rd arg       | remaining args | Behavior                           | Example call                             | Result    |
+       |---------------+---------------+----------------+------------------------------------+------------------------------------------+-----------|
+       | V / M / S     | n/a           | n/a            | argument cast using =vec2=         | =(add2 [1 2] [10 20])=                   | =[11 22]= |
+       |               |               |                |                                    | =(add2 [1 2] '(10 20 30))=               | =[11 22]= |
+       |               |               |                |                                    | =(add2 [1 2] {:x 10})=                   | =[11 2]=  |
+       | N             | n/a           | n/a            | argument cast using =vec2=         | =(add2 [1 2] 10)=                        | =[11 12]= |
+       | N             | N             | n/a            | arguments interpreted as XY coords | =(add2 [1 2] 10 20)=                     | =[11 22]= |
+       | V / M / S     | V / M / S     | n/a            | each argument cast using =vec2=    | =(add2 [1 2] '(10 20) {:x 30 :y 40})=    | =[41 62]= |
+       | V / M / S / N | V / M / S / N | V / M / S / N  | each argument cast using =vec2=    | =(add2 [1 2] 10 '(20 30) {:x 40 :y 50})= | =[71 92]= |
+
+       *Table legend:* (N)mber, (M)ap, (S)eq, (V)ector
+
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn- vecop2
+    [f]
+    (fn
+      ([v w]
+         (let [w (vec2 w)]
+           [(f (nth v 0) (w 0)) (f (nth v 1) (w 1))]))
+      ([v x y]
+         (if (number? x)
+           [(f (nth v 0) x) (f (nth v 1) y)]
+           (let [x (vec2 x) y (vec2 y)]
+             [(f (f (nth v 0) (x 0)) (y 0))
+              (f (f (nth v 1) (x 1)) (y 1))])))
+      ([a b c & more]
+         (vec2 (apply map f (map vec2 (concat [a b c] more)))))))
+
+  (defn- vecop3
+    [f]
+    (fn
+      ([v w]
+         (let [w (vec3 w)]
+           [(f (nth v 0) (w 0)) (f (nth v 1) (w 1)) (f (nth v 2) (w 2))]))
+      ([v x y z]
+         (if (number? x)
+           [(f (nth v 0) x) (f (nth v 1) y) (f (nth v 2) z)]
+           (let [x (vec3 x) y (vec3 y) z (vec3 z)]
+             [(f (f (f (nth v 0) (x 0)) (y 0)) (z 0))
+              (f (f (f (nth v 1) (x 1)) (y 1)) (z 1))
+              (f (f (f (nth v 2) (x 2)) (y 2)) (z 2))])))
+      ([a b c d & more]
+         (vec3 (apply map f (map vec3 (concat [a b c d] more)))))))
+
+  (defn- vecop4
+    [f]
+    (fn
+      ([v w]
+         (let [w (vec4 w)]
+           [(f (nth v 0) (w 0)) (f (nth v 1) (w 1)) (f (nth v 2) (w 2)) (f (nth v 3) (w 3))]))
+      ([v x y z w]
+         (if (number? x)
+           [(f (nth v 0) x) (f (nth v 1) y) (f (nth v 2) z) (f (nth v 3) w)]
+           (let [x (vec4 x) y (vec4 y) z (vec4 z) w (vec4 w)]
+             [(f (f (f (f (nth v 0) (x 0)) (y 0)) (z 0)) (w 0))
+              (f (f (f (f (nth v 1) (x 1)) (y 1)) (z 1)) (w 1))
+              (f (f (f (f (nth v 2) (x 2)) (y 2)) (z 2)) (w 2))
+              (f (f (f (f (nth v 3) (x 3)) (y 3)) (z 3)) (w 3))])))
+      ([a b c d e & more]
+         (vec4 (apply map f (map vec4 (concat [a b c d e] more)))))))
+#+END_SRC
+***** Implementation
+       With these function generators in place, we can implement
+       various algebra operators like this:
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (def add2   (vecop2 +))
+  (def sub2   (vecop2 -))
+  (def scale2 (vecop2 *))
+
+  (def add3   (vecop3 +))
+  (def sub3   (vecop3 -))
+  (def scale3 (vecop3 *))
+
+  (def add4   (vecop4 +))
+  (def sub4   (vecop4 -))
+  (def scale4 (vecop4 *))
+
+  (defn fma2 [a b c] (add2 (scale2 a b) c))
+  (defn fma3 [a b c] (add3 (scale3 a b) c))
+  (defn fma4 [a b c] (add4 (scale4 a b) c))
+#+END_SRC
+***** Absolute vectors & inversion
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn abs2 [[x y]] [(m/abs x) (m/abs y)])
+  (defn abs3 [[x y z]] [(m/abs x) (m/abs y) (m/abs z)])
+  (defn abs4 [[x y z w]] [(m/abs x) (m/abs y) (m/abs z) (m/abs w)])
+
+  (defn invert2 [[x y]] [(- x) (- y)])
+  (defn invert3 [[x y z]] [(- x) (- y) (- z)])
+  (defn invert4 [[x y z w]] [(- x) (- y) (- z) (- w)])
+#+END_SRC
+***** Magnitude & distance calculations
+      All of the following operations can operate both on arguments
+      given as vector or individual vector coordinates.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn mag2-squared
+    ([[x y]] (+ (* x x) (* y y)))
+    ([x y] (+ (* x x) (* y y))))
+
+  (defn mag3-squared
+    ([[x y z]] (+ (+ (* x x) (* y y)) (* z z)))
+    ([x y z] (+ (+ (* x x) (* y y)) (* z z))))
+
+  (defn mag4-squared
+    ([[x y z w]] (+ (+ (+ (* x x) (* y y)) (* z z)) (* w w)))
+    ([x y z w] (+ (+ (+ (* x x) (* y y)) (* z z)) (* w w))))
+
+  (defn mag2
+    ([v] (Math/sqrt (mag2-squared v)))
+    ([x y] (Math/sqrt (mag2-squared x y))))
+
+  (defn mag3
+    ([v] (Math/sqrt (mag3-squared v)))
+    ([x y z] (Math/sqrt (mag3-squared x y z))))
+
+  (defn mag4
+    ([v] (Math/sqrt (mag4-squared v)))
+    ([x y z w] (Math/sqrt (mag3-squared x y z w))))
+
+  (defn dist2
+    ([p q] (mag2 (sub2 p q)))
+    ([px py qx qy] (mag2 (- px qx) (- py qy))))
+
+  (defn dist3
+    ([p q] (mag3 (sub3 p q)))
+    ([px py pz qx qy qz] (mag3 (- px qx) (- py qy) (- pz qz))))
+
+  (defn dist4
+    ([p q] (mag4 (sub4 p q)))
+    ([px py pz pw qx qy qz qw] (mag4 (- px qx) (- py qy) (- pz qz) (- pw qw))))
+
+  (defn dist2-squared
+    ([p q] (mag2-squared (sub2 p q)))
+    ([px py qx qy] (mag2-squared (- px qx) (- py qy))))
+
+  (defn dist3-squared
+    ([p q] (mag3-squared (sub3 p q)))
+    ([px py pz qx qy qz] (mag3-squared (- px qx) (- py qy) (- pz qz))))
+
+  (defn dist4-squared
+    ([p q] (mag4-squared (sub4 p q)))
+    ([px py pz pw qx qy qz qw] (mag4-squared (- px qx) (- py qy) (- pz qz) (- pw qw))))
+#+END_SRC
+***** Normalization & limitation
+       All =normalize= functions take an optional argument to normalize
+       a vector to a given length, rather than the default length of
+       1.0. The =limit= functions constrain a vector to a given maximum
+       length. The =min= / =max= functions constrain a vector on a
+       component basis and are implemented using the HOF
+       [[Operation builders][function builders]] defined earlier.
+
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn normalize2
+    ([[x y :as p]]
+       (let [m (mag2 p)]
+         (if (pos? m) [(/ x m) (/ y m)] p)))
+    ([[x y :as p] n]
+       (let [m (mag2 p)]
+         (if (pos? m) (let [m (/ n m)] [(* x m) (* y m)]) p))))
+
+  (defn normalize3
+    ([[x y z :as p]]
+       (let [m (mag3 p)]
+         (if (pos? m) [(/ x m) (/ y m) (/ z m)] p)))
+    ([[x y z :as p] n]
+       (let [m (mag3 p)]
+         (if (pos? m) (let [m (/ n m)] [(* x m) (* y m) (* z m)]) p))))
+
+  (defn normalize4
+    ([[x y z w :as p]]
+       (let [m (mag4 p)]
+         (if (pos? m) [(/ x m) (/ y m) (/ z m) (/ w m)] p)))
+    ([[x y z w :as p] n]
+       (let [m (mag4 p)]
+         (if (pos? m) (let [m (/ n m)] [(* x m) (* y m) (* z m) (* w m)]) p))))
+
+  (defn limit2
+    [v len]
+    (if (> (mag2-squared v) (* len len)) (normalize2 v len) v))
+
+  (defn limit3
+    [v len]
+    (if (> (mag3-squared v) (* len len)) (normalize3 v len) v))
+
+  (defn limit4
+    [v len]
+    (if (> (mag4-squared v) (* len len)) (normalize4 v len) v))
+
+  (def min2 (vecop2 min))
+  (def max2 (vecop2 max))
+
+  (def min3 (vecop3 min))
+  (def max3 (vecop3 max))
+
+  (def min4 (vecop4 min))
+  (def max4 (vecop4 max))
+#+END_SRC
+***** Cross product & dot product
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn cross2
+    [[px py] [qx qy]] (- (* px qy) (* py qx)))
+
+  (defn cross3
+    [[px py pz] [qx qy qz]]
+    [(- (* py qz) (* qy pz)) (- (* pz qx) (* qz px)) (- (* px qy) (* qx py))])
+
+  (defn dot2
+    ([[px py] [qx qy]] (+ (* px qx) (* py qy)))
+    ([px py qx qy] (+ (* px qx) (* py qy))))
+
+  (defn dot3
+    ([[px py pz] [qx qy qz]] (+ (+ (* px qx) (* py qy)) (* pz qz)))
+    ([px py pz qx qy qz] (+ (+ (* px qx) (* py qy)) (* pz qz))))
+
+  (defn dot4
+    ([[px py pz pw] [qx qy qz qw]] (+ (+ (+ (* px qx) (* py qy)) (* pz qz)) (* pw qw)))
+    ([px py pz pw qx qy qz qw] (+ (+ (+ (* px qx) (* py qy)) (* pz qz)) (* pw qw))))
+#+END_SRC
+
+***** Interpolation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn mid2
+    [[px py] [qx qy]] [(* 0.5 (+ px qx)) (* 0.5 (+ py qy))])
+
+  (defn mid3
+    [[px py pz] [qx qy qz]]
+    [(* 0.5 (+ px qx)) (* 0.5 (+ py qy)) (* 0.5 (+ pz qz))])
+
+  (defn mid4
+    [[px py pz pw] [qx qy qz qw]]
+    [(* 0.5 (+ px qx)) (* 0.5 (+ py qy)) (* 0.5 (+ pz qz)) (* 0.5 (+ pw qw))])
+
+  (defn mix2
+    ([[px py] [qx qy] t] [(m/mix px qx t) (m/mix py qy t)])
+    ([px py qx qy t] [(m/mix px qx t) (m/mix py qy t)]))
+
+  (defn mix3
+    ([[px py pz] [qx qy qz] t]
+       [(m/mix px qx t) (m/mix py qy t) (m/mix pz qz t)])
+    ([px py pz qx qy qz t]
+       [(m/mix px qx t) (m/mix py qy t) (m/mix pz qz t)]))
+
+  (defn mix4
+    ([[px py pz pw] [qx qy qz qw] t]
+       [(m/mix px qx t) (m/mix py qy t) (m/mix pz qz t) (m/mix pw qw t)])
+    ([px py pz pw qx qy qz qw t]
+       [(m/mix px qx t) (m/mix py qy t) (m/mix pz qz t) (m/mix pw qw t)]))
+#+END_SRC
+***** Random vectors
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn randvec2
+    ([] (normalize2 [(m/randnorm) (m/randnorm)]))
+    ([n] (normalize2 [(m/randnorm) (m/randnorm)] n)))
+
+  (defn randvec3
+    ([] (normalize3 [(m/randnorm) (m/randnorm) (m/randnorm)]))
+    ([n] (normalize3 [(m/randnorm) (m/randnorm) (m/randnorm)] n)))
+
+  (defn randvec4
+    ([] (normalize4 [(m/randnorm) (m/randnorm) (m/randnorm) (m/randnorm)]))
+    ([n] (normalize4 [(m/randnorm) (m/randnorm) (m/randnorm) (m/randnorm)] n)))
+#+END_SRC
+***** Angles, heading, reflection
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn perpendicular2
+    [[x y]] [(- y) x])
+
+  (defn heading2
+    [[x y]]
+    (let [t (Math/atan2 y x)]
+      (if (neg? t) (+ m/TWO_PI t) t)))
+
+  (defn slope2
+    [[x y]] (/ y x))
+
+  (defn angle-between2
+    [p q]
+    (let [t (- (heading2 q) (heading2 p))]
+      (if (neg? t) (+ m/TWO_PI t) t)))
+
+  (defn reflect2
+    [[x y :as v] [rx ry :as r]]
+    (let [d (* (dot2 v r) 2.0)]
+      [(- (* rx d) x) (- (* ry d) y)]))
+
+  (defn reflect3
+    [[x y z :as v] [rx ry rz :as r]]
+    (let [d (* (dot3 v r) 2.0)]
+      [(- (* rx d) x) (- (* ry d) y) (- (* rz d) z)]))
+#+END_SRC
+***** Polar & spherical coordinates
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn polar2
+    [v] [(mag2 v) (heading2 v)])
+
+  (defn cartesian2
+    [[r t]] [(* r (Math/cos t)) (* r (Math/sin t))])
+
+  (defn cartesian3
+    [[x y z]]
+    (let [a (* x (Math/cos z))]
+      [(* a (Math/cos y)) (* x (Math/sin z)) (* a (Math/sin y))]))
+
+  (defn spherical3
+    [[x y z]]
+    (let [xx (if (m/delta= 0.0 (m/abs x))
+               (if (< x 0.0) (- m/*eps*) m/*eps*) x)
+          m (mag3 xx y z)
+          yy (+ (Math/atan (/ z xx)) (if (< xx 0.0) m/PI 0))
+          zz (Math/asin (/ y m))]
+      [m yy zz]))
+#+END_SRC
+*** Shared functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn closest-point*
+    [fdist lines q]
+    (reduce (fn [a b]
+              (if (< (fdist q a) (fdist q b)) a b))
+            (map #(closest-point % q) lines)))
+
+  (defn from-barycentric*
+    [fctor fscale fadd points weights]
+    (apply fadd (map (fn [p w] (fscale (fctor p) w)) points weights)))
+
+  (defn bounding-rect*
+    ([coll]
+       (let [c (count coll)]
+         (cond
+          (> c 1) (let [p (apply min2 coll)
+                        q (apply max2 coll)
+                        [w h] (sub2 q p)]
+                    (Rect. p w h))
+          (= c 1) (Rect. (first coll) 0 0)
+          :default nil)))
+    ([p w h] (Rect. p w h)))
+
+  (defn bounding-box*
+    ([coll]
+       (let [cnt (count coll)]
+         (cond
+          (> cnt 1) (let [p (apply min3 coll)
+                          q (apply max3 coll)]
+                      (AABB. p q))
+          (= cnt 1) (AABB. (first coll) [0 0 0])
+          :default nil)))
+    ([p q] (AABB. p (sub3 q p))))
+
+  (defn max-dist
+    [sub mag c points]
+    (->> points
+         (map #(mag (sub c %)))
+         (reduce max)
+         (Math/sqrt)))
+
+  (defn bounding-circle*
+    [c r-or-points]
+    (Circle. c (if (coll? r-or-points)
+                 (max-dist c r-or-points)
+                 r-or-points)))
+
+  (defn bounding-sphere*
+    [c r-or-points]
+    (Sphere. c
+             (if (coll? r-or-points)
+               (max-dist sub3 mag3-squared c r-or-points)
+               r-or-points)))
+#+END_SRC
+** thi.ng.geom.bezier
+*** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+  (ns thi.ng.geom.bezier
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]))
+#+END_SRC
+*** The Bernstein polynomial
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+(defn bernstein
+  [t]
+  (let [it (- 1.0 t) it2 (* it it) t2 (* t t)]
+    [(* it it2) (* 3 (* t it2)) (* 3 (* it t2)) (* t t2)]))
+#+END_SRC
+*** Interpolation & curve samplings
+     Applied to calculate a single point on a bezier patch, sample a patch
+     at a fixed resolution and sample a continous curve from a seq of
+     control points... =interpolate*= and =as-linestrip*= are
+     implemented as HOF to support both 2D/3D cases. Further below
+     we'll provide pre-configured implementations for each.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+  (defn interpolate*
+    [afn sfn]
+    (fn [[a b c d] t]
+      (let [[ta tb tc td] (bernstein t)]
+        (-> a
+            (sfn ta)
+            (afn (sfn b tb))
+            (afn (sfn c tc))
+            (afn (sfn d td))))))
+
+  (defn sample-segment
+    [interpolate seg res]
+    (for [t (range 0.0 1.0 (/ 1.0 res))]
+      (interpolate seg t)))
+
+  (defn as-linestrip*
+    [interpolate]
+    (fn [res include-last? points]
+      (let [ls (->> points
+                    (d/successive-nth 4)
+                    (take-nth 3)
+                    (mapcat #(sample-segment interpolate % res)))]
+        (if include-last?
+          (concat ls [(last points)])
+          ls))))
+#+END_SRC
+*** Automatic curve generation
+     The following two functions allow us to compute a bezier curve
+     which passes through all given points and automatically computes
+     the required control points.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+(defn find-cpoints*
+  [make-vec sub scale fma]
+  (fn [tight points]
+    (let [np (count points)
+          invt (/ 1.0 tight)
+          points (vec points)
+          c1 (scale (sub (get points 2) (first points)) tight)
+          [bi coeff] (reduce
+                      (fn [[bi coeff] i]
+                        (let [b (/ -1.0 (+ invt (peek bi)))
+                              c (peek coeff)
+                              p (get points (dec i))
+                              q (get points (inc i))]
+                          [(conj bi b)
+                           (conj coeff (scale (sub q p c) (- b)))]))
+                      [[0 (- tight)] [(make-vec) c1]]
+                      (range 2 (dec np)))]
+      (reduce
+       (fn [delta i]
+         (assoc delta i (fma (delta (inc i)) (bi i) (coeff i))))
+       (vec (repeatedly np make-vec))
+       (range (- np 2) 0 -1)))))
+
+(defn auto-spline*
+  [find-cpoints add sub]
+  (fn [tight points]
+    (concat
+     (->> points
+          (find-cpoints tight)
+          (d/successive-nth 2)
+          (interleave (d/successive-nth 2 points))
+          (partition 2)
+          (mapcat (fn [[[p q] [dp dq]]] [p (add p dp) (sub q dq)])))
+     [(last points)])))
+#+END_SRC
+*** Concrete implementations for 2D/3D...
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+(def interpolate2 (interpolate* g/add2 g/scale2))
+(def interpolate3 (interpolate* g/add3 g/scale3))
+
+(def as-linestrip2 (as-linestrip* interpolate2))
+(def as-linestrip3 (as-linestrip* interpolate3))
+
+(def find-cpoints2 (find-cpoints* g/vec2 g/sub2 g/scale2 g/fma2))
+(def find-cpoints3 (find-cpoints* g/vec3 g/sub3 g/scale3 g/fma3))
+
+(def auto-spline2 (auto-spline* find-cpoints2 g/add2 g/sub2))
+(def auto-spline3 (auto-spline* find-cpoints3 g/add3 g/sub3))
+#+END_SRC
+** thi.ng.geom.circle
+*** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  (ns thi.ng.geom.circle
+    (:require
+     [thi.ng.data.core :as d]
+     [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]]
+     [thi.ng.geom.core :as g :refer [*resolution*]]
+     [thi.ng.geom.types :as types])
+    (:import
+     [thi.ng.geom.types Circle Line2 Polygon]))
+#+END_SRC
+*** Protocol implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  (extend-type Circle
+#+END_SRC
+**** IGraph
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  g/IGraph
+  (edges
+   [this] (g/edges this *resolution*))
+  (vertices
+   [this res]
+   (map #(g/point-at this %) (range 0.0 TWO_PI (/ TWO_PI res))))
+  (edges
+   [this] (g/edges this *resolution*))
+  (edges
+   [this res]
+   (let [verts (g/vertices this res)]
+     (map (fn [[p q]] (Line2. p q))
+          (d/successive-nth 2 (concat verts [(first verts)])))))
+#+END_SRC
+**** IShape
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+    g/IShape
+    (area [{r :r}] (* (* PI r) r))
+    (bounds [{p :p r :r}]
+      (let [d (* 2 r)] (g/bounding-rect* (g/sub2 p [r r]) d d)))
+    (center
+      ([this] (Circle. [0.0 0.0] (:r this)))
+      ([this o] (Circle. o (:r this))))
+    (centroid [this] (:p this))
+    (classify-point [this q]
+      (m/signum (- (:r this) (g/dist2 (:p this) q)) *eps*))
+#+END_SRC
+**** IShape2
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+    g/IShape2
+    (bounding-circle [this] this)
+    (circumference [this] (* TWO_PI (:r this)))
+#+END_SRC
+**** IBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+    g/IBoundary
+    (closest-point [{p :p r :r} q]
+      (g/add2 p (g/normalize2 (g/sub2 q p) r)))
+    (contains-point? [{p :p r :r} q]
+      (<= (g/mag2-squared (g/sub2 p q)) (* r r)))
+    (point-at [this t]
+      (g/add2 (:p this) (g/cartesian2 [(:r this) (* t TWO_PI)])))
+    (random-point [this]
+      (g/add2 (:p this) (g/scale2 (g/randvec2) (m/random (:r this)))))
+    (random-boundary-point [this] (g/point-at this (m/random)))
+    (sample-uniform [this dist]) ;; TODO
+#+END_SRC
+**** IPolygonizable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  g/IPolygonizable
+  (as-polygon
+   [this] (g/as-polygon this *resolution*))
+  (as-polygon
+   [this res] (Polygon. (vec (g/vertices this res)) []))
+#+END_SRC
+**** End of implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  )
+#+END_SRC
+** thi.ng.geom.line
+*** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  (ns thi.ng.geom.line
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.types :as types]))
+#+END_SRC
+*** Protocol implementations
+** thi.ng.geom.rect
+*** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+  (ns thi.ng.geom.rect
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.types :as types]))
+#+END_SRC
+*** Protocol implementations
+** thi.ng.geom.polygon
+*** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+  (ns thi.ng.geom.polygon
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.types :as types]))
+#+END_SRC
+*** Protocol implementations
+** thi.ng.geom.triangle
+*** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
+  (ns thi.ng.geom.triangle
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.types :as types]))
+#+END_SRC
+*** Protocol implementations
