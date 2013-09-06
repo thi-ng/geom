@@ -8,6 +8,7 @@
 *** TODO Re-insert advanced polygon fns and update ns decl
 *** TODO extract LineStrip defrecords & protocols
 *** TODO refactor bezier ns to use linestrips
+*** TODO implement shape/shape intersections
 *** TODO add NURBS
 *** TODO add voxel ns
 ** thi.ng.geom.types
@@ -131,21 +132,25 @@
     (translate-y [this y])
     (translate-z [this z]))
 #+END_SRC
-**** Shape operations
+**** Shape based & structural operations
 ***** IGraph
+      Most geometric shape constructs can be understood as an
+      undirected graph of vertices, connected by edges. This protocol
+      provides read access to entities in this context.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol IGraph
     (vertices [this] [this res])
     (edges [this] [this res]))
 #+END_SRC
 ***** IShape
+      We use the term "shape" as the most general spatial entity
+      above the layer of simple points in space.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol IShape
     (area [this])
     (bounds [this])
     (center [this] [this o])
-    (centroid [this])
-    (classify-point [this p]))
+    (centroid [this]))
 #+END_SRC
 ***** IShape2
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -162,11 +167,16 @@
 ***** IBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol IBoundary
+    (classify-point [this p])
     (closest-point [this p])
-    (contains-point? [this p])
+    (contains-point? [this p]))
+#+END_SRC
+***** ISampleable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol ISampleable
     (point-at [this t])
+    (random-point-at [this])
     (random-point-inside [this])
-    (random-boundary-point [this])
     (sample-uniform [this dist]))
 #+END_SRC
 ***** IPolygonizable
@@ -189,9 +199,15 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol IIntersectable
     (intersect-line [this l])
-    (intersect-ray [this r]))
+    (intersect-ray [this r])
+    (intersect-shape [this s]))
 #+END_SRC
-****** TODO What about shape/shape intersections
+**** Type specific operations
+***** ILineStrip
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol ILineStrip
+    (arc-length [this]))
+#+END_SRC
 *** Constants
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (def ^:dynamic *resolution* 20)
@@ -807,16 +823,15 @@
 #+END_SRC
 **** IShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-    g/IShape
-    (area [{r :r}] (* (* PI r) r))
-    (bounds [{p :p r :r}]
-      (let [d (* 2 r)] (g/bounding-rect* (g/sub2 p [r r]) d d)))
-    (center
-      ([this] (thi.ng.geom.types.Circle. [0.0 0.0] (:r this)))
-      ([this o] (thi.ng.geom.types.Circle. o (:r this))))
-    (centroid [this] (:p this))
-    (classify-point [this q]
-      (m/signum (- (:r this) (g/dist2 (:p this) q)) *eps*))
+  g/IShape
+  (area [{r :r}] (* (* PI r) r))
+  (bounds
+   [{p :p r :r}]
+   (let [d (* 2 r)] (g/bounding-rect* (g/sub2 p [r r]) d d)))
+  (center
+   ([this] (thi.ng.geom.types.Circle. [0.0 0.0] (:r this)))
+   ([this o] (thi.ng.geom.types.Circle. o (:r this))))
+  (centroid [this] (:p this))
 #+END_SRC
 **** IShape2
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
@@ -826,17 +841,29 @@
 #+END_SRC
 **** IBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-    g/IBoundary
-    (closest-point [{p :p r :r} q]
-      (g/add2 p (g/normalize2 (g/sub2 q p) r)))
-    (contains-point? [{p :p r :r} q]
-      (<= (g/mag2-squared (g/sub2 p q)) (* r r)))
-    (point-at [this t]
-      (g/add2 (:p this) (g/cartesian2 [(:r this) (* t TWO_PI)])))
-    (random-point [this]
-      (g/add2 (:p this) (g/scale2 (g/randvec2) (m/random (:r this)))))
-    (random-boundary-point [this] (g/point-at this (m/random)))
-    (sample-uniform [this dist]) ;; TODO
+  g/IBoundary
+  (classify-point
+   [this q]
+   (m/signum (- (:r this) (g/dist2 (:p this) q)) *eps*))
+  (closest-point
+   [{p :p r :r} q]
+   (g/add2 p (g/normalize2 (g/sub2 q p) r)))
+  (contains-point?
+   [{p :p r :r} q]
+   (<= (g/mag2-squared (g/sub2 p q)) (* r r)))
+#+END_SRC
+**** ISampleable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  g/ISampleable
+  (point-at
+   [this t]
+   (g/add2 (:p this) (g/cartesian2 [(:r this) (* t TWO_PI)])))
+  (random-point-at
+   [this] (g/point-at this (m/random)))
+  (random-point-inside
+   [this]
+   (g/add2 (:p this) (g/scale2 (g/randvec2) (m/random (:r this)))))
+  (sample-uniform [this dist]) ;; TODO
 #+END_SRC
 **** IPolygonizable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
@@ -960,10 +987,6 @@
       (let [c (g/sub2 o (g/mid2 p q))] (thi.ng.geom.types.Line2. (g/add2 p c) (g/add2 q c)))))
   (centroid
    [this] (g/mid2 (:p this) (:q this)))
-  (classify-point
-   [{p :p q :q} v]
-   ;; TODO use -> macro
-   (m/signum (g/dot2 (g/sub2 v p) (g/perpendicular2 (g/sub2 q p))) *eps*))
 #+END_SRC
 ***** IShape2
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
@@ -977,6 +1000,10 @@
 ***** IBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/IBoundary
+  (classify-point
+   [{p :p q :q} v]
+   ;; TODO use -> macro
+   (m/signum (g/dot2 (g/sub2 v p) (g/perpendicular2 (g/sub2 q p))) *eps*))
   (closest-point
    [{p :p q :q} a]
    (let [t (closest-point-coeff g/sub2 g/dot2 g/mag2-squared a p q)]
@@ -986,12 +1013,18 @@
       :default (g/mix2 p q t))))
   (contains-point?
    [this p] (= (g/closest-point this p) p))
+#+END_SRC
+***** ISampleable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/ISampleable
   (point-at
    [this t] (g/mix2 (:p this) (:q this) t))
-  (random-point
+  (random-point-at
    [this] (g/mix2 (:p this) (:q this) (m/random)))
-  (random-boundary-point
+  (random-point-inside
    [this] (g/mix2 (:p this) (:q this) (m/random)))
+  (sample-uniform
+   [this dist] nil) ;; TODO
 #+END_SRC
 ***** IIntersectable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
@@ -1043,8 +1076,6 @@
         (thi.ng.geom.types.Line3. (g/add3 p c) (g/add3 q c)))))
   (centroid
    [this] (g/mid3 (:p this) (:q this)))
-  (classify-point
-   [{p :p q :q} p] nil) ; TODO
 #+END_SRC
 ***** IShape3
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
@@ -1057,6 +1088,8 @@
 ***** IBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/IBoundary
+  (classify-point
+   [{p :p q :q} p] nil) ; TODO
   (closest-point
    [{p :p q :q} a]
    (let [t (closest-point-coeff g/sub3 g/dot3 g/mag3-squared a p q)]
@@ -1066,11 +1099,15 @@
       :default (g/mix3 p q t))))
   (contains-point?
    [{p :p q :q} p] nil) ; TODO
+#+END_SRC
+***** ISampleable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/ISampleable
   (point-at
    [this t] (g/mix3 (:p this) (:q this) t))
-  (random-point
+  (random-point-at
    [this] (g/mix3 (:p this) (:q this) (m/random)))
-  (random-boundary-point
+  (random-point-inside
    [this] (g/mix3 (:p this) (:q this) (m/random)))
 #+END_SRC
 ***** TODO IIntersectable
@@ -1189,9 +1226,6 @@
         (thi.ng.geom.types.Rect. (g/sub2 o t) w h))))
   (centroid
    [{p :p :as this}] (g/mid2 p (g/add2 p [(:w this) (:h this)])))
-  (classify-point
-   [this q]
-   (reduce min (map #(g/classify-point % q) (g/edges this))))
 #+END_SRC
 **** IShape2
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
@@ -1206,17 +1240,24 @@
 **** IBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
   g/IBoundary
+  (classify-point
+   [this q]
+   (reduce min (map #(g/classify-point % q) (g/edges this))))
   (closest-point
    [this q]
    (g/closest-point* g/dist2-squared (g/edges this) q))
   (contains-point?
    [{[px py] :p w :w h :h} [x y]]
    (and (m/in-range? 0.0 w (- x px)) (m/in-range? 0.0 h (- y py))))
+#+END_SRC
+**** ISampleable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+  g/ISampleable
   (point-at [this t] nil) ; TODO
-  (random-point
-   [this] (g/add2 (:p this) [(m/random (:w this)) (m/random (:h this))]))
-  (random-boundary-point
+  (random-point-at
    [this] (g/point-at this (m/random)))
+  (random-point-inside
+   [this] (g/add2 (:p this) [(m/random (:w this)) (m/random (:h this))]))
 #+END_SRC
 **** IPolygonizable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
@@ -1375,12 +1416,12 @@
                   [(g/add2 c (g/scale2 (g/add2 p v) x)) v]))
               [[0.0 0.0] p] (conj (subvec points 1 (count points)) p))]
      (g/scale2 c (/ 1.0 (* 6 (g/area this))))))
-  (classify-point
-   [this p] nil) ; TODO
 #+END_SRC
 **** IBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   g/IBoundary
+  (classify-point
+   [this p] nil) ; TODO
   (closest-point
    [this p] (g/closest-point* g/dist2-squared (g/edges this) p))
   (contains-point?
@@ -1394,10 +1435,14 @@
                       (< (+ vx (* (/ (- y vy) (- py vy)) (- px vx))) x))
                [(not in) [vx vy]] [in [vx vy]]))
            [false (last points)] points)))))
+#+END_SRC
+**** ISampleable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+  g/ISampleable
   (point-at [this t] nil) ; TODO
-  (random-point [this] nil) ; TODO
-  (random-boundary-point
+  (random-point-at
    [this] (g/point-at this (m/random)))
+  (random-point-inside [this] nil) ; TODO
 #+END_SRC
 **** IShape2
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
@@ -1517,10 +1562,6 @@
              (g/add2 (:a t) ct) (g/add2 (:b t) ct) (g/add2 (:c t) ct)))))
   (centroid
    [t] (centroid2* (:a t) (:b t) (:c t)))
-  ;; TODO add clockwise? check, currently assumes clockwise ordering
-  (classify-point
-   [this p]
-   (reduce min (map #(g/classify-point % p) (g/edges this))))
 #+END_SRC
 ***** IShape2
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -1533,13 +1574,23 @@
 ***** IBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/IBoundary
+  ;; TODO add clockwise? check, currently assumes clockwise ordering
+  (classify-point
+   [this p]
+   (reduce min (map #(g/classify-point % p) (g/edges this))))
   (closest-point
    [this p]
    (g/closest-point* g/dist2-squared (g/edges this) p))
   (contains-point?
    [{a :a b :b c :c} p] (contains-point* g/sub2 g/dot2 g/mag2-squared a b c p))
+#+END_SRC
+***** ISampleable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
+  g/ISampleable
   (point-at [this t] nil) ; TODO
-  (random-point
+  (random-point-at
+   [this] (g/point-at this (m/random)))
+  (random-point-inside
    [t]
    (let [b1 (m/random)
          b2 (m/random (- 1.0 b1))
@@ -1547,8 +1598,6 @@
      (g/from-barycentric*
       g/vec2 g/scale2 g/add2
       [(:a t) (:b t) (:c t)] (shuffle [b1 b2 b3]))))
-  (random-boundary-point
-   [this] (g/point-at this (m/random)))
 #+END_SRC
 ***** IPolygonizable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -1577,6 +1626,10 @@
 
 #+END_SRC
 ***** IBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
+
+#+END_SRC
+***** ISampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
 
 #+END_SRC
