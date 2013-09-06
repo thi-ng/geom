@@ -11,7 +11,7 @@
 #+END_SRC
 **** Line
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
-  (defrecord Line2 [a b])
+  (defrecord Line2 [p q])
 #+END_SRC
 **** Triangle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
@@ -21,8 +21,8 @@
      Even though a circle is a specialization of an Ellipse, we define
      an extra Circle type for performance reasons.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
-  (defrecord Ellipse [o rx ry])
-  (defrecord Circle [o r])
+  (defrecord Ellipse [p rx ry])
+  (defrecord Circle [p r])
 #+END_SRC
 **** Rectangle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
@@ -39,7 +39,7 @@
 *** 3D types
 **** Line
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
-  (defrecord Line3 [a b])
+  (defrecord Line3 [p q])
 #+END_SRC
 **** Plane
       A plane in cartesian 3D space can be defined as a point =p=
@@ -73,12 +73,16 @@
    protocols related to common higher level geometric operations.
 *** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
-    (ns thi.ng.geom.core
-      (:require
-       [thi.ng.math.core :as m]
-       [thi.ng.geom.types :as types])
-      (:import
-       [thi.ng.geom.types Circle Rect AABB Sphere]))
+  ^:clj  (ns thi.ng.geom.core
+           (:require
+            [thi.ng.math.core :as m]
+            [thi.ng.geom.types :as types])
+           (:import
+            [thi.ng.geom.types Circle Rect AABB Sphere]))
+  ^:cljs (ns thi.ng.geom.core
+           (:require
+            [thi.ng.math.core :as m]
+            [thi.ng.geom.types :as types]))
 #+END_SRC
 *** Protocols
 **** Spatial transform operations
@@ -371,7 +375,7 @@
 
   (defn mag4
     ([v] (Math/sqrt (mag4-squared v)))
-    ([x y z w] (Math/sqrt (mag3-squared x y z w))))
+    ([x y z w] (Math/sqrt (mag4-squared x y z w))))
 
   (defn dist2
     ([p q] (mag2 (sub2 p q)))
@@ -585,10 +589,10 @@
           (> c 1) (let [p (apply min2 coll)
                         q (apply max2 coll)
                         [w h] (sub2 q p)]
-                    (Rect. p w h))
-          (= c 1) (Rect. (first coll) 0 0)
+                    (types/->Rect p w h))
+          (= c 1) (types/->Rect (first coll) 0 0)
           :default nil)))
-    ([p w h] (Rect. p w h)))
+    ([p w h] (types/->Rect p w h)))
 
   (defn bounding-box*
     ([coll]
@@ -596,10 +600,10 @@
          (cond
           (> cnt 1) (let [p (apply min3 coll)
                           q (apply max3 coll)]
-                      (AABB. p q))
-          (= cnt 1) (AABB. (first coll) [0 0 0])
+                      (types/->AABB p q))
+          (= cnt 1) (types/->AABB (first coll) [0 0 0])
           :default nil)))
-    ([p q] (AABB. p (sub3 q p))))
+    ([p q] (types/->AABB p (sub3 q p))))
 
   (defn max-dist
     [sub mag c points]
@@ -610,22 +614,22 @@
 
   (defn bounding-circle*
     [c r-or-points]
-    (Circle. c (if (coll? r-or-points)
-                 (max-dist c r-or-points)
-                 r-or-points)))
+    (types/->Circle c (if (coll? r-or-points)
+                        (max-dist sub2 mag2-squared c r-or-points)
+                        r-or-points)))
 
   (defn bounding-sphere*
     [c r-or-points]
-    (Sphere. c
-             (if (coll? r-or-points)
-               (max-dist sub3 mag3-squared c r-or-points)
-               r-or-points)))
+    (types/->Sphere c (if (coll? r-or-points)
+                        (max-dist sub3 mag3-squared c r-or-points)
+                        r-or-points)))
 #+END_SRC
 ** thi.ng.geom.bezier
 *** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
   (ns thi.ng.geom.bezier
     (:require
+     [thi.ng.data.core :as d]
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]))
 #+END_SRC
@@ -726,14 +730,28 @@
 ** thi.ng.geom.circle
 *** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-  (ns thi.ng.geom.circle
-    (:require
-     [thi.ng.data.core :as d]
-     [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]]
-     [thi.ng.geom.core :as g :refer [*resolution*]]
-     [thi.ng.geom.types :as types])
-    (:import
-     [thi.ng.geom.types Circle Line2 Polygon]))
+  ^:clj  (ns thi.ng.geom.circle
+           (:require
+            [thi.ng.data.core :as d]
+            [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]]
+            [thi.ng.geom.core :as g :refer [*resolution*]]
+            [thi.ng.geom.types :as types])
+           (:import
+            [thi.ng.geom.types Circle Line2 Polygon]))
+  ^:cljs (ns thi.ng.geom.circle
+           (:require
+            [thi.ng.data.core :as d]
+            [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]]
+            [thi.ng.geom.core :as g :refer [*resolution*]]
+            [thi.ng.geom.types :as types]))
+#+END_SRC
+*** Constructor
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+(defn circle
+  ([] (Circle. [0.0 0.0] 1.0))
+  ([r] (Circle. [0.0 0.0] r))
+  ([p r] (Circle. (g/vec2 p) r))
+  ([x y r] (Circle. (g/vec2 x y) r)))
 #+END_SRC
 *** Protocol implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
@@ -742,18 +760,16 @@
 **** IGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
   g/IGraph
-  (edges
-   [this] (g/edges this *resolution*))
   (vertices
-   [this res]
-   (map #(g/point-at this %) (range 0.0 TWO_PI (/ TWO_PI res))))
+   ([this] (g/vertices this *resolution*))
+   ([this res]
+      (map #(g/point-at this %) (range 0.0 1.0 (/ 1.0 res)))))
   (edges
-   [this] (g/edges this *resolution*))
-  (edges
-   [this res]
-   (let [verts (g/vertices this res)]
-     (map (fn [[p q]] (Line2. p q))
-          (d/successive-nth 2 (concat verts [(first verts)])))))
+   ([this] (g/edges this *resolution*))
+   ([this res]
+      (let [verts (g/vertices this res)]
+        (map (fn [[p q]] (Line2. p q))
+             (d/successive-nth 2 (concat verts [(first verts)]))))))
 #+END_SRC
 **** IShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
@@ -792,24 +808,202 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
   g/IPolygonizable
   (as-polygon
-   [this] (g/as-polygon this *resolution*))
-  (as-polygon
-   [this res] (Polygon. (vec (g/vertices this res)) []))
+   ([this] (g/as-polygon this *resolution*))
+   ([this res] (Polygon. (vec (g/vertices this res)) [])))
 #+END_SRC
 **** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
   )
 #+END_SRC
+*** Type specific functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  (defn intersect-circle
+    [{p :p r1 :r} {q :p r2 :r}]
+    (let [delta (g/sub2 q p)
+          d (g/mag2 delta)]
+      (if (and (<= d (+ r1 r2)) (>= d (m/abs (- r1 r2))))
+        (let [a (/ (+ (- (* r1 r1) (* r2 r2)) (* d d)) (* 2 d))
+              invd (/ 1.0 d)
+              p (g/add2 p (g/scale2 delta (* a invd)))
+              h (Math/sqrt (- (* r1 r1) (* a a)))
+              perp (g/scale2 (g/perpendicular2 delta) (* h invd))]
+          [(g/add2 p perp) (g/sub2 p perp)]))))
+
+  (defn tangent-points
+    [{p :p :as c} q]
+    (let [m (g/mid2 p q)]
+      (intersect-circle c (circle m (g/dist2 m p)))))
+#+END_SRC
 ** thi.ng.geom.line
 *** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
-  (ns thi.ng.geom.line
-    (:require
-     [thi.ng.math.core :as m]
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.types :as types]))
+  ^:clj  (ns thi.ng.geom.line
+           (:require
+            [thi.ng.data.core :as d]
+            [thi.ng.math.core :as m :refer [*eps*]]
+            [thi.ng.geom.core :as g]
+            [thi.ng.geom.types :as types])
+           (:import
+            [thi.ng.geom.types Circle Line2 Line3 Polygon]))
+  ^:cljs (ns thi.ng.geom.line
+           (:require
+            [thi.ng.data.core :as d]
+            [thi.ng.math.core :as m :refer [*eps*]]
+            [thi.ng.geom.core :as g]
+            [thi.ng.geom.types :as types]))
 #+END_SRC
-*** Protocol implementations
+*** Constructors
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  (defn line2
+    ([p q] (Line2. (g/vec2 p) (g/vec2 q)))
+    ([px py qx qy] (Line2. (g/vec2 px py) (g/vec2 qx qy))))
+
+  (defn line3
+    ([p q] (Line3. (g/vec3 p) (g/vec3 q)))
+    ([px py qx qy] (Line3. (g/vec3 px py) (g/vec3 qx qy)))
+    ([px py pz qx qy qz] (Line3. (g/vec3 px py pz) (g/vec3 qx qy qz))))
+#+END_SRC
+*** Shared helper functions
+    This function is going to be used for both 2D/3D implementations:
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  (defn closest-point-coeff
+    [fsub fdot fmag p a b]
+    (let [d (fsub b a)] (/ (fdot (fsub p a) d) (fmag d))))
+
+  (defn as-linestrip
+    [mix a b res include-b?]
+    (let [ls (for [t (range 0 1.0 (/ 1.0 res))] (mix a b t))]
+      (if include-b? (concat ls [b]) ls)))
+
+  (defn arc-length
+    [mag points]
+    (->> points
+         (d/successive-nth 2)
+         (map #(mag (% 0) (% 1)))
+         (reductions + 0)
+         (vec)))
+
+  (defn sample-uniform*
+    [mix mag step include-last? points]
+    (let [idx (arc-length mag points)
+          total (peek idx)
+          delta (/ step total)
+          samples (loop [t 0.0 i 1 acc []]
+                    (if (< t 1.0)
+                      (let [ct (* t total)
+                            i (loop [i i] (if (>= ct (idx i)) (recur (inc i)) i))
+                            p (nth points (dec i))
+                            q (nth points i)
+                            pi (idx (dec i))
+                            frac (/ (- ct pi) (- (idx i) pi))]
+                        (recur (+ t delta) i (conj acc (mix p q frac))))
+                      acc))]
+      (if include-last?
+        (conj samples (last points))
+        samples)))
+#+END_SRC
+*** Line2
+**** Protocol implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  (extend-type Line2
+#+END_SRC
+***** IGraph
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/IGraph
+  (vertices [this] [(:p this) (:q this)])
+  (edges [this] [this])
+#+END_SRC
+***** IShape
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/IShape
+  (area [this] 0)
+  (bounds
+   [this] (g/bounding-rect* [(:p this) (:q this)]))
+  (center
+   ([{p :p q :q}]
+      (let [c (g/mid2 p q)] (types/->Line2 (g/sub2 p c) (g/sub2 q c))))
+   ([{p :p q :q} o]
+      (let [c (g/sub2 o (g/mid2 p q))] (types/->Line2 (g/add2 p c) (g/add2 q c)))))
+  (centroid
+   [this] (g/mid2 (:p this) (:q this)))
+  (classify-point
+   [{p :p q :q} v]
+   ;; TODO use -> macro
+   (m/signum (g/dot2 (g/sub2 v p) (g/perpendicular2 (g/sub2 q p))) *eps*))
+#+END_SRC
+***** IShape2
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/IShape2
+  (bounding-circle
+   [{p :p q :q}]
+   (g/bounding-circle* (g/mid2 p q) (* 0.5 (g/dist2 p q))))
+  (circumference
+   [this] (* 2 (g/dist2 (:p this) (:q this))))
+#+END_SRC
+***** IBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/IBoundary
+  (closest-point
+   [{p :p q :q} a]
+   (let [t (closest-point-coeff g/sub2 g/dot2 g/mag2-squared a p q)]
+     (cond
+      (<= t 0.0) p
+      (> t 1.0) q
+      :default (g/mix2 p q t))))
+  (contains-point?
+   [this p] (= (g/closest-point this p) p))
+  (point-at
+   [this t] (g/mix2 (:p this) (:q this) t))
+  (random-point
+   [this] (g/mix2 (:p this) (:q this) (m/random)))
+  (random-boundary-point
+   [this] (g/mix2 (:p this) (:q this) (m/random)))
+#+END_SRC
+***** IIntersectable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/IIntersectable
+  (intersect-line
+   [{[px1 py1 :as p] :p [qx1 qy1 :as q] :q :as this}
+    {[px2 py2 :as lp] :p [qx2 qy2 :as lq] :q}]
+   (let [denom (- (* (- qy2 py2) (- qx1 px1)) (* (- qx2 px2) (- qy1 py1)))
+         na (- (* (- qx2 px2) (- py1 py2)) (* (- qy2 py2) (- px1 px2)))
+         nb (- (* (- qx1 px1) (- py1 py2)) (* (- qy1 py1) (- px1 px2)))]
+     (if-not (zero? denom)
+       (let [ua (/ na denom) ub (/ nb denom) ipos (g/mix2 p q ua)]
+         (if (and (>= ua 0.0) (<= ua 1.0) (>= ub 0.0) (<= ub 1.0))
+           {:type :intersect :p ipos :ua ua :ub ub}
+           {:type :intersect-outside :p ipos :ua ua :ub ub}))
+       (if (and (zero? na) (zero? nb))
+         (let [ip (g/closest-point this lp)
+               iq (g/closest-point this lq)]
+           (if (or (m/delta= ip lp) (m/delta= iq lq))
+             {:type :coincident :p ip :q iq}
+             {:type :coincident-no-intersect :p ip :q iq}))
+         {:type :parallel}))))
+#+END_SRC
+***** End of implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  )
+#+END_SRC
+*** Line3
+**** Protocol implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  (extend-type Line3
+#+END_SRC
+***** IGraph
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/IGraph
+  (vertices [this] [(:p this) (:q this)])
+  (edges [this] [this])
+#+END_SRC
+***** IShape
+***** IShape3
+***** IBoundary
+***** IIntersectable
+***** End of implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  )
+#+END_SRC
 ** thi.ng.geom.rect
 *** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
@@ -820,6 +1014,9 @@
      [thi.ng.geom.types :as types]))
 #+END_SRC
 *** Protocol implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+
+#+END_SRC
 ** thi.ng.geom.polygon
 *** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
@@ -830,6 +1027,9 @@
      [thi.ng.geom.types :as types]))
 #+END_SRC
 *** Protocol implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+
+#+END_SRC
 ** thi.ng.geom.triangle
 *** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -840,3 +1040,6 @@
      [thi.ng.geom.types :as types]))
 #+END_SRC
 *** Protocol implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
+
+#+END_SRC
