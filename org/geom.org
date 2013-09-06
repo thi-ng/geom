@@ -21,12 +21,16 @@
      Even though a circle is a specialization of an Ellipse, we define
      an extra Circle type for performance reasons.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
-  (defrecord Ellipse [p rx ry])
-  (defrecord Circle [p r])
+  ^:clj  (defrecord Ellipse [p ^double rx ^double ry])
+  ^:clj  (defrecord Circle [p ^double r])
+
+  ^:cljs (defrecord Ellipse [p rx ry])
+  ^:cljs (defrecord Circle [p r])
 #+END_SRC
 **** Rectangle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
-  (defrecord Rect [p w h])
+  ^:clj  (defrecord Rect [p ^double w ^double h])
+  ^:cljs (defrecord Rect [p w h])
 #+END_SRC
 **** Polygon
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
@@ -62,7 +66,8 @@
       Just like a circle in 2D, a 3D sphere is uniquely defined via
       its center point =o= and radius =r=.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
-  (defrecord Sphere [o r])
+  ^:clj  (defrecord Sphere [o ^double r])
+  ^:cljs (defrecord Sphere [o r])
 #+END_SRC
 **** Mesh
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
@@ -589,10 +594,10 @@
           (> c 1) (let [p (apply min2 coll)
                         q (apply max2 coll)
                         [w h] (sub2 q p)]
-                    (types/->Rect p w h))
-          (= c 1) (types/->Rect (first coll) 0 0)
+                    (thi.ng.geom.types.Rect. p w h))
+          (= c 1) (thi.ng.geom.types.Rect. (first coll) 0.0 0.0)
           :default nil)))
-    ([p w h] (types/->Rect p w h)))
+    ([p w h] (thi.ng.geom.types.Rect. p w h)))
 
   (defn bounding-box*
     ([coll]
@@ -600,10 +605,10 @@
          (cond
           (> cnt 1) (let [p (apply min3 coll)
                           q (apply max3 coll)]
-                      (types/->AABB p q))
-          (= cnt 1) (types/->AABB (first coll) [0 0 0])
+                      (thi.ng.geom.types.AABB. p q))
+          (= cnt 1) (thi.ng.geom.types.AABB. (first coll) [0.0 0.0 0.0])
           :default nil)))
-    ([p q] (types/->AABB p (sub3 q p))))
+    ([p q] (thi.ng.geom.types.AABB. p (sub3 q p))))
 
   (defn max-dist
     [sub mag c points]
@@ -614,15 +619,17 @@
 
   (defn bounding-circle*
     [c r-or-points]
-    (types/->Circle c (if (coll? r-or-points)
-                        (max-dist sub2 mag2-squared c r-or-points)
-                        r-or-points)))
+    (thi.ng.geom.types.Circle.
+     c (if (coll? r-or-points)
+         (max-dist sub2 mag2-squared c r-or-points)
+         r-or-points)))
 
   (defn bounding-sphere*
     [c r-or-points]
-    (types/->Sphere c (if (coll? r-or-points)
-                        (max-dist sub3 mag3-squared c r-or-points)
-                        r-or-points)))
+    (thi.ng.geom.types.Sphere.
+     c (if (coll? r-or-points)
+         (max-dist sub3 mag3-squared c r-or-points)
+         r-or-points)))
 #+END_SRC
 ** thi.ng.geom.bezier
 *** Namespace declaration
@@ -748,14 +755,14 @@
 *** Constructor
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
 (defn circle
-  ([] (Circle. [0.0 0.0] 1.0))
-  ([r] (Circle. [0.0 0.0] r))
-  ([p r] (Circle. (g/vec2 p) r))
-  ([x y r] (Circle. (g/vec2 x y) r)))
+  ([] (thi.ng.geom.types.Circle. [0.0 0.0] 1.0))
+  ([r] (thi.ng.geom.types.Circle. [0.0 0.0] r))
+  ([p r] (thi.ng.geom.types.Circle. (g/vec2 p) r))
+  ([x y r] (thi.ng.geom.types.Circle. (g/vec2 x y) r)))
 #+END_SRC
 *** Protocol implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-  (extend-type Circle
+  (extend-type thi.ng.geom.types.Circle
 #+END_SRC
 **** IGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
@@ -768,7 +775,7 @@
    ([this] (g/edges this *resolution*))
    ([this res]
       (let [verts (g/vertices this res)]
-        (map (fn [[p q]] (Line2. p q))
+        (map (fn [[p q]] (thi.ng.geom.types.Line2. p q))
              (d/successive-nth 2 (concat verts [(first verts)]))))))
 #+END_SRC
 **** IShape
@@ -778,8 +785,8 @@
     (bounds [{p :p r :r}]
       (let [d (* 2 r)] (g/bounding-rect* (g/sub2 p [r r]) d d)))
     (center
-      ([this] (Circle. [0.0 0.0] (:r this)))
-      ([this o] (Circle. o (:r this))))
+      ([this] (thi.ng.geom.types.Circle. [0.0 0.0] (:r this)))
+      ([this o] (thi.ng.geom.types.Circle. o (:r this))))
     (centroid [this] (:p this))
     (classify-point [this q]
       (m/signum (- (:r this) (g/dist2 (:p this) q)) *eps*))
@@ -809,7 +816,7 @@
   g/IPolygonizable
   (as-polygon
    ([this] (g/as-polygon this *resolution*))
-   ([this res] (Polygon. (vec (g/vertices this res)) [])))
+   ([this res] (thi.ng.geom.types.Polygon. (vec (g/vertices this res)) [])))
 #+END_SRC
 **** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
@@ -855,13 +862,13 @@
 *** Constructors
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   (defn line2
-    ([p q] (Line2. (g/vec2 p) (g/vec2 q)))
-    ([px py qx qy] (Line2. (g/vec2 px py) (g/vec2 qx qy))))
+    ([p q] (thi.ng.geom.types.Line2. (g/vec2 p) (g/vec2 q)))
+    ([px py qx qy] (thi.ng.geom.types.Line2. (g/vec2 px py) (g/vec2 qx qy))))
 
   (defn line3
-    ([p q] (Line3. (g/vec3 p) (g/vec3 q)))
-    ([px py qx qy] (Line3. (g/vec3 px py) (g/vec3 qx qy)))
-    ([px py pz qx qy qz] (Line3. (g/vec3 px py pz) (g/vec3 qx qy qz))))
+    ([p q] (thi.ng.geom.types.Line3. (g/vec3 p) (g/vec3 q)))
+    ([px py qx qy] (thi.ng.geom.types.Line3. (g/vec3 px py) (g/vec3 qx qy)))
+    ([px py pz qx qy qz] (thi.ng.geom.types.Line3. (g/vec3 px py pz) (g/vec3 qx qy qz))))
 #+END_SRC
 *** Shared helper functions
     This function is going to be used for both 2D/3D implementations:
@@ -905,7 +912,7 @@
 *** Line2
 **** Protocol implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
-  (extend-type Line2
+  (extend-type thi.ng.geom.types.Line2
 #+END_SRC
 ***** IGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
@@ -921,9 +928,9 @@
    [this] (g/bounding-rect* [(:p this) (:q this)]))
   (center
    ([{p :p q :q}]
-      (let [c (g/mid2 p q)] (types/->Line2 (g/sub2 p c) (g/sub2 q c))))
+      (let [c (g/mid2 p q)] (thi.ng.geom.types.Line2. (g/sub2 p c) (g/sub2 q c))))
    ([{p :p q :q} o]
-      (let [c (g/sub2 o (g/mid2 p q))] (types/->Line2 (g/add2 p c) (g/add2 q c)))))
+      (let [c (g/sub2 o (g/mid2 p q))] (thi.ng.geom.types.Line2. (g/add2 p c) (g/add2 q c)))))
   (centroid
    [this] (g/mid2 (:p this) (:q this)))
   (classify-point
@@ -988,7 +995,7 @@
 *** Line3
 **** Protocol implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
-  (extend-type Line3
+  (extend-type thi.ng.geom.types.Line3
 #+END_SRC
 ***** IGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
