@@ -60,3 +60,16 @@
 #+INCLUDE: "math.org" :minlevel 2
 
 #+INCLUDE: "geom.org" :minlevel 2
+
+* ClojureScript harness
+#+BEGIN_SRC html :tangle babel/resources/public/index.html
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <title>thing-geom test</title>
+    </head>
+    <body>
+      <script type="text/javascript" src="js/geom.js"></script>
+    </body>
+  </html>
+#+END_SRC
