@@ -4,6 +4,8 @@
   points. We attempt to realise this by defining all operations in
   the form of protocols which are then implemented by various core
   types.
+** Outstanding tasks
+*** TODO Re-insert advanced polygon fns and update ns decl
 ** thi.ng.geom.types
 *** 2D types
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
@@ -553,6 +555,27 @@
     (let [d (* (dot3 v r) 2.0)]
       [(- (* rx d) x) (- (* ry d) y) (- (* rz d) z)]))
 #+END_SRC
+***** Rotation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn rotate2
+    [[x y] theta]
+    (let [c (Math/cos theta) s (Math/sin theta)]
+      [(- (* x c) (* y s)) (+ (* x s) (* y c))]))
+#+END_SRC
+***** Translation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn translate2
+    ([t points] (let [t (vec2 t)] (map #(add2 % t) points)))
+    ([t p & more] (translate2 t (cons p more))))
+
+  (defn translate3
+    ([t points] (let [t (vec3 t)] (map #(add3 % t) points)))
+    ([t p & more] (translate3 t (cons p more))))
+
+  (defn translate4
+    ([t points] (let [t (vec4 t)] (map #(add4 % t) points)))
+    ([t p & more] (translate4 t (cons p more))))
+#+END_SRC
 ***** Polar & spherical coordinates
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn polar2
@@ -1004,9 +1027,52 @@
   (edges [this] [this])
 #+END_SRC
 ***** IShape
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/IShape
+  (bounds
+   [this] (thi.ng.geom.types.AABB. (:p this) (:q this)))
+  (center
+   ([{p :p q :q}]
+      (let [c (g/mid3 p q)] (thi.ng.geom.types.Line3. (g/sub3 p c) (g/sub3 q c))))
+   ([{p :p q :q} o]
+      (let [c (g/sub3 o (g/mid3 p q))]
+        (thi.ng.geom.types.Line3. (g/add3 p c) (g/add3 q c)))))
+  (centroid
+   [this] (g/mid3 (:p this) (:q this)))
+  (classify-point
+   [{p :p q :q} p] nil) ; TODO
+#+END_SRC
 ***** IShape3
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/IShape3
+  (bounding-sphere
+   [{p :p q :q}]
+   (g/bounding-sphere* (g/mid3 p q) (* 0.5 (g/dist3 p q))))
+  (volume [this] 0.0)
+#+END_SRC
 ***** IBoundary
-***** IIntersectable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/IBoundary
+  (closest-point
+   [{p :p q :q} a]
+   (let [t (closest-point-coeff g/sub3 g/dot3 g/mag3-squared a p q)]
+     (cond
+      (<= t 0.0) p
+      (>= t 1.0) q
+      :default (g/mix3 p q t))))
+  (contains-point?
+   [{p :p q :q} p] nil) ; TODO
+  (point-at
+   [this t] (g/mix3 (:p this) (:q this) t))
+  (random-point
+   [this] (g/mix3 (:p this) (:q this) (m/random)))
+  (random-boundary-point
+   [this] (g/mix3 (:p this) (:q this) (m/random)))
+#+END_SRC
+***** TODO IIntersectable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+
+#+END_SRC
 ***** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   )
@@ -1014,28 +1080,333 @@
 ** thi.ng.geom.rect
 *** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  (ns thi.ng.geom.rect
-    (:require
-     [thi.ng.math.core :as m]
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.types :as types]))
+  ^:clj  (ns thi.ng.geom.rect
+           (:require
+            [thi.ng.math.core :as m]
+            [thi.ng.geom.core :as g]
+            [thi.ng.geom.types :as types])
+           (:import
+            [thi.ng.geom.types Circle Line2 Polygon]))
+  ^:cljs (ns thi.ng.geom.rect
+           (:require
+            [thi.ng.math.core :as m]
+            [thi.ng.geom.core :as g]
+            [thi.ng.geom.types :as types]))
+#+END_SRC
+*** Constructor
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+  (defn rect
+    ([] (thi.ng.geom.types.Rect. [0.0 0.0] 1.0 1.0))
+    ([w] (thi.ng.geom.types.Rect. [0.0 0.0] w w))
+    ([p q]
+       (if (vector? p)
+         (if (vector? q)
+           (let [p (g/vec2 p) q (g/vec2 q)
+                 [p q] [(g/min2 p q) (g/max2 p q)]
+                 [w h] (g/sub2 q p)]
+             (thi.ng.geom.types.Rect. p w h))
+           (thi.ng.geom.types.Rect. (g/vec2 p) q q))
+         (thi.ng.geom.types.Rect. [0.0 0.0] p q)))
+    ([x y w]
+       (if (number? x)
+         (thi.ng.geom.types.Rect. (g/vec2 x y) w w)
+         (thi.ng.geom.types.Rect. (g/vec2 x) y w)))
+    ([x y w h] (thi.ng.geom.types.Rect. (g/vec2 x y) w h)))
+#+END_SRC
+*** Type specific functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+  (defn union
+    [{:keys[p w h]} {q :p qw :w qh :h}]
+    (let[[x1 y1] (g/min2 p q)
+         x2 (max (+ (p 0) w) (+ (q 0) qw))
+         y2 (max (+ (p 1) h) (+ (q 1) qh))
+         w (- x2 x1)
+         h (- y2 y1)]
+      (thi.ng.geom.types.Rect. [x1 y1] w h)))
+
+  (defn map-uv
+    [{:keys[p w h]} [qx qy]]
+    [(/ (- qx (p 0)) w) (/ (- qy (p 1)) h)])
+
+  (defn unmap-uv
+    [{:keys[p w h]} [qx qy]]
+    [(+ (* qx w) (p 0)) (+ (* qy h) (p 1))])
+
+  (defn left [r] ((:p r) 0))
+  (defn right [r] (+ ((:p r) 0) (:w r)))
+  (defn top [r] ((:p r) 1))
+  (defn bottom [r] (+ ((:p r) 1) (:h r)))
+  (defn bottom-right [r] (g/add2 (:p r) [(:w r) (:h r)]))
+
+  (defn rects-intersect?
+    [{[px py] :p w :w h :h} {[qx qy] :p w2 :w h2 :h}]
+    (not (or (> px (+ qx w2)) (> qx (+ px w)) (> py (+ qy h2)) (> qy (+ py h)))))
+
+  (defn intersect-circle
+    [{w :w h :h :as r} {c :p radius :r}]
+    (let [p (g/centroid r)
+          [dx dy :as d] (g/abs2 (g/sub2 c p))
+          w (* w 0.5) h (* h 0.5)]
+      (if (and (<= dx (+ w radius))
+               (<= dy (+ h radius)))
+        (if (or (<= dx w) (<= dy h))
+          true
+          (<= (g/mag2-squared (g/sub2 d [w h])) (* radius radius)))
+        false)))
 #+END_SRC
 *** Protocol implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-
+  (extend-type thi.ng.geom.types.Rect
+#+END_SRC
+**** IGraph
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+  g/IGraph
+  (vertices
+   [{[x y :as p] :p w :w h :h}]
+   (let [r (+ x w) b (+ y h)] [p [r y] [r b] [x b]]))
+  (edges
+   [{[x y :as p] :p w :w h :h}]
+   (let [r (+ x w) b (+ y h)]
+     [(thi.ng.geom.types.Line2. p [r y]) (thi.ng.geom.types.Line2. [r y] [r b])
+      (thi.ng.geom.types.Line2. [r b] [x b]) (thi.ng.geom.types.Line2. [x b] p)]))
+#+END_SRC
+**** IShape
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+  g/IShape
+  (area
+   [this] (* (:w this) (:h this)))
+  (bounds[this] this)
+  (center
+   ([{w :w h :h}]
+      (let [w2 (* w 0.5) h2 (* h 0.5)]
+        (thi.ng.geom.types.Rect. [(- w2) (- h2)] w h)))
+   ([{w :w h :h} o]
+      (let [t [(* w 0.5) (* h 0.5)]]
+        (thi.ng.geom.types.Rect. (g/sub2 o t) w h))))
+  (centroid
+   [{p :p :as this}] (g/mid2 p (g/add2 p [(:w this) (:h this)])))
+  (classify-point
+   [this q]
+   (reduce min (map #(g/classify-point % q) (g/edges this))))
+#+END_SRC
+**** IShape2
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+  g/IShape2
+  (bounding-circle
+   [this]
+   (let [c (g/centroid this)]
+     (g/bounding-circle* c (g/dist2 c (:p this)))))
+  (circumference
+   [this] (* 2 (+ (:w this) (:h this))))
+#+END_SRC
+**** IBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+  g/IBoundary
+  (closest-point
+   [this q]
+   (g/closest-point* g/dist2-squared (g/edges this) q))
+  (contains-point?
+   [{[px py] :p w :w h :h} [x y]]
+   (and (m/in-range? 0.0 w (- x px)) (m/in-range? 0.0 h (- y py))))
+  (point-at [this t] nil) ; TODO
+  (random-point
+   [this] (g/add2 (:p this) [(m/random (:w this)) (m/random (:h this))]))
+  (random-boundary-point
+   [this] (g/point-at this (m/random)))
+#+END_SRC
+**** IPolygonizable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+  g/IPolygonizable
+  (as-polygon
+   [this] (thi.ng.geom.types.Polygon. (g/vertices this) []))
+#+END_SRC
+**** End of implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+  )
 #+END_SRC
 ** thi.ng.geom.polygon
 *** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
-  (ns thi.ng.geom.polygon
-    (:require
-     [thi.ng.math.core :as m]
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.types :as types]))
+  ^:clj  (ns thi.ng.geom.polygon
+           (:require
+            [thi.ng.data.core :as d]
+            [thi.ng.math.core :as m :refer [PI HALF_PI *eps*]]
+            [thi.ng.geom.core :as g]
+            [thi.ng.geom.types :as types])
+           (:import
+            [thi.ng.geom.types Circle Line2 Rect Polygon]))
+  ^:cljs (ns thi.ng.geom.polygon
+           (:require
+            [thi.ng.data.core :as d]
+            [thi.ng.math.core :as m :refer [*eps*]]
+            [thi.ng.geom.core :as g]
+            [thi.ng.geom.types :as types]))
+#+END_SRC
+*** Constructor
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+  (defn polygon
+    ([points] (thi.ng.geom.types.Polygon. (vec (map g/vec2 points)) []))
+    ([p & more] (thi.ng.geom.types.Polygon. (vec (map g/vec2 (cons p more))) [])))
+#+END_SRC
+*** Type specific functions
+#+BEGIN_SRC clojure
+;; :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+  (defn clip-convex
+    [poly bounds]
+    (let[verts (if (map? poly) (:points poly) (vec poly))
+         verts (conj verts (first verts))
+         bc (g/centroid bounds)
+         ec-pos (fn [e p q] (:p (g/intersect-line e (Line2. p q))))]
+      (loop [cedges (g/edges bounds) points verts clipped []]
+        (if-let [ce (first cedges)]
+          (let [sign (g/classify-point ce bc)
+                clipped (reduce
+                         (fn [clipped [p q]]
+                           (if (= sign (g/classify-point ce p))
+                             (if (= sign (g/classify-point ce q))
+                               (conj clipped q)
+                               (conj clipped (ec-pos ce p q)))
+                             (if (= sign (g/classify-point ce q))
+                               (conj clipped (ec-pos ce p q) q)
+                               clipped)))
+                         [] (d/successive-nth 2 points))
+                clipped (if (and (pos? (count clipped))
+                                 (not (m/delta= (first clipped) (peek clipped))))
+                          (conj clipped (first clipped))
+                          clipped)]
+            (recur (rest cedges) clipped points))
+          (polygon (butlast points))))))
+
+  (defn delta-contains
+    [points p eps]
+    (some #(m/delta= p % eps) points))
+
+  (defn crossed-edge?
+    [e a b]
+    (let [{t :type ua :ua} (g/intersect-line e {:p a :q b})]
+      (and (= :intersect t) (m/in-range? 0.01 0.99 ua))))
+
+  (defn tesselate
+    [poly]
+    (let [m (apply mesh2 (triangulate (:points poly)))
+          assoc-bounds #(assoc! % %2 (g/bounding-rect* %2))
+          fbounds (reduce assoc-bounds (transient {}) (:faces m))
+          [m] (reduce
+               (fn [[m fbounds] e]
+                 (let [eb (g/bounds e)
+                       faces (filter
+                              (fn [[a b c :as f]]
+                                (and (r/rects-intersect? eb (get fbounds f))
+                                     (or (crossed-edge? e a b)
+                                         (crossed-edge? e b c)
+                                         (crossed-edge? e c a))))
+                              (:faces m))
+                       [m nf] (slice-with m e faces)
+                       fbounds (reduce assoc-bounds fbounds nf)]
+                   [m fbounds]))
+               [m fbounds] (g/edges poly))]
+      (keep-faces m #(g/contains-point? poly (centroid2* %)))))
+
+  (defn randompoly
+    [n r]
+    (let [points (:points (g/as-polygon (circle r) n))]
+      (polygon (map #(g/scale2 % (m/random 0.5 1.5)) points))))
+
+  (defn h-segment
+    [verts [px py :as p] pred theta ps]
+    (let [[q] (reduce (fn[state [qx qy :as q]]
+                        (if (pred qy py)
+                          (let [d (m/abs-diff theta (g/heading2 [(- qx px) (- qy py)]))]
+                            (if (< d (state 1)) [q d] state))
+                          state))
+                      [nil HALF_PI] ps)]
+      (if q (recur (conj verts q) q pred theta (all-after q ps)) verts)))
+
+  (defn convex-hull
+    [points]
+    (let [[p & more :as ps] (sort-by first (if (map? points) (:points points) points))
+          rps (reverse ps)]
+      (polygon
+       (butlast
+        (reduce
+         (fn[v [pred t ps]] (h-segment v (peek v) pred t (d/all-after (peek v) ps)))
+         [p] [[<= (* 1.5 PI) more] [>= 0.0 more]
+              [>= HALF_PI rps] [<= PI rps]])))))
 #+END_SRC
 *** Protocol implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
-
+  (extend-type thi.ng.geom.types.Polygon
+#+END_SRC
+**** IGraph
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+  g/IGraph
+  (vertices
+   [this] (:points this))
+  (edges
+   [{points :points}]
+   (map (fn [[p q]] (thi.ng.geom.types.Line2. p q))
+        (d/successive-nth 2 (concat points [(first points)]))))
+#+END_SRC
+**** IShape
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+  g/IShape
+  (area
+   [{points :points}]
+   (let [p (first points)
+         [area] (reduce (fn [[a p] v] [(+ a (g/cross2 p v)) v])
+                        [0.0 p] (concat (drop 1 points) [p]))]
+     (* 0.5 area)))
+  (bounds
+   [this] (g/bounding-rect* (:points this)))
+  (center
+   ([this] (g/center this [0.0 0.0]))
+   ([this o]
+      (thi.ng.geom.types.Polygon. (vec (g/translate2 (g/sub2 o (g/centroid this)) (:points this))) [])))
+  (centroid
+   [{points :points :as this}]
+   (let [p (first points)
+         [c] (reduce
+              (fn [[c p] v]
+                (let [x (g/cross2 p v)]
+                  [(g/add2 c (g/scale2 (g/add2 p v) x)) v]))
+              [[0.0 0.0] p] (conj (subvec points 1 (count points)) p))]
+     (g/scale2 c (/ 1.0 (* 6 (g/area this))))))
+  (classify-point
+   [this p] nil) ; TODO
+#+END_SRC
+**** IBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+  g/IBoundary
+  (closest-point
+   [this p] (g/closest-point* g/dist2-squared (g/edges this) p))
+  (contains-point?
+   [{points :points} p]
+   (if (some #{p} points) true
+       (let [[x y] p]
+         (first
+          (reduce
+           (fn [[in [px py]] [vx vy]]
+             (if (and (or (and (< vy y) (>= py y)) (and (< py y) (>= vy y)))
+                      (< (+ vx (* (/ (- y vy) (- py vy)) (- px vx))) x))
+               [(not in) [vx vy]] [in [vx vy]]))
+           [false (last points)] points)))))
+  (point-at [this t] nil) ; TODO
+  (random-point [this] nil) ; TODO
+  (random-boundary-point
+   [this] (g/point-at this (m/random)))
+#+END_SRC
+**** IShape2
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+  g/IShape2
+  (bounding-circle
+   [this] (g/bounding-circle* (g/centroid this) (:points this)))
+  (circumference
+   [{points :points}]
+   (d/apply-to-pairs + g/dist2 (concat points [(first points)])))
+#+END_SRC
+**** End of implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+  )
 #+END_SRC
 ** thi.ng.geom.triangle
 *** Namespace declaration
