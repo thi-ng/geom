@@ -6,6 +6,10 @@
   types.
 ** Outstanding tasks
 *** TODO Re-insert advanced polygon fns and update ns decl
+*** TODO extract LineStrip defrecords & protocols
+*** TODO refactor bezier ns to use linestrips
+*** TODO add NURBS
+*** TODO add voxel ns
 ** thi.ng.geom.types
 *** 2D types
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
@@ -1512,7 +1516,7 @@
             (thi.ng.geom.types.Triangle2.
              (g/add2 (:a t) ct) (g/add2 (:b t) ct) (g/add2 (:c t) ct)))))
   (centroid
-   [t] (centroid2* (:a t) (:b t) (:c t) THIRD))
+   [t] (centroid2* (:a t) (:b t) (:c t)))
   ;; TODO add clockwise? check, currently assumes clockwise ordering
   (classify-point
    [this p]
