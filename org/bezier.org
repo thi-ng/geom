@@ -1,0 +1,103 @@
+* thi.ng.geom.bezier
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+  (ns thi.ng.geom.bezier
+    (:require
+     [thi.ng.data.core :as d]
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]))
+#+END_SRC
+** The Bernstein polynomial
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+(defn bernstein
+  [t]
+  (let [it (- 1.0 t) it2 (* it it) t2 (* t t)]
+    [(* it it2) (* 3 (* t it2)) (* 3 (* it t2)) (* t t2)]))
+#+END_SRC
+** Interpolation & curve samplings
+     Applied to calculate a single point on a bezier patch, sample a patch
+     at a fixed resolution and sample a continous curve from a seq of
+     control points... =interpolate*= and =as-linestrip*= are
+     implemented as HOF to support both 2D/3D cases. Further below
+     we'll provide pre-configured implementations for each.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+  (defn interpolate*
+    [afn sfn]
+    (fn [[a b c d] t]
+      (let [[ta tb tc td] (bernstein t)]
+        (-> a
+            (sfn ta)
+            (afn (sfn b tb))
+            (afn (sfn c tc))
+            (afn (sfn d td))))))
+
+  (defn sample-segment
+    [interpolate seg res]
+    (for [t (range 0.0 1.0 (/ 1.0 res))]
+      (interpolate seg t)))
+
+  (defn as-linestrip*
+    [interpolate]
+    (fn [res include-last? points]
+      (let [ls (->> points
+                    (d/successive-nth 4)
+                    (take-nth 3)
+                    (mapcat #(sample-segment interpolate % res)))]
+        (if include-last?
+          (concat ls [(last points)])
+          ls))))
+#+END_SRC
+** Automatic curve generation
+     The following two functions allow us to compute a bezier curve
+     which passes through all given points and automatically computes
+     the required control points.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+(defn find-cpoints*
+  [make-vec sub scale fma]
+  (fn [tight points]
+    (let [np (count points)
+          invt (/ 1.0 tight)
+          points (vec points)
+          c1 (scale (sub (get points 2) (first points)) tight)
+          [bi coeff] (reduce
+                      (fn [[bi coeff] i]
+                        (let [b (/ -1.0 (+ invt (peek bi)))
+                              c (peek coeff)
+                              p (get points (dec i))
+                              q (get points (inc i))]
+                          [(conj bi b)
+                           (conj coeff (scale (sub q p c) (- b)))]))
+                      [[0 (- tight)] [(make-vec) c1]]
+                      (range 2 (dec np)))]
+      (reduce
+       (fn [delta i]
+         (assoc delta i (fma (delta (inc i)) (bi i) (coeff i))))
+       (vec (repeatedly np make-vec))
+       (range (- np 2) 0 -1)))))
+
+(defn auto-spline*
+  [find-cpoints add sub]
+  (fn [tight points]
+    (concat
+     (->> points
+          (find-cpoints tight)
+          (d/successive-nth 2)
+          (interleave (d/successive-nth 2 points))
+          (partition 2)
+          (mapcat (fn [[[p q] [dp dq]]] [p (add p dp) (sub q dq)])))
+     [(last points)])))
+#+END_SRC
+** Concrete implementations for 2D/3D...
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+(def interpolate2 (interpolate* g/add2 g/scale2))
+(def interpolate3 (interpolate* g/add3 g/scale3))
+
+(def as-linestrip2 (as-linestrip* interpolate2))
+(def as-linestrip3 (as-linestrip* interpolate3))
+
+(def find-cpoints2 (find-cpoints* g/vec2 g/sub2 g/scale2 g/fma2))
+(def find-cpoints3 (find-cpoints* g/vec3 g/sub3 g/scale3 g/fma3))
+
+(def auto-spline2 (auto-spline* find-cpoints2 g/add2 g/sub2))
+(def auto-spline3 (auto-spline* find-cpoints3 g/add3 g/sub3))
+#+END_SRC

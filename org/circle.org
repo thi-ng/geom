@@ -1,0 +1,118 @@
+* thi.ng.geom.circle
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  ^:clj  (ns thi.ng.geom.circle
+           (:require
+            [thi.ng.data.core :as d]
+            [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]]
+            [thi.ng.geom.core :as g :refer [*resolution*]]
+            [thi.ng.geom.types :as types])
+           (:import
+            [thi.ng.geom.types Circle Line2 Polygon]))
+  ^:cljs (ns thi.ng.geom.circle
+           (:require
+            [thi.ng.data.core :as d]
+            [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]]
+            [thi.ng.geom.core :as g :refer [*resolution*]]
+            [thi.ng.geom.types :as types]))
+#+END_SRC
+** Constructor
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+(defn circle
+  ([] (thi.ng.geom.types.Circle. [0.0 0.0] 1.0))
+  ([r] (thi.ng.geom.types.Circle. [0.0 0.0] r))
+  ([p r] (thi.ng.geom.types.Circle. (g/vec2 p) r))
+  ([x y r] (thi.ng.geom.types.Circle. (g/vec2 x y) r)))
+#+END_SRC
+** Protocol implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  (extend-type thi.ng.geom.types.Circle
+#+END_SRC
+*** IGraph
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  g/IGraph
+  (vertices
+   ([this] (g/vertices this *resolution*))
+   ([this res]
+      (map #(g/point-at this %) (range 0.0 1.0 (/ 1.0 res)))))
+  (edges
+   ([this] (g/edges this *resolution*))
+   ([this res]
+      (let [verts (g/vertices this res)]
+        (map (fn [[p q]] (thi.ng.geom.types.Line2. p q))
+             (d/successive-nth 2 (concat verts [(first verts)]))))))
+#+END_SRC
+*** IShape
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  g/IShape
+  (area [{r :r}] (* (* PI r) r))
+  (bounds
+   [{p :p r :r}]
+   (let [d (* 2 r)] (g/bounding-rect* (g/sub2 p [r r]) d d)))
+  (center
+   ([this] (thi.ng.geom.types.Circle. [0.0 0.0] (:r this)))
+   ([this o] (thi.ng.geom.types.Circle. o (:r this))))
+  (centroid [this] (:p this))
+#+END_SRC
+*** IShape2
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+    g/IShape2
+    (bounding-circle [this] this)
+    (circumference [this] (* TWO_PI (:r this)))
+#+END_SRC
+*** IBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  g/IBoundary
+  (classify-point
+   [this q]
+   (m/signum (- (:r this) (g/dist2 (:p this) q)) *eps*))
+  (closest-point
+   [{p :p r :r} q]
+   (g/add2 p (g/normalize2 (g/sub2 q p) r)))
+  (contains-point?
+   [{p :p r :r} q]
+   (<= (g/mag2-squared (g/sub2 p q)) (* r r)))
+#+END_SRC
+*** ISampleable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  g/ISampleable
+  (point-at
+   [this t]
+   (g/add2 (:p this) (g/cartesian2 [(:r this) (* t TWO_PI)])))
+  (random-point-at
+   [this] (g/point-at this (m/random)))
+  (random-point-inside
+   [this]
+   (g/add2 (:p this) (g/scale2 (g/randvec2) (m/random (:r this)))))
+  (sample-uniform [this dist]) ;; TODO
+#+END_SRC
+*** IPolygonizable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  g/IPolygonizable
+  (as-polygon
+   ([this] (g/as-polygon this *resolution*))
+   ([this res] (thi.ng.geom.types.Polygon. (vec (g/vertices this res)) [])))
+#+END_SRC
+*** End of implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  )
+#+END_SRC
+** Type specific functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  (defn intersect-circle
+    [{p :p r1 :r} {q :p r2 :r}]
+    (let [delta (g/sub2 q p)
+          d (g/mag2 delta)]
+      (if (and (<= d (+ r1 r2)) (>= d (m/abs (- r1 r2))))
+        (let [a (/ (+ (- (* r1 r1) (* r2 r2)) (* d d)) (* 2 d))
+              invd (/ 1.0 d)
+              p (g/add2 p (g/scale2 delta (* a invd)))
+              h (Math/sqrt (- (* r1 r1) (* a a)))
+              perp (g/scale2 (g/perpendicular2 delta) (* h invd))]
+          [(g/add2 p perp) (g/sub2 p perp)]))))
+
+  (defn tangent-points
+    [{p :p :as c} q]
+    (let [m (g/mid2 p q)]
+      (intersect-circle c (circle m (g/dist2 m p)))))
+#+END_SRC
