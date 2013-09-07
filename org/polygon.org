@@ -140,6 +140,15 @@
                   [(g/add2 c (g/scale2 (g/add2 p v) x)) v]))
               [[0.0 0.0] p] (conj (subvec points 1 (count points)) p))]
      (g/scale2 c (/ 1.0 (* 6 (g/area this))))))
+  (width
+   [this]
+   (let [xs (map #(nth % 0) (:points this))]
+     (- (reduce max xs) (reduce min xs))))
+  (height
+   [this]
+   (let [xs (map #(nth % 1) (:points this))]
+     (- (reduce max xs) (reduce min xs))))
+  (depth [this] 0)
 #+END_SRC
 *** IBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx

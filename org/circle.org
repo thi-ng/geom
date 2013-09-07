@@ -48,6 +48,9 @@
    ([this] (thi.ng.geom.types.Circle. [0.0 0.0] (:r this)))
    ([this o] (thi.ng.geom.types.Circle. o (:r this))))
   (centroid [this] (:p this))
+  (width  [this] (:r this))
+  (height [this] (:r this))
+  (depth  [this] 0)
 #+END_SRC
 *** IShape2
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx

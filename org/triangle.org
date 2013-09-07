@@ -98,6 +98,15 @@
              (g/add2 (:a t) ct) (g/add2 (:b t) ct) (g/add2 (:c t) ct)))))
   (centroid
    [t] (centroid2* (:a t) (:b t) (:c t)))
+  (width
+   [this]
+   (let [xs [((:a this) 0) ((:b this) 0) ((:c this) 0)]]
+     (- (reduce max xs) (reduce min xs))))
+  (height
+   [this]
+   (let [xs [((:a this) 1) ((:b this) 1) ((:c this) 1)]]
+     (- (reduce max xs) (reduce min xs))))
+  (depth [this] 0)
 #+END_SRC
 ***** IShape2
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -176,6 +185,18 @@
          (g/add3 (:a t) ct) (g/add3 (:b t) ct) (g/add3 (:c t) ct)))))
   (centroid
    [t] (centroid3* (:a t) (:b t) (:c t)))
+  (width
+   [this]
+   (let [xs [((:a this) 0) ((:b this) 0) ((:c this) 0)]]
+     (- (reduce max xs) (reduce min xs))))
+  (height
+   [this]
+   (let [xs [((:a this) 1) ((:b this) 1) ((:c this) 1)]]
+     (- (reduce max xs) (reduce min xs))))
+  (depth
+   [this]
+   (let [xs [((:a this) 2) ((:b this) 2) ((:c this) 2)]]
+     (- (reduce max xs) (reduce min xs))))
 #+END_SRC
 ***** IShape3
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx

@@ -102,6 +102,9 @@
         (thi.ng.geom.types.Rect. (g/sub2 o t) w h))))
   (centroid
    [{p :p :as this}] (g/mid2 p (g/add2 p [(:w this) (:h this)])))
+  (width  [this] (:w this))
+  (height [this] (:h this))
+  (depth  [this] 0)
 #+END_SRC
 *** IShape2
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx

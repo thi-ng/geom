@@ -1,5 +1,4 @@
 * Namespace: thi.ng.geom.aabb
-*** TODO fix size handling, AABB actually defined as p -> q
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
   (ns thi.ng.geom.aabb
@@ -45,6 +44,7 @@
      [a b c d e f g h]))
 #+END_SRC
 *** IBoundary
+**** TODO move fns into correct protocols
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
   g/IBoundary
   (classify-point
