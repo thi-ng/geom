@@ -180,7 +180,7 @@
         (thi.ng.geom.types.Triangle3.
          (g/add3 (:a t) ct) (g/add3 (:b t) ct) (g/add3 (:c t) ct)))))
   (centroid
-   [t] (centroid3* (:a t) (:b t) (:c t) THIRD))
+   [t] (centroid3* (:a t) (:b t) (:c t)))
 #+END_SRC
 ***** IShape3
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx

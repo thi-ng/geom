@@ -52,10 +52,12 @@
     [x] (if (even? x) (inc x) x))
 
   (defn fma
+    "Returns a * b + c."
     [a b c] (+ (* a b) c))
 
-  (defn abs
-    [x] (if (neg? x) (- x) x))
+  (def abs
+    ,#+clj (fn [x] (if (neg? x) (- x) x))
+    ,#+cljs Math/abs)
 
   (defn abs-diff
     [x y] (abs (- x y)))
@@ -72,7 +74,7 @@
   (defn signum
     ([x] (if (neg? x) -1 (if (zero? x) 0 1)))
     ([x delta]
-       (if (delta= 0 x delta) 0
+       (if (delta= 0.0 x delta) 0
            (if (neg? x) -1 1))))
 #+END_SRC
 **** Intervals

@@ -1,19 +1,14 @@
 * thi.ng.geom.plane
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
-  #+clj  (ns thi.ng.geom.plane
-           (:require
-            [thi.ng.math.core :as m :refer [*eps*]]
-            [thi.ng.geom.core :as g]
-            [thi.ng.geom.mesh :refer [mesh3]])
-           (:import
-            [thi.ng.geom.types Plane]))
-
-  #+cljs (ns thi.ng.geom.plane
-           (:require
-            [thi.ng.math.core :as m :refer [*eps*]]
-            [thi.ng.geom.core :as g]
-            [thi.ng.geom.mesh :refer [mesh3]]))
+  (ns thi.ng.geom.plane
+    (:require
+     [thi.ng.math.core :as m :refer [*eps*]]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.mesh :refer [mesh3]])
+    #+clj
+    (:import
+     [thi.ng.geom.types Plane]))
 #+END_SRC
 ** Constructor
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
@@ -22,18 +17,18 @@
 #+END_SRC
 ** TODO Protocol implementation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
-  (extend-type Plane
+  (extend-type thi.ng.geom.types.Plane
 #+END_SRC
-*** IShape
+*** IBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
-    g/IShape
+    g/IBoundary
     (classify-point
-      [{p :p n :n} q]
-      (-> (g/sub3 q p) (g/normalize3) (g/dot3 n) (m/signum *eps*)))
+      [this q]
+      (-> (g/sub3 q (:p this)) (g/normalize3) (g/dot3 (:n this)) (m/signum *eps*)))
     (closest-point
       [{p :p n :n} q]
       (let [sn (- (g/dot3 n (g/sub3 q p)))]
-        (add3 q (g/normalize3 n sn))))
+        (g/add3 q (g/normalize3 n sn))))
 #+END_SRC
 *** IIntersectable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
@@ -47,8 +42,8 @@
         (if (m/delta= d 0.0 *eps*)
           {:type (if (zero? dn) :on-plane :parallel)}
           (let [du (/ dn d)
-                i (add3 lp (scale3 u du))]
-            (if (in-range? 0.0 1.0 du)
+                i (g/add3 lp (g/scale3 u du))]
+            (if (m/in-range? 0.0 1.0 du)
               {:type :intersect :p i}
               {:type :intersect-outside :p i})))))
 #+END_SRC

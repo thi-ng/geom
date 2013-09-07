@@ -232,7 +232,7 @@
   #+clj  (defn type-error
            [t x] (throw (IllegalArgumentException. (str "can't create " t " from " x))))
   #+cljs (defn type-error
-           [t x] (throw (Error. (str "can't create " t " from " x))))
+           [t x] (throw (js/Error. (str "can't create " t " from " x))))
 
   (defn vec2
     ([] [0.0 0.0])
