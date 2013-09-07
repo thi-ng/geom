@@ -196,7 +196,8 @@
   (closest-point [this p] nil) ; TODO
   (contains-point?
    [this p]
-   (contains-point* g/sub3 g/dot3 g/mag3-squared (:a t) (:b t) (:c t) p))
+   (contains-point*
+    g/sub3 g/dot3 g/mag3-squared (:a this) (:b this) (:c this) p))
 #+END_SRC
 ***** ISampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -233,20 +234,20 @@
               (cond
                 eq-ab? (let [m2 (- (/ (- cx bx) (- cy by)))
                              mx1 (* 0.5 (+ ax bx))
-                             [mx2 my2] (mid2 b c)]
+                             [mx2 my2] (g/mid2 b c)]
                          [mx1 (+ (* m2 (- mx1 mx2)) my2)])
                 eq-bc? (let [m1 (- (/ (- bx ax) (- by ay)))
                              mx2 (* 0.5 (+ bx cx))
-                             [mx1 my1] (mid2 a b)]
+                             [mx1 my1] (g/mid2 a b)]
                          [mx2 (+ (* m1 (- mx2 mx1)) my1)])
                 :default (let [m1 (- (/ (- bx ax) (- by ay)))
                                m2 (- (/ (- cx bx) (- cy by)))
-                               [mx1 my1] (mid2 a b)
-                               [mx2 my2] (mid2 b c)
+                               [mx1 my1] (g/mid2 a b)
+                               [mx2 my2] (g/mid2 b c)
                                xx (-> (* m1 mx1) (- (* m2 mx2))
                                       (+ my2) (- my1) (/ (- m1 m2)))]
                            [xx (+ (* m1 (- xx mx1)) my1)]))]
-          [o (hypot (- bx ox) (- by oy))]))))
+          [o (m/hypot (- bx ox) (- by oy))]))))
 
   (defn circumcircle2
     ([t] (circumcircle2 (:a t) (:b t) (:c t)))
@@ -282,7 +283,7 @@
         (if add-q? (conj splits [q qc]) splits))))
 
   (defn slice-with
-    ([t e] (slice-with t e classify-point))
+    ([t e] (slice-with t e g/classify-point))
     ([[a b c] e classifier]
     (let [verts (-> []
             (check-edge classifier e a b true true)
@@ -301,8 +302,8 @@
                   (if (and (zero? c) (triverts v)) i (recur (dec i)))))))]
       (condp = (count verts)
         4 (let [d (corner-index)]
-            (cmap [[(d/wrap-range (inc d) 4) (d/wrap-range (+ d 2) 4) d]
-                   [(d/wrap-range (dec d) 4) d (d/wrap-range (+ d 2) 4)]]))
+            (cmap [[(m/wrap-range (inc d) 4) (m/wrap-range (+ d 2) 4) d]
+                   [(m/wrap-range (dec d) 4) d (m/wrap-range (+ d 2) 4)]]))
         5 (if (zero? (get-in verts [1 1]))
             (if (zero? (get-in verts [3 1]))
               (cmap [[0 1 3] [0 3 4] [2 3 1]])

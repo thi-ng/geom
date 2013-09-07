@@ -3,7 +3,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
   ^:clj  (ns thi.ng.geom.plane
            (:require
-            [thi.ng.math.core :as m:refer [*eps*]]
+            [thi.ng.math.core :as m :refer [*eps*]]
             [thi.ng.geom.core :as g]
             [thi.ng.geom.mesh :refer [mesh3]])
            (:import
@@ -11,7 +11,7 @@
 
   ^:cljs (ns thi.ng.geom.plane
            (:require
-            [thi.ng.math.core :as m:refer [*eps*]]
+            [thi.ng.math.core :as m :refer [*eps*]]
             [thi.ng.geom.core :as g]
             [thi.ng.geom.mesh :refer [mesh3]]))
 #+END_SRC
