@@ -1,19 +1,14 @@
 * thi.ng.geom.delaunay
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/delaunay.cljx
-  #+clj  (ns thi.ng.geom.delaunay
-           (:require
-            [thi.ng.math.core :as m :refer [*eps* delta=]]
-            [thi.ng.geom.core :as g]
-            [thi.ng.geom.triangle :as t])
-           (:import
-            [thi.ng.geom.types Triangle2]))
-
-  #+cljs (ns thi.ng.geom.delaunay
-           (:require
-            [thi.ng.math.core :as m :refer [*eps* delta=]]
-            [thi.ng.geom.core :as g]
-            [thi.ng.geom.triangle :as t]))
+  (ns thi.ng.geom.delaunay
+    (:require
+     [thi.ng.math.core :as m :refer [*eps* delta=]]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.triangle :as t])
+    #+clj
+    (:import
+     [thi.ng.geom.types Triangle2]))
 #+END_SRC
 ** Implementation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/delaunay.cljx

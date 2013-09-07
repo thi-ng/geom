@@ -1,18 +1,14 @@
 * thi.ng.geom.rect
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  #+clj  (ns thi.ng.geom.rect
-           (:require
-            [thi.ng.math.core :as m]
-            [thi.ng.geom.core :as g]
-            [thi.ng.geom.types :as types])
-           (:import
-            [thi.ng.geom.types Circle Line2 Polygon]))
-  #+cljs (ns thi.ng.geom.rect
-           (:require
-            [thi.ng.math.core :as m]
-            [thi.ng.geom.core :as g]
-            [thi.ng.geom.types :as types]))
+  (ns thi.ng.geom.rect
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.types :as types])
+    #+clj
+    (:import
+     [thi.ng.geom.types Circle Line2 Polygon]))
 #+END_SRC
 ** Constructor
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
@@ -134,7 +130,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
   g/ISampleable
   (point-at [this t] nil) ; TODO
-  (random-point-at
+  (random-point
    [this] (g/point-at this (m/random)))
   (random-point-inside
    [this] (g/add2 (:p this) [(m/random (:w this)) (m/random (:h this))]))

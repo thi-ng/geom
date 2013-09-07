@@ -66,9 +66,10 @@
 #+END_SRC
 ***** AABB
       An Axis-aligned bounding box is defined as the cartesian volume
-      between points =p= and =q=.
+      extending for =size= units (a 3D vector) from point =p= toward
+      positive infinity.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
-  (defrecord AABB [p q])
+  (defrecord AABB [p size])
 #+END_SRC
 ***** Sphere
       Just like a circle in 2D, a 3D sphere is uniquely defined via
@@ -86,16 +87,13 @@
     protocols related to common higher level geometric operations.
 **** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
-  #+clj  (ns thi.ng.geom.core
-           (:require
-            [thi.ng.math.core :as m]
-            [thi.ng.geom.types :as types])
-           (:import
-            [thi.ng.geom.types Circle Rect AABB Sphere]))
-  #+cljs (ns thi.ng.geom.core
-           (:require
-            [thi.ng.math.core :as m]
-            [thi.ng.geom.types :as types]))
+  (ns thi.ng.geom.core
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.types :as types])
+    #+clj
+    (:import
+     [thi.ng.geom.types Circle Rect AABB Sphere]))
 #+END_SRC
 **** Protocols
 ***** Spatial transform operations
@@ -148,10 +146,20 @@
       above the layer of simple points in space.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol IShape
-    (area [this])
-    (bounds [this])
-    (center [this] [this o])
-    (centroid [this]))
+    (area [this]
+      "Returns surface area")
+    (bounds [this]
+      "Returns bounding rect for 2d entities or box for 3d")
+    (center [this] [this o]
+      "Returns updated entity centered around world origin or given point")
+    (centroid [this]
+      "Returns centroid of entity")
+    (width [this]
+      "Returns entity's extent along X axis")
+    (height [this]
+      "Returns entity's extent along Y axis")
+    (depth [this]
+      "Returns entity's extent along Z (zero for 2d)"))
 #+END_SRC
 ****** IShape2
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -176,7 +184,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol ISampleable
     (point-at [this t])
-    (random-point-at [this])
+    (random-point [this])
     (random-point-inside [this])
     (sample-uniform [this dist]))
 #+END_SRC
@@ -201,7 +209,7 @@
   (defprotocol IIntersectable
     (intersect-line [this l])
     (intersect-ray [this r])
-    (intersect-shape [this s]))
+    (intersects-shape? [this s]))
 #+END_SRC
 ***** Type specific operations
 ****** ILineStrip
@@ -689,6 +697,10 @@
 #+INCLUDE: "triangle.org" :minlevel 4
 
 #+INCLUDE: "plane.org" :minlevel 4
+
+#+INCLUDE: "aabb.org" :minlevel 4
+
+#+INCLUDE: "sphere.org" :minlevel 4
 
 ** Geometric operations
 #+INCLUDE: "delaunay.org" :minlevel 4

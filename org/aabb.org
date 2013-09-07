@@ -1,0 +1,149 @@
+* Namespace: thi.ng.geom.aabb
+*** TODO fix size handling, AABB actually defined as p -> q
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+  (ns thi.ng.geom.aabb
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.mesh :as mesh]
+     [thi.ng.geom.types :as types])
+    #+clj
+    (:import
+     [thi.ng.geom.types Line3 AABB Sphere]))
+#+END_SRC
+** Constructors
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+  (defn aabb
+    ([] (thi.ng.geom.types.AABB. (g/vec3 0.0) (g/vec3 1.0)))
+    ([size] (thi.ng.geom.types.AABB. (g/vec3 0.0) (g/vec3 size)))
+    ([o size] (thi.ng.geom.types.AABB. (g/vec3 o) (g/vec3 size))))
+
+  (defn aabb-from-minmax
+    [p q]
+    (thi.ng.geom.types.AABB. p (g/sub3 q p)))
+#+END_SRC
+** Type specific functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+
+#+END_SRC
+** Protocol implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+  (extend-type thi.ng.geom.types.AABB
+#+END_SRC
+*** IGraph
+**** TODO add edges implementation
+#+BEGIN_SRC clojure
+  g/IGraph
+  (vertices
+   [{a :p size :size}]
+   (let [[x1 y1 z1] a
+         [x2 y2 z2 :as g] (g/add3 a size)
+         b [x1 y2 z1] c [x1 y2 z2]
+         d [x1 y1 z2] e [x2 y1 z1]
+         f [x2 y2 z1] h [x2 y1 z2]]
+     [a b c d e f g h]))
+#+END_SRC
+*** IBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+  g/IBoundary
+  (classify-point
+   [{p :p size :size} [x y z :as q]]
+   (let [[x1 y1 z1] p
+         [x2 y2 z2] (g/add3 p size)
+         on-plane? (fn [[minp maxp p min1 max1 min2 max2 c1 c2]]
+                     (and (or (m/delta= minp p *eps*)
+                              (m/delta= maxp p *eps*))
+                          (m/in-range? min1 max1 c1)
+                          (m/in-range? min2 max2 c2)))]
+     (if (some on-plane?
+               [[x1 x2 x y1 y2 z1 z2 y z]
+                [y1 y2 y x1 x2 z1 z2 x z]
+                [z1 z2 z x1 x2 y1 y2 x y]])
+       0
+       (if (and (m/in-range? x1 x2 x)
+                (m/in-range? y1 y2 y)
+                (m/in-range? z1 z2 z))
+         1 -1))))
+  (contains-point?
+   [{p :p size :size} [qx qy qz]]
+   (let [[x1 y1 z1] p
+         [x2 y2 z2] (g/add3 p size)]
+     (and (m/in-range? x1 x2 qx)
+          (m/in-range? y1 y2 qy)
+          (m/in-range? z1 z2 qz))))
+  (random-point-inside
+   [{p :p size :size}]
+   (let [[x1 y1 z1] p
+         [x2 y2 z2] (g/add3 p size)]
+     [(m/random x1 x2) (m/random y1 y2) (m/random z1 z2)]))
+  (random-point
+   [{p :p size :size}]
+   (let [[x1 y1 z1] p
+         [x2 y2 z2] (g/add3 p size)
+         id (int (m/random 6))]
+     (cond
+      (< id 2) (g/vec3 (if (zero? id) x1 x2) (m/random y1 y2) (m/random z1 z2))
+      (< id 4) (g/vec3 (m/random x1 x2) (if (= 2 id) y1 y2) (m/random z1 z2))
+      :default (g/vec3 (m/random x1 x2) (m/random y1 y2) (if (= 4 id) z1 z2)))))
+#+END_SRC
+*** IShape
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+  g/IShape
+  (area
+   [{[w h d] :size}] (* 2 (+ (* w h) (* d h) (* w d))))
+  (bounds [this] this)
+  (center
+   ([{p :p size :size}]
+      (thi.ng.geom.types.AABB.
+       (g/sub3 p (g/scale3 size 0.5)) size))
+   ([{size :size} q]
+      (thi.ng.geom.types.AABB.
+       (g/sub3 q (g/scale3 size 0.5)) size)))
+  (centroid
+   [this] (g/add3 (:p this) (g/scale3 (:size this) 0.5)))
+  (width [{size :size}] (size 0))
+  (height [{size :size}] (size 1))
+  (depth [{size :size}] (size 2))
+#+END_SRC
+*** IShape3
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+  g/IShape3
+  (bounding-sphere
+   [{p :p size :size}]
+   (let [e (g/scale3 size 0.5)]
+     (g/bounding-sphere* (g/add3 p e) (g/mag3 e))))
+  (volume
+   [{[w h d] :size}] (* (* w h) d))
+#+END_SRC
+*** IIntersectable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+  g/IIntersectable
+  (intersects-shape?
+   [{pa :p sa :size} s]
+   (if (instance? thi.ng.geom.types.AABB s)
+     (let [{pb :p sb :size} s]
+       (every?
+        #(and (<= (pa %) (+ (pb %) (sb %)))
+              (<= (pb %) (+ (pa %) (sa %))))
+        [0 1 2]))
+     (g/type-error "AABB" s)))
+#+END_SRC
+*** IMeshable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+  g/IMeshable
+  (as-mesh
+   [this]
+   (let [[a b c d e f g h] (g/vertices this)]
+     (mesh/mesh3
+      [a c b] [a d c] ;left
+      [d g c] [d h g] ;front
+      [h f g] [h e f] ;right
+      [e b f] [e a b] ;back
+      [c f b] [c g f] ;top
+      [e h d] [e d a]))) ; bottom
+#+END_SRC
+*** End of implementation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+  )
+#+END_SRC

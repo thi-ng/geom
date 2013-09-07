@@ -1,20 +1,15 @@
 * thi.ng.geom.line
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
-  #+clj  (ns thi.ng.geom.line
-           (:require
-            [thi.ng.data.core :as d]
-            [thi.ng.math.core :as m :refer [*eps*]]
-            [thi.ng.geom.core :as g]
-            [thi.ng.geom.types :as types])
-           (:import
-            [thi.ng.geom.types Circle Line2 Line3 Polygon]))
-  #+cljs (ns thi.ng.geom.line
-           (:require
-            [thi.ng.data.core :as d]
-            [thi.ng.math.core :as m :refer [*eps*]]
-            [thi.ng.geom.core :as g]
-            [thi.ng.geom.types :as types]))
+  (ns thi.ng.geom.line
+    (:require
+     [thi.ng.data.core :as d]
+     [thi.ng.math.core :as m :refer [*eps*]]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.types :as types])
+    #+clj
+    (:import
+     [thi.ng.geom.types Circle Line2 Line3 Polygon]))
 #+END_SRC
 ** Constructors
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
@@ -122,7 +117,7 @@
   g/ISampleable
   (point-at
    [this t] (g/mix2 (:p this) (:q this) t))
-  (random-point-at
+  (random-point
    [this] (g/mix2 (:p this) (:q this) (m/random)))
   (random-point-inside
    [this] (g/mix2 (:p this) (:q this) (m/random)))
@@ -169,8 +164,9 @@
 **** IShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/IShape
+  (area [this] 0)
   (bounds
-   [this] (thi.ng.geom.types.AABB. (:p this) (:q this)))
+   [this] (g/bounding-box* [(:p this) (:q this)]))
   (center
    ([{p :p q :q}]
       (let [c (g/mid3 p q)] (thi.ng.geom.types.Line3. (g/sub3 p c) (g/sub3 q c))))
@@ -208,7 +204,7 @@
   g/ISampleable
   (point-at
    [this t] (g/mix3 (:p this) (:q this) t))
-  (random-point-at
+  (random-point
    [this] (g/mix3 (:p this) (:q this) (m/random)))
   (random-point-inside
    [this] (g/mix3 (:p this) (:q this) (m/random)))

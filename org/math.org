@@ -37,18 +37,17 @@
 #+END_SRC
 **** Dynamic PRNG
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/math/core.cljx
-  #+clj  (def ^:dynamic *rnd* (java.util.Random.))
-  #+cljs (def ^:dynamic *rnd* Math/random)
+  (def ^:dynamic *rnd* #+clj (java.util.Random.) #+cljs Math/random)
 #+END_SRC
 *** Functions
 **** Basics
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/math/core.cljx
   (defn ensure-even
-    "Returns `x` if even or `x+1` if `x` is odd."
+    "Returns x if even or `x+1` if `x` is odd."
     [x] (if (even? x) x (inc x)))
 
   (defn ensure-odd
-    "Returns `x` if odd or `x+1` if `x` is even."
+    "Returns x if odd or `x+1` if `x` is even."
     [x] (if (even? x) (inc x) x))
 
   (defn fma
@@ -56,15 +55,15 @@
     [a b c] (+ (* a b) c))
 
   (def abs
-    ,#+clj (fn [x] (if (neg? x) (- x) x))
-    ,#+cljs Math/abs)
+    #+clj (fn [x] (if (neg? x) (- x) x))
+    #+cljs Math/abs)
 
   (defn abs-diff
     [x y] (abs (- x y)))
 
   (defn delta=
     "Compares the absolute difference between a and b and returns true
-         if less than delta."
+    if less than delta."
     ([a b] (delta= a b *eps*))
     ([a b delta]
        (if (number? a)

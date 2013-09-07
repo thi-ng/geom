@@ -1,20 +1,15 @@
 * thi.ng.geom.circle
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-  #+clj  (ns thi.ng.geom.circle
-           (:require
-            [thi.ng.data.core :as d]
-            [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]]
-            [thi.ng.geom.core :as g :refer [*resolution*]]
-            [thi.ng.geom.types :as types])
-           (:import
-            [thi.ng.geom.types Circle Line2 Polygon]))
-  #+cljs (ns thi.ng.geom.circle
-           (:require
-            [thi.ng.data.core :as d]
-            [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]]
-            [thi.ng.geom.core :as g :refer [*resolution*]]
-            [thi.ng.geom.types :as types]))
+  (ns thi.ng.geom.circle
+    (:require
+     [thi.ng.data.core :as d]
+     [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]]
+     [thi.ng.geom.core :as g :refer [*resolution*]]
+     [thi.ng.geom.types :as types])
+    #+clj
+    (:import
+     [thi.ng.geom.types Circle Line2 Polygon]))
 #+END_SRC
 ** Constructor
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
@@ -79,7 +74,7 @@
   (point-at
    [this t]
    (g/add2 (:p this) (g/cartesian2 [(:r this) (* t TWO_PI)])))
-  (random-point-at
+  (random-point
    [this] (g/point-at this (m/random)))
   (random-point-inside
    [this]

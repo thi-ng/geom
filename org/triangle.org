@@ -1,20 +1,15 @@
 ** thi.ng.geom.triangle
 *** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  #+clj  (ns thi.ng.geom.triangle
-           (:require
-            [thi.ng.data.core :as d]
-            [thi.ng.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
-            [thi.ng.geom.core :as g]
-            [thi.ng.geom.types :as types])
-           (:import
-            [thi.ng.geom.types Circle Line2 Line3 Rect Polygon Triangle2 Triangle3]))
-  #+cljs (ns thi.ng.geom.triangle
-           (:require
-            [thi.ng.data.core :as d]
-            [thi.ng.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
-            [thi.ng.geom.core :as g]
-            [thi.ng.geom.types :as types]))
+  (ns thi.ng.geom.triangle
+    (:require
+     [thi.ng.data.core :as d]
+     [thi.ng.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.types :as types])
+    #+clj
+    (:import
+     [thi.ng.geom.types Circle Line2 Line3 Rect Polygon Triangle2 Triangle3]))
 #+END_SRC
 *** Constructors
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -129,7 +124,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/ISampleable
   (point-at [this t] nil) ; TODO
-  (random-point-at
+  (random-point
    [this] (g/point-at this (m/random)))
   (random-point-inside
    [t]
@@ -203,7 +198,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/ISampleable
   (point-at [this t] nil) ; TODO
-  (random-point-at
+  (random-point
    [this] (g/point-at this (m/random)))
   (random-point-inside
    [t]

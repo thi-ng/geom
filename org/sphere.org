@@ -1,0 +1,82 @@
+* Namespace: thi.ng.geom.sphere
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
+  (ns thi.ng.geom.sphere
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.mesh :as mesh]
+     [thi.ng.geom.types :as types])
+    #+clj
+    (:import
+     [thi.ng.geom.types Line3 AABB Sphere]))
+#+END_SRC
+** Constructor
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
+  (defn sphere
+    ([] (thi.ng.geom.types.Sphere. [0.0 0.0 0.0] 1.0))
+    ([r] (thi.ng.geom.types.Sphere. [0.0 0.0 0.0] #+clj (double r) #+cljs r))
+    ([p r] (thi.ng.geom.types.Sphere. (g/vec3 p) #+clj (double r) #+cljs r)))
+#+END_SRC
+** Type specific functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
+
+#+END_SRC
+** Protocol implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
+  (extend-type thi.ng.geom.types.Sphere
+#+END_SRC
+*** IGraph
+**** TODO implement
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
+
+#+END_SRC
+*** IShape
+**** TODO implement area fn
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
+  g/IShape
+  (area [{r :r}] r)
+  (bounds
+   [this] (thi.ng.geom.types.AABB. (:p this) (vec3 (:r this))))
+  (center
+   ([this] (thi.ng.geom.types.Sphere. [0.0 0.0 0.0] (:r this)))
+   ([this p] (thi.ng.geom.types.Sphere. p (:r this))))
+  (centroid [this] (:p this))
+  (width  [this] (:r this))
+  (height [this] (:r this))
+  (depth  [this] (:r this))
+#+END_SRC
+*** IShape3
+**** TODO implement volume fn
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
+  g/IShape3
+  (bounding-sphere [this] this)
+  (volume [{r :r}] r)
+#+END_SRC
+*** IBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
+  g/IBoundary
+  (contains-point?
+   [{p :p :r r} q] (<= (g/dist3-squared p q) (* r r)))
+  (classify-point
+   [{p :p r :r} q]
+   (m/signum (- (* r r) (g/dist3-squared p q)) *eps*))
+  (random-point-inside
+   [this]
+   (g/add3 (:p this) (g/randvec3 (m/random (:r this)))))
+  (random-point
+   [this]
+   (g/add3 (:p this) (g/randvec3 (:r this))))
+#+END_SRC
+*** IMeshable
+**** TODO implement
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
+  g/IMeshable
+  (as-mesh
+   ([this] (as-mesh this *resolution*))
+   ([this res] nil))
+#+END_SRC
+*** End of implementation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
+  )
+#+END_SRC
