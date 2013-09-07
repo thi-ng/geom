@@ -12,98 +12,98 @@
 *** TODO add NURBS
 *** TODO add voxel ns
 ** Core API
-** thi.ng.geom.types
-*** 2D types
+*** thi.ng.geom.types
+**** 2D types
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (ns thi.ng.geom.types)
 #+END_SRC
-**** Line
+***** Line
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (defrecord Line2 [p q])
 #+END_SRC
-**** Triangle
+***** Triangle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (defrecord Triangle2 [a b c])
 #+END_SRC
-**** Ellipse
+***** Ellipse
      Even though a circle is a specialization of an Ellipse, we define
      an extra Circle type for performance reasons.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
-  ^:clj  (defrecord Ellipse [p ^double rx ^double ry])
-  ^:clj  (defrecord Circle [p ^double r])
+  #+clj  (defrecord Ellipse [p ^double rx ^double ry])
+  #+clj  (defrecord Circle [p ^double r])
 
-  ^:cljs (defrecord Ellipse [p rx ry])
-  ^:cljs (defrecord Circle [p r])
+  #+cljs (defrecord Ellipse [p rx ry])
+  #+cljs (defrecord Circle [p r])
 #+END_SRC
-**** Rectangle
+***** Rectangle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
-  ^:clj  (defrecord Rect [p ^double w ^double h])
-  ^:cljs (defrecord Rect [p w h])
+  #+clj  (defrecord Rect [p ^double w ^double h])
+  #+cljs (defrecord Rect [p w h])
 #+END_SRC
-**** Polygon
+***** Polygon
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (defrecord Polygon [points children])
 #+END_SRC
-**** Mesh
+***** Mesh
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (defrecord Mesh2 [vertices normals fnormals vnormals edges faces attribs])
 #+END_SRC
-*** 3D types
-**** Line
+**** 3D types
+***** Line
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (defrecord Line3 [p q])
 #+END_SRC
-**** Plane
+***** Plane
       A plane in cartesian 3D space can be defined as a point =p=
       lying on the plane and normal vector =n= standing perpendicular
       on the plane. The latter defines the plane's orientation in space.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (defrecord Plane [p n])
 #+END_SRC
-**** Triangle
+***** Triangle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (defrecord Triangle3 [a b c])
 #+END_SRC
-**** AABB
+***** AABB
       An Axis-aligned bounding box is defined as the cartesian volume
       between points =p= and =q=.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (defrecord AABB [p q])
 #+END_SRC
-**** Sphere
+***** Sphere
       Just like a circle in 2D, a 3D sphere is uniquely defined via
       its center point =o= and radius =r=.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
-  ^:clj  (defrecord Sphere [o ^double r])
-  ^:cljs (defrecord Sphere [o r])
+  #+clj  (defrecord Sphere [o ^double r])
+  #+cljs (defrecord Sphere [o r])
 #+END_SRC
-**** Mesh
+***** Mesh
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (defrecord Mesh3 [vertices normals fnormals vnormals edges faces attribs])
 #+END_SRC
-** thi.ng.geom.core
-   This namespace contains all basic vector operations and core
-   protocols related to common higher level geometric operations.
-*** Namespace declaration
+*** thi.ng.geom.core
+    This namespace contains all basic vector operations and core
+    protocols related to common higher level geometric operations.
+**** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
-  ^:clj  (ns thi.ng.geom.core
+  #+clj  (ns thi.ng.geom.core
            (:require
             [thi.ng.math.core :as m]
             [thi.ng.geom.types :as types])
            (:import
             [thi.ng.geom.types Circle Rect AABB Sphere]))
-  ^:cljs (ns thi.ng.geom.core
+  #+cljs (ns thi.ng.geom.core
            (:require
             [thi.ng.math.core :as m]
             [thi.ng.geom.types :as types]))
 #+END_SRC
-*** Protocols
-**** Spatial transform operations
-     The position, size and orientation of spatial entities can
-     usually be manipulated via the three basic operations: rotate,
-     scale & translate. Other, more complex transformations can be
-     achieved through combination and repetition of these.
-***** IRotatable
+**** Protocols
+***** Spatial transform operations
+      The position, size and orientation of spatial entities can
+      usually be manipulated via the three basic operations: rotate,
+      scale & translate. Other, more complex transformations can be
+      achieved through combination and repetition of these.
+****** IRotatable
        Rotation is always relative to the world origin. For 2D
        implementations, the rotation angle \theta (theta) is always
        interpreted clockwise and only the =rotate= method is
@@ -116,8 +116,8 @@
     (rotate-z [this t])
     (rotate-axis [this a t]))
 #+END_SRC
-****** TODO Maybe rotate-x etc could be implemented to, but return a 3D entity instead?
-***** IScalable
+******* TODO Maybe rotate-x etc could be implemented to, but return a 3D entity instead?
+****** IScalable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol IScalable
     (scale [this s])
@@ -125,7 +125,7 @@
     (scale-y [this y])
     (scale-z [this z]))
 #+END_SRC
-***** ITranslatable
+****** ITranslatable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol ITranslatable
     (translate [this t])
@@ -133,8 +133,8 @@
     (translate-y [this y])
     (translate-z [this z]))
 #+END_SRC
-**** Shape based & structural operations
-***** IGraph
+***** Shape based & structural operations
+****** IGraph
       Most geometric shape constructs can be understood as an
       undirected graph of vertices, connected by edges. This protocol
       provides read access to entities in this context.
@@ -143,7 +143,7 @@
     (vertices [this] [this res])
     (edges [this] [this res]))
 #+END_SRC
-***** IShape
+****** IShape
       We use the term "shape" as the most general spatial entity
       above the layer of simple points in space.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -153,26 +153,26 @@
     (center [this] [this o])
     (centroid [this]))
 #+END_SRC
-***** IShape2
+****** IShape2
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol IShape2
     (bounding-circle [this])
     (circumference [this]))
 #+END_SRC
-***** IShape3
+****** IShape3
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol IShape3
     (bounding-sphere [this])
     (volume [this]))
 #+END_SRC
-***** IBoundary
+****** IBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol IBoundary
     (classify-point [this p])
     (closest-point [this p])
     (contains-point? [this p]))
 #+END_SRC
-***** ISampleable
+****** ISampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol ISampleable
     (point-at [this t])
@@ -180,7 +180,7 @@
     (random-point-inside [this])
     (sample-uniform [this dist]))
 #+END_SRC
-***** IPolygonizable
+****** IPolygonizable
        Anything which can be turned into a 2D polygon will implement this
        protocol consisting of just this one function: =as-polygon=.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -188,7 +188,7 @@
     (as-polygon [this] [this res]
       "Transforms current entity into a Polygon instance"))
 #+END_SRC
-***** IMeshable
+****** IMeshable
        Anything which can be turned into a 2D or 3D mesh will implement this
        protocol consisting of just this one function: =as-mesh=.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -196,25 +196,25 @@
     (as-mesh [this opts]
       "Transforms the current enitity into a Mesh instance"))
  #+END_SRC
-***** IIntersectable
+****** IIntersectable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol IIntersectable
     (intersect-line [this l])
     (intersect-ray [this r])
     (intersect-shape [this s]))
 #+END_SRC
-**** Type specific operations
-***** ILineStrip
+***** Type specific operations
+****** ILineStrip
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol ILineStrip
     (arc-length [this]))
 #+END_SRC
-*** Constants
+**** Constants
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (def ^:dynamic *resolution* 20)
 #+END_SRC
-*** Vector operations
-**** Constructors
+**** Vector operations
+***** Constructors
       The library supports 2D, 3D & 4D vectors and represents them as
       standard Clojure vector types. To simplify vector construction
       in some cases, factory functions are provided which coerce
@@ -229,9 +229,9 @@
       | Single number | set all vector components      | =(vec3 1.0)=               | =[1.0 1.0 1.0]= |
 
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
-  ^:clj  (defn type-error
+  #+clj  (defn type-error
            [t x] (throw (IllegalArgumentException. (str "can't create " t " from " x))))
-  ^:cljs (defn type-error
+  #+cljs (defn type-error
            [t x] (throw (Error. (str "can't create " t " from " x))))
 
   (defn vec2
@@ -275,8 +275,8 @@
   (defn vec3? [x] (and (sequential? x) (>= (count x) 3)))
   (defn vec4? [x] (and (sequential? x) (>= (count x) 4)))
 #+END_SRC
-**** Vector algebra
-***** Operation builders
+***** Vector algebra
+****** Operation builders
        Basic vector algebra operations like addition, subtraction
        (both a translation), scaling and others are implemented using
        shared higher order functions to generate their
@@ -347,7 +347,7 @@
       ([a b c d e & more]
          (vec4 (apply map f (map vec4 (concat [a b c d e] more)))))))
 #+END_SRC
-***** Implementation
+****** Implementation
        With these function generators in place, we can implement
        various algebra operators like this:
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -367,7 +367,7 @@
   (defn fma3 [a b c] (add3 (scale3 a b) c))
   (defn fma4 [a b c] (add4 (scale4 a b) c))
 #+END_SRC
-***** Absolute vectors & inversion
+****** Absolute vectors & inversion
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn abs2 [[x y]] [(m/abs x) (m/abs y)])
   (defn abs3 [[x y z]] [(m/abs x) (m/abs y) (m/abs z)])
@@ -377,7 +377,7 @@
   (defn invert3 [[x y z]] [(- x) (- y) (- z)])
   (defn invert4 [[x y z w]] [(- x) (- y) (- z) (- w)])
 #+END_SRC
-***** Magnitude & distance calculations
+****** Magnitude & distance calculations
       All of the following operations can operate both on arguments
       given as vector or individual vector coordinates.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -429,7 +429,7 @@
     ([p q] (mag4-squared (sub4 p q)))
     ([px py pz pw qx qy qz qw] (mag4-squared (- px qx) (- py qy) (- pz qz) (- pw qw))))
 #+END_SRC
-***** Normalization & limitation
+****** Normalization & limitation
        All =normalize= functions take an optional argument to normalize
        a vector to a given length, rather than the default length of
        1.0. The =limit= functions constrain a vector to a given maximum
@@ -483,7 +483,7 @@
   (def min4 (vecop4 min))
   (def max4 (vecop4 max))
 #+END_SRC
-***** Cross product & dot product
+****** Cross product & dot product
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn cross2
     [[px py] [qx qy]] (- (* px qy) (* py qx)))
@@ -505,7 +505,7 @@
     ([px py pz pw qx qy qz qw] (+ (+ (+ (* px qx) (* py qy)) (* pz qz)) (* pw qw))))
 #+END_SRC
 
-***** Interpolation
+****** Interpolation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn mid2
     [[px py] [qx qy]] [(* 0.5 (+ px qx)) (* 0.5 (+ py qy))])
@@ -534,7 +534,7 @@
     ([px py pz pw qx qy qz qw t]
        [(m/mix px qx t) (m/mix py qy t) (m/mix pz qz t) (m/mix pw qw t)]))
 #+END_SRC
-***** Random vectors
+****** Random vectors
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn randvec2
     ([] (normalize2 [(m/randnorm) (m/randnorm)]))
@@ -548,7 +548,7 @@
     ([] (normalize4 [(m/randnorm) (m/randnorm) (m/randnorm) (m/randnorm)]))
     ([n] (normalize4 [(m/randnorm) (m/randnorm) (m/randnorm) (m/randnorm)] n)))
 #+END_SRC
-***** Angles, heading, reflection
+****** Angles, heading, reflection
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn perpendicular2
     [[x y]] [(- y) x])
@@ -576,14 +576,14 @@
     (let [d (* (dot3 v r) 2.0)]
       [(- (* rx d) x) (- (* ry d) y) (- (* rz d) z)]))
 #+END_SRC
-***** Rotation
+****** Rotation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn rotate2
     [[x y] theta]
     (let [c (Math/cos theta) s (Math/sin theta)]
       [(- (* x c) (* y s)) (+ (* x s) (* y c))]))
 #+END_SRC
-***** Translation
+****** Translation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn translate2
     ([t points] (let [t (vec2 t)] (map #(add2 % t) points)))
@@ -597,7 +597,7 @@
     ([t points] (let [t (vec4 t)] (map #(add4 % t) points)))
     ([t p & more] (translate4 t (cons p more))))
 #+END_SRC
-***** Polar & spherical coordinates
+****** Polar & spherical coordinates
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn polar2
     [v] [(mag2 v) (heading2 v)])
@@ -619,7 +619,7 @@
           zz (Math/asin (/ y m))]
       [m yy zz]))
 #+END_SRC
-*** Shared functions
+**** Shared functions
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn closest-point*
     [fdist lines q]

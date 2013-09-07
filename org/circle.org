@@ -1,7 +1,7 @@
 * thi.ng.geom.circle
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-  ^:clj  (ns thi.ng.geom.circle
+  #+clj  (ns thi.ng.geom.circle
            (:require
             [thi.ng.data.core :as d]
             [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]]
@@ -9,7 +9,7 @@
             [thi.ng.geom.types :as types])
            (:import
             [thi.ng.geom.types Circle Line2 Polygon]))
-  ^:cljs (ns thi.ng.geom.circle
+  #+cljs (ns thi.ng.geom.circle
            (:require
             [thi.ng.data.core :as d]
             [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]]

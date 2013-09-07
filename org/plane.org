@@ -1,7 +1,7 @@
 * thi.ng.geom.plane
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
-  ^:clj  (ns thi.ng.geom.plane
+  #+clj  (ns thi.ng.geom.plane
            (:require
             [thi.ng.math.core :as m :refer [*eps*]]
             [thi.ng.geom.core :as g]
@@ -9,7 +9,7 @@
            (:import
             [thi.ng.geom.types Plane]))
 
-  ^:cljs (ns thi.ng.geom.plane
+  #+cljs (ns thi.ng.geom.plane
            (:require
             [thi.ng.math.core :as m :refer [*eps*]]
             [thi.ng.geom.core :as g]

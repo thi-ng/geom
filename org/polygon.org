@@ -1,7 +1,7 @@
 * thi.ng.geom.polygon
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
-  ^:clj  (ns thi.ng.geom.polygon
+  #+clj  (ns thi.ng.geom.polygon
            (:require
             [thi.ng.data.core :as d]
             [thi.ng.math.core :as m :refer [PI HALF_PI *eps*]]
@@ -9,7 +9,7 @@
             [thi.ng.geom.types :as types])
            (:import
             [thi.ng.geom.types Circle Line2 Rect Polygon]))
-  ^:cljs (ns thi.ng.geom.polygon
+  #+cljs (ns thi.ng.geom.polygon
            (:require
             [thi.ng.data.core :as d]
             [thi.ng.math.core :as m :refer [*eps*]]

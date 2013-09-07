@@ -1,7 +1,7 @@
 ** thi.ng.geom.triangle
 *** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  ^:clj  (ns thi.ng.geom.triangle
+  #+clj  (ns thi.ng.geom.triangle
            (:require
             [thi.ng.data.core :as d]
             [thi.ng.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
@@ -9,7 +9,7 @@
             [thi.ng.geom.types :as types])
            (:import
             [thi.ng.geom.types Circle Line2 Line3 Rect Polygon Triangle2 Triangle3]))
-  ^:cljs (ns thi.ng.geom.triangle
+  #+cljs (ns thi.ng.geom.triangle
            (:require
             [thi.ng.data.core :as d]
             [thi.ng.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]

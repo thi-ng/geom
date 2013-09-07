@@ -33,13 +33,10 @@
 
     :cljx {:builds [{:source-paths ["src-cljx"]
                      :output-path "src-clj"
-                     :include-meta true
-                     :rules cljx.rules/clj-rules}
+                     :rules :clj}
                     {:source-paths ["src-cljx"]
                      :output-path "src-cljs"
-                     :extension "cljs"
-                     :include-meta true
-                     :rules cljx.rules/cljs-rules}]}
+                     :rules :cljs}]}
 
     :cljsbuild {:builds
                 [{:id "dev"
@@ -50,7 +47,7 @@
                    :optimizations :simple}
                   :jar false}]}
 
-    :profiles {:dev {:plugins [[com.keminglabs/cljx "0.2.2"]
+    :profiles {:dev {:plugins [[com.keminglabs/cljx "0.3.0"]
                                [org.clojars.cemerick/lein-cljsbuild "0.3.2.1"]]
                      :hooks [cljx.hooks]}})
 #+END_SRC

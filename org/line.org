@@ -1,7 +1,7 @@
 * thi.ng.geom.line
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
-  ^:clj  (ns thi.ng.geom.line
+  #+clj  (ns thi.ng.geom.line
            (:require
             [thi.ng.data.core :as d]
             [thi.ng.math.core :as m :refer [*eps*]]
@@ -9,7 +9,7 @@
             [thi.ng.geom.types :as types])
            (:import
             [thi.ng.geom.types Circle Line2 Line3 Polygon]))
-  ^:cljs (ns thi.ng.geom.line
+  #+cljs (ns thi.ng.geom.line
            (:require
             [thi.ng.data.core :as d]
             [thi.ng.math.core :as m :refer [*eps*]]

@@ -1,14 +1,14 @@
 * thi.ng.geom.rect
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  ^:clj  (ns thi.ng.geom.rect
+  #+clj  (ns thi.ng.geom.rect
            (:require
             [thi.ng.math.core :as m]
             [thi.ng.geom.core :as g]
             [thi.ng.geom.types :as types])
            (:import
             [thi.ng.geom.types Circle Line2 Polygon]))
-  ^:cljs (ns thi.ng.geom.rect
+  #+cljs (ns thi.ng.geom.rect
            (:require
             [thi.ng.math.core :as m]
             [thi.ng.geom.core :as g]

@@ -37,8 +37,8 @@
 #+END_SRC
 **** Dynamic PRNG
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/math/core.cljx
-  ^:clj  (def ^:dynamic *rnd* (java.util.Random.))
-  ^:cljs (def ^:dynamic *rnd* Math/random)
+  #+clj  (def ^:dynamic *rnd* (java.util.Random.))
+  #+cljs (def ^:dynamic *rnd* Math/random)
 #+END_SRC
 *** Functions
 **** Basics
@@ -115,14 +115,14 @@
 #+END_SRC
 **** Rounding
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/math/core.cljx
-  ^:clj  (defn floor
+  #+clj  (defn floor
            [x] (long (Math/floor x)))
-  ^:cljs (defn floor
+  #+cljs (defn floor
            [x] (Math/floor x))
 
-  ^:clj  (defn ceil
+  #+clj  (defn ceil
            [x] (long (Math/ceil x)))
-  ^:cljs (defn ceil
+  #+cljs (defn ceil
            [x] (Math/ceil x))
 
   (defn roundto
@@ -133,10 +133,10 @@
     (loop [pow2 1]
       (if (>= pow2 x) pow2 (recur (* pow2 2)))))
 
-  ^:clj  (defn floor-pow2
+  #+clj  (defn floor-pow2
            [x] (long (Math/pow 2 (long (/ (Math/log x) LOG2)))))
 
-  ^:cljs (defn floor-pow2
+  #+cljs (defn floor-pow2
            [x] (Math/pow 2 (int (/ (Math/log x) LOG2))))
 
   (defn trunc
@@ -235,17 +235,17 @@
 
 **** Randomness
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/math/core.cljx
-  ^:clj  (defn random
+  #+clj  (defn random
            ([] (.nextDouble *rnd*))
            ([max] (* (.nextDouble *rnd*) max))
            ([min max] (+ (* (.nextDouble *rnd*) (- max min)) min)))
-  ^:cljs (defn random
+  #+cljs (defn random
            ([] (*rnd*))
            ([max] (* (*rnd*) max))
            ([min max] (+ (* (*rnd*) (- max min)) min)))
 
-  ^:clj  (defn randnorm
+  #+clj  (defn randnorm
            [] (dec (* (.nextDouble *rnd*) 2.0)))
-  ^:cljs (defn randnorm
+  #+cljs (defn randnorm
            [] (dec (* (*rnd*) 2.0)))
 #+END_SRC
