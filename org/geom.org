@@ -1603,7 +1603,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/IPolygonizable
   (as-polygon
-   [t] (thi.ng.geom.types.Polygon. [(:a t) (:b t) (:c t)]))
+   [t] (thi.ng.geom.types.Polygon. [(:a t) (:b t) (:c t)] []))
 #+END_SRC
 ***** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
