@@ -101,6 +101,7 @@
       usually be manipulated via the three basic operations: rotate,
       scale & translate. Other, more complex transformations can be
       achieved through combination and repetition of these.
+****** TODO merge all into ITransformable??
 ****** IRotatable
        Rotation is always relative to the world origin. For 2D
        implementations, the rotation angle \theta (theta) is always
@@ -131,6 +132,11 @@
     (translate-y [this y])
     (translate-z [this z]))
 #+END_SRC
+****** ITransformable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol ITransform
+    (transform [this matrix]))
+#+END_SRC
 ***** Shape based & structural operations
 ****** IGraph
       Most geometric shape constructs can be understood as an
@@ -138,12 +144,16 @@
       provides read access to entities in this context.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol IGraph
+    (edges [this] [this res])
     (vertices [this] [this res])
-    (edges [this] [this res]))
+    (vertex-valence [this v])
+    (vertex-neighbors [this v]))
 #+END_SRC
 ****** IShape
       We use the term "shape" as the most general spatial entity
-      above the layer of simple points in space.
+      above the layer of simple points in space. In this context they
+      can be understood as having several shared properties, like
+      surface area, a bounding shape etc.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol IShape
     (area [this]
@@ -162,12 +172,16 @@
       "Returns entity's extent along Z (zero for 2d)"))
 #+END_SRC
 ****** IShape2
+       This protocol provides access to more shape properties only
+       available in 2d space.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol IShape2
     (bounding-circle [this])
     (circumference [this]))
 #+END_SRC
 ****** IShape3
+       This protocol provides access to more shape properties only
+       available in 3d space.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol IShape3
     (bounding-sphere [this])
@@ -211,11 +225,43 @@
     (intersect-ray [this r])
     (intersects-shape? [this s]))
 #+END_SRC
+****** ISliceable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol ISliceable
+    (slice-with [this e] [this e parts]))
+#+END_SRC
+****** ISubdivideable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol ISubdivideable
+    (subdivide [this opts]))
+#+END_SRC
+****** ITessellateable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol ITessellateable
+    (tessellate [this] [this opts]))
+#+END_SRC
+****** IExtrudeable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol IExtrudeable
+    (extrude [this opts]))
+#+END_SRC
 ***** Type specific operations
 ****** ILineStrip
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol ILineStrip
     (arc-length [this]))
+#+END_SRC
+****** IMesh
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol IMesh
+    (add-face [this f])
+    (add-mesh [this m])
+    (remove-face [this f])
+    (remove-vertex [this v])
+    (replace-vertex [this v])
+    (merge-vertices [this a b])
+    (subdivide-edge [this a b splits])
+    (subdivide-face [this f p displace splits]))
 #+END_SRC
 **** Constants
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -662,7 +708,7 @@
           :default nil)))
     ([p q] (thi.ng.geom.types.AABB. p (sub3 q p))))
 
-  (defn max-dist
+  (defn max-dist*
     [sub mag c points]
     (->> points
          (map #(mag (sub c %)))
@@ -673,15 +719,25 @@
     [c r-or-points]
     (thi.ng.geom.types.Circle.
      c (if (coll? r-or-points)
-         (max-dist sub2 mag2-squared c r-or-points)
+         (max-dist* sub2 mag2-squared c r-or-points)
          r-or-points)))
 
   (defn bounding-sphere*
     [c r-or-points]
     (thi.ng.geom.types.Sphere.
      c (if (coll? r-or-points)
-         (max-dist sub3 mag3-squared c r-or-points)
+         (max-dist* sub3 mag3-squared c r-or-points)
          r-or-points)))
+
+  (defn axis-bounds*
+    [axis coll]
+    (let [xs (map #(nth % axis) points)]
+      [(reduce min xs) (reduce max xs)]))
+
+  (defn axis-range*
+    [axis coll]
+    (let [xs (map #(nth % axis) points)]
+      (- (reduce max xs) (reduce min xs))))
 #+END_SRC
 ** Geometric entities
 #+INCLUDE: "bezier.org" :minlevel 4
@@ -701,6 +757,8 @@
 #+INCLUDE: "aabb.org" :minlevel 4
 
 #+INCLUDE: "sphere.org" :minlevel 4
+
+#+INCLUDE: "mesh.org" :minlevel 4
 
 ** Geometric operations
 #+INCLUDE: "delaunay.org" :minlevel 4
