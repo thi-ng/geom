@@ -74,7 +74,7 @@
                        fbounds (reduce assoc-bounds fbounds nf)]
                    [m fbounds]))
                [m fbounds] (g/edges poly))]
-      (keep-faces m #(g/contains-point? poly (centroid2* %)))))
+      (keep-faces m #(g/contains-point? poly (t/centroid* g/add2 g/scale2 %)))))
 
   (defn randompoly
     [n r]
@@ -115,6 +115,10 @@
    [{points :points}]
    (map (fn [[p q]] (thi.ng.geom.types.Line2. p q))
         (d/successive-nth 2 (concat points [(first points)]))))
+  (vertex-neighbors
+   [this v] (d/neighbors* v (g/vertices this)))
+  (vertex-valence
+   [this v] (if ((set (g/vertices this)) v) 2 0))
 #+END_SRC
 *** IShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
@@ -141,13 +145,9 @@
               [[0.0 0.0] p] (conj (subvec points 1 (count points)) p))]
      (g/scale2 c (/ 1.0 (* 6 (g/area this))))))
   (width
-   [this]
-   (let [xs (map #(nth % 0) (:points this))]
-     (- (reduce max xs) (reduce min xs))))
+   [this] (g/axis-range* 0 (:points this)))
   (height
-   [this]
-   (let [xs (map #(nth % 1) (:points this))]
-     (- (reduce max xs) (reduce min xs))))
+   [this] (g/axis-range* 1 (:points this)))
   (depth [this] 0)
 #+END_SRC
 *** IBoundary
@@ -184,7 +184,7 @@
    [this] (g/bounding-circle* (g/centroid this) (:points this)))
   (circumference
    [{points :points}]
-   (d/apply-to-pairs + g/dist2 (concat points [(first points)])))
+   (d/reduce-pairs + g/dist2 (concat points [(first points)])))
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx

@@ -69,8 +69,14 @@
 **** IGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/IGraph
-  (vertices [this] [(:p this) (:q this)])
-  (edges [this] [this])
+  (vertices
+   [this] [(:p this) (:q this)])
+  (edges
+   [this] [this])
+  (vertex-neighbors
+   [{p :p q :q} v] (condp = v p q q p nil))
+  (vertex-valence
+   [this v] (if (or (= v (:p this)) (= v (:q this))) 1 0))
 #+END_SRC
 **** IShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
@@ -161,8 +167,14 @@
 **** IGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/IGraph
-  (vertices [this] [(:p this) (:q this)])
-  (edges [this] [this])
+  (vertices
+   [this] [(:p this) (:q this)])
+  (edges
+   [this] [this])
+  (vertex-neighbors
+   [{p :p q :q} v] (condp = v p q q p nil))
+  (vertex-valence
+   [this v] (if (or (= v (:p this)) (= v (:q this))) 1 0))
 #+END_SRC
 **** IShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
