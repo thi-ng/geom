@@ -35,37 +35,38 @@
        (equilateral2 [x1 y1] [x2 y2])))
 #+END_SRC
 *** Shared 2d/3d functions
+**** TODO refactor centroid* w/ injected add/scale fns
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  (defn centroid2*
-    ([a b c] (g/scale2 (g/add2 a b c) THIRD))
-    ([[a b c]] (g/scale2 (g/add2 a b c) THIRD)))
+  (defn area2
+    ([a b c] (* 0.5 (g/cross2 (g/sub2 b a) (g/sub2 c a))))
+    ([[a b c]] (* 0.5 (g/cross2 (g/sub2 b a) (g/sub2 c a)))))
 
-  (defn centroid3*
-    ([a b c] (g/scale3 (g/add3 a b c) THIRD))
-    ([[a b c]] (g/scale3 (g/add3 a b c) THIRD)))
+  (defn centroid*
+    ([add scale a b c] (scale (add a b c) THIRD))
+    ([add scale [a b c]] (scale (add a b c) THIRD)))
 
   (defn normal3*
     ([a b c] (g/normalize3 (g/cross3 (g/sub3 b a) (g/sub3 c a))))
     ([[a b c]] (g/normalize3 (g/cross3 (g/sub3 b a) (g/sub3 c a)))))
 
   (defn barycentric*
-    [fsub fdot fmag a b c p]
-    (let [e0 (fsub c a)
-          e1 (fsub b a)
-          e2 (fsub p a)
-          d00 (fmag e0)
-          d01 (fdot e0 e1)
-          d02 (fdot e0 e2)
-          d11 (fmag e1)
-          d12 (fdot e1 e2)
+    [sub dot mag a b c p]
+    (let [e0 (sub c a)
+          e1 (sub b a)
+          e2 (sub p a)
+          d00 (mag e0)
+          d01 (dot e0 e1)
+          d02 (dot e0 e2)
+          d11 (mag e1)
+          d12 (dot e1 e2)
           denom (/ 1.0 (- (* d00 d11) (* d01 d01)))
           u (* denom (- (* d11 d02) (* d01 d12)))
           v (* denom (- (* d00 d12) (* d01 d02)))]
       [(- 1.0 (+ u v)) v u]))
 
   (defn contains-point*
-    [fsub fdot fmag a b c p]
-    (let [[u v w] (barycentric* fsub fdot fmag a b c p)]
+    [sub dot mag a b c p]
+    (let [[u v w] (barycentric* sub dot mag a b c p)]
       (and (>= u 0.0) (>= v 0.0) (<= w 1.0))))
 #+END_SRC
 *** Protocol implementations
@@ -97,15 +98,11 @@
             (thi.ng.geom.types.Triangle2.
              (g/add2 (:a t) ct) (g/add2 (:b t) ct) (g/add2 (:c t) ct)))))
   (centroid
-   [t] (centroid2* (:a t) (:b t) (:c t)))
+   [t] (centroid* g/add2 g/scale2 (:a t) (:b t) (:c t)))
   (width
-   [this]
-   (let [xs [((:a this) 0) ((:b this) 0) ((:c this) 0)]]
-     (- (reduce max xs) (reduce min xs))))
+   [this] (g/axis-range* 0 [(:a this) (:b this) (:c this)]))
   (height
-   [this]
-   (let [xs [((:a this) 1) ((:b this) 1) ((:c this) 1)]]
-     (- (reduce max xs) (reduce min xs))))
+   [this] (g/axis-range* 1 [(:a this) (:b this) (:c this)]))
   (depth [this] 0)
 #+END_SRC
 ***** IShape2
@@ -168,6 +165,15 @@
    [(thi.ng.geom.types.Line3. a b)
     (thi.ng.geom.types.Line3. b c)
     (thi.ng.geom.types.Line3. c a)])
+  (vertex-neighbors
+   [{a :a b :b c :c} v]
+   (condp = v
+     a [c b]
+     b [a c]
+     c [b a]
+     nil))
+  (vertex-valence
+   [{a :a b :b c :c} v] (if (#{a b c} v) 2 0))
 #+END_SRC
 ***** IShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -184,19 +190,13 @@
         (thi.ng.geom.types.Triangle3.
          (g/add3 (:a t) ct) (g/add3 (:b t) ct) (g/add3 (:c t) ct)))))
   (centroid
-   [t] (centroid3* (:a t) (:b t) (:c t)))
+   [t] (centroid* g/add3 g/scale3 (:a t) (:b t) (:c t)))
   (width
-   [this]
-   (let [xs [((:a this) 0) ((:b this) 0) ((:c this) 0)]]
-     (- (reduce max xs) (reduce min xs))))
+   [this] (g/axis-range* 0 [(:a this) (:b this) (:c this)]))
   (height
-   [this]
-   (let [xs [((:a this) 1) ((:b this) 1) ((:c this) 1)]]
-     (- (reduce max xs) (reduce min xs))))
+   [this] (g/axis-range* 1 [(:a this) (:b this) (:c this)]))
   (depth
-   [this]
-   (let [xs [((:a this) 2) ((:b this) 2) ((:c this) 2)]]
-     (- (reduce max xs) (reduce min xs))))
+   [this] (g/axis-range* 2 [(:a this) (:b this) (:c this)]))
 #+END_SRC
 ***** IShape3
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
