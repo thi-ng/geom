@@ -42,6 +42,16 @@
        (let [[m n] (bisect f coll)]
          [(f2 m) (f2 n)])))
 
+  (defn neighbors
+    [x coll]
+    (let [n (dec (count coll))]
+      (loop [i n]
+        (when (>= i 0)
+          (if (= x (coll i))
+            [(coll (if (pos? i) (dec i) n))
+             (coll (if (< i n) (inc i) 0))]
+            (recur (dec i)))))))
+
   (defn successive-nth
     "Returns a lazyseq of `n`-element vectors, each one containing
     a successive elements of the original collection.
@@ -74,7 +84,7 @@
     [type keys f & args]
     (reduce (fn[acc k] (assoc acc k (apply f (get type k) args))) type keys))
 
-  (defn apply-to-pairs
+  (defn reduce-pairs
     [f1 f2 coll]
     (when (> (count coll) 1)
       (reduce f1 (map (fn [[a b]] (f2 a b))
