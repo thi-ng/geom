@@ -3,12 +3,13 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
   (ns thi.ng.geom.rect
     (:require
+     [thi.ng.data.core :as d]
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.types :as types])
     #+clj
     (:import
-     [thi.ng.geom.types Circle Line2 Polygon]))
+     [thi.ng.geom.types Circle Line2 Polygon Rect]))
 #+END_SRC
 ** Constructor
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
@@ -86,6 +87,10 @@
    (let [r (+ x w) b (+ y h)]
      [(thi.ng.geom.types.Line2. p [r y]) (thi.ng.geom.types.Line2. [r y] [r b])
       (thi.ng.geom.types.Line2. [r b] [x b]) (thi.ng.geom.types.Line2. [x b] p)]))
+  (vertex-neighbors
+   [this v] (d/neighbors v (g/vertices this)))
+  (vertex-valence
+   [this v] (if ((set (g/vertices this)) v) 2 0))
 #+END_SRC
 *** IShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
@@ -143,6 +148,38 @@
   g/IPolygonizable
   (as-polygon
    [this] (thi.ng.geom.types.Polygon. (g/vertices this) []))
+#+END_SRC
+*** ISubdivideable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+  g/ISubdivideable
+  (subdivide
+   [this {i :iter :or {i 1}}]
+   (let [delta (/ 0.5 i)
+         iter (range 0.0 1.0 delta)
+         w (* (:w this) delta)
+         h (* (:h this) delta)]
+     (for [y iter x iter]
+       (thi.ng.geom.types.Rect. (unmap-uv this [x y]) w h))))
+#+END_SRC
+*** ITessellateable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+  g/ITessellateable
+  (tessellate
+   ([this]
+      (let [[a b c d] (g/vertices this)]
+        [[a c b] [a d c]]))
+   ([this opts]
+      (mapcat g/tessellate (g/subdivide this opts))))
+#+END_SRC
+*** IExtrudeable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+  g/IExtrudeable
+  (extrude
+   [this {depth :depth}]
+   (g/as-mesh
+    (thi.ng.geom.types.AABB.
+     (g/vec3 p)
+     (g/vec3 (:w this) (:h this) depth))))
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
