@@ -1,0 +1,496 @@
+* thi.ng.geom.mesh
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  (ns thi.ng.geom.mesh
+    (:require
+     [thi.ng.data.core :as d]
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.triangle :as t]
+     [thi.ng.geom.types :as types]
+     [clojure.set :as set])
+    #+clj
+    (:import
+     [thi.ng.geom.types Line3 AABB Sphere Mesh2 Mesh3]))
+#+END_SRC
+** Shared 2d/3d functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  (defn add-face
+    [{:keys [vertices edges faces] :as mesh} [a b c] & attribs]
+    (let [a (get (find vertices a) 0 a)
+          b (get (find vertices b) 0 b)
+          c (get (find vertices c) 0 c)
+          f [a b c]]
+      (if (and (nil? (get faces f))
+               (not (or (= a b) (= a c) (= b c))))
+        (let [vertices (-> vertices
+                           (d/index-kv a {:next b :prev c :f f})
+                           (d/index-kv b {:next c :prev a :f f})
+                           (d/index-kv c {:next a :prev b :f f}))
+              edges (-> edges (d/index-kv #{a b} f) (d/index-kv #{b c} f) (d/index-kv #{c a} f))]
+          (assoc mesh
+            :vertices vertices
+            :edges edges
+            :faces (conj faces f)))
+        mesh)))
+
+  (defn add-face!
+    "Internal helper fn to add a face using transients of a mesh structure.
+    Returns vector of new transients `[vertices edges faces]`."
+    [[vertices edges faces] [a b c :as f]]
+    (if (and (nil? (get faces f))
+             (not (or (= a b) (= a c) (= b c))))
+      (let [vertices (-> vertices
+                         (d/index-kv! a {:next b :prev c :f f})
+                         (d/index-kv! b {:next c :prev a :f f})
+                         (d/index-kv! c {:next a :prev b :f f}))
+            edges (-> edges (d/index-kv! #{a b} f) (d/index-kv! #{b c} f) (d/index-kv! #{c a} f))]
+        [vertices edges (conj! faces f)])
+      [vertices edges faces]))
+
+  (defn begin-edit
+    [{:keys [vertices edges faces]}]
+    [(transient vertices) (transient edges) (transient faces)])
+
+  (defn commit-edit
+    [mesh [vertices edges faces]]
+    (assoc mesh
+      :vertices (persistent! vertices)
+      :edges    (persistent! edges)
+      :faces    (persistent! faces)))
+
+  (defn into-mesh
+    "Adds all faces of the elements given in `more` to the mesh `mesh`.
+    Each element of `more` can be either an existing mesh or a face list."
+    [mesh & more]
+    (commit-edit
+     mesh
+     (reduce
+      (fn [edits m-or-faces]
+        (reduce
+         add-face! edits
+         (if (map? m-or-faces)
+           (:faces m-or-faces)
+           m-or-faces)))
+      (begin-edit mesh)
+      more)))
+
+  (defn vertex-neighbors*
+    [{vertices :vertices} v]
+    (set/union
+     (d/value-set :next vertices v)
+     (d/value-set :prev vertices v)))
+
+  (defn vertex-valence*
+    [mesh v] (inc (count (get (:vertices mesh) v))))
+
+  (defn vertex-faces*
+    [mesh v] (d/value-set :f (:vertices mesh) v))
+
+  (defn remove-vertex*
+    [mesh v]
+    (if (find (:vertices mesh) v)
+      (reduce g/remove-face mesh (vertex-faces* mesh v))
+      mesh))
+
+  (defn replace-vertex*
+    ([mesh v v2]
+       (let [vfaces (vertex-faces* mesh v)]
+         (-> (reduce g/remove-face mesh vfaces)
+             (replace-vertex* v v2 vfaces))))
+    ([mesh v v2 faces]
+       (reduce #(add-face % (replace {v v2} %2)) mesh faces)))
+
+  (defn merge-vertices*
+    [mesh mid a b]
+    (if ((vertex-neighbors* mesh a) b)
+      (let [fa (vertex-faces* mesh a) fb (vertex-faces* mesh b)
+            ab-isec (set/intersection fa fb)
+            a-xor (set/difference fa ab-isec)
+            b-xor (set/difference fb ab-isec)
+            mp (mid a b)]
+        (-> (reduce g/remove-face mesh (set/union ab-isec a-xor b-xor))
+            (replace-vertex* a mp a-xor)
+            (replace-vertex* b mp b-xor)))
+      mesh))
+
+  (defn subdivide-edge*
+    [mesh mix a b splits]
+    (if ((vertex-neighbors* mesh a) b)
+      (let [fa (vertex-faces* mesh a) fb (vertex-faces* mesh b)
+            faces (set/intersection fa fb)
+            s-points (map #(mix a b %) (d/wrap-seq splits 0.0 1.0))
+            s-points (d/successive-nth 2 s-points)]
+        (reduce
+         (fn [[mesh newfaces] f]
+           (reduce
+            (fn [[mesh newfaces] [sa sb]]
+              (let [nf (replace {a sa b sb} f)]
+                [(add-face mesh nf) (conj newfaces nf)]))
+            [mesh newfaces] s-points))
+         [(reduce g/remove-face mesh faces) #{}]
+         faces))
+      mesh))
+
+  (defn subdivide-face*
+    [mesh mix [a b c :as f] p displace splits]
+    (if (seq splits)
+      (let [splits (d/wrap-seq splits 0.0 1.0)
+            {:keys [vertices edges faces] :as mesh} (g/remove-face mesh f)
+            edge-vertex (if displace
+                          (fn [[ea eb :as e] t] (displace e (mix ea eb t) t))
+                          (fn [[ea eb] t] (mix ea eb t)))]
+        (commit-edit
+         mesh
+         (reduce
+          (fn [mesh e]
+            (reduce
+             (fn [mesh [sa sb]] (add-face! mesh [sa sb p]))
+             mesh (d/successive-nth
+                   2 (map #(edge-vertex e %) splits))))
+          (begin-edit mesh)
+          [[a b] [b c] [c a]])))
+      (-> (g/remove-face mesh f)
+          (g/add-face [a b p])
+          (g/add-face [b c p])
+          (g/add-face [c a p]))))
+
+  (defn subdivide*
+    [mesh {:keys [add scale mix]} {:keys [vertex displace splits] flt :filter}]
+    (let [vertex (or vertex #(t/centroid* add scale %))]
+      (reduce
+       (fn [mesh f] (subdivide-face* mesh mix f (vertex f) displace splits))
+       mesh (if flt (filter flt (:faces mesh)) (:faces mesh)))))
+#+END_SRC
+** Constructors
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  (defn mesh2
+    "Builds a new 2d mesh data structure and (optionally) populates it with
+    the given items (a seq of existing meshes and/or faces). Faces are defined
+    as 3-element vectors of their vertices."
+    ([] (types/map->Mesh2
+         {:vertices {} :edges {} :fnormals {} :vnormals {}
+          :normals #{} :faces #{}}))
+    ([& more]
+       (if (map? (first more))
+         (into-mesh (first more) (rest more))
+         (into-mesh (mesh2) more))))
+
+  (defn mesh3
+    ([] (types/map->Mesh3
+         {:vertices {} :edges {} :fnormals {} :vnormals {}
+          :normals #{} :faces #{}}))
+    ([& more]
+       (if (map? (first more))
+         (into-mesh (first more) (rest more))
+         (into-mesh (mesh3) more))))
+#+END_SRC
+** Protocol implementation
+*** Mesh2
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  (extend-type thi.ng.geom.types.Mesh2
+#+END_SRC
+**** IGraph
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  g/IGraph
+  (edges
+   [this] (keys (:edges this)))
+  (vertices
+   [this] (keys (:vertices this)))
+  (vertex-neighbors
+   [this v] (vertex-neighbors* this v))
+  (vertex-valence
+   [this v] (vertex-valence* this v))
+#+END_SRC
+**** IShape
+***** TODO implement center
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  g/IShape
+  (area
+   [this]
+   (-> this
+       :faces
+       (map #(m/abs (t/area2 %)))
+       (reduce +)))
+  (bounds
+   [this] (g/bounding-rect* (keys (:vertices this))))
+  (center
+   [this] this)
+  (centroid
+   [this]
+   (g/centroid* g/add2 g/scale2 (keys (:vertices this))))
+  (width
+   [this] (g/axis-range* 0 (keys (:vertices this))))
+  (height
+   [this] (g/axis-range* 1 (keys (:vertices this))))
+  (depth [this] 0)
+#+END_SRC
+**** IShape2
+***** TODO implement circumference, maybe use unify from ldk?
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  g/IShape2
+  (bounding-circle
+   [this] (g/bounding-circle* (g/centroid this) (g/vertices this)))
+  (circumference
+   [this] 0)
+#+END_SRC
+**** TODO IBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+
+#+END_SRC
+**** IMesh
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  g/IMesh
+  (vertex-faces
+   [this v] (vertex-faces* this v))
+  (compute-face-normals
+   [this] this)
+  (compute-vertex-normals
+   [this] this)
+  (remove-face
+   [{:keys [vertices edges faces] :as this} f]
+   (if (get faces f)
+     (let [[vertices edges]
+           (reduce
+            (fn [[vertices edges] [a b]]
+              (let [e #{a b}
+                    efaces (disj (get edges e) f)
+                    edges (if (seq efaces)
+                            (assoc edges e efaces)
+                            (dissoc edges e))
+                    ve (filter #(not= (:f %) f) (get vertices a))]
+                (if (seq ve)
+                  [(assoc vertices a (into #{} ve)) edges]
+                  [(dissoc vertices a) edges])))
+            [vertices edges]
+            (d/successive-nth 2 (conj f (first f))))]
+       (assoc this
+         :vertices vertices
+         :edges edges
+         :faces (disj faces f)))
+     this))
+  (remove-vertex
+   [this v] (remove-vertex* this v))
+  (replace-vertex
+   [this v v2] (replace-vertex* this v v2))
+  (merge-vertices
+   [this a b] (merge-vertices* this g/mid2 a b))
+#+END_SRC
+**** ISubdivideable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  g/ISubdivideable
+  (subdivide-edge
+   [this a b splits] (subdivide-edge* this g/mix2 a b splits))
+  (subdivide-face
+   [this f p opts] (subdivide-face* this f p (:displace opts) (:splits opts)))
+  (subdivide
+   [this opts]
+   (subdivide* this {:add g/add2 :scale g/scale2 :mix g/mix2} opts))
+#+END_SRC
+**** TODO ISliceable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  g/ISliceable
+  (slice-with
+    ([this e] (g/slice-with this e (:faces this)))
+    ([this e faces]
+       (let [verts (persistent!
+                    (reduce #(-> (conj! % (%2 0)) (conj! (%2 1)) (conj! (%2 2)))
+                            (transient #{}) faces))
+             cverts (zipmap verts (map #(g/classify-point e %) verts))
+             classifier #(get cverts %2)]
+         (reduce
+          (fn [[this nf :as state] f]
+            (if-let [tfaces (t/slice-with f e classifier)]
+              [(reduce g/add-face
+                       (reduce g/add-face (g/remove-face this f) (get tfaces -1))
+                       (get tfaces 1))
+               (into (into nf (get tfaces -1)) (get tfaces 1))]
+              state))
+          [this []] faces))))
+#+END_SRC
+**** End of implementation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  )
+#+END_SRC
+*** Mesh3
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  (extend-type thi.ng.geom.types.Mesh3
+#+END_SRC
+**** IGraph
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  g/IGraph
+  (edges
+   [this] (keys (:edges this)))
+  (vertices
+   [this] (keys (:vertices this)))
+  (vertex-neighbors
+   [this v] (vertex-neighbors* this v))
+  (vertex-valence
+   [this v] (vertex-valence* this v))
+#+END_SRC
+**** IShape
+***** TODO implement center
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  g/IShape
+  (area
+   [this]
+   (-> this
+       :faces
+       (map #(m/abs (t/area3 %)))
+       (reduce +)))
+  (bounds
+   [this] (g/bounding-box* (keys (:vertices this))))
+  (center
+   [this] this)
+  (centroid
+   [this]
+   (g/centroid* g/add3 g/scale3 (keys (:vertices this))))
+  (width
+   [this] (g/axis-range* 0 (keys (:vertices this))))
+  (height
+   [this] (g/axis-range* 1 (keys (:vertices this))))
+  (depth
+   [this] (g/axis-range* 2 (keys (:vertices this))))
+#+END_SRC
+**** IShape3
+***** TODO implement volume
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  g/IShape3
+  (bounding-sphere
+   [this] (g/bounding-sphere* (g/centroid this) (g/vertices this)))
+  (volume
+   [this] 0)
+#+END_SRC
+**** TODO IBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+
+#+END_SRC
+**** IMesh
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  g/IMesh
+  (vertex-faces
+   [this v] (vertex-faces* this v))
+  (compute-face-normals
+   [{:keys [faces] :as this}]
+   (let [[normals fnormals]
+         (reduce
+          (fn [[norms fnorms] [a b c :as f]]
+            (let [[norms n]
+                  (d/index!
+                   norms (-> (g/sub3 a b) (g/cross3 (g/sub3 a c)) (g/normalize3)))]
+              [norms (assoc! fnorms f n)]))
+          [(transient #{}) (transient {})] faces)]
+     (assoc this
+       :normals (persistent! normals)
+       :fnormals (persistent! fnormals))))
+  (compute-vertex-normals
+   [{:keys [vertices normals fnormals] :as this}]
+   (let [[normals vnormals]
+         (reduce
+          (fn [[norms vnorms] v]
+            (let [faces (g/vertex-faces this v)
+                  n (->> faces
+                         (map #(get fnormals %))
+                         (reduce g/add3)
+                         (g/normalize3))
+                  [norms n] (d/index! norms n)]
+              [norms (assoc! vnorms v n)]))
+          [(transient normals) (transient {})] (keys vertices))]
+     (assoc this
+       :normals (persistent! normals)
+       :vnormals (persistent! vnormals))))
+  (remove-face
+   [{:keys [vertices edges faces fnormals vnormals] :as this} f]
+   (if (get faces f)
+     (let [[vertices vnormals edges]
+           (reduce
+            (fn [[vertices vnormals edges] [a b]]
+              (let [e #{a b} efaces (disj (get edges e) f)
+                    edges (if (seq efaces)
+                            (assoc edges e efaces)
+                            (dissoc edges e))
+                    ve (filter #(not= (:f %) f) (get vertices a))]
+                (if (seq ve)
+                  [(assoc vertices a (into #{} ve)) vnormals edges]
+                  [(dissoc vertices a) (dissoc vnormals a) edges])))
+            [vertices vnormals edges]
+            (d/successive-nth 2 (conj f (first f))))]
+       (assoc this
+         :vertices vertices
+         :vnormals vnormals
+         :edges edges
+         :faces (disj faces f)
+         :fnormals (dissoc fnormals f)))
+     this))
+  (remove-vertex
+   [this v] (remove-vertex* this v))
+  (replace-vertex
+   [this v v2] (replace-vertex* this v v2))
+  (merge-vertices
+   [this a b] (merge-vertices* this g/mid3 a b))
+#+END_SRC
+**** ISubdivideable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  g/ISubdivideable
+  (subdivide-edge
+   [this a b splits] (subdivide-edge* this g/mix3 a b splits))
+  (subdivide-face
+   [this f p opts] (subdivide-face* this f p (:displace opts) (:splits opts)))
+  (subdivide
+   [this opts]
+   (subdivide* this {:add g/add3 :scale g/scale3 :mix g/mix3} opts))
+#+END_SRC
+
+**** End of implementation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  )
+#+END_SRC
+** Type specific functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  (defn loop-subdivide-face
+    [{{fmid :mid} :fns :as this} [a b c :as f]]
+    (let [{:keys[vertices edges faces] :as this} (g/remove-face this f)
+          [mab mbc mca] (map (fn [[p q]] (fmid p q)) [[a b] [b c] [c a]])]
+      (reduce g/add-face this [[a mab mca] [mab b mbc] [mbc c mca] [mab mbc mca]])))
+
+  (defn loop-subdivide-mesh
+    ([this] (loop-subdivide-mesh 1 this))
+    ([n this] (reduce (fn [this _] (reduce loop-subdivide-face this (:faces this))) this (range n)))
+    ([n f this] (reduce (fn [this _] (reduce loop-subdivide-face this (filter f (:faces this)))) this (range n))))
+
+  (defn laplacian2
+    [{:keys[vnormals] :as this} amp]
+    (fn [p]
+      (let [neighbors (g/vertex-neighbors this p)]
+        (g/add3
+         p (g/normalize3
+            (reduce g/add3 (vnormals p)
+                    (map (comp #(g/scale3 % 0.5) vnormals) neighbors))
+            amp)))))
+
+  (defn laplacian
+    [this]
+    (fn [p]
+      (let [neighbors (g/vertex-neighbors this p)
+            nc (count g/vertex-neighbors)]
+        (if (pos? nc)
+          (g/scale3 (reduce g/add3 neighbors) (/ 1.0 nc))
+          p))))
+
+  (defn spherify
+    [r] #(g/normalize3 % r))
+
+  (defn transform
+    [{:keys [faces vertices fns]} f]
+    (let [subst (into (hash-map) (map (fn [v] [v (f v)]) (keys vertices)))]
+      (apply (:ctor fns)
+             (map (fn[[a b c]] [(get subst a) (get subst b) (get subst c)])
+                  faces))))
+
+  (defn keep-faces
+      ([this f] (keep-faces this f (:faces this)))
+      ([this f faces]
+         (reduce
+          (fn [this face] (if (f face) this (g/remove-face this face)))
+          this faces)))
+#+END_SRC
