@@ -19,3 +19,6 @@
                :recursive 't
                :publishing-function 'org-publish-attachment)
          '("all" :components ("org-notes" "org-static")))))
+
+(setq org-agenda-files
+      (list (file-name-directory (buffer-file-name))))
