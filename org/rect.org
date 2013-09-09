@@ -6,6 +6,8 @@
      [thi.ng.data.core :as d]
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
+     [thi.ng.geom.aabb :as aabb]
+     [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])
     #+clj
     (:import
@@ -150,36 +152,90 @@
    [this] (thi.ng.geom.types.Polygon. (g/vertices this) []))
 #+END_SRC
 *** ISubdivideable
+    A rectangle can be subdivided into smaller ones, i.e. to create a
+    list of uniform grid cells. The following options can be given as
+    a 2nd argument map:
+
+    | Key     | Description                                                    | Default |
+    |---------+----------------------------------------------------------------+---------|
+    | =:num=  | number of cols/rows the rect will be uniformly subdivided into |       2 |
+    | =:cols= | number of times the rect will be subdivided along the X-axis   |       2 |
+    | =:rows= | number of times the rect will be subdivided along the Y-axis   |       2 |
+
+    When =:num= is given, the resulting rects will retain the aspect
+    ratio of the original rect. If specified, =:cols= and =:rows= will
+    take precedence over =:num=, but the latter will be used as
+    default for missing args. Rects are returned as a lazyseq with
+    top-left to bottom-right ordering and inner sorting along X.
+
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
   g/ISubdivideable
   (subdivide
-   [this {i :iter :or {i 1}}]
-   (let [delta (/ 0.5 i)
-         iter (range 0.0 1.0 delta)
-         w (* (:w this) delta)
-         h (* (:h this) delta)]
-     (for [y iter x iter]
-       (thi.ng.geom.types.Rect. (unmap-uv this [x y]) w h))))
+   ([this] (g/subdivide this {}))
+   ([this {:keys [num cols rows] :or {num 2}}]
+      (let [dx (/ 1.0 (or cols num))
+            dy (/ 1.0 (or rows num))
+            rx (range 0.0 1.0 dx)
+            ry (range 0.0 1.0 dy)
+            w (* (:w this) dx)
+            h (* (:h this) dy)]
+        (for [y ry x rx]
+          (thi.ng.geom.types.Rect. (unmap-uv this [x y]) w h)))))
 #+END_SRC
 *** ITessellateable
+    A rectangle can be tessellated into a number of triangles. When
+    called without options map as 2nd argument, the rect will be split
+    into 2 triangles, each in anti-clockwise orientation: =[tl br tr]=
+    & =[tl bl br]=. When called *with* options, then these are used
+    for a call to [[ISubdivideable][=subdivide=]] first and the function returns a lazyseq
+    of triangles of the subdivided rects.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
   g/ITessellateable
   (tessellate
    ([this]
-      (let [[a b c d] (g/vertices this)]
-        [[a c b] [a d c]]))
+      (let [[a b c d] (g/vertices this)] [[a c b] [a d c]]))
    ([this opts]
       (mapcat g/tessellate (g/subdivide this opts))))
 #+END_SRC
 *** IExtrudeable
+    Extruding a rectangle along the Z-axis results in a 3D mesh
+    implementation. The =extrude= function supports two options,
+    given as parameter map:
+
+    | Key      | Description                             | Default |
+    |----------+-----------------------------------------+---------|
+    | =:depth= | extrusion depth along positive Z        |     1.0 |
+    | =:scale= | scale factor of rect at extrusion depth |     1.0 |
+
+    The process results is bevelled forms for =:scale= values other
+    than 1.0.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
   g/IExtrudeable
   (extrude
-   [this {depth :depth}]
-   (g/as-mesh
-    (thi.ng.geom.types.AABB.
-     (g/vec3 p)
-     (g/vec3 (:w this) (:h this) depth))))
+   [this {depth :depth scale :scale :or {depth 1.0 scale 1.0}}]
+   (if (= scale 1.0)
+     (g/as-mesh
+      (thi.ng.geom.types.AABB.
+       (g/vec3 (:p this))
+       (g/vec3 (:w this) (:h this) depth)))
+     (let [[a b c d] (map g/vec3 (g/vertices this))
+           [a2 b2 c2 d2] (-> this
+                             (g/scale scale)
+                             (g/center (g/centroid this))
+                             (g/vertices)
+                             (map g/vec3))]
+       (mesh/mesh3
+        [a b c] [a c d]       ;;back
+        [a2 c2 b2] [a2 d2 c2] ;; front
+        [a d2 d] [a d2 a2]    ;; left
+        [b2 c2 c] [b2 c b]    ;; right
+        [a a2 b2] [a b2 b]    ;; top
+        [d c2 d2] [d c c2]    ;; bottom
+        ))))
+#+END_SRC
+*** TODO ITransformable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
