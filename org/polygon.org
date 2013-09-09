@@ -116,7 +116,7 @@
    (map (fn [[p q]] (thi.ng.geom.types.Line2. p q))
         (d/successive-nth 2 (concat points [(first points)]))))
   (vertex-neighbors
-   [this v] (d/neighbors* v (g/vertices this)))
+   [this v] (d/neighbors v (g/vertices this)))
   (vertex-valence
    [this v] (if ((set (g/vertices this)) v) 2 0))
 #+END_SRC
