@@ -208,10 +208,10 @@
   g/IShape
   (area
    [this]
-   (-> this
-       :faces
-       (map #(m/abs (t/area2 %)))
-       (reduce +)))
+   (->> this
+        :faces
+        (map #(m/abs (t/area2 %)))
+        (reduce +)))
   (bounds
    [this] (g/bounding-rect* (keys (:vertices this))))
   (center
@@ -282,7 +282,8 @@
   (subdivide-edge
    [this a b splits] (subdivide-edge* this g/mix2 a b splits))
   (subdivide-face
-   [this f p opts] (subdivide-face* this f p (:displace opts) (:splits opts)))
+   [this f p opts]
+   (subdivide-face* this g/mix2 f p (:displace opts) (:splits opts)))
   (subdivide
    [this opts]
    (subdivide* this {:add g/add2 :scale g/scale2 :mix g/mix2} opts))
@@ -334,10 +335,10 @@
   g/IShape
   (area
    [this]
-   (-> this
-       :faces
-       (map #(m/abs (t/area3 %)))
-       (reduce +)))
+   (->> this
+        :faces
+        (map #(m/abs (t/area3 %)))
+        (reduce +)))
   (bounds
    [this] (g/bounding-box* (keys (:vertices this))))
   (center
@@ -435,7 +436,8 @@
   (subdivide-edge
    [this a b splits] (subdivide-edge* this g/mix3 a b splits))
   (subdivide-face
-   [this f p opts] (subdivide-face* this f p (:displace opts) (:splits opts)))
+   [this f p opts]
+   (subdivide-face* this g/mix3 f p (:displace opts) (:splits opts)))
   (subdivide
    [this opts]
    (subdivide* this {:add g/add3 :scale g/scale3 :mix g/mix3} opts))
