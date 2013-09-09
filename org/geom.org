@@ -42,7 +42,7 @@
 #+END_SRC
 ***** Polygon
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
-  (defrecord Polygon [points children])
+  (defrecord Polygon [points holes])
 #+END_SRC
 ***** Mesh
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
@@ -215,7 +215,7 @@
        protocol consisting of just this one function: =as-mesh=.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol IMeshable
-    (as-mesh [this opts]
+    (as-mesh [this] [this opts]
       "Transforms the current enitity into a Mesh instance"))
  #+END_SRC
 ****** IIntersectable
@@ -233,7 +233,9 @@
 ****** ISubdivideable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol ISubdivideable
-    (subdivide [this opts]))
+    (subdivide [this] [this opts])
+    (subdivide-edge [this a b splits])
+    (subdivide-face [this f p displace splits]))
 #+END_SRC
 ****** ITessellateable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -259,9 +261,8 @@
     (remove-face [this f])
     (remove-vertex [this v])
     (replace-vertex [this v])
-    (merge-vertices [this a b])
-    (subdivide-edge [this a b splits])
-    (subdivide-face [this f p displace splits]))
+    (vertex-faces [this v])
+    (merge-vertices [this a b]))
 #+END_SRC
 **** Constants
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -685,6 +686,11 @@
     [fctor fscale fadd points weights]
     (apply fadd (map (fn [p w] (fscale (fctor p) w)) points weights)))
 
+  (defn centroid*
+    [add scale coll]
+    (when (seq coll)
+       (scale (reduce add coll) (/ 1.0 (count coll)))))
+
   (defn bounding-rect*
     ([coll]
        (let [c (count coll)]
@@ -731,12 +737,12 @@
 
   (defn axis-bounds*
     [axis coll]
-    (let [xs (map #(nth % axis) points)]
+    (let [xs (map #(nth % axis) coll)]
       [(reduce min xs) (reduce max xs)]))
 
   (defn axis-range*
     [axis coll]
-    (let [xs (map #(nth % axis) points)]
+    (let [xs (map #(nth % axis) coll)]
       (- (reduce max xs) (reduce min xs))))
 #+END_SRC
 ** Geometric entities
