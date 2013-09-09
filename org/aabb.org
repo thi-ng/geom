@@ -1,9 +1,9 @@
-* Namespace: thi.ng.geom.aabb
+* thi.ng.geom.aabb
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
   (ns thi.ng.geom.aabb
     (:require
-     [thi.ng.math.core :as m]
+     [thi.ng.math.core :as m :refer [*eps*]]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])
@@ -31,8 +31,7 @@
   (extend-type thi.ng.geom.types.AABB
 #+END_SRC
 *** IGraph
-**** TODO add edges implementation
-#+BEGIN_SRC clojure
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
   g/IGraph
   (vertices
    [{a :p size :size}]
@@ -42,9 +41,18 @@
          d [x1 y1 z2] e [x2 y1 z1]
          f [x2 y2 z1] h [x2 y1 z2]]
      [a b c d e f g h]))
+  (edges
+   [this]
+   (let [[a b c d e f g h] (g/vertices this)]
+     (for [[p q] [[a b] [b c] [c d] [d a] ;; left
+                  [a e] [b f] ;; back
+                  [e f] [f g] [g h] [h e] ;; right
+                  [c g] [d h] ;; front
+                  ]]
+       (thi.ng.geom.types.Line3. p q))))
 #+END_SRC
 *** IBoundary
-**** TODO move fns into correct protocols
+**** TODO implement closest-point
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
   g/IBoundary
   (classify-point
@@ -72,6 +80,11 @@
      (and (m/in-range? x1 x2 qx)
           (m/in-range? y1 y2 qy)
           (m/in-range? z1 z2 qz))))
+#+END_SRC
+*** ISampleable
+**** TODO implement point-at
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+  g/ISampleable
   (random-point-inside
    [{p :p size :size}]
    (let [[x1 y1 z1] p
@@ -121,13 +134,14 @@
   g/IIntersectable
   (intersects-shape?
    [{pa :p sa :size} s]
-   (if (instance? thi.ng.geom.types.AABB s)
-     (let [{pb :p sb :size} s]
-       (every?
-        #(and (<= (pa %) (+ (pb %) (sb %)))
-              (<= (pb %) (+ (pa %) (sa %))))
-        [0 1 2]))
-     (g/type-error "AABB" s)))
+   (cond
+    (instance? thi.ng.geom.types.AABB s)
+    (let [{pb :p sb :size} s]
+      (every?
+       #(and (<= (pa %) (+ (pb %) (sb %)))
+             (<= (pb %) (+ (pa %) (sa %))))
+       [0 1 2]))
+    :default (g/type-error "AABB" s)))
 #+END_SRC
 *** IMeshable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
