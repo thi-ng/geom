@@ -1,10 +1,10 @@
-* Namespace: thi.ng.geom.sphere
+* thi.ng.geom.sphere
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   (ns thi.ng.geom.sphere
     (:require
-     [thi.ng.math.core :as m]
-     [thi.ng.geom.core :as g]
+     [thi.ng.math.core :as m :refer [PI *eps*]]
+     [thi.ng.geom.core :as g :refer [*resolution*]]
      [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])
     #+clj
@@ -32,32 +32,32 @@
 
 #+END_SRC
 *** IShape
-**** TODO implement area fn
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   g/IShape
-  (area [{r :r}] r)
+  (area
+   [{r :r}] (* 4.0 PI r r))
   (bounds
-   [this] (thi.ng.geom.types.AABB. (:p this) (vec3 (:r this))))
+   [this] (thi.ng.geom.types.AABB. (:p this) (g/vec3 (:r this))))
   (center
-   ([this] (thi.ng.geom.types.Sphere. [0.0 0.0 0.0] (:r this)))
+   ([this] (thi.ng.geom.types.Sphere. (g/vec3 0.0) (:r this)))
    ([this p] (thi.ng.geom.types.Sphere. p (:r this))))
   (centroid [this] (:p this))
-  (width  [this] (:r this))
-  (height [this] (:r this))
-  (depth  [this] (:r this))
+  (width  [this] (* 2.0 (:r this)))
+  (height [this] (* 2.0 (:r this)))
+  (depth  [this] (* 2.0 (:r this)))
 #+END_SRC
 *** IShape3
-**** TODO implement volume fn
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   g/IShape3
   (bounding-sphere [this] this)
-  (volume [{r :r}] r)
+  (volume
+   [{r :r}] (* (/ 4.0 3.0) PI r r r))
 #+END_SRC
 *** IBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   g/IBoundary
   (contains-point?
-   [{p :p :r r} q] (<= (g/dist3-squared p q) (* r r)))
+   [{p :p r :r} q] (<= (g/dist3-squared p q) (* r r)))
   (classify-point
    [{p :p r :r} q]
    (m/signum (- (* r r) (g/dist3-squared p q)) *eps*))
@@ -73,7 +73,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   g/IMeshable
   (as-mesh
-   ([this] (as-mesh this *resolution*))
+   ([this] (g/as-mesh this *resolution*))
    ([this res] nil))
 #+END_SRC
 *** End of implementation
