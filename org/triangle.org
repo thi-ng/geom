@@ -35,11 +35,14 @@
        (equilateral2 [x1 y1] [x2 y2])))
 #+END_SRC
 *** Shared 2d/3d functions
-**** TODO refactor centroid* w/ injected add/scale fns
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   (defn area2
     ([a b c] (* 0.5 (g/cross2 (g/sub2 b a) (g/sub2 c a))))
     ([[a b c]] (* 0.5 (g/cross2 (g/sub2 b a) (g/sub2 c a)))))
+
+  (defn area3
+    ([a b c] (* 0.5 (g/mag3 (g/cross3 (g/sub3 b a) (g/sub3 c a)))))
+    ([[a b c]] (* 0.5 (g/mag3 (g/cross3 (g/sub3 b a) (g/sub3 c a))))))
 
   (defn centroid*
     ([add scale a b c] (scale (add a b c) THIRD))
@@ -87,7 +90,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/IShape
   (area
-   [t] (* 0.5 (g/cross2 (g/sub2 (:b t) (:a t)) (g/sub2 (:c t) (:a t)))))
+   [t] (area2 t))
   (bounds
    [t] (g/bounding-rect* [(:a t) (:b t) (:c t)]))
   (center
@@ -178,6 +181,8 @@
 ***** IShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/IShape
+  (area
+   [t] (area3 t))
   (bounds
    [t] (g/bounding-box* [(:a t) (:b t) (:c t)]))
   (center
@@ -230,9 +235,20 @@
       g/vec3 g/scale3 g/add3
       [(:a t) (:b t) (:c t)] (shuffle [b1 b2 b3]))))
 #+END_SRC
-***** TODO IIntersectable
+***** IIntersectable
+****** TODO update ray definition or protocol?
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-
+  g/IIntersectable
+  (intersect-ray
+   [{:keys [a b c]} {p :p dir :dir}]
+    (let [n (normal3* a b c)
+          nd (g/dot3 n dir)]
+      (if (neg? nd)
+        (let [t (/ (- (g/dot3 n (g/sub3 p a))) nd)]
+          (if (>= t *eps*)
+            (let [ip (g/add3 p (g/scale3 dir t))]
+              (if (contains-point* g/sub3 g/dot3 g/mag3-squared a b c ip)
+                {:p ip :n n :dist t :dir (g/normalize3 (g/sub3 ip p))})))))))
 #+END_SRC
 ***** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -241,7 +257,7 @@
 *** Type specific functions
 **** Circumcircle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  (defn circumcircle*
+  (defn circumcircle-raw
     [[ax ay :as a] [bx by :as b] [cx cy :as c]]
     (let [eq-ab? (m/delta= ay by *eps*)
           eq-bc? (m/delta= by cy *eps*)]
@@ -265,12 +281,14 @@
                            [xx (+ (* m1 (- xx mx1)) my1)]))]
           [o (m/hypot (- bx ox) (- by oy))]))))
 
-  (defn circumcircle2
-    ([t] (circumcircle2 (:a t) (:b t) (:c t)))
+  (defn circumcircle
+    ([t] (circumcircle (:a t) (:b t) (:c t)))
     ([a b c]
-      (let [[o r] (circumcircle* a b c)] (thi.ng.geom.types.Circle. o r))))
+       (let [[o r] (circumcircle-raw a b c)]
+         (thi.ng.geom.types.Circle. o r))))
 #+END_SRC
 **** Subdivision & slicing
+***** TODO use centroid* instead of g/centroid in subdivide*
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   (defn- subdivide*
     [fctor fmid {:keys [a b c] :as t}]
@@ -282,10 +300,10 @@
        (fctor c ca bc) (fctor ca ab bc)]))
 
   (defn subdiv2
-    [tri] (subdivide* (fn[a b c] (thi.ng.geom.types.Triangle2. a b c)) g/mid2 tri))
+    [tri] (subdivide* (fn [a b c] (thi.ng.geom.types.Triangle2. a b c)) g/mid2 tri))
 
   (defn subdiv3
-    [tri] (subdivide* (fn[a b c] (thi.ng.geom.types.Triangle3. a b c)) g/mid3 tri))
+    [tri] (subdivide* (fn [a b c] (thi.ng.geom.types.Triangle3. a b c)) g/mid3 tri))
 
   (defn check-edge
     [splits classifier e p q add-p? add-q?]
@@ -326,18 +344,4 @@
               (cmap [[0 1 4] [2 4 1] [2 3 4]]))
             (cmap [[0 1 2] [0 2 4] [3 4 2]]))
         nil))))
-#+END_SRC
-**** Intersection
-***** TODO move into protocols
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  (defn intersect-ray3
-    [[a b c] p d]
-    (let [n (normal3* a b c)
-          nd (g/dot3 n d)]
-      (if (neg? nd)
-        (let [t (/ (- (g/dot3 n (g/sub3 p a))) nd)]
-          (if (>= t *eps*)
-            (let [ip (g/add3 p (g/scale3 d t))]
-              (if (contains-point* g/sub3 g/dot3 g/mag3-squared a b c ip)
-                {:p ip :n n :dist t :dir (g/normalize3 (g/sub3 ip p))})))))))
 #+END_SRC
