@@ -9,7 +9,7 @@
      [thi.ng.geom.types :as types])
     #+clj
     (:import
-     [thi.ng.geom.types Circle Line2 Polygon]))
+     [thi.ng.geom.types Circle Line2 Polygon Triangle2]))
 #+END_SRC
 ** Constructor
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
@@ -40,16 +40,16 @@
 *** IShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
   g/IShape
-  (area [{r :r}] (* (* PI r) r))
+  (area [{r :r}] (* PI (* r r)))
   (bounds
    [{p :p r :r}]
    (let [d (* 2 r)] (g/bounding-rect* (g/sub2 p [r r]) d d)))
   (center
    ([this] (thi.ng.geom.types.Circle. [0.0 0.0] (:r this)))
-   ([this o] (thi.ng.geom.types.Circle. o (:r this))))
+   ([this p] (thi.ng.geom.types.Circle. p (:r this))))
   (centroid [this] (:p this))
-  (width  [this] (:r this))
-  (height [this] (:r this))
+  (width  [this] (* 2.0 (:r this)))
+  (height [this] (* 2.0 (:r this)))
   (depth  [this] 0)
 #+END_SRC
 *** IShape2
@@ -90,6 +90,31 @@
   (as-polygon
    ([this] (g/as-polygon this *resolution*))
    ([this res] (thi.ng.geom.types.Polygon. (vec (g/vertices this res)) [])))
+#+END_SRC
+*** ITessellateable
+     A circle can be tessellated into a list of uniform triangles,
+     each sharing the circle's centroid. If called without 2nd
+     argument the default circle =*resolution*= (a dynamic var defined
+     in [[file:geom.org][thi.ng.geom.core]]) will be used.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  g/ITessellateable
+  (tessellate
+   ([this] (g/tessellate this *resolution*))
+   ([{p :p :as this} res]
+      (let [verts (g/vertices this res)]
+        (->> [(first verts)]
+             (concat verts)
+             (d/successive-nth 2)
+             (map
+              (fn [[a b]]
+                (thi.ng.geom.types.Triangle2. a p b)))))))
+#+END_SRC
+*** IExtrudeable
+**** TODO use cone implementation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  g/IExtrudeable
+  (extrude
+   [this opts])
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
