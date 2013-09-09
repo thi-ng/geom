@@ -50,13 +50,11 @@
     "Returns x if odd or `x+1` if `x` is even."
     [x] (if (even? x) (inc x) x))
 
-  (defn fma
-    "Returns a * b + c."
-    [a b c] (+ (* a b) c))
+  #+clj  (definline fma "Returns a * b + c." [a b c] `(+ (* ~a ~b) ~c))
+  #+cljs (defn fma "Returns a * b + c."  [a b c] (+ (* a b) c))
 
-  (def abs
-    #+clj (fn [x] (if (neg? x) (- x) x))
-    #+cljs Math/abs)
+  #+clj  (defn abs [x] (if (neg? x) (- x) x))
+  #+cljs (def abs Math/abs)
 
   (defn abs-diff
     [x y] (abs (- x y)))
