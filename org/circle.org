@@ -107,7 +107,7 @@
              (d/successive-nth 2)
              (map
               (fn [[a b]]
-                (thi.ng.geom.types.Triangle2. a p b)))))))
+                (thi.ng.geom.types.Triangle2. b p a)))))))
 #+END_SRC
 *** IExtrudeable
 **** TODO use cone implementation

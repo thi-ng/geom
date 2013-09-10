@@ -4,7 +4,7 @@
   (ns thi.ng.geom.rect
     (:require
      [thi.ng.data.core :as d]
-     [thi.ng.math.core :as m]
+     [thi.ng.math.core :as m :refer [*eps*]]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.aabb :as aabb]
      [thi.ng.geom.mesh :as mesh]
@@ -50,7 +50,7 @@
 
   (defn unmap-uv
     [{:keys[p w h]} [qx qy]]
-    [(+ (* qx w) (p 0)) (+ (* qy h) (p 1))])
+    [(m/fma qx w (p 0)) (m/fma qy h (p 1))])
 
   (defn left [r] ((:p r) 0))
   (defn right [r] (+ ((:p r) 0) (:w r)))
@@ -179,8 +179,11 @@
             ry (range 0.0 1.0 dy)
             w (* (:w this) dx)
             h (* (:h this) dy)]
-        (for [y ry x rx]
-          (thi.ng.geom.types.Rect. (unmap-uv this [x y]) w h)))))
+        (for [y ry x rx
+              :let [[px py] (unmap-uv this [x y])
+                    px (m/roundto px *eps*)
+                    py (m/roundto py *eps*)]]
+          (thi.ng.geom.types.Rect. [px py] w h)))))
 #+END_SRC
 *** ITessellateable
     A rectangle can be tessellated into a number of triangles. When
@@ -193,7 +196,7 @@
   g/ITessellateable
   (tessellate
    ([this]
-      (let [[a b c d] (g/vertices this)] [[a c b] [a d c]]))
+      (let [[a b c d] (g/vertices this)] [[a b c] [a c d]]))
    ([this opts]
       (mapcat g/tessellate (g/subdivide this opts))))
 #+END_SRC
