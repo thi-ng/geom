@@ -71,6 +71,47 @@
     [sub dot mag a b c p]
     (let [[u v w] (barycentric* sub dot mag a b c p)]
       (and (>= u 0.0) (>= v 0.0) (<= w 1.0))))
+
+  (defn check-edge
+    [splits classifier e p q add-p? add-q?]
+    (let [pc (classifier e p) qc (classifier e q)
+          splits (if add-p? (conj splits [p pc]) splits)]
+      (if (neg? (* pc qc))
+        (let [{ip :p ub :ub} (g/intersect-line e {:p p :q q})]
+          (if add-q?
+            (conj (conj splits [ip 0]) [q qc])
+            (conj splits [ip 0])))
+        (if add-q? (conj splits [q qc]) splits))))
+
+  (defn slice-with*
+    ([t e] (slice-with* t e g/classify-point))
+    ([[a b c] e classifier] (slice-with* a b c e classifier))
+    ([a b c e classifier]
+       (let [verts (-> []
+                       (check-edge classifier e a b true true)
+                       (check-edge classifier e b c false true)
+                       (check-edge classifier e c a false false))
+             cmap (fn [ids]
+                    (reduce
+                     (fn [m [[a cl] b c]]
+                       (update-in m [cl] conj [a (b 0) (c 0)]))
+                     {-1 [] 1 []}
+                     (map (fn [[a b c]] [(verts a) (verts b) (verts c)]) ids)))
+             corner-index (fn []
+                            (let [triverts #{a b c}]
+                              (loop [i (dec (count verts))]
+                                (when-let [[v c] (verts i)]
+                                  (if (and (zero? c) (triverts v)) i (recur (dec i)))))))]
+         (condp = (count verts)
+           4 (let [d (corner-index)]
+               (cmap [[(m/wrap-range (inc d) 4) (m/wrap-range (+ d 2) 4) d]
+                      [(m/wrap-range (dec d) 4) d (m/wrap-range (+ d 2) 4)]]))
+           5 (if (zero? (get-in verts [1 1]))
+               (if (zero? (get-in verts [3 1]))
+                 (cmap [[0 1 3] [0 3 4] [2 3 1]])
+                 (cmap [[0 1 4] [2 4 1] [2 3 4]]))
+               (cmap [[0 1 2] [0 2 4] [3 4 2]]))
+           nil))))
 #+END_SRC
 *** Protocol implementations
 **** Triangle2
@@ -149,6 +190,15 @@
   g/IPolygonizable
   (as-polygon
    [t] (thi.ng.geom.types.Polygon. [(:a t) (:b t) (:c t)] []))
+#+END_SRC
+***** ISliceable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
+  g/ISliceable
+  (slice-with
+   ([this e]
+      (slice-with* (:a this) (:b this) (:c this) e g/classify-point))
+   ([this e classifier]
+      (slice-with* (:a this) (:b this) (:c this) e classifier)))
 #+END_SRC
 ***** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -250,6 +300,15 @@
               (if (contains-point* g/sub3 g/dot3 g/mag3-squared a b c ip)
                 {:p ip :n n :dist t :dir (g/normalize3 (g/sub3 ip p))})))))))
 #+END_SRC
+***** ISliceable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
+  g/ISliceable
+  (slice-with
+   ([this e]
+      (slice-with* (:a this) (:b this) (:c this) e g/classify-point))
+   ([this e classifier]
+      (slice-with* (:a this) (:b this) (:c this) e classifier)))
+#+END_SRC
 ***** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   )
@@ -304,44 +363,4 @@
 
   (defn subdiv3
     [tri] (subdivide* (fn [a b c] (thi.ng.geom.types.Triangle3. a b c)) g/mid3 tri))
-
-  (defn check-edge
-    [splits classifier e p q add-p? add-q?]
-    (let [pc (classifier e p) qc (classifier e q)
-          splits (if add-p? (conj splits [p pc]) splits)]
-      (if (neg? (* pc qc))
-        (let [{ip :p ub :ub} (g/intersect-line e {:p p :q q})]
-          (if add-q?
-            (conj (conj splits [ip 0]) [q qc])
-            (conj splits [ip 0])))
-        (if add-q? (conj splits [q qc]) splits))))
-
-  (defn slice-with
-    ([t e] (slice-with t e g/classify-point))
-    ([[a b c] e classifier]
-    (let [verts (-> []
-            (check-edge classifier e a b true true)
-            (check-edge classifier e b c false true)
-            (check-edge classifier e c a false false))
-          cmap (fn[ids]
-           (reduce
-             (fn[m [[a cl] b c]]
-               (update-in m [cl] conj [a (b 0) (c 0)]))
-             {-1 [] 1 []}
-             (map (fn[[a b c]] [(verts a) (verts b) (verts c)]) ids)))
-          corner-index (fn[]
-            (let [triverts #{a b c}]
-              (loop [i (dec (count verts))]
-                (when-let [[v c] (verts i)]
-                  (if (and (zero? c) (triverts v)) i (recur (dec i)))))))]
-      (condp = (count verts)
-        4 (let [d (corner-index)]
-            (cmap [[(m/wrap-range (inc d) 4) (m/wrap-range (+ d 2) 4) d]
-                   [(m/wrap-range (dec d) 4) d (m/wrap-range (+ d 2) 4)]]))
-        5 (if (zero? (get-in verts [1 1]))
-            (if (zero? (get-in verts [3 1]))
-              (cmap [[0 1 3] [0 3 4] [2 3 1]])
-              (cmap [[0 1 4] [2 4 1] [2 3 4]]))
-            (cmap [[0 1 2] [0 2 4] [3 4 2]]))
-        nil))))
 #+END_SRC
