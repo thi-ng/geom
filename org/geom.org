@@ -228,7 +228,7 @@
 ****** ISliceable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol ISliceable
-    (slice-with [this e] [this e parts]))
+    (slice-with [this e] [this e classifier] [this e classifier parts]))
 #+END_SRC
 ****** ISubdivideable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -375,6 +375,13 @@
       ([v w]
          (let [w (vec3 w)]
            [(f (nth v 0) (w 0)) (f (nth v 1) (w 1)) (f (nth v 2) (w 2))]))
+      ([v x y]
+         (if (number? x)
+           [(f (nth v 0) x) (f (nth v 1) y) (nth v 2)]
+           (let [x (vec3 x) y (vec3 y)]
+             [(f (f (nth v 0) (x 0)) (y 0))
+              (f (f (nth v 1) (x 1)) (y 1))
+              (f (f (nth v 2) (x 2)) (y 2))])))
       ([v x y z]
          (if (number? x)
            [(f (nth v 0) x) (f (nth v 1) y) (f (nth v 2) z)]
@@ -391,6 +398,22 @@
       ([v w]
          (let [w (vec4 w)]
            [(f (nth v 0) (w 0)) (f (nth v 1) (w 1)) (f (nth v 2) (w 2)) (f (nth v 3) (w 3))]))
+      ([v x y]
+         (if (number? x)
+           [(f (nth v 0) x) (f (nth v 1) y) (nth v 2) (nth v 3)]
+           (let [x (vec4 x) y (vec4 y)]
+             [(f (f (nth v 0) (x 0)) (y 0))
+              (f (f (nth v 1) (x 1)) (y 1))
+              (f (f (nth v 2) (x 2)) (y 2))
+              (f (f (nth v 3) (x 3)) (y 3))])))
+      ([v x y z]
+         (if (number? x)
+           [(f (nth v 0) x) (f (nth v 1) y) (f (nth v 2) z) (nth v 3)]
+           (let [x (vec4 x) y (vec4 y) z (vec4 z)]
+             [(f (f (f (f (nth v 0) (x 0)) (y 0)) (z 0)))
+              (f (f (f (f (nth v 1) (x 1)) (y 1)) (z 1)))
+              (f (f (f (f (nth v 2) (x 2)) (y 2)) (z 2)))
+              (f (f (f (f (nth v 3) (x 3)) (y 3)) (z 3)))])))
       ([v x y z w]
          (if (number? x)
            [(f (nth v 0) x) (f (nth v 1) y) (f (nth v 2) z) (f (nth v 3) w)]
@@ -768,3 +791,5 @@
 
 ** Geometric operations
 #+INCLUDE: "delaunay.org" :minlevel 4
+** Geometry IO
+#+INCLUDE: "meshio.org" :minlevel 4
