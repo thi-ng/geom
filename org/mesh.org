@@ -161,6 +161,23 @@
       (reduce
        (fn [mesh f] (subdivide-face* mesh mix f (vertex f) displace splits))
        mesh (if flt (filter flt (:faces mesh)) (:faces mesh)))))
+
+  (defn slice-with*
+    [mesh e classifier faces]
+    (let [verts (persistent!
+                 (reduce #(-> (conj! % (%2 0)) (conj! (%2 1)) (conj! (%2 2)))
+                         (transient #{}) faces))
+          cverts (zipmap verts (map #(classifier e %) verts))
+          classifier-cache #(get cverts %2)]
+      (reduce
+       (fn [[mesh nf :as state] f]
+         (if-let [tfaces (t/slice-with* f e classifier-cache)]
+           [(reduce add-face
+                    (reduce add-face (g/remove-face mesh f) (get tfaces -1))
+                    (get tfaces 1))
+            (into (into nf (get tfaces -1)) (get tfaces 1))]
+           state))
+       [mesh []] faces)))
 #+END_SRC
 ** Constructors
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
@@ -288,26 +305,16 @@
    [this opts]
    (subdivide* this {:add g/add2 :scale g/scale2 :mix g/mix2} opts))
 #+END_SRC
-**** TODO ISliceable
+**** ISliceable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/ISliceable
   (slice-with
-    ([this e] (g/slice-with this e (:faces this)))
-    ([this e faces]
-       (let [verts (persistent!
-                    (reduce #(-> (conj! % (%2 0)) (conj! (%2 1)) (conj! (%2 2)))
-                            (transient #{}) faces))
-             cverts (zipmap verts (map #(g/classify-point e %) verts))
-             classifier #(get cverts %2)]
-         (reduce
-          (fn [[this nf :as state] f]
-            (if-let [tfaces (t/slice-with f e classifier)]
-              [(reduce g/add-face
-                       (reduce g/add-face (g/remove-face this f) (get tfaces -1))
-                       (get tfaces 1))
-               (into (into nf (get tfaces -1)) (get tfaces 1))]
-              state))
-          [this []] faces))))
+   ([this e]
+      (slice-with* this e g/classify-point (:faces this)))
+   ([this e classifier]
+      (slice-with* this e classifier (:faces this)))
+   ([this e classifier faces]
+      (slice-with* this e classifier faces)))
 #+END_SRC
 **** End of implementation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
@@ -443,6 +450,17 @@
    (subdivide* this {:add g/add3 :scale g/scale3 :mix g/mix3} opts))
 #+END_SRC
 
+**** ISliceable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  g/ISliceable
+  (slice-with
+   ([this e]
+      (slice-with* this e g/classify-point (:faces this)))
+   ([this e classifier]
+      (slice-with* this e classifier (:faces this)))
+   ([this e classifier faces]
+      (slice-with* this e classifier faces)))
+#+END_SRC
 **** End of implementation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   )
