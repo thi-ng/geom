@@ -1,0 +1,140 @@
+* thi.ng.geom.meshio
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshio.cljx
+  (ns thi.ng.geom.meshio
+    (:require
+      [thi.ng.data.byteutils :as b]
+      [thi.ng.geom.core :as g]
+      [thi.ng.geom.mesh :as m]
+      [thi.ng.geom.triangle :as t]))
+#+END_SRC
+** Configuration parameters
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshio.cljx
+  (def ^:dynamic *precision* 5)
+#+END_SRC
+** STL
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshio.cljx
+  (defn write-stl
+    [stream {:keys [fnormals faces]}]
+    (.write stream (byte-array 80))
+    (b/write-int32-le stream (count faces))
+    (doseq [[a b c :as f] faces]
+      (b/write-vec3-le stream (or (get fnormals f) (t/normal3* f)))
+      (b/write-vec3-le stream a)
+      (b/write-vec3-le stream b)
+      (b/write-vec3-le stream c)
+      (b/write-int16-le stream 0))
+    stream)
+
+  (defn read-stl
+    [stream]
+    (.read stream (byte-array 80))
+    (let [face (byte-array 50)
+          nf (b/read-int32-le stream)
+          mesh (m/mesh3)]
+      (loop [[v e f] (m/begin-edit mesh) i nf]
+        (if (zero? i)
+          (m/commit-edit mesh [v e f])
+          (let [_ (b/read-vec3-le stream)
+                a (b/read-vec3-le stream)
+                b (b/read-vec3-le stream)
+                c (b/read-vec3-le stream)
+                _ (b/read-int16-le stream)]
+            (recur (m/add-face! [v e f] [a b c]) (dec i)))))))
+
+  (defn read-stl-vertices
+    [stream]
+    (.read stream (byte-array 80))
+    (loop [vertices #{} nf (b/read-int32-le stream)]
+      (if (zero? nf)
+        vertices
+        (let [_ (b/read-vec3-le stream)
+              a (b/read-vec3-le stream)
+              b (b/read-vec3-le stream)
+              c (b/read-vec3-le stream)
+              _ (b/read-int16-le stream)]
+          (recur (conj vertices a b c) (dec nf))))))
+#+END_SRC
+** PLY
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshio.cljx
+  (defn write-ply
+    [stream {:keys [vertices vnormals faces]}]
+    (let [vertices (keys vertices)
+          vindex (zipmap vertices (range))
+          fhead (byte-array [(byte 3)])
+          write-props (fn[props]
+                        (doseq [p props]
+                          (b/write-str-bytes
+                           stream (str "property float32 " p "\n"))))
+          write-vindex (fn[face]
+                         (doseq [v face]
+                           (b/write-int32-le stream (get vindex v))))]
+      (doto stream
+        (b/write-str-bytes "ply\n")
+        (b/write-str-bytes "format binary_little_endian 1.0\n")
+        (b/write-str-bytes (str "element vertex " (count vertices) "\n")))
+      (write-props ['x 'y 'z])
+      (when (seq vnormals) (write-props ['nx 'ny 'nz]))
+      (doto stream
+        (b/write-str-bytes (str "element face " (count faces) "\n"))
+        (b/write-str-bytes "property list uint8 uint32 vertex_indices\n")
+        (b/write-str-bytes "end_header\n"))
+      (doseq [v vertices]
+        (b/write-vec3-le stream v)
+        (when (seq vnormals)
+          (b/write-vec3-le stream (get vnormals v))))
+      (doseq [f faces]
+        (.write stream fhead)
+        (write-vindex f))
+      stream))
+#+END_SRC
+** OBJ
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshio.cljx
+  (defn write-obj
+    [stream {:keys [vertices vnormals faces]}]
+    (let [vertices (keys vertices)
+          has-vnormals? (not (nil? (seq vnormals)))
+          fmt-float (str "%1." *precision* "f ")
+          fmt-vertex (str "v " fmt-float fmt-float fmt-float "\n")
+          fmt-vnormal (str "vn " fmt-float fmt-float fmt-float "\n")
+          fmt-face (if has-vnormals? "f %d//%d %d//%d %d//%d\n" "f %d %d %d\n")
+          vindex (zipmap vertices (range))
+          nindex (zipmap (vals vnormals) (range))]
+      (doseq [[x y z] vertices]
+        (b/write-str-bytes stream (format fmt-vertex (double x) (double y) (double z))))
+      (doseq [[x y z] (vals vnormals)]
+        (b/write-str-bytes stream (format fmt-vnormal (double x) (double y) (double z))))
+      (b/write-str-bytes stream "g\n")
+      (doseq [[a b c] faces]
+        (b/write-str-bytes stream
+                           (if has-vnormals?
+                             (format fmt-face
+                                     (inc (get vindex a))
+                                     (inc (get nindex (get vnormals a)))
+                                     (inc (get vindex b))
+                                     (inc (get nindex (get vnormals b)))
+                                     (inc (get vindex c))
+                                     (inc (get nindex (get vnormals c))))
+                             (format fmt-face
+                                     (inc (get vindex a))
+                                     (inc (get vindex b))
+                                     (inc (get vindex c))))))
+      stream))
+#+END_SRC
+** OFF
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshio.cljx
+  (defn write-off
+    [stream {:keys [vertices faces]}]
+    (let [vertices (keys vertices)
+          fmt-float (str "%1." *precision* "f ")
+          fmt-vertex (str fmt-float fmt-float fmt-float "\n")
+          fmt-face "3 %d %d %d\n"
+          vindex (zipmap vertices (range))]
+      (b/write-str-bytes stream "OFF\n")
+      (b/write-str-bytes stream (str (count vertices) " " (count faces) " 0\n"))
+      (doseq [[x y z] vertices]
+        (b/write-str-bytes stream (format fmt-vertex (double x) (double y) (double z))))
+      (doseq [[a b c] faces]
+        (b/write-str-bytes stream
+                           (format fmt-face (get vindex a) (get vindex b) (get vindex c))))))
+#+END_SRC

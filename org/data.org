@@ -112,3 +112,78 @@
      (when (pred x)
        (cons x (iterate-while pred f (f x))))))
 #+END_SRC
+** thi.ng.data.byteutils
+*** TODO refactor to be CLJS compatible
+*** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/data/byteutils.cljx
+  (ns thi.ng.data.byteutils)
+#+END_SRC
+*** Conversion functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/data/byteutils.cljx
+  (defn int->byte [x] (if (> x 0x7f) (- x 0x100) x))
+
+  (defn byte->int [x] (if (neg? x) (+ x 0x100) x))
+#+END_SRC
+*** Write functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/data/byteutils.cljx
+  (defn write-str-bytes
+    [out x]
+    (.write out (.getBytes x))
+    out)
+
+  (defn write-int16-le
+    [out x]
+    (.write
+     out
+     (byte-array
+      [(unchecked-byte (bit-and x 0xff))
+       (unchecked-byte (bit-and (bit-shift-right x 8) 0xff))]))
+    out)
+
+  (defn write-int32-le
+    [out x]
+    (.write
+     out
+     (byte-array
+      [(unchecked-byte (bit-and x 0xff))
+       (unchecked-byte (bit-and (bit-shift-right x 8) 0xff))
+       (unchecked-byte (bit-and (bit-shift-right x 16) 0xff))
+       (unchecked-byte (bit-shift-right x 24))]))
+    out)
+
+  (defn write-float-le
+    [out x]
+    (write-int32-le out (Float/floatToRawIntBits x)))
+
+  (defn write-vec3-le
+    [out [x y z]]
+    (write-float-le out x)
+    (write-float-le out y)
+    (write-float-le out z))
+#+END_SRC
+*** Read functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/data/byteutils.cljx
+  (defn read-int16-le
+    [in]
+    (let [buf (byte-array 2)]
+      (.read in buf 0 2)
+      (bit-or (byte->int (aget buf 0)) (bit-shift-left (byte->int (aget buf 1)) 8))))
+
+  (defn read-int32-le
+    [in]
+    (let [buf (byte-array 4)]
+      (.read in buf 0 4)
+      (bit-or
+       (byte->int (aget buf 0))
+       (bit-shift-left (byte->int (aget buf 1)) 8)
+       (bit-shift-left (byte->int (aget buf 2)) 16)
+       (bit-shift-left (byte->int (aget buf 3)) 24))))
+
+  (defn read-float-le
+    [in]
+    (Float/intBitsToFloat (unchecked-int (read-int32-le in))))
+
+  (defn read-vec3-le
+    [in]
+    [(read-float-le in) (read-float-le in) (read-float-le in)])
+#+END_SRC
