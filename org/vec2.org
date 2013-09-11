@@ -1,0 +1,176 @@
+* Vector deftype experiments
+
+** Helper macros
+*** Namespace declarations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/macros.cljx
+  (ns thi.ng.geom.macros)
+#+END_SRC
+*** Impl
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/macros.cljx
+  (defmacro lookup-swizzle2
+    [this k]
+    `(case ~k
+       0 (.x ~this) :x (.x ~this)
+       1 (.y ~this) :y (.y ~this)
+       :xx (Vec2. (.x ~this) (.x ~this) (.m ~this))
+       :yy (Vec2. (.y ~this) (.y ~this) (.m ~this))
+       :yx (Vec2. (.y ~this) (.x ~this) (.m ~this))
+       :xy ~this))
+#+END_SRC
+
+** Defs
+*** Namespace declarations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/vec2.cljx
+  (ns thi.ng.geom.vec2
+    #+clj (:use [thi.ng.geom.macros])
+    #+cljs (:use-macros [thi.ng.geom.macros]))
+#+END_SRC
+*** Clojure implementation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/vec2.cljx
+  ,#+clj
+  (deftype Vec2 [^double x ^double y m]
+    clojure.lang.IObj
+    (meta [_] m)
+    (withMeta [_ m*] (Vec2. x y m*))
+
+    clojure.lang.ILookup
+    (valAt [this k] (lookup-swizzle2 this k))
+    (valAt [_ k nf] (condp = (int k) 0 x 1 y nf))
+
+    clojure.lang.IFn
+    (invoke [this k] (lookup-swizzle2 this k))
+
+    clojure.lang.Associative
+    clojure.lang.IPersistentVector
+    (count [_] 2)
+    (length [_] 2)
+    (containsKey [_ k] (not (nil? (#{0 1 :x :y} k))))
+    (entryAt [_ k])
+    (assoc [_ k v]
+      (case k
+        0 (Vec2. v y m)
+        1 (Vec2. x v m)
+        :x (Vec2. v y m)
+        :y (Vec2. x v m)))
+    (assocN [_ k v]
+      (case k
+        0 (Vec2. v y m)
+        1 (Vec2. x v m)))
+
+    java.util.Collection
+    (isEmpty [_] false)
+    (iterator [_]
+      (let [^java.util.Collection l (list x y)]
+        (.iterator l)))
+    (toArray [_]
+      (let [a (object-array 2)] (aset a 0 x) (aset a 1 y) a))
+    (size [_] 2)
+
+    clojure.lang.IPersistentCollection
+    clojure.lang.Indexed
+    clojure.lang.Sequential
+    clojure.lang.ISeq
+    clojure.lang.Seqable
+
+    (first [_] x)
+    (next [_] (cons y nil))
+    (more [_] (cons y nil))
+    (cons [_ _] (throw (UnsupportedOperationException.)))
+    (peek [_] y)
+    (pop [_] (throw (UnsupportedOperationException.)))
+    (rseq [_] (Vec2. y x m))
+    (seq [this] this)
+    (nth [_ k] (case (int k) 0 x 1 y))
+    (nth [_ k nf] (case (int k) 0 x 1 y nf))
+
+    (equiv [this o]
+      (if (instance? Vec2 o)
+        (and (clojure.lang.Util/equiv x (.x ^Vec2 o)) (clojure.lang.Util/equiv y (.y ^Vec2 o)))
+        (and (= 2 (count o)) (clojure.lang.Util/equiv o this))))
+    (equals [this o]
+      (if (instance? Vec2 o)
+        (and (clojure.lang.Util/equals x (.x ^Vec2 o)) (clojure.lang.Util/equals y (.y ^Vec2 o)))
+        (and (= 2 (count o)) (clojure.lang.Util/equals o this))))
+
+    Comparable
+    (compareTo [this o]
+      (if (instance? Vec2 o)
+        (let [c (compare x (.x o))]
+          (if (== 0 c) (compare y (.y o)) c))
+        (let [c (count o)]
+          (if (== 2 c) (compare o this) (- 2 c)))))
+    (hashCode [_]
+      (unchecked-int (+ (clojure.lang.Util/hash x) (clojure.lang.Util/hash y))))
+
+    (toString [_] (str "[" x " " y "]"))
+    )
+#+END_SRC
+
+*** ClojureScript implementation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/vec2.cljx
+  (defn lookup-swizzle2
+    [this k]
+    (case k
+       0 (.-x this) :x (.-x this)
+       1 (.-y this) :y (.-y this)
+       :xx (Vec2. (.-x this) (.-x this) (.-m this))
+       :yy (Vec2. (.-y this) (.-y this) (.-m this))
+       :yx (Vec2. (.-y this) (.-x this) (.-m this))
+       :xy this))
+
+  ,#+cljs
+  (deftype Vec2 [x y m]
+    IMeta
+    (-meta [_] m)
+    IWithMeta
+    (-with-meta [_ m*] (Vec2. x y m*))
+
+    ILookup
+    (-lookup [this k] (lookup-swizzle2 this k))
+    (-lookup [_ k nf] (condp = (int k) 0 x 1 y nf))
+
+    IFn
+    (-invoke [this k] (lookup-swizzle2 this k))
+
+    ICounted
+    (-count [this] 2)
+
+    IAssociative
+    IVector
+    (-contains-key? [this k]
+      (not (nil? (#{0 1 :x :y} k))))
+    (-assoc [this k v]
+      (case k
+          0 (Vec2. v y m)
+          1 (Vec2. x v m)
+          :x (Vec2. v y m)
+          :y (Vec2. x v m)))
+    (-assoc-n [this k v]
+      (case k
+          0 (Vec2. v y m)
+          1 (Vec2. x v m)))
+
+    ISeq
+    (-first [this] x)
+    (-rest [this] (cons y nil))
+    ISeqable
+    IReversible
+    (-seq [this] (cons x (cons y nil)))
+    (-rseq [this] (cons y (cons x nil)))
+
+    IIndexed
+    (-nth [this n] (case n 0 x 1 y))
+    (-nth [this n nf] (case n 0 x 1 y nf))
+
+    IComparable
+    (-compare [this o]
+      (let [c (compare x (.-x o))]
+        (if (== 0 c) (compare y (.-y o)) c)))
+    )
+#+END_SRC
+
+*** Constructor
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/vec2.cljx
+  (defn vec2
+    [x y] (Vec2. x y nil))
+#+END_SRC
