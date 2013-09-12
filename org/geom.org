@@ -455,6 +455,27 @@
   (defn invert3 [[x y z]] [(- x) (- y) (- z)])
   (defn invert4 [[x y z w]] [(- x) (- y) (- z) (- w)])
 #+END_SRC
+****** Cross product & dot product
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn cross2
+    [[px py] [qx qy]] (- (* px qy) (* py qx)))
+
+  (defn cross3
+    [[px py pz] [qx qy qz]]
+    [(- (* py qz) (* qy pz)) (- (* pz qx) (* qz px)) (- (* px qy) (* qx py))])
+
+  (defn dot2
+    ([[px py] [qx qy]] (+ (* px qx) (* py qy)))
+    ([px py qx qy] (+ (* px qx) (* py qy))))
+
+  (defn dot3
+    ([[px py pz] [qx qy qz]] (+ (+ (* px qx) (* py qy)) (* pz qz)))
+    ([px py pz qx qy qz] (+ (+ (* px qx) (* py qy)) (* pz qz))))
+
+  (defn dot4
+    ([[px py pz pw] [qx qy qz qw]] (+ (+ (+ (* px qx) (* py qy)) (* pz qz)) (* pw qw)))
+    ([px py pz pw qx qy qz qw] (+ (+ (+ (* px qx) (* py qy)) (* pz qz)) (* pw qw))))
+#+END_SRC
 ****** Magnitude & distance calculations
       All of the following operations can operate both on arguments
       given as vector or individual vector coordinates.
@@ -540,6 +561,10 @@
        (let [m (mag4 p)]
          (if (pos? m) (let [m (/ n m)] [(* x m) (* y m) (* z m) (* w m)]) p))))
 
+  (defn normal3
+    ([a b c] (normalize3 (cross3 (sub3 b a) (sub3 c a))))
+    ([[a b c]] (normalize3 (cross3 (sub3 b a) (sub3 c a)))))
+
   (defn limit2
     [v len]
     (if (> (mag2-squared v) (* len len)) (normalize2 v len) v))
@@ -560,27 +585,6 @@
 
   (def min4 (vecop4 min))
   (def max4 (vecop4 max))
-#+END_SRC
-****** Cross product & dot product
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
-  (defn cross2
-    [[px py] [qx qy]] (- (* px qy) (* py qx)))
-
-  (defn cross3
-    [[px py pz] [qx qy qz]]
-    [(- (* py qz) (* qy pz)) (- (* pz qx) (* qz px)) (- (* px qy) (* qx py))])
-
-  (defn dot2
-    ([[px py] [qx qy]] (+ (* px qx) (* py qy)))
-    ([px py qx qy] (+ (* px qx) (* py qy))))
-
-  (defn dot3
-    ([[px py pz] [qx qy qz]] (+ (+ (* px qx) (* py qy)) (* pz qz)))
-    ([px py pz qx qy qz] (+ (+ (* px qx) (* py qy)) (* pz qz))))
-
-  (defn dot4
-    ([[px py pz pw] [qx qy qz qw]] (+ (+ (+ (* px qx) (* py qy)) (* pz qz)) (* pw qw)))
-    ([px py pz pw qx qy qz qw] (+ (+ (+ (* px qx) (* py qy)) (* pz qz)) (* pw qw))))
 #+END_SRC
 
 ****** Interpolation
@@ -793,3 +797,9 @@
 #+INCLUDE: "delaunay.org" :minlevel 4
 ** Geometry IO
 #+INCLUDE: "meshio.org" :minlevel 4
+
+
+** Tuples
+#+BEGIN_SRC clojure
+
+#+END_SRC
