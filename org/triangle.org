@@ -36,41 +36,51 @@
 #+END_SRC
 *** Shared 2d/3d functions
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  (defn area2
-    ([a b c] (* 0.5 (g/cross2 (g/sub2 b a) (g/sub2 c a))))
-    ([[a b c]] (* 0.5 (g/cross2 (g/sub2 b a) (g/sub2 c a)))))
+  (defn area*
+    [sub cross]
+    (fn
+      ([a b c] (* 0.5 (cross (sub b a) (sub c a))))
+      ([[a b c]] (* 0.5 (cross (sub b a) (sub c a))))))
 
-  (defn area3
-    ([a b c] (* 0.5 (g/mag3 (g/cross3 (g/sub3 b a) (g/sub3 c a)))))
-    ([[a b c]] (* 0.5 (g/mag3 (g/cross3 (g/sub3 b a) (g/sub3 c a))))))
+  (def area2 (area* g/sub2 g/cross2))
+  (def area3 (area* g/sub3 g/cross3))
 
   (defn centroid*
-    ([add scale a b c] (scale (add a b c) THIRD))
-    ([add scale [a b c]] (scale (add a b c) THIRD)))
+    [add scale]
+    (fn
+      ([a b c] (scale (add a b c) THIRD))
+      ([[a b c]] (scale (add a b c) THIRD))))
 
-  (defn normal3*
-    ([a b c] (g/normalize3 (g/cross3 (g/sub3 b a) (g/sub3 c a))))
-    ([[a b c]] (g/normalize3 (g/cross3 (g/sub3 b a) (g/sub3 c a)))))
+  (def centroid2 (centroid* g/add2 g/scale2))
+  (def centroid3 (centroid* g/add3 g/scale3))
 
   (defn barycentric*
-    [sub dot mag a b c p]
-    (let [e0 (sub c a)
-          e1 (sub b a)
-          e2 (sub p a)
-          d00 (mag e0)
-          d01 (dot e0 e1)
-          d02 (dot e0 e2)
-          d11 (mag e1)
-          d12 (dot e1 e2)
-          denom (/ 1.0 (- (* d00 d11) (* d01 d01)))
-          u (* denom (- (* d11 d02) (* d01 d12)))
-          v (* denom (- (* d00 d12) (* d01 d02)))]
-      [(- 1.0 (+ u v)) v u]))
+    [sub dot mag]
+    (fn [a b c p]
+      (let [e0 (sub c a)
+            e1 (sub b a)
+            e2 (sub p a)
+            d00 (mag e0)
+            d01 (dot e0 e1)
+            d02 (dot e0 e2)
+            d11 (mag e1)
+            d12 (dot e1 e2)
+            denom (/ 1.0 (- (* d00 d11) (* d01 d01)))
+            u (* denom (- (* d11 d02) (* d01 d12)))
+            v (* denom (- (* d00 d12) (* d01 d02)))]
+        [(- 1.0 (+ u v)) v u])))
+
+  (def barycentric2 (barycentric* g/sub2 g/dot2 g/mag2-squared))
+  (def barycentric3 (barycentric* g/sub3 g/dot3 g/mag3-squared))
 
   (defn contains-point*
-    [sub dot mag a b c p]
-    (let [[u v w] (barycentric* sub dot mag a b c p)]
-      (and (>= u 0.0) (>= v 0.0) (<= w 1.0))))
+    [barycentric]
+    (fn [a b c p]
+      (let [[u v w] (barycentric a b c p)]
+        (and (>= u 0.0) (>= v 0.0) (<= w 1.0)))))
+
+  (def contains-point2 (contains-point* barycentric2))
+  (def contains-point3 (contains-point* barycentric3))
 
   (defn check-edge
     [splits classifier e p q add-p? add-q?]
@@ -142,7 +152,7 @@
             (thi.ng.geom.types.Triangle2.
              (g/add2 (:a t) ct) (g/add2 (:b t) ct) (g/add2 (:c t) ct)))))
   (centroid
-   [t] (centroid* g/add2 g/scale2 (:a t) (:b t) (:c t)))
+   [t] (centroid2 (:a t) (:b t) (:c t)))
   (width
    [this] (g/axis-range* 0 [(:a this) (:b this) (:c this)]))
   (height
@@ -168,7 +178,8 @@
    [this p]
    (g/closest-point* g/dist2-squared (g/edges this) p))
   (contains-point?
-   [{a :a b :b c :c} p] (contains-point* g/sub2 g/dot2 g/mag2-squared a b c p))
+   [this p]
+   (contains-point2 (:a this) (:b this) (:c this) p))
 #+END_SRC
 ***** ISampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -245,7 +256,7 @@
         (thi.ng.geom.types.Triangle3.
          (g/add3 (:a t) ct) (g/add3 (:b t) ct) (g/add3 (:c t) ct)))))
   (centroid
-   [t] (centroid* g/add3 g/scale3 (:a t) (:b t) (:c t)))
+   [t] (centroid3 (:a t) (:b t) (:c t)))
   (width
    [this] (g/axis-range* 0 [(:a this) (:b this) (:c this)]))
   (height
@@ -267,8 +278,7 @@
   (closest-point [this p] nil) ; TODO
   (contains-point?
    [this p]
-   (contains-point*
-    g/sub3 g/dot3 g/mag3-squared (:a this) (:b this) (:c this) p))
+   (contains-point3 (:a this) (:b this) (:c this) p))
 #+END_SRC
 ***** ISampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -291,13 +301,13 @@
   g/IIntersectable
   (intersect-ray
    [{:keys [a b c]} {p :p dir :dir}]
-    (let [n (normal3* a b c)
+    (let [n (g/normal3 a b c)
           nd (g/dot3 n dir)]
       (if (neg? nd)
         (let [t (/ (- (g/dot3 n (g/sub3 p a))) nd)]
           (if (>= t *eps*)
             (let [ip (g/add3 p (g/scale3 dir t))]
-              (if (contains-point* g/sub3 g/dot3 g/mag3-squared a b c ip)
+              (if (contains-point3 a b c ip)
                 {:p ip :n n :dist t :dir (g/normalize3 (g/sub3 ip p))})))))))
 #+END_SRC
 ***** ISliceable
@@ -347,20 +357,18 @@
          (thi.ng.geom.types.Circle. o r))))
 #+END_SRC
 **** Subdivision & slicing
-***** TODO use centroid* instead of g/centroid in subdivide*
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  (defn- subdivide*
-    [fctor fmid {:keys [a b c] :as t}]
-    (let [ab (fmid a b)
-          bc (fmid b c)
-          ca (fmid c a)
-          ct (g/centroid t)]
-      [(fctor a ab ca) (fctor bc ab b)
-       (fctor c ca bc) (fctor ca ab bc)]))
+  (defn subdivide*
+    [ctor centroid mid]
+    (fn
+      [{:keys [a b c] :as t}]
+      (let [ab (mid a b)
+            bc (mid b c)
+            ca (mid c a)
+            ct (centroid t)]
+        [(ctor a ab ca) (ctor bc ab b)
+         (ctor c ca bc) (ctor ca ab bc)])))
 
-  (defn subdiv2
-    [tri] (subdivide* (fn [a b c] (thi.ng.geom.types.Triangle2. a b c)) g/mid2 tri))
-
-  (defn subdiv3
-    [tri] (subdivide* (fn [a b c] (thi.ng.geom.types.Triangle3. a b c)) g/mid3 tri))
+  (def subdiv2 (subdivide* (fn [a b c] (thi.ng.geom.types.Triangle2. a b c)) centroid2 g/mid2))
+  (def subdiv3 (subdivide* (fn [a b c] (thi.ng.geom.types.Triangle3. a b c)) centroid3 g/mid3))
 #+END_SRC
