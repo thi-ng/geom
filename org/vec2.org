@@ -41,7 +41,7 @@
   (declare key-error swizzle2 swizzle3)
 
   #+clj
-  (defn map-entry [k v]
+  (defn map-entry [k ^double v]
     (reify
       clojure.lang.IMapEntry
       java.util.Map$Entry
@@ -156,8 +156,8 @@
       ,#+clj Comparable
       ,#+clj (compareTo [this o]
               (if (instance? Vec2 o)
-                (let [c (compare x (.-x o))]
-                  (if (== 0 c) (compare y (.-y o)) c))
+                (let [c (compare x (.-x ^Vec2 o))]
+                  (if (== 0 c) (compare y (.-y ^Vec2 o)) c))
                 (let [c (count o)]
                   (if (== 2 c) (compare o this) (- 2 c)))))
       ,#+clj (hashCode [_]
@@ -165,8 +165,8 @@
 
       ,#+cljs IComparable
       ,#+cljs (-compare [this o]
-               (let [c (compare x (.-x o))]
-                 (if (== 0 c) (compare y (.-y o)) c)))
+               (let [c (compare x (.-x ^Vec2 o))]
+                 (if (== 0 c) (compare y (.-y ^Vec2 o)) c)))
 
       ,#+cljs IHash
       ,#+cljs (-hash [_] (hash-combine (hash x) (hash y)))
@@ -179,7 +179,7 @@
         (Vec2. (m/abs x) (m/abs y) _meta))
       (add [this a]
         (if (instance? Vec2 a)
-          (Vec2. (+ x (.-x a)) (+ y (.-y a)) _meta)
+          (Vec2. (+ x (.-x ^Vec2 a)) (+ y (.-y ^Vec2 a)) _meta)
           (Vec2. (+ x (nth a 0 0)) (+ y (nth a 1 0)) _meta)))
       (add [this a b]
         (if (number? a)
@@ -191,7 +191,7 @@
 
       (sub [this a]
         (if (instance? Vec2 a)
-          (Vec2. (- x (.-x a)) (- y (.-y a)) _meta)
+          (Vec2. (- x (.-x ^Vec2 a)) (- y (.-y ^Vec2 a)) _meta)
           (Vec2. (- x (nth a 0 0)) (- y (nth a 1 0)) _meta)))
       (sub [this a b]
         (if (number? a)
@@ -203,7 +203,7 @@
 
       (scale [this a]
         (if (instance? Vec2 a)
-          (Vec2. (* x (.-x a)) (* y (.-y a)) _meta)
+          (Vec2. (* x (.-x ^Vec2 a)) (* y (.-y ^Vec2 a)) _meta)
           (Vec2. (* x (nth a 0 1)) (* y (nth a 1 1)) _meta)))
       (scale [this a b]
         (if (number? a)
@@ -368,11 +368,11 @@
       ,#+clj Comparable
       ,#+clj (compareTo [this o]
               (if (instance? Vec3 o)
-                (let [c (compare x (.-x o))]
+                (let [c (compare x (.-x ^Vec3 o))]
                   (if (== 0 c)
-                    (let [c (compare y (.-y o))]
+                    (let [c (compare y (.-y ^Vec3 o))]
                       (if (== 0 c)
-                        (compare z (.-z o))
+                        (compare z (.-z ^Vec3 o))
                         c))
                     c))
                 (let [c (count o)]
@@ -385,10 +385,10 @@
                (clojure.lang.Util/hash z)))
       ,#+cljs IComparable
       ,#+cljs (-compare [this o]
-               (let [c (compare x (.-x o))]
+               (let [c (compare x (.-x ^Vec3 o))]
                  (if (== 0 c)
-                   (let [c (compare y (.-y o))]
-                     (if (== 0 c) (compare z (.-z o)) c))
+                   (let [c (compare y (.-y ^Vec3 o))]
+                     (if (== 0 c) (compare z (.-z ^Vec3 o)) c))
                    c)))
       ,#+cljs IHash
       ,#+cljs (-hash [_]
@@ -404,7 +404,7 @@
       PVector
       (add [this a]
         (if (instance? Vec3 a)
-          (Vec3. (+ x (.-x a)) (+ y (.-y a)) (+ z (.-z a)) _meta)
+          (Vec3. (+ x (.-x ^Vec3 a)) (+ y (.-y ^Vec3 a)) (+ z (.-z ^Vec3 a)) _meta)
           (Vec3. (+ x (nth a 0 0)) (+ y (nth a 1 0)) (+ z (nth a 2 0)) _meta)))
       (add [this a b]
         (if (number? a)
@@ -420,7 +420,7 @@
 
       (sub [this a]
         (if (instance? Vec3 a)
-          (Vec3. (- x (.-x a)) (- y (.-y a)) (- z (.-z a)) _meta)
+          (Vec3. (- x (.-x ^Vec3 a)) (- y (.-y ^Vec3 a)) (- z (.-z ^Vec3 a)) _meta)
           (Vec3. (- x (nth a 0 0)) (- y (nth a 1 0)) (- z (nth a 2 0)) _meta)))
       (sub [this a b]
         (if (number? a)
@@ -436,7 +436,7 @@
 
       (scale [this a]
         (if (instance? Vec3 a)
-          (Vec3. (* x (.-x a)) (* y (.-y a)) (* z (.-z a)) _meta)
+          (Vec3. (* x (.-x ^Vec3 a)) (* y (.-y ^Vec3 a)) (* z (.-z ^Vec3 a)) _meta)
           (Vec3. (* x (nth a 0 1)) (* y (nth a 1 1)) (* z (nth a 2 1)) _meta)))
       (scale [this a b]
         (if (number? a)
