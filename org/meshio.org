@@ -19,7 +19,7 @@
     (.write stream (byte-array 80))
     (b/write-int32-le stream (count faces))
     (doseq [[a b c :as f] faces]
-      (b/write-vec3-le stream (or (get fnormals f) (t/normal3* f)))
+      (b/write-vec3-le stream (or (get fnormals f) (g/normal3 f)))
       (b/write-vec3-le stream a)
       (b/write-vec3-le stream b)
       (b/write-vec3-le stream c)
@@ -106,19 +106,20 @@
         (b/write-str-bytes stream (format fmt-vnormal (double x) (double y) (double z))))
       (b/write-str-bytes stream "g\n")
       (doseq [[a b c] faces]
-        (b/write-str-bytes stream
-                           (if has-vnormals?
-                             (format fmt-face
-                                     (inc (get vindex a))
-                                     (inc (get nindex (get vnormals a)))
-                                     (inc (get vindex b))
-                                     (inc (get nindex (get vnormals b)))
-                                     (inc (get vindex c))
-                                     (inc (get nindex (get vnormals c))))
-                             (format fmt-face
-                                     (inc (get vindex a))
-                                     (inc (get vindex b))
-                                     (inc (get vindex c))))))
+        (b/write-str-bytes
+         stream
+         (if has-vnormals?
+           (format fmt-face
+                   (inc (get vindex a))
+                   (inc (get nindex (get vnormals a)))
+                   (inc (get vindex b))
+                   (inc (get nindex (get vnormals b)))
+                   (inc (get vindex c))
+                   (inc (get nindex (get vnormals c))))
+           (format fmt-face
+                   (inc (get vindex a))
+                   (inc (get vindex b))
+                   (inc (get vindex c))))))
       stream))
 #+END_SRC
 ** OFF
@@ -135,6 +136,7 @@
       (doseq [[x y z] vertices]
         (b/write-str-bytes stream (format fmt-vertex (double x) (double y) (double z))))
       (doseq [[a b c] faces]
-        (b/write-str-bytes stream
-                           (format fmt-face (get vindex a) (get vindex b) (get vindex c))))))
+        (b/write-str-bytes
+         stream
+         (format fmt-face (get vindex a) (get vindex b) (get vindex c))))))
 #+END_SRC

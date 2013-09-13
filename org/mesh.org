@@ -156,11 +156,18 @@
           (g/add-face [c a p]))))
 
   (defn subdivide*
-    [mesh {:keys [add scale mix]} {:keys [vertex displace splits] flt :filter}]
-    (let [vertex (or vertex #(t/centroid* add scale %))]
+    [centroid mix]
+    (fn
+      [mesh {:keys [vertex displace filter splits] :or {vertex centroid}}]
       (reduce
        (fn [mesh f] (subdivide-face* mesh mix f (vertex f) displace splits))
-       mesh (if flt (filter flt (:faces mesh)) (:faces mesh)))))
+       mesh
+       (if filter
+         (clojure.core/filter filter (:faces mesh))
+         (:faces mesh)))))
+
+  (def subdivide2 (subdivide* t/centroid2 g/mix2))
+  (def subdivide3 (subdivide* t/centroid3 g/mix3))
 
   (defn slice-with*
     [mesh e classifier faces]

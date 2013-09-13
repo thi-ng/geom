@@ -26,8 +26,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   (extend-type thi.ng.geom.types.Sphere
 #+END_SRC
-*** IGraph
-**** TODO implement
+*** TODO IGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
 
 #+END_SRC
@@ -68,8 +67,7 @@
    [this]
    (g/add3 (:p this) (g/randvec3 (:r this))))
 #+END_SRC
-*** IMeshable
-**** TODO implement
+*** TODO IMeshable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   g/IMeshable
   (as-mesh
@@ -80,3 +78,29 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   )
 #+END_SRC
+
+
+* COMMENT DITAA
+#+header: :exports results
+#+BEGIN_SRC ditaa :file assets/hello-world.png :cmdline -r
++---------------------+
+|Amazing stuff!       |
+|cFF0                 |
+|         +-----------+        +------------------------+
+|         |cF60       |        |cF0F                    |
+|         |           |        | o in pink is nice too  |
+|         |           |        |                        +<-----------+
+|         |           |        |                        |            |
+|         |           |        |                        |            |
++---------+-----+-----+        +------+-----------------+            |
+                |                     |                              |
+                v                     v                              |
+          +-----+---------------------+---+                          |
+          |c0FF                           |                          |
+          | o more bullets                +--------------------------+
+          | o even more                   |
+          +-------------------------------+
+#+END_SRC
+
+#+RESULTS:
+file:assets/hello-world.png

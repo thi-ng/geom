@@ -74,7 +74,7 @@
                        fbounds (reduce assoc-bounds fbounds nf)]
                    [m fbounds]))
                [m fbounds] (g/edges poly))]
-      (keep-faces m #(g/contains-point? poly (t/centroid* g/add2 g/scale2 %)))))
+      (keep-faces m #(g/contains-point? poly (t/centroid2 %)))))
 
   (defn randompoly
     [n r]
