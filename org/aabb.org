@@ -30,9 +30,9 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
   (extend-type thi.ng.geom.types.AABB
 #+END_SRC
-*** IGraph
+*** PGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
-  g/IGraph
+  g/PGraph
   (vertices
    [{a :p size :size}]
    (let [[x1 y1 z1] a
@@ -51,10 +51,10 @@
                   ]]
        (thi.ng.geom.types.Line3. p q))))
 #+END_SRC
-*** IBoundary
+*** PBoundary
 **** TODO implement closest-point
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
-  g/IBoundary
+  g/PBoundary
   (classify-point
    [{p :p size :size} [x y z :as q]]
    (let [[x1 y1 z1] p
@@ -81,10 +81,10 @@
           (m/in-range? y1 y2 qy)
           (m/in-range? z1 z2 qz))))
 #+END_SRC
-*** ISampleable
+*** PSampleable
 **** TODO implement point-at
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
-  g/ISampleable
+  g/PSampleable
   (random-point-inside
    [{p :p size :size}]
    (let [[x1 y1 z1] p
@@ -100,9 +100,9 @@
       (< id 4) (g/vec3 (m/random x1 x2) (if (= 2 id) y1 y2) (m/random z1 z2))
       :default (g/vec3 (m/random x1 x2) (m/random y1 y2) (if (= 4 id) z1 z2)))))
 #+END_SRC
-*** IShape
+*** PShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
-  g/IShape
+  g/PShape
   (area
    [{[w h d] :size}] (* 2 (+ (* w h) (* d h) (* w d))))
   (bounds [this] this)
@@ -119,9 +119,9 @@
   (height [{size :size}] (size 1))
   (depth [{size :size}] (size 2))
 #+END_SRC
-*** IShape3
+*** PShape3
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
-  g/IShape3
+  g/PShape3
   (bounding-sphere
    [{p :p size :size}]
    (let [e (g/scale3 size 0.5)]
@@ -129,9 +129,9 @@
   (volume
    [{[w h d] :size}] (* (* w h) d))
 #+END_SRC
-*** IIntersectable
+*** PIntersectable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
-  g/IIntersectable
+  g/PIntersectable
   (intersects-shape?
    [{pa :p sa :size} s]
    (cond
@@ -143,9 +143,9 @@
        [0 1 2]))
     :default (g/type-error "AABB" s)))
 #+END_SRC
-*** IMeshable
+*** PMeshable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
-  g/IMeshable
+  g/PMeshable
   (as-mesh
    [this]
    (let [[a b c d e f g h] (g/vertices this)]

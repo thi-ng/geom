@@ -128,18 +128,18 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   (extend-type thi.ng.geom.types.Triangle2
 #+END_SRC
-***** IGraph
+***** PGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/IGraph
+  g/PGraph
   (vertices
    [this] [(:a this) (:b this) (:c this)])
   (edges
    [{a :a b :b c :c}]
    [(thi.ng.geom.types.Line2. a b) (thi.ng.geom.types.Line2. b c) (thi.ng.geom.types.Line2. c a)])
 #+END_SRC
-***** IShape
+***** PShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/IShape
+  g/PShape
   (area
    [t] (area2 t))
   (bounds
@@ -159,17 +159,17 @@
    [this] (g/axis-range* 1 [(:a this) (:b this) (:c this)]))
   (depth [this] 0)
 #+END_SRC
-***** IShape2
+***** PShape2
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/IShape2
+  g/PShape2
   (bounding-circle
    [t] (g/bounding-circle* (g/centroid t) [(:a t) (:b t) (:c t)]))
   (circumference
    [{a :a b :b c :c}] (+ (+ (g/dist2 a b) (g/dist2 b c)) (g/dist2 c a)))
 #+END_SRC
-***** IBoundary
+***** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/IBoundary
+  g/PBoundary
   ;; TODO add clockwise? check, currently assumes clockwise ordering
   (classify-point
    [this p]
@@ -181,9 +181,9 @@
    [this p]
    (contains-point2 (:a this) (:b this) (:c this) p))
 #+END_SRC
-***** ISampleable
+***** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/ISampleable
+  g/PSampleable
   (point-at [this t] nil) ; TODO
   (random-point
    [this] (g/point-at this (m/random)))
@@ -196,15 +196,15 @@
       g/vec2 g/scale2 g/add2
       [(:a t) (:b t) (:c t)] (shuffle [b1 b2 b3]))))
 #+END_SRC
-***** IPolygonizable
+***** PPolygonizable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/IPolygonizable
+  g/PPolygonizable
   (as-polygon
    [t] (thi.ng.geom.types.Polygon. [(:a t) (:b t) (:c t)] []))
 #+END_SRC
-***** ISliceable
+***** PSliceable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/ISliceable
+  g/PSliceable
   (slice-with
    ([this e]
       (slice-with* (:a this) (:b this) (:c this) e g/classify-point))
@@ -219,9 +219,9 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   (extend-type thi.ng.geom.types.Triangle3
 #+END_SRC
-***** IGraph
+***** PGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/IGraph
+  g/PGraph
   (vertices
    [this] [(:a this) (:b this) (:c this)])
   (edges
@@ -239,9 +239,9 @@
   (vertex-valence
    [{a :a b :b c :c} v] (if (#{a b c} v) 2 0))
 #+END_SRC
-***** IShape
+***** PShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/IShape
+  g/PShape
   (area
    [t] (area3 t))
   (bounds
@@ -264,25 +264,25 @@
   (depth
    [this] (g/axis-range* 2 [(:a this) (:b this) (:c this)]))
 #+END_SRC
-***** IShape3
+***** PShape3
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/IShape3
+  g/PShape3
   (bounding-sphere
    [t] (g/bounding-sphere* (g/centroid t) [(:a t) (:b t) (:c t)]))
   (volume [this] 0.0)
 #+END_SRC
-***** IBoundary
+***** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/IBoundary
+  g/PBoundary
   (classify-point [this p] nil) ; TODO
   (closest-point [this p] nil) ; TODO
   (contains-point?
    [this p]
    (contains-point3 (:a this) (:b this) (:c this) p))
 #+END_SRC
-***** ISampleable
+***** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/ISampleable
+  g/PSampleable
   (point-at [this t] nil) ; TODO
   (random-point
    [this] (g/point-at this (m/random)))
@@ -295,10 +295,10 @@
       g/vec3 g/scale3 g/add3
       [(:a t) (:b t) (:c t)] (shuffle [b1 b2 b3]))))
 #+END_SRC
-***** IIntersectable
+***** PIntersectable
 ****** TODO update ray definition or protocol?
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/IIntersectable
+  g/PIntersectable
   (intersect-ray
    [{:keys [a b c]} {p :p dir :dir}]
     (let [n (g/normal3 a b c)
@@ -310,9 +310,9 @@
               (if (contains-point3 a b c ip)
                 {:p ip :n n :dist t :dir (g/normalize3 (g/sub3 ip p))})))))))
 #+END_SRC
-***** ISliceable
+***** PSliceable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/ISliceable
+  g/PSliceable
   (slice-with
    ([this e]
       (slice-with* (:a this) (:b this) (:c this) e g/classify-point))

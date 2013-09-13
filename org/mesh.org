@@ -214,9 +214,9 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   (extend-type thi.ng.geom.types.Mesh2
 #+END_SRC
-**** IGraph
+**** PGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
-  g/IGraph
+  g/PGraph
   (edges
    [this] (keys (:edges this)))
   (vertices
@@ -226,10 +226,10 @@
   (vertex-valence
    [this v] (vertex-valence* this v))
 #+END_SRC
-**** IShape
+**** PShape
 ***** TODO implement center
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
-  g/IShape
+  g/PShape
   (area
    [this]
    (->> this
@@ -249,22 +249,22 @@
    [this] (g/axis-range* 1 (keys (:vertices this))))
   (depth [this] 0)
 #+END_SRC
-**** IShape2
+**** PShape2
 ***** TODO implement circumference, maybe use unify from ldk?
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
-  g/IShape2
+  g/PShape2
   (bounding-circle
    [this] (g/bounding-circle* (g/centroid this) (g/vertices this)))
   (circumference
    [this] 0)
 #+END_SRC
-**** TODO IBoundary
+**** TODO PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
 
 #+END_SRC
-**** IMesh
+**** PMesh
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
-  g/IMesh
+  g/PMesh
   (vertex-faces
    [this v] (vertex-faces* this v))
   (compute-face-normals
@@ -300,9 +300,9 @@
   (merge-vertices
    [this a b] (merge-vertices* this g/mid2 a b))
 #+END_SRC
-**** ISubdivideable
+**** PSubdivideable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
-  g/ISubdivideable
+  g/PSubdivideable
   (subdivide-edge
    [this a b splits] (subdivide-edge* this g/mix2 a b splits))
   (subdivide-face
@@ -312,9 +312,9 @@
    [this opts]
    (subdivide* this {:add g/add2 :scale g/scale2 :mix g/mix2} opts))
 #+END_SRC
-**** ISliceable
+**** PSliceable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
-  g/ISliceable
+  g/PSliceable
   (slice-with
    ([this e]
       (slice-with* this e g/classify-point (:faces this)))
@@ -331,9 +331,9 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   (extend-type thi.ng.geom.types.Mesh3
 #+END_SRC
-**** IGraph
+**** PGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
-  g/IGraph
+  g/PGraph
   (edges
    [this] (keys (:edges this)))
   (vertices
@@ -343,10 +343,10 @@
   (vertex-valence
    [this v] (vertex-valence* this v))
 #+END_SRC
-**** IShape
+**** PShape
 ***** TODO implement center
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
-  g/IShape
+  g/PShape
   (area
    [this]
    (->> this
@@ -367,22 +367,22 @@
   (depth
    [this] (g/axis-range* 2 (keys (:vertices this))))
 #+END_SRC
-**** IShape3
+**** PShape3
 ***** TODO implement volume
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
-  g/IShape3
+  g/PShape3
   (bounding-sphere
    [this] (g/bounding-sphere* (g/centroid this) (g/vertices this)))
   (volume
    [this] 0)
 #+END_SRC
-**** TODO IBoundary
+**** TODO PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
 
 #+END_SRC
-**** IMesh
+**** PMesh
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
-  g/IMesh
+  g/PMesh
   (vertex-faces
    [this v] (vertex-faces* this v))
   (compute-face-normals
@@ -444,9 +444,9 @@
   (merge-vertices
    [this a b] (merge-vertices* this g/mid3 a b))
 #+END_SRC
-**** ISubdivideable
+**** PSubdivideable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
-  g/ISubdivideable
+  g/PSubdivideable
   (subdivide-edge
    [this a b splits] (subdivide-edge* this g/mix3 a b splits))
   (subdivide-face
@@ -457,9 +457,9 @@
    (subdivide* this {:add g/add3 :scale g/scale3 :mix g/mix3} opts))
 #+END_SRC
 
-**** ISliceable
+**** PSliceable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
-  g/ISliceable
+  g/PSliceable
   (slice-with
    ([this e]
       (slice-with* this e g/classify-point (:faces this)))

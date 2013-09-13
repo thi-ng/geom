@@ -26,13 +26,13 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   (extend-type thi.ng.geom.types.Sphere
 #+END_SRC
-*** TODO IGraph
+*** TODO PGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
 
 #+END_SRC
-*** IShape
+*** PShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
-  g/IShape
+  g/PShape
   (area
    [{r :r}] (* 4.0 PI r r))
   (bounds
@@ -45,16 +45,16 @@
   (height [this] (* 2.0 (:r this)))
   (depth  [this] (* 2.0 (:r this)))
 #+END_SRC
-*** IShape3
+*** PShape3
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
-  g/IShape3
+  g/PShape3
   (bounding-sphere [this] this)
   (volume
    [{r :r}] (* (/ 4.0 3.0) PI r r r))
 #+END_SRC
-*** IBoundary
+*** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
-  g/IBoundary
+  g/PBoundary
   (contains-point?
    [{p :p r :r} q] (<= (g/dist3-squared p q) (* r r)))
   (classify-point
@@ -67,9 +67,9 @@
    [this]
    (g/add3 (:p this) (g/randvec3 (:r this))))
 #+END_SRC
-*** TODO IMeshable
+*** TODO PMeshable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
-  g/IMeshable
+  g/PMeshable
   (as-mesh
    ([this] (g/as-mesh this *resolution*))
    ([this res] nil))

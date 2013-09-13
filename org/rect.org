@@ -78,9 +78,9 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
   (extend-type thi.ng.geom.types.Rect
 #+END_SRC
-*** IGraph
+*** PGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/IGraph
+  g/PGraph
   (vertices
    [{[x y :as p] :p w :w h :h}]
    (let [r (+ x w) b (+ y h)] [p [r y] [r b] [x b]]))
@@ -94,9 +94,9 @@
   (vertex-valence
    [this v] (if ((set (g/vertices this)) v) 2 0))
 #+END_SRC
-*** IShape
+*** PShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/IShape
+  g/PShape
   (area
    [this] (* (:w this) (:h this)))
   (bounds[this] this)
@@ -113,9 +113,9 @@
   (height [this] (:h this))
   (depth  [this] 0)
 #+END_SRC
-*** IShape2
+*** PShape2
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/IShape2
+  g/PShape2
   (bounding-circle
    [this]
    (let [c (g/centroid this)]
@@ -123,9 +123,9 @@
   (circumference
    [this] (* 2 (+ (:w this) (:h this))))
 #+END_SRC
-*** IBoundary
+*** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/IBoundary
+  g/PBoundary
   (classify-point
    [this q]
    (reduce min (map #(g/classify-point % q) (g/edges this))))
@@ -136,22 +136,22 @@
    [{[px py] :p w :w h :h} [x y]]
    (and (m/in-range? 0.0 w (- x px)) (m/in-range? 0.0 h (- y py))))
 #+END_SRC
-*** ISampleable
+*** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/ISampleable
+  g/PSampleable
   (point-at [this t] nil) ; TODO
   (random-point
    [this] (g/point-at this (m/random)))
   (random-point-inside
    [this] (g/add2 (:p this) [(m/random (:w this)) (m/random (:h this))]))
 #+END_SRC
-*** IPolygonizable
+*** PPolygonizable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/IPolygonizable
+  g/PPolygonizable
   (as-polygon
    [this] (thi.ng.geom.types.Polygon. (g/vertices this) []))
 #+END_SRC
-*** ISubdivideable
+*** PSubdivideable
     A rectangle can be subdivided into smaller ones, i.e. to create a
     list of uniform grid cells. The following options can be given as
     a 2nd argument map:
@@ -169,7 +169,7 @@
     top-left to bottom-right ordering and inner sorting along X.
 
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/ISubdivideable
+  g/PSubdivideable
   (subdivide
    ([this] (g/subdivide this {}))
    ([this {:keys [num cols rows] :or {num 2}}]
@@ -185,22 +185,22 @@
                     py (m/roundto py *eps*)]]
           (thi.ng.geom.types.Rect. [px py] w h)))))
 #+END_SRC
-*** ITessellateable
+*** PTessellateable
     A rectangle can be tessellated into a number of triangles. When
     called without options map as 2nd argument, the rect will be split
     into 2 triangles, each in anti-clockwise orientation: =[tl br tr]=
     & =[tl bl br]=. When called *with* options, then these are used
-    for a call to [[ISubdivideable][=subdivide=]] first and the function returns a lazyseq
+    for a call to [[PSubdivideable][=subdivide=]] first and the function returns a lazyseq
     of triangles of the subdivided rects.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/ITessellateable
+  g/PTessellateable
   (tessellate
    ([this]
       (let [[a b c d] (g/vertices this)] [[a b c] [a c d]]))
    ([this opts]
       (mapcat g/tessellate (g/subdivide this opts))))
 #+END_SRC
-*** IExtrudeable
+*** PExtrudeable
     Extruding a rectangle along the Z-axis results in a 3D mesh
     implementation. The =extrude= function supports two options,
     given as parameter map:
@@ -213,7 +213,7 @@
     The process results is bevelled forms for =:scale= values other
     than 1.0.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/IExtrudeable
+  g/PExtrudeable
   (extrude
    [this {depth :depth scale :scale :or {depth 1.0 scale 1.0}}]
    (if (= scale 1.0)
@@ -236,7 +236,7 @@
         [d c2 d2] [d c c2]    ;; bottom
         ))))
 #+END_SRC
-*** TODO ITransformable
+*** TODO PTransformable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
 
 #+END_SRC

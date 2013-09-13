@@ -1,10 +1,4 @@
 * Vector deftype experiments
-
-** Helper macros
-*** Namespace declarations
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/macros.cljx
-  (ns thi.ng.geom.macros)
-#+END_SRC
 ** Vector types
 *** Namespace declarations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/vectors.cljx
@@ -62,9 +56,7 @@
 *** Type implementations
 **** 2D
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/vectors.cljx
-  (deftype Vec2
-      ,#+clj [^double x ^double y _meta]
-      ,#+cljs [x y _meta]
+  (deftype Vec2 [^double x ^double y _meta]
 
       ,#+clj clojure.lang.IObj
       ,#+clj (meta [_] _meta)
@@ -257,9 +249,7 @@
 #+END_SRC
 **** 3D
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/vectors.cljx
-  (deftype Vec3
-      ,#+clj [^double x ^double y ^double z _meta]
-      ,#+cljs [x y z _meta]
+  (deftype Vec3 [^double x ^double y ^double z _meta]
 
       ,#+clj clojure.lang.IObj
       ,#+clj (meta [_] _meta)

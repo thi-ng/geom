@@ -106,9 +106,9 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   (extend-type thi.ng.geom.types.Polygon
 #+END_SRC
-*** IGraph
+*** PGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
-  g/IGraph
+  g/PGraph
   (vertices
    [this] (:points this))
   (edges
@@ -120,9 +120,9 @@
   (vertex-valence
    [this v] (if ((set (g/vertices this)) v) 2 0))
 #+END_SRC
-*** IShape
+*** PShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
-  g/IShape
+  g/PShape
   (area
    [{points :points}]
    (let [p (first points)
@@ -150,9 +150,9 @@
    [this] (g/axis-range* 1 (:points this)))
   (depth [this] 0)
 #+END_SRC
-*** IBoundary
+*** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
-  g/IBoundary
+  g/PBoundary
   (classify-point
    [this p] nil) ; TODO
   (closest-point
@@ -169,17 +169,17 @@
                [(not in) [vx vy]] [in [vx vy]]))
            [false (last points)] points)))))
 #+END_SRC
-*** ISampleable
+*** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
-  g/ISampleable
+  g/PSampleable
   (point-at [this t] nil) ; TODO
   (random-point
    [this] (g/point-at this (m/random)))
   (random-point-inside [this] nil) ; TODO
 #+END_SRC
-*** IShape2
+*** PShape2
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
-  g/IShape2
+  g/PShape2
   (bounding-circle
    [this] (g/bounding-circle* (g/centroid this) (:points this)))
   (circumference

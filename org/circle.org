@@ -23,9 +23,9 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
   (extend-type thi.ng.geom.types.Circle
 #+END_SRC
-*** IGraph
+*** PGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-  g/IGraph
+  g/PGraph
   (vertices
    ([this] (g/vertices this *resolution*))
    ([this res]
@@ -37,9 +37,9 @@
         (map (fn [[p q]] (thi.ng.geom.types.Line2. p q))
              (d/successive-nth 2 (concat verts [(first verts)]))))))
 #+END_SRC
-*** IShape
+*** PShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-  g/IShape
+  g/PShape
   (area [{r :r}] (* PI (* r r)))
   (bounds
    [{p :p r :r}]
@@ -52,15 +52,15 @@
   (height [this] (* 2.0 (:r this)))
   (depth  [this] 0)
 #+END_SRC
-*** IShape2
+*** PShape2
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-    g/IShape2
+    g/PShape2
     (bounding-circle [this] this)
     (circumference [this] (* TWO_PI (:r this)))
 #+END_SRC
-*** IBoundary
+*** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-  g/IBoundary
+  g/PBoundary
   (classify-point
    [this q]
    (m/signum (- (:r this) (g/dist2 (:p this) q)) *eps*))
@@ -71,9 +71,9 @@
    [{p :p r :r} q]
    (<= (g/mag2-squared (g/sub2 p q)) (* r r)))
 #+END_SRC
-*** ISampleable
+*** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-  g/ISampleable
+  g/PSampleable
   (point-at
    [this t]
    (g/add2 (:p this) (g/cartesian2 [(:r this) (* t TWO_PI)])))
@@ -84,20 +84,20 @@
    (g/add2 (:p this) (g/scale2 (g/randvec2) (m/random (:r this)))))
   (sample-uniform [this dist]) ;; TODO
 #+END_SRC
-*** IPolygonizable
+*** PPolygonizable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-  g/IPolygonizable
+  g/PPolygonizable
   (as-polygon
    ([this] (g/as-polygon this *resolution*))
    ([this res] (thi.ng.geom.types.Polygon. (vec (g/vertices this res)) [])))
 #+END_SRC
-*** ITessellateable
+*** PTessellateable
      A circle can be tessellated into a list of uniform triangles,
      each sharing the circle's centroid. If called without 2nd
      argument the default circle =*resolution*= (a dynamic var defined
      in [[file:geom.org][thi.ng.geom.core]]) will be used.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-  g/ITessellateable
+  g/PTessellateable
   (tessellate
    ([this] (g/tessellate this *resolution*))
    ([{p :p :as this} res]
@@ -109,10 +109,10 @@
               (fn [[a b]]
                 (thi.ng.geom.types.Triangle2. b p a)))))))
 #+END_SRC
-*** IExtrudeable
+*** PExtrudeable
 **** TODO use cone implementation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-  g/IExtrudeable
+  g/PExtrudeable
   (extrude
    [this opts])
 #+END_SRC

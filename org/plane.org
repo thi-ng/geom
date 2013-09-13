@@ -19,9 +19,9 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
   (extend-type thi.ng.geom.types.Plane
 #+END_SRC
-*** IBoundary
+*** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
-    g/IBoundary
+    g/PBoundary
     (classify-point
       [this q]
       (-> (g/sub3 q (:p this)) (g/normalize3) (g/dot3 (:n this)) (m/signum *eps*)))
@@ -30,9 +30,9 @@
       (let [sn (- (g/dot3 n (g/sub3 q p)))]
         (g/add3 q (g/normalize3 n sn))))
 #+END_SRC
-*** IIntersectable
+*** PIntersectable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
-    g/IIntersectable
+    g/PIntersectable
     (intersect-line
       [{p :p n :n} {lp :p lq :q}]
       (let [u (g/sub3 lq lp)
