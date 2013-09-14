@@ -4,7 +4,7 @@
   (ns thi.ng.geom.aabb
     (:require
      [thi.ng.math.core :as m :refer [*eps*]]
-     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core :as g :refer [vec3]]
      [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])
     #+clj
@@ -14,13 +14,14 @@
 ** Constructors
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
   (defn aabb
-    ([] (thi.ng.geom.types.AABB. (g/vec3 0.0) (g/vec3 1.0)))
-    ([size] (thi.ng.geom.types.AABB. (g/vec3 0.0) (g/vec3 size)))
-    ([o size] (thi.ng.geom.types.AABB. (g/vec3 o) (g/vec3 size))))
+    ([] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 1.0)))
+    ([size] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 size)))
+    ([o size] (thi.ng.geom.types.AABB. (vec3 o) (vec3 size))))
 
   (defn aabb-from-minmax
     [p q]
-    (thi.ng.geom.types.AABB. p (g/sub3 q p)))
+    (let [a (g/minv p q) b (g/maxv p q)]
+      (thi.ng.geom.types.AABB. a (g/sub b a))))
 #+END_SRC
 ** Type specific functions
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
@@ -36,10 +37,10 @@
   (vertices
    [{a :p size :size}]
    (let [[x1 y1 z1] a
-         [x2 y2 z2 :as g] (g/add3 a size)
-         b [x1 y2 z1] c [x1 y2 z2]
-         d [x1 y1 z2] e [x2 y1 z1]
-         f [x2 y2 z1] h [x2 y1 z2]]
+         [x2 y2 z2 :as g] (g/add a size)
+         b (vec3 x1 y2 z1) c (vec3 x1 y2 z2)
+         d (vec3 x1 y1 z2) e (vec3 x2 y1 z1)
+         f (vec3 x2 y2 z1) h (vec3 x2 y1 z2)]
      [a b c d e f g h]))
   (edges
    [this]
@@ -58,7 +59,7 @@
   (classify-point
    [{p :p size :size} [x y z :as q]]
    (let [[x1 y1 z1] p
-         [x2 y2 z2] (g/add3 p size)
+         [x2 y2 z2] (g/add p size)
          on-plane? (fn [[minp maxp p min1 max1 min2 max2 c1 c2]]
                      (and (or (m/delta= minp p *eps*)
                               (m/delta= maxp p *eps*))
@@ -76,7 +77,7 @@
   (contains-point?
    [{p :p size :size} [qx qy qz]]
    (let [[x1 y1 z1] p
-         [x2 y2 z2] (g/add3 p size)]
+         [x2 y2 z2] (g/add p size)]
      (and (m/in-range? x1 x2 qx)
           (m/in-range? y1 y2 qy)
           (m/in-range? z1 z2 qz))))
@@ -88,17 +89,17 @@
   (random-point-inside
    [{p :p size :size}]
    (let [[x1 y1 z1] p
-         [x2 y2 z2] (g/add3 p size)]
-     [(m/random x1 x2) (m/random y1 y2) (m/random z1 z2)]))
+         [x2 y2 z2] (g/add p size)]
+     (vec3 (m/random x1 x2) (m/random y1 y2) (m/random z1 z2))))
   (random-point
    [{p :p size :size}]
    (let [[x1 y1 z1] p
-         [x2 y2 z2] (g/add3 p size)
+         [x2 y2 z2] (g/add p size)
          id (int (m/random 6))]
      (cond
-      (< id 2) (g/vec3 (if (zero? id) x1 x2) (m/random y1 y2) (m/random z1 z2))
-      (< id 4) (g/vec3 (m/random x1 x2) (if (= 2 id) y1 y2) (m/random z1 z2))
-      :default (g/vec3 (m/random x1 x2) (m/random y1 y2) (if (= 4 id) z1 z2)))))
+      (< id 2) (vec3 (if (zero? id) x1 x2) (m/random y1 y2) (m/random z1 z2))
+      (< id 4) (vec3 (m/random x1 x2) (if (= 2 id) y1 y2) (m/random z1 z2))
+      :default (vec3 (m/random x1 x2) (m/random y1 y2) (if (= 4 id) z1 z2)))))
 #+END_SRC
 *** PShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
@@ -109,12 +110,12 @@
   (center
    ([{p :p size :size}]
       (thi.ng.geom.types.AABB.
-       (g/sub3 p (g/scale3 size 0.5)) size))
+       (g/sub p (g/scale-n size 0.5)) size))
    ([{size :size} q]
       (thi.ng.geom.types.AABB.
-       (g/sub3 q (g/scale3 size 0.5)) size)))
+       (g/sub q (g/scale-n size 0.5)) size)))
   (centroid
-   [this] (g/add3 (:p this) (g/scale3 (:size this) 0.5)))
+   [this] (g/add (:p this) (g/scale-n (:size this) 0.5)))
   (width [{size :size}] (size 0))
   (height [{size :size}] (size 1))
   (depth [{size :size}] (size 2))
@@ -124,8 +125,8 @@
   g/PShape3
   (bounding-sphere
    [{p :p size :size}]
-   (let [e (g/scale3 size 0.5)]
-     (g/bounding-sphere* (g/add3 p e) (g/mag3 e))))
+   (let [e (g/scale-n size 0.5)]
+     (g/bounding-sphere* (g/add p e) (g/mag e))))
   (volume
    [{[w h d] :size}] (* (* w h) d))
 #+END_SRC

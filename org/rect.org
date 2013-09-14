@@ -5,7 +5,7 @@
     (:require
      [thi.ng.data.core :as d]
      [thi.ng.math.core :as m :refer [*eps*]]
-     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as aabb]
      [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])
@@ -14,30 +14,31 @@
      [thi.ng.geom.types Circle Line2 Polygon Rect]))
 #+END_SRC
 ** Constructor
+*** TODO replace sequential? w/ coll?
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
   (defn rect
-    ([] (thi.ng.geom.types.Rect. [0.0 0.0] 1.0 1.0))
-    ([w] (thi.ng.geom.types.Rect. [0.0 0.0] w w))
+    ([] (thi.ng.geom.types.Rect. (vec2) 1.0 1.0))
+    ([w] (thi.ng.geom.types.Rect. (vec2) w w))
     ([p q]
-       (if (vector? p)
-         (if (vector? q)
-           (let [p (g/vec2 p) q (g/vec2 q)
-                 [p q] [(g/min2 p q) (g/max2 p q)]
-                 [w h] (g/sub2 q p)]
+       (if (sequential? p)
+         (if (sequential? q)
+           (let [p (vec2 p) q (vec2 q)
+                 [p q] [(g/minv p q) (g/maxv p q)]
+                 [w h] (g/sub q p)]
              (thi.ng.geom.types.Rect. p w h))
-           (thi.ng.geom.types.Rect. (g/vec2 p) q q))
-         (thi.ng.geom.types.Rect. [0.0 0.0] p q)))
+           (thi.ng.geom.types.Rect. (vec2 p) q q))
+         (thi.ng.geom.types.Rect. (vec2) p q)))
     ([x y w]
        (if (number? x)
-         (thi.ng.geom.types.Rect. (g/vec2 x y) w w)
-         (thi.ng.geom.types.Rect. (g/vec2 x) y w)))
-    ([x y w h] (thi.ng.geom.types.Rect. (g/vec2 x y) w h)))
+         (thi.ng.geom.types.Rect. (vec2 x y) w w)
+         (thi.ng.geom.types.Rect. (vec2 x) y w)))
+    ([x y w h] (thi.ng.geom.types.Rect. (vec2 x y) w h)))
 #+END_SRC
 ** Type specific functions
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
   (defn union
     [{:keys[p w h]} {q :p qw :w qh :h}]
-    (let [[x1 y1] (g/min2 p q)
+    (let [[x1 y1] (g/minv p q)
           x2 (max (+ (p 0) w) (+ (q 0) qw))
           y2 (max (+ (p 1) h) (+ (q 1) qh))
           w (- x2 x1)
@@ -56,7 +57,7 @@
   (defn right [r] (+ ((:p r) 0) (:w r)))
   (defn top [r] ((:p r) 1))
   (defn bottom [r] (+ ((:p r) 1) (:h r)))
-  (defn bottom-right [r] (g/add2 (:p r) [(:w r) (:h r)]))
+  (defn bottom-right [r] (g/add (:p r) [(:w r) (:h r)]))
 
   (defn rects-intersect?
     [{[px py] :p w :w h :h} {[qx qy] :p w2 :w h2 :h}]
@@ -65,13 +66,13 @@
   (defn intersect-circle
     [{w :w h :h :as r} {c :p radius :r}]
     (let [p (g/centroid r)
-          [dx dy :as d] (g/abs2 (g/sub2 c p))
+          [dx dy :as d] (g/abs (g/sub c p))
           w (* w 0.5) h (* h 0.5)]
       (if (and (<= dx (+ w radius))
                (<= dy (+ h radius)))
         (if (or (<= dx w) (<= dy h))
           true
-          (<= (g/mag2-squared (g/sub2 d [w h])) (* radius radius)))
+          (<= (g/mag-squared (g/sub d [w h])) (* radius radius)))
         false)))
 #+END_SRC
 ** Protocol implementations
@@ -83,16 +84,18 @@
   g/PGraph
   (vertices
    [{[x y :as p] :p w :w h :h}]
-   (let [r (+ x w) b (+ y h)] [p [r y] [r b] [x b]]))
+   (let [r (+ x w) b (+ y h)] [p (vec2 r y) (vec2 r b) (vec2 x b)]))
   (edges
    [{[x y :as p] :p w :w h :h}]
    (let [r (+ x w) b (+ y h)]
-     [(thi.ng.geom.types.Line2. p [r y]) (thi.ng.geom.types.Line2. [r y] [r b])
-      (thi.ng.geom.types.Line2. [r b] [x b]) (thi.ng.geom.types.Line2. [x b] p)]))
+     [(thi.ng.geom.types.Line2. p (vec2 r y))
+      (thi.ng.geom.types.Line2. (vec2 r y) (vec2 r b))
+      (thi.ng.geom.types.Line2. (vec2 r b) (vec2 x b))
+      (thi.ng.geom.types.Line2. (vec2 x b) p)]))
   (vertex-neighbors
-   [this v] (d/neighbors v (g/vertices this)))
+   [this v] (d/neighbors (vec2 v) (g/vertices this)))
   (vertex-valence
-   [this v] (if ((set (g/vertices this)) v) 2 0))
+   [this v] (if ((set (g/vertices this)) (vec2 v)) 2 0))
 #+END_SRC
 *** PShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
@@ -103,12 +106,12 @@
   (center
    ([{w :w h :h}]
       (let [w2 (* w 0.5) h2 (* h 0.5)]
-        (thi.ng.geom.types.Rect. [(- w2) (- h2)] w h)))
+        (thi.ng.geom.types.Rect. (vec2 (- w2) (- h2)) w h)))
    ([{w :w h :h} o]
       (let [t [(* w 0.5) (* h 0.5)]]
-        (thi.ng.geom.types.Rect. (g/sub2 o t) w h))))
+        (thi.ng.geom.types.Rect. (g/sub o t) w h))))
   (centroid
-   [{p :p :as this}] (g/mid2 p (g/add2 p [(:w this) (:h this)])))
+   [{p :p :as this}] (g/mid p (g/add p (:w this) (:h this))))
   (width  [this] (:w this))
   (height [this] (:h this))
   (depth  [this] 0)
@@ -119,7 +122,7 @@
   (bounding-circle
    [this]
    (let [c (g/centroid this)]
-     (g/bounding-circle* c (g/dist2 c (:p this)))))
+     (g/bounding-circle* c (g/dist c (:p this)))))
   (circumference
    [this] (* 2 (+ (:w this) (:h this))))
 #+END_SRC
@@ -131,7 +134,7 @@
    (reduce min (map #(g/classify-point % q) (g/edges this))))
   (closest-point
    [this q]
-   (g/closest-point* g/dist2-squared (g/edges this) q))
+   (g/closest-point* (g/edges this) q))
   (contains-point?
    [{[px py] :p w :w h :h} [x y]]
    (and (m/in-range? 0.0 w (- x px)) (m/in-range? 0.0 h (- y py))))
@@ -143,7 +146,7 @@
   (random-point
    [this] (g/point-at this (m/random)))
   (random-point-inside
-   [this] (g/add2 (:p this) [(m/random (:w this)) (m/random (:h this))]))
+   [this] (g/add (:p this) (m/random (:w this)) (m/random (:h this))))
 #+END_SRC
 *** PPolygonizable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
@@ -183,7 +186,7 @@
               :let [[px py] (unmap-uv this [x y])
                     px (m/roundto px *eps*)
                     py (m/roundto py *eps*)]]
-          (thi.ng.geom.types.Rect. [px py] w h)))))
+          (thi.ng.geom.types.Rect. (vec2 px py) w h)))))
 #+END_SRC
 *** PTessellateable
     A rectangle can be tessellated into a number of triangles. When
@@ -192,6 +195,7 @@
     & =[tl bl br]=. When called *with* options, then these are used
     for a call to [[PSubdivideable][=subdivide=]] first and the function returns a lazyseq
     of triangles of the subdivided rects.
+**** TODO return Triangle2 instances
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
   g/PTessellateable
   (tessellate
@@ -219,14 +223,14 @@
    (if (= scale 1.0)
      (g/as-mesh
       (thi.ng.geom.types.AABB.
-       (g/vec3 (:p this))
-       (g/vec3 (:w this) (:h this) depth)))
-     (let [[a b c d] (map g/vec3 (g/vertices this))
+       (vec3 (:p this))
+       (vec3 (:w this) (:h this) depth)))
+     (let [[a b c d] (map vec3 (g/vertices this))
            [a2 b2 c2 d2] (-> this
                              (g/scale scale)
                              (g/center (g/centroid this))
                              (g/vertices)
-                             (map g/vec3))]
+                             (map vec3))]
        (mesh/mesh3
         [a b c] [a c d]       ;;back
         [a2 c2 b2] [a2 d2 c2] ;; front

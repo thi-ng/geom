@@ -238,6 +238,7 @@
     (contains-point? [this p]))
 #+END_SRC
 ****** PInterpolateable
+******* TODO replace mid with single arity mix
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol PInterpolateable
     (mid [this x])
@@ -963,8 +964,8 @@
             (map #(closest-point % q) lines)))
 
   (defn from-barycentric*
-    [ctor points weights]
-    (reduce add (map (fn [p w] (scale (ctor p) w)) points weights)))
+    [points weights]
+    (reduce add (map scale-n points weights)))
 
   (defn centroid*
     [coll]
@@ -1026,6 +1027,10 @@
     [axis coll]
     (let [xs (map #(nth % axis) coll)]
       (- (reduce max xs) (reduce min xs))))
+
+  (defn normal3
+    ([a b c] (normalize (cross (sub b a) (sub c a))))
+    ([[a b c]] (normalize (cross (sub b a) (sub c a)))))
 #+END_SRC
 ** Geometric entities
 #+INCLUDE: "bezier.org" :minlevel 4

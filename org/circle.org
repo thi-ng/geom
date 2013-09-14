@@ -14,8 +14,8 @@
 ** Constructor
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
 (defn circle
-  ([] (thi.ng.geom.types.Circle. (vec2 0.0) 1.0))
-  ([r] (thi.ng.geom.types.Circle. (vec2 0.0) r))
+  ([] (thi.ng.geom.types.Circle. (vec2) 1.0))
+  ([r] (thi.ng.geom.types.Circle. (vec2) r))
   ([p r] (thi.ng.geom.types.Circle. (vec2 p) r))
   ([x y r] (thi.ng.geom.types.Circle. (vec2 x y) r)))
 #+END_SRC
@@ -43,9 +43,9 @@
   (area [{r :r}] (* PI (* r r)))
   (bounds
    [{p :p r :r}]
-   (let [d (* 2 r)] (Rect. (g/sub-n p r) d d)))
+   (let [d (* 2 r)] (thi.ng.geom.types.Rect. (g/sub-n p r) d d)))
   (center
-   ([this] (thi.ng.geom.types.Circle. (vec2 0.0) (:r this)))
+   ([this] (thi.ng.geom.types.Circle. (vec2) (:r this)))
    ([this p] (thi.ng.geom.types.Circle. (vec2 p) (:r this))))
   (centroid [this] (:p this))
   (width  [this] (* 2.0 (:r this)))
@@ -121,18 +121,19 @@
   )
 #+END_SRC
 ** Type specific functions
+*** TODO refactor as intersect-shape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
   (defn intersect-circle
     [{p :p r1 :r} {q :p r2 :r}]
     (let [delta (g/sub q p)
           d (g/mag delta)]
-      (if (and (<= d (+ r1 r2)) (>= d (m/abs (- r1 r2))))
-        (let [a (/ (+ (- (* r1 r1) (* r2 r2)) (* d d)) (* 2 d))
+      (when (and (<= d (+ r1 r2)) (>= d (m/abs (- r1 r2))))
+        (let [a (/ (+ (- (* r1 r1) (* r2 r2)) (* d d)) (* 2.0 d))
               invd (/ 1.0 d)
               p (g/add p (g/scale-n delta (* a invd)))
               h (Math/sqrt (- (* r1 r1) (* a a)))
               perp (g/scale-n (g/normal delta) (* h invd))]
-          (vec2 (g/add p perp) (g/sub p perp))))))
+          [(g/add p perp) (g/sub p perp)]))))
 
   (defn tangent-points
     [{p :p :as c} q]

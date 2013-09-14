@@ -102,24 +102,24 @@
        (reduce #(add-face % (replace {v v2} %2)) mesh faces)))
 
   (defn merge-vertices*
-    [mesh mid a b]
+    [mesh a b]
     (if ((vertex-neighbors* mesh a) b)
       (let [fa (vertex-faces* mesh a) fb (vertex-faces* mesh b)
             ab-isec (set/intersection fa fb)
             a-xor (set/difference fa ab-isec)
             b-xor (set/difference fb ab-isec)
-            mp (mid a b)]
+            mp (g/mid a b)]
         (-> (reduce g/remove-face mesh (set/union ab-isec a-xor b-xor))
             (replace-vertex* a mp a-xor)
             (replace-vertex* b mp b-xor)))
       mesh))
 
   (defn subdivide-edge*
-    [mesh mix a b splits]
+    [mesh a b splits]
     (if ((vertex-neighbors* mesh a) b)
       (let [fa (vertex-faces* mesh a) fb (vertex-faces* mesh b)
             faces (set/intersection fa fb)
-            s-points (map #(mix a b %) (d/wrap-seq splits 0.0 1.0))
+            s-points (map #(g/mix a b %) (d/wrap-seq splits 0.0 1.0))
             s-points (d/successive-nth 2 s-points)]
         (reduce
          (fn [[mesh newfaces] f]
@@ -133,13 +133,13 @@
       mesh))
 
   (defn subdivide-face*
-    [mesh mix [a b c :as f] p displace splits]
+    [mesh [a b c :as f] p displace splits]
     (if (seq splits)
       (let [splits (d/wrap-seq splits 0.0 1.0)
             {:keys [vertices edges faces] :as mesh} (g/remove-face mesh f)
             edge-vertex (if displace
-                          (fn [[ea eb :as e] t] (displace e (mix ea eb t) t))
-                          (fn [[ea eb] t] (mix ea eb t)))]
+                          (fn [[ea eb :as e] t] (displace e (g/mix ea eb t) t))
+                          (fn [[ea eb] t] (g/mix ea eb t)))]
         (commit-edit
          mesh
          (reduce
@@ -156,18 +156,13 @@
           (g/add-face [c a p]))))
 
   (defn subdivide*
-    [centroid mix]
-    (fn
-      [mesh {:keys [vertex displace filter splits] :or {vertex centroid}}]
+    [mesh {:keys [vertex displace filter splits] :or {vertex t/centroid*}}]
       (reduce
-       (fn [mesh f] (subdivide-face* mesh mix f (vertex f) displace splits))
+       (fn [mesh f] (subdivide-face* mesh f (vertex f) displace splits))
        mesh
        (if filter
          (clojure.core/filter filter (:faces mesh))
-         (:faces mesh)))))
-
-  (def subdivide2 (subdivide* t/centroid2 g/mix2))
-  (def subdivide3 (subdivide* t/centroid3 g/mix3))
+         (:faces mesh))))
 
   (defn slice-with*
     [mesh e classifier faces]
@@ -242,7 +237,7 @@
    [this] this)
   (centroid
    [this]
-   (g/centroid* g/add2 g/scale2 (keys (:vertices this))))
+   (g/centroid* (keys (:vertices this))))
   (width
    [this] (g/axis-range* 0 (keys (:vertices this))))
   (height
@@ -298,19 +293,19 @@
   (replace-vertex
    [this v v2] (replace-vertex* this v v2))
   (merge-vertices
-   [this a b] (merge-vertices* this g/mid2 a b))
+   [this a b] (merge-vertices* this a b))
 #+END_SRC
 **** PSubdivideable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PSubdivideable
   (subdivide-edge
-   [this a b splits] (subdivide-edge* this g/mix2 a b splits))
+   [this a b splits] (subdivide-edge* this a b splits))
   (subdivide-face
    [this f p opts]
-   (subdivide-face* this g/mix2 f p (:displace opts) (:splits opts)))
+   (subdivide-face* this f p (:displace opts) (:splits opts)))
   (subdivide
    [this opts]
-   (subdivide* this {:add g/add2 :scale g/scale2 :mix g/mix2} opts))
+   (subdivide* this opts))
 #+END_SRC
 **** PSliceable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
@@ -335,7 +330,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PGraph
   (edges
-   [this] (keys (:edges this)))
+   [this] (map (fn [[p q]] (thi.ng.geom.types.Line3. p q)) (keys (:edges this))))
   (vertices
    [this] (keys (:vertices this)))
   (vertex-neighbors
@@ -359,7 +354,7 @@
    [this] this)
   (centroid
    [this]
-   (g/centroid* g/add3 g/scale3 (keys (:vertices this))))
+   (g/centroid* (keys (:vertices this))))
   (width
    [this] (g/axis-range* 0 (keys (:vertices this))))
   (height
@@ -390,9 +385,7 @@
    (let [[normals fnormals]
          (reduce
           (fn [[norms fnorms] [a b c :as f]]
-            (let [[norms n]
-                  (d/index!
-                   norms (-> (g/sub3 a b) (g/cross3 (g/sub3 a c)) (g/normalize3)))]
+            (let [[norms n] (d/index! norms (g/normal3 a b c))]
               [norms (assoc! fnorms f n)]))
           [(transient #{}) (transient {})] faces)]
      (assoc this
@@ -406,8 +399,8 @@
             (let [faces (g/vertex-faces this v)
                   n (->> faces
                          (map #(get fnormals %))
-                         (reduce g/add3)
-                         (g/normalize3))
+                         (reduce g/add)
+                         (g/normalize))
                   [norms n] (d/index! norms n)]
               [norms (assoc! vnorms v n)]))
           [(transient normals) (transient {})] (keys vertices))]
@@ -442,19 +435,19 @@
   (replace-vertex
    [this v v2] (replace-vertex* this v v2))
   (merge-vertices
-   [this a b] (merge-vertices* this g/mid3 a b))
+   [this a b] (merge-vertices* this a b))
 #+END_SRC
 **** PSubdivideable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PSubdivideable
   (subdivide-edge
-   [this a b splits] (subdivide-edge* this g/mix3 a b splits))
+   [this a b splits] (subdivide-edge* this a b splits))
   (subdivide-face
    [this f p opts]
-   (subdivide-face* this g/mix3 f p (:displace opts) (:splits opts)))
+   (subdivide-face* this f p (:displace opts) (:splits opts)))
   (subdivide
    [this opts]
-   (subdivide* this {:add g/add3 :scale g/scale3 :mix g/mix3} opts))
+   (subdivide* this opts))
 #+END_SRC
 
 **** PSliceable
@@ -489,10 +482,10 @@
     [{:keys[vnormals] :as this} amp]
     (fn [p]
       (let [neighbors (g/vertex-neighbors this p)]
-        (g/add3
-         p (g/normalize3
-            (reduce g/add3 (vnormals p)
-                    (map (comp #(g/scale3 % 0.5) vnormals) neighbors))
+        (g/add
+         p (g/normalize
+            (reduce g/add (vnormals p)
+                    (map (comp #(g/scale-n % 0.5) vnormals) neighbors))
             amp)))))
 
   (defn laplacian
@@ -501,11 +494,11 @@
       (let [neighbors (g/vertex-neighbors this p)
             nc (count g/vertex-neighbors)]
         (if (pos? nc)
-          (g/scale3 (reduce g/add3 neighbors) (/ 1.0 nc))
+          (g/scale-n (reduce g/add neighbors) (/ 1.0 nc))
           p))))
 
   (defn spherify
-    [r] #(g/normalize3 % r))
+    [r] #(g/normalize % r))
 
   (defn transform
     [{:keys [faces vertices fns]} f]
