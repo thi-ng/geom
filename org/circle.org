@@ -5,19 +5,19 @@
     (:require
      [thi.ng.data.core :as d]
      [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]]
-     [thi.ng.geom.core :as g :refer [*resolution*]]
+     [thi.ng.geom.core :as g :refer [vec2 *resolution*]]
      [thi.ng.geom.types :as types])
     #+clj
     (:import
-     [thi.ng.geom.types Circle Line2 Polygon Triangle2]))
+     [thi.ng.geom.types Circle Line2 Polygon Rect Triangle2]))
 #+END_SRC
 ** Constructor
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
 (defn circle
-  ([] (thi.ng.geom.types.Circle. [0.0 0.0] 1.0))
-  ([r] (thi.ng.geom.types.Circle. [0.0 0.0] r))
-  ([p r] (thi.ng.geom.types.Circle. (g/vec2 p) r))
-  ([x y r] (thi.ng.geom.types.Circle. (g/vec2 x y) r)))
+  ([] (thi.ng.geom.types.Circle. (vec2 0.0) 1.0))
+  ([r] (thi.ng.geom.types.Circle. (vec2 0.0) r))
+  ([p r] (thi.ng.geom.types.Circle. (vec2 p) r))
+  ([x y r] (thi.ng.geom.types.Circle. (vec2 x y) r)))
 #+END_SRC
 ** Protocol implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
@@ -43,10 +43,10 @@
   (area [{r :r}] (* PI (* r r)))
   (bounds
    [{p :p r :r}]
-   (let [d (* 2 r)] (g/bounding-rect* (g/sub2 p [r r]) d d)))
+   (let [d (* 2 r)] (Rect. (g/sub-n p r) d d)))
   (center
-   ([this] (thi.ng.geom.types.Circle. [0.0 0.0] (:r this)))
-   ([this p] (thi.ng.geom.types.Circle. p (:r this))))
+   ([this] (thi.ng.geom.types.Circle. (vec2 0.0) (:r this)))
+   ([this p] (thi.ng.geom.types.Circle. (vec2 p) (:r this))))
   (centroid [this] (:p this))
   (width  [this] (* 2.0 (:r this)))
   (height [this] (* 2.0 (:r this)))
@@ -63,25 +63,25 @@
   g/PBoundary
   (classify-point
    [this q]
-   (m/signum (- (:r this) (g/dist2 (:p this) q)) *eps*))
+   (m/signum (- (:r this) (g/dist (:p this) q)) *eps*))
   (closest-point
    [{p :p r :r} q]
-   (g/add2 p (g/normalize2 (g/sub2 q p) r)))
+   (g/add p (g/normalize (g/sub q p) r)))
   (contains-point?
    [{p :p r :r} q]
-   (<= (g/mag2-squared (g/sub2 p q)) (* r r)))
+   (<= (g/mag-squared (g/sub p q)) (* r r)))
 #+END_SRC
 *** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
   g/PSampleable
   (point-at
    [this t]
-   (g/add2 (:p this) (g/cartesian2 [(:r this) (* t TWO_PI)])))
+   (g/add (:p this) (g/cartesian (vec2 (:r this) (* t TWO_PI)))))
   (random-point
    [this] (g/point-at this (m/random)))
   (random-point-inside
    [this]
-   (g/add2 (:p this) (g/scale2 (g/randvec2) (m/random (:r this)))))
+   (g/add (:p this) (g/scale-n (g/randvec2) (m/random (:r this)))))
   (sample-uniform [this dist]) ;; TODO
 #+END_SRC
 *** PPolygonizable
@@ -124,18 +124,18 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
   (defn intersect-circle
     [{p :p r1 :r} {q :p r2 :r}]
-    (let [delta (g/sub2 q p)
-          d (g/mag2 delta)]
+    (let [delta (g/sub q p)
+          d (g/mag delta)]
       (if (and (<= d (+ r1 r2)) (>= d (m/abs (- r1 r2))))
         (let [a (/ (+ (- (* r1 r1) (* r2 r2)) (* d d)) (* 2 d))
               invd (/ 1.0 d)
-              p (g/add2 p (g/scale2 delta (* a invd)))
+              p (g/add p (g/scale-n delta (* a invd)))
               h (Math/sqrt (- (* r1 r1) (* a a)))
-              perp (g/scale2 (g/perpendicular2 delta) (* h invd))]
-          [(g/add2 p perp) (g/sub2 p perp)]))))
+              perp (g/scale-n (g/normal delta) (* h invd))]
+          (vec2 (g/add p perp) (g/sub p perp))))))
 
   (defn tangent-points
     [{p :p :as c} q]
-    (let [m (g/mid2 p q)]
-      (intersect-circle c (circle m (g/dist2 m p)))))
+    (let [m (g/mid p q)]
+      (intersect-circle c (circle m (g/dist m p)))))
 #+END_SRC
