@@ -4,7 +4,7 @@
   (ns thi.ng.geom.plane
     (:require
      [thi.ng.math.core :as m :refer [*eps*]]
-     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core :as g :refer [vec3]]
      [thi.ng.geom.mesh :refer [mesh3]])
     #+clj
     (:import
@@ -13,7 +13,7 @@
 ** Constructor
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
   (defn plane
-    [p n] (thi.ng.geom.types.Plane. (g/vec3 p) (g/normalize3 (g/vec3 n))))
+    [p n] (thi.ng.geom.types.Plane. (vec3 p) (g/normalize (vec3 n))))
 #+END_SRC
 ** TODO Protocol implementation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
@@ -24,25 +24,25 @@
     g/PBoundary
     (classify-point
       [this q]
-      (-> (g/sub3 q (:p this)) (g/normalize3) (g/dot3 (:n this)) (m/signum *eps*)))
+      (-> (g/sub q (:p this)) (g/normalize) (g/dot (:n this)) (m/signum *eps*)))
     (closest-point
       [{p :p n :n} q]
-      (let [sn (- (g/dot3 n (g/sub3 q p)))]
-        (g/add3 q (g/normalize3 n sn))))
+      (let [sn (- (g/dot n (g/sub q p)))]
+        (g/add q (g/normalize n sn))))
 #+END_SRC
 *** PIntersectable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
     g/PIntersectable
     (intersect-line
       [{p :p n :n} {lp :p lq :q}]
-      (let [u (g/sub3 lq lp)
-            w (g/sub3 lp p)
-            d (g/dot3 n u)
-            dn (- (g/dot3 n w))]
+      (let [u (g/sub lq lp)
+            w (g/sub lp p)
+            d (g/dot n u)
+            dn (- (g/dot n w))]
         (if (m/delta= d 0.0 *eps*)
           {:type (if (zero? dn) :on-plane :parallel)}
           (let [du (/ dn d)
-                i (g/add3 lp (g/scale3 u du))]
+                i (g/add lp (g/scale-n u du))]
             (if (m/in-range? 0.0 1.0 du)
               {:type :intersect :p i}
               {:type :intersect-outside :p i})))))
@@ -52,14 +52,16 @@
   )
 #+END_SRC
 ** Intersections
+*** TODO refactor as intersect-shape
+*** TODO return map instead of vector
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
   (defn intersect-plane
     [{a :p na :n} {b :p nb :n}]
-    (let [da (g/dot3 a na) db (g/dot3 b nb)]
+    (let [da (g/dot a na) db (g/dot b nb)]
       (when-not (or (m/delta= na nb) (m/delta= da db))
-        (let [od (g/dot3 na nb)
+        (let [od (g/dot na nb)
               det (/ 1.0 (- 1.0 (* od od)))
               ta (* det (- da (* db od)))
               tb (* det (- db (* da od)))]
-          [(g/fma3 na ta (g/scale3 nb tb)) (g/cross3 na nb)]))))
+          [(g/madd na ta (g/scale-n nb tb)) (g/cross na nb)]))))
 #+END_SRC

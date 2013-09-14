@@ -5,12 +5,13 @@
     (:require
      [thi.ng.math.core :as m :refer [*eps* delta=]]
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.triangle :as t])
+     [thi.ng.geom.triangle :refer [circumcircle-raw]])
     #+clj
     (:import
      [thi.ng.geom.types Triangle2]))
 #+END_SRC
 ** Implementation
+*** TODO have triangulate return Triangle2 instances
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/delaunay.cljx
   (defn- add-unique-edge!
     [edges p q]
@@ -40,8 +41,9 @@
         (transient [(transient #{}) (transient [])])
         tris)))
 
-  (defn- make-triangle [a b c]
-    (let [[[ox oy] r] (t/circumcircle* a b c)]
+  (defn- make-triangle
+    [a b c]
+    (let [[[ox oy] r] (circumcircle-raw a b c)]
       [a b c ox oy (* r r) (+ ox r)]))
 
   (defn shared-vertex?
@@ -53,13 +55,13 @@
   (defn triangulate
     [points]
     (let [points (sort-by #(% 0) points)
-          bmin (apply g/min2 points)
-          bmax (apply g/max2 points)
-          bext (g/sub2 bmax bmin)
+          bmin (reduce g/minv points)
+          bmax (reduce g/maxv points)
+          bext (g/sub bmax bmin)
           dm (max (bext 0) (bext 1))
           d2 (* 2.0 dm)
-          m (g/mid2 bmin bmax)
-          s (make-triangle (g/sub2 m [d2 dm]) (g/add2 m [0 d2]) (g/add2 m [d2 (- dm)]))]
+          m (g/mid bmin bmax)
+          s (make-triangle (g/sub m d2 dm) (g/add m 0 d2) (g/add m d2 (- dm)))]
       (loop [points points tris [s] complete (transient #{})]
         (if-let [[px :as p] (first points)]
           (let [complete (reduce #(if (< (%2 6) px) (conj! % %2) %) complete tris)

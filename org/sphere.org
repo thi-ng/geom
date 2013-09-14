@@ -4,7 +4,7 @@
   (ns thi.ng.geom.sphere
     (:require
      [thi.ng.math.core :as m :refer [PI *eps*]]
-     [thi.ng.geom.core :as g :refer [*resolution*]]
+     [thi.ng.geom.core :as g :refer [vec3 *resolution*]]
      [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])
     #+clj
@@ -14,9 +14,9 @@
 ** Constructor
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   (defn sphere
-    ([] (thi.ng.geom.types.Sphere. [0.0 0.0 0.0] 1.0))
-    ([r] (thi.ng.geom.types.Sphere. [0.0 0.0 0.0] #+clj (double r) #+cljs r))
-    ([p r] (thi.ng.geom.types.Sphere. (g/vec3 p) #+clj (double r) #+cljs r)))
+    ([] (thi.ng.geom.types.Sphere. (vec3) 1.0))
+    ([r] (thi.ng.geom.types.Sphere. (vec3) #+clj (double r) #+cljs r))
+    ([p r] (thi.ng.geom.types.Sphere. (vec3 p) #+clj (double r) #+cljs r)))
 #+END_SRC
 ** Type specific functions
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
@@ -36,9 +36,9 @@
   (area
    [{r :r}] (* 4.0 PI r r))
   (bounds
-   [this] (thi.ng.geom.types.AABB. (:p this) (g/vec3 (:r this))))
+   [this] (thi.ng.geom.types.AABB. (:p this) (vec3 (:r this))))
   (center
-   ([this] (thi.ng.geom.types.Sphere. (g/vec3 0.0) (:r this)))
+   ([this] (thi.ng.geom.types.Sphere. (vec3) (:r this)))
    ([this p] (thi.ng.geom.types.Sphere. p (:r this))))
   (centroid [this] (:p this))
   (width  [this] (* 2.0 (:r this)))
@@ -56,16 +56,16 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   g/PBoundary
   (contains-point?
-   [{p :p r :r} q] (<= (g/dist3-squared p q) (* r r)))
+   [{p :p r :r} q] (<= (g/dist-squared p q) (* r r)))
   (classify-point
    [{p :p r :r} q]
-   (m/signum (- (* r r) (g/dist3-squared p q)) *eps*))
+   (m/signum (- (* r r) (g/dist-squared p q)) *eps*))
   (random-point-inside
    [this]
-   (g/add3 (:p this) (g/randvec3 (m/random (:r this)))))
+   (g/add (:p this) (g/randvec3 (m/random (:r this)))))
   (random-point
    [this]
-   (g/add3 (:p this) (g/randvec3 (:r this))))
+   (g/add (:p this) (g/randvec3 (:r this))))
 #+END_SRC
 *** TODO PMeshable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx

@@ -5,7 +5,7 @@
     (:require
      [thi.ng.data.core :as d]
      [thi.ng.math.core :as m :refer [PI HALF_PI *eps*]]
-     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.types :as types])
     #+clj
     (:import
@@ -14,8 +14,8 @@
 ** Constructor
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   (defn polygon
-    ([points] (thi.ng.geom.types.Polygon. (vec (map g/vec2 points)) []))
-    ([p & more] (thi.ng.geom.types.Polygon. (vec (map g/vec2 (cons p more))) [])))
+    ([points] (thi.ng.geom.types.Polygon. (vec (map vec2 points)) []))
+    ([p & more] (thi.ng.geom.types.Polygon. (vec (map vec2 (cons p more))) [])))
 #+END_SRC
 ** Type specific functions
 #+BEGIN_SRC clojure
@@ -79,7 +79,7 @@
   (defn randompoly
     [n r]
     (let [points (:points (g/as-polygon (circle r) n))]
-      (polygon (map #(g/scale2 % (m/random 0.5 1.5)) points))))
+      (polygon (map #(g/scale % (m/random 0.5 1.5)) points))))
 
   (defn h-segment
     [verts [px py :as p] pred theta ps]
@@ -118,7 +118,7 @@
   (vertex-neighbors
    [this v] (d/neighbors v (g/vertices this)))
   (vertex-valence
-   [this v] (if ((set (g/vertices this)) v) 2 0))
+   [this v] (if ((set (g/vertices this)) (vec2 v)) 2 0))
 #+END_SRC
 *** PShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
@@ -126,7 +126,7 @@
   (area
    [{points :points}]
    (let [p (first points)
-         [area] (reduce (fn [[a p] v] [(+ a (g/cross2 p v)) v])
+         [area] (reduce (fn [[a p] v] [(+ a (g/cross p v)) v])
                         [0.0 p] (concat (drop 1 points) [p]))]
      (* 0.5 area)))
   (bounds
@@ -134,16 +134,16 @@
   (center
    ([this] (g/center this [0.0 0.0]))
    ([this o]
-      (thi.ng.geom.types.Polygon. (vec (g/translate2 (g/sub2 o (g/centroid this)) (:points this))) [])))
+      (thi.ng.geom.types.Polygon. (vec (g/translate (g/sub o (g/centroid this)) (:points this))) [])))
   (centroid
    [{points :points :as this}]
    (let [p (first points)
          [c] (reduce
               (fn [[c p] v]
-                (let [x (g/cross2 p v)]
-                  [(g/add2 c (g/scale2 (g/add2 p v) x)) v]))
+                (let [x (g/cross p v)]
+                  [(g/add c (g/scale-n (g/add p v) x)) v]))
               [[0.0 0.0] p] (conj (subvec points 1 (count points)) p))]
-     (g/scale2 c (/ 1.0 (* 6 (g/area this))))))
+     (g/scale-n c (/ 1.0 (* 6 (g/area this))))))
   (width
    [this] (g/axis-range* 0 (:points this)))
   (height
@@ -156,7 +156,7 @@
   (classify-point
    [this p] nil) ; TODO
   (closest-point
-   [this p] (g/closest-point* g/dist2-squared (g/edges this) p))
+   [this p] (g/closest-point* (g/edges this) p))
   (contains-point?
    [{points :points} p]
    (if (some #{p} points) true
@@ -184,7 +184,7 @@
    [this] (g/bounding-circle* (g/centroid this) (:points this)))
   (circumference
    [{points :points}]
-   (d/reduce-pairs + g/dist2 (concat points [(first points)])))
+   (d/reduce-pairs + g/dist (concat points [(first points)])))
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
