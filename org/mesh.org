@@ -151,9 +151,9 @@
           (begin-edit mesh)
           [[a b] [b c] [c a]])))
       (-> (g/remove-face mesh f)
-          (g/add-face [a b p])
-          (g/add-face [b c p])
-          (g/add-face [c a p]))))
+          (add-face [a b p])
+          (add-face [b c p])
+          (add-face [c a p]))))
 
   (defn subdivide*
     [mesh {:keys [vertex displace filter splits] :or {vertex t/centroid*}}]
@@ -466,12 +466,13 @@
   )
 #+END_SRC
 ** Type specific functions
+*** TODO refactor transform as protocol method
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   (defn loop-subdivide-face
-    [{{fmid :mid} :fns :as this} [a b c :as f]]
-    (let [{:keys[vertices edges faces] :as this} (g/remove-face this f)
-          [mab mbc mca] (map (fn [[p q]] (fmid p q)) [[a b] [b c] [c a]])]
-      (reduce g/add-face this [[a mab mca] [mab b mbc] [mbc c mca] [mab mbc mca]])))
+    [this [a b c :as f]]
+    (let [{:keys [vertices edges faces] :as this} (g/remove-face this f)
+          [mab mbc mca] (map (fn [[p q]] (g/mix p q)) [[a b] [b c] [c a]])]
+      (reduce add-face this [[a mab mca] [mab b mbc] [mbc c mca] [mab mbc mca]])))
 
   (defn loop-subdivide-mesh
     ([this] (loop-subdivide-mesh 1 this))
@@ -492,7 +493,7 @@
     [this]
     (fn [p]
       (let [neighbors (g/vertex-neighbors this p)
-            nc (count g/vertex-neighbors)]
+            nc (count neighbors)]
         (if (pos? nc)
           (g/scale-n (reduce g/add neighbors) (/ 1.0 nc))
           p))))
@@ -503,7 +504,7 @@
   (defn transform
     [{:keys [faces vertices fns]} f]
     (let [subst (into (hash-map) (map (fn [v] [v (f v)]) (keys vertices)))]
-      (apply (:ctor fns)
+      (apply mesh3
              (map (fn[[a b c]] [(get subst a) (get subst b) (get subst c)])
                   faces))))
 
