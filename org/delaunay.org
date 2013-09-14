@@ -5,13 +5,12 @@
     (:require
      [thi.ng.math.core :as m :refer [*eps* delta=]]
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.triangle :refer [circumcircle-raw]])
+     [thi.ng.geom.triangle :refer [circumcircle-raw triangle2]])
     #+clj
     (:import
      [thi.ng.geom.types Triangle2]))
 #+END_SRC
 ** Implementation
-*** TODO have triangulate return Triangle2 instances
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/delaunay.cljx
   (defn- add-unique-edge!
     [edges p q]
@@ -24,22 +23,22 @@
   (defn- compute-edges
     [complete tris [px py]]
     (persistent!
-      (reduce
-        (fn [state t]
-          (if (complete t) state
+     (reduce
+      (fn [state t]
+        (if (complete t) state
             (let [x (- px (t 3))
                   y (- py (t 4))]
               (if (<= (+ (* x x) (* y y)) (t 5))
                 (assoc! state
-                  0 (let [[a b c] t]
-                      (-> (state 0)
-                          (add-unique-edge! a b)
-                          (add-unique-edge! b c)
-                          (add-unique-edge! c a))))
+                        0 (let [[a b c] t]
+                            (-> (state 0)
+                                (add-unique-edge! a b)
+                                (add-unique-edge! b c)
+                                (add-unique-edge! c a))))
                 (assoc! state
-                  1 (conj! (state 1) t))))))
-        (transient [(transient #{}) (transient [])])
-        tris)))
+                        1 (conj! (state 1) t))))))
+      (transient [(transient #{}) (transient [])])
+      tris)))
 
   (defn- make-triangle
     [a b c]
@@ -68,6 +67,7 @@
                 [edges tris] (compute-edges complete tris p)
                 tris (reduce #(conj! % (make-triangle (%2 0) (%2 1) p)) tris (persistent! edges))]
             (recur (rest points) (persistent! tris) complete))
-          (map #(subvec % 0 3)
-            (remove #(shared-vertex? s %) (persistent! (reduce conj! complete tris))))))))
+          (map
+           (fn [t] (triangle2 (t 0) (t 1) (t 2)))
+           (remove #(shared-vertex? s %) (persistent! (reduce conj! complete tris))))))))
 #+END_SRC
