@@ -14,10 +14,10 @@
 *** Constructors
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   (defn triangle2
-    [a b c] (thi.ng.geom.types.Triangle2. (g/vec2 a) (g/vec2 b) (g/vec2 c)))
+    [a b c] (thi.ng.geom.types.Triangle2. (vec2 a) (vec2 b) (vec2 c)))
 
   (defn triangle3
-    [a b c] (thi.ng.geom.types.Triangle3. (g/vec3 a) (g/vec3 b) (g/vec3 c)))
+    [a b c] (thi.ng.geom.types.Triangle3. (vec3 a) (vec3 b) (vec3 c)))
 
   (defn equilateral2
     ([l]
@@ -26,7 +26,7 @@
         (sequential? l) (let [[a b] l] (equilateral2 a b))
         :default (assert false "invalid argument, only map or sequential supported"))) ;; TODO
     ([a b]
-       (let [a (g/vec2 a) b (g/vec2 b)
+       (let [a (vec2 a) b (vec2 b)
              dir (g/sub a b)
              n (g/normal dir)
              c (-> n (g/normalize (* (g/mag dir) (* SQRT3 0.5))) (g/add (g/mid a b)))]
@@ -127,7 +127,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PShape
   (area
-   [t] (area2 t))
+   [t] (area2 (:a t) (:b t) (:c t)))
   (bounds
    [t] (g/bounding-rect* [(:a t) (:b t) (:c t)]))
   (center
@@ -228,7 +228,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PShape
   (area
-   [t] (area3 t))
+   [t] (area3 (:a t) (:b t) (:c t)))
   (bounds
    [t] (g/bounding-box* [(:a t) (:b t) (:c t)]))
   (center
