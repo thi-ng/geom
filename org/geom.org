@@ -98,7 +98,7 @@
 **** Protocols
 ***** Vector operations
 ****** PVector
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/vectors.cljx
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol PVector
     (abs [this])
     (add [this a] [this a b] [this a b c])
@@ -123,18 +123,19 @@
     (maxv [this a] [this a b]))
 #+END_SRC
 ****** PHeading
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/vectors.cljx
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol PHeading
     (heading-xy [this])
     (heading-xz [this])
     (heading-yz [this])
     (angle-between [this a])
+    (normal [this] [this a])
     (slope-xy [this])
     (slope-xz [this])
     (slope-yz [this]))
 #+END_SRC
 ****** PPolar
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/vectors.cljx
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol PPolar
     (polar [this])
     (cartesian [this]))
@@ -333,7 +334,7 @@
      Furthermore, since we aim for full ClojureScript compatibiliy,
      the following implementations are quite lengthy.
 ***** 2D
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/vectors.cljx
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (deftype Vec2 [^double x ^double y _meta]
 
     ,#+clj clojure.lang.IObj
@@ -511,7 +512,7 @@
           (let [l (/ len l)] (Vec2. (* x l) (* y l) _meta)) this)))
 
     (invert [this] (Vec2. (- x) (- y) _meta))
-    (inverse [this] (Vec2. (/ x) (/ y) _meta))
+    (inverse [this] (Vec2. (/ 1.0 x) (/ 1.0 y) _meta))
 
     (reflect [this [rx ry :as r]]
       (let [d (* (dot this r) 2.0)]
@@ -529,7 +530,7 @@
     PInterpolateable
     (mid [this [ax ay]]
       (Vec2. (+ x (* (- ax x) 0.5)) (+ y (* (- ay y) 0.5)) _meta))
-    (mix [this [ax ay] ^double t]
+    (mix [this [ax ay] t]
       (Vec2. (+ x (* (- ax x) t)) (+ y (* (- ay y) t)) _meta))
 
     PHeading
@@ -544,13 +545,13 @@
 
     PPolar
     (polar [this]
-      (Vec2. (mag this)) (heading this) _meta)
+      (Vec2. (mag this) (heading-xy this) _meta))
     (cartesian [this]
       (Vec2. (* x (Math/cos y)) (* x (Math/sin y)) _meta))
     )
 #+END_SRC
 ***** 3D
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/vectors.cljx
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (deftype Vec3 [^double x ^double y ^double z _meta]
 
     ,#+clj clojure.lang.IObj
@@ -770,7 +771,7 @@
           (let [l (/ len l)] (Vec3. (* x l) (* y l) (* z l) _meta)) this)))
 
     (invert [this] (Vec3. (- x) (- y) (- z) _meta))
-    (inverse [this] (Vec3. (/ x) (/ y) (/ z) _meta))
+    (inverse [this] (Vec3. (/ 1.0 x) (/ 1.0 y) (/ 1.0 z) _meta))
 
     (reflect [this [rx ry rz :as r]]
       (let [d (* (dot this r) 2.0)]
@@ -781,14 +782,14 @@
     (minv [this [ax ay az] [bx by bz]]
       (Vec3. (min (min x ax) bx) (min (min y ay) by) (min (min z az) bz) _meta))
     (maxv [this [ax ay az]]
-      (Vec3. (max x ax) (max y ay) (min z az) _meta))
+      (Vec3. (max x ax) (max y ay) (max z az) _meta))
     (maxv [this [ax ay az] [bx by bz]]
-      (Vec3. (max (max x ax) bx) (max (max y ay) by) (min (min z az) bz) _meta))
+      (Vec3. (max (max x ax) bx) (max (max y ay) by) (max (max z az) bz) _meta))
 
     PInterpolateable
     (mid [this [ax ay az]]
       (Vec3. (+ x (* (- ax x) 0.5)) (+ y (* (- ay y) 0.5)) (+ z (* (- az z) 0.5)) _meta))
-    (mix [this [ax ay az] ^double t]
+    (mix [this [ax ay az] t]
       (Vec3. (+ x (* (- ax x) t)) (+ y (* (- ay y) t)) (+ z (* (- az z) t)) _meta))
 
     PPolar
@@ -806,7 +807,7 @@
     )
 #+END_SRC
 ***** Protocol helpers
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/vectors.cljx
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   #+clj
   (defn map-entry [k ^double v]
     (reify
@@ -827,7 +828,7 @@
              (clojure.lang.Util/equals v (.getValue ^java.util.Map$Entry x))))))
 #+END_SRC
 ***** Swizzling
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/vectors.cljx
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   ,#+clj  (defn- key-error [k] (throw (IllegalArgumentException. (str "illegal lookup key: " k))))
   ,#+cljs (defn- key-error [k] (throw (js/Error. (str "illegal lookup key: " k))))
 
@@ -931,14 +932,16 @@
     ([n] (normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm)) n)))
 #+END_SRC
 ***** Rotation
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+#+BEGIN_SRC clojure
+  ;; :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn rotate2
     [[x y] theta]
     (let [c (Math/cos theta) s (Math/sin theta)]
       [(- (* x c) (* y s)) (+ (* x s) (* y c))]))
 #+END_SRC
 ***** Translation
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+#+BEGIN_SRC clojure
+  ;; :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn translate2
     ([t points] (let [t (vec2 t)] (map #(add2 % t) points)))
     ([t p & more] (translate2 t (cons p more))))
@@ -954,27 +957,27 @@
 ***** Shared functions
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn closest-point*
-    [fdist lines q]
+    [lines q]
     (reduce (fn [a b]
-              (if (< (fdist q a) (fdist q b)) a b))
+              (if (< (dist-squared q a) (dist-squared q b)) a b))
             (map #(closest-point % q) lines)))
 
   (defn from-barycentric*
-    [fctor fscale fadd points weights]
-    (apply fadd (map (fn [p w] (fscale (fctor p) w)) points weights)))
+    [ctor points weights]
+    (reduce add (map (fn [p w] (scale (ctor p) w)) points weights)))
 
   (defn centroid*
-    [add scale coll]
+    [coll]
     (when (seq coll)
-       (scale (reduce add coll) (/ 1.0 (count coll)))))
+      (scale-n (reduce add coll) (/ 1.0 (count coll)))))
 
   (defn bounding-rect*
     ([coll]
        (let [c (count coll)]
          (cond
-          (> c 1) (let [p (apply min2 coll)
-                        q (apply max2 coll)
-                        [w h] (sub2 q p)]
+          (> c 1) (let [p (reduce minv coll)
+                        q (reduce maxv coll)
+                        [w h] (sub q p)]
                     (thi.ng.geom.types.Rect. p w h))
           (= c 1) (thi.ng.geom.types.Rect. (first coll) 0.0 0.0)
           :default nil)))
@@ -984,33 +987,35 @@
     ([coll]
        (let [cnt (count coll)]
          (cond
-          (> cnt 1) (let [p (apply min3 coll)
-                          q (apply max3 coll)]
+          (> cnt 1) (let [p (reduce minv coll)
+                          q (reduce maxv coll)]
                       (thi.ng.geom.types.AABB. p q))
           (= cnt 1) (thi.ng.geom.types.AABB. (first coll) [0.0 0.0 0.0])
           :default nil)))
-    ([p q] (thi.ng.geom.types.AABB. p (sub3 q p))))
+    ([p q] (thi.ng.geom.types.AABB. p (sub q p))))
 
   (defn max-dist*
-    [sub mag c points]
+    [c points]
     (->> points
-         (map #(mag (sub c %)))
+         (map #(mag-squared (sub c %)))
          (reduce max)
          (Math/sqrt)))
 
   (defn bounding-circle*
     [c r-or-points]
     (thi.ng.geom.types.Circle.
-     c (if (coll? r-or-points)
-         (max-dist* sub2 mag2-squared c r-or-points)
-         r-or-points)))
+     (vec2 c)
+     (if (coll? r-or-points)
+       (max-dist* c r-or-points)
+       r-or-points)))
 
   (defn bounding-sphere*
     [c r-or-points]
     (thi.ng.geom.types.Sphere.
-     c (if (coll? r-or-points)
-         (max-dist* sub3 mag3-squared c r-or-points)
-         r-or-points)))
+     (vec3 c)
+     (if (coll? r-or-points)
+       (max-dist* c r-or-points)
+       r-or-points)))
 
   (defn axis-bounds*
     [axis coll]
