@@ -3,10 +3,13 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshio.cljx
   (ns thi.ng.geom.meshio
     (:require
-      [thi.ng.data.byteutils :as b]
-      [thi.ng.geom.core :as g]
-      [thi.ng.geom.mesh :as m]
-      [thi.ng.geom.triangle :as t]))
+     [thi.ng.data.byteutils :as b]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.mesh :as m]
+     [thi.ng.geom.triangle :as t])
+    ,#+clj
+    (:import
+     [java.io OutputStream InputStream]))
 #+END_SRC
 ** Configuration parameters
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshio.cljx
@@ -15,7 +18,7 @@
 ** STL
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshio.cljx
   (defn write-stl
-    [stream {:keys [fnormals faces]}]
+    [^OutputStream stream {:keys [fnormals faces]}]
     (.write stream (byte-array 80))
     (b/write-int32-le stream (count faces))
     (doseq [[a b c :as f] faces]
@@ -27,7 +30,7 @@
     stream)
 
   (defn read-stl
-    [stream]
+    [^InputStream stream]
     (.read stream (byte-array 80))
     (let [face (byte-array 50)
           nf (b/read-int32-le stream)
@@ -43,7 +46,7 @@
             (recur (m/add-face! [v e f] [a b c]) (dec i)))))))
 
   (defn read-stl-vertices
-    [stream]
+    [^InputStream stream]
     (.read stream (byte-array 80))
     (loop [vertices #{} nf (b/read-int32-le stream)]
       (if (zero? nf)
@@ -58,7 +61,7 @@
 ** PLY
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshio.cljx
   (defn write-ply
-    [stream {:keys [vertices vnormals faces]}]
+    [^OutputStream stream {:keys [vertices vnormals faces]}]
     (let [vertices (keys vertices)
           vindex (zipmap vertices (range))
           fhead (byte-array [(byte 3)])
@@ -91,7 +94,7 @@
 ** OBJ
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshio.cljx
   (defn write-obj
-    [stream {:keys [vertices vnormals faces]}]
+    [^OutputStream stream {:keys [vertices vnormals faces]}]
     (let [vertices (keys vertices)
           has-vnormals? (not (nil? (seq vnormals)))
           fmt-float (str "%1." *precision* "f ")
@@ -125,7 +128,7 @@
 ** OFF
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshio.cljx
   (defn write-off
-    [stream {:keys [vertices faces]}]
+    [^OutputStream stream {:keys [vertices faces]}]
     (let [vertices (keys vertices)
           fmt-float (str "%1." *precision* "f ")
           fmt-vertex (str fmt-float fmt-float fmt-float "\n")
