@@ -108,7 +108,7 @@
             ab-isec (set/intersection fa fb)
             a-xor (set/difference fa ab-isec)
             b-xor (set/difference fb ab-isec)
-            mp (g/mid a b)]
+            mp (g/mix a b)]
         (-> (reduce g/remove-face mesh (set/union ab-isec a-xor b-xor))
             (replace-vertex* a mp a-xor)
             (replace-vertex* b mp b-xor)))

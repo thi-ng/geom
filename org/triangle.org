@@ -29,7 +29,7 @@
        (let [a (vec2 a) b (vec2 b)
              dir (g/sub a b)
              n (g/normal dir)
-             c (-> n (g/normalize (* (g/mag dir) (* SQRT3 0.5))) (g/add (g/mid a b)))]
+             c (-> n (g/normalize (* (g/mag dir) (* SQRT3 0.5))) (g/add (g/mix a b)))]
          (triangle2 a b c)))
     ([x1 y1 x2 y2]
        (equilateral2 [x1 y1] [x2 y2])))
@@ -319,16 +319,16 @@
               (cond
                 eq-ab? (let [m2 (- (/ (- cx bx) (- cy by)))
                              mx1 (* 0.5 (+ ax bx))
-                             [mx2 my2] (g/mid b c)]
+                             [mx2 my2] (g/mix b c)]
                          [mx1 (+ (* m2 (- mx1 mx2)) my2)])
                 eq-bc? (let [m1 (- (/ (- bx ax) (- by ay)))
                              mx2 (* 0.5 (+ bx cx))
-                             [mx1 my1] (g/mid a b)]
+                             [mx1 my1] (g/mix a b)]
                          [mx2 (+ (* m1 (- mx2 mx1)) my1)])
                 :default (let [m1 (- (/ (- bx ax) (- by ay)))
                                m2 (- (/ (- cx bx) (- cy by)))
-                               [mx1 my1] (g/mid a b)
-                               [mx2 my2] (g/mid b c)
+                               [mx1 my1] (g/mix a b)
+                               [mx2 my2] (g/mix b c)
                                xx (-> (* m1 mx1) (- (* m2 mx2))
                                       (+ my2) (- my1) (/ (- m1 m2)))]
                            [xx (+ (* m1 (- xx mx1)) my1)]))]
@@ -346,9 +346,9 @@
     [ctor]
     (fn
       [{:keys [a b c] :as t}]
-      (let [ab (g/mid a b)
-            bc (g/mid b c)
-            ca (g/mid c a)
+      (let [ab (g/mix a b)
+            bc (g/mix b c)
+            ca (g/mix c a)
             ct (centroid* t)]
         [(ctor a ab ca) (ctor bc ab b)
          (ctor c ca bc) (ctor ca ab bc)])))

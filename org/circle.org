@@ -137,6 +137,6 @@
 
   (defn tangent-points
     [{p :p :as c} q]
-    (let [m (g/mid p q)]
+    (let [m (g/mix p q)]
       (intersect-circle c (circle m (g/dist m p)))))
 #+END_SRC

@@ -60,7 +60,7 @@
           bext (g/sub bmax bmin)
           dm (max (bext 0) (bext 1))
           d2 (* 2.0 dm)
-          m (g/mid bmin bmax)
+          m (g/mix bmin bmax)
           s (make-triangle (g/sub m d2 dm) (g/add m 0 d2) (g/add m d2 (- dm)))]
       (loop [points points tris [s] complete (transient #{})]
         (if-let [[px :as p] (first points)]

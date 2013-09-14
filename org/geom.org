@@ -238,11 +238,9 @@
     (contains-point? [this p]))
 #+END_SRC
 ****** PInterpolateable
-******* TODO replace mid with single arity mix
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol PInterpolateable
-    (mid [this x])
-    (mix [this x t]))
+    (mix [this x] [this x t]))
 #+END_SRC
 ****** PSampleable
 ******* TODO move random-point-inside into PBoundary
@@ -529,7 +527,7 @@
       (Vec2. (max (max x ax) bx) (max (max y ay) by) _meta))
 
     PInterpolateable
-    (mid [this [ax ay]]
+    (mix [this [ax ay]]
       (Vec2. (+ x (* (- ax x) 0.5)) (+ y (* (- ay y) 0.5)) _meta))
     (mix [this [ax ay] t]
       (Vec2. (+ x (* (- ax x) t)) (+ y (* (- ay y) t)) _meta))
@@ -788,7 +786,7 @@
       (Vec3. (max (max x ax) bx) (max (max y ay) by) (max (max z az) bz) _meta))
 
     PInterpolateable
-    (mid [this [ax ay az]]
+    (mix [this [ax ay az]]
       (Vec3. (+ x (* (- ax x) 0.5)) (+ y (* (- ay y) 0.5)) (+ z (* (- az z) 0.5)) _meta))
     (mix [this [ax ay az] t]
       (Vec3. (+ x (* (- ax x) t)) (+ y (* (- ay y) t)) (+ z (* (- az z) t)) _meta))

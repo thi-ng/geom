@@ -111,7 +111,7 @@
       (let [t [(* w 0.5) (* h 0.5)]]
         (thi.ng.geom.types.Rect. (g/sub o t) w h))))
   (centroid
-   [{p :p :as this}] (g/mid p (g/add p (:w this) (:h this))))
+   [{p :p :as this}] (g/mix p (g/add p (:w this) (:h this))))
   (width  [this] (:w this))
   (height [this] (:h this))
   (depth  [this] 0)
