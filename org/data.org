@@ -127,9 +127,8 @@
 #+END_SRC
 *** Conversion functions
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/data/byteutils.cljx
-  (defn int->byte [x] (if (> x 0x7f) (- x 0x100) x))
-
-  (defn byte->int [x] (if (neg? x) (+ x 0x100) x))
+  #+clj (defn int->byte [x] (if (> x 0x7f) (- x 0x100) x))
+  #+clj (defn byte->int [x] (if (neg? x) (+ x 0x100) x))
 #+END_SRC
 *** Write functions
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/data/byteutils.cljx

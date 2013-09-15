@@ -105,8 +105,6 @@
     (add-n [this n])
     (sub [this a] [this a b] [this a b c])
     (sub-n [this n])
-    (scale [this a] [this a b] [this a b c])
-    (scale-n [this n])
     (madd [this a b])
     (dot [this a])
     (cross [this a])
@@ -116,7 +114,6 @@
     (dist-squared [this a])
     (normalize [this] [this len])
     (limit [this len])
-    (invert [this])
     (inverse [this])
     (reflect [this r])
     (minv [this a] [this a b])
@@ -145,39 +142,21 @@
       usually be manipulated via the three basic operations: rotate,
       scale & translate. Other, more complex transformations can be
       achieved through combination and repetition of these.
-****** TODO merge all into PTransformable??
-****** PRotatable
+****** PTransformable
        Rotation is always relative to the world origin. For 2D
        implementations, the rotation angle \theta (theta) is always
        interpreted clockwise and only the =rotate= method is
        implemented.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
-  (defprotocol PRotatable
-    (rotate [this t])
+  (defprotocol PTransformable
     (rotate-x [this t])
     (rotate-y [this t])
     (rotate-z [this t])
-    (rotate-axis [this a t]))
-#+END_SRC
-******* TODO Maybe rotate-x etc could be implemented to, but return a 3D entity instead?
-****** PScalable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
-  (defprotocol PScalable
-    (scale-x [this x])
-    (scale-y [this y])
-    (scale-z [this z]))
-#+END_SRC
-****** PTranslatable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
-  (defprotocol PTranslatable
+    (rotate [this t]) ;; alias for rotate-z
+    (rotate-around-axis [this a t])
+    (scale [this s] [this a b] [this a b c])
+    (scale-n [this n])
     (translate [this t])
-    (translate-x [this x])
-    (translate-y [this y])
-    (translate-z [this z]))
-#+END_SRC
-****** PTransformable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
-  (defprotocol ITransform
     (transform [this matrix]))
 #+END_SRC
 ***** Shape based & structural operations
@@ -296,6 +275,11 @@
   (defprotocol PExtrudeable
     (extrude [this opts]))
 #+END_SRC
+****** PInvertible
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol PInvertible
+    (invert [this]))
+#+END_SRC
 ***** Type specific operations
 ****** PLineStrip
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -307,9 +291,11 @@
   (defprotocol PMesh
     (add-face [this f])
     (add-mesh [this m])
+    (compute-face-normals [this])
+    (compute-vertex-normals [this])
     (remove-face [this f])
     (remove-vertex [this v])
-    (replace-vertex [this v])
+    (replace-vertex [this a b])
     (vertex-faces [this v])
     (merge-vertices [this a b]))
 #+END_SRC
@@ -444,6 +430,27 @@
     Object
     (toString [_] (str "[" x " " y "]"))
 
+    PTransformable
+    (scale [this a]
+      (if (instance? Vec2 a)
+        (Vec2. (* x (.-x ^Vec2 a)) (* y (.-y ^Vec2 a)) _meta)
+        (Vec2. (* x (nth a 0 1)) (* y (nth a 1 1)) _meta)))
+    (scale [this a b]
+      (if (number? a)
+        (Vec2. (* x a) (* y b) _meta)
+        (let [[ax ay] a [bx by] b]
+          (Vec2. (* (* x ax) bx) (* (* y ay) by) _meta))))
+    (scale-n [this n]
+      (Vec2. (* x n) (* y n) _meta))
+    (translate [this [tx ty]]
+      (add this tx ty))
+    (rotate [this theta]
+      (let [s (Math/sin theta) c (Math/cos theta)]
+        (Vec2. (- (* x c) (* y s)) (+ (* x s) (* y c)) _meta)))
+    (rotate-z [this theta]
+      (rotate this theta))
+    (transform [this m])
+
     PVector
     (abs [this]
       (Vec2. (m/abs x) (m/abs y) _meta))
@@ -470,18 +477,6 @@
           (Vec2. (- (- x ax) bx) (- (- y ay) by) _meta))))
     (sub-n [this n]
       (Vec2. (- x n) (- y n) _meta))
-
-    (scale [this a]
-      (if (instance? Vec2 a)
-        (Vec2. (* x (.-x ^Vec2 a)) (* y (.-y ^Vec2 a)) _meta)
-        (Vec2. (* x (nth a 0 1)) (* y (nth a 1 1)) _meta)))
-    (scale [this a b]
-      (if (number? a)
-        (Vec2. (* x a) (* y b) _meta)
-        (let [[ax ay] a [bx by] b]
-          (Vec2. (* (* x ax) bx) (* (* y ay) by) _meta))))
-    (scale-n [this n]
-      (Vec2. (* x n) (* y n) _meta))
 
     (madd [this a b] (add ((if (number? a) scale-n scale) this a) b))
 
@@ -510,7 +505,6 @@
         (if (pos? l)
           (let [l (/ len l)] (Vec2. (* x l) (* y l) _meta)) this)))
 
-    (invert [this] (Vec2. (- x) (- y) _meta))
     (inverse [this] (Vec2. (/ 1.0 x) (/ 1.0 y) _meta))
 
     (reflect [this [rx ry :as r]]
@@ -525,6 +519,9 @@
       (Vec2. (max x ax) (max y ay) _meta))
     (maxv [this [ax ay] [bx by]]
       (Vec2. (max (max x ax) bx) (max (max y ay) by) _meta))
+
+    PInvertible
+    (invert [this] (Vec2. (- x) (- y) _meta))
 
     PInterpolateable
     (mix [this [ax ay]]
@@ -546,8 +543,7 @@
     (polar [this]
       (Vec2. (mag this) (heading-xy this) _meta))
     (cartesian [this]
-      (Vec2. (* x (Math/cos y)) (* x (Math/sin y)) _meta))
-    )
+      (Vec2. (* x (Math/cos y)) (* x (Math/sin y)) _meta)))
 #+END_SRC
 ***** 3D
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -693,6 +689,37 @@
     Object
     (toString [_] (str "[" x " " y " " z "]"))
 
+    PTransformable
+    (scale [this a]
+      (if (instance? Vec3 a)
+        (Vec3. (* x (.-x ^Vec3 a)) (* y (.-y ^Vec3 a)) (* z (.-z ^Vec3 a)) _meta)
+        (Vec3. (* x (nth a 0 1)) (* y (nth a 1 1)) (* z (nth a 2 1)) _meta)))
+    (scale [this a b]
+      (if (number? a)
+        (Vec3. (* x a) (* y b) z _meta)
+        (let [[ax ay az] a [bx by bz] b]
+          (Vec3. (* (* x ax) bx) (* (* y ay) by) (* (* z az) bz) _meta))))
+    (scale [this a b c]
+      (if (number? a)
+        (Vec3. (* x a) (* y b) (* z c) _meta)
+        (let [[ax ay az] a [bx by bz] b [cx cy cz] c]
+          (Vec3. (* (* (* x ax) bx) cx) (* (* (* y ay) by) cy) (* (* (* z az) bz) cz) _meta))))
+    (scale-n [this n] (Vec3. (* x n) (* y n) (* z n) _meta))
+    (translate [this t]
+      (add this t))
+    (rotate-x [this theta]
+      (let [s (Math/sin theta) c (Math/cos theta)]
+        (Vec3. x (+ (* z s) (* y c)) (- (* z c) (* y s)) _meta)))
+    (rotate-y [this theta]
+      (let [s (Math/sin theta) c (Math/cos theta)]
+        (Vec3. (- (* x c) (* z s)) y (+ (* x s) (* z c)) _meta)))
+    (rotate-z [this theta]
+      (let [s (Math/sin theta) c (Math/cos theta)]
+        (Vec3. (- (* x c) (* y s)) (+ (* x s) (* y c)) z _meta)))
+    (rotate [this theta]
+      (rotate-z this theta))
+    (transform [this m])
+
     PVector
     (add [this a]
       (if (instance? Vec3 a)
@@ -726,22 +753,6 @@
           (Vec3. (- (- (- x ax) bx) cx) (- (- (- y ay) by) cy) (- (- (- z az) bz) cz) _meta))))
     (sub-n [this n] (Vec3. (- x n) (- y n) (- z n) _meta))
 
-    (scale [this a]
-      (if (instance? Vec3 a)
-        (Vec3. (* x (.-x ^Vec3 a)) (* y (.-y ^Vec3 a)) (* z (.-z ^Vec3 a)) _meta)
-        (Vec3. (* x (nth a 0 1)) (* y (nth a 1 1)) (* z (nth a 2 1)) _meta)))
-    (scale [this a b]
-      (if (number? a)
-        (Vec3. (* x a) (* y b) z _meta)
-        (let [[ax ay az] a [bx by bz] b]
-          (Vec3. (* (* x ax) bx) (* (* y ay) by) (* (* z az) bz) _meta))))
-    (scale [this a b c]
-      (if (number? a)
-        (Vec3. (* x a) (* y b) (* z c) _meta)
-        (let [[ax ay az] a [bx by bz] b [cx cy cz] c]
-          (Vec3. (* (* (* x ax) bx) cx) (* (* (* y ay) by) cy) (* (* (* z az) bz) cz) _meta))))
-    (scale-n [this n] (Vec3. (* x n) (* y n) (* z n) _meta))
-
     (madd [this a b] (add ((if (number? a) scale-n scale) this a) b))
 
     (dot [this [ax ay az]] (+ (* x ax) (* y ay) (* z az)))
@@ -769,7 +780,6 @@
         (if (pos? l)
           (let [l (/ len l)] (Vec3. (* x l) (* y l) (* z l) _meta)) this)))
 
-    (invert [this] (Vec3. (- x) (- y) (- z) _meta))
     (inverse [this] (Vec3. (/ 1.0 x) (/ 1.0 y) (/ 1.0 z) _meta))
 
     (reflect [this [rx ry rz :as r]]
@@ -784,6 +794,9 @@
       (Vec3. (max x ax) (max y ay) (max z az) _meta))
     (maxv [this [ax ay az] [bx by bz]]
       (Vec3. (max (max x ax) bx) (max (max y ay) by) (max (max z az) bz) _meta))
+
+    PInvertible
+    (invert [this] (Vec3. (- x) (- y) (- z) _meta))
 
     PInterpolateable
     (mix [this [ax ay az]]

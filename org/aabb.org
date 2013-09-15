@@ -16,7 +16,8 @@
   (defn aabb
     ([] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 1.0)))
     ([size] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 size)))
-    ([o size] (thi.ng.geom.types.AABB. (vec3 o) (vec3 size))))
+    ([o size] (thi.ng.geom.types.AABB. (vec3 o) (vec3 size)))
+    ([sx sy sz] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 sx sy sz))))
 
   (defn aabb-from-minmax
     [p q]

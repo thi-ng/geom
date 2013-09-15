@@ -51,7 +51,7 @@
 
   (defn unmap-uv
     [{:keys[p w h]} [qx qy]]
-    [(m/fma qx w (p 0)) (m/fma qy h (p 1))])
+    [(m/madd qx w (p 0)) (m/madd qy h (p 1))])
 
   (defn left [r] ((:p r) 0))
   (defn right [r] (+ ((:p r) 0) (:w r)))

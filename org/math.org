@@ -50,8 +50,8 @@
     "Returns x if odd or `x+1` if `x` is even."
     [x] (if (even? x) (inc x) x))
 
-  #+clj  (definline fma "Returns a * b + c." [a b c] `(+ (* ~a ~b) ~c))
-  #+cljs (defn fma "Returns a * b + c."  [a b c] (+ (* a b) c))
+  #+clj  (definline madd "Returns a * b + c." [a b c] `(+ (* ~a ~b) ~c))
+  #+cljs (defn madd "Returns a * b + c."  [a b c] (+ (* a b) c))
 
   #+clj  (defn abs [x] (if (neg? x) (- x) x))
   #+cljs (def abs Math/abs)
@@ -203,7 +203,7 @@
     [n num]
     (dec
      (if (< n 100)
-       (int (Math/round (fma (/ n 100.0) num 0.5)))
+       (int (Math/round (madd (/ n 100.0) num 0.5)))
        num)))
 
   (defn percentile

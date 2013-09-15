@@ -125,24 +125,29 @@
   g/PShape
   (area
    [{points :points}]
-   (let [p (first points)
-         [area] (reduce (fn [[a p] v] [(+ a (g/cross p v)) v])
-                        [0.0 p] (concat (drop 1 points) [p]))]
-     (* 0.5 area)))
+   (->> points
+        (d/shift-left 1)
+        (reduce (fn [[a p] v] [(+ a (g/cross p v)) v]) [0.0 (first points)])
+        first
+        (* 0.5)))
   (bounds
    [this] (g/bounding-rect* (:points this)))
   (center
    ([this] (g/center this [0.0 0.0]))
    ([this o]
-      (thi.ng.geom.types.Polygon. (vec (g/translate (g/sub o (g/centroid this)) (:points this))) [])))
+      (let [d (g/sub o (g/centroid this)) (:points this)
+            p (->> this
+                   :points
+                   (map #(g/add d %))
+                   (vec))]
+        (thi.ng.geom.types.Polygon. p []))))
   (centroid
    [{points :points :as this}]
-   (let [p (first points)
-         [c] (reduce
-              (fn [[c p] v]
-                (let [x (g/cross p v)]
-                  [(g/add c (g/scale-n (g/add p v) x)) v]))
-              [[0.0 0.0] p] (conj (subvec points 1 (count points)) p))]
+   (let [c (->> points
+                (d/shift-left 1)
+                (reduce (fn [[c p] v] [(g/madd (g/add p v) (g/cross p v) c) v])
+                        [(vec2) (first points)])
+                (first))]
      (g/scale-n c (/ 1.0 (* 6 (g/area this))))))
   (width
    [this] (g/axis-range* 0 (:points this)))
