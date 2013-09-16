@@ -45,8 +45,8 @@
     ([[a b c]] (* 0.5 (g/mag (g/cross (g/sub b a) (g/sub c a))))))
 
   (defn centroid*
-    ([a b c] (g/scale-n (g/add a b c) THIRD))
-    ([[a b c]] (g/scale-n (g/add a b c) THIRD)))
+    ([a b c] (g/scale (g/add a b c) THIRD))
+    ([[a b c]] (g/scale (g/add a b c) THIRD)))
 
   (defn barycentric*
     [a b c p]
@@ -290,7 +290,7 @@
       (if (neg? nd)
         (let [t (/ (- (g/dot n (g/sub p a))) nd)]
           (if (>= t *eps*)
-            (let [ip (g/add p (g/scale-n dir t))]
+            (let [ip (g/add p (g/scale dir t))]
               (if (contains-point* a b c ip)
                 {:p ip :n n :dist t :dir (g/normalize (g/sub ip p))})))))))
 #+END_SRC

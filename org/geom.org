@@ -104,9 +104,7 @@
   (defprotocol PVector
     (abs [this])
     (add [this a] [this a b] [this a b c])
-    (add-n [this n])
     (sub [this a] [this a b] [this a b c])
-    (sub-n [this n])
     (madd [this a b])
     (dot [this a])
     (cross [this a])
@@ -167,7 +165,6 @@
     (rotate [this t]) ;; alias for rotate-z
     (rotate-around-axis [this a t])
     (scale [this s] [this a b] [this a b c])
-    (scale-n [this n])
     (translate [this t])
     (transform [this matrix]))
 #+END_SRC
@@ -454,8 +451,6 @@
     PTransformable
     (scale [this s]
       (multiply this (set-scale IDENTITY4x4 s)))
-    (scale-n [this s]
-      (multiply this (set-scale IDENTITY4x4 s)))
     (translate [this t]
       (multiply this (set-position IDENTITY4x4 t)))
     (rotate-x [this theta]
@@ -623,14 +618,14 @@
     (scale [this a]
       (if (instance? Vec2 a)
         (Vec2. (* x (.-x ^Vec2 a)) (* y (.-y ^Vec2 a)) _meta)
-        (Vec2. (* x (nth a 0 1)) (* y (nth a 1 1)) _meta)))
+        (if (number? a)
+          (Vec2. (* x a) (* y a) _meta)
+          (Vec2. (* x (nth a 0 1)) (* y (nth a 1 1)) _meta))))
     (scale [this a b]
       (if (number? a)
         (Vec2. (* x a) (* y b) _meta)
         (let [[ax ay] a [bx by] b]
           (Vec2. (* (* x ax) bx) (* (* y ay) by) _meta))))
-    (scale-n [this n]
-      (Vec2. (* x n) (* y n) _meta))
     (translate [this [tx ty]]
       (add this tx ty))
     (rotate [this theta]
@@ -646,28 +641,28 @@
     (add [this a]
       (if (instance? Vec2 a)
         (Vec2. (+ x (.-x ^Vec2 a)) (+ y (.-y ^Vec2 a)) _meta)
-        (Vec2. (+ x (nth a 0 0)) (+ y (nth a 1 0)) _meta)))
+        (if (number? a)
+          (Vec2. (+ x a) (+ y a) _meta)
+          (Vec2. (+ x (nth a 0 0)) (+ y (nth a 1 0)) _meta))))
     (add [this a b]
       (if (number? a)
         (Vec2. (+ x a) (+ y b) _meta)
         (let [[ax ay] a [bx by] b]
           (Vec2. (+ (+ x ax) bx) (+ (+ y ay) by) _meta))))
-    (add-n [this n]
-      (Vec2. (+ x n) (+ y n) _meta))
 
     (sub [this a]
       (if (instance? Vec2 a)
         (Vec2. (- x (.-x ^Vec2 a)) (- y (.-y ^Vec2 a)) _meta)
-        (Vec2. (- x (nth a 0 0)) (- y (nth a 1 0)) _meta)))
+        (if (number? a)
+          (Vec2. (- x a) (- y a) _meta)
+          (Vec2. (- x (nth a 0 0)) (- y (nth a 1 0)) _meta))))
     (sub [this a b]
       (if (number? a)
         (Vec2. (- x a) (- y b) _meta)
         (let [[ax ay] a [bx by] b]
           (Vec2. (- (- x ax) bx) (- (- y ay) by) _meta))))
-    (sub-n [this n]
-      (Vec2. (- x n) (- y n) _meta))
 
-    (madd [this a b] (add ((if (number? a) scale-n scale) this a) b))
+    (madd [this a b] (add (scale this a) b))
 
     (dot [this [ax ay]] (+ (* x ax) (* y ay)))
     (cross [this [ax ay]] (- (* x ay) (* y ax)))
@@ -882,7 +877,9 @@
     (scale [this a]
       (if (instance? Vec3 a)
         (Vec3. (* x (.-x ^Vec3 a)) (* y (.-y ^Vec3 a)) (* z (.-z ^Vec3 a)) _meta)
-        (Vec3. (* x (nth a 0 1)) (* y (nth a 1 1)) (* z (nth a 2 1)) _meta)))
+        (if (number? a)
+          (Vec3. (* x a) (* y a) (* z a) _meta)
+          (Vec3. (* x (nth a 0 1)) (* y (nth a 1 1)) (* z (nth a 2 1)) _meta))))
     (scale [this a b]
       (if (number? a)
         (Vec3. (* x a) (* y b) z _meta)
@@ -893,7 +890,6 @@
         (Vec3. (* x a) (* y b) (* z c) _meta)
         (let [[ax ay az] a [bx by bz] b [cx cy cz] c]
           (Vec3. (* (* (* x ax) bx) cx) (* (* (* y ay) by) cy) (* (* (* z az) bz) cz) _meta))))
-    (scale-n [this n] (Vec3. (* x n) (* y n) (* z n) _meta))
     (translate [this t]
       (add this t))
     (rotate-x [this theta]
@@ -918,7 +914,9 @@
     (add [this a]
       (if (instance? Vec3 a)
         (Vec3. (+ x (.-x ^Vec3 a)) (+ y (.-y ^Vec3 a)) (+ z (.-z ^Vec3 a)) _meta)
-        (Vec3. (+ x (nth a 0 0)) (+ y (nth a 1 0)) (+ z (nth a 2 0)) _meta)))
+        (if (number? a)
+          (Vec3. (+ x a) (+ y a) (+ z a) _meta)
+          (Vec3. (+ x (nth a 0 0)) (+ y (nth a 1 0)) (+ z (nth a 2 0)) _meta))))
     (add [this a b]
       (if (number? a)
         (Vec3. (+ x a) (+ y b) z _meta)
@@ -929,12 +927,13 @@
         (Vec3. (+ x a) (+ y b) (+ z c) _meta)
         (let [[ax ay az] a [bx by bz] b [cx cy cz] c]
           (Vec3. (+ (+ (+ x ax) bx) cx) (+ (+ (+ y ay) by) cy) (+ (+ (+ z az) bz) cz) _meta))))
-    (add-n [this n] (Vec3. (+ x n) (+ y n) (+ z n) _meta))
 
     (sub [this a]
       (if (instance? Vec3 a)
         (Vec3. (- x (.-x ^Vec3 a)) (- y (.-y ^Vec3 a)) (- z (.-z ^Vec3 a)) _meta)
-        (Vec3. (- x (nth a 0 0)) (- y (nth a 1 0)) (- z (nth a 2 0)) _meta)))
+        (if (number? a)
+          (Vec3. (- x a) (- y a) (- z a) _meta)
+          (Vec3. (- x (nth a 0 0)) (- y (nth a 1 0)) (- z (nth a 2 0)) _meta))))
     (sub [this a b]
       (if (number? a)
         (Vec3. (- x a) (- y b) z _meta)
@@ -945,9 +944,8 @@
         (Vec3. (- x a) (- y b) (- z c) _meta)
         (let [[ax ay az] a [bx by bz] b [cx cy cz] c]
           (Vec3. (- (- (- x ax) bx) cx) (- (- (- y ay) by) cy) (- (- (- z az) bz) cz) _meta))))
-    (sub-n [this n] (Vec3. (- x n) (- y n) (- z n) _meta))
 
-    (madd [this a b] (add ((if (number? a) scale-n scale) this a) b))
+    (madd [this a b] (add (scale this a) b))
 
     (dot [this [ax ay az]] (+ (* x ax) (* y ay) (* z az)))
     (cross [this [ax ay az]]
@@ -1173,12 +1171,12 @@
 
   (defn from-barycentric*
     [points weights]
-    (reduce add (map scale-n points weights)))
+    (reduce add (map scale points weights)))
 
   (defn centroid*
     [coll]
     (when (seq coll)
-      (scale-n (reduce add coll) (/ 1.0 (count coll)))))
+      (scale (reduce add coll) (/ 1.0 (count coll)))))
 
   (defn bounding-rect*
     ([coll]
@@ -1312,13 +1310,13 @@
     toward the target point with the given up direction.
     This emulates the OpenGL function `gluLookAt()`."
     [eye target upvec]
-    (let [[fx fy fz :as f] (g/normalize (g/sub eye target))
-          [sx sy sz :as s] (g/normalize (g/cross upvec f))
-          [tx ty tz :as t] (g/normalize (g/cross f s))]
+    (let [[fx fy fz :as f] (normalize (sub eye target))
+          [sx sy sz :as s] (normalize (cross upvec f))
+          [tx ty tz :as t] (normalize (cross f s))]
       (Matrix44.
-       sx sy sz (- (g/dot s eye))
-       tx ty tz (- (g/dot t eye))
-       fx fy fz (- (g/dot f eye))
+       sx sy sz (- (dot s eye))
+       tx ty tz (- (dot t eye))
+       fx fy fz (- (dot f eye))
        0.0 0.0 0.0 1.0
        nil)))
 #+END_SRC

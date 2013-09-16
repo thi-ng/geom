@@ -486,7 +486,7 @@
         (g/add
          p (g/normalize
             (reduce g/add (vnormals p)
-                    (map (comp #(g/scale-n % 0.5) vnormals) neighbors))
+                    (map (comp #(g/scale % 0.5) vnormals) neighbors))
             amp)))))
 
   (defn laplacian
@@ -495,7 +495,7 @@
       (let [neighbors (g/vertex-neighbors this p)
             nc (count neighbors)]
         (if (pos? nc)
-          (g/scale-n (reduce g/add neighbors) (/ 1.0 nc))
+          (g/scale (reduce g/add neighbors) (/ 1.0 nc))
           p))))
 
   (defn spherify

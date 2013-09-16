@@ -42,7 +42,7 @@
         (if (m/delta= d 0.0 *eps*)
           {:type (if (zero? dn) :on-plane :parallel)}
           (let [du (/ dn d)
-                i (g/add lp (g/scale-n u du))]
+                i (g/add lp (g/scale u du))]
             (if (m/in-range? 0.0 1.0 du)
               {:type :intersect :p i}
               {:type :intersect-outside :p i})))))
@@ -63,5 +63,5 @@
               det (/ 1.0 (- 1.0 (* od od)))
               ta (* det (- da (* db od)))
               tb (* det (- db (* da od)))]
-          [(g/madd na ta (g/scale-n nb tb)) (g/cross na nb)]))))
+          [(g/madd na ta (g/scale nb tb)) (g/cross na nb)]))))
 #+END_SRC

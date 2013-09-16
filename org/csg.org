@@ -220,7 +220,7 @@
   (defn csg-aabb
     [{:keys [p size] :as b}]
     (let [[cx cy cz] (g/centroid b)
-          [sx sy sz] (g/scale-n size 0.5)
+          [sx sy sz] (g/scale size 0.5)
           f (fn [c s i mask] (m/madd s (if (pos? (bit-and i mask)) 1 -1) c))]
       (map
        (fn [[verts n]]
@@ -274,9 +274,9 @@
              ve (csg-vertex e az)
              f (fn [stack i blend r]
                  (let [theta (* m/TWO_PI i)
-                       out (g/madd ax (Math/cos theta) (g/scale-n ay (Math/sin theta)))
-                       norm (g/madd out (- 1.0 (m/abs blend)) (g/scale-n az blend))
-                       pos (g/add s (g/scale-n dir stack) (g/scale-n out r))]
+                       out (g/madd ax (Math/cos theta) (g/scale ay (Math/sin theta)))
+                       norm (g/madd out (- 1.0 (m/abs blend)) (g/scale az blend))
+                       pos (g/add s (g/scale dir stack) (g/scale out r))]
                    (csg-vertex pos norm)))
              res (double res)]
          (mapcat

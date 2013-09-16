@@ -43,7 +43,7 @@
   (area [{r :r}] (* PI (* r r)))
   (bounds
    [{p :p r :r}]
-   (let [d (* 2 r)] (thi.ng.geom.types.Rect. (g/sub-n p r) d d)))
+   (let [d (* 2 r)] (thi.ng.geom.types.Rect. (g/sub p r) d d)))
   (center
    ([this] (thi.ng.geom.types.Circle. (vec2) (:r this)))
    ([this p] (thi.ng.geom.types.Circle. (vec2 p) (:r this))))
@@ -81,7 +81,7 @@
    [this] (g/point-at this (m/random)))
   (random-point-inside
    [this]
-   (g/add (:p this) (g/scale-n (g/randvec2) (m/random (:r this)))))
+   (g/add (:p this) (g/scale (g/randvec2) (m/random (:r this)))))
   (sample-uniform [this dist]) ;; TODO
 #+END_SRC
 *** PPolygonizable
@@ -130,9 +130,9 @@
       (when (and (<= d (+ r1 r2)) (>= d (m/abs (- r1 r2))))
         (let [a (/ (+ (- (* r1 r1) (* r2 r2)) (* d d)) (* 2.0 d))
               invd (/ 1.0 d)
-              p (g/add p (g/scale-n delta (* a invd)))
+              p (g/add p (g/scale delta (* a invd)))
               h (Math/sqrt (- (* r1 r1) (* a a)))
-              perp (g/scale-n (g/normal delta) (* h invd))]
+              perp (g/scale (g/normal delta) (* h invd))]
           [(g/add p perp) (g/sub p perp)]))))
 
   (defn tangent-points

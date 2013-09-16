@@ -149,7 +149,7 @@
           prc *precision*
           fmt-vertex
           #+clj (let [ff (str "%1." prc "f ")
-                      ff (str fmt-float fmt-float fmt-float "\n")]
+                      ff (str ff ff ff "\n")]
                   #(format ff %1 %2 %3))
           #+cljs #(str (.toFixed (js/Number. %1) prc) " "
                        (.toFixed (js/Number. %2) prc) " "

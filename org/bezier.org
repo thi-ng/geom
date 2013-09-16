@@ -25,10 +25,10 @@
     [[a b c d] t]
     (let [[ta tb tc td] (bernstein t)]
       (-> a
-          (g/scale-n ta)
-          (g/add (g/scale-n b tb))
-          (g/add (g/scale-n c tc))
-          (g/add (g/scale-n d td)))))
+          (g/scale ta)
+          (g/add (g/scale b tb))
+          (g/add (g/scale c tc))
+          (g/add (g/scale d td)))))
 
   (defn sample-segment
     [seg res]
@@ -56,7 +56,7 @@
       (let [np (count points)
             invt (/ 1.0 tight)
             points (vec points)
-            c1 (g/scale-n (g/sub (get points 2) (first points)) tight)
+            c1 (g/scale (g/sub (get points 2) (first points)) tight)
             [bi coeff] (reduce
                         (fn [[bi coeff] i]
                           (let [b (/ -1.0 (+ invt (peek bi)))
@@ -64,7 +64,7 @@
                                 p (get points (dec i))
                                 q (get points (inc i))]
                             [(conj bi b)
-                             (conj coeff (g/scale-n (g/sub q p c) (- b)))]))
+                             (conj coeff (g/scale (g/sub q p c) (- b)))]))
                         [[0 (- tight)] [(ctor) c1]]
                         (range 2 (dec np)))]
         (reduce

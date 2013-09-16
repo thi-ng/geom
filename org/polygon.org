@@ -148,7 +148,7 @@
                 (reduce (fn [[c p] v] [(g/madd (g/add p v) (g/cross p v) c) v])
                         [(vec2) (first points)])
                 (first))]
-     (g/scale-n c (/ 1.0 (* 6 (g/area this))))))
+     (g/scale c (/ 1.0 (* 6 (g/area this))))))
   (width
    [this] (g/axis-range* 0 (:points this)))
   (height

@@ -111,12 +111,12 @@
   (center
    ([{p :p size :size}]
       (thi.ng.geom.types.AABB.
-       (g/sub p (g/scale-n size 0.5)) size))
+       (g/sub p (g/scale size 0.5)) size))
    ([{size :size} q]
       (thi.ng.geom.types.AABB.
-       (g/sub q (g/scale-n size 0.5)) size)))
+       (g/sub q (g/scale size 0.5)) size)))
   (centroid
-   [this] (g/add (:p this) (g/scale-n (:size this) 0.5)))
+   [this] (g/add (:p this) (g/scale (:size this) 0.5)))
   (width [{size :size}] (size 0))
   (height [{size :size}] (size 1))
   (depth [{size :size}] (size 2))
@@ -126,7 +126,7 @@
   g/PShape3
   (bounding-sphere
    [{p :p size :size}]
-   (let [e (g/scale-n size 0.5)]
+   (let [e (g/scale size 0.5)]
      (g/bounding-sphere* (g/add p e) (g/mag e))))
   (volume
    [{[w h d] :size}] (* (* w h) d))
