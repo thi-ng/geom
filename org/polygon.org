@@ -135,7 +135,7 @@
   (center
    ([this] (g/center this [0.0 0.0]))
    ([this o]
-      (let [d (g/sub o (g/centroid this)) (:points this)
+      (let [d (g/sub o (g/centroid this))
             p (->> this
                    :points
                    (map #(g/add d %))
