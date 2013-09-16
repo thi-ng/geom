@@ -90,13 +90,15 @@
   (ns thi.ng.geom.core
     (:require
      [thi.ng.math.core :as m :refer [*eps* PI TWO_PI]]
-     [thi.ng.geom.types :as types])
+     [thi.ng.geom.types :as types]
+    #+clj [thi.ng.geom.macros :as mac])
+    #+cljs (:require-macros [thi.ng.geom.macros :as mac])
     #+clj
     (:import
      [thi.ng.geom.types Circle Rect AABB Sphere]))
 #+END_SRC
 **** Protocols
-***** Vector operations
+***** Vector & matrix operations
 ****** PVector
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol PVector
@@ -136,6 +138,16 @@
   (defprotocol PPolar
     (polar [this])
     (cartesian [this]))
+#+END_SRC
+****** PMatrix
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol PMatrix
+    (multiply [this m])
+    (set-position [this p])
+    (set-scale [this s])
+    (set-rotation [this r])
+    (transpose [this])
+    (determinant [this]))
 #+END_SRC
 ***** Spatial transform operations
       The position, size and orientation of spatial entities can
@@ -299,15 +311,192 @@
     (vertex-faces [this v])
     (merge-vertices [this a b]))
 #+END_SRC
-**** Constants
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
-  (def ^:dynamic *resolution* 20)
-#+END_SRC
 **** Declarations
      Some functions used by the following vector types will be
      defined further on, but need to be declared already.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (declare map-entry key-error swizzle2 swizzle3)
+  (declare IDENTITY4x4)
+#+END_SRC
+**** Matrix implementations
+***** Helper macros
+      CLJX doesn't process macros correctly and therefore they need to
+      be defined twice, for CLJ & CLJS individually...
+****** Matrix item calculation
+#+BEGIN_SRC clojure :tangle babel/src-clj/thi/ng/geom/macros.clj
+  (ns thi.ng.geom.macros)
+  (defmacro mat-item
+    ([a1 a2 b1 b2 c1 c2]
+       `(+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)))
+    ([a1 a2 b1 b2 c1 c2 d]
+       `(+ (+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)) ~d))
+    ([a1 a2 b1 b2 c1 c2 d1 d2]
+       `(+ (+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)) (* ~d1 ~d2))))
+#+END_SRC
+#+BEGIN_SRC clojure :tangle babel/src-cljs/thi/ng/geom/macros.clj
+  (ns thi.ng.geom.macros)
+  (defmacro mat-item
+    ([a1 a2 b1 b2 c1 c2]
+       `(+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)))
+    ([a1 a2 b1 b2 c1 c2 d]
+       `(+ (+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)) ~d))
+    ([a1 a2 b1 b2 c1 c2 d1 d2]
+       `(+ (+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)) (* ~d1 ~d2))))
+#+END_SRC
+***** 4x4 Matrix
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (deftype Matrix44
+      [^double m00 ^double m01 ^double m02 ^double m03
+       ^double m10 ^double m11 ^double m12 ^double m13
+       ^double m20 ^double m21 ^double m22 ^double m23
+       ^double m30 ^double m31 ^double m32 ^double m33
+       _meta]
+
+    PMatrix
+    (multiply [this m]
+      (let [^Matrix44 m m]
+        (Matrix44.
+         (mac/mat-item m00 (.-m00 m) m01 (.-m10 m) m02 (.-m20 m) m03 (.-m30 m))
+         (mac/mat-item m00 (.-m01 m) m01 (.-m11 m) m02 (.-m21 m) m03 (.-m31 m))
+         (mac/mat-item m00 (.-m02 m) m01 (.-m12 m) m02 (.-m22 m) m03 (.-m32 m))
+         (mac/mat-item m00 (.-m03 m) m01 (.-m13 m) m02 (.-m23 m) m03 (.-m33 m))
+
+         (mac/mat-item m10 (.-m00 m) m11 (.-m10 m) m12 (.-m20 m) m13 (.-m30 m))
+         (mac/mat-item m10 (.-m01 m) m11 (.-m11 m) m12 (.-m21 m) m13 (.-m31 m))
+         (mac/mat-item m10 (.-m02 m) m11 (.-m12 m) m12 (.-m22 m) m13 (.-m32 m))
+         (mac/mat-item m10 (.-m03 m) m11 (.-m13 m) m12 (.-m23 m) m13 (.-m33 m))
+
+         (mac/mat-item m20 (.-m00 m) m21 (.-m10 m) m22 (.-m20 m) m23 (.-m30 m))
+         (mac/mat-item m20 (.-m01 m) m21 (.-m11 m) m22 (.-m21 m) m23 (.-m31 m))
+         (mac/mat-item m20 (.-m02 m) m21 (.-m12 m) m22 (.-m22 m) m23 (.-m32 m))
+         (mac/mat-item m20 (.-m03 m) m21 (.-m13 m) m22 (.-m23 m) m23 (.-m33 m))
+
+         (mac/mat-item m20 (.-m00 m) m21 (.-m10 m) m22 (.-m20 m) m23 (.-m30 m))
+         (mac/mat-item m20 (.-m01 m) m21 (.-m11 m) m22 (.-m21 m) m23 (.-m31 m))
+         (mac/mat-item m20 (.-m02 m) m21 (.-m12 m) m22 (.-m22 m) m23 (.-m32 m))
+         (mac/mat-item m20 (.-m03 m) m21 (.-m13 m) m22 (.-m23 m) m23 (.-m33 m))
+         _meta)))
+
+    (set-position [this [x y z]]
+      (Matrix44.
+       m00 m01 m02 x
+       m10 m11 m12 y
+       m20 m21 m22 z
+       m30 m31 m32 m33 _meta))
+
+    (set-scale [this s]
+      (let [[x y z] (if (number? s) [s s s] s)]
+        (Matrix44.
+         x m01 m02 m03
+         m10 y m12 m12
+         m20 m21 z m23
+         m30 m31 m32 m33 _meta)))
+
+    (set-rotation [this [rx ry rz]] ;; TODO
+      (Matrix44.
+       m00 m01 m02 m03
+       m10 m11 m12 m12
+       m20 m21 m22 m23
+       m30 m31 m32 m33 _meta))
+
+    (transpose [this]
+      (Matrix44.
+       m00 m10 m20 m30
+       m01 m11 m21 m31
+       m02 m12 m22 m32
+       m03 m13 m23 m33 _meta))
+
+    (determinant [this]
+      (+ (+ (- (- (* m30 m21 m12 m03) (* m20 m31 m12 m03)) (* m30 m11 m22 m03)) (* m10 m31 m22 m03))
+         (+ (- (- (* m20 m11 m32 m03) (* m10 m21 m32 m03)) (* m30 m21 m02 m13)) (* m20 m31 m02 m13))
+         (+ (- (- (* m30 m01 m22 m13) (* m00 m31 m22 m13)) (* m20 m01 m32 m13)) (* m00 m21 m32 m13))
+         (+ (- (- (* m30 m11 m02 m23) (* m10 m31 m02 m23)) (* m30 m01 m12 m23)) (* m00 m31 m12 m23))
+         (+ (- (- (* m10 m01 m32 m23) (* m00 m11 m32 m23)) (* m20 m11 m02 m33)) (* m10 m21 m02 m33))
+         (+ (- (- (* m20 m01 m12 m33) (* m00 m21 m12 m33)) (* m10 m01 m22 m33)) (* m00 m11 m22 m33))))
+
+    PInvertible
+    (invert [this]
+      (let [n00 (- (* m00 m11) (* m01 m10))
+            n01 (- (* m00 m12) (* m02 m10))
+            n02 (- (* m00 m13) (* m03 m10))
+            n03 (- (* m01 m12) (* m02 m11))
+            n04 (- (* m01 m13) (* m03 m11))
+            n05 (- (* m02 m13) (* m03 m12))
+            n06 (- (* m20 m31) (* m21 m30))
+            n07 (- (* m20 m32) (* m22 m30))
+            n08 (- (* m20 m33) (* m32 m30))
+            n09 (- (* m21 m32) (* m22 m31))
+            n10 (- (* m21 m33) (* m23 m31))
+            n11 (- (* m22 m33) (* m23 m32))
+            d (+ (- (+ (+ (- (* n00 n11) (* n01 n10)) (* n02 n09)) (* n03 n08)) (* n04 n07)) (* n05 n06))]
+        (prn d)
+        (when-not (zero? d)
+          (let [invd (/ 1.0 d)]
+            (Matrix44.
+             (* invd (+ (- (* m11 n11) (* m12 n10)) (* m13 n09))) ;0
+             (* invd (+ (- (* m02 n10) (* m03 n09)) (* (- m01) n11))) ;1
+             (* invd (+ (- (* m31 n05) (* m32 n04)) (* m33 n03))) ;2
+             (* invd (+ (- (* m22 n04) (* m23 n03)) (* (- m21) n05))) ;3
+             (* invd (+ (- (* m12 n08) (* m13 n07)) (* (- m10) n11))) ;4
+             (* invd (+ (- (* m00 n11) (* m02 n08)) (* m03 n07))) ;5
+             (* invd (+ (- (* m32 n02) (* m33 n01)) (* (- m30) n05))) ;6
+             (* invd (+ (- (* m20 n05) (* m22 n02)) (* m23 n01))) ;7
+             (* invd (+ (- (* m10 n10) (* m11 n08)) (* m13 n06))) ;8
+             (* invd (+ (- (* m01 n08) (* m03 n06)) (* (- m00) n10))) ;9
+             (* invd (+ (- (* m30 n04) (* m31 n02)) (* m33 n00))) ;10
+             (* invd (+ (- (* m21 n02) (* m23 n00)) (* (- m20) n04))) ;11
+             (* invd (+ (- (* m11 n07) (* m12 n06)) (* (- m10) n09))) ;12
+             (* invd (+ (- (* m00 n09) (* m01 n07)) (* m02 n06))) ;13
+             (* invd (+ (- (* m31 n01) (* m32 n00)) (* (- m30) n03))) ;14
+             (* invd (+ (- (* m20 n03) (* m21 n01)) (* m22 n00))) ;15
+             _meta)))))
+
+    PTransformable
+    (scale [this s]
+      (multiply this (set-scale IDENTITY4x4 s)))
+    (scale-n [this s]
+      (multiply this (set-scale IDENTITY4x4 s)))
+    (translate [this t]
+      (multiply this (set-position IDENTITY4x4 t)))
+    (rotate-x [this theta]
+      (let [s (Math/sin theta) c (Math/cos theta)]
+        (multiply
+         this
+         (Matrix44.
+          1 0 0 0
+          0 c (- s) 0
+          0 s c 0
+          0 0 0 1 nil))))
+    (rotate-y [this theta]
+      (let [s (Math/sin theta) c (Math/cos theta)]
+        (multiply
+         this
+         (Matrix44.
+          c 0 s 0
+          0 1 0 0
+          (- s) 0 c 0
+          0 0 0 1 nil))))
+    (rotate-z [this theta]
+      (let [s (Math/sin theta) c (Math/cos theta)]
+        (multiply
+         this
+         (Matrix44.
+          c (- s) 0 0
+          s c 0 0
+          0 0 1 0
+          0 0 0 1 nil))))
+    (rotate-around-axis [this [x y z] theta]
+      (let [s (Math/sin theta) c (Math/cos theta)
+            sx (* s x) sy (* s y) sz (* s z)
+            t (- 1.0 c) tx (* t x) ty (* t y)]
+        (multiply
+         this
+         (Matrix44.
+          (+ (* tx x) c) (+ (* tx y) sz) (- (* tx z) sy) 0.0
+          (- (* tx y) sz) (+ (* ty y) c) (+ (* ty z) sx) 0.0
+          (+ (* tx z) sy) (- (* ty z) sx) (+ (* t z z) c) 0.0
+          0.0 0.0 0.0 1.0 nil))))
+    )
 #+END_SRC
 **** Vector implementations
      For performance reasons, we decided to define custom datatypes
@@ -718,7 +907,12 @@
         (Vec3. (- (* x c) (* y s)) (+ (* x s) (* y c)) z _meta)))
     (rotate [this theta]
       (rotate-z this theta))
-    (transform [this m])
+    (transform [this m]
+      (let [^Matrix44 m m]
+        (Vec3. (mac/mat-item x (.-m00 m) y (.-m01 m) z (.-m02 m) (.-m03 m))
+               (mac/mat-item x (.-m10 m) y (.-m11 m) z (.-m12 m) (.-m13 m))
+               (mac/mat-item x (.-m20 m) y (.-m21 m) z (.-m22 m) (.-m23 m))
+               _meta)))
 
     PVector
     (add [this a]
@@ -817,6 +1011,32 @@
       (let [a (* x (Math/cos z))]
         (Vec3. (* a (Math/cos y)) (* x (Math/sin z)) (* a (Math/sin y)) _meta)))
     )
+#+END_SRC
+***** Constants
+****** Default circle resolution
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (def ^:dynamic *resolution* 20)
+#+END_SRC
+****** Vectors
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (def ^:const VEC2 (Vec2. 0.0 0.0 nil))
+  (def ^:const VEC3 (Vec3. 0.0 0.0 0.0 nil))
+
+  (def ^:const V2_X (Vec2. 1.0 0.0 nil))
+  (def ^:const V2_Y (Vec2. 0.0 1.0 nil))
+
+  (def ^:const V3_X (Vec3. 1.0 0.0 0.0 nil))
+  (def ^:const V3_Y (Vec3. 0.0 1.0 0.0 nil))
+  (def ^:const V3_Z (Vec3. 0.0 0.0 1.0 nil))
+#+END_SRC
+****** Identity matrices
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (def ^:const IDENTITY4x4
+    (Matrix44.
+     1.0 0.0 0.0 0.0
+     0.0 1.0 0.0 0.0
+     0.0 0.0 1.0 0.0
+     0.0 0.0 0.0 1.0 nil))
 #+END_SRC
 ***** Protocol helpers
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -943,29 +1163,6 @@
     ([] (normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm))))
     ([n] (normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm)) n)))
 #+END_SRC
-***** Rotation
-#+BEGIN_SRC clojure
-  ;; :tangle babel/src-cljx/thi/ng/geom/core.cljx
-  (defn rotate2
-    [[x y] theta]
-    (let [c (Math/cos theta) s (Math/sin theta)]
-      [(- (* x c) (* y s)) (+ (* x s) (* y c))]))
-#+END_SRC
-***** Translation
-#+BEGIN_SRC clojure
-  ;; :tangle babel/src-cljx/thi/ng/geom/core.cljx
-  (defn translate2
-    ([t points] (let [t (vec2 t)] (map #(add2 % t) points)))
-    ([t p & more] (translate2 t (cons p more))))
-
-  (defn translate3
-    ([t points] (let [t (vec3 t)] (map #(add3 % t) points)))
-    ([t p & more] (translate3 t (cons p more))))
-
-  (defn translate4
-    ([t points] (let [t (vec4 t)] (map #(add4 % t) points)))
-    ([t p & more] (translate4 t (cons p more))))
-#+END_SRC
 ***** Shared functions
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn closest-point*
@@ -1042,6 +1239,88 @@
   (defn normal3
     ([a b c] (normalize (cross (sub b a) (sub c a))))
     ([[a b c]] (normalize (cross (sub b a) (sub c a)))))
+#+END_SRC
+***** Matrix functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn frustum
+    "Sets up a viewing frustum, shaped like a truncated pyramid with the
+    camera where the tip of the pyramid would be.
+    This emulates the OpenGL function glFrustum()."
+    [l t r b n f]
+    (let [dx (- r l)
+          dy (- t b)
+          dz (- f n)]
+      (Matrix44.
+       (/ (* 2.0 n) dx) 0.0 (/ (+ r l) dx) 0.0
+       0.0 (/ (* 2.0 n) dy) (/ (+ t b) dy) 0.0
+       0.0 0.0 (* -1 (/ (+ f n) dz)) (/ (* (* -2.0 f) n) dz)
+       0.0 0.0 -1.0 0.0
+       nil)))
+
+  (defn frustum-bounds
+    [fov aspect near]
+    (let [rad (* 0.5 (m/radians fov))
+          top (* near (Math/tan rad))
+          right (* top aspect)]
+      {:left (- right)
+       :right right
+       :top top
+       :bottom (- top)}))
+
+  (defn ortho
+    "Returns an orthographic projection matrix, in which objects are the same size no
+    matter how far away or nearby they are.
+    This emulates the OpenGL function glOrtho()."
+    [l t r b n f]
+    (let[dx (- r l)
+         dy (- t b)
+         dz (- f n)]
+      (Matrix44.
+       (/ 2.0 dx) 0.0 0.0 (- (/ (+ r l) dx))
+       0.0 (/ 2.0 dy) 0.0 (- (/ (+ t b) dy))
+       0.0 0.0 (/ -2.0 dz) (- (/ (+ f n) dz))
+       0.0 0.0 0.0 1.0
+       nil)))
+
+  (defn perspective
+    "Returns a perspective transform matrix, which makes far away objects appear
+    smaller than nearby objects. The `aspect` argument should be the width
+    divided by the height of your viewport and `fov` is the vertical angle
+    of the field of view in degrees.
+    This emulates the OpenGL function gluPerspective()."
+    [fov aspect near far]
+    (let [rad (* 0.5 (m/radians fov))
+          cot (/ (Math/cos rad) (Math/sin rad))
+          deltaz (- far near)
+          a (/ cot aspect)
+          b (- (/ (+ far near) deltaz))
+          c (/ (* -2.0 near far) deltaz)]
+      (Matrix44.
+       a 0.0 0.0 0.0
+       0.0 cot 0.0 0.0
+       0.0 0.0 b c
+       0.0 0.0 -1.0 0.0
+       nil)))
+
+  (defn perspective-frustum
+    [fov aspect near far]
+    (let [{:keys [left right top bottom]} (frustum-bounds fov aspect near)]
+      (frustum left top right bottom near far)))
+
+  (defn look-at
+    "Returns a matrix that puts the camera at the eye position looking
+    toward the target point with the given up direction.
+    This emulates the OpenGL function `gluLookAt()`."
+    [eye target upvec]
+    (let [[fx fy fz :as f] (g/normalize (g/sub eye target))
+          [sx sy sz :as s] (g/normalize (g/cross upvec f))
+          [tx ty tz :as t] (g/normalize (g/cross f s))]
+      (Matrix44.
+       sx sy sz (- (g/dot s eye))
+       tx ty tz (- (g/dot t eye))
+       fx fy fz (- (g/dot f eye))
+       0.0 0.0 0.0 1.0
+       nil)))
 #+END_SRC
 ** Geometric entities
 #+INCLUDE: "bezier.org" :minlevel 4
