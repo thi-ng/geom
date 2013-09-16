@@ -48,7 +48,8 @@
                   :jar false}]}
 
     :profiles {:dev {:plugins [[com.keminglabs/cljx "0.3.0"]
-                               [org.clojars.cemerick/lein-cljsbuild "0.3.2.1"]]
+                               [lein-cljsbuild "0.3.3"]]
+                     :dependencies [[org.clojure/clojurescript "0.0-1885"]]
                      :hooks [cljx.hooks]}})
 #+END_SRC
 * Namespaces
