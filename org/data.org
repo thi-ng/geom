@@ -96,7 +96,7 @@
      (if (sequential? head) (concat head s) (cons head s))
      (if (sequential? tail) tail [tail])))
 
-  (defn shift-left
+  (defn rotate-left
     [n xs]
     (concat (drop n xs) (take n xs)))
 

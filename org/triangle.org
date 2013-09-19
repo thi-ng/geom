@@ -170,16 +170,20 @@
 ***** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PSampleable
-  (point-at [this t] nil) ; TODO
+  (point-at
+   [this t] (g/point-at* t [(:a this) (:b this) (:c this) (:a this)]))
   (random-point
    [this] (g/point-at this (m/random)))
   (random-point-inside
-   [t]
+   [this]
    (let [b1 (m/random)
          b2 (m/random (- 1.0 b1))
          b3 (- 1.0 (+ b1 b2))]
      (g/from-barycentric*
-      [(:a t) (:b t) (:c t)] (shuffle [b1 b2 b3]))))
+      [(:a this) (:b this) (:c this)] (shuffle [b1 b2 b3]))))
+  (sample-uniform
+   [this udist include-last?]
+   (g/sample-uniform* udist include-last? [(:a this) (:b this) (:c this) (:a this)]))
 #+END_SRC
 ***** PPolygonizable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx

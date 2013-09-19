@@ -126,7 +126,7 @@
   (area
    [{points :points}]
    (->> points
-        (d/shift-left 1)
+        (d/rotate-left 1)
         (reduce (fn [[a p] v] [(+ a (g/cross p v)) v]) [0.0 (first points)])
         first
         (* 0.5)))
@@ -144,7 +144,7 @@
   (centroid
    [{points :points :as this}]
    (let [c (->> points
-                (d/shift-left 1)
+                (d/rotate-left 1)
                 (reduce (fn [[c p] v] [(g/madd (g/add p v) (g/cross p v) c) v])
                         [(vec2) (first points)])
                 (first))]
@@ -154,6 +154,15 @@
   (height
    [this] (g/axis-range* 1 (:points this)))
   (depth [this] 0)
+#+END_SRC
+*** PShape2
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+  g/PShape2
+  (bounding-circle
+   [this] (g/bounding-circle* (g/centroid this) (:points this)))
+  (circumference
+   [{points :points}]
+   (d/reduce-pairs + g/dist (concat points [(first points)])))
 #+END_SRC
 *** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
@@ -177,19 +186,14 @@
 *** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   g/PSampleable
-  (point-at [this t] nil) ; TODO
+  (point-at
+   [{points :points} t] (g/point-at* t (conj points (first points))))
   (random-point
    [this] (g/point-at this (m/random)))
   (random-point-inside [this] nil) ; TODO
-#+END_SRC
-*** PShape2
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
-  g/PShape2
-  (bounding-circle
-   [this] (g/bounding-circle* (g/centroid this) (:points this)))
-  (circumference
-   [{points :points}]
-   (d/reduce-pairs + g/dist (concat points [(first points)])))
+  (sample-uniform
+   [{points :points} udist include-last?]
+   (g/sample-uniform* udist include-last? (conj points (first points))))
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
