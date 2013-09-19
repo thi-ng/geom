@@ -11,6 +11,8 @@
 *** TODO implement shape/shape intersections
 *** TODO add NURBS
 *** TODO add voxel ns
+*** TODO add typehints to defrecords
+*** TODO remove obsolete cljs defrecords (typehints are ignored for cljs)
 ** Core API
 *** thi.ng.geom.types
 **** 2D types
@@ -26,6 +28,7 @@
   (defrecord Triangle2 [a b c])
 #+END_SRC
 ***** Ellipse
+****** TODO rename circle ns into ellipse and add ellipse impl
      Even though a circle is a specialization of an Ellipse, we define
      an extra Circle type for performance reasons.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
@@ -43,6 +46,10 @@
 ***** Polygon
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (defrecord Polygon [points holes])
+#+END_SRC
+***** Path
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord Path2 [segments])
 #+END_SRC
 ***** Mesh
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
@@ -89,6 +96,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (ns thi.ng.geom.core
     (:require
+     [thi.ng.data.core :as d]
      [thi.ng.math.core :as m :refer [*eps* PI TWO_PI]]
      [thi.ng.geom.types :as types]
     #+clj [thi.ng.geom.macros :as mac])
@@ -234,10 +242,10 @@
 ******* TODO move random-point-inside into PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol PSampleable
-    (point-at [this t])
+    (point-at [this t] [this u v])
     (random-point [this])
     (random-point-inside [this])
-    (sample-uniform [this dist]))
+    (sample-uniform [this dist include-last?]))
 #+END_SRC
 ****** PPolygonizable
        Anything which can be turned into a 2D polygon will implement this
@@ -323,6 +331,8 @@
 #+BEGIN_SRC clojure :tangle babel/src-clj/thi/ng/geom/macros.clj
   (ns thi.ng.geom.macros)
   (defmacro mat-item
+    ([a1 a2 b1 b2]
+       `(+ (* ~a1 ~a2) (* ~b1 ~b2)))
     ([a1 a2 b1 b2 c1 c2]
        `(+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)))
     ([a1 a2 b1 b2 c1 c2 d]
@@ -333,6 +343,8 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljs/thi/ng/geom/macros.clj
   (ns thi.ng.geom.macros)
   (defmacro mat-item
+    ([a1 a2 b1 b2]
+       `(+ (* ~a1 ~a2) (* ~b1 ~b2)))
     ([a1 a2 b1 b2 c1 c2]
        `(+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)))
     ([a1 a2 b1 b2 c1 c2 d]
@@ -340,7 +352,43 @@
     ([a1 a2 b1 b2 c1 c2 d1 d2]
        `(+ (+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)) (* ~d1 ~d2))))
 #+END_SRC
+***** Affine transform
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (deftype Matrix32
+      [^double m00 ^double m01 ^double m02
+       ^double m10 ^double m11 ^double m12
+       _meta]
+
+    PMatrix
+    (multiply [this m]
+      (Matrix32.
+       (mac/mat-item m00 (.-m00 m) m01 (.-m10 m))
+       (mac/mat-item m00 (.-m01 m) m01 (.-m11 m))
+       (+ m02 (mac/mat-item m00 (.-m02 m) m01 (.-m12 m)))
+       (mac/mat-item m10 (.-m00 m) m11 (.-m10 m))
+       (mac/mat-item m10 (.-m01 m) m11 (.-m11 m))
+       (+ m12 (mac/mat-item m10 (.-m02 m) m11 (.-m12 m)))
+       _meta))
+    (set-scale [this s]
+      (let [[sx sy] (if (number? s) [s s] s)]
+        (Matrix32. sx 0.0 0.0 sy 0.0 0.0 _meta)))
+    (set-position [this [x y]]
+      (Matrix32. 1.0 0.0 0.0 1.0 x y _meta))
+    (determinant [this]
+      (- (* m00 m11) (* m01 m10)))
+
+    PInvertible
+    (invert [this]
+      (let [d (determinant this)]
+        (when-not (zero? d)
+          (Matrix32.
+           (/ m11 d) (- (/ m10 d)) (- (/ m01 d))
+           (/ m00 d) (/ (- (* m01 m12) (* m11 m02)) d) (/ (- (* m10 m02) (* m00 m12)) d)
+           _meta))))
+    )
+#+END_SRC
 ***** 4x4 Matrix
+****** TODO add unproject from [[file:/Users/toxi/dev/js/gl-matrix.orig/gl-matrix.js::385]]
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (deftype Matrix44
       [^double m00 ^double m01 ^double m02 ^double m03
@@ -662,7 +710,31 @@
         (let [[ax ay] a [bx by] b]
           (Vec2. (- (- x ax) bx) (- (- y ay) by) _meta))))
 
-    (madd [this a b] (add (scale this a) b))
+    (madd [this a b]
+      (if (instance? Vec2 a)
+        (if (instance? Vec2 b)
+          (Vec2. (+ (* x (.-x ^Vec2 a)) (.-x ^Vec2 b))
+                 (+ (* y (.-y ^Vec2 a)) (.-y ^Vec2 b)) _meta)
+          (if (number? b)
+            (Vec2. (+ (* x (.-x ^Vec2 a)) b)
+                   (+ (* y (.-y ^Vec2 a)) b) _meta)
+            (Vec2. (+ (* x (.-x ^Vec2 a)) (nth b 0 0.0))
+                   (+ (* y (.-y ^Vec2 a)) (nth b 1 0.0)) _meta)))
+        (if (number? a)
+          (if (instance? Vec2 b)
+            (Vec2. (+ (* x a) (.-x ^Vec2 b))
+                   (+ (* y a) (.-y ^Vec2 b)) _meta)
+            (if (number? b)
+              (Vec2. (+ (* x a) b) (+ (* y a) b) _meta)
+              (Vec2. (+ (* x a) (nth b 0 0.0)) (+ (* y a) (nth b 1 0.0)) _meta)))
+          (if (instance? Vec2 b)
+            (Vec2. (+ (* x (nth a 0 0.0)) (.-x ^Vec2 b))
+                   (+ (* y (nth a 1 0.0)) (.-y ^Vec2 b)) _meta)
+            (if (number? b)
+              (Vec2. (+ (* x (nth a 0 0.0)) b)
+                     (+ (* y (nth a 1 0.0)) b) _meta)
+              (Vec2. (+ (* x (nth a 0 0.0)) (nth b 0 0.0))
+                     (+ (* y (nth a 1 0.0)) (nth b 1 0.0)) _meta))))))
 
     (dot [this [ax ay]] (+ (* x ax) (* y ay)))
     (cross [this [ax ay]] (- (* x ay) (* y ax)))
@@ -945,7 +1017,38 @@
         (let [[ax ay az] a [bx by bz] b [cx cy cz] c]
           (Vec3. (- (- (- x ax) bx) cx) (- (- (- y ay) by) cy) (- (- (- z az) bz) cz) _meta))))
 
-    (madd [this a b] (add (scale this a) b))
+    (madd [this a b]
+      (if (instance? Vec3 a)
+        (if (instance? Vec3 b)
+          (Vec3. (+ (* x (.-x ^Vec3 a)) (.-x ^Vec3 b))
+                 (+ (* y (.-y ^Vec3 a)) (.-y ^Vec3 b))
+                 (+ (* z (.-z ^Vec3 a)) (.-z ^Vec3 b)) _meta)
+          (if (number? b)
+            (Vec3. (+ (* x (.-x ^Vec3 a)) b)
+                   (+ (* y (.-y ^Vec3 a)) b)
+                   (+ (* z (.-z ^Vec3 a)) b) _meta)
+            (Vec3. (+ (* x (.-x ^Vec3 a)) (nth b 0 0.0))
+                   (+ (* y (.-y ^Vec3 a)) (nth b 1 0.0))
+                   (+ (* z (.-z ^Vec3 a)) (nth b 2 0.0)) _meta)))
+        (if (number? a)
+          (if (instance? Vec3 b)
+            (Vec3. (+ (* x a) (.-x ^Vec3 b))
+                   (+ (* y a) (.-y ^Vec3 b))
+                   (+ (* z a) (.-z ^Vec3 b)) _meta)
+            (if (number? b)
+              (Vec3. (+ (* x a) b) (+ (* y a) b) (+ (* z a) b) _meta)
+              (Vec3. (+ (* x a) (nth b 0 0.0)) (+ (* y a) (nth b 1 0.0)) (+ (* z a) (nth b 2 0.0)) _meta)))
+          (if (instance? Vec3 b)
+            (Vec3. (+ (* x (nth a 0 0.0)) (.-x ^Vec3 b))
+                   (+ (* y (nth a 1 0.0)) (.-y ^Vec3 b))
+                   (+ (* z (nth a 2 0.0)) (.-z ^Vec3 b)) _meta)
+            (if (number? b)
+              (Vec3. (+ (* x (nth a 0 0.0)) b)
+                     (+ (* y (nth a 1 0.0)) b)
+                     (+ (* z (nth a 2 0.0)) b) _meta)
+              (Vec3. (+ (* x (nth a 0 0.0)) (nth b 0 0.0))
+                     (+ (* y (nth a 1 0.0)) (nth b 1 0.0))
+                     (+ (* z (nth a 2 0.0)) (nth b 2 0.0)) _meta))))))
 
     (dot [this [ax ay az]] (+ (* x ax) (* y ay) (* z az)))
     (cross [this [ax ay az]]
@@ -1015,6 +1118,13 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (def ^:dynamic *resolution* 20)
 #+END_SRC
+******* TODO Binding macro
+#+BEGIN_SRC clojure
+  ;; :tangle babel/src-cljs/thi/ng/geom/macros.clj
+  (defmacro with-resolution
+    [res & body]
+    (binding [*resolution* res] ~@body))
+#+END_SRC
 ****** Vectors
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (def ^:const VEC2 (Vec2. 0.0 0.0 nil))
@@ -1029,6 +1139,11 @@
 #+END_SRC
 ****** Identity matrices
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (def ^:const IDENTITY3x2
+    (Matrix32.
+     1.0 0.0 0.0
+     0.0 1.0 0.0 nil))
+
   (def ^:const IDENTITY4x4
     (Matrix44.
      1.0 0.0 0.0 0.0
@@ -1234,7 +1349,34 @@
     (let [xs (map #(nth % axis) coll)]
       (- (reduce max xs) (reduce min xs))))
 
-  (defn normal3
+  (defn total-length*
+    [points]
+    (->> points
+         (d/successive-nth 2)
+         (map #(dist (% 0) (% 1)))
+         (reductions + 0)
+         (vec)))
+
+  (defn sample-uniform*
+    [udist include-last? points]
+    (let [idx (total-length* points)
+          total (peek idx)
+          delta (/ udist total)
+          samples (loop [t 0.0 i 1 acc []]
+                    (if (< t 1.0)
+                      (let [ct (* t total)
+                            i (loop [i i] (if (>= ct (idx i)) (recur (inc i)) i))
+                            p (nth points (dec i))
+                            q (nth points i)
+                            pi (idx (dec i))
+                            frac (/ (- ct pi) (- (idx i) pi))]
+                        (recur (+ t delta) i (conj acc (mix p q frac))))
+                      acc))]
+      (if include-last?
+        (conj samples (last points))
+        samples)))
+
+  (defn normal3*
     ([a b c] (normalize (cross (sub b a) (sub c a))))
     ([[a b c]] (normalize (cross (sub b a) (sub c a)))))
 #+END_SRC
@@ -1326,6 +1468,8 @@
 #+INCLUDE: "circle.org" :minlevel 4
 
 #+INCLUDE: "line.org" :minlevel 4
+
+#+INCLUDE: "path.org" :minlevel 4
 
 #+INCLUDE: "rect.org" :minlevel 4
 
