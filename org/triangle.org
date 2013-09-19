@@ -285,7 +285,7 @@
   g/PIntersectable
   (intersect-ray
    [{:keys [a b c]} {p :p dir :dir}]
-    (let [n (g/normal3 a b c)
+    (let [n (g/normal3* a b c)
           nd (g/dot n dir)]
       (if (neg? nd)
         (let [t (/ (- (g/dot n (g/sub p a))) nd)]

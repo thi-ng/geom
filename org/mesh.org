@@ -385,7 +385,7 @@
    (let [[normals fnormals]
          (reduce
           (fn [[norms fnorms] [a b c :as f]]
-            (let [[norms n] (d/index! norms (g/normal3 a b c))]
+            (let [[norms n] (d/index! norms (g/normal3* a b c))]
               [norms (assoc! fnorms f n)]))
           [(transient #{}) (transient {})] faces)]
      (assoc this
