@@ -24,7 +24,6 @@
 #+END_SRC
 ** Shared helper functions
     This function is going to be used for both 2D/3D implementations:
-*** TODO replace closest-point-coeff with full closest-point impl
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   (defn closest-point*
     [p a b]
@@ -35,37 +34,10 @@
         (> t 1.0) b
         :default (g/mix a b t))))
 
-  (defn as-linestrip
+  (defn as-linestrip*
     [a b res include-b?]
     (let [ls (for [t (range 0 1.0 (/ 1.0 res))] (g/mix a b t))]
       (if include-b? (concat ls [b]) ls)))
-
-  (defn arc-length
-    [points]
-    (->> points
-         (d/successive-nth 2)
-         (map #(g/dist (% 0) (% 1)))
-         (reductions + 0)
-         (vec)))
-
-  (defn sample-uniform*
-    [step include-last? points]
-    (let [idx (arc-length points)
-          total (peek idx)
-          delta (/ step total)
-          samples (loop [t 0.0 i 1 acc []]
-                    (if (< t 1.0)
-                      (let [ct (* t total)
-                            i (loop [i i] (if (>= ct (idx i)) (recur (inc i)) i))
-                            p (nth points (dec i))
-                            q (nth points i)
-                            pi (idx (dec i))
-                            frac (/ (- ct pi) (- (idx i) pi))]
-                        (recur (+ t delta) i (conj acc (g/mix p q frac))))
-                      acc))]
-      (if include-last?
-        (conj samples (last points))
-        samples)))
 #+END_SRC
 ** Line2
 *** Protocol implementations
@@ -75,15 +47,20 @@
 #+END_SRC
 **** PGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
-  g/PGraph
-  (vertices
-   [this] [(:p this) (:q this)])
-  (edges
-   [this] [this])
-  (vertex-neighbors
-   [{p :p q :q} v] (condp = v p q q p nil))
-  (vertex-valence
-   [this v] (if (or (= v (:p this)) (= v (:q this))) 1 0))
+    g/PGraph
+    (vertices
+     ([this] [(:p this) (:q this)])
+     ([this res] (as-linestrip* (:p this) (:q this) res true)))
+    (edges
+     ([this] [this])
+     ([this res] (->> (g/vertices this res)
+                      (d/successive-nth 2)
+                      (map (fn [[a b]] (thi.ng.geom.Line2. a b)))
+                      (vec))))
+    (vertex-neighbors
+     [{p :p q :q} v] (condp = v p q q p nil))
+    (vertex-valence
+     [this v] (if (or (= v (:p this)) (= v (:q this))) 1 0))
 #+END_SRC
 **** PShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
@@ -109,18 +86,18 @@
    [{p :p q :q}]
    (thi.ng.geom.types.Circle. (g/mix p q) (* 0.5 (g/dist p q))))
   (circumference
-   [this] (* 2.0 (g/dist (:p this) (:q this))))
+   [this] (g/dist (:p this) (:q this)))
 #+END_SRC
 **** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/PBoundary
   (classify-point
    [{p :p q :q} v]
-   (m/signum (g/dot (g/sub v p) (g/normal (g/sub q p))) *eps*))
+   (m/signum (g/dot (g/sub (vec2 v) p) (g/normal (g/sub q p))) *eps*))
   (closest-point
-   [this a] (closest-point* a (:p this) (:q this)))
+   [this a] (closest-point* (vec2 a) (:p this) (:q this)))
   (contains-point?
-   [this a] (m/delta= (closest-point* a (:p this) (:q this)) a *eps*))
+   [this a] (m/delta= (closest-point* (vec2 a) (:p this) (:q this)) a *eps*))
 #+END_SRC
 **** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
@@ -132,7 +109,8 @@
   (random-point-inside
    [this] (g/mix (:p this) (:q this) (m/random)))
   (sample-uniform
-   [this dist] nil) ;; TODO
+   [this dist include-last?]
+   (g/sample-uniform* dist include-last? [(:p this) (:q this)]))
 #+END_SRC
 **** PIntersectable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
@@ -169,9 +147,14 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/PGraph
   (vertices
-   [this] [(:p this) (:q this)])
+   ([this] [(:p this) (:q this)])
+   ([this res] (as-linestrip* (:p this) (:q this) res true)))
   (edges
-   [this] [this])
+   ([this] [this])
+   ([this res] (->> (g/vertices this res)
+                    (d/successive-nth 2)
+                    (map (fn [[a b]] (thi.ng.geom.Line3. a b)))
+                    (vec))))
   (vertex-neighbors
    [{p :p q :q} v] (condp = v p q q p nil))
   (vertex-valence
@@ -209,9 +192,9 @@
   (classify-point
    [{p :p q :q} p] nil) ; TODO
   (closest-point
-   [this a] (closest-point* a (:p this) (:q this)))
+   [this a] (closest-point* (vec3 a) (:p this) (:q this)))
   (contains-point?
-   [this a] (m/delta= (closest-point* a (:p this) (:q this)) a *eps*))
+   [this a] (m/delta= (closest-point* (vec3 a) (:p this) (:q this)) a *eps*))
 #+END_SRC
 **** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
@@ -231,3 +214,4 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   )
 #+END_SRC
+** TODO LineStrip
