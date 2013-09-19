@@ -82,7 +82,13 @@
   (random-point-inside
    [this]
    (g/add (:p this) (g/scale (g/randvec2) (m/random (:r this)))))
-  (sample-uniform [this dist]) ;; TODO
+  (sample-uniform
+   [this udist include-last?]
+   (let [points (g/vertices this)
+         points (if include-last?
+                  (conj (vec points) (first points))
+                  points)]
+     (g/sample-uniform* udist include-last? points)))
 #+END_SRC
 *** PPolygonizable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
