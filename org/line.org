@@ -9,7 +9,7 @@
      [thi.ng.geom.types :as types])
     #+clj
     (:import
-     [thi.ng.geom.types Circle Line2 Line3 Polygon]))
+     [thi.ng.geom.types Circle Line2 Line3 LineStrip2]))
 #+END_SRC
 ** Constructors
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
@@ -21,6 +21,10 @@
     ([p q] (thi.ng.geom.types.Line3. (vec3 p) (vec3 q)))
     ([px py qx qy] (thi.ng.geom.types.Line3. (vec3 px py) (vec3 qx qy)))
     ([px py pz qx qy qz] (thi.ng.geom.types.Line3. (vec3 px py pz) (vec3 qx qy qz))))
+
+  (defn linestrip2
+    ([points] (thi.ng.geom.types.LineStrip2. (vec (map vec2 points))))
+    ([p & more] (thi.ng.geom.types.LineStrip2. (vec (map vec2 (cons p more))))))
 #+END_SRC
 ** Shared helper functions
     This function is going to be used for both 2D/3D implementations:
@@ -55,7 +59,7 @@
      ([this] [this])
      ([this res] (->> (g/vertices this res)
                       (d/successive-nth 2)
-                      (map (fn [[a b]] (thi.ng.geom.Line2. a b)))
+                      (map (fn [[a b]] (thi.ng.geom.types.Line2. a b)))
                       (vec))))
     (vertex-neighbors
      [{p :p q :q} v] (condp = v p q q p nil))
@@ -153,7 +157,7 @@
    ([this] [this])
    ([this res] (->> (g/vertices this res)
                     (d/successive-nth 2)
-                    (map (fn [[a b]] (thi.ng.geom.Line3. a b)))
+                    (map (fn [[a b]] (thi.ng.geom.types.Line3. a b)))
                     (vec))))
   (vertex-neighbors
    [{p :p q :q} v] (condp = v p q q p nil))
@@ -214,4 +218,97 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   )
 #+END_SRC
-** TODO LineStrip
+** TODO LineStrip2
+*** Protocol implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  (extend-type thi.ng.geom.types.LineStrip2
+#+END_SRC
+**** PGraph
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PGraph
+  (vertices [this] (:points this))
+  (edges
+   [this]
+   (->> (:points this)
+        (d/successive-nth 2)
+        (map (fn [[a b]] (thi.ng.geom.types.Line2. a b)))
+        (vec)))
+  (vertex-neighbors
+   [this v] (d/neighbors v (:points this)))
+  (vertex-valence
+   [this v] (if-let [p (d/neighbors v (:points this))]
+              (let [points (:points this)]
+                (if (or (= p (first points)) (= p (peek points)))
+                  1 2))
+              0))
+#+END_SRC
+**** PShape
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PShape
+  (area [this] 0)
+  (bounds
+   [this] (g/bounding-rect* (:points this)))
+  (center
+   ([this]
+      (g/translate this (g/invert (g/centroid this))))
+   ([this o]
+      (g/translate this (g/sub (vec2 o) (g/centroid this)))))
+  (centroid
+   [this] (g/centroid* (:points this)))
+  (width
+   [this] (g/axis-range* 0 (:points this)))
+  (height
+   [this] (g/axis-range* 1 (:points this)))
+  (depth [this] 0)
+#+END_SRC
+**** PShape2
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PShape2
+  (bounding-circle
+   [this]
+   (g/bounding-circle* (g/centroid this) (:points this)))
+  (circumference
+   [{points :points}]
+   (d/reduce-pairs + g/dist (concat points [(first points)])))
+#+END_SRC
+**** PBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PBoundary
+  (classify-point [this v])
+  (closest-point [this a])
+  (contains-point? [this a])
+#+END_SRC
+**** PSampleable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PSampleable
+  (point-at
+   [this t] (g/point-at* t (:points this) nil))
+  (random-point
+   [this] (g/point-at* (m/random) (:points this) nil))
+  (random-point-inside
+   [this] (g/point-at* (m/random) (:points this) nil))
+  (sample-uniform
+   [this udist include-last?]
+   (g/sample-uniform* udist include-last? (:points this)))
+#+END_SRC
+**** TODO PIntersectable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PIntersectable
+  (intersect-line [this l])
+#+END_SRC
+**** TODO PTransformable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PTransformable
+  (scale
+   ([this s]
+      (thi.ng.geom.types.LineStrip2. (vec (map #(g/scale % s) (:points this)))))
+   ([this sx sy]
+      (thi.ng.geom.types.LineStrip2. (vec (map #(g/scale % sx sy) (:points this))))))
+  (translate
+   [this t]
+   (thi.ng.geom.types.LineStrip2. (vec (map #(g/add % t) (:points this)))))
+#+END_SRC
+**** End of implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  )
+#+END_SRC
