@@ -22,6 +22,7 @@
 ***** Line
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (defrecord Line2 [p q])
+  (defrecord LineStrip2 [points])
 #+END_SRC
 ***** Triangle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
@@ -1276,7 +1277,7 @@
     ([] (normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm))))
     ([n] (normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm)) n)))
 #+END_SRC
-***** Shared functions
+**** Shared functions
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn closest-point*
     [lines q]
@@ -1376,11 +1377,31 @@
         (conj samples (last points))
         samples)))
 
+  (defn point-at*
+    ([t points] (point-at* t points nil))
+    ([t points idx]
+       (when (m/in-range? 0.0 1.0 t)
+         (let [n (count points)
+               t (double t)]
+           (cond
+            (= 0 n) nil
+            (= 1 n) (first points)
+            (= 1.0 t) (last points)
+            :default (let [idx (or idx (total-length* points))
+                           total (peek idx)
+                           ct (* t total)
+                           i (loop [i 1] (if (>= ct (idx i)) (recur (inc i)) i))
+                           p (nth points (dec i))
+                           q (nth points i)
+                           pi (idx (dec i))
+                           frac (/ (- ct pi) (- (idx i) pi))]
+                       (mix p q frac)))))))
+
   (defn normal3*
     ([a b c] (normalize (cross (sub b a) (sub c a))))
     ([[a b c]] (normalize (cross (sub b a) (sub c a)))))
 #+END_SRC
-***** Matrix functions
+**** Matrix functions
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn frustum
     "Sets up a viewing frustum, shaped like a truncated pyramid with the
