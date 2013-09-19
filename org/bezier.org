@@ -24,11 +24,10 @@
   (defn interpolate
     [[a b c d] t]
     (let [[ta tb tc td] (bernstein t)]
-      (-> a
-          (g/scale ta)
-          (g/add (g/scale b tb))
-          (g/add (g/scale c tc))
-          (g/add (g/scale d td)))))
+      (->> (g/scale a ta)
+           (g/madd b tb)
+           (g/madd c tc)
+           (g/madd d td))))
 
   (defn sample-segment
     [seg res]
