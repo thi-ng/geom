@@ -38,9 +38,9 @@
         (> t 1.0) b
         :default (g/mix a b t))))
 
-  (defn as-linestrip*
+  (defn sample-with-res*
     [a b res include-b?]
-    (let [ls (for [t (range 0 1.0 (/ 1.0 res))] (g/mix a b t))]
+    (let [ls (for [t (m/norm-range res)] (g/mix a b t))]
       (if include-b? (concat ls [b]) ls)))
 #+END_SRC
 ** Line2
@@ -54,7 +54,7 @@
     g/PGraph
     (vertices
      ([this] [(:p this) (:q this)])
-     ([this res] (as-linestrip* (:p this) (:q this) res true)))
+     ([this res] (sample-with-res* (:p this) (:q this) res true)))
     (edges
      ([this] [this])
      ([this res] (->> (g/vertices this res)
@@ -152,7 +152,7 @@
   g/PGraph
   (vertices
    ([this] [(:p this) (:q this)])
-   ([this res] (as-linestrip* (:p this) (:q this) res true)))
+   ([this res] (sample-with-res* (:p this) (:q this) res true)))
   (edges
    ([this] [this])
    ([this res] (->> (g/vertices this res)

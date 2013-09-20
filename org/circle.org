@@ -29,7 +29,7 @@
   (vertices
    ([this] (g/vertices this *resolution*))
    ([this res]
-      (map #(g/point-at this %) (range 0.0 1.0 (/ 1.0 res)))))
+      (map #(g/point-at this %) (m/norm-range res))))
   (edges
    ([this] (g/edges this *resolution*))
    ([this res]

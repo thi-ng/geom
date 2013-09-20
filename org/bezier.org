@@ -15,11 +15,6 @@
     [(* it it2) (* 3 (* t it2)) (* 3 (* it t2)) (* t t2)]))
 #+END_SRC
 ** Interpolation & curve samplings
-     Applied to calculate a single point on a bezier patch, sample a patch
-     at a fixed resolution and sample a continous curve from a seq of
-     control points... =interpolate*= and =as-linestrip*= are
-     implemented as HOF to support both 2D/3D cases. Further below
-     we'll provide pre-configured implementations for each.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
   (defn interpolate
     [[a b c d] t]
@@ -31,10 +26,9 @@
 
   (defn sample-segment
     [seg res]
-    (for [t (range 0.0 1.0 (/ 1.0 res))]
-      (interpolate seg t)))
+    (map #(interpolate seg %) (m/norm-range res)))
 
-  (defn as-linestrip
+  (defn sample-with-res
     [res include-last? points]
     (let [ls (->> points
                   (d/successive-nth 4)
@@ -49,7 +43,7 @@
      which passes through all given points and automatically computes
      the required control points.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
-  (defn find-cpoints*
+  (defn- find-cpoints*
     [ctor]
     (fn [tight points]
       (let [np (count points)
