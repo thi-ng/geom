@@ -34,8 +34,8 @@
    ([this] (g/edges this *resolution*))
    ([this res]
       (let [verts (g/vertices this res)]
-        (map (fn [[p q]] (thi.ng.geom.types.Line2. p q))
-             (d/successive-nth 2 (concat verts [(first verts)]))))))
+        (g/edges* #(thi.ng.geom.types.Line2. (% 0) (% 1))
+                  (concat verts [(first verts)])))))
 #+END_SRC
 *** PShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
@@ -104,13 +104,9 @@
   (tessellate
    ([this] (g/tessellate this *resolution*))
    ([{p :p :as this} res]
-      (let [verts (g/vertices this res)]
-        (->> [(first verts)]
-             (concat verts)
-             (d/successive-nth 2)
-             (map
-              (fn [[a b]]
-                (thi.ng.geom.types.Triangle2. b p a)))))))
+      (-> (g/vertices this res)
+          (g/tessellate* p)
+          (map #(thi.ng.geom.types.Triangle2. (% 0) (% 1) (% 2))))))
 #+END_SRC
 *** PExtrudeable
 **** TODO use cone implementation

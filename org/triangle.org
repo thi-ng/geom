@@ -17,7 +17,15 @@
     [a b c] (thi.ng.geom.types.Triangle2. (vec2 a) (vec2 b) (vec2 c)))
 
   (defn triangle3
-    [a b c] (thi.ng.geom.types.Triangle3. (vec3 a) (vec3 b) (vec3 c)))
+    ([t]
+       (cond
+        (or (instance? thi.ng.geom.types.Triangle2 t) (map? t))
+        (thi.ng.geom.types.Triangle3.
+         (vec3 (:a t)) (vec3 (:b t)) (vec3 (:c t)))
+        :default
+        (thi.ng.geom.types.Triangle3.
+         (vec3 (nth t 0 0)) (vec3 (nth t 1 0)) (vec3 (nth t 2 0)))))
+    ([a b c] (thi.ng.geom.types.Triangle3. (vec3 a) (vec3 b) (vec3 c))))
 
   (defn equilateral2
     ([l]
@@ -191,6 +199,12 @@
   (as-polygon
    [t] (thi.ng.geom.types.Polygon. [(:a t) (:b t) (:c t)] []))
 #+END_SRC
+***** PInvertible
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
+  g/PInvertible
+  (invert
+   [t] (thi.ng.geom.types.Triangle2. (:c t) (:b t) (:a t)))
+#+END_SRC
 ***** PSliceable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PSliceable
@@ -297,6 +311,12 @@
             (let [ip (g/add p (g/scale dir t))]
               (if (contains-point* a b c ip)
                 {:p ip :n n :dist t :dir (g/normalize (g/sub ip p))})))))))
+#+END_SRC
+***** PInvertible
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
+  g/PInvertible
+  (invert
+   [t] (thi.ng.geom.types.Triangle3. (:c t) (:b t) (:a t)))
 #+END_SRC
 ***** PSliceable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx

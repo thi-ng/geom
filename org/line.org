@@ -14,10 +14,12 @@
 ** Constructors
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   (defn line2
+    ([[p q]] (thi.ng.geom.types.Line2. (vec2 p) (vec2 q)))
     ([p q] (thi.ng.geom.types.Line2. (vec2 p) (vec2 q)))
     ([px py qx qy] (thi.ng.geom.types.Line2. (vec2 px py) (vec2 qx qy))))
 
   (defn line3
+    ([[p q]] (thi.ng.geom.types.Line3. (vec3 p) (vec3 q)))
     ([p q] (thi.ng.geom.types.Line3. (vec3 p) (vec3 q)))
     ([px py qx qy] (thi.ng.geom.types.Line3. (vec3 px py) (vec3 qx qy)))
     ([px py pz qx qy qz] (thi.ng.geom.types.Line3. (vec3 px py pz) (vec3 qx qy qz))))
@@ -51,20 +53,17 @@
 #+END_SRC
 **** PGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
-    g/PGraph
-    (vertices
-     ([this] [(:p this) (:q this)])
-     ([this res] (sample-with-res* (:p this) (:q this) res true)))
-    (edges
-     ([this] [this])
-     ([this res] (->> (g/vertices this res)
-                      (d/successive-nth 2)
-                      (map (fn [[a b]] (thi.ng.geom.types.Line2. a b)))
-                      (vec))))
-    (vertex-neighbors
-     [{p :p q :q} v] (condp = v p q q p nil))
-    (vertex-valence
-     [this v] (if (or (= v (:p this)) (= v (:q this))) 1 0))
+  g/PGraph
+  (vertices
+   ([this] [(:p this) (:q this)])
+   ([this res] (sample-with-res* (:p this) (:q this) res true)))
+  (edges
+   ([this] [this])
+   ([this res] (g/edges* line2 (g/vertices this res))))
+  (vertex-neighbors
+   [{p :p q :q} v] (condp = v p q q p nil))
+  (vertex-valence
+   [this v] (if (or (= v (:p this)) (= v (:q this))) 1 0))
 #+END_SRC
 **** PShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
@@ -155,10 +154,7 @@
    ([this res] (sample-with-res* (:p this) (:q this) res true)))
   (edges
    ([this] [this])
-   ([this res] (->> (g/vertices this res)
-                    (d/successive-nth 2)
-                    (map (fn [[a b]] (thi.ng.geom.types.Line3. a b)))
-                    (vec))))
+   ([this res] (g/edges* line3 (g/vertices this res))))
   (vertex-neighbors
    [{p :p q :q} v] (condp = v p q q p nil))
   (vertex-valence
@@ -226,13 +222,13 @@
 **** PGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/PGraph
-  (vertices [this] (:points this))
+  (vertices
+   ([this] (:points this))
+   ([{points :points} res]
+      (map #(g/point-at* % points) (m/norm-range res))))
   (edges
-   [this]
-   (->> (:points this)
-        (d/successive-nth 2)
-        (map (fn [[a b]] (thi.ng.geom.types.Line2. a b)))
-        (vec)))
+   ([this] (g/edges* line2 (g/vertices this)))
+   ([this res] (g/edges* line2 (g/vertices this res))))
   (vertex-neighbors
    [this v] (d/neighbors v (:points this)))
   (vertex-valence
