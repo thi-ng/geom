@@ -1392,6 +1392,17 @@
                            frac (/ (- ct pi) (- (idx i) pi))]
                        (mix p q frac)))))))
 
+  (defn edges*
+    [ctor points]
+    (->> points (d/successive-nth 2) (map ctor) (vec)))
+
+  (defn tessellate*
+    [c points]
+    (->> [(first points)]
+         (concat points)
+         (d/successive-nth 2)
+         (map #(vector (% 0) c (% 1)))))
+
   (defn normal3*
     ([a b c] (normalize (cross (sub b a) (sub c a))))
     ([[a b c]] (normalize (cross (sub b a) (sub c a)))))
