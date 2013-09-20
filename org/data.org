@@ -85,10 +85,13 @@
     (reduce (fn[acc k] (assoc acc k (apply f (get type k) args))) type keys))
 
   (defn reduce-pairs
-    [f1 f2 coll]
-    (when (> (count coll) 1)
-      (reduce f1 (map (fn [[a b]] (f2 a b))
-                      (successive-nth 2 coll)))))
+    ([f1 f2 coll] (reduce-pairs f1 f2 nil coll))
+    ([f1 f2 acc coll]
+       (when (> (count coll) 1)
+         (let [pairs (map (fn [[a b]] (f2 a b)) (successive-nth 2 coll))]
+           (if acc
+             (reduce f1 acc pairs)
+             (reduce f1 pairs))))))
 
   (defn wrap-seq
     [s head tail]
