@@ -229,24 +229,45 @@
       (thi.ng.geom.types.AABB.
        (vec3 (:p this))
        (vec3 (:w this) (:h this) depth)))
-     (let [[a b c d] (map vec3 (g/vertices this))
-           [a2 b2 c2 d2] (-> this
-                             (g/scale scale)
-                             (g/center (g/centroid this))
-                             (g/vertices)
-                             (map vec3))]
+     (let [off (vec3 0 0 depth)
+           [a b c d] (map vec3 (g/vertices this))
+           [a2 b2 c2 d2] (->> (g/scale-size this scale)
+                              (g/vertices)
+                              (map #(g/add off %)))]
        (mesh/mesh3
-        [a b c] [a c d]       ;;back
-        [a2 c2 b2] [a2 d2 c2] ;; front
-        [a d2 d] [a d2 a2]    ;; left
-        [b2 c2 c] [b2 c b]    ;; right
-        [a a2 b2] [a b2 b]    ;; top
-        [d c2 d2] [d c c2]    ;; bottom
+        [a c b] [a d c]       ;;back
+        [a2 b2 c2] [a2 c2 d2] ;; front
+        [a d2 d] [a a2 d2]    ;; left
+        [b2 c c2] [b2 b c]    ;; right
+        [a b2 a2] [a b b2]    ;; top
+        [d d2 c2] [d c2 c]    ;; bottom
         ))))
 #+END_SRC
 *** TODO PTransformable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-
+  g/PTransformable
+  (scale
+   ([this s]
+      (if (number? s)
+        (thi.ng.geom.types.Rect.
+         (g/scale (:p this) s) (* (:w this) s) (* (:h this) s))
+        (thi.ng.geom.types.Rect.
+         (g/scale (:p this) s) (* (:w this) (nth s 0 0)) (* (:h this) (nth s 1 0)))))
+   ([this a b]
+      (if (number? a)
+        (thi.ng.geom.types.Rect.
+         (g/scale (:p this) a b) (* (:w this) a) (* (:h this) b))
+        (thi.ng.geom.types.Rect.
+         (g/scale (:p this) a b)
+         (* (:w this) (nth a 0 0) (nth b 0 0))
+         (* (:h this) (nth a 1 0) (nth b 1 0))))))
+  (scale-size
+   [{w :w h :h :as this} s]
+   (let [[w2 h2] (if (number? s)
+                   [(* w s) (* h s)]
+                   [(* w (nth s 0 0)) (* h (nth s 1 0))])]
+     (thi.ng.geom.types.Rect.
+       (g/madd (vec2 w2 h2) -0.5 (g/centroid this)) w2 h2)))
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
