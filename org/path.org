@@ -1,0 +1,163 @@
+* Namespace: thi.ng.geom.path
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  (ns thi.ng.geom.path
+    (:require
+     [thi.ng.geom
+      [core :as g :refer [vec2]]
+      [bezier :as b]
+      [line :as l]]
+     ,#+clj [clojure.xml :as xml])
+    ,#+clj (:import [thi.ng.geom.types Line2 Path2]))
+#+END_SRC
+** Constructor
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  (defn path
+    ([segments]
+       (thi.ng.geom.types.Path2. (vec segments)))
+    ([s & segments]
+       (thi.ng.geom.types.Path2. (vec (cons s segments)))))
+#+END_SRC
+** Path segment processing
+*** TODO refactor to use protocols
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  (defmulti sample-segment (fn [s res last?] (:type s)))
+
+  (defmethod sample-segment :line
+    [{[a b] :points} res last?]
+    (l/sample-with-res* a b res last?))
+
+  (defmethod sample-segment :close
+    [{[a b] :points} res last?]
+    (l/sample-with-res* a b res last?))
+
+  (defmethod sample-segment :bezier
+    [{points :points} res last?]
+    (b/sample-with-res res last? points))
+
+  (defn sample-segments
+    [res segments]
+    (let [last (last segments)
+          [paths curr] (reduce
+                        (fn [[paths curr] seg]
+                          (let [curr (concat curr (sample-segment seg res (= seg last)))]
+                            (if (= :close (:type seg))
+                              [(conj paths curr) []]
+                              [paths curr])))
+                        [[] []] segments)]
+      (if (seq curr)
+        (conj paths curr)
+        paths)))
+#+END_SRC
+** SVG path parser
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  (defn parse-svg-coords
+    [coords]
+    (->> coords
+         (re-seq #"[0-9\.\-\+]+")
+         ,#+clj  (map #(Double/parseDouble %))
+         ,#+cljs (map js/parseFloat)
+         (partition 2)
+         (map vec2)))
+
+  (defn parse-svg-path
+    ([svg]
+       (parse-svg-path
+        (->> svg
+             (re-seq #"([MLCZz])\s*(((([0-9\.\-]+)\,?){2}\s*){0,3})")
+             (map (fn [[_ t c]]
+                    [t (parse-svg-coords c)])))
+        [0 0] [0 0]))
+    ([[[type points :as seg] & more] p0 pc]
+       (when seg
+         (cond
+          (= "M" type)
+          (let [p (first points)] (recur more p p))
+
+          (= "L" type)
+          (let [p (first points)]
+            (lazy-seq (cons {:type :line :points [pc p]}
+                            (parse-svg-path more p0 p))))
+
+          (= "C" type)
+          (let [p (last points)]
+            (lazy-seq (cons {:type :bezier :points (cons pc points)}
+                            (parse-svg-path more p0 p))))
+
+          (or (= "Z" type) (= "z" type))
+          (lazy-seq (cons {:type :close :points [pc p0]}
+                          (parse-svg-path more p0 p0)))
+
+          :default
+          ,#+clj  (throw (UnsupportedOperationException.
+                        (str "non-implemented segment type" type)))
+          ,#+cljs (throw (js/Error. (str "non-implemented segment type" type)))))))
+#+END_SRC
+** SVG path parser (Clojure only)
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  ,#+clj
+  (defn parse-svg
+    [src res udist]
+    (->> src
+         (xml/parse)
+         (xml-seq)
+         (filter #(= :path (:tag %)))
+         (map #(parse-svg-path (get-in % [:attrs :d])))
+         (map path)))
+#+END_SRC
+** Protocol implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  (extend-type thi.ng.geom.types.Path2
+#+END_SRC
+*** PGraph
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  g/PGraph
+  (edges [this])
+  (vertices
+   [this res]
+   (sample-segments res (:segments this)))
+#+END_SRC
+*** PShape
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  g/PShape
+  (area [this])
+  (bound [this])
+  (center [this])
+#+END_SRC
+*** PShape2
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  g/PShape2
+  (bounding-cicle [this])
+  (circumference [this])
+#+END_SRC
+*** PBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  g/PBoundary
+  (classify-point [this p])
+  (closest-point [this p])
+  (contains-point? [this p])
+#+END_SRC
+*** PSampleable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  g/PSampleable
+  (point-at [this t])
+  (random-point [this])
+  (random-point-inside [this])
+  (sample-uniform
+   [this udist include-last?]
+   (->> this
+        :segments
+        (sample-segments 8)
+        (map #(g/sample-uniform* udist include-last? %))))
+#+END_SRC
+*** PPolygonizable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  g/PPolygonizable
+  (as-polygon
+   ([this] nil)
+   ([this res] nil))
+#+END_SRC
+*** End of implementation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  )
+#+END_SRC
