@@ -322,14 +322,12 @@
      defined further on, but need to be declared already.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (declare map-entry key-error swizzle2 swizzle3)
-  (declare IDENTITY4x4)
+  (declare IDENTITY32 IDENTITY44)
 #+END_SRC
 **** Matrix implementations
 ***** Helper macros
-      CLJX doesn't process macros correctly and therefore they need to
-      be defined twice, for CLJ & CLJS individually...
 ****** Matrix item calculation
-#+BEGIN_SRC clojure :tangle babel/src-clj/thi/ng/geom/macros.clj
+#+BEGIN_SRC clojure :noweb-ref mat-item
   (ns thi.ng.geom.macros)
   (defmacro mat-item
     ([a1 a2 b1 b2]
@@ -341,19 +339,16 @@
     ([a1 a2 b1 b2 c1 c2 d1 d2]
        `(+ (+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)) (* ~d1 ~d2))))
 #+END_SRC
-#+BEGIN_SRC clojure :tangle babel/src-cljs/thi/ng/geom/macros.clj
-  (ns thi.ng.geom.macros)
-  (defmacro mat-item
-    ([a1 a2 b1 b2]
-       `(+ (* ~a1 ~a2) (* ~b1 ~b2)))
-    ([a1 a2 b1 b2 c1 c2]
-       `(+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)))
-    ([a1 a2 b1 b2 c1 c2 d]
-       `(+ (+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)) ~d))
-    ([a1 a2 b1 b2 c1 c2 d1 d2]
-       `(+ (+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)) (* ~d1 ~d2))))
+******* Tangle twice for CLJ & CLJS                                :noexport:
+        CLJX doesn't process macros correctly and therefore they need to
+        be defined twice, for CLJ & CLJS individually...
+#+BEGIN_SRC clojure :tangle babel/src-clj/thi/ng/geom/macros.clj :noweb yes
+  <<mat-item>>
 #+END_SRC
-***** Affine transform
+#+BEGIN_SRC clojure :tangle babel/src-cljs/thi/ng/geom/macros.clj :noweb yes
+  <<mat-item>>
+#+END_SRC
+***** 3x2 Matrix (Affine 2D transform)
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (deftype Matrix32
       [^double m00 ^double m01 ^double m02
@@ -499,9 +494,9 @@
 
     PTransformable
     (scale [this s]
-      (multiply this (set-scale IDENTITY4x4 s)))
+      (multiply this (set-scale IDENTITY44 s)))
     (translate [this t]
-      (multiply this (set-position IDENTITY4x4 t)))
+      (multiply this (set-position IDENTITY44 t)))
     (rotate-x [this theta]
       (let [s (Math/sin theta) c (Math/cos theta)]
         (multiply
@@ -1140,12 +1135,12 @@
 #+END_SRC
 ****** Identity matrices
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
-  (def ^:const IDENTITY3x2
+  (def ^:const IDENTITY32
     (Matrix32.
      1.0 0.0 0.0
      0.0 1.0 0.0 nil))
 
-  (def ^:const IDENTITY4x4
+  (def ^:const IDENTITY44
     (Matrix44.
      1.0 0.0 0.0 0.0
      0.0 1.0 0.0 0.0
