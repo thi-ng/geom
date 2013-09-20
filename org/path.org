@@ -1,4 +1,12 @@
 * Namespace: thi.ng.geom.path
+** TODO add path builder
+#+BEGIN_SRC clojure
+  (build-path
+   (moveto [0 0])
+   (lineto 100 0)
+   (curveto a b c)
+   (close))
+#+END_SRC
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
   (ns thi.ng.geom.path
@@ -20,6 +28,7 @@
 #+END_SRC
 ** Path segment processing
 *** TODO refactor to use protocols
+*** TODO move sample-with-res into [[file:geom.org]]::PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
   (defmulti sample-segment (fn [s res last?] (:type s)))
 
@@ -35,7 +44,7 @@
     [{points :points} res last?]
     (b/sample-with-res res last? points))
 
-  (defn sample-segments
+  (defn sample-segments*
     [res segments]
     (let [last (last segments)
           [paths curr] (reduce
@@ -115,7 +124,7 @@
   (edges [this])
   (vertices
    [this res]
-   (sample-segments res (:segments this)))
+   (first (sample-segments* res (:segments this))))
 #+END_SRC
 *** PShape
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
@@ -147,8 +156,9 @@
    [this udist include-last?]
    (->> this
         :segments
-        (sample-segments 8)
-        (map #(g/sample-uniform* udist include-last? %))))
+        (sample-segments* 8)
+        (map #(g/sample-uniform* udist include-last? %))
+        (first)))
 #+END_SRC
 *** PPolygonizable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
