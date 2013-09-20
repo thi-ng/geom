@@ -76,28 +76,32 @@
 #+END_SRC
 **** Intervals
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/math/core.cljx
-(defn map-interval
-  "Maps x from one interval into another. Intervals can be defined as vectors."
-  ([x [minIn maxIn] [minOut maxOut]]
-     (+ (* (- maxOut minOut) (/ (- x minIn) (- maxIn minIn))) minOut))
-  ([x minIn maxIn minOut maxOut]
-     (+ (* (- maxOut minOut) (/ (- x minIn) (- maxIn minIn))) minOut)))
+  (defn map-interval
+    "Maps x from one interval into another. Intervals can be defined as vectors."
+    ([x [minIn maxIn] [minOut maxOut]]
+       (+ (* (- maxOut minOut) (/ (- x minIn) (- maxIn minIn))) minOut))
+    ([x minIn maxIn minOut maxOut]
+       (+ (* (- maxOut minOut) (/ (- x minIn) (- maxIn minIn))) minOut)))
 
-(defn in-range?
-  "Returns true if x >= min and x <= max."
-  ([[min max] x]
-     (and (>= x min) (<= x max)))
-  ([min max x]
-     (and (>= x min) (<= x max))))
+  (defn in-range?
+    "Returns true if x >= min and x <= max."
+    ([[min max] x]
+       (and (>= x min) (<= x max)))
+    ([min max x]
+       (and (>= x min) (<= x max))))
 
-(defn wrap-range
-  ([x y] (let [x (rem x y)] (if (neg? x) (+ x y) x))))
+  (defn wrap-range
+    ([x y] (let [x (rem x y)] (if (neg? x) (+ x y) x))))
 
-(defn clamp
-  [x min max] (if (< x min) min (if (> x max) max x)))
+  (defn clamp
+    [x min max] (if (< x min) min (if (> x max) max x)))
 
-(defn clamp-normalized
-  [x] (clamp x -1.0 1.0))
+  (defn clamp-normalized
+    [x] (clamp x -1.0 1.0))
+
+  (defn norm-range
+    "Returns lazy-seq of values in the interval [ 0.0, 1.0 ) at resolution 1/x."
+    [x] (map #(/ % (double x)) (range x)))
 #+END_SRC
 **** Interpolation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/math/core.cljx
