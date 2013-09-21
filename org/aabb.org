@@ -134,7 +134,7 @@
 *** PIntersectable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
   g/PIntersectable
-  (intersects-shape?
+  (intersect-shape
    [{pa :p sa :size} s]
    (cond
     (instance? thi.ng.geom.types.AABB s)

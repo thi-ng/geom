@@ -69,7 +69,7 @@
                  (let [eb (g/bounds e)
                        faces (filter
                               (fn [[a b c :as f]]
-                                (and (r/rects-intersect? eb (get fbounds f))
+                                (and (r/intersect-rect? eb (get fbounds f))
                                      (or (crossed-edge? e a b)
                                          (crossed-edge? e b c)
                                          (crossed-edge? e c a))))

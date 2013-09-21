@@ -270,7 +270,7 @@
   (defprotocol PIntersectable
     (intersect-line [this l])
     (intersect-ray [this r])
-    (intersects-shape? [this s]))
+    (intersect-shape [this s]))
 #+END_SRC
 ****** PSliceable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx

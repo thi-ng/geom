@@ -59,11 +59,11 @@
   (defn bottom [r] (+ ((:p r) 1) (:h r)))
   (defn bottom-right [r] (g/add (:p r) [(:w r) (:h r)]))
 
-  (defn rects-intersect?
+  (defn intersect-rect?
     [{[px py] :p w :w h :h} {[qx qy] :p w2 :w h2 :h}]
     (not (or (> px (+ qx w2)) (> qx (+ px w)) (> py (+ qy h2)) (> qy (+ py h)))))
 
-  (defn intersect-circle
+  (defn intersect-circle?
     [{w :w h :h :as r} {c :p radius :r}]
     (let [p (g/centroid r)
           [dx dy :as d] (g/abs (g/sub c p))
@@ -151,6 +151,16 @@
   (sample-uniform
    [this udist include-last?]
    (g/sample-uniform* udist include-last? (conj (g/vertices this) (:p this))))
+#+END_SRC
+*** PIntersectable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+  g/PIntersectable
+  (intersect-shape
+   [this s]
+   (cond
+    (instance? thi.ng.geom.types.Rect s) (intersect-rect? this s)
+    (instance? thi.ng.geom.types.Circle s) (intersect-circle? this s)
+    :default (g/type-error "Rect" s)))
 #+END_SRC
 *** PPolygonizable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx

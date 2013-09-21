@@ -214,6 +214,20 @@
    ([this e classifier]
       (slice-with* (:a this) (:b this) (:c this) e classifier)))
 #+END_SRC
+***** PTransformable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+  g/PTransformable
+  (scale
+   ([this s]
+    (thi.ng.geom.types.Triangle2. (g/scale (:a this) s) (g/scale (:b this) s) (g/scale (:c this) s)))
+   ([this a b]
+    (thi.ng.geom.types.Triangle2. (g/scale (:a this) a b) (g/scale (:b this) a b) (g/scale (:c this) a b))))
+  (scale-size
+   [{a :a b :b c :c} s]
+   (let [cc (centroid* a b c)]
+     (thi.ng.geom.types.Triangle2.
+      (-> a (g/sub cc) (g/madd s cc)) (-> b (g/sub cc) (g/madd s cc)) (-> c (g/sub cc) (g/madd s cc)))))
+#+END_SRC
 ***** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   )
@@ -326,6 +340,20 @@
       (slice-with* (:a this) (:b this) (:c this) e g/classify-point))
    ([this e classifier]
       (slice-with* (:a this) (:b this) (:c this) e classifier)))
+#+END_SRC
+***** PTransformable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+  g/PTransformable
+  (scale
+   ([this s]
+    (thi.ng.geom.types.Triangle3. (g/scale (:a this) s) (g/scale (:b this) s) (g/scale (:c this) s)))
+   ([this a b]
+    (thi.ng.geom.types.Triangle3. (g/scale (:a this) a b) (g/scale (:b this) a b) (g/scale (:c this) a b))))
+  (scale-size
+   [{a :a b :b c :c} s]
+   (let [cc (centroid* a b c)]
+     (thi.ng.geom.types.Triangle3.
+      (-> a (g/sub cc) (g/madd s cc)) (-> b (g/sub cc) (g/madd s cc)) (-> c (g/sub cc) (g/madd s cc)))))
 #+END_SRC
 ***** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
