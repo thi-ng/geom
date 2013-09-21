@@ -24,24 +24,22 @@
   (defn ascend
     "Customized version of clojure.zip/up without support for zipper meta data.
     Returns the loc of the parent of the node at this loc, or nil if at the top."
-    [loc]
-    (let [[node {l :l ppath :ppath pnodes :pnodes r :r changed? :changed?}] loc]
-      (when pnodes
-        (let [pnode (peek pnodes)]
-          (if changed?
-            [(make-node pnode (concat l (cons node r)))
-             (if ppath (assoc ppath :changed? true))]
-            [pnode ppath])))))
+    [[node {pnodes :pnodes :as z}]]
+    (if pnodes
+      (let [pnode (peek pnodes)]
+        (if (:changed? z)
+          [(make-node pnode (concat (:l z) (cons node (:r z))))
+           (if (:ppath z) (assoc (:ppath z) :changed? true))]
+          [pnode (:ppath z)]))))
 
   (defn descend
     "Customized version of clojure.zip/down without support for zipper meta data.
     Returns the loc of the leftmost child of the node at this loc, or
     nil if no children. The new zipper state also includes a new key :siblings,
     used by nth-sibling."
-    [loc]
-    (let [[node path] loc
-          cs (:children node)]
-      (when cs
+    [[node path]]
+    (let [cs (:children node)]
+      (if cs
         [(cs 0)
          {:l []
           :pnodes (if path (conj (:pnodes path) node) [node])
@@ -90,9 +88,7 @@
               (replace-node
                (let [{:keys [x y w h]} (z 0)
                      cx (if (pos? (bit-and idx 1)) (+ x w) x)
-                     cy (if (pos? (bit-and idx 2)) (+ y h) y)
-                     ;;[cx cy] (nth [[0 0] [w 0] [0 h] [w h]] idx) ;; TODO refactor as if's
-                     ]
+                     cy (if (pos? (bit-and idx 2)) (+ y h) y)]
                  {:x cx :y cy :w (* 0.5 w) :h (* 0.5 h)})
                c))))
       (node-bounds [this {:keys [x y w h]}]
