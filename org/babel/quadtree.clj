@@ -8,36 +8,36 @@
   (split-node [this])
   (add-point [this p]))
 
-(defn root-node*
-  [this path]
-  (loop [p (:parent this) n this path path]
+(defn commit-path
+  [node path]
+  (loop [node node path path]
     (if (seq path)
-      (recur
-       (:parent p)
-       (->> n (assoc (:children p) (peek path)) (assoc p :children))
-       (pop path))
-      n)))
+      (let [[parent i] (peek path)]
+        (recur
+         (->> node (assoc (:children parent) i) (assoc parent :children))
+         (pop path)))
+      node)))
 
 (defn add-point*
   [this p path]
   (if (:children this)
     (let [[c i] (make-child-for-point this p false)]
-      (add-point* c p (conj path i)))
+      (add-point* c p (conj path [this i])))
     (let [data (:data this)]
       (if data
         (if (m/delta= data p)
-          (root-node* this path)
+          (ffirst path)
           (let [n (split-node this)
                 [c i] (make-child-for-point n p true)]
             (-> n
                 (assoc-in [:children i] c)
                 (add-point* data [])
-                (root-node* path))))
-        (root-node* (assoc this :data p) path)))))
+                (commit-path path))))
+        (commit-path (assoc this :data p) path)))))
 
 (def ^:const qtchildren [nil nil nil nil])
 
-(defrecord QuadtreeNode [x y w h parent children data]
+(defrecord QuadtreeNode [x y w h children data]
   TreeOps
   (child-index-for-point [this [px py]]
     (if (< px (+ x w))
@@ -51,7 +51,7 @@
         [(children idx) idx]
         (let [cx (if (pos? (bit-and idx 1)) (+ x w) x)
               cy (if (pos? (bit-and idx 2)) (+ y h) y)]
-          [(QuadtreeNode. cx cy (* 0.5 w) (* 0.5 h) this nil (if add? p)) idx]))))
+          [(QuadtreeNode. cx cy (* 0.5 w) (* 0.5 h) nil (if add? p)) idx]))))
   (node-bounds [this]
     (thi.ng.geom.types.Rect. (g/vec2 x y) (* w 2) (* h 2)))
   (split-node [this]
@@ -65,7 +65,7 @@
 (defn quadtree
   "Create a new quadtree root node with the given XY position & dimensions."
   [x y w h]
-  (QuadtreeNode. x y (* 0.5 w) (* 0.5 h) nil nil nil))
+  (QuadtreeNode. x y (* 0.5 w) (* 0.5 h) nil nil))
 
 (defn select-with
   "Produces a seq of points in the tree within a given region.
