@@ -215,7 +215,7 @@
       (slice-with* (:a this) (:b this) (:c this) e classifier)))
 #+END_SRC
 ***** PTransformable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PTransformable
   (scale
    ([this s]
@@ -342,7 +342,7 @@
       (slice-with* (:a this) (:b this) (:c this) e classifier)))
 #+END_SRC
 ***** PTransformable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PTransformable
   (scale
    ([this s]
