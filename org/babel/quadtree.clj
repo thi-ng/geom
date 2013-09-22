@@ -10,12 +10,24 @@
 
 (defn commit-path
   [node path]
-  (loop [node node path path]
-    (if (seq path)
-      (let [[parent i] (peek path)]
-        (recur
-         (->> node (assoc (:children parent) i) (assoc parent :children))
-         (pop path)))
+  (if (seq path)
+    (let [[parent i] (peek path)]
+      (recur
+       (->> node (assoc (:children parent) i) (assoc parent :children))
+       (pop path)))
+    node))
+
+(defn commit-prune
+  [node path]
+  (if (seq path)
+    (let [[parent i] (peek path)]
+      (recur
+       (->> (if (some identity (:children node)) node)
+            (assoc (:children parent) i)
+            (assoc parent :children))
+       (pop path)))
+    (if (every? nil? (:children node))
+      (assoc node :children nil)
       node)))
 
 (defn add-point*
@@ -26,7 +38,7 @@
     (let [data (:data this)]
       (if data
         (if (m/delta= data p)
-          (ffirst path)
+          (or (ffirst path) this)
           (let [n (split-node this)
                 [c i] (make-child-for-point n p true)]
             (-> n
@@ -34,6 +46,21 @@
                 (add-point* data [])
                 (commit-path path))))
         (commit-path (assoc this :data p) path)))))
+
+(defn delete-point*
+  [this p path]
+  (if (:children this)
+    (let [[c i] (child-for-point this p)]
+      (if c
+        (delete-point* c p (conj path [this i]))
+        (or (ffirst path) this)))
+    (if (m/delta= p (:data this))
+      (if (seq path)
+        (let [[p i] (peek path)
+              p (assoc-in p [:children i] nil)]
+          (commit-prune p (pop path)))
+        (assoc this :data nil))
+      (or (ffirst path) this))))
 
 (def ^{:const true :private true} qt-children [nil nil nil nil])
 (def ^{:const true :private true} ot-children [nil nil nil nil nil nil nil nil])
@@ -121,5 +148,17 @@
 (defn select-with-shape
   [s q] (select-with #(g/intersect-shape s %) #(g/contains-point? s %) q))
 
-(def q (time (reduce add-point (quadtree 0 0 100 100) [[55 10] [25 10] [55 11]])))
+(def q (time (reduce add-point (quadtree 0 0 100 100) [[55 10] [25 10] [55 11] [52 11]])))
 (def o (time (reduce add-point (octree 0 0 0 100 100 100) [[55 10 25] [25 10 55] [55 11 25]])))
+
+
+(let [points [[55 10] [25 10] [55 11] [52 11]]
+      q (reduce add-point (quadtree 0 0 100 100) points)]
+  (pprint q)
+  (reduce
+   (fn [q p]
+     (prn "-----" p)
+     (let [q (delete-point* q p [])]
+       (pprint q)
+       q))
+   q points))
