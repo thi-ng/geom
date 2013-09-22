@@ -1,4 +1,4 @@
-(require '[thi.ng.geom [core :as g] [rect :as r]] '[thi.ng.math.core :as m])
+(require '[thi.ng.geom [core :as g] [rect :as r] [aabb :as a]] '[thi.ng.math.core :as m])
 
 (defprotocol TreeOps
   (child-index-for-point [this p])
@@ -6,7 +6,8 @@
   (make-child-for-point [this p add-p?])
   (node-bounds [this])
   (split-node [this])
-  (add-point [this p]))
+  (add-point [this p])
+  (delete-point [this p]))
 
 (defn commit-path
   [node path]
@@ -19,15 +20,20 @@
 
 (defn commit-prune
   [node path]
-  (if (seq path)
-    (let [[parent i] (peek path)]
-      (recur
-       (->> (if (some identity (:children node)) node)
-            (assoc (:children parent) i)
-            (assoc parent :children))
-       (pop path)))
-    (if (every? nil? (:children node))
-      (assoc node :children nil)
+  (let [children (filter identity (:children node))
+        node (if (seq children)
+               (if (= 1 (count children))
+                 (if-let [d (:data (first children))]
+                   (assoc node :data d :children nil)
+                   node)
+                 node))]
+    (if (seq path)
+      (let [[parent i] (peek path)]
+        (recur
+         (->> node
+              (assoc (:children parent) i)
+              (assoc parent :children))
+         (pop path)))
       node)))
 
 (defn add-point*
@@ -72,7 +78,8 @@
       (if (< py (+ y h)) 0 2)
       (if (< py (+ y h)) 1 3)))
   (child-for-point [this p]
-    (let [idx (child-index-for-point this p)] [(children idx) idx]))
+    (let [idx (child-index-for-point this p)]
+      [(children idx) idx]))
   (make-child-for-point [this p add?]
     (let [idx (child-index-for-point this p)]
       (if (children idx)
@@ -88,6 +95,11 @@
     [this p]
     (if (g/contains-point? (node-bounds this) p)
       (add-point* this p [])
+      this))
+  (delete-point
+    [this p]
+    (if (g/contains-point? (node-bounds this) p)
+      (delete-point* this p [])
       this)))
 
 (defrecord OctreeNode [x y z w h d children data]
@@ -98,7 +110,8 @@
          (if (< py (+ y h)) 0 2)
          (if (< py (+ y h)) 1 3))))
   (child-for-point [this p]
-    (let [idx (child-index-for-point this p)] [(children idx) idx]))
+    (let [idx (child-index-for-point this p)]
+      [(children idx) idx]))
   (make-child-for-point [this p add?]
     (let [idx (child-index-for-point this p)]
       (if (children idx)
@@ -115,6 +128,11 @@
     [this p]
     (if (g/contains-point? (node-bounds this) p)
       (add-point* this p [])
+      this))
+  (delete-point
+    [this p]
+    (if (g/contains-point? (node-bounds this) p)
+      (delete-point* this p [])
       this)))
 
 (defn quadtree
