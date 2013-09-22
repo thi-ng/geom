@@ -35,7 +35,8 @@
                 (commit-path path))))
         (commit-path (assoc this :data p) path)))))
 
-(def ^:const qtchildren [nil nil nil nil])
+(def ^{:const true :private true} qt-children [nil nil nil nil])
+(def ^{:const true :private true} ot-children [nil nil nil nil nil nil nil nil])
 
 (defrecord QuadtreeNode [x y w h children data]
   TreeOps
@@ -55,7 +56,34 @@
   (node-bounds [this]
     (thi.ng.geom.types.Rect. (g/vec2 x y) (* w 2) (* h 2)))
   (split-node [this]
-    (assoc this :children qtchildren :data nil))
+    (assoc this :children qt-children :data nil))
+  (add-point
+    [this p]
+    (if (g/contains-point? (node-bounds this) p)
+      (add-point* this p [])
+      this)))
+
+(defrecord OctreeNode [x y z w h d children data]
+  TreeOps
+  (child-index-for-point [this [px py pz]]
+    (+ (if (< pz (+ z d)) 0 4)
+       (if (< px (+ x w))
+         (if (< py (+ y h)) 0 2)
+         (if (< py (+ y h)) 1 3))))
+  (child-for-point [this p]
+    (let [idx (child-index-for-point this p)] [(children idx) idx]))
+  (make-child-for-point [this p add?]
+    (let [idx (child-index-for-point this p)]
+      (if (children idx)
+        [(children idx) idx]
+        (let [cx (if (pos? (bit-and idx 1)) (+ x w) x)
+              cy (if (pos? (bit-and idx 2)) (+ y h) y)
+              cz (if (pos? (bit-and idx 4)) (+ z d) z)]
+          [(OctreeNode. cx cy cz (* 0.5 w) (* 0.5 h) (* 0.5 d) nil (if add? p)) idx]))))
+  (node-bounds [this]
+    (thi.ng.geom.types.AABB. (g/vec3 x y z) (g/vec3 (* w 2) (* h 2) (* d 2))))
+  (split-node [this]
+    (assoc this :children ot-children :data nil))
   (add-point
     [this p]
     (if (g/contains-point? (node-bounds this) p)
@@ -66,6 +94,11 @@
   "Create a new quadtree root node with the given XY position & dimensions."
   [x y w h]
   (QuadtreeNode. x y (* 0.5 w) (* 0.5 h) nil nil))
+
+(defn octree
+  "Create a new octree root node with the given XYZ position & dimensions."
+  [x y z w h d]
+  (OctreeNode. x y z (* 0.5 w) (* 0.5 h) (* 0.5 d) nil nil))
 
 (defn select-with
   "Produces a seq of points in the tree within a given region.
@@ -89,3 +122,4 @@
   [s q] (select-with #(g/intersect-shape s %) #(g/contains-point? s %) q))
 
 (def q (time (reduce add-point (quadtree 0 0 100 100) [[55 10] [25 10] [55 11]])))
+(def o (time (reduce add-point (octree 0 0 0 100 100 100) [[55 10 25] [25 10 55] [55 11 25]])))
