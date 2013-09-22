@@ -40,7 +40,7 @@
   [this p path]
   (if (:children this)
     (let [[c i] (make-child-for-point this p false)]
-      (add-point* c p (conj path [this i])))
+      (recur c p (conj path [this i])))
     (let [data (:data this)]
       (if data
         (if (m/delta= data p)
@@ -58,7 +58,7 @@
   (if (:children this)
     (let [[c i] (child-for-point this p)]
       (if c
-        (delete-point* c p (conj path [this i]))
+        (recur c p (conj path [this i]))
         (or (ffirst path) this)))
     (if (m/delta= p (:data this))
       (if (seq path)
@@ -71,7 +71,7 @@
 (def ^{:const true :private true} qt-children [nil nil nil nil])
 (def ^{:const true :private true} ot-children [nil nil nil nil nil nil nil nil])
 
-(defrecord QuadtreeNode [x y w h children data]
+(defrecord QuadtreeNode [^double x ^double y ^double w ^double h children data]
   TreeOps
   (child-index-for-point [this [px py]]
     (if (< px (+ x w))
@@ -88,7 +88,7 @@
               cy (if (pos? (bit-and idx 2)) (+ y h) y)]
           [(QuadtreeNode. cx cy (* 0.5 w) (* 0.5 h) nil (if add? p)) idx]))))
   (node-bounds [this]
-    (thi.ng.geom.types.Rect. (g/vec2 x y) (* w 2) (* h 2)))
+    (thi.ng.geom.types.Rect. (g/vec2 x y) (* w 2.0) (* h 2.0)))
   (split-node [this]
     (assoc this :children qt-children :data nil))
   (add-point
@@ -102,7 +102,7 @@
       (delete-point* this p [])
       this)))
 
-(defrecord OctreeNode [x y z w h d children data]
+(defrecord OctreeNode [^double x ^double y ^double z ^double w ^double h ^double d children data]
   TreeOps
   (child-index-for-point [this [px py pz]]
     (+ (if (< pz (+ z d)) 0 4)
@@ -121,7 +121,7 @@
               cz (if (pos? (bit-and idx 4)) (+ z d) z)]
           [(OctreeNode. cx cy cz (* 0.5 w) (* 0.5 h) (* 0.5 d) nil (if add? p)) idx]))))
   (node-bounds [this]
-    (thi.ng.geom.types.AABB. (g/vec3 x y z) (g/vec3 (* w 2) (* h 2) (* d 2))))
+    (thi.ng.geom.types.AABB. (g/vec3 x y z) (g/vec3 (* w 2.0) (* h 2.0) (* d 2.0))))
   (split-node [this]
     (assoc this :children ot-children :data nil))
   (add-point
@@ -170,7 +170,7 @@
 (def o (time (reduce add-point (octree 0 0 0 100 100 100) [[55 10 25] [25 10 55] [55 11 25]])))
 
 
-(let [points [[55 10] [25 10] [55 11] [52 11]]
+(let [points [[55 10] [55 11] [52 11] [25 10]]
       q (reduce add-point (quadtree 0 0 100 100) points)]
   (pprint q)
   (reduce
