@@ -1,0 +1,241 @@
+* Namespace: thi.ng.geom.svo
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/svo.cljx
+  (ns thi.ng.geom.svo
+    (:require
+     [thi.ng.geom.core :as g :refer [vec3]])
+    ,#+clj (:import [thi.ng.geom.core Vec3]))
+#+END_SRC
+** Constants
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/svo.cljx
+  (def ^:const depth-index
+    (vec (reductions #(+ % (long (Math/pow 8 %2))) 0 (range 16))))
+
+  (def ^:const depth-size
+    (vec (map #(long (Math/pow 8 %)) (range 16))))
+
+  (def ^:const bit-vals [0x01 0x02 0x04 0x08 0x10 0x20 0x40 0x80])
+
+  (def ^:const used-bits
+    "Returns a lazy-seq of bit ids used in `x`.
+    Only checks 8bit range (0 - 255)."
+    (reduce
+      (fn [acc x] (conj acc (filter #(pos? (bit-and x (bit-vals %))) [0 1 2 3 4 5 6 7])))
+      [] (range 0x100)))
+#+END_SRC
+** Helper & index functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/svo.cljx
+  (defn node-id
+    [[ox oy oz] dim [px py pz]]
+    (if (< pz (+ oz dim))
+      (if (< px (+ ox dim))
+        (if (< py (+ oy dim)) 0 1)
+        (if (< py (+ oy dim)) 2 3))
+      (if (< px (+ ox dim))
+        (if (< py (+ oy dim)) 4 5)
+        (if (< py (+ oy dim)) 6 7))))
+
+  (defn node-bitmask
+    [o dim p] (bit-shift-left 1 (node-id o dim p)))
+
+  (defn node-offset
+    "Computes the position of a child node id"
+    [[x y z] d b]
+    (thi.ng.geom.core.Vec3.
+     (if (pos? (bit-and b 2)) (+ x d) x)
+     (if (pos? (bit-and b 1)) (+ y d) y)
+     (if (pos? (bit-and b 4)) (+ z d) z)
+     nil))
+
+  (defn node-index
+    [idx id d sizes]
+    (+ (inc idx) (* id (sizes d))))
+
+  (defn max-depth
+    "Returns max tree depth for the given size and min requested precision (voxel size)."
+    [dim prec]
+    (loop [d dim depth 0] (if (<= d prec) (dec depth) (recur (* d 0.5) (inc depth)))))
+
+  (defn size-at-depth
+    "Returns node size at depth for given tree bounds."
+    [dim depth] (/ dim (bit-shift-left 1 depth)))
+
+  (defn voxeltree
+    "Creates a new voxel tree structure with the given root
+    node dimension and min precision."
+    [dim prec]
+    (let [depth (max-depth dim prec)]
+      {:dim dim :max-depth depth :prec (size-at-depth dim (inc depth)) :data {}
+       :branches (vec (cons 0 (reverse (map #(apply + (take % depth-size)) (range 1 (inc depth))))))}))
+
+  (defn set-at
+    "Marks voxel at given position as set. Updates tree at all levels."
+    ([tree v]
+       (set-at tree (vec3) (* (:dim tree) 0.5) 0 0 (:max-depth tree) (:branches tree) v))
+    ([tree offset dim idx depth max-depth branches v]
+       (let [id (node-id offset dim v)
+             tree (assoc tree :data
+                         (assoc (:data tree) idx
+                                (bit-or (or ((:data tree) idx) 0) (bit-shift-left 1 id))))]
+         ;; (prn :d depth :o offset :o2 (g/madd (vec3 dim) 2 offset) :dim dim :idx idx :val (get-in tree [:data idx]))
+         (if (< depth max-depth)
+           (recur tree
+                  (node-offset offset dim id)
+                  (* dim 0.5)
+                  (node-index idx id (inc depth) branches)
+                  (inc depth)
+                  max-depth
+                  branches
+                  v)
+           tree))))
+
+  (defn depth-at
+    "Returns max defined tree depth at given position."
+    ([tree v]
+       (depth-at tree (vec3) (* (:dim tree) 0.5) 0 0 (:max-depth tree) (:branches tree) v))
+    ([tree max-depth v]
+       (depth-at tree (vec3) (* (:dim tree) 0.5) 0 0 (min max-depth (:max-depth tree)) (:branches tree) v))
+    ([tree offset dim idx depth max-depth branches v]
+       (let [id (node-id offset dim v)
+             n-val (or ((:data tree) idx) 0)
+             found? (and (pos? n-val) (pos? (bit-and n-val (bit-shift-left 1 id))))]
+         ;; (prn :d depth :o offset :o2 (g/madd (vec3 dim) 2 offset) :dim dim :idx idx :id id :val n-val :found found?)
+         (if found?
+           (if (< depth max-depth)
+             (recur tree
+                    (node-offset offset dim id)
+                    (* dim 0.5)
+                    (node-index idx id (inc depth) branches)
+                    (inc depth)
+                    max-depth
+                    branches
+                    v)
+             depth)
+           depth))))
+
+  (defn delete-at
+    ([tree v]
+       (delete-at tree (vec3) (* (:dim tree) 0.5) 0 0 (:max-depth tree) (:branches tree) v))
+    ([tree offset dim idx depth max-depth branches v]
+       (let [id (node-id offset dim v)
+             bmask (bit-shift-left 1 id)
+             n-val (or ((:data tree) idx) 0)]
+         (if (pos? (bit-and n-val bmask))
+           (if (< depth max-depth)
+             (let [c-depth (inc depth)
+                   c-idx (node-index idx id c-depth branches)
+                   [tree edit? :as result]
+                   (delete-at tree
+                              (node-offset offset dim id)
+                              (* dim 0.5)
+                              c-idx
+                              c-depth max-depth
+                              branches v)
+                   new-val (bit-and n-val (bit-xor 0xff bmask))]
+               (if (and edit? (zero? (or ((:data tree) c-idx) 0)))
+                 (if (zero? new-val)
+                   [(assoc tree :data (dissoc (:data tree) c-idx idx)) true]
+                   [(assoc tree :data (assoc (dissoc (:data tree) c-idx) idx new-val)) true])
+                 result))
+             (let [new-val (bit-and n-val (bit-xor 0xff bmask))]
+               ;; (prn :d depth :o offset :o2 (g/madd (vec3 dim) 2 offset) :dim dim :idx idx :id id :val n-val)
+               (if (= new-val n-val)
+                 [tree false]
+                 [(assoc tree :data (assoc (:data tree) idx new-val)) true])))
+           [tree false]))))
+
+  (defn select
+    ([tree min-depth]
+       (select tree (vec3) (* (:dim tree) 0.5) 0 0 (min min-depth (:max-depth tree)) (:branches tree) #{}))
+    ([tree offset dim idx depth min-depth branches acc]
+       (let [n-val (or ((:data tree) idx) 0)
+             c-depth (inc depth)
+             c-dim (* dim 0.5)]
+         ;; (prn :d depth :o offset :o2 (g/madd (vec3 dim) 2 offset) :dim dim :idx idx :val n-val)
+         (if (zero? n-val) acc
+             (if (< depth min-depth)
+               (reduce
+                (fn [acc id]
+                  (select tree
+                          (node-offset offset dim id) c-dim
+                          (node-index idx id c-depth branches)
+                          c-depth min-depth branches
+                          acc))
+                acc (used-bits n-val))
+                                          ; collect voxels
+               (reduce
+                #(conj % (g/add (node-offset offset dim %2) [c-dim c-dim c-dim]))
+                acc (used-bits n-val)))))))
+
+  (defn voxel-config-at-depth
+    "Returns a map of configuration settings for the given `tree` and `depth`.
+    Depth will be clamped at tree's max-depth."
+    [{:keys [dim max-depth] :as tree} min-depth]
+    (let [depth (max (min min-depth max-depth) 0)
+          s (size-at-depth dim (inc depth))
+          s2 (* s 0.5)
+          stride (int (/ dim s))]
+      {:depth depth
+       :size s :inv-size (/ 1.0 s)
+       :offset [s2 s2 s2]
+       :stride stride :stride-z (* stride stride)}))
+
+  (defn voxel-cell
+    "Returns the cell coordinate for the given `index` and tree configuration
+    (the latter obtained via `voxel-config-at-depth`)."
+    [{:keys [size stride stride-z]} idx]
+    (let [z (int (/ idx stride-z))
+          y (int (/ (rem idx stride-z) stride))
+          x (rem idx stride)]
+      (vec3 x y z)))
+
+  (defn voxel-coord
+    "Returns the actual world space coordinate for the given `index` and tree
+    configuration (the latter obtained via `voxel-config-at-depth`)."
+    [config idx]
+    (g/scale (voxel-cell config idx) (:size config)))
+
+  (defn cell-index
+    "Returns the index for the cell at xyz with `stride` and `stride-z`."
+    [stride stride-z x y z]
+    (+ (+ x (* y stride)) (* z stride-z)))
+
+  (defn select-cells
+    ([tree min-depth]
+       (select-cells tree (vec3) (* (:dim tree) 0.5) 0 0 (voxel-config-at-depth tree min-depth) (:branches tree) #{}))
+    ([tree offset dim idx depth config branches acc]
+       (let [n-val (get (:data tree) idx 0)
+             c-depth (inc depth)
+             c-dim (* dim 0.5)]
+         ;; (prn :d depth :o offset :o2 (g/madd (vec3 dim) 2 offset) :dim dim :idx idx :val n-val)
+         (if (zero? n-val) acc
+             (if (< depth (:depth config))
+               (reduce
+                (fn [acc id]
+                  (select-cells tree
+                                (node-offset offset dim id)
+                                c-dim
+                                (node-index idx id c-depth branches)
+                                c-depth
+                                config branches
+                                acc))
+                acc (used-bits n-val))
+                                          ; collect voxels
+               (let [{:keys [inv-size stride stride-z]} config]
+                 (reduce
+                  (fn [acc c]
+                    (let [[x y z] (g/scale (node-offset offset dim c) inv-size)]
+                      (conj acc (+ (+ (int x) (* (int y) stride)) (* (int z) stride-z)))))
+                  acc (used-bits n-val))))))))
+
+  (defn apply-voxels
+    [f tree coll] (reduce f tree coll))
+
+  (defn as-array
+    [tree min-depth]
+    (let [{:keys [stride stride-z]} (voxel-config-at-depth tree min-depth)
+          buf (byte-array (* stride stride-z))]
+      (doseq [c (select-cells tree min-depth)]
+        (aset-byte buf (int c) 127))
+      buf))
+#+END_SRC
