@@ -138,11 +138,11 @@
           (map #(thi.ng.geom.types.Triangle2. (% 0) (% 1) (% 2))))))
 #+END_SRC
 *** PExtrudeable
-**** TODO use cone implementation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
   g/PExtrudeable
   (extrude
-   [this opts])
+   [this opts]
+   (g/extrude (g/as-polygon this (or (:res opts) *resolution*)) opts))
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
