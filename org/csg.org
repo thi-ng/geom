@@ -228,14 +228,14 @@
           (map
            (fn [i]
              (csg-vertex
-              [(f cx sx i 1) (f cy sy i 2) (f cz sz i 4)] n))
+              (vec3 (f cx sx i 1) (f cy sy i 2) (f cz sz i 4)) n))
            verts)))
-       [[[0 4 6 2] [-1 0 0]]
-        [[1 3 7 5] [1 0 0]]
-        [[0 1 5 4] [0 -1 0]]
-        [[2 6 7 3] [0 1 0]]
-        [[0 2 3 1] [0 0 -1]]
-        [[4 5 7 6] [0 0 1]]])))
+       [[[0 4 6 2] (vec3 -1 0 0)]
+        [[1 3 7 5] (vec3 1 0 0)]
+        [[0 1 5 4] (vec3 0 -1 0)]
+        [[2 6 7 3] (vec3 0 1 0)]
+        [[0 2 3 1] (vec3 0 0 -1)]
+        [[4 5 7 6] (vec3 0 0 1)]])))
 
   (defn csg-sphere
     [{:keys [p r]} slices stacks]
