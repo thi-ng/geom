@@ -231,6 +231,7 @@
   (defn apply-voxels
     [f tree coll] (reduce f tree coll))
 
+  #+clj
   (defn as-array
     [tree min-depth]
     (let [{:keys [stride stride-z]} (voxel-config-at-depth tree min-depth)
