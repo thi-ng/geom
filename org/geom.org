@@ -325,9 +325,8 @@
   (declare map-entry key-error swizzle2 swizzle3)
   (declare IDENTITY32 IDENTITY44)
 #+END_SRC
-**** Matrix implementations
-***** Helper macros
-****** Matrix item calculation
+**** Helper macros
+***** Matrix item calculation
 #+BEGIN_SRC clojure :noweb-ref mat-item
   (ns thi.ng.geom.macros)
   (defmacro mat-item
@@ -340,15 +339,24 @@
     ([a1 a2 b1 b2 c1 c2 d1 d2]
        `(+ (+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)) (* ~d1 ~d2))))
 #+END_SRC
-******* Tangle twice for CLJ & CLJS                                :noexport:
+***** Voxel test
+#+BEGIN_SRC clojure :noweb-ref voxel-set-bit
+  (defmacro set-bit-if-index
+    [voxels idx mask id]
+    `(if (~voxels ~idx) ~id (bit-or ~id ~mask)))
+#+END_SRC
+****** Tangle twice for CLJ & CLJS                                 :noexport:
         CLJX doesn't process macros correctly and therefore they need to
         be defined twice, for CLJ & CLJS individually...
 #+BEGIN_SRC clojure :tangle babel/src-clj/thi/ng/geom/macros.clj :noweb yes
   <<mat-item>>
+  <<voxel-set-bit>>
 #+END_SRC
 #+BEGIN_SRC clojure :tangle babel/src-cljs/thi/ng/geom/macros.clj :noweb yes
   <<mat-item>>
+  <<voxel-set-bit>>
 #+END_SRC
+**** Matrix implementations
 ***** 3x2 Matrix (Affine 2D transform)
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (deftype Matrix32
@@ -688,7 +696,7 @@
         (Vec2. (+ x (.-x ^Vec2 a)) (+ y (.-y ^Vec2 a)) _meta)
         (if (number? a)
           (Vec2. (+ x a) (+ y a) _meta)
-          (Vec2. (+ x (nth a 0 0)) (+ y (nth a 1 0)) _meta))))
+          (Vec2. (+ x (nth a 0 0.0)) (+ y (nth a 1 0.0)) _meta))))
     (add [this a b]
       (if (number? a)
         (Vec2. (+ x a) (+ y b) _meta)
@@ -700,7 +708,7 @@
         (Vec2. (- x (.-x ^Vec2 a)) (- y (.-y ^Vec2 a)) _meta)
         (if (number? a)
           (Vec2. (- x a) (- y a) _meta)
-          (Vec2. (- x (nth a 0 0)) (- y (nth a 1 0)) _meta))))
+          (Vec2. (- x (nth a 0 0.0)) (- y (nth a 1 0.0)) _meta))))
     (sub [this a b]
       (if (number? a)
         (Vec2. (- x a) (- y b) _meta)
@@ -919,11 +927,10 @@
               (let [c (count o)]
                 (if (== 3 c) (compare o this) (- 3 c)))))
     ,#+clj (hashCode [_]
-            (hash-combine
-             (hash-combine
-              (clojure.lang.Util/hash x)
-              (clojure.lang.Util/hash y))
-             (clojure.lang.Util/hash z)))
+            (-> x
+                (clojure.lang.Util/hash)
+                (hash-combine (clojure.lang.Util/hash y))
+                (hash-combine (clojure.lang.Util/hash z))))
     ,#+cljs IComparable
     ,#+cljs (-compare [this o]
              (let [c (compare x (.-x ^Vec3 o))]
@@ -932,12 +939,7 @@
                    (if (== 0 c) (compare z (.-z ^Vec3 o)) c))
                  c)))
     ,#+cljs IHash
-    ,#+cljs (-hash [_]
-             (let [seed (* 37 x)]
-               (bit-xor seed
-                        (+ (+ (+ 0x9e3779b9 (* y 37))
-                              (bit-shift-left seed 6))
-                           (bit-shift-right seed 2)))))
+    ,#+cljs (-hash [_] (-> x (hash) (hash-combine (hash y)) (hash-combine (hash z))))
 
     Object
     (toString [_] (str "[" x " " y " " z "]"))
@@ -985,7 +987,7 @@
         (Vec3. (+ x (.-x ^Vec3 a)) (+ y (.-y ^Vec3 a)) (+ z (.-z ^Vec3 a)) _meta)
         (if (number? a)
           (Vec3. (+ x a) (+ y a) (+ z a) _meta)
-          (Vec3. (+ x (nth a 0 0)) (+ y (nth a 1 0)) (+ z (nth a 2 0)) _meta))))
+          (Vec3. (+ x (nth a 0 0.0)) (+ y (nth a 1 0.0)) (+ z (nth a 2 0.0)) _meta))))
     (add [this a b]
       (if (number? a)
         (Vec3. (+ x a) (+ y b) z _meta)
@@ -1002,7 +1004,7 @@
         (Vec3. (- x (.-x ^Vec3 a)) (- y (.-y ^Vec3 a)) (- z (.-z ^Vec3 a)) _meta)
         (if (number? a)
           (Vec3. (- x a) (- y a) (- z a) _meta)
-          (Vec3. (- x (nth a 0 0)) (- y (nth a 1 0)) (- z (nth a 2 0)) _meta))))
+          (Vec3. (- x (nth a 0 0.0)) (- y (nth a 1 0.0)) (- z (nth a 2 0.0)) _meta))))
     (sub [this a b]
       (if (number? a)
         (Vec3. (- x a) (- y b) z _meta)
