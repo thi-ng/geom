@@ -6,6 +6,7 @@
      [thi.ng.data.core :as d]
      [thi.ng.math.core :as m :refer [*eps*]]
      [thi.ng.geom.core :as g :refer [vec2 vec3]]
+     [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])
     #+clj
     (:import
@@ -31,10 +32,14 @@
 ** Shared helper functions
     This function is going to be used for both 2D/3D implementations:
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  (defn closest-point-coeff*
+    [p a b]
+    (let [d (g/sub b a)]
+      (/ (g/dot (g/sub p a) d) (g/mag-squared d))))
+
   (defn closest-point*
     [p a b]
-    (let [d (g/sub b a)
-          t (/ (g/dot (g/sub p a) d) (g/mag-squared d))]
+    (let [t (closest-point-coeff* p a b)]
       (cond
         (<= t 0.0) a
         (> t 1.0) b
@@ -300,9 +305,30 @@
       (thi.ng.geom.types.LineStrip2. (vec (map #(g/scale % s) (:points this)))))
    ([this sx sy]
       (thi.ng.geom.types.LineStrip2. (vec (map #(g/scale % sx sy) (:points this))))))
+  (scale-size
+   [this s]
+   (let [c (g/centroid this)]
+     (thi.ng.geom.types.LineStrip2.
+      (vec (map #(-> % (g/sub c) (g/madd s c)) (:points this))))))
   (translate
    [this t]
    (thi.ng.geom.types.LineStrip2. (vec (map #(g/add % t) (:points this)))))
+#+END_SRC
+**** TODO PExtrudeable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PExtrudeable
+  (extrude
+   [{points :points :as this}
+    {:keys [depth scale] :or {depth 1.0 scale 1.0}}]
+   (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size this scale)))
+         off (vec3 0 0 depth)
+         bottom (map vec3 points)
+         top (map #(g/add off %) tpoints)]
+     (apply mesh/mesh3
+            (mapcat
+             (fn [[a1 a2] [b1 b2]] [[b1 a1 a2] [b2 b1 a2]])
+             (d/successive-nth 2 bottom)
+             (d/successive-nth 2 top)))))
 #+END_SRC
 **** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
