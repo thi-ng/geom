@@ -501,7 +501,7 @@
   (defn spherify
     [r] #(g/normalize % r))
 
-  (defn transform
+  (defn transform-with
     [{:keys [faces vertices fns]} f]
     (let [subst (into (hash-map) (map (fn [v] [v (f v)]) (keys vertices)))]
       (apply mesh3
@@ -514,4 +514,14 @@
          (reduce
           (fn [this face] (if (f face) this (g/remove-face this face)))
           this faces)))
+
+  (defn trianglestrip-faces
+    "Takes two seqs of linestrip style points and returns a lazyseq of
+    faces connecting them. The boolean flip? arg controls face orientation."
+    [averts bverts flip?]
+    (mapcat
+     (if flip?
+       (fn [[a1 a2] [b1 b2]] [[a1 b1 a2] [a2 b1 b2]])
+       (fn [[a1 a2] [b1 b2]] [[a1 a2 b1] [a2 b2 b1]]))
+     (d/successive-nth 2 averts) (d/successive-nth 2 bverts)))
 #+END_SRC
