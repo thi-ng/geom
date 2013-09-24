@@ -11,10 +11,9 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
   (ns thi.ng.geom.path
     (:require
-     [thi.ng.geom
-      [core :as g :refer [vec2]]
-      [bezier :as b]
-      [line :as l]]
+     [thi.ng.geom.core :as g :refer [vec2]]
+     [thi.ng.geom.bezier :as b]
+     [thi.ng.geom.line :as l]
      ,#+clj [clojure.xml :as xml])
     ,#+clj (:import [thi.ng.geom.types Line2 Path2]))
 #+END_SRC
