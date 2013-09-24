@@ -4,7 +4,7 @@
   (ns thi.ng.geom.polygon
     (:require
      [thi.ng.data.core :as d]
-     [thi.ng.math.core :as m :refer [PI HALF_PI *eps*]]
+     [thi.ng.math.core :as m :refer [PI HALF_PI THREE_HALVES_PI *eps*]]
      [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.mesh :as mesh]
@@ -20,6 +20,8 @@
     ([p & more] (thi.ng.geom.types.Polygon. (vec (map vec2 (cons p more))) [])))
 #+END_SRC
 ** Type specific functions
+*** Sutherland-Hodgeman convex clipping
+ - http://en.wikipedia.org/wiki/Sutherland-Hodgman_algorithm
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   (defn clip-convex*
     [verts bounds]
@@ -44,7 +46,32 @@
                           (conj clipped (first clipped))
                           clipped)]
             (recur (rest cedges) clipped points))
-          (polygon (distinct (butlast points)))))))
+          (distinct (butlast points))))))
+#+END_SRC
+*** Convex hull
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+  (defn- h-segment
+    [verts [px py :as p] pred theta ps]
+    (let [[q] (reduce
+               (fn [state [qx qy :as q]]
+                 (if (pred qy py)
+                   (let [d (m/abs-diff theta (g/heading-xy (vec2 (- qx px) (- qy py))))]
+                     (if (< d (state 1)) [q d] state))
+                   state))
+               [nil HALF_PI] ps)]
+      (if q
+        (recur (conj verts q) q pred theta (d/all-after q ps))
+        verts)))
+
+  (defn convex-hull*
+    [points]
+    (let [[p & more :as ps] (sort-by first points)
+          rps (reverse ps)]
+      (butlast
+       (reduce
+        (fn [v [pred t ps]] (h-segment v (peek v) pred t (d/all-after (peek v) ps)))
+        [p] [[<= THREE_HALVES_PI more] [>= 0.0 more]
+             [>= HALF_PI rps] [<= PI rps]]))))
 #+END_SRC
 *** TODO complete porting
 #+BEGIN_SRC clojure
@@ -79,32 +106,6 @@
                    [m fbounds]))
                [m fbounds] (g/edges poly))]
       (keep-faces m #(g/contains-point? poly (t/centroid2 %)))))
-
-  (defn randompoly
-    [n r]
-    (let [points (:points (g/as-polygon (circle r) n))]
-      (polygon (map #(g/scale % (m/random 0.5 1.5)) points))))
-
-  (defn h-segment
-    [verts [px py :as p] pred theta ps]
-    (let [[q] (reduce (fn[state [qx qy :as q]]
-                        (if (pred qy py)
-                          (let [d (m/abs-diff theta (g/heading2 [(- qx px) (- qy py)]))]
-                            (if (< d (state 1)) [q d] state))
-                          state))
-                      [nil HALF_PI] ps)]
-      (if q (recur (conj verts q) q pred theta (all-after q ps)) verts)))
-
-  (defn convex-hull
-    [points]
-    (let [[p & more :as ps] (sort-by first (if (map? points) (:points points) points))
-          rps (reverse ps)]
-      (polygon
-       (butlast
-        (reduce
-         (fn[v [pred t ps]] (h-segment v (peek v) pred t (d/all-after (peek v) ps)))
-         [p] [[<= (* 1.5 PI) more] [>= 0.0 more]
-              [>= HALF_PI rps] [<= PI rps]])))))
 #+END_SRC
 ** Protocol implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
@@ -243,6 +244,9 @@
    (let [c (g/centroid this)]
      (thi.ng.geom.types.Polygon.
       (vec (map #(-> % (g/sub c) (g/madd s c)) (:points this))) [])))
+  (translate
+   [this t]
+   (thi.ng.geom.types.Polygon. (vec (map #(g/add % t) (:points this))) []))
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
