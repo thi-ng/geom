@@ -6,7 +6,9 @@
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g :refer [vec3]]
      [thi.ng.geom.svo :as svo :refer [cell-index select-cells voxel-cell voxel-config-at-depth]]
-     [thi.ng.geom.mesh :as mesh]))
+     [thi.ng.geom.mesh :as mesh]
+     ,#+clj [thi.ng.geom.macros :as mac])
+    ,#+cljs (:require-macros [thi.ng.geom.macros :as mac]))
 #+END_SRC
 ** Marching cube lookup tables
 *** Edge offset table
@@ -297,38 +299,35 @@
      2 5 3 4 2 5 3 4 6 1 7 0 6 1 7 0])
 #+END_SRC
 ** Helper functions
+*** Voxel lookups
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/isosurface.cljx
-  (defmacro cell-neighbor-bit
-    [voxels idx mask id]
-    `(if (~voxels ~idx) ~id (bit-or ~id ~mask)))
-
   (defn voxel-id-front
     [voxels {:keys [stride stride-z]} idx]
     (let [y2 (+ idx stride) z2 (+ idx stride-z) yz (+ z2 stride)
           idx1 (inc idx) y21 (inc y2) z21 (inc z2) yz1 (inc yz)]
       (->> 0
-           (cell-neighbor-bit voxels idx 0x01)
-           (cell-neighbor-bit voxels idx1 0x02)
-           (cell-neighbor-bit voxels z21 0x04)
-           (cell-neighbor-bit voxels z2 0x08)
-           (cell-neighbor-bit voxels y2 0x10)
-           (cell-neighbor-bit voxels y21 0x20)
-           (cell-neighbor-bit voxels yz1 0x40)
-           (cell-neighbor-bit voxels yz 0x80))))
+           (mac/set-bit-if-index voxels idx 0x01)
+           (mac/set-bit-if-index voxels idx1 0x02)
+           (mac/set-bit-if-index voxels z21 0x04)
+           (mac/set-bit-if-index voxels z2 0x08)
+           (mac/set-bit-if-index voxels y2 0x10)
+           (mac/set-bit-if-index voxels y21 0x20)
+           (mac/set-bit-if-index voxels yz1 0x40)
+           (mac/set-bit-if-index voxels yz 0x80))))
 
   (defn voxel-id-back
     [voxels {:keys [stride stride-z]} idx]
     (let [y2 (- idx stride) z2 (- idx stride-z) yz (- z2 stride)
           idx1 (dec idx) y21 (dec y2) z21 (dec z2) yz1 (dec yz)]
       (->> 0
-           (cell-neighbor-bit voxels idx 0x01)
-           (cell-neighbor-bit voxels idx1 0x02)
-           (cell-neighbor-bit voxels z21 0x04)
-           (cell-neighbor-bit voxels z2 0x08)
-           (cell-neighbor-bit voxels y2 0x10)
-           (cell-neighbor-bit voxels y21 0x20)
-           (cell-neighbor-bit voxels yz1 0x40)
-           (cell-neighbor-bit voxels yz 0x80))))
+           (mac/set-bit-if-index voxels idx 0x01)
+           (mac/set-bit-if-index voxels idx1 0x02)
+           (mac/set-bit-if-index voxels z21 0x04)
+           (mac/set-bit-if-index voxels z2 0x08)
+           (mac/set-bit-if-index voxels y2 0x10)
+           (mac/set-bit-if-index voxels y21 0x20)
+           (mac/set-bit-if-index voxels yz1 0x40)
+           (mac/set-bit-if-index voxels yz 0x80))))
 
   (defn boundary-voxels
     [config cells]
