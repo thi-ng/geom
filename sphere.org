@@ -3,7 +3,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   (ns thi.ng.geom.sphere
     (:require
-     [thi.ng.math.core :as m :refer [PI *eps*]]
+     [thi.ng.common.math.core :as m :refer [PI *eps*]]
      [thi.ng.geom.core :as g :refer [vec3 *resolution*]]
      [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])

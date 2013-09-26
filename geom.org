@@ -1,3 +1,7 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
 * Namespace: thi.ng.geom
   Providing an easy-to-use & easy-to-learn API for both common and
   advanced geometry operations is one of this project's main focal
@@ -97,8 +101,8 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (ns thi.ng.geom.core
     (:require
-     [thi.ng.data.core :as d]
-     [thi.ng.math.core :as m :refer [*eps* PI TWO_PI]]
+     [thi.ng.common.data.core :as d]
+     [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
      [thi.ng.geom.types :as types]
     #+clj [thi.ng.geom.macros :as mac])
     #+cljs (:require-macros [thi.ng.geom.macros :as mac])

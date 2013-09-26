@@ -3,8 +3,8 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
   (ns thi.ng.geom.rect
     (:require
-     [thi.ng.data.core :as d]
-     [thi.ng.math.core :as m :refer [*eps*]]
+     [thi.ng.common.data.core :as d]
+     [thi.ng.common.math.core :as m :refer [*eps*]]
      [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as aabb]
      [thi.ng.geom.mesh :as mesh]

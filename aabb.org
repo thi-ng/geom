@@ -3,7 +3,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
   (ns thi.ng.geom.aabb
     (:require
-     [thi.ng.math.core :as m :refer [*eps*]]
+     [thi.ng.common.math.core :as m :refer [*eps*]]
      [thi.ng.geom.core :as g :refer [vec3]]
      [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])

@@ -3,8 +3,8 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   (ns thi.ng.geom.line
     (:require
-     [thi.ng.data.core :as d]
-     [thi.ng.math.core :as m :refer [*eps*]]
+     [thi.ng.common.data.core :as d]
+     [thi.ng.common.math.core :as m :refer [*eps*]]
      [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])

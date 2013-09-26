@@ -3,7 +3,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/delaunay.cljx
   (ns thi.ng.geom.delaunay
     (:require
-     [thi.ng.math.core :as m :refer [*eps* delta=]]
+     [thi.ng.common.math.core :as m :refer [*eps* delta=]]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.triangle :refer [circumcircle-raw triangle2]])
     #+clj

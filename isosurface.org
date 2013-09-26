@@ -3,7 +3,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/isosurface.cljx
   (ns thi.ng.geom.isosurface
     (:require
-     [thi.ng.math.core :as m]
+     [thi.ng.common.math.core :as m]
      [thi.ng.geom.core :as g :refer [vec3]]
      [thi.ng.geom.svo :as svo :refer [cell-index select-cells voxel-cell voxel-config-at-depth]]
      [thi.ng.geom.mesh :as mesh]

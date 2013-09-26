@@ -1,0 +1,115 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+TITLE:          Geometry Kit
+#+AUTHOR:         Karsten Schmidt
+#+EMAIL:          k@thi.ng
+#+LANGUAGE:       en
+#+OPTIONS:        toc:4 h:4 html-postamble:auto html-preamble:t tex:t
+#+HTML_CONTAINER: div
+#+HTML_DOCTYPE:   <!DOCTYPE html5>
+#+HTML_HEAD:      <link href='http://fonts.googleapis.com/css?family=Droid+Sans:400,700' rel='stylesheet' type='text/css'>
+#+HTML_HEAD:      <link rel="stylesheet" type="text/css" href="css/main.css" />
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:        ../index.html
+#+LINK_HOME:      ../index.html
+
+* About the project
+
+** Injected properties                                             :noexport:
+#+BEGIN_SRC clojure :exports none :noweb-ref version
+0.1.0-SNAPSHOT
+#+END_SRC
+#+BEGIN_SRC clojure :exports none :noweb-ref project-url
+http://code.thi.ng/geom
+#+END_SRC
+** Objectives
+** Literal programming format
+#+INCLUDE: "../_shared/literalprogramming.org"
+** License
+   This project is open source and licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache Software License 2.0]].
+** Dependencies
+*** Runtime
+**** [[https://github.com/clojure/clojure][Clojure]] & [[https://github.com/clojure/clojurescript][ClojureScript]]
+#+BEGIN_SRC clojure :noweb-ref dep-clj
+[org.clojure/clojure "1.5.1"]
+#+END_SRC
+#+BEGIN_SRC clojure :noweb-ref dep-cljs
+[org.clojure/clojurescript "0.0-1885"]
+#+END_SRC
+**** thi.ng/common
+#+BEGIN_SRC clojure :noweb-ref dep-common
+[thi.ng/common "0.1.0-SNAPSHOT"]
+#+END_SRC
+*** Development
+**** [[https://github.com/lynaghk/cljx][cljx]]
+#+BEGIN_SRC clojure :noweb-ref dep-cljx
+[com.keminglabs/cljx "0.3.0"]
+#+END_SRC
+**** [[https://github.com/emezeske/lein-cljsbuild][lein-cljsbuild]]
+#+BEGIN_SRC clojure :noweb-ref dep-cljsbuild
+[lein-cljsbuild "0.3.3"]
+#+END_SRC
+
+** Authors
+   | [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://thi.ng][thi.ng]]              |
+   |                 |                                 | [[http://postspectacular.com][postspectacular.com]] |
+
+** Changelog
+   | *Version* | *Released* | *Description*               |
+   |-----------+------------+-----------------------------|
+   |     0.1.0 | 2013-10-01 | initial development release |
+
+** Leiningen coordinates
+#+BEGIN_SRC clojure :noweb yes
+  [thi.ng/geom <<version>>]
+#+END_SRC
+
+** Leiningen project file                                          :noexport:
+#+BEGIN_SRC clojure :tangle babel/project.clj :noweb yes
+  (defproject thi.ng/geom "<<version>>"
+    :description "Linked Data Kit - a Clojure toolkit for the Semantic Web"
+    :url "<<project-url>>"
+    :license {:name "Apache Software License"
+              :url "http://www.eclipse.org/legal/epl-v10.html"}
+    :dependencies [<<dep-clj>>
+                   <<dep-common>>]
+    :jar-exclusions [#"\.cljx|\.DS_Store|\.js|\.html"]
+    :source-paths ["src-clj"]
+
+    :cljx {:builds [{:source-paths ["src-cljx"]
+                     :output-path "src-clj"
+                     :rules :clj}
+                    {:source-paths ["src-cljx"]
+                     :output-path "src-cljs"
+                     :rules :cljs}]}
+
+    :cljsbuild {:builds
+                [{:id "dev"
+                  :source-paths ["src-cljs"]
+                  :compiler
+                  {:pretty-print true
+                   :output-to "resources/public/js/geom-<<version>>.js"
+                   :optimizations :simple}
+                  :jar false}]}
+
+    :profiles {:dev {:plugins [<<dep-cljx>>
+                               <<dep-cljsbuild>>]
+                     :dependencies [<<dep-cljs>>]
+                     :hooks [cljx.hooks leiningen.cljsbuild]}})
+#+END_SRC
+
+* Namespaces
+#+INCLUDE: "geom.org" :minlevel 2
+
+* ClojureScript test harness                                       :noexport:
+#+BEGIN_SRC html :tangle babel/resources/public/index.html
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <title>thing-geom test</title>
+    </head>
+    <body>
+      <script type="text/javascript" src="js/geom.js"></script>
+    </body>
+  </html>
+#+END_SRC

@@ -4,7 +4,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshio.cljx
   (ns thi.ng.geom.meshio
     (:require
-     [thi.ng.data.byteutils :as b]
+     [thi.ng.common.data.byteutils :as b]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.mesh :as m]
      [thi.ng.geom.triangle :as t])

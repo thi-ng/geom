@@ -1,0 +1,130 @@
+#+OPTIONS:    H:3 num:nil toc:2 \n:nil @:t ::t |:t ^:{} -:t f:t *:t TeX:t LaTeX:t skip:nil d:(HIDE) tags:not-in-toc
+#+STARTUP:    align fold nodlcheck hidestars oddeven lognotestate hideblocks
+#+SEQ_TODO:   TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:       Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+TITLE:      thi.ng.geom protocols & types
+#+AUTHOR:     Karsten Schmidt
+#+EMAIL:      k@thi.ng
+#+LANGUAGE:   en
+#+STYLE:      <style type="text/css">#outline-container-introduction{ clear:both; }</style>
+#+LINK_UP:    ../languages.html
+#+LINK_HOME:  http://thi.ng/
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+#+name: banner
+#+begin_html
+
+#+end_html
+
+* Protocol implementations by type
+#+name: protocol-table
+| Vec2      | PVector | PMatrix | PTransformable | PInterpolateable | PInvertible |        |         |         |           |             |                |                 |           |                 |             |                |
+| Vec3      | PVector | PMatrix | PTransformable | PInterpolateable | PInvertible |        |         |         |           |             |                |                 |           |                 |             |                |
+| Matrix32  |         | PMatrix |                |                  | PInvertible |        |         |         |           |             |                |                 |           |                 |             |                |
+| Matrix44  |         | PMatrix |                |                  | PInvertible |        |         |         |           |             |                |                 |           |                 |             |                |
+| Line2     |         |         | PTransformable | PInterpolateable |             | PShape | PShape2 |         | PBoundary | PSampleable | PIntersectable |                 |           |                 | PExtrudable | PSubdivideable |
+| Line3     |         |         | PTransformable | PInterpolateable |             | PShape |         | PShape3 | PBoundary | PSampleable | PIntersectable |                 |           |                 | PExtrudable | PSubdivideable |
+| Triangle2 |         |         | PTransformable | PInterpolateable |             | PShape | PShape2 |         | PBoundary | PSampleable | PIntersectable | PPolygonizeable | PMeshable | PTessellateable | PExtrudable | PSubdivideable |
+| Triangle3 |         |         | PTransformable | PInterpolateable |             | PShape |         | PShape3 | PBoundary | PSampleable | PIntersectable |                 | PMeshable | PTessellateable | PExtrudable | PSubdivideable |
+| Rect      |         |         | PTransformable | PInterpolateable |             | PShape | PShape2 |         | PBoundary | PSampleable | PIntersectable | PPolygonizeable | PMeshable | PTessellateable | PExtrudable | PSubdivideable |
+| Circle    |         |         | PTransformable | PInterpolateable |             | PShape | PShape2 |         | PBoundary | PSampleable | PIntersectable | PPolygonizeable | PMeshable | PTessellateable | PExtrudable |                |
+| Polygon   |         |         | PTransformable |                  |             | PShape | PShape2 |         | PBoundary | PSampleable |                |                 | PMeshable | PTessellateable | PExtrudable | PSubdivideable |
+| Plane     |         |         | PTransformable | PInterpolateable |             | PShape |         | PShape3 | PBoundary | PSampleable | PIntersectable |                 | PMeshable | PTessellateable |             |                |
+| AABB      |         |         | PTransformable | PInterpolateable |             | PShape |         | PShape3 | PBoundary | PSampleable | PIntersectable |                 | PMeshable | PTessellateable |             | PSubdivideable |
+| Sphere    |         |         | PTransformable | PInterpolateable |             | PShape |         | PShape3 | PBoundary | PSampleable | PIntersectable |                 | PMeshable | PTessellateable |             |                |
+| Mesh2     |         |         | PTransformable |                  |             | PShape | PShape2 |         | PBoundary | PSampleable | PIntersectable |                 |           |                 |             | PSubdivideable |
+| Mesh3     |         |         | PTransformable |                  |             | PShape |         | PShape3 | PBoundary | PSampleable | PIntersectable |                 |           |                 |             | PSubdivideable |
+
+* Protocol functions
+  #+name: proto-fn-table
+  | PBoundary        | classify-point  | contains-point? | random-boundary-point |                    |        |       |           |             |      |              |      |      |
+  | PExtrudable      | extrude         |                 |                       |                    |        |       |           |             |      |              |      |      |
+  | PInterpolateable | mix             |                 |                       |                    |        |       |           |             |      |              |      |      |
+  | PIntersectable   | intersect-line  | intersect-ray   | intersect-shape       |                    |        |       |           |             |      |              |      |      |
+  | PInvertible      | invert          |                 |                       |                    |        |       |           |             |      |              |      |      |
+  | PMeshable        | as-mesh         |                 |                       |                    |        |       |           |             |      |              |      |      |
+  | PPolygonizeable  | as-polygon      |                 |                       |                    |        |       |           |             |      |              |      |      |
+  | PSampleable      | point-at        | random-point    |                       |                    |        |       |           |             |      |              |      |      |
+  | PShape           | area            | bounds          | centroid              | center             |        |       |           |             |      |              |      |      |
+  | PShape2          | bounding-circle | circumference   |                       |                    |        |       |           |             |      |              |      |      |
+  | PShape3          | bounding-sphere | volume          |                       |                    |        |       |           |             |      |              |      |      |
+  | PSubdivideable   | subdivide       |                 |                       |                    |        |       |           |             |      |              |      |      |
+  | PTessellateable  | tessellate      |                 |                       |                    |        |       |           |             |      |              |      |      |
+  | PTransformable   | rotate-x        | rotate-y        | rotate-z              | rotate-around-axis | rotate | scale | translate | transform   |      |              |      |      |
+  | PVector          | abs             | add             | sub                   | madd               | dot    | cross | mag       | mag-squared | dist | dist-squared | minv | maxv |
+  | PMatrix          | multiply        | determinant     |                       |                    |        |       |           |             |      |              |      |      |
+
+* Protocol colors                                                  :noexport:
+  #+name: proto-cols
+  | PBoundary        | cc9900 |
+  | PExtrudable      | 00ffff |
+  | PInterpolateable | 00ddff |
+  | PIntersectable   | 00dddd |
+  | PInvertible      | ff6699 |
+  | PMeshable        | 66ff00 |
+  | PPolygonizeable  | 44cc00 |
+  | PSampleable      | 00bbdd |
+  | PShape           | ffff00 |
+  | PShape2          | ffdd00 |
+  | PShape3          | ffbb00 |
+  | PSubdivideable   | 0099dd |
+  | PTessellateable  | 0066dd |
+  | PTransformable   | ff0099 |
+  | PVector          | ff0000 |
+  | PMatrix          | ff0066 |
+
+* Overview of relationships
+  #+name: make-dot
+#+BEGIN_SRC emacs-lisp :var type-table=protocol-table :var fn-table=proto-fn-table :var col-table=proto-cols :results output :exports none
+  (defun toxi-hash-nodes (table)
+    (let ((nodes (make-hash-table :test 'equal)))
+      (mapcar (lambda (x) (puthash (first x) (second x) nodes)) table)
+      nodes))
+
+  (defun toxi-maphash (f hash)
+    (let (res)
+      (maphash (lambda (k v) (setq res (cons (funcall f k v) res))) hash)
+      res))
+
+  (defun toxi-make-graph (wrap table)
+    (mapcar
+     (lambda (x)
+       (let ((x (-keep (lambda (y) (if (> (length y) 0) y)) x)))
+         (let ((body (apply #'concat
+                            (mapcar (lambda (y) (format "\"%s\" -> \"%s\";\n" (first x)  y)) (cdr x)))))
+           (if wrap (funcall wrap x body) body))))
+     table))
+
+  (defun toxi-tint-nodes (nodes)
+    (lambda (x body)
+      (let ((col (gethash (first x) nodes)))
+        (concat
+         (apply #'concat
+                (mapcar (lambda (y) (format "\"%s\"[color=\"#%s\"];\n" y col)) (cdr x)))
+         body))))
+
+  (defun toxi-print-concat (coll)
+    (princ (apply #'concat coll)))
+
+  (let ((nodes (toxi-hash-nodes col-table)))
+    (toxi-print-concat (toxi-maphash (lambda (k v) (format "\"%s\"[color=\"#%s\"];\n" k v)) nodes))
+    (toxi-print-concat (toxi-make-graph nil type-table))
+    (toxi-print-concat (toxi-make-graph (toxi-tint-nodes nodes) fn-table)))
+
+  (let ((nodes (toxi-hash-nodes '(("PVector" "a")))))
+    (toxi-make-graph (toxi-tint-nodes nodes) '(("PVector" "fn1" "fn2" "" ""))))
+#+END_SRC
+
+#+BEGIN_SRC dot :file test-dot.png :var input=make-dot :exports results
+digraph G {
+ size="6,8";
+ dpi=200;
+ ratio=fill;
+ rankdir=LR;
+ ranksep=1.5;
+ node[shape=box;style=filled;fontname="Inconsolata"];
+ $input
+}
+#+END_SRC
+
+  #+RESULTS: file:test-dot.png

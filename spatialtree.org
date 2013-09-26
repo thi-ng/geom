@@ -3,7 +3,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/spatialtree.cljx
   (ns thi.ng.geom.spatialtree
     (:require
-     [thi.ng.math.core :as m]
+     [thi.ng.common.math.core :as m]
      [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.rect :as r]
      [thi.ng.geom.aabb :as a]

@@ -1,5 +1,12 @@
 #!/bin/sh
 # -*- mode: shell-script -*-
+mkdir -p \
+babel/src-clj babel/src-cljs \
+babel/src-cljx/thi/ng/geom \
+babel/src-clj/thi/ng/geom \
+babel/src-cljs/thi/ng/geom \
+babel/resources/public/js
+
 DIR=`pwd`
 FILES=""
 
@@ -15,4 +22,4 @@ done
      (mapc (lambda (file)
             (find-file (expand-file-name file \"$DIR\"))
             (org-babel-tangle)
-            (kill-buffer)) '($FILES)))" 2>&1 | grep Tangled
+            (kill-buffer)) '($FILES)))" #2>&1 | grep Tangled

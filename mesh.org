@@ -3,8 +3,8 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   (ns thi.ng.geom.mesh
     (:require
-     [thi.ng.data.core :as d]
-     [thi.ng.math.core :as m]
+     [thi.ng.common.data.core :as d]
+     [thi.ng.common.math.core :as m]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.types :as types]
