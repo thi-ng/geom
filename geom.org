@@ -312,14 +312,15 @@
 ****** PMesh
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol PMesh
+    (faces [this])
+    (vertex-faces [this v])
     (add-face [this f])
+    (remove-face [this f])
     (add-mesh [this m])
     (compute-face-normals [this])
     (compute-vertex-normals [this])
-    (remove-face [this f])
     (remove-vertex [this v])
     (replace-vertex [this a b])
-    (vertex-faces [this v])
     (merge-vertices [this a b]))
 #+END_SRC
 **** Declarations
@@ -356,7 +357,8 @@
   <<mat-item>>
   <<voxel-set-bit>>
 #+END_SRC
-#+BEGIN_SRC clojure :tangle babel/src-cljs/thi/ng/geom/macros.clj :noweb yes
+#+BEGIN_SRC clojure
+  ;; :tangle babel/src-cljs/thi/ng/geom/macros.clj :noweb yes
   <<mat-item>>
   <<voxel-set-bit>>
 #+END_SRC
