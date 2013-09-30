@@ -6,7 +6,10 @@
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [PI HALF_PI THREE_HALVES_PI *eps*]]
      [thi.ng.geom.core :as g :refer [vec2 vec3]]
+     [thi.ng.geom.line :as l]
      [thi.ng.geom.triangle :as t]
+     [thi.ng.geom.rect :as r]
+     [thi.ng.geom.delaunay :as dl]
      [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])
     #+clj
@@ -74,9 +77,7 @@
              [>= HALF_PI rps] [<= PI rps]]))))
 #+END_SRC
 *** TODO complete porting
-#+BEGIN_SRC clojure
-  ;; :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
-
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   (defn delta-contains
     [points p eps]
     (some #(m/delta= p % eps) points))
@@ -88,7 +89,7 @@
 
   (defn tesselate
     [poly]
-    (let [m (apply mesh2 (triangulate (:points poly)))
+    (let [m (apply mesh/mesh2 (map #(vector (:a %) (:b %) (:c %)) (dl/triangulate (:points poly))))
           assoc-bounds #(assoc! % %2 (g/bounding-rect* %2))
           fbounds (reduce assoc-bounds (transient {}) (:faces m))
           [m] (reduce
@@ -101,11 +102,11 @@
                                          (crossed-edge? e b c)
                                          (crossed-edge? e c a))))
                               (:faces m))
-                       [m nf] (slice-with m e faces)
+                       [m nf] (g/slice-with m e g/classify-point faces)
                        fbounds (reduce assoc-bounds fbounds nf)]
                    [m fbounds]))
                [m fbounds] (g/edges poly))]
-      (keep-faces m #(g/contains-point? poly (t/centroid2 %)))))
+      (mesh/keep-faces m #(g/contains-point? poly (t/centroid* %)))))
 #+END_SRC
 ** Protocol implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
