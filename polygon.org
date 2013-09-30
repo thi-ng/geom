@@ -76,7 +76,7 @@
         [p] [[<= THREE_HALVES_PI more] [>= 0.0 more]
              [>= HALF_PI rps] [<= PI rps]]))))
 #+END_SRC
-*** TODO complete porting
+*** Tessellation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   (defn delta-contains
     [points p eps]
@@ -87,7 +87,7 @@
     (let [{t :type ua :ua} (g/intersect-line e {:p a :q b})]
       (and (= :intersect t) (m/in-range? 0.01 0.99 ua))))
 
-  (defn tesselate
+  (defn tessellate*
     [poly]
     (let [m (apply mesh/mesh2 (map #(vector (:a %) (:b %) (:c %)) (dl/triangulate (:points poly))))
           assoc-bounds #(assoc! % %2 (g/bounding-rect* %2))
@@ -205,34 +205,35 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   g/PTessellateable
   (tessellate
-   [{points :points :as this}]
-   (-> points
-       (g/tessellate* (g/centroid this))
-       (map #(thi.ng.geom.types.Triangle2. (% 0) (% 1) (% 2)))))
+   [this] (:faces (tessellate* this)))
 #+END_SRC
 *** PExtrudeable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   g/PExtrudeable
   (extrude
-   [{points :points :as this}
-    {:keys [depth scale top? bottom?] :or {depth 1.0 scale 1.0 top? true bottom? true}}]
-   (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size this scale)))
-         [points tpoints] (if (pos? (g/area this))
-                            [(reverse points) (reverse tpoints)]
-                            [points tpoints])
-         off (vec3 0 0 depth)
-         c (g/centroid this)
-         bottom (->> points
-                     (g/tessellate* c)
-                     (map (fn [[a b c]] [(vec3 a) (vec3 b) (vec3 c)])))
-         top (->> tpoints
-                  (g/tessellate* c)
-                  (map (fn [[a b c]] [(g/add off a) (g/add off b) (g/add off c)])))]
-     (apply mesh/mesh3
-            (concat
-             (when bottom? (map (fn [[a b c]] [b a c]) bottom))
-             (mapcat (fn [[a1 _ b1] [a2 _ b2]] [[b1 a1 a2] [b2 b1 a2]]) bottom top)
-             (when top? top)))))
+      [{points :points :as this}
+       {:keys [depth offset scale top? bottom?] :or {depth 1.0 scale 1.0 top? true bottom? true}}]
+      (let [points (if (pos? (g/area this)) (reverse points) points)
+            tpoints (if (= 1.0 scale) points (:points (g/scale-size this scale)))
+            off (or offset (vec3 0 0 depth))
+            points3 (vec (map #(vec3 %) points))
+            tpoints3 (vec (map #(g/add off %) tpoints))]
+        (mesh/into-mesh
+         (mesh/mesh3) nil
+         (concat
+          (when bottom?
+            (->> (polygon points)
+                 (tessellate*)
+                 :faces
+                 (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)]))))
+          (mapcat (fn [[a1 b1] [a2 b2]] [[b1 a1 a2] [b2 b1 a2]])
+                  (d/successive-nth 2 (conj points3 (points3 0)))
+                  (d/successive-nth 2 (conj tpoints3 (tpoints3 0))))
+          (when top?
+            (->> (polygon tpoints)
+                 (tessellate*)
+                 :faces
+                 (map (fn [[a b c]] [(g/add off a) (g/add off b) (g/add off c)]))))))))
 #+END_SRC
 *** PTransformable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
