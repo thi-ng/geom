@@ -85,17 +85,20 @@ http://code.thi.ng/geom
 
     :cljsbuild {:builds
                 [{:id "dev"
-                  :source-paths ["src-cljs"]
+                  :source-paths ["src-cljs" "src-clj"]
                   :compiler
                   {:pretty-print true
                    :output-to "resources/public/js/geom-<<version>>.js"
                    :optimizations :simple}
-                  :jar false}]}
+                  :jar true}]}
 
     :profiles {:dev {:plugins [<<dep-cljx>>
                                <<dep-cljsbuild>>]
                      :dependencies [<<dep-cljs>>]
-                     :hooks [cljx.hooks leiningen.cljsbuild]}})
+                     :hooks [cljx.hooks]}
+               :cljs {:plugins [<<dep-cljsbuild>>]
+                      :dependencies [<<dep-cljs>>]
+                      :hooks [leiningen.cljsbuild]}})
 #+END_SRC
 
 * Namespaces
