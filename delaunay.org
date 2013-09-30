@@ -68,6 +68,6 @@
                 tris (reduce #(conj! % (make-triangle (%2 0) (%2 1) p)) tris (persistent! edges))]
             (recur (rest points) (persistent! tris) complete))
           (map
-           (fn [t] (triangle2 (t 0) (t 1) (t 2)))
+           (fn [t] (triangle2 (t 1) (t 0) (t 2)))
            (remove #(shared-vertex? s %) (persistent! (reduce conj! complete tris))))))))
 #+END_SRC

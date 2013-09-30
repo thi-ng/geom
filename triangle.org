@@ -203,7 +203,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PInvertible
   (invert
-   [t] (thi.ng.geom.types.Triangle2. (:c t) (:b t) (:a t)))
+   [t] (thi.ng.geom.types.Triangle2. (:b t) (:a t) (:c t)))
 #+END_SRC
 **** PSliceable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -330,7 +330,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PInvertible
   (invert
-   [t] (thi.ng.geom.types.Triangle3. (:c t) (:b t) (:a t)))
+   [t] (thi.ng.geom.types.Triangle3. (:b t) (:a t) (:c t)))
 #+END_SRC
 **** PSliceable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
