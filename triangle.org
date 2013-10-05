@@ -44,37 +44,61 @@
 #+END_SRC
 ** Shared 2d/3d functions
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
+  (defn norm-sign2
+    [a b c] (g/cross (g/sub b a) (g/sub c a)))
+
+  (defn norm-sign3
+    ([a b c] (g/dot (g/cross (g/sub b a) (g/sub c a)) g/V3_Z))
+    ([a b c n] (g/dot (g/cross (g/sub b a) (g/sub c a)) n)))
+
   (defn area2
-    ([a b c] (* 0.5 (g/cross (g/sub b a) (g/sub c a))))
-    ([[a b c]] (* 0.5 (g/cross (g/sub b a) (g/sub c a)))))
+    ([a b c] (* 0.5 (norm-sign2 a b c)))
+    ([[a b c]] (* 0.5 (norm-sign2 a b c))))
 
   (defn area3
-    ([a b c] (* 0.5 (g/mag (g/cross (g/sub b a) (g/sub c a)))))
-    ([[a b c]] (* 0.5 (g/mag (g/cross (g/sub b a) (g/sub c a))))))
+    ([a b c] (* 0.5 (norm-sign3 a b c g/V3_Z)))
+    ([a b c n] (* 0.5 (norm-sign3 a b c n))))
+
+  (defn clockwise2?
+    [a b c] (neg? (norm-sign2 a b c)))
+
+  (defn clockwise3?
+    ([a b c] (neg? (norm-sign3 a b c g/V3_Z)))
+    ([a b c n] (neg? (norm-sign3 a b c n))))
+
+  (defn barycentric*
+    [a b c p]
+    (let [e0 (g/sub c a)
+          e1 (g/sub b a)
+          e2 (g/sub p a)
+          d00 (g/mag-squared e0)
+          d01 (g/dot e0 e1)
+          d02 (g/dot e0 e2)
+          d11 (g/mag-squared e1)
+          d12 (g/dot e1 e2)
+          denom (/ 1.0 (- (* d00 d11) (* d01 d01)))
+          u (* denom (- (* d11 d02) (* d01 d12)))
+          v (* denom (- (* d00 d12) (* d01 d02)))]
+      [(- 1.0 (+ u v)) v u]))
+
+  (defn contains-point2*
+    [a b c p]
+    (if (clockwise2? a b c)
+        (and (>= (norm-sign2 a c p) 0.0)
+             (>= (norm-sign2 b a p) 0.0)
+             (>= (norm-sign2 c b p) 0.0))
+        (and (>= (norm-sign2 b c p) 0.0)
+             (>= (norm-sign2 a b p) 0.0)
+             (>= (norm-sign2 c a p) 0.0))))
+
+  (defn contains-point3*
+    [a b c p]
+    (let [[u v w] (barycentric* a b c p)]
+      (and (>= u 0.0) (>= v 0.0) (<= w 1.0))))
 
   (defn centroid*
     ([a b c] (g/scale (g/add a b c) THIRD))
     ([[a b c]] (g/scale (g/add a b c) THIRD)))
-
-  (defn barycentric*
-    [a b c p]
-      (let [e0 (g/sub c a)
-            e1 (g/sub b a)
-            e2 (g/sub p a)
-            d00 (g/mag-squared e0)
-            d01 (g/dot e0 e1)
-            d02 (g/dot e0 e2)
-            d11 (g/mag-squared e1)
-            d12 (g/dot e1 e2)
-            denom (/ 1.0 (- (* d00 d11) (* d01 d01)))
-            u (* denom (- (* d11 d02) (* d01 d12)))
-            v (* denom (- (* d00 d12) (* d01 d02)))]
-        [(- 1.0 (+ u v)) v u]))
-
-  (defn contains-point*
-    [a b c p]
-      (let [[u v w] (barycentric* a b c p)]
-        (and (>= u 0.0) (>= v 0.0) (<= w 1.0))))
 
   (defn check-edge
     [splits classifier e p q add-p? add-q?]
@@ -173,7 +197,7 @@
    (g/closest-point* (g/edges this) p))
   (contains-point?
    [this p]
-   (contains-point* (:a this) (:b this) (:c this) p))
+   (contains-point2* (:a this) (:b this) (:c this) p))
 #+END_SRC
 **** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -295,7 +319,7 @@
   (closest-point [this p] nil) ; TODO
   (contains-point?
    [this p]
-   (contains-point* (:a this) (:b this) (:c this) p))
+   (contains-point3* (:a this) (:b this) (:c this) p))
 #+END_SRC
 **** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -322,8 +346,8 @@
       (if (neg? nd)
         (let [t (/ (- (g/dot n (g/sub p a))) nd)]
           (if (>= t *eps*)
-            (let [ip (g/add p (g/scale dir t))]
-              (if (contains-point* a b c ip)
+            (let [ip (g/madd dir t p)]
+              (if (contains-point3* a b c ip)
                 {:p ip :n n :dist t :dir (g/normalize (g/sub ip p))})))))))
 #+END_SRC
 **** PInvertible
