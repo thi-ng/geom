@@ -35,7 +35,7 @@
     inverting all vertex normals and its plane normal."
     [poly]
     (assoc poly
-      :vertices (vec (map flip-vertex (reverse (:vertices poly))))
+      :vertices (mapv flip-vertex (reverse (:vertices poly)))
       :plane (flip-plane (:plane poly))))
 
   (defn split-poly

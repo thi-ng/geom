@@ -26,8 +26,8 @@
     ([px py pz qx qy qz] (thi.ng.geom.types.Line3. (vec3 px py pz) (vec3 qx qy qz))))
 
   (defn linestrip2
-    ([points] (thi.ng.geom.types.LineStrip2. (vec (map vec2 points))))
-    ([p & more] (thi.ng.geom.types.LineStrip2. (vec (map vec2 (cons p more))))))
+    ([points] (thi.ng.geom.types.LineStrip2. (mapv vec2 points)))
+    ([p & more] (thi.ng.geom.types.LineStrip2. (mapv vec2 (cons p more)))))
 #+END_SRC
 ** Shared helper functions
     This function is going to be used for both 2D/3D implementations:
@@ -302,17 +302,17 @@
   g/PTransformable
   (scale
    ([this s]
-      (thi.ng.geom.types.LineStrip2. (vec (map #(g/scale % s) (:points this)))))
+      (thi.ng.geom.types.LineStrip2. (mapv #(g/scale % s) (:points this))))
    ([this sx sy]
-      (thi.ng.geom.types.LineStrip2. (vec (map #(g/scale % sx sy) (:points this))))))
+      (thi.ng.geom.types.LineStrip2. (mapv #(g/scale % sx sy) (:points this)))))
   (scale-size
    [this s]
    (let [c (g/centroid this)]
      (thi.ng.geom.types.LineStrip2.
-      (vec (map #(-> % (g/sub c) (g/madd s c)) (:points this))))))
+      (mapv #(-> % (g/sub c) (g/madd s c)) (:points this)))))
   (translate
    [this t]
-   (thi.ng.geom.types.LineStrip2. (vec (map #(g/add % t) (:points this)))))
+   (thi.ng.geom.types.LineStrip2. (mapv #(g/add % t) (:points this))))
 #+END_SRC
 **** TODO PExtrudeable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx

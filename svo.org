@@ -12,7 +12,7 @@
     (vec (reductions #(+ % (long (Math/pow 8 %2))) 0 (range 16))))
 
   (def ^:const depth-size
-    (vec (map #(long (Math/pow 8 %)) (range 16))))
+    (mapv #(long (Math/pow 8 %)) (range 16)))
 
   (def ^:const bit-vals [0x01 0x02 0x04 0x08 0x10 0x20 0x40 0x80])
 

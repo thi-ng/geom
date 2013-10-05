@@ -19,8 +19,8 @@
 ** Constructor
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   (defn polygon
-    ([points] (thi.ng.geom.types.Polygon. (vec (map vec2 points)) []))
-    ([p & more] (thi.ng.geom.types.Polygon. (vec (map vec2 (cons p more))) [])))
+    ([points] (thi.ng.geom.types.Polygon. (mapv vec2 points) []))
+    ([p & more] (thi.ng.geom.types.Polygon. (mapv vec2 (cons p more)) [])))
 #+END_SRC
 ** Type specific functions
 *** Sutherland-Hodgeman convex clipping
@@ -221,8 +221,8 @@
       (let [points (if (neg? (g/area this)) (reverse points) points)
             tpoints (if (= 1.0 scale) points (:points (g/scale-size (polygon points) scale)))
             off (or offset (vec3 0 0 depth))
-            points3 (vec (map #(vec3 %) points))
-            tpoints3 (vec (map #(g/add off %) tpoints))]
+            points3 (mapv #(vec3 %) points)
+            tpoints3 (mapv #(g/add off %) tpoints)]
         (mesh/into-mesh
          (mesh/mesh3) nil
          (concat
@@ -242,16 +242,16 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   g/PTransformable
   (scale
-   ([this s] (thi.ng.geom.types.Polygon. (vec (map #(g/scale % s) (:points this))) []))
-   ([this a b] (thi.ng.geom.types.Polygon. (vec (map #(g/scale % a b) (:points this))) [])))
+   ([this s] (thi.ng.geom.types.Polygon. (mapv #(g/scale % s) (:points this)) []))
+   ([this a b] (thi.ng.geom.types.Polygon. (mapv #(g/scale % a b) (:points this)) [])))
   (scale-size
    [this s]
    (let [c (g/centroid this)]
      (thi.ng.geom.types.Polygon.
-      (vec (map #(-> % (g/sub c) (g/madd s c)) (:points this))) [])))
+      (mapv #(-> % (g/sub c) (g/madd s c)) (:points this)) [])))
   (translate
    [this t]
-   (thi.ng.geom.types.Polygon. (vec (map #(g/add % t) (:points this))) []))
+   (thi.ng.geom.types.Polygon. (mapv #(g/add % t) (:points this)) []))
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
