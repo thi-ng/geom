@@ -209,41 +209,42 @@
     & =[tl bl br]=. When called *with* options, then these are used
     for a call to [[PSubdivideable][=subdivide=]] first and the function returns a lazyseq
     of triangles of the subdivided rects.
-**** TODO return Triangle2 instances
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
   g/PTessellateable
   (tessellate
    ([this]
-      (let [[a b c d] (g/vertices this)] [[a b c] [a c d]]))
+      (let [[a b c d] (g/vertices this)]
+        [(thi.ng.geom.types.Triangle2. a b c) (thi.ng.geom.types.Triangle2. a c d)]))
    ([this opts]
       (mapcat g/tessellate (g/subdivide this opts))))
 #+END_SRC
 *** PExtrudeable
     Extruding a rectangle along the Z-axis results in a 3D mesh
-    implementation. The =extrude= function supports two options,
-    given as parameter map:
+    implementation. The =extrude= function supports the following
+    options, given as parameter map:
 
-    | Key      | Description                             | Default |
-    |----------+-----------------------------------------+---------|
-    | =:depth= | extrusion depth along positive Z        |     1.0 |
-    | =:scale= | scale factor of rect at extrusion depth |     1.0 |
+    | Key       | Description                             | Default |
+    |-----------+-----------------------------------------+---------|
+    | =:depth=  | extrusion depth along positive Z        |     1.0 |
+    | =:scale=  | scale factor of rect at extrusion depth |     1.0 |
+    | =:offset= | extrusion vector                        |     nil |
 
     The process results is bevelled forms for =:scale= values other
     than 1.0.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
   g/PExtrudeable
   (extrude
-   [this {depth :depth scale :scale :or {depth 1.0 scale 1.0}}]
-   (if (= scale 1.0)
+   [this {:keys [depth scale offset] :or {depth 1.0 scale 1.0}}]
+   (if (and (= scale 1.0) (nil? offset))
      (g/as-mesh
       (thi.ng.geom.types.AABB.
        (vec3 (:p this))
        (vec3 (:w this) (:h this) depth)))
-     (let [off (vec3 0 0 depth)
-           [a b c d] (map vec3 (g/vertices this))
+     (let [offset (or offset (vec3 0 0 depth))
+           [a b c d] (mapv vec3 (g/vertices this))
            [a2 b2 c2 d2] (->> (g/scale-size this scale)
                               (g/vertices)
-                              (map #(g/add off %)))]
+                              (map #(g/add offset %)))]
        (mesh/mesh3
         [a c b] [a d c]       ;;back
         [a2 b2 c2] [a2 c2 d2] ;; front
