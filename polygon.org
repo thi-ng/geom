@@ -77,36 +77,41 @@
              [>= HALF_PI rps] [<= PI rps]]))))
 #+END_SRC
 *** Tessellation
+**** TODO move delta-contains into core
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   (defn delta-contains
     [points p eps]
     (some #(m/delta= p % eps) points))
 
-  (defn crossed-edge?
-    [e a b]
-    (let [{t :type ua :ua} (g/intersect-line e {:p a :q b})]
-      (and (= :intersect t) (m/in-range? 0.01 0.99 ua))))
+  (defn snip
+    [points a b c nv verts]
+    (when (< m/*eps* (t/norm-sign2 a b c))
+      (not (some #(t/contains-point2* a b c %)
+                 (-> points (subvec 0 nv) set (disj a b c))))))
 
   (defn tessellate*
-    [poly]
-    (let [m (apply mesh/mesh2 (map #(vector (:a %) (:b %) (:c %)) (dl/triangulate (:points poly))))
-          assoc-bounds #(assoc! % %2 (g/bounding-rect* %2))
-          fbounds (reduce assoc-bounds (transient {}) (:faces m))
-          [m] (reduce
-               (fn [[m fbounds] e]
-                 (let [eb (g/bounds e)
-                       faces (filter
-                              (fn [[a b c :as f]]
-                                (and (r/intersect-rect? eb (get fbounds f))
-                                     (or (crossed-edge? e a b)
-                                         (crossed-edge? e b c)
-                                         (crossed-edge? e c a))))
-                              (:faces m))
-                       [m nf] (g/slice-with m e g/classify-point faces)
-                       fbounds (reduce assoc-bounds fbounds nf)]
-                   [m fbounds]))
-               [m fbounds] (g/edges poly))]
-      (mesh/keep-faces m #(g/contains-point? poly (t/centroid* %)))))
+    [p]
+    (let [[points area] (if (instance? thi.ng.geom.types.Polygon p)
+                          [(:points p) (g/area p)] [(vec p) (g/area (polygon p))])
+          points (if (neg? area) (vec points) (vec (reverse points)))
+          nv (count points)
+          verts (vec (range (dec nv) -1 -1))]
+      (loop [result [], verts verts, v (dec nv), nv nv, cnt (dec (* 2 nv))]
+        (if (= nv 2)
+          result
+          (when (pos? cnt)
+            (let [u (if (<= nv v) 0 v)
+                  v (inc u) v (if (<= nv v) 0 v)
+                  w (inc v) w (if (<= nv w) 0 w)
+                  a (points (verts u))
+                  b (points (verts v))
+                  c (points (verts w))]
+              (if (snip points a b c nv verts)
+                (let [result (conj result [a b c])
+                      verts (vec (concat (subvec verts 0 v) (subvec verts (inc v))))
+                      nv (dec nv)]
+                  (recur result verts v nv (* 2 nv)))
+                (recur result verts v nv (dec cnt)))))))))
 #+END_SRC
 ** Protocol implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
@@ -205,7 +210,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   g/PTessellateable
   (tessellate
-   [this] (:faces (tessellate* this)))
+   [this] (map #(thi.ng.geom.types.Triangle2. (% 0) (% 1) (% 2)) (tessellate* this)))
 #+END_SRC
 *** PExtrudeable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
@@ -213,8 +218,8 @@
   (extrude
       [{points :points :as this}
        {:keys [depth offset scale top? bottom?] :or {depth 1.0 scale 1.0 top? true bottom? true}}]
-      (let [points (if (pos? (g/area this)) (reverse points) points)
-            tpoints (if (= 1.0 scale) points (:points (g/scale-size this scale)))
+      (let [points (if (neg? (g/area this)) (reverse points) points)
+            tpoints (if (= 1.0 scale) points (:points (g/scale-size (polygon points) scale)))
             off (or offset (vec3 0 0 depth))
             points3 (vec (map #(vec3 %) points))
             tpoints3 (vec (map #(g/add off %) tpoints))]
@@ -222,17 +227,15 @@
          (mesh/mesh3) nil
          (concat
           (when bottom?
-            (->> (polygon points)
+            (->> points
                  (tessellate*)
-                 :faces
                  (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)]))))
-          (mapcat (fn [[a1 b1] [a2 b2]] [[b1 a1 a2] [b2 b1 a2]])
+          (mapcat (fn [[a1 b1] [a2 b2]] [[a1 b1 a2] [b1 b2 a2]])
                   (d/successive-nth 2 (conj points3 (points3 0)))
                   (d/successive-nth 2 (conj tpoints3 (tpoints3 0))))
           (when top?
-            (->> (polygon tpoints)
+            (->> tpoints
                  (tessellate*)
-                 :faces
                  (map (fn [[a b c]] [(g/add off a) (g/add off b) (g/add off c)]))))))))
 #+END_SRC
 *** PTransformable
