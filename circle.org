@@ -123,6 +123,13 @@
    ([this] (g/as-polygon this *resolution*))
    ([this res] (thi.ng.geom.types.Polygon. (vec (g/vertices this res)) [])))
 #+END_SRC
+*** PMeshable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  g/PMeshable
+  (as-mesh
+   ([this] (g/as-mesh this *resolution*))
+   ([this res] (mesh/into-mesh (mesh/mesh2) nil (g/tessellate* (:p this) (g/vertices this res)))))
+#+END_SRC
 *** PTessellateable
      A circle can be tessellated into a list of uniform triangles,
      each sharing the circle's centroid. If called without 2nd
@@ -133,16 +140,36 @@
   (tessellate
    ([this] (g/tessellate this *resolution*))
    ([{p :p :as this} res]
-      (-> (g/vertices this res)
+      (->> (g/vertices this res)
           (g/tessellate* p)
           (map #(thi.ng.geom.types.Triangle2. (% 0) (% 1) (% 2))))))
 #+END_SRC
 *** PExtrudeable
+**** TODO don't use polygon as intermediary to ensure better tessellation using centroid
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
   g/PExtrudeable
   (extrude
-   [this opts]
-   (g/extrude (g/as-polygon this (or (:res opts) *resolution*)) opts))
+   [this
+    {:keys [res depth offset scale top? bottom?] :or {res *resolution* depth 1.0 scale 1.0 top? true bottom? true}}]
+   (let [points (g/vertices this res)
+         tpoints (if (= 1.0 scale) points (g/vertices (circle (:p this) (* scale (:r this))) res))
+         off (or offset (vec3 0 0 depth))
+         points3 (mapv #(vec3 %) points)
+         tpoints3 (mapv #(g/add off %) tpoints)]
+     (mesh/into-mesh
+      (mesh/mesh3) nil
+      (concat
+       (when bottom?
+         (->> points
+              (g/tessellate* (:p this))
+              (map (fn [[a b c]] [(vec3 a) (vec3 b) (vec3 c)]))))
+       (mapcat (fn [[a1 b1] [a2 b2]] [[a1 b1 a2] [b1 b2 a2]])
+               (d/successive-nth 2 (conj points3 (points3 0)))
+               (d/successive-nth 2 (conj tpoints3 (tpoints3 0))))
+       (when top?
+         (->> tpoints
+              (g/tessellate* (:p this))
+              (map (fn [[a b c]] [(g/add off b) (g/add off a) (g/add off c)]))))))))
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
