@@ -5,7 +5,8 @@
     (:require
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [PI TWO_PI *eps*]]
-     [thi.ng.geom.core :as g :refer [vec2 *resolution*]]
+     [thi.ng.geom.core :as g :refer [vec2 vec3 *resolution*]]
+     [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])
     #+clj
     (:import
