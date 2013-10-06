@@ -85,17 +85,18 @@
 
   (defn snip
     [points a b c nv verts]
-    (when (< m/*eps* (t/norm-sign2 a b c))
-      (not (some #(t/contains-point2* a b c %)
-                 (-> points (subvec 0 nv) set (disj a b c))))))
+    (let [[ax ay] a [bx by] b [cx cy] c
+          cp (- (* (- bx ax) (- cy ay)) (* (- by ay) (- cx ax)))]
+      (when (< m/*eps* cp)
+        (not (some #(t/contains-point2* a b c %)
+                   (disj (set (map points (subvec verts 0 nv))) a b c))))))
 
   (defn tessellate*
     [p]
     (let [[points area] (if (instance? thi.ng.geom.types.Polygon p)
                           [(:points p) (g/area p)] [(vec p) (g/area (polygon p))])
-          points (if (neg? area) (vec points) (vec (reverse points)))
           nv (count points)
-          verts (vec (range (dec nv) -1 -1))]
+          verts (vec (if (pos? area) (range nv) (range (dec nv) -1 -1)))]
       (loop [result [], verts verts, v (dec nv), nv nv, cnt (dec (* 2 nv))]
         (if (= nv 2)
           result
