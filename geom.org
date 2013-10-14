@@ -160,6 +160,21 @@
     (transpose [this])
     (determinant [this]))
 #+END_SRC
+****** PQuaternion
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol PQuaternion
+    (conjugate [this]))
+#+END_SRC
+****** PMatrixConvert
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol PMatrixConvert
+    (as-matrix [this]))
+#+END_SRC
+****** PVectorTransform
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol PVectorTransform
+    (transform-vector [this v]))
+#+END_SRC
 ***** Spatial transform operations
       The position, size and orientation of spatial entities can
       usually be manipulated via the three basic operations: rotate,
@@ -400,6 +415,7 @@
 #+END_SRC
 ***** 4x4 Matrix
 ****** TODO add unproject from [[file:/Users/toxi/dev/js/gl-matrix.orig/gl-matrix.js::385]]
+****** Implementation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (deftype Matrix44
       [^double m00 ^double m01 ^double m02 ^double m03
@@ -551,6 +567,14 @@
           (+ (* tx z) sy) (- (* ty z) sx) (+ (* t z z) c) 0.0
           0.0 0.0 0.0 1.0 nil))))
     )
+#+END_SRC
+****** Constructor
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn matrix44
+    ([[m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]]
+       (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33 nil))
+    ([m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]
+       (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33 nil)))
 #+END_SRC
 **** Vector implementations
      For performance reasons, we decided to define custom datatypes
@@ -1280,6 +1304,183 @@
   (defn randvec3
     ([] (normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm))))
     ([n] (normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm)) n)))
+#+END_SRC
+**** Quaternion
+***** Implementation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (deftype Quaternion [^double x ^double y ^double z ^double w _meta]
+    ,,#+clj clojure.lang.IObj
+    ,,#+clj (meta [_] _meta)
+    ,,#+clj (withMeta [_ m*] (Quaternion. x y z w m*))
+    ,,#+cljs IMeta
+    ,,#+cljs (-meta [_] _meta)
+    ,,#+cljs IWithMeta
+    ,,#+cljs (-with-meta [_ m*] (Quaternion. x y z w m*))
+
+    PTransformable
+    (scale [this s]
+      (Quaternion. (* x s) (* y s) (* z s) (* w s) _meta))
+
+    PMatrix
+    (multiply [this q]
+      (let [q ^Quaternion q
+            qx (.-x q) qy (.-y q) qz (.-z q) qw (.-w q)]
+        (Quaternion.
+         (- (+ (+ (* x qw) (* w qx)) (* y qz)) (* z qy))
+         (- (+ (+ (* y qw) (* w qy)) (* z qx)) (* x qz))
+         (- (+ (+ (* z qw) (* w qz)) (* x qy)) (* y qx))
+         (- (- (- (* w qw) (* x qx)) (* y qy)) (* z qz))
+         _meta)))
+
+    PVector
+    (add [this q]
+      (let [q ^Quaternion q]
+        (Quaternion. (+ x (.-x q)) (+ y (.-y q)) (+ z (.-z q)) (+ w (.-w q)) _meta)))
+    (sub [this q]
+      (let [q ^Quaternion q]
+        (Quaternion. (- x (.-x q)) (- y (.-y q)) (- z (.-z q)) (- w (.-w q)) _meta)))
+    (dot [this q]
+      (let [q ^Quaternion q]
+        (+ (+ (+ (* x (.-x q)) (* y (.-y q))) (* z (.-z q))) (* w (.-w q)))))
+    (mag-squared [this]
+      (+ (+ (+ (* x x) (* y y)) (* z z)) (* w w)))
+    (mag [this]
+      (Math/sqrt (+ (+ (+ (* x x) (* y y)) (* z z)) (* w w))))
+    (normalize [this]
+      (let [mag (+ (+ (+ (* x x) (* y y)) (* z z)) (* w w))]
+        (if (> mag *eps*)
+          (let [m (/ mag)]
+            (Quaternion. (* x m) (* y m) (* z m) (* w m) _meta))
+          this)))
+
+    PInvertible
+    (invert [this]
+      (let [d (mag-squared this)
+            d (if (zero? d) 0.0 (/ d))
+            id (- d)]
+        (Quaternion. (* x id) (* y id) (* z id) (* w d) _meta)))
+
+    PInterpolateable
+    (mix [this q] (mix this q 0.5))
+    (mix [this q t]
+      (let [d (dot this q)]
+        (if (>= (m/abs d) 1.0)
+          this
+          (let [theta (Math/acos d)
+                stheta (Math/sqrt (- 1.0 (* d d)))
+                [a b] (if (< (m/abs stheta) 0.001)
+                        [0.5 0.5]
+                        [(/ (Math/sin (* theta (- 1.0 t))) stheta)
+                         (/ (Math/sin (* theta t)) stheta)])
+                q ^Quaternion q]
+            (Quaternion.
+             (m/madd x a (* (.-x q) b))
+             (m/madd y a (* (.-y q) b))
+             (m/madd z a (* (.-z q) b))
+             (m/madd w a (* (.-w q) b))
+             _meta)))))
+
+    PMatrixConvert
+    (as-matrix [this]
+      (let [x2 (+ x x) y2 (+ y y) z2 (+ z z)
+            xx (* x x2) xy (* x y2) xz (* x z2)
+            yy (* y y2) yz (* y z2) zz (* z z2)
+            wx (* w x2) wy (* w y2) wz (* w z2)]
+        (Matrix44.
+         (- 1.0 (+ yy zz)) (+ xy wz) (- xz wy) 0.0
+         (- xy wz) (- 1.0 (+ xx zz)) (+ yz wx) 0.0
+         (+ xz wy) (- yz wx) (- 1.0 (+ xx yy)) 0.0
+         0.0 0.0 0.0 1.0 nil)))
+
+    PVectorTransform
+    (transform-vector [this [vx vy vz :as v]]
+      (let [ix (- (+ (* w vx) (* y vz)) (* z vy))
+            iy (- (+ (* w vy) (* z vx)) (* x vz))
+            iz (- (+ (* w vz) (* x vy)) (* y vx))
+            iw (- (- (* (- x) vx) (* y vy)) (* z vz))]
+        (Vec3.
+         (- (+ (+ (* ix w) (* iw (- x))) (* iy (- z))) (* iz (- y)))
+         (- (+ (+ (* iy w) (* iw (- y))) (* iz (- x))) (* ix (- z)))
+         (- (+ (+ (* iz w) (* iw (- z))) (* ix (- y))) (* iy (- x)))
+         (meta v))))
+    )
+#+END_SRC
+***** Constructors
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn quat
+    ([[x y z] w] (Quaternion. x y z w nil))
+    ([[x y z w]] (Quaternion. x y z w nil))
+    ([x y z w] (Quaternion. x y z w nil)))
+
+  (defn quat-from-axis-angle
+    [axis theta]
+    (let [theta (* theta 0.5)]
+      (quat (normalize (vec3 axis) (Math/sin theta)) (Math/cos theta))))
+
+  (defn quat-from-euler
+    [^double pitch ^double yaw ^double roll]
+    (let [pitch (* pitch 0.5) yaw (* yaw 0.5) roll (* roll 0.5)
+          sp (Math/sin pitch) cp (Math/cos pitch)
+          sy (Math/sin yaw) cy (Math/cos yaw)
+          sr (Math/sin roll) cr (Math/cos roll)
+          spsy (* sp sy) cpcy (* cp cy)]
+      (Quaternion.
+       (- (* sr cpcy) (* cr spsy))
+       (+ (* (* cr sp) cy) (* (* sr cp) sy))
+       (- (* (* cr cp) sy) (* (* sr sp) cy))
+       (+ (* cr cpcy) (* sr spsy))
+       nil)))
+
+  (defn quat-from-matrix44
+    [^Matrix44 m]
+    (let [trace (+ (+ (.-m00 m) (.-m11 m)) (.-m22 m))]
+      (if (pos? trace)
+        (let [s (Math/sqrt (+ 1.0 trace))
+              w (* s 0.5)
+              s (/ -0.5 s)]
+          (Quaternion.
+           (m/madd (.-m21 m) s (.-m12 m))
+           (m/madd (.-m02 m) s (.-m20 m))
+           (m/madd (.-m10 m) s (.-m01 m))
+           w nil))
+        (let [[i mi] (if (> (.-m11 m) (.-m00 m))
+                       [1 (.-m11 m)] [0 (.-m00 m)])
+              [i mi] (if (> (.-m22 m) mi)
+                       [2 (.-m22 m)] [i mi])]
+          (condp = i
+            0 (let [s (Math/sqrt (+ 1.0 (+ (- mi (.-m11 m)) (.-m22 m))))
+                    x (* s 0.5)
+                    s (/ 0.5 s)]
+                (Quaternion. ; i=0 j=1 k=2
+                 x
+                 (* (+ (.-m10 m) (.-m01 m)) s)
+                 (* (+ (.-m20 m) (.-m02 m)) s)
+                 (* (- (.-m21 m) (.-m12 m)) s) nil))
+            1 (let [s (Math/sqrt (+ 1.0 (+ (- mi (.-m22 m)) (.-m00 m))))
+                    x (* s 0.5)
+                    s (/ 0.5 s)]
+                (Quaternion. ; i=1 j=2 k=0
+                 (* (+ (.-m10 m) (.-m01 m)) s)
+                 x
+                 (* (+ (.-m12 m) (.-m21 m)) s)
+                 (* (- (.-m20 m) (.-m02 m)) s) nil))
+            2 (let [s (Math/sqrt (+ 1.0 (+ (- mi (.-m00 m)) (.-m11 m))))
+                    x (* s 0.5)
+                    s (/ 0.5 s)]
+                (Quaternion. ; i=2 j=0 k=1
+                 (* (+ (.-m20 m) (.-m02 m)) s)
+                 (* (+ (.-m21 m) (.-m12 m)) s)
+                 x
+                 (* (- (.-m01 m) (.-m10 m)) s) nil)))))))
+
+  (defn alignment-quat
+    [target forward]
+    (let [target (normalize target)
+          forward (normalize forward)
+          axis (cross forward target)
+          len (mag axis)
+          theta (Math/atan2 len (dot forward target))]
+      (quat-from-axis-angle axis theta)))
 #+END_SRC
 **** Shared functions
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
