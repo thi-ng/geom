@@ -1128,18 +1128,16 @@
     (mix [this [ax ay az] t]
       (Vec3. (+ x (* (- ax x) t)) (+ y (* (- ay y) t)) (+ z (* (- az z) t)) _meta))
 
+    ;; http://mathworld.wolfram.com/SphericalCoordinates.html
     PPolar
     (polar [this]
-      (let [xx (if (m/delta= 0.0 (m/abs x))
-                 (if (< x 0.0) (- *eps*) *eps*)
-                 x)
-            m (Math/sqrt (+ (+ (* xx xx) (* y y)) (* z z)))
-            yy (+ (Math/atan (/ z xx)) (if (< xx 0.0) PI 0.0))
-            zz (Math/asin (/ y m))]
-        (Vec3. m yy zz _meta)))
+      (let [r (Math/sqrt (+ (+ (* x x) (* y y)) (* z z)))
+            theta (Math/atan2 y x)
+            phi (Math/acos (/ z r))]
+        (Vec3. r theta phi _meta)))
     (cartesian [this]
-      (let [a (* x (Math/cos z))]
-        (Vec3. (* a (Math/cos y)) (* x (Math/sin z)) (* a (Math/sin y)) _meta)))
+      (let [rsphi (* x (Math/sin z))]
+        (Vec3. (* (Math/cos y) rsphi) (* (Math/sin y) rsphi) (* x (Math/cos z)) _meta)))
     )
 #+END_SRC
 ***** Constants
