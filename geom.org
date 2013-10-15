@@ -121,16 +121,33 @@
     (madd [this a b])
     (dot [this a])
     (cross [this a])
-    (mag [this])
-    (mag-squared [this])
-    (dist [this a])
-    (dist-squared [this a])
-    (normalize [this] [this len])
     (limit [this len])
     (inverse [this])
-    (reflect [this r])
     (minv [this a] [this a b])
     (maxv [this a] [this a b]))
+#+END_SRC
+****** PNormalize
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol PNormalize
+    (normalize [this] [this len])
+    (normalized? [this]))
+#+END_SRC
+****** PMagnitude
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol PMagnitude
+    (mag [this])
+    (mag-squared [this]))
+#+END_SRC
+****** PDistance
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol PDistance
+    (dist [this a])
+    (dist-squared [this a]))
+#+END_SRC
+****** PReflect
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol PReflect
+    (reflect [this r]))
 #+END_SRC
 ****** PHeading
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -311,7 +328,8 @@
 ****** PExtrudeable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol PExtrudeable
-    (extrude [this opts]))
+    (extrude [this opts])
+    (extrude-shell [this opts]))
 #+END_SRC
 ****** PInvertible
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -588,7 +606,9 @@
 ***** 2D
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (deftype Vec2 [^double x ^double y _meta]
-
+#+END_SRC
+****** Clojure protocols
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     ,#+clj clojure.lang.IObj
     ,#+clj (meta [_] _meta)
     ,#+clj (withMeta [_ m*] (Vec2. x y m*))
@@ -696,7 +716,9 @@
 
     Object
     (toString [_] (str "[" x " " y "]"))
-
+#+END_SRC
+****** PTransformable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PTransformable
     (scale [this a]
       (if (instance? Vec2 a)
@@ -717,7 +739,9 @@
     (rotate-z [this theta]
       (rotate this theta))
     (transform [this m])
-
+#+END_SRC
+****** PVector
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PVector
     (abs [this]
       (Vec2. (m/abs x) (m/abs y) _meta))
@@ -774,33 +798,11 @@
     (dot [this [ax ay]] (+ (* x ax) (* y ay)))
     (cross [this [ax ay]] (- (* x ay) (* y ax)))
 
-    (mag [this] (Math/sqrt (+ (* x x) (* y y))))
-    (mag-squared [this] (+ (* x x) (* y y)))
-
-    (dist [this [ax ay]]
-      (let [dx (- x ax) dy (- y ay)]
-        (Math/sqrt (+ (* dx dx) (* dy dy)))))
-    (dist-squared [this [ax ay]]
-      (let [dx (- x ax) dy (- y ay)]
-        (+ (* dx dx) (* dy dy))))
-
     (limit [this len]
       (if (> (mag-squared this) (* len len))
         (normalize this len) this))
 
-    (normalize [this]
-      (let [l (mag this)]
-        (if (pos? l) (Vec2. (/ x l) (/ y l) _meta) this)))
-    (normalize [this len]
-      (let [l (mag this)]
-        (if (pos? l)
-          (let [l (/ len l)] (Vec2. (* x l) (* y l) _meta)) this)))
-
     (inverse [this] (Vec2. (/ 1.0 x) (/ 1.0 y) _meta))
-
-    (reflect [this [rx ry :as r]]
-      (let [d (* (dot this r) 2.0)]
-        (Vec2. (- (* rx d) x) (- (* ry d) y) _meta)))
 
     (minv [this [ax ay]]
       (Vec2. (min x ax) (min y ay) _meta))
@@ -810,16 +812,64 @@
       (Vec2. (max x ax) (max y ay) _meta))
     (maxv [this [ax ay] [bx by]]
       (Vec2. (max (max x ax) bx) (max (max y ay) by) _meta))
-
+#+END_SRC
+****** PMagnitude
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+    PMagnitude
+    (mag [this] (Math/sqrt (+ (* x x) (* y y))))
+    (mag-squared [this] (+ (* x x) (* y y)))
+#+END_SRC
+****** PNormalize
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+    PNormalize
+    (normalize [this]
+      (let [l (mag this)]
+        (if (pos? l) (Vec2. (/ x l) (/ y l) _meta) this)))
+    (normalize [this len]
+      (let [l (mag this)]
+        (if (pos? l)
+          (let [l (/ len l)] (Vec2. (* x l) (* y l) _meta)) this)))
+    (normalized? [this]
+      (m/delta= 1.0 (mag-squared this)))
+#+END_SRC
+****** PDistance
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  PDistance
+  (dist
+   [this a]
+   (let [[dx dy] (if (instance? Vec2 a)
+                   [(- x (.-x ^Vec2 a)) (- y (.-y ^Vec2 a))]
+                   [(- x (nth a 0)) (- y (nth a 1))])]
+     (Math/sqrt (+ (* dx dx) (* dy dy)))))
+  (dist-squared
+   [this a]
+   (let [[dx dy] (if (instance? Vec2 a)
+                   [(- x (.-x ^Vec2 a)) (- y (.-y ^Vec2 a))]
+                   [(- x (nth a 0)) (- y (nth a 1))])]
+     (+ (* dx dx) (* dy dy))))
+#+END_SRC
+****** PReflect
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+    PReflect
+    (reflect [this [rx ry :as r]]
+      (let [d (* (dot this r) 2.0)]
+        (Vec2. (- (* rx d) x) (- (* ry d) y) _meta)))
+#+END_SRC
+****** PInvertible
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PInvertible
     (invert [this] (Vec2. (- x) (- y) _meta))
-
+#+END_SRC
+****** PInterpolateable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PInterpolateable
     (mix [this [ax ay]]
       (Vec2. (+ x (* (- ax x) 0.5)) (+ y (* (- ay y) 0.5)) _meta))
     (mix [this [ax ay] t]
       (Vec2. (+ x (* (- ax x) t)) (+ y (* (- ay y) t)) _meta))
-
+#+END_SRC
+****** PHeading
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PHeading
     (heading-xy [this]
       (let [t (Math/atan2 y x)]
@@ -829,17 +879,25 @@
         (if (neg? t) (+ TWO_PI t) t)))
     (slope-xy [this] (/ y x))
     (normal [this] (Vec2. (- y) x _meta))
-
+#+END_SRC
+****** PPolar
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PPolar
     (polar [this]
       (Vec2. (mag this) (heading-xy this) _meta))
     (cartesian [this]
-      (Vec2. (* x (Math/cos y)) (* x (Math/sin y)) _meta)))
+      (Vec2. (* x (Math/cos y)) (* x (Math/sin y)) _meta))
+#+END_SRC
+****** End of implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  )
 #+END_SRC
 ***** 3D
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (deftype Vec3 [^double x ^double y ^double z _meta]
-
+#+END_SRC
+****** Clojure protocols
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     ,#+clj clojure.lang.IObj
     ,#+clj (meta [_] _meta)
     ,#+clj (withMeta [_ m*] (Vec3. x y z m*))
@@ -973,7 +1031,9 @@
 
     Object
     (toString [_] (str "[" x " " y " " z "]"))
-
+#+END_SRC
+****** PTransformable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PTransformable
     (scale [this a]
       (if (instance? Vec3 a)
@@ -1010,7 +1070,9 @@
                (mac/mat-item x (.-m10 m) y (.-m11 m) z (.-m12 m) (.-m13 m))
                (mac/mat-item x (.-m20 m) y (.-m21 m) z (.-m22 m) (.-m23 m))
                _meta)))
-
+#+END_SRC
+****** PVector
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PVector
     (add [this a]
       (if (instance? Vec3 a)
@@ -1083,32 +1145,10 @@
     (cross [this [ax ay az]]
       (Vec3. (- (* y az) (* ay z)) (- (* z ax) (* az x)) (- (* x ay) (* ax y)) _meta))
 
-    (mag [this] (Math/sqrt (+ (+ (* x x) (* y y)) (* z z))))
-    (mag-squared [this] (+ (+ (* x x) (* y y)) (* z z)))
-
-    (dist [this [ax ay az]]
-      (let [dx (- x ax) dy (- y ay) dz (- z az)]
-        (Math/sqrt (+ (+ (* dx dx) (* dy dy)) (* dz dz)))))
-    (dist-squared [this [ax ay az]]
-      (let [dx (- x ax) dy (- y ay) dz (- z az)]
-        (+ (+ (* dx dx) (* dy dy)) (* dz dz))))
-
     (limit [this len]
       (if (> (mag-squared this) (* len len)) (normalize this len) this))
 
-    (normalize [this]
-      (let [l (mag this)]
-        (if (pos? l) (Vec3. (/ x l) (/ y l) (/ z l) _meta) this)))
-    (normalize [this len]
-      (let [l (mag this)]
-        (if (pos? l)
-          (let [l (/ len l)] (Vec3. (* x l) (* y l) (* z l) _meta)) this)))
-
-    (inverse [this] (Vec3. (/ 1.0 x) (/ 1.0 y) (/ 1.0 z) _meta))
-
-    (reflect [this [rx ry rz :as r]]
-      (let [d (* (dot this r) 2.0)]
-        (Vec3. (- (* rx d) x) (- (* ry d) y) (- (* rz d) z) _meta)))
+    (inverse [this] (Vec3. (/ x) (/ y) (/ z) _meta))
 
     (minv [this [ax ay az]]
       (Vec3. (min x ax) (min y ay) (min z az) _meta))
@@ -1118,16 +1158,64 @@
       (Vec3. (max x ax) (max y ay) (max z az) _meta))
     (maxv [this [ax ay az] [bx by bz]]
       (Vec3. (max (max x ax) bx) (max (max y ay) by) (max (max z az) bz) _meta))
-
+#+END_SRC
+****** PMagnitude
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+    PMagnitude
+    (mag [this] (Math/sqrt (+ (+ (* x x) (* y y)) (* z z))))
+    (mag-squared [this] (+ (+ (* x x) (* y y)) (* z z)))
+#+END_SRC
+****** PNormalize
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+    PNormalize
+    (normalize [this]
+      (let [l (mag this)]
+        (if (pos? l) (Vec3. (/ x l) (/ y l) (/ z l) _meta) this)))
+    (normalize [this len]
+      (let [l (mag this)]
+        (if (pos? l)
+          (let [l (/ len l)] (Vec3. (* x l) (* y l) (* z l) _meta)) this)))
+    (normalized? [this]
+      (m/delta= 1.0 (mag-squared this)))
+#+END_SRC
+****** PDistance
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  PDistance
+  (dist
+   [this a]
+   (let [[dx dy dz] (if (instance? Vec3 a)
+                      [(- x (.-x ^Vec3 a)) (- y (.-y ^Vec3 a)) (- z (.-z ^Vec3 a))]
+                      [(- x (nth a 0)) (- y (nth a 1)) (- z (nth a 2 0.0))])]
+     (Math/sqrt (+ (+ (* dx dx) (* dy dy)) (* dz dz)))))
+  (dist-squared
+   [this a]
+   (let [[dx dy dz] (if (instance? Vec3 a)
+                      [(- x (.-x ^Vec3 a)) (- y (.-y ^Vec3 a)) (- z (.-z ^Vec3 a))]
+                      [(- x (nth a 0)) (- y (nth a 1)) (- z (nth a 2 0.0))])]
+     (+ (+ (* dx dx) (* dy dy)) (* dz dz))))
+#+END_SRC
+****** PReflect
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+    PReflect
+    (reflect [this [rx ry rz :as r]]
+      (let [d (* (dot this r) 2.0)]
+        (Vec3. (- (* rx d) x) (- (* ry d) y) (- (* rz d) z) _meta)))
+#+END_SRC
+****** PInvertible
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PInvertible
     (invert [this] (Vec3. (- x) (- y) (- z) _meta))
-
+#+END_SRC
+****** PInterpolateable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PInterpolateable
     (mix [this [ax ay az]]
       (Vec3. (+ x (* (- ax x) 0.5)) (+ y (* (- ay y) 0.5)) (+ z (* (- az z) 0.5)) _meta))
     (mix [this [ax ay az] t]
       (Vec3. (+ x (* (- ax x) t)) (+ y (* (- ay y) t)) (+ z (* (- az z) t)) _meta))
-
+#+END_SRC
+****** PPolar
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     ;; http://mathworld.wolfram.com/SphericalCoordinates.html
     PPolar
     (polar [this]
@@ -1138,6 +1226,9 @@
     (cartesian [this]
       (let [rsphi (* x (Math/sin z))]
         (Vec3. (* (Math/cos y) rsphi) (* (Math/sin y) rsphi) (* x (Math/cos z)) _meta)))
+#+END_SRC
+****** End of implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     )
 #+END_SRC
 ***** Constants
@@ -1307,18 +1398,25 @@
 ***** Implementation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (deftype Quaternion [^double x ^double y ^double z ^double w _meta]
-    ,,#+clj clojure.lang.IObj
-    ,,#+clj (meta [_] _meta)
-    ,,#+clj (withMeta [_ m*] (Quaternion. x y z w m*))
-    ,,#+cljs IMeta
-    ,,#+cljs (-meta [_] _meta)
-    ,,#+cljs IWithMeta
-    ,,#+cljs (-with-meta [_ m*] (Quaternion. x y z w m*))
-
+#+END_SRC
+****** Clojure protocols
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+    ,#+clj clojure.lang.IObj
+    ,#+clj (meta [_] _meta)
+    ,#+clj (withMeta [_ m*] (Quaternion. x y z w m*))
+    ,#+cljs IMeta
+    ,#+cljs (-meta [_] _meta)
+    ,#+cljs IWithMeta
+    ,#+cljs (-with-meta [_ m*] (Quaternion. x y z w m*))
+#+END_SRC
+******
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PTransformable
     (scale [this s]
       (Quaternion. (* x s) (* y s) (* z s) (* w s) _meta))
-
+#+END_SRC
+****** PMatrix
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PMatrix
     (multiply [this q]
       (let [q ^Quaternion q
@@ -1329,7 +1427,9 @@
          (- (+ (+ (* z qw) (* w qz)) (* x qy)) (* y qx))
          (- (- (- (* w qw) (* x qx)) (* y qy)) (* z qz))
          _meta)))
-
+#+END_SRC
+****** PVector
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PVector
     (add [this q]
       (let [q ^Quaternion q]
@@ -1340,24 +1440,36 @@
     (dot [this q]
       (let [q ^Quaternion q]
         (+ (+ (+ (* x (.-x q)) (* y (.-y q))) (* z (.-z q))) (* w (.-w q)))))
+#+END_SRC
+****** PMagnitude
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+    PMagnitude
     (mag-squared [this]
       (+ (+ (+ (* x x) (* y y)) (* z z)) (* w w)))
     (mag [this]
       (Math/sqrt (+ (+ (+ (* x x) (* y y)) (* z z)) (* w w))))
+#+END_SRC
+****** PNormalize
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+    PNormalize
     (normalize [this]
       (let [mag (+ (+ (+ (* x x) (* y y)) (* z z)) (* w w))]
         (if (> mag *eps*)
           (let [m (/ mag)]
             (Quaternion. (* x m) (* y m) (* z m) (* w m) _meta))
           this)))
-
+#+END_SRC
+****** PInvertible
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PInvertible
     (invert [this]
       (let [d (mag-squared this)
             d (if (zero? d) 0.0 (/ d))
             id (- d)]
         (Quaternion. (* x id) (* y id) (* z id) (* w d) _meta)))
-
+#+END_SRC
+****** PInterpolateable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PInterpolateable
     (mix [this q] (mix this q 0.5))
     (mix [this q t]
@@ -1377,7 +1489,9 @@
              (m/madd z a (* (.-z q) b))
              (m/madd w a (* (.-w q) b))
              _meta)))))
-
+#+END_SRC
+****** PMatrixConvert
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PMatrixConvert
     (as-matrix [this]
       (let [x2 (+ x x) y2 (+ y y) z2 (+ z z)
@@ -1389,7 +1503,9 @@
          (- xy wz) (- 1.0 (+ xx zz)) (+ yz wx) 0.0
          (+ xz wy) (- yz wx) (- 1.0 (+ xx yy)) 0.0
          0.0 0.0 0.0 1.0 nil)))
-
+#+END_SRC
+****** PVectorTransform
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PVectorTransform
     (transform-vector [this [vx vy vz :as v]]
       (let [ix (- (+ (* w vx) (* y vz)) (* z vy))
@@ -1401,6 +1517,9 @@
          (- (+ (+ (* iy w) (* iw (- y))) (* iz (- x))) (* ix (- z)))
          (- (+ (+ (* iz w) (* iw (- z))) (* ix (- y))) (* iy (- x)))
          (meta v))))
+#+END_SRC
+****** End of implementation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     )
 #+END_SRC
 ***** Constructors
