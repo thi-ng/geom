@@ -120,6 +120,40 @@
    [this dist include-last?]
    (g/sample-uniform* dist include-last? [(:p this) (:q this)]))
 #+END_SRC
+**** PMagnitude
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PMagnitude
+  (mag
+   [this] (g/mag (g/sub (:q this) (:p this))))
+  (mag-squared
+   [this] (g/mag-squared (g/sub (:q this) (:p this))))
+#+END_SRC
+**** PNormalize
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PNormalize
+  (normalize
+   ([{p :p :as this}]
+      (let [d (g/normalize (g/sub (:q this) p))]
+        (thi.ng.geom.types.Line2. p (g/add p d))))
+   ([{p :p :as this} n]
+      (let [d (g/normalize (g/sub (:q this) p) n)]
+        (thi.ng.geom.types.Line2. p (g/add p d)))))
+  (normalized?
+   [this] (m/delta= 1.0 (g/mag-squared this)))
+#+END_SRC
+**** PReflect
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PReflect
+  (reflect
+   [this r]
+   (if (instance? thi.ng.geom.types.Line2 r)
+     (let [ra (g/normalize (g/sub (:q r) (:p r)))
+           rc (g/centroid r)
+           p* (g/reflect (g/sub (:p this) rc) ra)
+           q* (g/reflect (g/sub (:q this) rc) ra)]
+       (thi.ng.geom.types.Line2. (g/add p* rc) (g/add q* rc)))
+     (thi.ng.geom.types.Line2. (g/reflect (:p this) r) (g/reflect (:q this) r))))
+#+END_SRC
 **** PIntersectable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/PIntersectable
@@ -211,6 +245,34 @@
   (random-point-inside
    [this] (g/mix (:p this) (:q this) (m/random)))
 #+END_SRC
+**** PMagnitude
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PMagnitude
+  (mag
+   [this] (g/mag (g/sub (:q this) (:p this))))
+  (mag-squared
+   [this] (g/mag-squared (g/sub (:q this) (:p this))))
+#+END_SRC
+**** PNormalize
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PNormalize
+  (normalize
+   ([{p :p :as this}]
+      (let [d (g/normalize (g/sub (:q this) p))]
+        (thi.ng.geom.types.Line3. p (g/add p d))))
+   ([{p :p :as this} n]
+      (let [d (g/normalize (g/sub (:q this) p) n)]
+        (thi.ng.geom.types.Line3. p (g/add p d)))))
+  (normalized?
+   [this] (m/delta= 1.0 (g/mag-squared this)))
+#+END_SRC
+**** PReflect
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PReflect
+  (reflect
+   [this r]
+   (thi.ng.geom.types.Line3. (g/reflect (:p this) r) (g/reflect (:q this) r)))
+#+END_SRC
 **** TODO PIntersectable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
 
@@ -291,6 +353,29 @@
   (sample-uniform
    [this udist include-last?]
    (g/sample-uniform* udist include-last? (:points this)))
+#+END_SRC
+**** PMagnitude
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PMagnitude
+  (mag
+   [this]
+   (->> (:points this)
+        (d/successive-nth 2)
+        (map #(g/dist (% 0) (% 1)))
+        (reduce +)))
+  (mag-squared
+   [this]
+   (->> (:points this)
+        (d/successive-nth 2)
+        (map #(g/dist-squared (% 0) (% 1)))
+        (reduce +)))
+#+END_SRC
+**** PReflect
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PReflect
+  (reflect
+   [this r]
+   (thi.ng.geom.types.LineStrip2. (mapv #(g/reflect % r) (:points this))))
 #+END_SRC
 **** TODO PIntersectable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
