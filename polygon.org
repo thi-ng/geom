@@ -140,6 +140,18 @@
       (fn [[p c n]] (inset-corner p c n d))
       (d/successive-nth 3 (d/wrap-seq points [(peek points)] [(first points)])))
      []))
+
+  (defn smooth
+    [{points :points :as this} amp base-weight]
+    (let [pc (g/centroid this)]
+      (thi.ng.geom.types.Polygon.
+       (mapv
+        (fn [[p c n]]
+          (let [d (g/add (g/sub p c) (g/sub n c))
+                d (g/madd (g/sub c pc) base-weight d)]
+            (g/madd d amp c)))
+        (d/successive-nth 3 (d/wrap-seq points [(peek points)] [(first points)])))
+       [])))
 #+END_SRC
 ** Protocol implementations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
