@@ -279,8 +279,8 @@
               (map (fn [[a b c]] [(g/add off a) (g/add off b) (g/add off c)]))))))))
   (extrude-shell
    [{points :points :as this}
-    {:keys [depth offset inset top? bottom? wall]
-     :or {wall 1.0 depth 1.0 inset 0.0 top? true bottom? true}}]
+    {:keys [depth offset inset top? bottom? wall nump]
+     :or {wall 1.0 depth 1.0 inset 0.0 top? false bottom? false}}]
    (let [points (if (neg? (g/area this)) (reverse points) points)
          tpoints (if (zero? inset) points (:points (inset-polygon (polygon points) (- inset))))
          ipoints (:points (inset-polygon (polygon points) (- wall)))
@@ -288,16 +288,23 @@
          off (or offset (vec3 0 0 depth))
          ioff (if bottom? (g/normalize off wall) (vec3))
          itoff (if top? (g/normalize off (- (g/mag off) wall)) off)
+         maxp (inc (count points))
+         nump (if nump (m/clamp nump 2 maxp) maxp)
+         np1 (dec nump)
+         complete? (= nump maxp)
+         maybe-loop #(if complete? (conj % (% 0)) (take nump %))
+         drop-wrap #(conj (vec (drop np1 %)) (first %))
+         tri-strip (fn [a b flip?]
+                     (mapcat
+                      (fn [[a1 b1] [a2 b2]]
+                        (if flip? [[a1 b1 a2] [b1 b2 a2]] [[a1 a2 b1] [b1 a2 b2]]))
+                      (d/successive-nth 2 a) (d/successive-nth 2 b)))
          points3 (mapv #(vec3 %) points)
          ipoints3 (mapv #(g/add ioff %) ipoints)
          tpoints3 (mapv #(g/add off %) tpoints)
          itpoints3 (mapv #(g/add itoff %) itpoints)
-         outsides (mapcat (fn [[a1 b1] [a2 b2]] [[a1 b1 a2] [b1 b2 a2]])
-                          (d/successive-nth 2 (conj points3 (points3 0)))
-                          (d/successive-nth 2 (conj tpoints3 (tpoints3 0))))
-         insides (mapcat (fn [[a1 b1] [a2 b2]] [[a1 a2 b1] [b1 a2 b2]])
-                         (d/successive-nth 2 (conj ipoints3 (ipoints3 0)))
-                         (d/successive-nth 2 (conj itpoints3 (itpoints3 0))))]
+         outsides (tri-strip (maybe-loop points3) (maybe-loop tpoints3) true)
+         insides (tri-strip (maybe-loop ipoints3) (maybe-loop itpoints3) false)]
      (mesh/into-mesh
       (mesh/mesh3) nil
       (concat
@@ -308,12 +315,16 @@
                (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)])))
           (->> ipoints
                (tessellate*)
-               (map (fn [[a b c]] [(g/add ioff a) (g/add ioff b) (g/add ioff c)]))))
-         (mapcat (fn [[a1 b1] [a2 b2]] [[a1 a2 b1] [b1 a2 b2]])
-                 (d/successive-nth 2 (conj points3 (points3 0)))
-                 (d/successive-nth 2 (conj ipoints3 (ipoints3 0)))))
+               (map (fn [[a b c]] [(g/add ioff a) (g/add ioff b) (g/add ioff c)])))
+          (when-not complete?
+            (tri-strip (drop-wrap points3) (drop-wrap ipoints3) true)))
+         (tri-strip (maybe-loop points3) (maybe-loop ipoints3) false))
        outsides
        insides
+       (when-not complete?
+         (let [a (points3 0) b (ipoints3 0) c (itpoints3 0) d (tpoints3 0)
+               e (points3 np1) f (ipoints3 np1) g (itpoints3 np1) h (tpoints3 np1)]
+           [[a c b] [a d c] [e f g] [e g h]]))
        (if top?
          (concat
           (->> tpoints
@@ -321,10 +332,10 @@
                (map (fn [[a b c]] [(g/add off a) (g/add off b) (g/add off c)])))
           (->> itpoints
                (tessellate*)
-               (map (fn [[a b c]] [(g/add itoff b) (g/add itoff a) (g/add itoff c)]))))
-         (mapcat (fn [[a1 b1] [a2 b2]] [[a1 b1 a2] [b1 b2 a2]])
-                 (d/successive-nth 2 (conj tpoints3 (tpoints3 0)))
-                 (d/successive-nth 2 (conj itpoints3 (itpoints3 0)))))))))
+               (map (fn [[a b c]] [(g/add itoff b) (g/add itoff a) (g/add itoff c)])))
+          (when-not complete? (tri-strip (drop-wrap tpoints3) (drop-wrap itpoints3) false)))
+         (tri-strip (maybe-loop tpoints3) (maybe-loop itpoints3) true))))))
+
 #+END_SRC
 *** PTransformable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
