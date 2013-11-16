@@ -5,7 +5,7 @@
     (:require
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m]
-     [thi.ng.geom.core :as g]))
+     [thi.ng.geom.core :as g :refer [vec2 vec3 *resolution*]]))
 #+END_SRC
 ** The Bernstein polynomial
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
@@ -82,4 +82,28 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
 (def auto-spline2 (auto-spline* (find-cpoints* g/vec2)))
 (def auto-spline3 (auto-spline* (find-cpoints* g/vec3)))
+#+END_SRC
+** TODO Bezier2
+*** Protocol implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  (extend-type thi.ng.geom.types.Bezier2
+#+END_SRC
+**** PGraph
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PGraph
+  (vertices
+   ([this] (g/vertices this *resolution*))
+   ([{points :points} res]
+      (map #(g/point-at* % points) (m/norm-range res))))
+  (edges
+   ([this] (g/edges this *resolution*))
+   ([this res] (g/edges* line2 (g/vertices this res))))
+  (vertex-neighbors
+   [this v] (d/neighbors v (:points this)))
+  (vertex-valence
+   [this v] (if-let [p (d/neighbors v (:points this))]
+              (let [points (:points this)]
+                (if (or (= p (first points)) (= p (peek points)))
+                  1 2))
+              0))
 #+END_SRC

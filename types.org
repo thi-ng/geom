@@ -3,10 +3,14 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (ns thi.ng.geom.types)
 #+END_SRC
-*** Line
+*** Line & LineStrip
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (defrecord Line2 [p q])
   (defrecord LineStrip2 [points])
+#+END_SRC
+*** Bezier
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord Bezier2 [points])
 #+END_SRC
 *** Triangle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
@@ -37,9 +41,14 @@
   (defrecord Mesh2 [vertices normals fnormals vnormals edges faces attribs])
 #+END_SRC
 ** 3D types
-*** Line
+*** Line & LineStrip
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (defrecord Line3 [p q])
+  (defrecord LineStrip3 [points])
+#+END_SRC
+*** Bezier
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord Bezier3 [points])
 #+END_SRC
 *** Plane
       A plane in cartesian 3D space can be defined as a point =p=
