@@ -9,14 +9,9 @@
   the form of protocols which are then implemented by various core
   types.
 ** Outstanding tasks
-*** TODO Re-insert advanced polygon fns and update ns decl
-*** TODO extract LineStrip defrecords & protocols
 *** TODO refactor bezier ns to use linestrips
 *** TODO implement shape/shape intersections
 *** TODO add NURBS
-*** TODO add voxel ns
-*** TODO add typehints to defrecords
-*** TODO remove obsolete cljs defrecords (typehints are ignored for cljs)
 ** Core API
 *** thi.ng.geom.types
 **** 2D types
@@ -37,16 +32,12 @@
      Even though a circle is a specialization of an Ellipse, we define
      an extra Circle type for performance reasons.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
-  #+clj  (defrecord Ellipse [p ^double rx ^double ry])
-  #+clj  (defrecord Circle [p ^double r])
-
-  #+cljs (defrecord Ellipse [p rx ry])
-  #+cljs (defrecord Circle [p r])
+  (defrecord Ellipse [p ^double rx ^double ry])
+  (defrecord Circle [p ^double r])
 #+END_SRC
 ***** Rectangle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
-  #+clj  (defrecord Rect [p ^double w ^double h])
-  #+cljs (defrecord Rect [p w h])
+  (defrecord Rect [p ^double w ^double h])
 #+END_SRC
 ***** Polygon
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
@@ -87,8 +78,7 @@
       Just like a circle in 2D, a 3D sphere is uniquely defined via
       its center point =o= and radius =r=.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
-  #+clj  (defrecord Sphere [o ^double r])
-  #+cljs (defrecord Sphere [o r])
+  (defrecord Sphere [o ^double r])
 #+END_SRC
 ***** Mesh
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
@@ -1060,10 +1050,10 @@
       (add this t))
     (rotate-x [this theta]
       (let [s (Math/sin theta) c (Math/cos theta)]
-        (Vec3. x (+ (* z s) (* y c)) (- (* z c) (* y s)) _meta)))
+        (Vec3. x (- (- (* z c) (* y s))) (- (+ (* z s) (* y c))) _meta)))
     (rotate-y [this theta]
       (let [s (Math/sin theta) c (Math/cos theta)]
-        (Vec3. (- (* x c) (* z s)) y (+ (* x s) (* z c)) _meta)))
+        (Vec3. (- (- (* x c) (* z s))) y (+ (* x s) (* z c)) _meta)))
     (rotate-z [this theta]
       (let [s (Math/sin theta) c (Math/cos theta)]
         (Vec3. (- (* x c) (* y s)) (+ (* x s) (* y c)) z _meta)))
