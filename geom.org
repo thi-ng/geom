@@ -306,15 +306,10 @@
     [voxels idx mask id]
     `(if (~voxels ~idx) ~id (bit-or ~id ~mask)))
 #+END_SRC
-****** Tangle twice for CLJ & CLJS                                 :noexport:
-        CLJX doesn't process macros correctly and therefore they need to
-        be defined twice, for CLJ & CLJS individually...
+***** Tangle twice for CLJ & CLJS                                  :noexport:
+  CLJX doesn't process macros correctly and therefore they need to be
+  defined twice, for CLJ & CLJS individually...
 #+BEGIN_SRC clojure :tangle babel/src-clj/thi/ng/geom/macros.clj :noweb yes
-  <<mat-item>>
-  <<voxel-set-bit>>
-#+END_SRC
-#+BEGIN_SRC clojure
-  ;; :tangle babel/src-cljs/thi/ng/geom/macros.clj :noweb yes
   <<mat-item>>
   <<voxel-set-bit>>
 #+END_SRC
