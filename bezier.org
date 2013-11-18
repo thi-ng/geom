@@ -85,11 +85,11 @@
 #+END_SRC
 ** TODO Bezier2
 *** Protocol implementations
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
   (extend-type thi.ng.geom.types.Bezier2
 #+END_SRC
 **** PGraph
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
   g/PGraph
   (vertices
    ([this] (g/vertices this *resolution*))
@@ -106,4 +106,8 @@
                 (if (or (= p (first points)) (= p (peek points)))
                   1 2))
               0))
+#+END_SRC
+**** End of implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+  )
 #+END_SRC

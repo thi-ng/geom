@@ -84,16 +84,17 @@
 ****** PPolar
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol PPolar
-    (polar [this])
-    (cartesian [this]))
+    (as-polar [this])
+    (as-cartesian [this]))
 #+END_SRC
 ****** PMatrix
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol PMatrix
     (multiply [this m])
-    (set-position [this p])
-    (set-scale [this s])
+    (set-position [this p] [this x y])
+    (set-scale [this s] [this sx sy])
     (set-rotation [this r])
+    (set-shear [this s] [this sx sy])
     (transpose [this])
     (determinant [this]))
 #+END_SRC
@@ -107,21 +108,16 @@
   (defprotocol PMatrixConvert
     (as-matrix [this]))
 #+END_SRC
-****** PVectorTransform
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
-  (defprotocol PVectorTransform
-    (transform-vector [this v]))
-#+END_SRC
 ***** Spatial transform operations
       The position, size and orientation of spatial entities can
       usually be manipulated via the three basic operations: rotate,
       scale & translate. Other, more complex transformations can be
       achieved through combination and repetition of these.
 ****** PTransformable
-       Rotation is always relative to the world origin. For 2D
-       implementations, the rotation angle \theta (theta) is always
-       interpreted clockwise and only the =rotate= method is
-       implemented.
+  Rotation is always relative to the world origin. For 2D
+  implementations, the rotation angle \theta (theta) is always
+  interpreted clockwise and only the =rotate= method is
+  implemented.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defprotocol PTransformable
     (rotate-x [this t])
@@ -131,8 +127,14 @@
     (rotate-around-axis [this a t])
     (scale [this s] [this a b] [this a b c])
     (scale-size [this s])
-    (translate [this t])
+    (shear [this s] [this sx sy])
+    (translate [this t] [this x y] [this x y z])
     (transform [this matrix]))
+#+END_SRC
+****** PVectorTransform
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defprotocol PVectorTransform
+    (transform-vector [this v]))
 #+END_SRC
 ***** Shape based & structural operations
 ****** PGraph
@@ -257,10 +259,11 @@
     (invert [this]))
 #+END_SRC
 ***** Type specific operations
-****** PLineStrip
+****** PCurve
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
-  (defprotocol PLineStrip
-    (arc-length [this]))
+  (defprotocol PCurve
+    (arc-length [this])
+    (auto-spline [this]))
 #+END_SRC
 ****** PMesh
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -280,7 +283,7 @@
      Some functions used by the following vector types will be
      defined further on, but need to be declared already.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
-  (declare map-entry key-error swizzle2 swizzle3)
+  (declare map-entry key-error vec2 vec3 swizzle2 swizzle3)
   (declare IDENTITY32 IDENTITY44)
 #+END_SRC
 **** Helper macros
@@ -469,31 +472,19 @@
    (let [s (Math/sin theta) c (Math/cos theta)]
      (multiply
       this
-      (Matrix44.
-       1 0 0 0
-       0 c (- s) 0
-       0 s c 0
-       0 0 0 1))))
+      (assoc IDENTITY44 :m11 c :m12 (- s) :m21 s :m22 c))))
   (rotate-y
    [this theta]
    (let [s (Math/sin theta) c (Math/cos theta)]
      (multiply
       this
-      (Matrix44.
-       c 0 s 0
-       0 1 0 0
-       (- s) 0 c 0
-       0 0 0 1))))
+      (assoc IDENTITY44 :m00 c :m02 s :m20 (- s) :m22 c))))
   (rotate-z
    [this theta]
    (let [s (Math/sin theta) c (Math/cos theta)]
      (multiply
       this
-      (Matrix44.
-       c (- s) 0 0
-       s c 0 0
-       0 0 1 0
-       0 0 0 1))))
+      (assoc IDENTITY44 :m00 c :m01 (- s) :m10 s :m11 c))))
   (rotate-around-axis
    [this [x y z] theta]
    (let [s (Math/sin theta) c (Math/cos theta)
@@ -808,9 +799,9 @@
 ****** PPolar
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     PPolar
-    (polar [this]
+    (as-polar [this]
       (Vec2. (mag this) (heading-xy this) _meta))
-    (cartesian [this]
+    (as-cartesian [this]
       (Vec2. (* x (Math/cos y)) (* x (Math/sin y)) _meta))
 #+END_SRC
 ****** End of implementations
@@ -1143,12 +1134,12 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     ;; http://mathworld.wolfram.com/SphericalCoordinates.html
     PPolar
-    (polar [this]
+    (as-polar [this]
       (let [r (Math/sqrt (+ (+ (* x x) (* y y)) (* z z)))
             theta (Math/atan2 y x)
             phi (Math/acos (/ z r))]
         (Vec3. r theta phi _meta)))
-    (cartesian [this]
+    (as-cartesian [this]
       (let [rsphi (* x (Math/sin z))]
         (Vec3. (* (Math/cos y) rsphi) (* (Math/sin y) rsphi) (* x (Math/cos z)) _meta)))
 #+END_SRC
@@ -1156,7 +1147,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
     )
 #+END_SRC
-***** Constants
+**** Constants
 ****** Default circle resolution
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (def ^:dynamic *resolution* 20)

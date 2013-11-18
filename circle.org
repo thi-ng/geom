@@ -96,7 +96,7 @@
   g/PSampleable
   (point-at
    [this t]
-   (g/add (:p this) (g/cartesian (vec2 (:r this) (* t TWO_PI)))))
+   (g/add (:p this) (g/as-cartesian (vec2 (:r this) (* t TWO_PI)))))
   (random-point
    [this] (g/point-at this (m/random)))
   (random-point-inside
