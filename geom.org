@@ -390,6 +390,8 @@
   (rotate
    [this theta]
    (multiply this (set-rotation IDENTITY32 theta)))
+  (transform
+   [this matrix] (multiply this matrix))
 #+END_SRC
 ****** PVectorTransform
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -471,7 +473,9 @@
       (+ (- (- (* m30 m11 m02 m23) (* m10 m31 m02 m23)) (* m30 m01 m12 m23)) (* m00 m31 m12 m23))
       (+ (- (- (* m10 m01 m32 m23) (* m00 m11 m32 m23)) (* m20 m11 m02 m33)) (* m10 m21 m02 m33))
       (+ (- (- (* m20 m01 m12 m33) (* m00 m21 m12 m33)) (* m10 m01 m22 m33)) (* m00 m11 m22 m33))))
-
+#+END_SRC
+******* PInvertible
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   PInvertible
   (invert
    [this]
@@ -509,7 +513,9 @@
             (* invd (+ (- (* m31 n01) (* m32 n00)) (* (- m30) n03))) ;14
             (* invd (+ (- (* m20 n03) (* m21 n01)) (* m22 n00))))
            (meta this))))))
-
+#+END_SRC
+******* PTransformable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   PTransformable
   (scale
    [this s]
@@ -535,6 +541,8 @@
      (multiply
       this
       (assoc IDENTITY44 :m00 c :m01 (- s) :m10 s :m11 c))))
+  (rotate
+   [this theta] (rotate-z this theta))
   (rotate-around-axis
    [this [x y z] theta]
    (let [s (Math/sin theta) c (Math/cos theta)
@@ -547,6 +555,18 @@
        (- (* tx y) sz) (+ (* ty y) c) (+ (* ty z) sx) 0.0
        (+ (* tx z) sy) (- (* ty z) sx) (+ (* t z z) c) 0.0
        0.0 0.0 0.0 1.0))))
+  (transform
+   [this matrix] (multiply this matrix))
+#+END_SRC
+******* PMatrix
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  PVectorTransform
+  (transform-vector
+   [this [x y z :as v]]
+   (Vec3. (mac/mat-item x m00 y m01 z m02 m03)
+          (mac/mat-item x m10 y m11 z m12 m13)
+          (mac/mat-item x m20 y m21 z m22 m23)
+          (meta v)))
 #+END_SRC
 ******* End of implementation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
@@ -1038,12 +1058,7 @@
         (Vec3. (- (* x c) (* y s)) (+ (* x s) (* y c)) z _meta)))
     (rotate [this theta]
       (rotate-z this theta))
-    (transform [this m]
-      (let [^Matrix44 m m]
-        (Vec3. (mac/mat-item x (.-m00 m) y (.-m01 m) z (.-m02 m) (.-m03 m))
-               (mac/mat-item x (.-m10 m) y (.-m11 m) z (.-m12 m) (.-m13 m))
-               (mac/mat-item x (.-m20 m) y (.-m21 m) z (.-m22 m) (.-m23 m))
-               _meta)))
+    (transform [this m] (transform-vector m this))
 #+END_SRC
 ****** PVector
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
