@@ -17,14 +17,14 @@
 
 ** Injected properties                                             :noexport:
 #+BEGIN_SRC clojure :exports none :noweb-ref version
-0.1.0-SNAPSHOT
+0.1.1-SNAPSHOT
 #+END_SRC
 #+BEGIN_SRC clojure :exports none :noweb-ref project-url
 http://code.thi.ng/geom
 #+END_SRC
 ** Objectives
 ** Literal programming format
-#+INCLUDE: "../_shared/literalprogramming.org"
+#+INCLUDE: "../literalprogramming/literalprogramming.org"
 ** License
    This project is open source and licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache Software License 2.0]].
 ** Dependencies
