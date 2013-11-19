@@ -15,9 +15,8 @@ for i in $@; do
     FILES="$FILES \"$i\""
 done
 
-/Applications/Emacs.app/Contents/MacOS/Emacs-10.7 -Q --batch \
+/usr/bin/emacs -Q --batch \
     --eval "(progn
-     (add-to-list 'load-path (expand-file-name \"~/.emacs.d/elpa/org-20130902/\"))
      (require 'org)(require 'ob)(require 'ob-tangle)
      (mapc (lambda (file)
             (find-file (expand-file-name file \"$DIR\"))
