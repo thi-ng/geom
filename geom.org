@@ -496,7 +496,7 @@
        (let [invd (/ 1.0 d)]
          (with-meta
            (Matrix44.
-            (* invd (+ (- (* m11 n11) (* m12 n10)) (* m13 n09)))  ;0
+            (* invd (+ (- (* m11 n11) (* m12 n10)) (* m13 n09)))     ;0
             (* invd (+ (- (* m02 n10) (* m03 n09)) (* (- m01) n11))) ;1
             (* invd (+ (- (* m31 n05) (* m32 n04)) (* m33 n03)))     ;2
             (* invd (+ (- (* m22 n04) (* m23 n03)) (* (- m21) n05))) ;3
@@ -506,12 +506,12 @@
             (* invd (+ (- (* m20 n05) (* m22 n02)) (* m23 n01)))     ;7
             (* invd (+ (- (* m10 n10) (* m11 n08)) (* m13 n06)))     ;8
             (* invd (+ (- (* m01 n08) (* m03 n06)) (* (- m00) n10))) ;9
-            (* invd (+ (- (* m30 n04) (* m31 n02)) (* m33 n00)))  ;10
+            (* invd (+ (- (* m30 n04) (* m31 n02)) (* m33 n00)))     ;10
             (* invd (+ (- (* m21 n02) (* m23 n00)) (* (- m20) n04))) ;11
             (* invd (+ (- (* m11 n07) (* m12 n06)) (* (- m10) n09))) ;12
-            (* invd (+ (- (* m00 n09) (* m01 n07)) (* m02 n06)))  ;13
+            (* invd (+ (- (* m00 n09) (* m01 n07)) (* m02 n06)))     ;13
             (* invd (+ (- (* m31 n01) (* m32 n00)) (* (- m30) n03))) ;14
-            (* invd (+ (- (* m20 n03) (* m21 n01)) (* m22 n00))))
+            (* invd (+ (- (* m20 n03) (* m21 n01)) (* m22 n00))))    ;15
            (meta this))))))
 #+END_SRC
 ******* PTransformable
@@ -558,15 +558,14 @@
   (transform
    [this matrix] (multiply this matrix))
 #+END_SRC
-******* PMatrix
+******* PVectorTransform
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   PVectorTransform
   (transform-vector
    [this [x y z :as v]]
-   (Vec3. (mac/mat-item x m00 y m01 z m02 m03)
-          (mac/mat-item x m10 y m11 z m12 m13)
-          (mac/mat-item x m20 y m21 z m22 m23)
-          (meta v)))
+   (vec3 (mac/mat-item x m00 y m01 z m02 m03)
+         (mac/mat-item x m10 y m11 z m12 m13)
+         (mac/mat-item x m20 y m21 z m22 m23)))
 #+END_SRC
 ******* End of implementation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
