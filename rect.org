@@ -218,6 +218,14 @@
    ([this opts]
       (mapcat g/tessellate (g/subdivide this opts))))
 #+END_SRC
+*** PMeshable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+  g/PMeshable
+  (as-mesh
+   [this]
+   (let [[a b c d] (g/vertices this)]
+     (mesh/mesh2 [a b c] [a c d])))
+#+END_SRC
 *** PExtrudeable
     Extruding a rectangle along the Z-axis results in a 3D mesh
     implementation. The =extrude= function supports the following
@@ -227,7 +235,7 @@
     |-----------+-----------------------------------------+---------|
     | =:depth=  | extrusion depth along positive Z        |     1.0 |
     | =:scale=  | scale factor of rect at extrusion depth |     1.0 |
-    | =:offset= | extrusion vector                        |     nil |
+    | =:offset= | extrusion vector (overrides :depth)     |     nil |
 
     The process results is bevelled forms for =:scale= values other
     than 1.0.

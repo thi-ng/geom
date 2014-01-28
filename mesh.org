@@ -299,6 +299,12 @@
   (merge-vertices
    [this a b] (merge-vertices* this a b))
 #+END_SRC
+**** PMeshable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  g/PMeshable
+  (as-mesh [this] this)
+#+END_SRC
+
 **** PSubdivideable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PSubdivideable
@@ -443,6 +449,12 @@
   (merge-vertices
    [this a b] (merge-vertices* this a b))
 #+END_SRC
+**** PMeshable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
+  g/PMeshable
+  (as-mesh [this] this)
+#+END_SRC
+
 **** PSubdivideable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PSubdivideable
