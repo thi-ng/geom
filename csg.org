@@ -132,7 +132,7 @@
     a normal vector & w-constant."
     ([[a b c]]
        (let [[a b c] (map #(if (map? %) (:p %) %) [a b c])
-             n (g/normal3* a c b)]
+             n (g/normal3* a b c)]
          {:n n :w (g/dot n a)}))
     ([n w] {:n n :w w}))
 
