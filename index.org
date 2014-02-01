@@ -101,8 +101,28 @@ http://code.thi.ng/geom
                       :hooks [leiningen.cljsbuild]}})
 #+END_SRC
 
-* Namespaces
-#+INCLUDE: "geom.org" :minlevel 2
+* Modules
+** Core API
+#+INCLUDE: "core.org" :minlevel 2
+
+** Geometric entities
+#+INCLUDE: "bezier.org" :minlevel 2
+#+INCLUDE: "circle.org" :minlevel 2
+#+INCLUDE: "line.org" :minlevel 2
+#+INCLUDE: "path.org" :minlevel 2
+#+INCLUDE: "rect.org" :minlevel 2
+#+INCLUDE: "polygon.org" :minlevel 2
+#+INCLUDE: "triangle.org" :minlevel 2
+#+INCLUDE: "plane.org" :minlevel 2
+#+INCLUDE: "aabb.org" :minlevel 2
+#+INCLUDE: "sphere.org" :minlevel 2
+#+INCLUDE: "mesh.org" :minlevel 2
+
+** Geometric operations
+#+INCLUDE: "delaunay.org" :minlevel 2
+
+** Geometry IO
+#+INCLUDE: "meshio.org" :minlevel 2
 
 * ClojureScript test harness                                       :noexport:
 #+BEGIN_SRC html :tangle babel/resources/public/index.html

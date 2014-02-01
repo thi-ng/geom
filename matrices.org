@@ -1,0 +1,299 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+* Matrix implementations
+** 3x2 Matrix (Affine 2D transform)
+*** Implementation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx :mkdirp yes
+  (defrecord Matrix32
+      [^double m00 ^double m01 ^double m02
+       ^double m10 ^double m11 ^double m12]
+#+END_SRC
+**** PMathOps
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+  PMathOps
+  (*
+   [this m]
+   (let [m ^Matrix32 m]
+     (Matrix32.
+      (mm/mat-item m00 (.-m00 m) m01 (.-m10 m))
+      (mm/mat-item m00 (.-m01 m) m01 (.-m11 m))
+      (c+ m02 (mm/mat-item m00 (.-m02 m) m01 (.-m12 m)))
+      (mm/mat-item m10 (.-m00 m) m11 (.-m10 m))
+      (mm/mat-item m10 (.-m01 m) m11 (.-m11 m))
+      (c+ m12 (mm/mat-item m10 (.-m02 m) m11 (.-m12 m))))))
+#+END_SRC
+**** PMatrix
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+  PMatrix
+  (set-scale
+   [this s]
+   (let [[sx sy] (if (number? s) [s s] s)]
+     (Matrix32. sx 0.0 0.0 0.0 sy 0.0)))
+  (set-scale
+   [this sx sy]
+   (Matrix32. sx 0.0 0.0 0.0 sy 0.0))
+  (set-position
+   [this [x y]]
+   (Matrix32. 1.0 0.0 x 0.0 1.0 y))
+  (set-position
+   [this x y]
+   (Matrix32. 1.0 0.0 x 0.0 1.0 y))
+  (set-rotation
+   [this theta]
+   (let [s (Math/sin theta) c (Math/cos theta)]
+     (Matrix32. c (c- s) 0.0 s c 0.0)))
+  (set-shear
+   [this s]
+   (let [[sx sy] (if (number? s) [s s] s)]
+     (Matrix32. 1.0 sx 0.0 sy 1.0 0.0)))
+  (set-shear
+   [this sx sy]
+   (Matrix32. 1.0 sx 0.0 sy 1.0 0.0))
+  (determinant
+   [this]
+   (c- (c* m00 m11) (c* m01 m10)))
+#+END_SRC
+**** PInvertible
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+  PInvertible
+  (invert
+   [this]
+   (let [d (determinant this)]
+     (when-not (zero? d)
+       (Matrix32.
+        (/ m11 d) (c- (/ m01 d)) (/ (c- (c* m01 m12) (c* m11 m02)) d)
+        (c- (/ m10 d)) (/ m00 d) (/ (c- (c* m10 m02) (c* m00 m12)) d)))))
+#+END_SRC
+**** PTransformable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+  PTransformable
+  (scale
+   [this s]
+   (* this (set-scale IDENTITY32 s)))
+  (scale
+   [this sx sy]
+   (* this (set-scale IDENTITY32 sx sy)))
+  (translate
+   [this t]
+   (* this (set-position IDENTITY32 t)))
+  (translate
+   [this tx ty]
+   (* this (set-position IDENTITY32 tx ty)))
+  (rotate
+   [this theta]
+   (* this (set-rotation IDENTITY32 theta)))
+  (transform
+   [this matrix] (* this matrix))
+#+END_SRC
+**** PVectorTransform
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+  PVectorTransform
+  (transform-vector
+    [this v]
+    (let [x (v 0) y (v 1)]
+      (vec2 (c+ (c+ (c* x m00) (c* y m01)) m02)
+            (c+ (c+ (c* x m10) (c* y m11)) m12))))
+#+END_SRC
+**** End of implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+  )
+#+END_SRC
+** 4x4 Matrix
+*** TODO add unproject from [[file:/Users/toxi/dev/js/gl-matrix.orig/gl-matrix.js::385]]
+*** Implementation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+  (defrecord Matrix44
+      [^double m00 ^double m01 ^double m02 ^double m03
+       ^double m10 ^double m11 ^double m12 ^double m13
+       ^double m20 ^double m21 ^double m22 ^double m23
+       ^double m30 ^double m31 ^double m32 ^double m33]
+#+END_SRC
+**** PMathOps
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+  PMathOps
+  (*
+   [this m]
+   (let [^Matrix44 m m]
+     (with-meta
+       (Matrix44.
+        (mm/mat-item m00 (.-m00 m) m01 (.-m10 m) m02 (.-m20 m) m03 (.-m30 m))
+        (mm/mat-item m00 (.-m01 m) m01 (.-m11 m) m02 (.-m21 m) m03 (.-m31 m))
+        (mm/mat-item m00 (.-m02 m) m01 (.-m12 m) m02 (.-m22 m) m03 (.-m32 m))
+        (mm/mat-item m00 (.-m03 m) m01 (.-m13 m) m02 (.-m23 m) m03 (.-m33 m))
+  
+        (mm/mat-item m10 (.-m00 m) m11 (.-m10 m) m12 (.-m20 m) m13 (.-m30 m))
+        (mm/mat-item m10 (.-m01 m) m11 (.-m11 m) m12 (.-m21 m) m13 (.-m31 m))
+        (mm/mat-item m10 (.-m02 m) m11 (.-m12 m) m12 (.-m22 m) m13 (.-m32 m))
+        (mm/mat-item m10 (.-m03 m) m11 (.-m13 m) m12 (.-m23 m) m13 (.-m33 m))
+  
+        (mm/mat-item m20 (.-m00 m) m21 (.-m10 m) m22 (.-m20 m) m23 (.-m30 m))
+        (mm/mat-item m20 (.-m01 m) m21 (.-m11 m) m22 (.-m21 m) m23 (.-m31 m))
+        (mm/mat-item m20 (.-m02 m) m21 (.-m12 m) m22 (.-m22 m) m23 (.-m32 m))
+        (mm/mat-item m20 (.-m03 m) m21 (.-m13 m) m22 (.-m23 m) m23 (.-m33 m))
+  
+        (mm/mat-item m30 (.-m00 m) m31 (.-m10 m) m32 (.-m20 m) m33 (.-m30 m))
+        (mm/mat-item m30 (.-m01 m) m31 (.-m11 m) m32 (.-m21 m) m33 (.-m31 m))
+        (mm/mat-item m30 (.-m02 m) m31 (.-m12 m) m32 (.-m22 m) m33 (.-m32 m))
+        (mm/mat-item m30 (.-m03 m) m31 (.-m13 m) m32 (.-m23 m) m33 (.-m33 m)))
+       (meta this))))
+#+END_SRC
+**** PMatrix
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+  PMatrix
+  (set-position
+   [this [x y z]]
+   (assoc this :m03 x :m13 y :m23 z))
+  
+  (set-scale
+   [this s]
+   (let [[x y z] (if (number? s) [s s s] s)]
+     (assoc this :m00 x :m11 y :m22 z)))
+  
+  (set-rotation
+   [this [rx ry rz]] ;; TODO
+   this)
+  
+  (determinant
+   [this]
+   (reduce
+    c+
+    [(mm/det-item m30 m21 m12 m03 m20 m31 m12 m03 m30 m11 m22 m03 m10 m31 m22 m03)
+     (mm/det-item m20 m11 m32 m03 m10 m21 m32 m03 m30 m21 m02 m13 m20 m31 m02 m13)
+     (mm/det-item m30 m01 m22 m13 m00 m31 m22 m13 m20 m01 m32 m13 m00 m21 m32 m13)
+     (mm/det-item m30 m11 m02 m23 m10 m31 m02 m23 m30 m01 m12 m23 m00 m31 m12 m23)
+     (mm/det-item m10 m01 m32 m23 m00 m11 m32 m23 m20 m11 m02 m33 m10 m21 m02 m33)
+     (mm/det-item m20 m01 m12 m33 m00 m21 m12 m33 m10 m01 m22 m33 m00 m11 m22 m33)]))
+#+END_SRC
+**** PInvertible
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+  PInvertible
+  (invert
+   [this]
+   (let [n00 (c- (c* m00 m11) (c* m01 m10))
+         n01 (c- (c* m00 m12) (c* m02 m10))
+         n02 (c- (c* m00 m13) (c* m03 m10))
+         n03 (c- (c* m01 m12) (c* m02 m11))
+         n04 (c- (c* m01 m13) (c* m03 m11))
+         n05 (c- (c* m02 m13) (c* m03 m12))
+         n06 (c- (c* m20 m31) (c* m21 m30))
+         n07 (c- (c* m20 m32) (c* m22 m30))
+         n08 (c- (c* m20 m33) (c* m32 m30))
+         n09 (c- (c* m21 m32) (c* m22 m31))
+         n10 (c- (c* m21 m33) (c* m23 m31))
+         n11 (c- (c* m22 m33) (c* m23 m32))
+         d (c+ (c- (c+ (c+ (c- (c* n00 n11) (c* n01 n10)) (c* n02 n09)) (c* n03 n08)) (c* n04 n07)) (c* n05 n06))]
+     (when-not (zero? d)
+       (let [invd (/ 1.0 d)]
+         (with-meta
+           (Matrix44.
+            (c* invd (c+ (c- (c* m11 n11) (c* m12 n10)) (c* m13 n09)))      ;0
+            (c* invd (c+ (c- (c* m02 n10) (c* m03 n09)) (c* (c- m01) n11))) ;1
+            (c* invd (c+ (c- (c* m31 n05) (c* m32 n04)) (c* m33 n03)))      ;2
+            (c* invd (c+ (c- (c* m22 n04) (c* m23 n03)) (c* (c- m21) n05))) ;3
+            (c* invd (c+ (c- (c* m12 n08) (c* m13 n07)) (c* (c- m10) n11))) ;4
+            (c* invd (c+ (c- (c* m00 n11) (c* m02 n08)) (c* m03 n07)))      ;5
+            (c* invd (c+ (c- (c* m32 n02) (c* m33 n01)) (c* (c- m30) n05))) ;6
+            (c* invd (c+ (c- (c* m20 n05) (c* m22 n02)) (c* m23 n01)))      ;7
+            (c* invd (c+ (c- (c* m10 n10) (c* m11 n08)) (c* m13 n06)))      ;8
+            (c* invd (c+ (c- (c* m01 n08) (c* m03 n06)) (c* (c- m00) n10))) ;9
+            (c* invd (c+ (c- (c* m30 n04) (c* m31 n02)) (c* m33 n00)))      ;10
+            (c* invd (c+ (c- (c* m21 n02) (c* m23 n00)) (c* (c- m20) n04))) ;11
+            (c* invd (c+ (c- (c* m11 n07) (c* m12 n06)) (c* (c- m10) n09))) ;12
+            (c* invd (c+ (c- (c* m00 n09) (c* m01 n07)) (c* m02 n06)))      ;13
+            (c* invd (c+ (c- (c* m31 n01) (c* m32 n00)) (c* (c- m30) n03))) ;14
+            (c* invd (c+ (c- (c* m20 n03) (c* m21 n01)) (c* m22 n00))))     ;15
+           (meta this))))))
+#+END_SRC
+**** PTransposable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+  PTransposable
+  (transpose
+   [this]
+   (with-meta
+     (Matrix44.
+      m00 m10 m20 m30 m01 m11 m21 m31 m02 m12 m22 m32 m03 m13 m23 m33)
+     (meta this)))
+#+END_SRC
+**** PTransformable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+  PTransformable
+  (scale
+   [this s]
+   (* this (set-scale IDENTITY44 s)))
+  (translate
+   [this t]
+   (* this (set-position IDENTITY44 t)))
+  (rotate-x
+   [this theta]
+   (let [s (Math/sin theta) c (Math/cos theta)]
+     (* this (assoc IDENTITY44 :m11 c :m12 (c- s) :m21 s :m22 c))))
+  (rotate-y
+   [this theta]
+   (let [s (Math/sin theta) c (Math/cos theta)]
+     (* this (assoc IDENTITY44 :m00 c :m02 s :m20 (c- s) :m22 c))))
+  (rotate-z
+   [this theta]
+   (let [s (Math/sin theta) c (Math/cos theta)]
+     (* this (assoc IDENTITY44 :m00 c :m01 (c- s) :m10 s :m11 c))))
+  (rotate
+   [this theta] (rotate-z this theta))
+  (rotate-around-axis
+   [this [x y z] theta]
+   (let [s (Math/sin theta) c (Math/cos theta)
+         sx (c* s x) sy (c* s y) sz (c* s z)
+         t (c- 1.0 c) tx (c* t x) ty (c* t y)]
+     (* this
+        (Matrix44.
+         (c+ (c* tx x) c) (c+ (c* tx y) sz) (c- (c* tx z) sy) 0.0
+         (c- (c* tx y) sz) (c+ (c* ty y) c) (c+ (c* ty z) sx) 0.0
+         (c+ (c* tx z) sy) (c- (c* ty z) sx) (c+ (c* t z z) c) 0.0
+         0.0 0.0 0.0 1.0))))
+  (transform
+   [this matrix] (* this matrix))
+#+END_SRC
+**** PVectorTransform
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+  PVectorTransform
+  (transform-vector
+   [this [x y z :as v]]
+   (vec3 (mm/mat-item x m00 y m01 z m02 m03)
+         (mm/mat-item x m10 y m11 z m12 m13)
+         (mm/mat-item x m20 y m21 z m22 m23)))
+#+END_SRC
+**** End of implementation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+    )
+#+END_SRC
+** Constants
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+  (def ^:const IDENTITY32
+    (Matrix32.
+     1.0 0.0 0.0
+     0.0 1.0 0.0))
+
+  (def ^:const IDENTITY44
+    (Matrix44.
+     1.0 0.0 0.0 0.0
+     0.0 1.0 0.0 0.0
+     0.0 0.0 1.0 0.0
+     0.0 0.0 0.0 1.0))
+#+END_SRC
+** Constructors
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
+  (defn matrix32
+    ([] IDENTITY32)
+    ([[m00 m01 m02 m10 m11 m12]]
+       (Matrix32. m00 m01 m02 m10 m11 m12))
+    ([m00 m01 m02 m10 m11 m12]
+       (Matrix32. m00 m01 m02 m10 m11 m12)))
+
+  (defn matrix44
+    ([] IDENTITY44)
+    ([[m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]]
+       (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33))
+    ([m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]
+       (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33)))
+#+END_SRC
+

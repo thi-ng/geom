@@ -1,0 +1,317 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+* Namespace: thi.ng.geom.core
+  Providing an easy-to-use & easy-to-learn API for both common and
+  advanced geometry operations is one of this project's main focal
+  points. We attempt to realise this by defining all operations in
+  the form of protocols which are then implemented by various core
+  types.
+
+  This namespace contains all basic vector operations and core
+  protocols related to common higher level geometric operations.
+
+#+INCLUDE: "types.org" :minlevel 3
+
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx :mkdirp yes
+  (ns thi.ng.geom.core
+    (:refer-clojure :exclude [* - + min max])
+    (:refer-clojure :rename {+ c+, - c-, * c*, min cmin, max cmax})
+    (:require
+     [thi.ng.common.data.core :as d]
+     [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
+     [thi.ng.geom.types :as types]
+    #+clj [thi.ng.geom.macros.matrix :as mm])
+    #+cljs (:require-macros [thi.ng.geom.macros.matrix :as mm])
+    #+clj
+    (:import
+     [thi.ng.geom.types Circle Rect AABB Sphere]))
+#+END_SRC
+** Error handling
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn throw!
+    [msg] (throw
+           ,#+clj  (IllegalArgumentException. msg)
+           ,#+cljs (js/Error. msg)))
+
+  (defn key-error
+    [k] (throw! (str "Illegal lookup key: " k)))
+
+  (defn type-error
+    [t x] (throw! (str "can't create " t " from " (pr-str x))))
+
+  (defn arity-error
+    [n] (throw! (str "Wrong number of args: " n)))
+#+END_SRC
+** Protocol helpers
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  #+clj
+  (defn map-entry [k ^double v]
+    (reify
+      clojure.lang.IMapEntry
+      java.util.Map$Entry
+
+      (key [_] k)
+      (getKey [_] k)
+
+      (val [_] v)
+      (getValue [_] v)
+
+      (hashCode [_]
+        (bit-xor (clojure.lang.Util/hash k) (clojure.lang.Util/hash v)))
+      (equals [_ x]
+        (and (instance? java.util.Map$Entry x)
+             (clojure.lang.Util/equals k (.getKey ^java.util.Map$Entry x))
+             (clojure.lang.Util/equals v (.getValue ^java.util.Map$Entry x))))))
+#+END_SRC
+** Declarations
+     Some functions used by the following vector types will be
+     defined further on, but need to be declared already.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (declare vec2 vec3 swizzle2 swizzle3)
+  (declare IDENTITY32 IDENTITY44)
+#+END_SRC
+** Core implementations
+#+INCLUDE: "protocols.org" :minlevel 3
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (load "core/protocols")
+#+END_SRC
+#+INCLUDE: "vectors.org" :minlevel 3
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (load "core/vec")
+#+END_SRC
+#+INCLUDE: "matrices.org" :minlevel 3
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (load "core/mat")
+#+END_SRC
+#+INCLUDE: "quaternion.org" :minlevel 3
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (load "core/quat")
+#+END_SRC
+** Constants
+*** Default circle resolution
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (def ^:dynamic *resolution* 20)
+#+END_SRC
+**** TODO Binding macro
+#+BEGIN_SRC clojure
+  ;; :tangle babel/src-cljs/thi/ng/geom/macros.clj
+  (defmacro with-resolution
+    [res & body]
+    (binding [*resolution* res] ~@body))
+#+END_SRC
+** Shared functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn closest-point*
+    [lines q]
+    (reduce (fn [a b]
+              (if (< (dist-squared q a) (dist-squared q b)) a b))
+            (map #(closest-point % q) lines)))
+
+  (defn from-barycentric*
+    [points weights]
+    (reduce + (map * points weights)))
+
+  (defn centroid*
+    [coll]
+    (when (seq coll)
+      (* (reduce + coll) (/ 1.0 (count coll)))))
+
+  (defn bounding-rect*
+    ([coll]
+       (let [c (count coll)]
+         (cond
+          (> c 1) (let [p (reduce min coll)
+                        q (reduce max coll)
+                        [w h] (- q p)]
+                    (thi.ng.geom.types.Rect. p w h))
+          (= c 1) (thi.ng.geom.types.Rect. (first coll) 0.0 0.0)
+          :default nil)))
+    ([p w h] (thi.ng.geom.types.Rect. p w h)))
+
+  (defn bounding-box*
+    ([coll]
+       (let [cnt (count coll)]
+         (cond
+          (> cnt 1) (let [p (reduce min coll)
+                          q (reduce max coll)]
+                      (thi.ng.geom.types.AABB. p q))
+          (= cnt 1) (thi.ng.geom.types.AABB. (first coll) [0.0 0.0 0.0])
+          :default nil)))
+    ([p q] (thi.ng.geom.types.AABB. p (- q p))))
+
+  (defn max-dist*
+    [c points]
+    (->> points
+         (map #(mag-squared (- c %)))
+         (reduce cmax)
+         (Math/sqrt)))
+
+  (defn bounding-circle*
+    [c r-or-points]
+    (thi.ng.geom.types.Circle.
+     (vec2 c)
+     (if (coll? r-or-points)
+       (max-dist* c r-or-points)
+       r-or-points)))
+
+  (defn bounding-sphere*
+    [c r-or-points]
+    (thi.ng.geom.types.Sphere.
+     (vec3 c)
+     (if (coll? r-or-points)
+       (max-dist* c r-or-points)
+       r-or-points)))
+
+  (defn axis-bounds*
+    [axis coll]
+    (let [xs (map #(nth % axis) coll)]
+      [(reduce cmin xs) (reduce cmax xs)]))
+
+  (defn axis-range*
+    [axis coll]
+    (let [xs (map #(nth % axis) coll)]
+      (c- (reduce cmax xs) (reduce cmin xs))))
+
+  (defn total-length*
+    [points]
+    (->> points
+         (d/successive-nth 2)
+         (map #(dist (% 0) (% 1)))
+         (reductions c+ 0)
+         (vec)))
+
+  (defn sample-uniform*
+    [udist include-last? points]
+    (let [idx (total-length* points)
+          total (peek idx)
+          delta (/ udist total)
+          samples (loop [t 0.0 i 1 acc []]
+                    (if (< t 1.0)
+                      (let [ct (c* t total)
+                            i (loop [i i] (if (>= ct (idx i)) (recur (inc i)) i))
+                            p (nth points (dec i))
+                            q (nth points i)
+                            pi (idx (dec i))
+                            frac (/ (c- ct pi) (c- (idx i) pi))]
+                        (recur (c+ t delta) i (conj acc (mix p q frac))))
+                      acc))]
+      (if include-last?
+        (conj samples (last points))
+        samples)))
+
+  (defn point-at*
+    ([t points] (point-at* t points nil))
+    ([t points idx]
+       (when (m/in-range? 0.0 1.0 t)
+         (let [n (count points)
+               t (double t)]
+           (cond
+            (= 0 n) nil
+            (= 1 n) (first points)
+            (= 1.0 t) (last points)
+            :default (let [idx (or idx (total-length* points))
+                           total (peek idx)
+                           ct (c* t total)
+                           i (loop [i 1] (if (>= ct (idx i)) (recur (inc i)) i))
+                           p (nth points (dec i))
+                           q (nth points i)
+                           pi (idx (dec i))
+                           frac (/ (c- ct pi) (c- (idx i) pi))]
+                       (mix p q frac)))))))
+
+  (defn edges*
+    [ctor points]
+    (->> points (d/successive-nth 2) (mapv ctor)))
+
+  (defn tessellate*
+    [c points]
+    (->> [(first points)]
+         (concat points)
+         (d/successive-nth 2)
+         (map #(vector (% 0) c (% 1)))))
+
+  (defn normal3*
+    ([a b c] (normalize (cross (- b a) (- c a))))
+    ([[a b c]] (normalize (cross (- b a) (- c a)))))
+#+END_SRC
+** Matrix functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
+  (defn frustum
+    "Sets up a viewing frustum, shaped like a truncated pyramid with the
+    camera where the tip of the pyramid would be.
+    This emulates the OpenGL function glFrustum()."
+    [l t r b n f]
+    (let [dx (c- r l)
+          dy (c- t b)
+          dz (c- f n)]
+      (Matrix44.
+       (/ (c* 2.0 n) dx) 0.0 (/ (c+ r l) dx) 0.0
+       0.0 (/ (c* 2.0 n) dy) (/ (c+ t b) dy) 0.0
+       0.0 0.0 (c* -1.0 (/ (c+ f n) dz)) (/ (c* (c* -2.0 f) n) dz)
+       0.0 0.0 -1.0 0.0)))
+
+  (defn frustum-bounds
+    [fov aspect near]
+    (let [rad (c* 0.5 (m/radians fov))
+          top (c* near (Math/tan rad))
+          right (c* top aspect)]
+      {:left (c- right)
+       :right right
+       :top top
+       :bottom (c- top)}))
+
+  (defn ortho
+    "Returns an orthographic projection matrix, in which objects are the same size no
+    matter how far away or nearby they are.
+    This emulates the OpenGL function glOrtho()."
+    [l t r b n f]
+    (let[dx (c- r l)
+         dy (c- t b)
+         dz (c- f n)]
+      (Matrix44.
+       (/ 2.0 dx) 0.0 0.0 (c- (/ (c+ r l) dx))
+       0.0 (/ 2.0 dy) 0.0 (c- (/ (c+ t b) dy))
+       0.0 0.0 (/ -2.0 dz) (c- (/ (c+ f n) dz))
+       0.0 0.0 0.0 1.0)))
+
+  (defn perspective
+    "Returns a perspective transform matrix, which makes far away objects appear
+    smaller than nearby objects. The `aspect` argument should be the width
+    divided by the height of your viewport and `fov` is the vertical angle
+    of the field of view in degrees.
+    This emulates the OpenGL function gluPerspective()."
+    [fov aspect near far]
+    (let [rad (c* 0.5 (m/radians fov))
+          cot (/ (Math/cos rad) (Math/sin rad))
+          deltaz (c- far near)
+          a (/ cot aspect)
+          b (c- (/ (c+ far near) deltaz))
+          c (/ (c* -2.0 near far) deltaz)]
+      (Matrix44.
+       a 0.0 0.0 0.0
+       0.0 cot 0.0 0.0
+       0.0 0.0 b c
+       0.0 0.0 -1.0 0.0)))
+
+  (defn perspective-frustum
+    [fov aspect near far]
+    (let [{:keys [left right top bottom]} (frustum-bounds fov aspect near)]
+      (frustum left top right bottom near far)))
+
+  (defn look-at
+    "Returns a matrix that puts the camera at the eye position looking
+    toward the target point with the given up direction.
+    This emulates the OpenGL function `gluLookAt()`."
+    [eye target upvec]
+    (let [[fx fy fz :as f] (normalize (- eye target))
+          [sx sy sz :as s] (normalize (cross upvec f))
+          [tx ty tz :as t] (normalize (cross f s))]
+      (Matrix44.
+       sx sy sz (c- (dot s eye))
+       tx ty tz (c- (dot t eye))
+       fx fy fz (c- (dot f eye))
+       0.0 0.0 0.0 1.0)))
+#+END_SRC

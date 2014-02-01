@@ -1,0 +1,306 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+* Protocols
+** Math operations
+*** PMathOps
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx :mkdir yes
+  (defprotocol PMathOps
+    (+ [this a] [this a b] [this a b c])
+    (- [this a] [this a b] [this a b c])
+    (* [this a] [this a b] [this a b c])
+    (div [this] [this a] [this a b] [this a b c])
+    (madd [this a b])
+    (abs [this]))
+#+END_SRC
+*** PSetOps
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PSetOps
+    (union [this x])
+    (intersection [this y])
+    (difference [this x]))
+#+END_SRC
+*** PDotProduct
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PDotProduct
+    (dot [this a]))
+#+END_SRC
+*** PCrossProduct
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PCrossProduct
+    (cross [this a]))
+#+END_SRC
+*** PLimit
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PLimit
+    (limit [this x]))
+#+END_SRC
+*** PMinMax
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PMinMax
+    (min [this x] [this a b])
+    (max [this y] [this a b]))
+#+END_SRC
+*** PTransposable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PTransposable
+    (transpose [this]))
+#+END_SRC
+*** PNormalize
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PNormalize
+    (normalize [this] [this len])
+    (normalized? [this]))
+#+END_SRC
+*** PInterpolateable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PInterpolateable
+    (mix [this x] [this x t]))
+#+END_SRC
+*** PMagnitude
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PMagnitude
+    (mag [this])
+    (mag-squared [this]))
+#+END_SRC
+*** PDistance
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PDistance
+    (dist [this a])
+    (dist-squared [this a]))
+#+END_SRC
+*** PHeading
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PHeading
+    (heading-xy [this])
+    (heading-xz [this])
+    (heading-yz [this])
+    (angle-between [this a])
+    (normal [this] [this a])
+    (slope-xy [this])
+    (slope-xz [this])
+    (slope-yz [this]))
+#+END_SRC
+*** PMatrix
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PMatrix
+    (set-position [this p] [this x y])
+    (set-scale [this s] [this sx sy])
+    (set-rotation [this r])
+    (set-shear [this s] [this sx sy])
+    (determinant [this]))
+#+END_SRC
+*** PQuaternion
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PQuaternion
+    (conjugate [this]))
+#+END_SRC
+*** PMatrixConvert
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PMatrixConvert
+    (as-matrix [this]))
+#+END_SRC
+** Spatial transform operations
+   The position, size and orientation of spatial entities can
+   usually be manipulated via the three basic operations: rotate,
+   scale & translate. Other, more complex transformations can be
+   achieved through combination and repetition of these.
+*** PTransformable
+  Rotation is always relative to the world origin. For 2D
+  implementations, the rotation angle \theta (theta) is always
+  interpreted clockwise and only the =rotate= method is
+  implemented.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PTransformable
+    (rotate-x [this t])
+    (rotate-y [this t])
+    (rotate-z [this t])
+    (rotate [this t]) ;; alias for rotate-z
+    (rotate-around-axis [this a t])
+    (scale [this s] [this a b] [this a b c])
+    (scale-size [this s])
+    (shear [this s] [this sx sy])
+    (translate [this t] [this x y] [this x y z])
+    (transform [this matrix]))
+#+END_SRC
+*** PVectorTransform
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PVectorTransform
+    (transform-vector [this v]))
+#+END_SRC
+*** PReflect
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PReflect
+    (reflect [this r]))
+#+END_SRC
+*** PPolar
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PPolar
+    (as-polar [this])
+    (as-cartesian [this]))
+#+END_SRC
+** Shape based & structural operations
+*** PGraph
+      Most geometric shape constructs can be understood as an
+      undirected graph of vertices, connected by edges. This protocol
+      provides read access to entities in this context.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PGraph
+    (cyclic? [this])
+    (edges [this])
+    (nodes [this])
+    (node-valence [this n])
+    (node-neighbors [this n])
+    (node-incoming [this n])
+    (node-outgoing [this n]))
+#+END_SRC
+*** PGraphConvert
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PGraph
+    (as-graph [this] [this opts]))
+#+END_SRC
+*** PArea
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PArea
+    (area [this]
+      "Returns an entity's total surface area"))
+#+END_SRC
+*** PVolume
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PVolume
+    (volume [this]
+      "Returns an entity's inner volume."))
+#+END_SRC
+*** PCircumference
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PCircumference
+    (circumference [this]
+      "Returns an entity's circumference"))
+#+END_SRC
+*** PBounds
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PBounds
+    (bounds [this]
+      "Returns bounding rect for 2d entities or box for 3d")
+    (width [this]
+      "Returns entity's extent along X axis")
+    (height [this]
+      "Returns entity's extent along Y axis")
+    (depth [this]
+      "Returns entity's extent along Z (zero for 2d)"))
+#+END_SRC
+*** PBoundingCircle
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PBoundingCircle
+    (bounding-circle [this]))
+#+END_SRC
+*** PBoundingSphere
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PBoundingSphere
+    (bounding-sphere [this]))
+#+END_SRC
+*** PBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PBoundary
+    (classify-point [this p])
+    (closest-point [this p])
+    (contains-point? [this p]))
+#+END_SRC
+*** PCenter
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PCenter
+    (center [this] [this o]
+      "Returns updated entity centered around world origin or given point")
+    (centroid [this]
+      "Returns centroid of entity"))
+#+END_SRC
+*** PAlignable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PAlignable
+    (align-with [this x opts]
+      "Returns updated entity aligned with `x` in the specified manner"))
+#+END_SRC
+*** PSampleable
+**** TODO move random-point-inside into PBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PSampleable
+    (point-at [this t] [this u v])
+    (random-point [this])
+    (random-point-inside [this])
+    (sample-uniform [this dist include-last?])
+    (sample-with-resolution [this res]))
+#+END_SRC
+*** PPolygonizable
+       Anything which can be turned into a polygon will implement this
+       protocol consisting of just this one function: =as-polygon=.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PPolygonizable
+    (as-polygon [this] [this res]
+      "Transforms current entity into a Polygon instance"))
+#+END_SRC
+*** PMeshable
+       Anything which can be turned into a 2D or 3D mesh will implement this
+       protocol consisting of just this one function: =as-mesh=.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PMeshable
+    (as-mesh [this] [this opts]
+      "Transforms the current enitity into a Mesh instance"))
+ #+END_SRC
+*** PIntersectable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PIntersectable
+    (intersect-line [this l])
+    (intersect-ray [this r])
+    (intersect-shape [this s]))
+#+END_SRC
+*** PSliceable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PSliceable
+    (slice-with [this e] [this e classifier] [this e classifier parts]))
+#+END_SRC
+*** PSubdivideable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PSubdivideable
+    (subdivide [this] [this opts])
+    (subdivide-edge [this a b splits])
+    (subdivide-face [this f p displace splits]))
+#+END_SRC
+*** PTessellateable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PTessellateable
+    (tessellate [this] [this opts]))
+#+END_SRC
+*** PExtrudeable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PExtrudeable
+    (extrude [this opts])
+    (extrude-shell [this opts]))
+#+END_SRC
+*** PInvertible
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PInvertible
+    (invert [this]))
+#+END_SRC
+** Type specific operations
+*** PCurve
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PCurve
+    (arc-length [this])
+    (auto-spline [this]))
+#+END_SRC
+*** PMesh
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PMesh
+    (faces [this])
+    (vertex-faces [this v])
+    (add-face [this f])
+    (remove-face [this f])
+    (add-mesh [this m])
+    (compute-face-normals [this])
+    (compute-vertex-normals [this])
+    (remove-vertex [this v])
+    (replace-vertex [this a b])
+    (merge-vertices [this a b]))
+#+END_SRC
+

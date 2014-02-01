@@ -1,0 +1,209 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+* Quaternion
+** Implementation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
+  (deftype Quaternion [^double x ^double y ^double z ^double w _meta]
+#+END_SRC
+*** Clojure protocols
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
+    ,#+clj clojure.lang.IObj
+    ,#+clj (meta [_] _meta)
+    ,#+clj (withMeta [_ m*] (Quaternion. x y z w m*))
+    ,#+cljs IMeta
+    ,#+cljs (-meta [_] _meta)
+    ,#+cljs IWithMeta
+    ,#+cljs (-with-meta [_ m*] (Quaternion. x y z w m*))
+#+END_SRC
+******
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
+    PTransformable
+    (scale [this s]
+      (Quaternion. (* x s) (* y s) (* z s) (* w s) _meta))
+#+END_SRC
+*** PMatrix
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
+  PMathOps
+  (+ [this q]
+     (let [q ^Quaternion q]
+       (Quaternion. (c+ x (.-x q)) (c+ y (.-y q)) (c+ z (.-z q)) (c+ w (.-w q)) _meta)))
+  (- [this q]
+     (let [q ^Quaternion q]
+       (Quaternion. (c- x (.-x q)) (c- y (.-y q)) (c- z (.-z q)) (c- w (.-w q)) _meta)))
+  (* [this q]
+     (let [q ^Quaternion q
+           qx (.-x q) qy (.-y q) qz (.-z q) qw (.-w q)]
+       (Quaternion.
+        (c- (c+ (c+ (c* x qw) (c* w qx)) (c* y qz)) (c* z qy))
+        (c- (c+ (c+ (c* y qw) (c* w qy)) (c* z qx)) (c* x qz))
+        (c- (c+ (c+ (c* z qw) (c* w qz)) (c* x qy)) (c* y qx))
+        (c- (c- (c- (c* w qw) (c* x qx)) (c* y qy)) (c* z qz))
+        _meta)))
+#+END_SRC
+*** PDotProduct
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx  
+  PDotProduct
+  (dot [this q]
+    (let [q ^Quaternion q]
+      (c+ (c+ (c+ (c* x (.-x q)) (c* y (.-y q))) (c* z (.-z q))) (c* w (.-w q)))))
+#+END_SRC
+*** PMagnitude
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
+  PMagnitude
+  (mag-squared [this]
+    (c+ (c+ (c+ (c* x x) (c* y y)) (c* z z)) (c* w w)))
+  (mag [this]
+    (Math/sqrt (c+ (c+ (c+ (c* x x) (c* y y)) (c* z z)) (c* w w))))
+#+END_SRC
+*** PNormalize
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
+  PNormalize
+  (normalize [this]
+    (let [mag (c+ (c+ (c+ (c* x x) (c* y y)) (c* z z)) (c* w w))]
+      (if (> mag *eps*)
+        (let [m (/ mag)]
+          (Quaternion. (c* x m) (c* y m) (c* z m) (c* w m) _meta))
+        this)))
+#+END_SRC
+*** PInvertible
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
+  PInvertible
+  (invert [this]
+    (let [d (mag-squared this)
+          d (if (zero? d) 0.0 (/ d))
+          id (c- d)]
+      (Quaternion. (c* x id) (c* y id) (c* z id) (c* w d) _meta)))
+#+END_SRC
+*** PInterpolateable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
+  PInterpolateable
+  (mix [this q] (mix this q 0.5))
+  (mix [this q t]
+    (let [d (dot this q)]
+      (if (>= (m/abs d) 1.0)
+        this
+        (let [theta (Math/acos d)
+              stheta (Math/sqrt (c- 1.0 (c* d d)))
+              [a b] (if (< (m/abs stheta) 0.001)
+                      [0.5 0.5]
+                      [(/ (Math/sin (c* theta (c- 1.0 t))) stheta)
+                       (/ (Math/sin (c* theta t)) stheta)])
+              q ^Quaternion q]
+          (Quaternion.
+           (m/madd x a (c* (.-x q) b))
+           (m/madd y a (c* (.-y q) b))
+           (m/madd z a (c* (.-z q) b))
+           (m/madd w a (c* (.-w q) b))
+           _meta)))))
+#+END_SRC
+*** PMatrixConvert
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
+  PMatrixConvert
+  (as-matrix [this]
+    (let [x2 (c+ x x) y2 (c+ y y) z2 (c+ z z)
+          xx (c* x x2) xy (c* x y2) xz (c* x z2)
+          yy (c* y y2) yz (c* y z2) zz (c* z z2)
+          wx (c* w x2) wy (c* w y2) wz (c* w z2)]
+      (Matrix44.
+       (c- 1.0 (c+ yy zz)) (c+ xy wz) (c- xz wy) 0.0
+       (c- xy wz) (c- 1.0 (c+ xx zz)) (c+ yz wx) 0.0
+       (c+ xz wy) (c- yz wx) (c- 1.0 (c+ xx yy)) 0.0
+       0.0 0.0 0.0 1.0)))
+#+END_SRC
+*** PVectorTransform
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
+  PVectorTransform
+  (transform-vector [this [vx vy vz :as v]]
+    (let [ix (c- (c+ (c* w vx) (c* y vz)) (c* z vy))
+          iy (c- (c+ (c* w vy) (c* z vx)) (c* x vz))
+          iz (c- (c+ (c* w vz) (c* x vy)) (c* y vx))
+          iw (c- (c- (c* (c- x) vx) (c* y vy)) (c* z vz))]
+      (Vec3.
+       (c- (c+ (c+ (c* ix w) (c* iw (c- x))) (c* iy (c- z))) (c* iz (c- y)))
+       (c- (c+ (c+ (c* iy w) (c* iw (c- y))) (c* iz (c- x))) (c* ix (c- z)))
+       (c- (c+ (c+ (c* iz w) (c* iw (c- z))) (c* ix (c- y))) (c* iy (c- x)))
+       (meta v))))
+#+END_SRC
+*** End of implementation
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
+    )
+#+END_SRC
+** Constructors
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
+  (defn quat
+    ([[x y z] w] (Quaternion. x y z w nil))
+    ([[x y z w]] (Quaternion. x y z w nil))
+    ([x y z w] (Quaternion. x y z w nil)))
+  
+  (defn quat-from-axis-angle
+    [axis theta]
+    (let [theta (c* theta 0.5)]
+      (quat (normalize (vec3 axis) (Math/sin theta)) (Math/cos theta))))
+  
+  (defn quat-from-euler
+    [^double pitch ^double yaw ^double roll]
+    (let [pitch (c* pitch 0.5) yaw (c* yaw 0.5) roll (c* roll 0.5)
+          sp (Math/sin pitch) cp (Math/cos pitch)
+          sy (Math/sin yaw) cy (Math/cos yaw)
+          sr (Math/sin roll) cr (Math/cos roll)
+          spsy (c* sp sy) cpcy (c* cp cy)]
+      (Quaternion.
+       (c- (c* sr cpcy) (c* cr spsy))
+       (c+ (c* (c* cr sp) cy) (c* (c* sr cp) sy))
+       (c- (c* (c* cr cp) sy) (c* (c* sr sp) cy))
+       (c+ (c* cr cpcy) (c* sr spsy))
+       nil)))
+  
+  (defn quat-from-matrix44
+    [^Matrix44 m]
+    (let [trace (c+ (c+ (.-m00 m) (.-m11 m)) (.-m22 m))]
+      (if (pos? trace)
+        (let [s (Math/sqrt (c+ 1.0 trace))
+              w (c* s 0.5)
+              s (/ -0.5 s)]
+          (Quaternion.
+           (m/madd (.-m21 m) s (.-m12 m))
+           (m/madd (.-m02 m) s (.-m20 m))
+           (m/madd (.-m10 m) s (.-m01 m))
+           w nil))
+        (let [[i mi] (if (> (.-m11 m) (.-m00 m))
+                       [1 (.-m11 m)] [0 (.-m00 m)])
+              [i mi] (if (> (.-m22 m) mi)
+                       [2 (.-m22 m)] [i mi])]
+          (condp = i
+            0 (let [s (Math/sqrt (c+ 1.0 (c+ (c- mi (.-m11 m)) (.-m22 m))))
+                    x (c* s 0.5)
+                    s (/ 0.5 s)]
+                (Quaternion. ; i=0 j=1 k=2
+                 x
+                 (c* (c+ (.-m10 m) (.-m01 m)) s)
+                 (c* (c+ (.-m20 m) (.-m02 m)) s)
+                 (c* (c- (.-m21 m) (.-m12 m)) s) nil))
+            1 (let [s (Math/sqrt (c+ 1.0 (c+ (c- mi (.-m22 m)) (.-m00 m))))
+                    x (c* s 0.5)
+                    s (/ 0.5 s)]
+                (Quaternion. ; i=1 j=2 k=0
+                 (c* (c+ (.-m10 m) (.-m01 m)) s)
+                 x
+                 (c* (c+ (.-m12 m) (.-m21 m)) s)
+                 (c* (c- (.-m20 m) (.-m02 m)) s) nil))
+            2 (let [s (Math/sqrt (c+ 1.0 (c+ (c- mi (.-m00 m)) (.-m11 m))))
+                    x (c* s 0.5)
+                    s (/ 0.5 s)]
+                (Quaternion. ; i=2 j=0 k=1
+                 (c* (c+ (.-m20 m) (.-m02 m)) s)
+                 (c* (c+ (.-m21 m) (.-m12 m)) s)
+                 x
+                 (c* (c- (.-m01 m) (.-m10 m)) s) nil)))))))
+  
+  (defn alignment-quat
+    [target forward]
+    (let [target (normalize target)
+          forward (normalize forward)
+          axis (cross forward target)
+          len (mag axis)
+          theta (Math/atan2 len (dot forward target))]
+      (quat-from-axis-angle axis theta)))
+#+END_SRC
