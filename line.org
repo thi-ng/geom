@@ -1,14 +1,20 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
 * thi.ng.geom.line
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.line
+    (:refer-clojure :exclude [+ - * min max])
+    (:refer-clojure :rename {+ c+, - c-, * c*, min cmin, max cmax})
     (:require
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [*eps*]]
-     [thi.ng.geom.core :as g :refer [vec2 vec3]]
+     [thi.ng.geom.core :as g :refer [+ - * vec2 vec3 min max]]
      [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])
-    #+clj
+    ,#+clj
     (:import
      [thi.ng.geom.types Circle Line2 Line3 LineStrip2]))
 #+END_SRC
@@ -34,9 +40,9 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   (defn closest-point-coeff*
     [p a b]
-    (let [d (g/sub b a)]
-      (/ (g/dot (g/sub p a) d) (g/mag-squared d))))
-
+    (let [d (- b a)]
+      (/ (g/dot (- p a) d) (g/mag-squared d))))
+  
   (defn closest-point*
     [p a b]
     (let [t (closest-point-coeff* p a b)]
@@ -44,7 +50,7 @@
         (<= t 0.0) a
         (> t 1.0) b
         :default (g/mix a b t))))
-
+  
   (defn sample-with-res*
     [a b res include-b?]
     (let [ls (for [t (m/norm-range res)] (g/mix a b t))]
@@ -70,38 +76,47 @@
   (vertex-valence
    [this v] (if (or (= v (:p this)) (= v (:q this))) 1 0))
 #+END_SRC
-**** PShape
+**** PArea
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
-  g/PShape
+  g/PArea
   (area [this] 0)
+#+END_SRC
+**** PBounds
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PBounds
   (bounds
    [this] (g/bounding-rect* [(:p this) (:q this)]))
-  (center
-   ([{p :p q :q}]
-      (let [c (g/mix p q)] (thi.ng.geom.types.Line2. (g/sub p c) (g/sub q c))))
-   ([{p :p q :q} o]
-      (let [c (g/sub o (g/mix p q))] (thi.ng.geom.types.Line2. (g/add p c) (g/add q c)))))
-  (centroid
-   [this] (g/mix (:p this) (:q this)))
-  (width  [this] (m/abs (- ((:p this) 0) ((:q this) 0))))
-  (height [this] (m/abs (- ((:p this) 1) ((:q this) 1))))
+  (width  [this] (m/abs (c- ((:p this) 0) ((:q this) 0))))
+  (height [this] (m/abs (c- ((:p this) 1) ((:q this) 1))))
   (depth  [this] 0)
 #+END_SRC
-**** PShape2
+**** PCenter
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
-  g/PShape2
+  g/PCenter
+  (center
+   ([{p :p q :q}]
+      (let [c (g/mix p q)] (thi.ng.geom.types.Line2. (- p c) (- q c))))
+   ([{p :p q :q} o]
+      (let [c (- o (g/mix p q))] (thi.ng.geom.types.Line2. (+ p c) (+ q c)))))
+  (centroid [this] (g/mix (:p this) (:q this)))
+#+END_SRC
+**** PBoundingCircle
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PBoundingCircle
   (bounding-circle
-   [{p :p q :q}]
-   (thi.ng.geom.types.Circle. (g/mix p q) (* 0.5 (g/dist p q))))
-  (circumference
-   [this] (g/dist (:p this) (:q this)))
+   [{p :p q :q}] (thi.ng.geom.types.Circle. (g/mix p q) (c* 0.5 (g/dist p q))))
+#+END_SRC
+**** PCircumference
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PCircumference
+  (circumference [this] (g/dist (:p this) (:q this)))
 #+END_SRC
 **** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/PBoundary
   (classify-point
    [{p :p q :q} v]
-   (m/signum (g/dot (g/sub (vec2 v) p) (g/normal (g/sub q p))) *eps*))
+   (m/signum (g/dot (- (vec2 v) p) (g/normal (- q p))) *eps*))
   (closest-point
    [this a] (closest-point* (vec2 a) (:p this) (:q this)))
   (contains-point?
@@ -123,23 +138,20 @@
 **** PMagnitude
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/PMagnitude
-  (mag
-   [this] (g/mag (g/sub (:q this) (:p this))))
-  (mag-squared
-   [this] (g/mag-squared (g/sub (:q this) (:p this))))
+  (mag [this] (g/mag (- (:q this) (:p this))))
+  (mag-squared [this] (g/mag-squared (- (:q this) (:p this))))
 #+END_SRC
 **** PNormalize
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/PNormalize
   (normalize
    ([{p :p :as this}]
-      (let [d (g/normalize (g/sub (:q this) p))]
-        (thi.ng.geom.types.Line2. p (g/add p d))))
+      (let [d (g/normalize (- (:q this) p))]
+        (thi.ng.geom.types.Line2. p (+ p d))))
    ([{p :p :as this} n]
-      (let [d (g/normalize (g/sub (:q this) p) n)]
-        (thi.ng.geom.types.Line2. p (g/add p d)))))
-  (normalized?
-   [this] (m/delta= 1.0 (g/mag-squared this)))
+      (let [d (g/normalize (- (:q this) p) n)]
+        (thi.ng.geom.types.Line2. p (+ p d)))))
+  (normalized? [this] (m/delta= 1.0 (g/mag-squared this)))
 #+END_SRC
 **** PReflect
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
@@ -147,11 +159,11 @@
   (reflect
    [this r]
    (if (instance? thi.ng.geom.types.Line2 r)
-     (let [ra (g/normalize (g/sub (:q r) (:p r)))
+     (let [ra (g/normalize (- (:q r) (:p r)))
            rc (g/centroid r)
-           p* (g/reflect (g/sub (:p this) rc) ra)
-           q* (g/reflect (g/sub (:q this) rc) ra)]
-       (thi.ng.geom.types.Line2. (g/add p* rc) (g/add q* rc)))
+           p* (g/reflect (- (:p this) rc) ra)
+           q* (g/reflect (- (:q this) rc) ra)]
+       (thi.ng.geom.types.Line2. (+ p* rc) (+ q* rc)))
      (thi.ng.geom.types.Line2. (g/reflect (:p this) r) (g/reflect (:q this) r))))
 #+END_SRC
 **** PIntersectable
@@ -160,9 +172,9 @@
   (intersect-line
    [{[px1 py1 :as p] :p [qx1 qy1 :as q] :q :as this}
     {[px2 py2 :as lp] :p [qx2 qy2 :as lq] :q}]
-   (let [denom (- (* (- qy2 py2) (- qx1 px1)) (* (- qx2 px2) (- qy1 py1)))
-         na (- (* (- qx2 px2) (- py1 py2)) (* (- qy2 py2) (- px1 px2)))
-         nb (- (* (- qx1 px1) (- py1 py2)) (* (- qy1 py1) (- px1 px2)))]
+   (let [denom (c- (c* (c- qy2 py2) (c- qx1 px1)) (c* (c- qx2 px2) (c- qy1 py1)))
+         na (c- (c* (c- qx2 px2) (c- py1 py2)) (c* (c- qy2 py2) (c- px1 px2)))
+         nb (c- (c* (c- qx1 px1) (c- py1 py2)) (c* (c- qy1 py1) (c- px1 px2)))]
      (if-not (zero? denom)
        (let [ua (/ na denom) ub (/ nb denom) ipos (g/mix p q ua)]
          (if (and (>= ua 0.0) (<= ua 1.0) (>= ub 0.0) (<= ub 1.0))
@@ -176,7 +188,7 @@
              {:type :coincident-no-intersect :p ip :q iq}))
          {:type :parallel}))))
 #+END_SRC
-**** End of implementations
+**** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   )
 #+END_SRC
@@ -199,30 +211,40 @@
   (vertex-valence
    [this v] (if (or (= v (:p this)) (= v (:q this))) 1 0))
 #+END_SRC
-**** PShape
+**** PArea
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
-  g/PShape
-  (area [this] 0)
-  (bounds
-   [this] (g/bounding-box* [(:p this) (:q this)]))
-  (center
-   ([{p :p q :q}]
-      (let [c (g/mix p q)] (thi.ng.geom.types.Line3. (g/sub p c) (g/sub q c))))
-   ([{p :p q :q} o]
-      (let [c (g/sub o (g/mix p q))]
-        (thi.ng.geom.types.Line3. (g/add p c) (g/add q c)))))
-  (centroid
-   [this] (g/mix (:p this) (:q this)))
-  (width  [this] (m/abs (- ((:p this) 0) ((:q this) 0))))
-  (height [this] (m/abs (- ((:p this) 1) ((:q this) 1))))
-  (depth  [this] (m/abs (- ((:p this) 2) ((:q this) 2))))
+g/PArea
+(area [this] 0)
 #+END_SRC
-**** PShape3
+**** PBounds
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
-  g/PShape3
+g/PBounds
+(bounds [this] (g/bounding-box* [(:p this) (:q this)]))
+(width  [this] (m/abs (c- ((:p this) 0) ((:q this) 0))))
+(height [this] (m/abs (c- ((:p this) 1) ((:q this) 1))))
+(depth  [this] (m/abs (c- ((:p this) 2) ((:q this) 2))))
+#+END_SRC
+**** PCenter
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+g/PCenter
+(center
+ ([{p :p q :q}]
+    (let [c (g/mix p q)] (thi.ng.geom.types.Line3. (- p c) (- q c))))
+ ([{p :p q :q} o]
+    (let [c (- o (g/mix p q))]
+      (thi.ng.geom.types.Line3. (+ p c) (+ q c)))))
+(centroid [this] (g/mix (:p this) (:q this)))
+#+END_SRC
+**** PBoundingSphere
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PBoundingSphere
   (bounding-sphere
    [{p :p q :q}]
-   (g/bounding-sphere* (g/mix p q) (* 0.5 (g/dist p q))))
+   (g/bounding-sphere* (g/mix p q) (c* 0.5 (g/dist p q))))
+#+END_SRC
+**** PVolume
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+  g/PVolume
   (volume [this] 0.0)
 #+END_SRC
 **** PBoundary
@@ -248,36 +270,32 @@
 **** PMagnitude
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/PMagnitude
-  (mag
-   [this] (g/mag (g/sub (:q this) (:p this))))
-  (mag-squared
-   [this] (g/mag-squared (g/sub (:q this) (:p this))))
+  (mag [this] (g/mag (- (:q this) (:p this))))
+  (mag-squared [this] (g/mag-squared (- (:q this) (:p this))))
 #+END_SRC
 **** PNormalize
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/PNormalize
   (normalize
    ([{p :p :as this}]
-      (let [d (g/normalize (g/sub (:q this) p))]
-        (thi.ng.geom.types.Line3. p (g/add p d))))
+      (let [d (g/normalize (- (:q this) p))]
+        (thi.ng.geom.types.Line3. p (+ p d))))
    ([{p :p :as this} n]
-      (let [d (g/normalize (g/sub (:q this) p) n)]
-        (thi.ng.geom.types.Line3. p (g/add p d)))))
-  (normalized?
-   [this] (m/delta= 1.0 (g/mag-squared this)))
+      (let [d (g/normalize (- (:q this) p) n)]
+        (thi.ng.geom.types.Line3. p (+ p d)))))
+  (normalized? [this] (m/delta= 1.0 (g/mag-squared this)))
 #+END_SRC
 **** PReflect
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/PReflect
-  (reflect
-   [this r]
+  (reflect [this r]
    (thi.ng.geom.types.Line3. (g/reflect (:p this) r) (g/reflect (:q this) r)))
 #+END_SRC
 **** TODO PIntersectable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
 
 #+END_SRC
-**** End of implementations
+**** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   )
 #+END_SRC
@@ -305,36 +323,40 @@
                   1 2))
               0))
 #+END_SRC
-**** PShape
+**** PArea
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
-  g/PShape
-  (area [this] 0)
-  (bounds
-   [this] (g/bounding-rect* (:points this)))
-  (center
-   ([this]
-      (g/translate this (g/invert (g/centroid this))))
-   ([this o]
-      (g/translate this (g/sub (vec2 o) (g/centroid this)))))
-  (centroid
-   [this] (g/centroid* (:points this)))
-  (width
-   [this] (g/axis-range* 0 (:points this)))
-  (height
-   [this] (g/axis-range* 1 (:points this)))
-  (depth [this] 0)
+g/PArea
+(area [this] 0)
 #+END_SRC
-**** PShape2
+**** PBounds
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
-  g/PShape2
-  (bounding-circle
-   [this]
-   (g/bounding-circle* (g/centroid this) (:points this)))
-  (circumference
-   [{points :points}]
-   (d/reduce-pairs + g/dist (concat points [(first points)])))
+g/PBounds
+(bounds [this] (g/bounding-rect* (:points this)))
+(width [this] (g/axis-range* 0 (:points this)))
+(height [this] (g/axis-range* 1 (:points this)))
+(depth [this] 0)
 #+END_SRC
-**** PBoundary
+**** PCenter
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+g/PCenter
+(center
+ ([this] (g/translate this (g/invert (g/centroid this))))
+ ([this o] (g/translate this (g/sub (vec2 o) (g/centroid this)))))
+(centroid [this] (g/centroid* (:points this)))
+#+END_SRC
+**** PBoundingCircle
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+g/PBoundingCircle
+(bounding-circle
+ [this] (g/bounding-circle* (g/centroid this) (:points this)))
+#+END_SRC
+**** PCircumference
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
+g/PCircumference
+(circumference
+ [{points :points}] (d/reduce-pairs c+ g/dist (concat points [(first points)])))
+#+END_SRC
+**** TODO PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/PBoundary
   (classify-point [this v])
@@ -362,13 +384,12 @@
    (->> (:points this)
         (d/successive-nth 2)
         (map #(g/dist (% 0) (% 1)))
-        (reduce +)))
-  (mag-squared
-   [this]
+        (reduce c+)))
+  (mag-squared [this]
    (->> (:points this)
         (d/successive-nth 2)
         (map #(g/dist-squared (% 0) (% 1)))
-        (reduce +)))
+        (reduce c+)))
 #+END_SRC
 **** PReflect
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
@@ -386,18 +407,15 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/PTransformable
   (scale
-   ([this s]
-      (thi.ng.geom.types.LineStrip2. (mapv #(g/scale % s) (:points this))))
-   ([this sx sy]
-      (thi.ng.geom.types.LineStrip2. (mapv #(g/scale % sx sy) (:points this)))))
+   ([this s] (thi.ng.geom.types.LineStrip2. (mapv #(* % s) (:points this))))
+   ([this sx sy] (thi.ng.geom.types.LineStrip2. (mapv #(* % sx sy) (:points this)))))
   (scale-size
    [this s]
    (let [c (g/centroid this)]
      (thi.ng.geom.types.LineStrip2.
-      (mapv #(-> % (g/sub c) (g/madd s c)) (:points this)))))
+      (mapv #(-> % (- c) (g/madd s c)) (:points this)))))
   (translate
-   [this t]
-   (thi.ng.geom.types.LineStrip2. (mapv #(g/add % t) (:points this))))
+   [this t] (thi.ng.geom.types.LineStrip2. (mapv #(+ % t) (:points this))))
 #+END_SRC
 **** TODO PExtrudeable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
@@ -408,14 +426,14 @@
    (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size this scale)))
          off (vec3 0 0 depth)
          bottom (map vec3 points)
-         top (map #(g/add off %) tpoints)]
+         top (map #(+ off %) tpoints)]
      (apply mesh/mesh3
             (mapcat
              (fn [[a1 a2] [b1 b2]] [[b1 a1 a2] [b2 b1 a2]])
              (d/successive-nth 2 bottom)
              (d/successive-nth 2 top)))))
 #+END_SRC
-**** End of implementations
+**** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   )
 #+END_SRC

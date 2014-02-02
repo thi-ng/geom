@@ -1,3 +1,7 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
 * Namespace: thi.ng.geom.path
 ** TODO add path builder
 #+BEGIN_SRC clojure
@@ -8,10 +12,12 @@
    (close))
 #+END_SRC
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.path
+    (:refer-clojure :exclude [* - +])
+    (:refer-clojure :rename {+ c+, - c-, * c*})
     (:require
-     [thi.ng.geom.core :as g :refer [vec2]]
+     [thi.ng.geom.core :as g :refer [+ - * vec2]]
      [thi.ng.geom.bezier :as b]
      [thi.ng.geom.line :as l]
      ,#+clj [clojure.xml :as xml])
@@ -125,18 +131,33 @@
    [this res]
    (first (sample-segments* res (:segments this))))
 #+END_SRC
-*** PShape
+*** PArea
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
-  g/PShape
+  g/PArea
   (area [this])
-  (bound [this])
-  (center [this])
 #+END_SRC
-*** PShape2
+*** PBounds
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
-  g/PShape2
-  (bounding-cicle [this])
-  (circumference [this])
+  g/PBounds
+  (bounds [this])
+#+END_SRC
+*** PCenter
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  g/PCenter
+  (center
+   ([this] nil)
+   ([this o] nil))
+  (centroid [this])
+#+END_SRC
+*** PBoundingCircle
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  g/PBoundingCircle
+  (bounding-cicle [this] nil)
+#+END_SRC
+*** PCircumference
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
+  g/PCircumference
+  (circumference [this] nil)
 #+END_SRC
 *** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
@@ -159,14 +180,14 @@
         (map #(g/sample-uniform* udist include-last? %))
         (first)))
 #+END_SRC
-*** PPolygonizable
+*** TODO PPolygonizable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
   g/PPolygonizable
   (as-polygon
    ([this] nil)
    ([this res] nil))
 #+END_SRC
-*** End of implementation
+*** End of implementation                                          :noexport:
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
   )
 #+END_SRC

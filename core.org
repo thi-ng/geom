@@ -15,7 +15,7 @@
 #+INCLUDE: "types.org" :minlevel 3
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx :mkdirp yes
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.core
     (:refer-clojure :exclude [* - + min max])
     (:refer-clojure :rename {+ c+, - c-, * c*, min cmin, max cmax})

@@ -1,12 +1,18 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
 * thi.ng.geom.plane
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.plane
+    (:refer-clojure :exclude [* - +])
+    (:refer-clojure :rename {+ c+, - c-, * c*})
     (:require
      [thi.ng.common.math.core :as m :refer [*eps*]]
-     [thi.ng.geom.core :as g :refer [vec3]]
+     [thi.ng.geom.core :as g :refer [+ - * vec3]]
      [thi.ng.geom.mesh :refer [mesh3]])
-    #+clj
+    ,#+clj
     (:import
      [thi.ng.geom.types Plane]))
 #+END_SRC
@@ -21,51 +27,51 @@
 #+END_SRC
 *** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
-    g/PBoundary
-    (classify-point
-      [this q]
-      (-> (g/sub q (:p this)) (g/normalize) (g/dot (:n this)) (m/signum *eps*)))
-    (closest-point
-      [{p :p n :n} q]
-      (let [sn (- (g/dot n (g/sub q p)))]
-        (g/add q (g/normalize n sn))))
+  g/PBoundary
+  (classify-point
+    [this q]
+    (-> (- q (:p this)) (g/normalize) (g/dot (:n this)) (m/signum *eps*)))
+  (closest-point
+    [{p :p n :n} q]
+    (let [sn (c- (g/dot n (- q p)))]
+      (+ q (g/normalize n sn))))
 #+END_SRC
 *** PIntersectable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
-    g/PIntersectable
-    (intersect-line
-      [{p :p n :n} {lp :p lq :q}]
-      (let [u (g/sub lq lp)
-            w (g/sub lp p)
-            d (g/dot n u)
-            dn (- (g/dot n w))]
-        (if (m/delta= d 0.0 *eps*)
-          {:type (if (zero? dn) :on-plane :parallel)}
-          (let [du (/ dn d)
-                i (g/add lp (g/scale u du))]
-            (if (m/in-range? 0.0 1.0 du)
-              {:type :intersect :p i}
-              {:type :intersect-outside :p i})))))
+  g/PIntersectable
+  (intersect-line
+    [{p :p n :n} {lp :p lq :q}]
+    (let [u (- lq lp)
+          w (- lp p)
+          d (g/dot n u)
+          dn (c- (g/dot n w))]
+      (if (m/delta= d 0.0 *eps*)
+        {:type (if (zero? dn) :on-plane :parallel)}
+        (let [du (/ dn d)
+              i (+ lp (g/scale u du))]
+          (if (m/in-range? 0.0 1.0 du)
+            {:type :intersect :p i}
+            {:type :intersect-outside :p i})))))
 #+END_SRC
 *** PMeshable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
   g/PMeshable
   (as-mesh
    [{p :p n :n :as this} {:keys [width height size] :or {size 1.0}}]
-   (let [w (* (or width size) 0.5)
-         h (* (or height size) 0.5)
+   (let [w (c* (or width size) 0.5)
+         h (c* (or height size) 0.5)
          flip? (m/delta= -1.0 (g/dot n g/V3_Z))
          q (if flip?
              (g/quat 0 0 0 1)
              (g/alignment-quat n g/V3_Z))
          [a b c d] (map #(g/add p (g/transform-vector q %))
-                        [(vec3 (- w) (- h) 0) (vec3 (- w) h 0)
-                         (vec3 w (- h) 0) (vec3 w h 0)])]
+                        [(vec3 (c- w) (c- h) 0) (vec3 (c- w) h 0)
+                         (vec3 w (c- h) 0) (vec3 w h 0)])]
      (if flip?
        (mesh3 [a b d] [a d c])
        (mesh3 [a d b] [a c d]))))
 #+END_SRC
-*** End implementation
+*** End implementation                                             :noexport:
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
   )
 #+END_SRC
@@ -78,8 +84,8 @@
     (let [da (g/dot a na) db (g/dot b nb)]
       (when-not (or (m/delta= na nb) (m/delta= da db))
         (let [od (g/dot na nb)
-              det (/ 1.0 (- 1.0 (* od od)))
-              ta (* det (- da (* db od)))
-              tb (* det (- db (* da od)))]
+              det (/ 1.0 (- 1.0 (c* od od)))
+              ta (c* det (- da (c* db od)))
+              tb (c* det (- db (c* da od)))]
           [(g/madd na ta (g/scale nb tb)) (g/cross na nb)]))))
 #+END_SRC

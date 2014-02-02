@@ -1,11 +1,17 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
 * thi.ng.geom.circle
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.circle
+    (:refer-clojure :exclude [+ - * min max])
+    (:refer-clojure :rename {+ c+, - c-, * c*})
     (:require
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [PI TWO_PI *eps*]]
-     [thi.ng.geom.core :as g :refer [vec2 vec3 *resolution*]]
+     [thi.ng.geom.core :as g :refer [+ - * vec2 vec3 *resolution*]]
      [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])
     #+clj
@@ -14,26 +20,26 @@
 #+END_SRC
 ** Constructor
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-(defn circle
-  ([] (thi.ng.geom.types.Circle. (vec2) 1.0))
-  ([r] (thi.ng.geom.types.Circle. (vec2) r))
-  ([p r] (thi.ng.geom.types.Circle. (vec2 p) r))
-  ([x y r] (thi.ng.geom.types.Circle. (vec2 x y) r)))
+  (defn circle
+    ([] (thi.ng.geom.types.Circle. (vec2) 1.0))
+    ([r] (thi.ng.geom.types.Circle. (vec2) r))
+    ([p r] (thi.ng.geom.types.Circle. (vec2 p) r))
+    ([x y r] (thi.ng.geom.types.Circle. (vec2 x y) r)))
 #+END_SRC
 ** Type specific functions
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
   (defn intersect-circle
     [{p :p r1 :r} {q :p r2 :r}]
-    (let [delta (g/sub q p)
+    (let [delta (- q p)
           d (g/mag delta)]
-      (when (and (<= d (+ r1 r2)) (>= d (m/abs (- r1 r2))))
-        (let [a (/ (+ (- (* r1 r1) (* r2 r2)) (* d d)) (* 2.0 d))
+      (when (and (<= d (c+ r1 r2)) (>= d (m/abs (c- r1 r2))))
+        (let [a (/ (c+ (c- (c* r1 r1) (c* r2 r2)) (c* d d)) (c* 2.0 d))
               invd (/ 1.0 d)
-              p (g/madd delta (* a invd) p)
-              h (Math/sqrt (- (* r1 r1) (* a a)))
-              perp (g/scale (g/normal delta) (* h invd))]
-          [(g/add p perp) (g/sub p perp)]))))
-
+              p (g/madd delta (c* a invd) p)
+              h (Math/sqrt (c- (c* r1 r1) (c* a a)))
+              perp (* (g/normal delta) (c* h invd))]
+          [(+ p perp) (- p perp)]))))
+  
   (defn tangent-points
     [{p :p :as c} q]
     (let [m (g/mix p q)]
@@ -57,51 +63,63 @@
         (g/edges* #(thi.ng.geom.types.Line2. (% 0) (% 1))
                   (concat verts [(first verts)])))))
 #+END_SRC
-*** PShape
+*** PArea
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-  g/PShape
-  (area [{r :r}] (* PI (* r r)))
+  g/PArea
+  (area [{r :r}] (c* PI (c* r r)))
+#+END_SRC
+*** PBounds
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  g/PBounds
   (bounds
    [{p :p r :r}]
-   (let [d (* 2 r)] (thi.ng.geom.types.Rect. (g/sub p r) d d)))
+   (let [d (c* 2 r)] (thi.ng.geom.types.Rect. (- p r) d d)))
+  (width  [this] (c* 2.0 (:r this)))
+  (height [this] (c* 2.0 (:r this)))
+  (depth  [this] 0)
+#+END_SRC
+*** PCenter
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  g/PCenter
   (center
    ([this] (thi.ng.geom.types.Circle. (vec2) (:r this)))
    ([this p] (thi.ng.geom.types.Circle. (vec2 p) (:r this))))
   (centroid [this] (:p this))
-  (width  [this] (* 2.0 (:r this)))
-  (height [this] (* 2.0 (:r this)))
-  (depth  [this] 0)
 #+END_SRC
-*** PShape2
+*** PBoundingCircle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-    g/PShape2
-    (bounding-circle [this] this)
-    (circumference [this] (* TWO_PI (:r this)))
+  g/PShape2
+  (bounding-circle [this] this)
+#+END_SRC
+*** PCircumference
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
+  g/PCircumference
+  (circumference [this] (c* TWO_PI (:r this)))
 #+END_SRC
 *** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
   g/PBoundary
   (classify-point
    [this q]
-   (m/signum (- (:r this) (g/dist (:p this) q)) *eps*))
+   (m/signum (c- (:r this) (g/dist (:p this) q)) *eps*))
   (closest-point
    [{p :p r :r} q]
-   (g/add p (g/normalize (g/sub q p) r)))
+   (+ p (g/normalize (- q p) r)))
   (contains-point?
    [{p :p r :r} q]
-   (<= (g/mag-squared (g/sub p q)) (* r r)))
+   (<= (g/mag-squared (- p q)) (c* r r)))
 #+END_SRC
 *** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
   g/PSampleable
   (point-at
    [this t]
-   (g/add (:p this) (g/as-cartesian (vec2 (:r this) (* t TWO_PI)))))
+   (+ (:p this) (g/as-cartesian (vec2 (:r this) (c* t TWO_PI)))))
   (random-point
    [this] (g/point-at this (m/random)))
   (random-point-inside
    [this]
-   (g/add (:p this) (g/scale (g/randvec2) (m/random (:r this)))))
+   (+ (:p this) (g/randvec2 (m/random (:r this)))))
   (sample-uniform
    [this udist include-last?]
    (let [points (g/vertices this)]
@@ -151,12 +169,13 @@
   g/PExtrudeable
   (extrude
    [this
-    {:keys [res depth offset scale top? bottom?] :or {res *resolution* depth 1.0 scale 1.0 top? true bottom? true}}]
+    {:keys [res depth offset scale top? bottom?]
+     :or {res *resolution* depth 1.0 scale 1.0 top? true bottom? true}}]
    (let [points (g/vertices this res)
-         tpoints (if (= 1.0 scale) points (g/vertices (circle (:p this) (* scale (:r this))) res))
+         tpoints (if (= 1.0 scale) points (g/vertices (circle (:p this) (c* scale (:r this))) res))
          off (or offset (vec3 0 0 depth))
-         points3 (mapv #(vec3 %) points)
-         tpoints3 (mapv #(g/add off %) tpoints)]
+         points3 (mapv vec3 points)
+         tpoints3 (mapv #(+ off %) tpoints)]
      (mesh/into-mesh
       (mesh/mesh3) nil
       (concat
@@ -170,9 +189,9 @@
        (when top?
          (->> tpoints
               (g/tessellate* (:p this))
-              (map (fn [[a b c]] [(g/add off b) (g/add off a) (g/add off c)]))))))))
+              (map (fn [[a b c]] [(+ off b) (+ off a) (+ off c)]))))))))
 #+END_SRC
-*** End of implementations
+*** End of implementations                                         :noexport:
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
   )
 #+END_SRC

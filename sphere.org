@@ -1,13 +1,19 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
 * thi.ng.geom.sphere
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   (ns thi.ng.geom.sphere
+    (:refer-clojure :exclude [* - +])
+    (:refer-clojure :rename {+ c+, - c-, * c*})
     (:require
      [thi.ng.common.math.core :as m :refer [PI *eps*]]
-     [thi.ng.geom.core :as g :refer [vec3 *resolution*]]
+     [thi.ng.geom.core :as g :refer [+ - * vec3 *resolution*]]
      [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])
-    #+clj
+    ,#+clj
     (:import
      [thi.ng.geom.types Line3 AABB Sphere]))
 #+END_SRC
@@ -30,42 +36,53 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
 
 #+END_SRC
-*** PShape
+*** PArea
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
-  g/PShape
+  g/PArea
   (area
-   [{r :r}] (* 4.0 PI r r))
+   [{r :r}] (c* 4.0 PI r r))
+#+END_SRC
+*** PBounds
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
+  g/PBounds
   (bounds
    [this] (thi.ng.geom.types.AABB. (:p this) (vec3 (:r this))))
+  (width  [this] (c* 2.0 (:r this)))
+  (height [this] (c* 2.0 (:r this)))
+  (depth  [this] (c* 2.0 (:r this)))
+#+END_SRC
+*** PCenter
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
+  g/PCenter
   (center
    ([this] (thi.ng.geom.types.Sphere. (vec3) (:r this)))
    ([this p] (thi.ng.geom.types.Sphere. p (:r this))))
   (centroid [this] (:p this))
-  (width  [this] (* 2.0 (:r this)))
-  (height [this] (* 2.0 (:r this)))
-  (depth  [this] (* 2.0 (:r this)))
 #+END_SRC
-*** PShape3
+*** PBoundingSphere
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
-  g/PShape3
+  g/PBoundingSphere
   (bounding-sphere [this] this)
-  (volume
-   [{r :r}] (* (/ 4.0 3.0) PI r r r))
+#+END_SRC
+*** PVolume
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
+  g/PVolume
+  (volume [{r :r}] (* (/ 4.0 3.0) PI r r r))
 #+END_SRC
 *** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   g/PBoundary
   (contains-point?
-   [{p :p r :r} q] (<= (g/dist-squared p q) (* r r)))
+   [{p :p r :r} q] (<= (g/dist-squared p q) (c* r r)))
   (classify-point
    [{p :p r :r} q]
-   (m/signum (- (* r r) (g/dist-squared p q)) *eps*))
+   (m/signum (c- (c* r r) (g/dist-squared p q)) *eps*))
   (random-point-inside
    [this]
-   (g/add (:p this) (g/randvec3 (m/random (:r this)))))
+   (+ (:p this) (g/randvec3 (m/random (:r this)))))
   (random-point
    [this]
-   (g/add (:p this) (g/randvec3 (:r this))))
+   (+ (:p this) (g/randvec3 (:r this))))
 #+END_SRC
 *** TODO PMeshable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
@@ -74,33 +91,9 @@
    ([this] (g/as-mesh this *resolution*))
    ([this res] nil))
 #+END_SRC
-*** End of implementation
+*** End of implementation                                          :noexport:
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   )
 #+END_SRC
 
 
-* COMMENT DITAA
-#+header: :exports results
-#+BEGIN_SRC ditaa :file assets/hello-world.png :cmdline -r
-+---------------------+
-|Amazing stuff!       |
-|cFF0                 |
-|         +-----------+        +------------------------+
-|         |cF60       |        |cF0F                    |
-|         |           |        | o in pink is nice too  |
-|         |           |        |                        +<-----------+
-|         |           |        |                        |            |
-|         |           |        |                        |            |
-+---------+-----+-----+        +------+-----------------+            |
-                |                     |                              |
-                v                     v                              |
-          +-----+---------------------+---+                          |
-          |c0FF                           |                          |
-          | o more bullets                +--------------------------+
-          | o even more                   |
-          +-------------------------------+
-#+END_SRC
-
-#+RESULTS:
-file:assets/hello-world.png

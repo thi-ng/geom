@@ -149,11 +149,11 @@
   (defprotocol PGraph
     (cyclic? [this])
     (edges [this])
-    (nodes [this])
-    (node-valence [this n])
-    (node-neighbors [this n])
-    (node-incoming [this n])
-    (node-outgoing [this n]))
+    (vertices [this])
+    (vertex-valence [this v])
+    (vertex-neighbors [this v])
+    (in-vertices [this v])
+    (out-vertices [this v]))
 #+END_SRC
 *** PGraphConvert
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
