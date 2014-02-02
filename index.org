@@ -17,7 +17,7 @@
 
 ** Injected properties                                             :noexport:
 #+BEGIN_SRC clojure :exports none :noweb-ref version
-0.1.1-SNAPSHOT
+0.2.0-SNAPSHOT
 #+END_SRC
 #+BEGIN_SRC clojure :exports none :noweb-ref project-url
 http://code.thi.ng/geom
@@ -34,7 +34,7 @@ http://code.thi.ng/geom
 [org.clojure/clojure "1.5.1"]
 #+END_SRC
 #+BEGIN_SRC clojure :noweb-ref dep-cljs
-[org.clojure/clojurescript "0.0-1885"]
+[org.clojure/clojurescript "0.0-2156"]
 #+END_SRC
 **** thi.ng/common
 #+BEGIN_SRC clojure :noweb-ref dep-common
@@ -43,11 +43,11 @@ http://code.thi.ng/geom
 *** Development
 **** [[https://github.com/lynaghk/cljx][cljx]]
 #+BEGIN_SRC clojure :noweb-ref dep-cljx
-[com.keminglabs/cljx "0.3.0"]
+[com.keminglabs/cljx "0.3.2"]
 #+END_SRC
 **** [[https://github.com/emezeske/lein-cljsbuild][lein-cljsbuild]]
 #+BEGIN_SRC clojure :noweb-ref dep-cljsbuild
-[lein-cljsbuild "0.3.3"]
+[lein-cljsbuild "1.0.2"]
 #+END_SRC
 
 ** Authors
@@ -65,7 +65,7 @@ http://code.thi.ng/geom
 #+END_SRC
 
 ** Leiningen project file                                          :noexport:
-#+BEGIN_SRC clojure :tangle babel/project.clj :noweb yes
+#+BEGIN_SRC clojure :tangle babel/project.clj :noweb yes :mkdirp yes :padline no
   (defproject thi.ng/geom "<<version>>"
     :description "Linked Data Kit - a Clojure toolkit for the Semantic Web"
     :url "<<project-url>>"
