@@ -32,7 +32,7 @@
 ** Error handling
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core.cljx
   (defn throw!
-    [msg] (throw
+    [^String msg] (throw
            ,#+clj  (IllegalArgumentException. msg)
            ,#+cljs (js/Error. msg)))
 
@@ -191,7 +191,7 @@
           samples (loop [t 0.0 i 1 acc []]
                     (if (< t 1.0)
                       (let [ct (c* t total)
-                            i (loop [i i] (if (>= ct (idx i)) (recur (inc i)) i))
+                            i (int (loop [i i] (if (>= ct (idx i)) (recur (inc i)) i)))
                             p (nth points (dec i))
                             q (nth points i)
                             pi (idx (dec i))

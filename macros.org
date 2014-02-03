@@ -3,25 +3,6 @@
 #+EXPORT_EXCLUDE_TAGS: noexport
 
 * Helper macros
-** Vector operations
-#+BEGIN_SRC clojure :noweb-ref vec3-ops
-  (defmacro vec3-op-1
-    [type op a meta]
-    `(if (instance? ~type ~a)
-       (let [^{:tag t#} a# ~a]
-         (new ~type
-              (~op 'x (.-x a#))
-              (~op 'y (.-y a#))
-              (~op 'z (.-z a#))
-              ~meta))
-      (if (number? a)
-        (new ~type (~op 'x a) (~op 'y a) (~op 'z a) ~meta)
-        (new ~type
-             (~op x (nth a 0 0.0))
-             (~op y (nth a 1 0.0))
-             (~op z (nth a 2 0.0))
-             ~meta))))
-#+END_SRC
 ** Matrix item calculation
 #+BEGIN_SRC clojure :noweb-ref mat-ops  
   (defmacro mat-item
@@ -53,8 +34,6 @@
       (:refer-clojure :exclude [* - +])
       (:refer-clojure :rename {+ c+, - c-, * c*}))
   
-  <<vec3-ops>>
-
   <<mat-ops>>
 #+END_SRC
 #+BEGIN_SRC clojure :tangle babel/src-clj/thi/ng/geom/macros/voxel.clj :noweb yes :mkdirp yes :padline no
