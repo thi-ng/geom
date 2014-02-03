@@ -67,7 +67,7 @@
   ,#+clj (count [_] 2)
   ,#+clj (length [_] 2)
   ,#+clj (containsKey [_ k] (not (nil? (#{0 1 :x :y} k))))
-  ,#+clj (entryAt [this k] (map-entry k (case k 0 x, 1 y, (key-error k))))
+  ,#+clj (entryAt [this k] (map-entry k (case (int k) 0 x, 1 y, (key-error k))))
   ,#+clj (assoc [_ k v]
           (case k
             :x (Vec2. v y _meta) :y (Vec2. x v _meta)
@@ -436,7 +436,7 @@
   ,#+clj (count [_] 3)
   ,#+clj (length [_] 3)
   ,#+clj (containsKey [_ k] (not (nil? (#{0 1 2 :x :y :z} k))))
-  ,#+clj (entryAt [this k] (map-entry k (case k 0 x, 1 y, 2 z, (key-error k))))
+  ,#+clj (entryAt [this k] (map-entry k (case (int k) 0 x, 1 y, 2 z, (key-error k))))
   ,#+clj (assoc [_ k v]
           (case k
             :x (Vec3. v y z _meta)
