@@ -32,12 +32,17 @@
   ,#+cljs (-lookup [this k] (swizzle2 this k nil))
   ,#+cljs (-lookup [this k nf] (swizzle2 this k nf))
   
+  ,#+clj java.util.concurrent.Callable
+  ,#+clj (call [this] (.invoke ^clojure.lang.IFn this))
+  ,#+clj java.lang.Runnable
+  ,#+clj (run [this] (.invoke ^clojure.lang.IFn this))
+  
   ,#+clj clojure.lang.IFn
   ,#+clj (invoke [this k] (swizzle2 this k nil))
   ,#+clj (applyTo
          [this args]
          (condp = (count args)
-           1 (swizzle2 this (first args))
+           1 (swizzle2 this (first args) nil)
            2 (swizzle2 this (first args) (second args))
            (arity-error (count args))))
   
@@ -46,20 +51,29 @@
   ,#+cljs (-applyTo
           [this args]
           (condp = (count args)
-            1 (swizzle2 this (first args))
+            1 (swizzle2 this (first args) nil)
             2 (swizzle2 this (first args) (second args))
             (arity-error (count args))))
+  
+  ,#+clj clojure.lang.IMapEntry
+  ,#+clj java.util.Map$Entry
+  ,#+clj (key [_] x)
+  ,#+clj (getKey [_] x)
+  ,#+clj (val [_] y)
+  ,#+clj (getValue [_] y)
   
   ,#+clj clojure.lang.Associative
   ,#+clj clojure.lang.IPersistentVector
   ,#+clj (count [_] 2)
   ,#+clj (length [_] 2)
   ,#+clj (containsKey [_ k] (not (nil? (#{0 1 :x :y} k))))
-  ,#+clj (entryAt [this k] (map-entry k (swizzle2 this k nil)))
+  ,#+clj (entryAt [this k] (map-entry k (case k 0 x, 1 y, (key-error k))))
   ,#+clj (assoc [_ k v]
-          (condp = k
-            0 (Vec2. v y _meta) 1 (Vec2. x v _meta)
+          (case k
             :x (Vec2. v y _meta) :y (Vec2. x v _meta)
+            0 (Vec2. v y _meta) 1 (Vec2. x v _meta)
+            :xy (Vec2. (v 0) (v 1) _meta)
+            :yx (Vec2. (v 1) (v 0) _meta)
             (key-error k)))
   ,#+clj (assocN [_ k v]
                 (condp = k 0 (Vec2. v y _meta) 1 (Vec2. x v _meta) (key-error k)))
@@ -70,13 +84,21 @@
   ,#+cljs IVector
   ,#+cljs (-contains-key? [this k] (not (nil? (#{0 1 :x :y} k))))
   ,#+cljs (-assoc [this k v]
-                 (condp = k
-                   0 (Vec2. v y _meta) 1 (Vec2. x v _meta)
+                 (case k
                    :x (Vec2. v y _meta) :y (Vec2. x v _meta)
+                   0 (Vec2. v y _meta) 1 (Vec2. x v _meta)
+                   :xy (Vec2. (v 0) (v 1) _meta)
+                   :yx (Vec2. (v 1) (v 0) _meta)
                    (key-error k)))
   ,#+cljs (-assoc-n [this k v]
-                   (condp = k
+                   (case k
                      0 (Vec2. v y _meta) 1 (Vec2. x v _meta) (key-error k)))
+  
+  ,#+clj java.util.Collection
+  ,#+clj (isEmpty [this] false)
+  ,#+clj (iterator [this] (.iterator ^java.util.Collection (list x y)))
+  ,#+clj (toArray [this] (double-array 2 [x y]))
+  ,#+clj (size [this] 2)
   
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.Indexed
@@ -98,9 +120,9 @@
                  (and (clojure.lang.Util/equiv x (.-x ^Vec2 o))
                       (clojure.lang.Util/equiv y (.-y ^Vec2 o)))
                  (and (instance? java.util.Collection o)
-                       (= 2 (count o))
-                       (clojure.lang.Util/equiv x (nth o 0))
-                       (clojure.lang.Util/equiv y (nth o 1)))))
+                      (= 2 (count o))
+                      (clojure.lang.Util/equiv x (nth o 0))
+                      (clojure.lang.Util/equiv y (nth o 1)))))
   ,#+clj (equals [this o]
                 (if (instance? Vec2 o)
                   (and (clojure.lang.Util/equals x (.-x ^Vec2 o))
@@ -169,6 +191,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PMathOps
   (abs [this] (Vec2. (m/abs x) (m/abs y) _meta))
+  (+ [this] this)
   (+ [this a]
      (if (instance? Vec2 a)
        (Vec2. (c+ x (.-x ^Vec2 a)) (c+ y (.-y ^Vec2 a)) _meta)
@@ -178,9 +201,11 @@
   (+ [this a b]
      (if (number? a)
        (Vec2. (c+ x a) (c+ y b) _meta)
-       (let [[ax ay] a [bx by] b]
+       (let [[ax ay] a
+             [bx by] (if (number? b) [b b] b)]
          (Vec2. (c+ (c+ x ax) bx) (c+ (c+ y ay) by) _meta))))
   
+  (- [this] (Vec2. (c- x) (c- y) _meta))
   (- [this a]
      (if (instance? Vec2 a)
        (Vec2. (c- x (.-x ^Vec2 a)) (c- y (.-y ^Vec2 a)) _meta)
@@ -190,9 +215,11 @@
   (- [this a b]
      (if (number? a)
        (Vec2. (c- x a) (c- y b) _meta)
-       (let [[ax ay] a [bx by] b]
+       (let [[ax ay] a
+             [bx by] (if (number? b) [b b] b)]
          (Vec2. (c- (c- x ax) bx) (c- (c- y ay) by) _meta))))
   
+  (* [this] this)
   (* [this a]
      (if (number? a)
        (Vec2. (c* x a) (c* y a) _meta)
@@ -202,7 +229,8 @@
   (* [this a b]
      (if (number? a)
        (Vec2. (c* x a) (c* y b) _meta)
-       (let [[ax ay] a [bx by] b]
+       (let [[ax ay] a
+             [bx by] (if (number? b) [b b] b)]
          (Vec2. (c* (c* x ax) bx) (c* (c* y ay) by) _meta))))
   
   (div [this] (Vec2. (/ 1.0 x) (/ 1.0 y) _meta))
@@ -215,7 +243,8 @@
   (div [this a b]
        (if (number? a)
          (Vec2. (/ x a) (/ y b) _meta)
-         (let [[ax ay] a [bx by] b]
+         (let [[ax ay] a
+               [bx by] (if (number? b) [b b] b)]
            (Vec2. (/ (/ x ax) bx) (/ (/ y ay) by) _meta))))
   
   (madd
@@ -355,8 +384,9 @@
 #+END_SRC
 *** Override print methods
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
-  (prefer-method clojure.pprint/simple-dispatch clojure.lang.IPersistentVector clojure.lang.ISeq)
-  (defmethod print-method Vec2 [o ^java.io.Writer w] (.write w (.toString o)))
+  #+clj (require 'clojure.pprint)
+  #+clj (prefer-method clojure.pprint/simple-dispatch clojure.lang.IPersistentVector clojure.lang.ISeq)
+  #+clj (defmethod print-method Vec2 [o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 ** 3D
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
@@ -379,25 +409,48 @@
   ,#+cljs (-lookup [this k] (swizzle3 this k nil))
   ,#+cljs (-lookup [this k nf] (swizzle3 this k nf))
   
+  ,#+clj java.util.concurrent.Callable
+  ,#+clj (call [this] (.invoke ^clojure.lang.IFn this))
+  ,#+clj java.lang.Runnable
+  ,#+clj (run [this] (.invoke ^clojure.lang.IFn this))
+  
   ,#+clj clojure.lang.IFn
   ,#+clj (invoke [this k] (swizzle3 this k nil))
+  ,#+clj (applyTo
+         [this args]
+         (condp = (count args)
+           1 (swizzle3 this (first args) nil)
+           2 (swizzle3 this (first args) (second args))
+           (arity-error (count args))))
   ,#+cljs IFn
   ,#+cljs (-invoke [this k] (swizzle3 this k nil))
+  ,#+cljs (-applyTo
+          [this args]
+          (condp = (count args)
+            1 (swizzle3 this (first args) nil)
+            2 (swizzle3 this (first args) (second args))
+            (arity-error (count args))))
   
   ,#+clj clojure.lang.Associative
   ,#+clj clojure.lang.IPersistentVector
   ,#+clj (count [_] 3)
   ,#+clj (length [_] 3)
   ,#+clj (containsKey [_ k] (not (nil? (#{0 1 2 :x :y :z} k))))
-  ,#+clj (entryAt [_ k])
+  ,#+clj (entryAt [this k] (map-entry k (case k 0 x, 1 y, 2 z, (key-error k))))
   ,#+clj (assoc [_ k v]
           (case k
-            0 (Vec3. v y z _meta)
-            1 (Vec3. x v z _meta)
-            2 (Vec3. x y v _meta)
             :x (Vec3. v y z _meta)
             :y (Vec3. x v z _meta)
             :z (Vec3. x y v _meta)
+            0 (Vec3. v y z _meta)
+            1 (Vec3. x v z _meta)
+            2 (Vec3. x y v _meta)
+            :xy (Vec3. (v 0) (v 1) z _meta) ;; (assoc [x y z] :xy [a b]) => [a b z]
+            :yx (Vec3. (v 1) (v 0) z _meta) ;; (assoc [x y z] :yx [a b]) => [b a z]
+            :xz (Vec3. (v 0) y (v 1) _meta) ;; (assoc [x y z] :xz [a b]) => [a y b]
+            :zx (Vec3. (v 1) y (v 0) _meta) ;; (assoc [x y z] :zx [a b]) => [b y a]
+            :yz (Vec3. x (v 0) (v 1) _meta) ;; (assoc [x y z] :yz [a b]) => [x a b]
+            :zy (Vec3. x (v 1) (v 0) _meta) ;; (assoc [x y z] :zy [a b]) => [x b a]
             (key-error k)))
   ,#+clj (assocN
          [_ k v]
@@ -416,12 +469,18 @@
   ,#+cljs (-assoc
           [this k v]
           (case k
-            0 (Vec3. v y z _meta)
-            1 (Vec3. x v z _meta)
-            2 (Vec3. x y v _meta)
             :x (Vec3. v y z _meta)
             :y (Vec3. x v z _meta)
             :z (Vec3. x y v _meta)
+            0 (Vec3. v y z _meta)
+            1 (Vec3. x v z _meta)
+            2 (Vec3. x y v _meta)
+            :xy (Vec3. (v 0) (v 1) z _meta) ;; (assoc [x y z] :xy [a b]) => [a b z]
+            :yx (Vec3. (v 1) (v 0) z _meta) ;; (assoc [x y z] :yx [a b]) => [b a z]
+            :xz (Vec3. (v 0) y (v 1) _meta) ;; (assoc [x y z] :xz [a b]) => [a y b]
+            :zx (Vec3. (v 1) y (v 0) _meta) ;; (assoc [x y z] :zx [a b]) => [b y a]
+            :yz (Vec3. x (v 0) (v 1) _meta) ;; (assoc [x y z] :yz [a b]) => [x a b]
+            :zy (Vec3. x (v 1) (v 0) _meta) ;; (assoc [x y z] :zy [a b]) => [x b a]
             (key-error k)))
   ,#+cljs (-assoc-n
           [this k v]
@@ -430,6 +489,12 @@
             1 (Vec3. x v z _meta)
             2 (Vec3. x y v _meta)
             (key-error k)))
+  
+  ,#+clj java.util.Collection
+  ,#+clj (isEmpty [this] false)
+  ,#+clj (iterator [this] (.iterator ^java.util.Collection (list x y z)))
+  ,#+clj (toArray [this] (double-array 3 [x y z]))
+  ,#+clj (size [this] 3)
   
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.Indexed
@@ -557,6 +622,7 @@
 *** PMathOps
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PMathOps
+  (+ [this] this)
   (+ [this a]
      (if (instance? Vec3 a)
        (Vec3. (c+ x (.-x ^Vec3 a)) (c+ y (.-y ^Vec3 a)) (c+ z (.-z ^Vec3 a)) _meta)
@@ -566,14 +632,18 @@
   (+ [this a b]
      (if (number? a)
        (Vec3. (c+ x a) (c+ y b) z _meta)
-       (let [[ax ay az] a [bx by bz] b]
+       (let [[ax ay az] a
+             [bx by bz] (if (number? b) [b b b] b)]
          (Vec3. (c+ (c+ x ax) bx) (c+ (c+ y ay) by) (c+ (c+ z az) bz) _meta))))
   (+ [this a b c]
      (if (number? a)
        (Vec3. (c+ x a) (c+ y b) (c+ z c) _meta)
-       (let [[ax ay az] a [bx by bz] b [cx cy cz] c]
+       (let [[ax ay az] a
+             [bx by bz] (if (number? b) [b b b] b)
+             [cx cy cz] (if (number? c) [c c c] c)]
          (Vec3. (c+ (c+ (c+ x ax) bx) cx) (c+ (c+ (c+ y ay) by) cy) (c+ (c+ (c+ z az) bz) cz) _meta))))
   
+  (- [this] (Vec3. (c- x) (c- y) (c- z) _meta))
   (- [this a]
      (if (instance? Vec3 a)
        (Vec3. (c- x (.-x ^Vec3 a)) (c- y (.-y ^Vec3 a)) (c- z (.-z ^Vec3 a)) _meta)
@@ -583,14 +653,18 @@
   (- [this a b]
      (if (number? a)
        (Vec3. (c- x a) (c- y b) z _meta)
-       (let [[ax ay az] a [bx by bz] b]
+       (let [[ax ay az] a
+             [bx by bz] (if (number? b) [b b b] b)]
          (Vec3. (c- (c- x ax) bx) (c- (c- y ay) by) (c- (c- z az) bz) _meta))))
   (- [this a b c]
      (if (number? a)
        (Vec3. (c- x a) (c- y b) (c- z c) _meta)
-       (let [[ax ay az] a [bx by bz] b [cx cy cz] c]
+       (let [[ax ay az] a
+             [bx by bz] (if (number? b) [b b b] b)
+             [cx cy cz] (if (number? c) [c c c] c)]
          (Vec3. (c- (c- (c- x ax) bx) cx) (c- (c- (c- y ay) by) cy) (c- (c- (c- z az) bz) cz) _meta))))
   
+  (* [this] this)
   (* [this a]
      (if (number? a)
        (Vec3. (c* x a) (c* y a) (c* z a) _meta)
@@ -600,12 +674,15 @@
   (* [this a b]
      (if (number? a)
        (Vec3. (c* x a) (c* y b) z _meta)
-       (let [[ax ay az] a [bx by bz] b]
+       (let [[ax ay az] a
+             [bx by bz] (if (number? b) [b b b] b)]
          (Vec3. (c* (c* x ax) bx) (c* (c* y ay) by) (c* (c* z az) bz) _meta))))
   (* [this a b c]
      (if (number? a)
        (Vec3. (c* x a) (c* y b) (c* z c) _meta)
-       (let [[ax ay az] a [bx by bz] b [cx cy cz] c]
+       (let [[ax ay az] a
+             [bx by bz] (if (number? b) [b b b] b)
+             [cx cy cz] (if (number? c) [c c c] c)]
          (Vec3. (c* (c* (c* x ax) bx) cx) (c* (c* (c* y ay) by) cy) (c* (c* (c* z az) bz) cz) _meta))))
   
   (div [this] (Vec3. (/ x) (/ y) (/ z) _meta))
@@ -618,12 +695,15 @@
   (div [this a b]
        (if (number? a)
          (Vec3. (/ x a) (/ y b) z _meta)
-         (let [[ax ay az] a [bx by bz] b]
+         (let [[ax ay az] a
+               [bx by bz] (if (number? b) [b b b] b)]
            (Vec3. (/ (/ x ax) bx) (/ (/ y ay) by) (/ (/ z az) bz) _meta))))
   (div [this a b c]
        (if (number? a)
          (Vec3. (/ x a) (/ y b) (/ z c) _meta)
-         (let [[ax ay az] a [bx by bz] b [cx cy cz] c]
+         (let [[ax ay az] a
+               [bx by bz] (if (number? b) [b b b] b)
+               [cx cy cz] (if (number? c) [c c c] c)]
            (Vec3. (/ (/ (/ x ax) bx) cx) (/ (/ (/ y ay) by) cy) (/ (/ (/ z az) bz) cz) _meta))))
   
   (madd [this a b]
@@ -754,7 +834,7 @@
 #+END_SRC
 *** Override print methods
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
-  (defmethod print-method Vec3 [o ^java.io.Writer w] (.write w (.toString o)))
+  #+clj (defmethod print-method Vec3 [o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 ** Constants
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx

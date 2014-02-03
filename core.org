@@ -23,8 +23,8 @@
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
      [thi.ng.geom.types :as types]
-    #+clj [thi.ng.geom.macros.matrix :as mm])
-    #+cljs (:require-macros [thi.ng.geom.macros.matrix :as mm])
+    #+clj [thi.ng.geom.macros.core :as mc])
+    #+cljs (:require-macros [thi.ng.geom.macros.core :as mc])
     #+clj
     (:import
      [thi.ng.geom.types Circle Rect AABB Sphere]))

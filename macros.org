@@ -3,12 +3,27 @@
 #+EXPORT_EXCLUDE_TAGS: noexport
 
 * Helper macros
+** Vector operations
+#+BEGIN_SRC clojure :noweb-ref vec3-ops
+  (defmacro vec3-op-1
+    [type op a meta]
+    `(if (instance? ~type ~a)
+       (let [^{:tag t#} a# ~a]
+         (new ~type
+              (~op 'x (.-x a#))
+              (~op 'y (.-y a#))
+              (~op 'z (.-z a#))
+              ~meta))
+      (if (number? a)
+        (new ~type (~op 'x a) (~op 'y a) (~op 'z a) ~meta)
+        (new ~type
+             (~op x (nth a 0 0.0))
+             (~op y (nth a 1 0.0))
+             (~op z (nth a 2 0.0))
+             ~meta))))
+#+END_SRC
 ** Matrix item calculation
-#+BEGIN_SRC clojure :noweb-ref mat-item
-  (ns thi.ng.geom.macros.matrix
-    (:refer-clojure :exclude [* - +])
-    (:refer-clojure :rename {+ c+, - c-, * c*}))
-  
+#+BEGIN_SRC clojure :noweb-ref mat-ops  
   (defmacro mat-item
     ([a1 a2 b1 b2]
        `(c+ (c* ~a1 ~a2) (c* ~b1 ~b2)))
@@ -27,16 +42,23 @@
         (c* (c* ~m ~n) (c* ~o ~p))))
 #+END_SRC
 ** Voxel test
-#+BEGIN_SRC clojure :noweb-ref voxel-set-bit
-  (ns thi.ng.geom.macros.voxel)
+#+BEGIN_SRC clojure :noweb-ref voxel-ops
   (defmacro set-bit-if-index
     [voxels idx mask id]
     `(if (~voxels ~idx) ~id (bit-or ~id ~mask)))
 #+END_SRC
-** Tangle twice for CLJ & CLJS                                     :noexport:
-#+BEGIN_SRC clojure :tangle babel/src-clj/thi/ng/geom/macros/matrix.clj :noweb yes :mkdirp yes
-  <<mat-item>>
+** Tangle for CLJ & CLJS                                     :noexport:
+#+BEGIN_SRC clojure :tangle babel/src-clj/thi/ng/geom/macros/core.clj :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.macros.core
+      (:refer-clojure :exclude [* - +])
+      (:refer-clojure :rename {+ c+, - c-, * c*}))
+  
+  <<vec3-ops>>
+
+  <<mat-ops>>
 #+END_SRC
-#+BEGIN_SRC clojure :tangle babel/src-clj/thi/ng/geom/macros/voxel.clj :noweb yes :mkdirp yes
-  <<voxel-set-bit>>
+#+BEGIN_SRC clojure :tangle babel/src-clj/thi/ng/geom/macros/voxel.clj :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.macros.voxel)
+  
+  <<voxel-ops>>
 #+END_SRC

@@ -17,12 +17,12 @@
    [this m]
    (let [m ^Matrix32 m]
      (Matrix32.
-      (mm/mat-item m00 (.-m00 m) m01 (.-m10 m))
-      (mm/mat-item m00 (.-m01 m) m01 (.-m11 m))
-      (c+ m02 (mm/mat-item m00 (.-m02 m) m01 (.-m12 m)))
-      (mm/mat-item m10 (.-m00 m) m11 (.-m10 m))
-      (mm/mat-item m10 (.-m01 m) m11 (.-m11 m))
-      (c+ m12 (mm/mat-item m10 (.-m02 m) m11 (.-m12 m))))))
+      (mc/mat-item m00 (.-m00 m) m01 (.-m10 m))
+      (mc/mat-item m00 (.-m01 m) m01 (.-m11 m))
+      (c+ m02 (mc/mat-item m00 (.-m02 m) m01 (.-m12 m)))
+      (mc/mat-item m10 (.-m00 m) m11 (.-m10 m))
+      (mc/mat-item m10 (.-m01 m) m11 (.-m11 m))
+      (c+ m12 (mc/mat-item m10 (.-m02 m) m11 (.-m12 m))))))
 #+END_SRC
 **** PMatrix
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
@@ -118,25 +118,25 @@
    (let [^Matrix44 m m]
      (with-meta
        (Matrix44.
-        (mm/mat-item m00 (.-m00 m) m01 (.-m10 m) m02 (.-m20 m) m03 (.-m30 m))
-        (mm/mat-item m00 (.-m01 m) m01 (.-m11 m) m02 (.-m21 m) m03 (.-m31 m))
-        (mm/mat-item m00 (.-m02 m) m01 (.-m12 m) m02 (.-m22 m) m03 (.-m32 m))
-        (mm/mat-item m00 (.-m03 m) m01 (.-m13 m) m02 (.-m23 m) m03 (.-m33 m))
+        (mc/mat-item m00 (.-m00 m) m01 (.-m10 m) m02 (.-m20 m) m03 (.-m30 m))
+        (mc/mat-item m00 (.-m01 m) m01 (.-m11 m) m02 (.-m21 m) m03 (.-m31 m))
+        (mc/mat-item m00 (.-m02 m) m01 (.-m12 m) m02 (.-m22 m) m03 (.-m32 m))
+        (mc/mat-item m00 (.-m03 m) m01 (.-m13 m) m02 (.-m23 m) m03 (.-m33 m))
   
-        (mm/mat-item m10 (.-m00 m) m11 (.-m10 m) m12 (.-m20 m) m13 (.-m30 m))
-        (mm/mat-item m10 (.-m01 m) m11 (.-m11 m) m12 (.-m21 m) m13 (.-m31 m))
-        (mm/mat-item m10 (.-m02 m) m11 (.-m12 m) m12 (.-m22 m) m13 (.-m32 m))
-        (mm/mat-item m10 (.-m03 m) m11 (.-m13 m) m12 (.-m23 m) m13 (.-m33 m))
+        (mc/mat-item m10 (.-m00 m) m11 (.-m10 m) m12 (.-m20 m) m13 (.-m30 m))
+        (mc/mat-item m10 (.-m01 m) m11 (.-m11 m) m12 (.-m21 m) m13 (.-m31 m))
+        (mc/mat-item m10 (.-m02 m) m11 (.-m12 m) m12 (.-m22 m) m13 (.-m32 m))
+        (mc/mat-item m10 (.-m03 m) m11 (.-m13 m) m12 (.-m23 m) m13 (.-m33 m))
   
-        (mm/mat-item m20 (.-m00 m) m21 (.-m10 m) m22 (.-m20 m) m23 (.-m30 m))
-        (mm/mat-item m20 (.-m01 m) m21 (.-m11 m) m22 (.-m21 m) m23 (.-m31 m))
-        (mm/mat-item m20 (.-m02 m) m21 (.-m12 m) m22 (.-m22 m) m23 (.-m32 m))
-        (mm/mat-item m20 (.-m03 m) m21 (.-m13 m) m22 (.-m23 m) m23 (.-m33 m))
+        (mc/mat-item m20 (.-m00 m) m21 (.-m10 m) m22 (.-m20 m) m23 (.-m30 m))
+        (mc/mat-item m20 (.-m01 m) m21 (.-m11 m) m22 (.-m21 m) m23 (.-m31 m))
+        (mc/mat-item m20 (.-m02 m) m21 (.-m12 m) m22 (.-m22 m) m23 (.-m32 m))
+        (mc/mat-item m20 (.-m03 m) m21 (.-m13 m) m22 (.-m23 m) m23 (.-m33 m))
   
-        (mm/mat-item m30 (.-m00 m) m31 (.-m10 m) m32 (.-m20 m) m33 (.-m30 m))
-        (mm/mat-item m30 (.-m01 m) m31 (.-m11 m) m32 (.-m21 m) m33 (.-m31 m))
-        (mm/mat-item m30 (.-m02 m) m31 (.-m12 m) m32 (.-m22 m) m33 (.-m32 m))
-        (mm/mat-item m30 (.-m03 m) m31 (.-m13 m) m32 (.-m23 m) m33 (.-m33 m)))
+        (mc/mat-item m30 (.-m00 m) m31 (.-m10 m) m32 (.-m20 m) m33 (.-m30 m))
+        (mc/mat-item m30 (.-m01 m) m31 (.-m11 m) m32 (.-m21 m) m33 (.-m31 m))
+        (mc/mat-item m30 (.-m02 m) m31 (.-m12 m) m32 (.-m22 m) m33 (.-m32 m))
+        (mc/mat-item m30 (.-m03 m) m31 (.-m13 m) m32 (.-m23 m) m33 (.-m33 m)))
        (meta this))))
 #+END_SRC
 **** PMatrix
@@ -159,12 +159,12 @@
    [this]
    (reduce
     c+
-    [(mm/det-item m30 m21 m12 m03 m20 m31 m12 m03 m30 m11 m22 m03 m10 m31 m22 m03)
-     (mm/det-item m20 m11 m32 m03 m10 m21 m32 m03 m30 m21 m02 m13 m20 m31 m02 m13)
-     (mm/det-item m30 m01 m22 m13 m00 m31 m22 m13 m20 m01 m32 m13 m00 m21 m32 m13)
-     (mm/det-item m30 m11 m02 m23 m10 m31 m02 m23 m30 m01 m12 m23 m00 m31 m12 m23)
-     (mm/det-item m10 m01 m32 m23 m00 m11 m32 m23 m20 m11 m02 m33 m10 m21 m02 m33)
-     (mm/det-item m20 m01 m12 m33 m00 m21 m12 m33 m10 m01 m22 m33 m00 m11 m22 m33)]))
+    [(mc/det-item m30 m21 m12 m03 m20 m31 m12 m03 m30 m11 m22 m03 m10 m31 m22 m03)
+     (mc/det-item m20 m11 m32 m03 m10 m21 m32 m03 m30 m21 m02 m13 m20 m31 m02 m13)
+     (mc/det-item m30 m01 m22 m13 m00 m31 m22 m13 m20 m01 m32 m13 m00 m21 m32 m13)
+     (mc/det-item m30 m11 m02 m23 m10 m31 m02 m23 m30 m01 m12 m23 m00 m31 m12 m23)
+     (mc/det-item m10 m01 m32 m23 m00 m11 m32 m23 m20 m11 m02 m33 m10 m21 m02 m33)
+     (mc/det-item m20 m01 m12 m33 m00 m21 m12 m33 m10 m01 m22 m33 m00 m11 m22 m33)]))
 #+END_SRC
 **** PInvertible
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
@@ -258,9 +258,9 @@
   PVectorTransform
   (transform-vector
    [this [x y z :as v]]
-   (vec3 (mm/mat-item x m00 y m01 z m02 m03)
-         (mm/mat-item x m10 y m11 z m12 m13)
-         (mm/mat-item x m20 y m21 z m22 m23)))
+   (vec3 (mc/mat-item x m00 y m01 z m02 m03)
+         (mc/mat-item x m10 y m11 z m12 m13)
+         (mc/mat-item x m20 y m21 z m22 m23)))
 #+END_SRC
 **** End of implementation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/mat.cljx
