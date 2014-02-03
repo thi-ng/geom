@@ -1,3 +1,7 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
 * Namespace: thi.ng.geom.isosurface
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/isosurface.cljx
@@ -7,8 +11,8 @@
      [thi.ng.geom.core :as g :refer [vec3]]
      [thi.ng.geom.svo :as svo :refer [cell-index select-cells voxel-cell voxel-config-at-depth]]
      [thi.ng.geom.mesh :as mesh]
-     ,#+clj [thi.ng.geom.macros :as mac])
-    ,#+cljs (:require-macros [thi.ng.geom.macros :as mac]))
+     ,#+clj [thi.ng.geom.macros.voxel :as mac])
+    ,#+cljs (:require-macros [thi.ng.geom.macros.voxel :as mac]))
 #+END_SRC
 ** Marching cube lookup tables
 *** Edge offset table
@@ -378,7 +382,7 @@
                            (let [[voxel-id vid idx cell] cell
                                  vid1 (inc vid) vid2 (inc vid1)
                                  delta (if (zero? (bit-and voxel-id 1)) scaled-isov1 scaled-isov)
-                                 [x y z] (g/scale cell size)
+                                 [x y z] (g/* cell size)
                                  vertices (if (and (pos? (bit-and eflags 0x01)) (nil? (vertices vid)))
                                             (assoc! vertices vid (vec3 (if (zero? (bit-and voxel-id 0x02)) (+ x delta) (- x delta)) y z))
                                             vertices)
