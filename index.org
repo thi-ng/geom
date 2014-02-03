@@ -49,7 +49,10 @@ http://code.thi.ng/geom
 #+BEGIN_SRC clojure :noweb-ref dep-cljsbuild
 [lein-cljsbuild "1.0.2"]
 #+END_SRC
-
+**** speclj
+#+BEGIN_SRC clojure :noweb-ref dep-speclj
+[speclj "2.8.1"]
+#+END_SRC
 ** Authors
    | [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://thi.ng][thi.ng]]              |
    |                 |                                 | [[http://postspectacular.com][postspectacular.com]] |
@@ -75,14 +78,14 @@ http://code.thi.ng/geom
                    <<dep-common>>]
     :jar-exclusions [#"\.cljx|\.DS_Store|\.js|\.html"]
     :source-paths ["src-clj"]
-
+  
     :cljx {:builds [{:source-paths ["src-cljx"]
                      :output-path "src-clj"
                      :rules :clj}
                     {:source-paths ["src-cljx"]
                      :output-path "src-cljs"
                      :rules :cljs}]}
-
+  
     :cljsbuild {:builds
                 [{:id "dev"
                   :source-paths ["src-cljs" "src-clj"]
@@ -91,14 +94,18 @@ http://code.thi.ng/geom
                    :output-to "resources/public/js/geom-<<version>>.js"
                    :optimizations :simple}
                   :jar true}]}
-
+  
     :profiles {:dev {:plugins [<<dep-cljx>>
                                <<dep-cljsbuild>>]
-                     :dependencies [<<dep-cljs>>]
+                     :dependencies [<<dep-cljs>>
+                                    <<dep-speclj>>]
                      :hooks [cljx.hooks]}
                :cljs {:plugins [<<dep-cljsbuild>>]
                       :dependencies [<<dep-cljs>>]
-                      :hooks [leiningen.cljsbuild]}})
+                      :hooks [leiningen.cljsbuild]}}
+  
+    :plugins [<<dep-speclj>>]
+    :test-paths ["spec"])
 #+END_SRC
 
 * Modules
