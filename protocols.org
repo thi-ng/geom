@@ -7,9 +7,9 @@
 *** PMathOps
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx :mkdir yes
   (defprotocol PMathOps
-    (+ [this a] [this a b] [this a b c])
-    (- [this a] [this a b] [this a b c])
-    (* [this a] [this a b] [this a b c])
+    (+ [this] [this a] [this a b] [this a b c])
+    (- [this] [this a] [this a b] [this a b c])
+    (* [this] [this a] [this a b] [this a b c])
     (div [this] [this a] [this a b] [this a b c])
     (madd [this a b])
     (abs [this]))
@@ -148,8 +148,8 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PGraph
     (cyclic? [this])
-    (edges [this])
-    (vertices [this])
+    (edges [this] [this n])
+    (vertices [this] [this n])
     (vertex-valence [this v])
     (vertex-neighbors [this v])
     (in-vertices [this v])
@@ -157,7 +157,7 @@
 #+END_SRC
 *** PGraphConvert
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
-  (defprotocol PGraph
+  (defprotocol PGraphConvert
     (as-graph [this] [this opts]))
 #+END_SRC
 *** PArea

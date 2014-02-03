@@ -88,7 +88,7 @@
 #+END_SRC
 *** PBoundingCircle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-  g/PShape2
+  g/PBoundingCircle
   (bounding-circle [this] this)
 #+END_SRC
 *** PCircumference
