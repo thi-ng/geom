@@ -10,7 +10,7 @@
     (:refer-clojure :rename {+ c+, - c-, * c*, min cmin, max cmax})
     (:require
      [thi.ng.common.math.core :as m :refer [*eps*]]
-     [thi.ng.geom.core :as g :refer [+ - * vec2 vec3 min max]]
+     [thi.ng.geom.core :as g :refer [+ - * div vec2 vec3 min max]]
      [thi.ng.geom.types :as types]
      [speclj.core :refer :all]))
 #+END_SRC
@@ -20,7 +20,7 @@
 #+END_SRC
 *** 2d
 #+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
-  (describe
+  (context
    "2d"
    (it "vec2?" (g/vec2? (vec2 1)))
    (it "uniform from single number" (should= [1.0 1.0] (vec2 1)))
@@ -38,7 +38,7 @@
 #+END_SRC
 *** 3d
 #+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
-  (describe
+  (context
    "3d"
    (it "vec3?" (g/vec3? (vec3 1)))
    (it "uniform from single number" (should= (vec3 1) [1.0 1.0 1.0]))
@@ -67,7 +67,7 @@
    (with v2 (vec2 1 2))
    (with v3 (vec3 1 2 3))
   
-   (describe
+   (context
     "reading..."
     (it ":x" (should (= 1.0 (:x @v2) (:x @v3))))
     (it ":y" (should (= 2.0 (:y @v2) (:y @v3))))
@@ -91,7 +91,7 @@
     (it "idx 3 fail v3" (should-throw (@v3 3)))
     )
   
-   (describe
+   (context
     "writing..."
     (it ":x" (should= [10.0 2.0] (assoc @v2 :x 10)))
     (it ":x" (should= [10.0 2.0 3.0] (assoc @v3 :x 10)))
@@ -197,8 +197,11 @@
   
    (it "+ v2" (should= @a2 (+ @a2)))
    (it "+ v2 b2" (should= [11.0 22.0] (+ @a2 @b2)))
+   (it "+ v2 b3" (should= (+ @a2 @b2) (+ @a2 @b3)))
    (it "+ v2 n" (should= [11.0 12.0] (+ @a2 10)))
    (it "+ v2 n m" (should= (+ @a2 @b2) (+ @a2 10 20)))
+   (it "+ v2 [n]" (should= (+ @a2 10 0) (+ @a2 [10])))
+   (it "+ v2 [n m]" (should= (+ @a2 @b2) (+ @a2 [10 20])))
    (it "+ v2 b2 m" (should= (+ (+ @a2 @b2) 20) (+ @a2 @b2 20)))
    (it "+ v2 b2 b2" (should= (+ (+ @a2 @b2) @b2) (+ @a2 @b2 @b2)))
    (it "+ v2 n b2" (should= (+ (+ @a2 10) @b2) (+ @a2 10 @b2)))
@@ -211,6 +214,8 @@
    (it "+ v3 b3 b3" (should= (+ (+ @a3 @b3) @b3) (+ @a3 @b3 @b3)))
    (it "+ v3 n b3" (should= (+ (+ @a3 10) @b3) (+ @a3 10 @b3)))
    (it "+ v3 n m o" (should= (+ @a3 @b3) (+ @a3 10 20 30)))
+   (it "+ v3 [n m]" (should= (+ @a3 10 20 0) (+ @a3 [10 20])))
+   (it "+ v3 [n m o]" (should= (+ @a3 @b3) (+ @a3 [10 20 30])))
    (it "+ v3 b3 n m" (should= (+ (+ (+ @a3 @b3) 20) 30) (+ @a3 @b3 20 30)))
    (it "+ v3 b3 b3 m" (should= (+ (+ (+ @a3 @b3) @b3) 30) (+ @a3 @b3 @b3 30)))
    (it "+ v3 b3 b3 a3" (should= (+ (+ (+ @a3 @b3) @b3) @a3) (+ @a3 @b3 @b3 @a3)))
@@ -255,6 +260,26 @@
    (it "* v3 b3 n m" (should= (* (* (* @a3 @b3) 20) 30) (* @a3 @b3 20 30)))
    (it "* v3 b3 b3 m" (should= (* (* (* @a3 @b3) @b3) 30) (* @a3 @b3 @b3 30)))
    (it "* v3 n m b3" (should= (* (* (* @a3 10) 20) @b3) (* @a3 10 20 @b3)))
+  
+   (it "/ v2" (should= [1.0 0.5] (div @a2)))
+   (it "/ v2 b2" (should= [0.1 0.1] (div @a2 @b2)))
+   (it "/ v2 n" (should= [0.1 0.2] (div @a2 10)))
+   (it "/ v2 n m" (should= (div @a2 @b2) (div @a2 10 20)))
+   (it "/ v2 b2 m" (should= (div (div @a2 @b2) 20) (div @a2 @b2 20)))
+   (it "/ v2 b2 b2" (should= (div (div @a2 @b2) @b2) (div @a2 @b2 @b2)))
+   (it "/ v2 n b2" (should= (div (div @a2 10) @b2) (div @a2 10 @b2)))
+  
+   (it "/ v3" (should= [1.0 0.5 (/ 3.0)] (div @a3)))
+   (it "/ v3 b3" (should= [0.1 0.1 0.1] (div @a3 @b3)))
+   (it "/ v3 n" (should= [0.1 0.2 0.3] (div @a3 10)))
+   (it "/ v3 n m" (should= (div (div @a3 10) 20) (div @a3 10 20)))
+   (it "/ v3 b3 m" (should= (div (div @a3 @b3) 20) (div @a3 @b3 20)))
+   (it "/ v3 b3 b3" (should= (div (div @a3 @b3) @b3) (div @a3 @b3 @b3)))
+   (it "/ v3 n b3" (should= (div (div @a3 10) @b3) (div @a3 10 @b3)))
+   (it "/ v3 n m o" (should= (div @a3 @b3) (div @a3 10 20 30)))
+   (it "/ v3 b3 n m" (should= (div (div (div @a3 @b3) 20) 30) (div @a3 @b3 20 30)))
+   (it "/ v3 b3 b3 m" (should= (div (div (div @a3 @b3) @b3) 30) (div @a3 @b3 @b3 30)))
+   (it "/ v3 n m b3" (should= (div (div (div @a3 10) 20) @b3) (div @a3 10 20 @b3)))
   
    (it "madd v2 n m" (should= (+ (* @a2 10) 20) (g/madd @a2 10 20)))
    (it "madd v2 b2 n" (should= (+ (* @a2 @b2) 10) (g/madd @a2 @b2 10)))
