@@ -194,29 +194,33 @@
 #+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
   (defn context-vec2-op
     [op]
-    (context
-     (str "op: " op)
-     (it "op v2 b3" (should= (op a2 b2) (op a2 b3)))
-     (it "op v2 n m" (should= (op a2 b2) (op a2 10 20)))
-     (it "op v2 [n m]" (should= (op a2 b2) (op a2 [10 20])))
-     (it "op v2 b2 m" (should= (op (op a2 b2) 20) (op a2 b2 20)))
-     (it "op v2 b2 b2" (should= (op (op a2 b2) b2) (op a2 b2 b2)))
-     (it "op v2 n b2" (should= (op (op a2 10) b2) (op a2 10 b2)))))
+    (let [op* (name op)
+          op (resolve op)]
+      (context
+       (str "op: " op*)
+       (it (str op* " v2 b3") (should= (op a2 b2) (op a2 b3)))
+       (it (str op* " v2 n m") (should= (op a2 b2) (op a2 10 20)))
+       (it (str op* " v2 [n m]") (should= (op a2 b2) (op a2 [10 20])))
+       (it (str op* " v2 b2 m") (should= (op (op a2 b2) 20) (op a2 b2 20)))
+       (it (str op* " v2 b2 b2") (should= (op (op a2 b2) b2) (op a2 b2 b2)))
+       (it (str op* " v2 n b2") (should= (op (op a2 10) b2) (op a2 10 b2))))))
   
   (defn context-vec3-op
     [op]
-    (context
-     (str "op:" op)
-     (it "op v3 n m" (should= (op (op a3 10) 20) (op a3 10 20)))
-     (it "op v3 b3 n" (should= (op (op a3 b3) 20) (op a3 b3 20)))
-     (it "op v3 b3 b3" (should= (op (op a3 b3) b3) (op a3 b3 b3)))
-     (it "op v3 n b3" (should= (op (op a3 10) b3) (op a3 10 b3)))
-     (it "op v3 n m o" (should= (op a3 b3) (op a3 10 20 30)))
-     (it "op v3 [n m o]" (should= (op a3 b3) (op a3 [10 20 30])))
-     (it "op v3 b3 n m" (should= (op (op (op a3 b3) 20) 30) (op a3 b3 20 30)))
-     (it "op v3 b3 b3 m" (should= (op (op (op a3 b3) b3) 30) (op a3 b3 b3 30)))
-     (it "op v3 b3 b3 a3" (should= (op (op (op a3 b3) b3) a3) (op a3 b3 b3 a3)))
-     (it "op v3 n m b3" (should= (op (op (op a3 10) 20) b3) (op a3 10 20 b3)))))
+    (let [op* (name op)
+          op (resolve op)]
+      (context
+       (str "op: " op*)
+       (it (str op* " v3 n m") (should= (op (op a3 10) 20) (op a3 10 20)))
+       (it (str op* " v3 b3 n") (should= (op (op a3 b3) 20) (op a3 b3 20)))
+       (it (str op* " v3 b3 b3") (should= (op (op a3 b3) b3) (op a3 b3 b3)))
+       (it (str op* " v3 n b3") (should= (op (op a3 10) b3) (op a3 10 b3)))
+       (it (str op* " v3 n m o") (should= (op a3 b3) (op a3 10 20 30)))
+       (it (str op* " v3 [n m o]") (should= (op a3 b3) (op a3 [10 20 30])))
+       (it (str op* " v3 b3 n m") (should= (op (op (op a3 b3) 20) 30) (op a3 b3 20 30)))
+       (it (str op* " v3 b3 b3 m") (should= (op (op (op a3 b3) b3) 30) (op a3 b3 b3 30)))
+       (it (str op* " v3 b3 b3 a3") (should= (op (op (op a3 b3) b3) a3) (op a3 b3 b3 a3)))
+       (it (str op* " v3 n m b3") (should= (op (op (op a3 10) 20) b3) (op a3 10 20 b3))))))
   
   (describe
    "Vector algebra"
@@ -227,25 +231,25 @@
     (it "+ v2 b2" (should= [11.0 22.0] (+ a2 b2)))
     (it "+ v2 n" (should= [11.0 12.0] (+ a2 10)))
     (it "+ v2 [n]" (should= (+ a2 10 0) (+ a2 [10])))
-    (context-vec2-op +)
+    (context-vec2-op '+)
   
     (it "- v2" (should= [-1.0 -2.0] (- a2)))
     (it "- v2 b2" (should= [-9.0 -18.0] (- a2 b2)))
     (it "- v2 n" (should= [-9.0 -8.0] (- a2 10)))
     (it "- v2 [n]" (should= (+ a2 10 0) (+ a2 [10])))
-    (context-vec2-op -)
+    (context-vec2-op '-)
   
     (it "* v2" (should= a2 (* a2)))
     (it "* v2 b2" (should= [10.0 40.0] (* a2 b2)))
     (it "* v2 n" (should= [10.0 20.0] (* a2 10)))
     (it "* v2 [n]" (should= (* a2 10 1) (* a2 [10])))
-    (context-vec2-op *)
+    (context-vec2-op '*)
   
     (it "/ v2" (should= [1.0 0.5] (div a2)))
     (it "/ v2 b2" (should= [0.1 0.1] (div a2 b2)))
     (it "/ v2 n" (should= [0.1 0.2] (div a2 10)))
     (it "/ v2 [n] fail" (should-throw (div a2 [10])))
-    (context-vec2-op div))
+    (context-vec2-op 'div))
   
    (context
     "3d ops"
@@ -253,40 +257,85 @@
     (it "+ v3 b3" (should= [11.0 22.0 33.0] (+ a3 b3)))
     (it "+ v3 n" (should= [11.0 12.0 13.0] (+ a3 10)))
     (it "+ v3 [n m]" (should= (+ a3 10 20 0) (+ a3 [10 20])))
-    (context-vec3-op +)
+    (context-vec3-op '+)
   
     (it "- v3" (should= [-1.0 -2.0 -3.0] (- a3)))
     (it "- v3 b3" (should= [-9.0 -18.0 -27.0] (- a3 b3)))
     (it "- v3 n" (should= [-9.0 -8.0 -7.0] (- a3 10)))
     (it "- v3 [n m]" (should= (- a3 10 20 0) (- a3 [10 20])))
-    (context-vec3-op -)
+    (context-vec3-op '-)
   
     (it "* v3" (should= a3 (* a3)))
     (it "* v3 b3" (should= [10.0 40.0 90.0] (* a3 b3)))
     (it "* v3 n" (should= [10.0 20.0 30.0] (* a3 10)))
     (it "* v3 [n m]" (should= (* a3 10 20 1) (* a3 [10 20])))
-    (context-vec3-op *)
+    (context-vec3-op '*)
   
     (it "/ v3" (should= [1.0 0.5 (/ 3.0)] (div a3)))
     (it "/ v3 b3" (should= [0.1 0.1 0.1] (div a3 b3)))
     (it "/ v3 n" (should= [0.1 0.2 0.3] (div a3 10)))
     (it "/ v3 [n m] fail" (should-throw (div a3 [10 20])))
-    (context-vec3-op div))
+    (context-vec3-op 'div))
   
    (context
     "madd"
     (it "madd v2 n m" (should= (+ (* a2 10) 20) (g/madd a2 10 20)))
     (it "madd v2 b2 n" (should= (+ (* a2 b2) 10) (g/madd a2 b2 10)))
     (it "madd v2 n b2" (should= (+ (* a2 10) b2) (g/madd a2 10 b2)))
-    (it "madd v2 n b2 != madd v2 b2 n" (should-not= (g/madd a2 10 b2) (g/madd a3 b3 10)))
+    (it "madd v2 n b2 != v2 b2 n" (should-not= (g/madd a2 10 b2) (g/madd a3 b3 10)))
     (it "madd v2 b2 a2" (should= (+ (* a2 b2) a2) (g/madd a2 b2 a2)))
   
     (it "madd v3 n m" (should= (+ (* a3 10) 20) (g/madd a3 10 20)))
     (it "madd v3 b3 n" (should= (+ (* a3 b3) 10) (g/madd a3 b3 10)))
     (it "madd v3 n b3" (should= (+ (* a3 10) b3) (g/madd a3 10 b3)))
-    (it "madd v3 n b3 != madd v3 b3 n" (should-not= (g/madd a3 10 b3) (g/madd a3 b3 10)))
+    (it "madd v3 n b3 != v3 b3 n" (should-not= (g/madd a3 10 b3) (g/madd a3 b3 10)))
     (it "madd v3 b3 a3" (should= (+ (* a3 b3) a3) (g/madd a3 b3 a3))))
   
+   (context
+    "dot"
+    (it "dot a2 a2" (should== (g/mag-squared a2) (g/dot a2 a2)))
+    (it "dot 2d zero" (should== 0 (g/dot a2 [(c- (:y a2)) (:x a2)])))
+    (it "dot a2 b2" (should== (c+ (c* (a2 :x) (b2 :x)) (c* (a2 :y) (b2 :y)))
+                              (g/dot a2 b2)))
+    (it "dot -a2 b2" (should== (c+ (c* (c- (a2 :x)) (b2 :x))
+                                   (c* (c- (a2 :y)) (b2 :y)))
+                               (g/dot (- a2) b2)))
+    (it "dot a3 a3" (should== (g/mag-squared a3) (g/dot a3 a3)))
+    (it "dot 3d xy zero" (should== 0 (g/dot (vec3 1 0 0) (vec3 0 1 0))))
+    (it "dot 3d xz zero" (should== 0 (g/dot (vec3 1 0 0) (vec3 0 0 1))))
+    (it "dot 3d yz zero" (should== 0 (g/dot (vec3 0 1 0) (vec3 0 0 1))))
+    (it "dot a3 b3" (should== (c+ (c* (a3 :x) (b3 :x))
+                                  (c* (a3 :y) (b3 :y))
+                                  (c* (a3 :z) (b3 :z)))
+                              (g/dot a3 b3)))
+    (it "dot -a3 b3" (should== (c+ (c* (c- (a3 :x)) (b3 :x))
+                                   (c* (c- (a3 :y)) (b3 :y))
+                                   (c* (c- (a3 :z)) (b3 :z)))
+                               (g/dot (- a3) b3))))
+  
+   (context
+    "mag"
+    (it "mag a2" (should== (Math/sqrt (c+ 1 4)) (g/mag a2)))
+    (it "mag -a2" (should== (Math/sqrt (c+ 1 4)) (g/mag (- a2))))
+    (it "mag b2" (should== (Math/sqrt (c+ 100 400)) (g/mag b2)))
+    (it "mag-squared a2" (should== (c+ 1 4) (g/mag-squared a2)))
+    (it "mag-squared -a2" (should== (c+ 1 4) (g/mag-squared (- a2))))
+    (it "mag-squared b2" (should== (c+ 100 400) (g/mag-squared b2)))
+    (it "mag a3" (should== (Math/sqrt (c+ 1 4 9)) (g/mag a3)))
+    (it "mag -a3" (should== (Math/sqrt (c+ 1 4 9)) (g/mag (- a3))))
+    (it "mag b3" (should== (Math/sqrt (c+ 100 400 900)) (g/mag b3)))
+    (it "mag-squared a3" (should== (c+ 1 4 9) (g/mag-squared a3)))
+    (it "mag-squared -a3" (should== (c+ 1 4 9) (g/mag-squared (- a3))))
+    (it "mag-squared b3" (should== (c+ 100 400 900) (g/mag-squared b3))))
+  
+   (context
+    "normalize"
+    (it "norm a2" (should== (let [m (g/mag a2)] [(/ (:x a2) m) (/ (:y a2) m)]) (g/normalize a2)))
+    (it "norm a2 10" (should== (let [m (/ 10 (g/mag a2))] [(c* m (:x a2)) (c* m (:y a2))]) (g/normalize a2 10)))
+    (it "mag = norm a2 10" (should== 10 (g/mag (g/normalize a2 10))))
+    (it "norm a3" (should== (let [m (g/mag a3)] [(/ (:x a3) m) (/ (:y a3) m) (/ (:z a3) m)]) (g/normalize a3)))
+    (it "norm a3 10" (should== (let [m (/ 10 (g/mag a3))] [(c* m (:x a3)) (c* m (:y a3)) (c* m (:z a3))]) (g/normalize a3 10)))
+    (it "mag = norm a3 10" (should== 10 (g/mag (g/normalize a3 10)))))
    )
 #+END_SRC
 ** Trigger tests
