@@ -98,13 +98,15 @@
 #+END_SRC
 *** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/circle.cljx
-  g/PBoundary
+  g/PClassify
   (classify-point
    [this q]
    (m/signum (c- (:r this) (g/dist (:p this) q)) *eps*))
+  g/PProximity
   (closest-point
    [{p :p r :r} q]
    (+ p (g/normalize (- q p) r)))
+  g/PBoundary
   (contains-point?
    [{p :p r :r} q]
    (<= (g/mag-squared (- p q)) (c* r r)))

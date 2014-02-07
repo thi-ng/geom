@@ -62,7 +62,7 @@
 *** PBoundary
 **** TODO implement closest-point
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
-  g/PBoundary
+  g/PClassify
   (classify-point
    [{p :p size :size} [x y z :as q]]
    (let [[x1 y1 z1] p
@@ -81,6 +81,7 @@
                 (m/in-range? y1 y2 y)
                 (m/in-range? z1 z2 z))
          1 -1))))
+  g/PBoundary
   (contains-point?
    [{p :p size :size} [qx qy qz]]
    (let [[x1 y1 z1] p

@@ -113,12 +113,14 @@
 #+END_SRC
 **** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
-  g/PBoundary
+  g/PClassify
   (classify-point
    [{p :p q :q} v]
    (m/signum (g/dot (- (vec2 v) p) (g/normal (- q p))) *eps*))
+  g/PProximity
   (closest-point
    [this a] (closest-point* (vec2 a) (:p this) (:q this)))
+  g/PBoundary
   (contains-point?
    [this a] (m/delta= (closest-point* (vec2 a) (:p this) (:q this)) a *eps*))
 #+END_SRC
@@ -249,11 +251,13 @@ g/PCenter
 #+END_SRC
 **** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
-  g/PBoundary
+  g/PClassify
   (classify-point
    [{p :p q :q} p] nil) ; TODO
+  g/PProximity
   (closest-point
    [this a] (closest-point* (vec3 a) (:p this) (:q this)))
+  g/PBoundary
   (contains-point?
    [this a] (m/delta= (closest-point* (vec3 a) (:p this) (:q this)) a *eps*))
 #+END_SRC
@@ -341,7 +345,7 @@ g/PBounds
 g/PCenter
 (center
  ([this] (g/translate this (g/invert (g/centroid this))))
- ([this o] (g/translate this (g/sub (vec2 o) (g/centroid this)))))
+ ([this o] (g/translate this (- (vec2 o) (g/centroid this)))))
 (centroid [this] (g/centroid* (:points this)))
 #+END_SRC
 **** PBoundingCircle
@@ -360,7 +364,9 @@ g/PCircumference
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/line.cljx
   g/PBoundary
   (classify-point [this v])
+  g/PProximity
   (closest-point [this a])
+  g/PBoundary
   (contains-point? [this a])
 #+END_SRC
 **** PSampleable

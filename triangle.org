@@ -201,12 +201,14 @@
 #+END_SRC
 **** TODO PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/PBoundary
+  g/PClassify
   ;; TODO add clockwise? check, currently assumes clockwise ordering
   (classify-point
    [this p] (reduce cmin (map #(g/classify-point % p) (g/edges this))))
+  g/PProximity
   (closest-point
    [this p] (g/closest-point* (g/edges this) p))
+  g/PBoundary
   (contains-point?
    [this p] (contains-point2* (:a this) (:b this) (:c this) p))
 #+END_SRC
@@ -329,9 +331,11 @@
 #+END_SRC
 **** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
-  g/PBoundary
+  g/PClassify
   (classify-point [this p] nil) ; TODO
+  g/PProximity
   (closest-point [this p] nil) ; TODO
+  g/PBoundary
   (contains-point? [this p] (contains-point3* (:a this) (:b this) (:c this) p))
 #+END_SRC
 **** PSampleable

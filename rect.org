@@ -145,11 +145,13 @@
 #+END_SRC
 *** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/PBoundary
+  g/PClassify
   (classify-point
    [this q] (reduce cmin (map #(g/classify-point % q) (g/edges this))))
+  g/PProximity
   (closest-point
    [this q] (g/closest-point* (g/edges this) q))
+  g/PBoundary
   (contains-point?
    [{[px py] :p w :w h :h} [x y]]
    (and (m/in-range? 0.0 w (c- x px)) (m/in-range? 0.0 h (c- y py))))

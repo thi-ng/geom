@@ -159,11 +159,13 @@
   g/PCircumference
   (circumference [this] nil)
 #+END_SRC
-*** PBoundary
+*** TODO PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
-  g/PBoundary
+  g/PClassify
   (classify-point [this p])
+  g/PProximity
   (closest-point [this p])
+  g/PBoundary
   (contains-point? [this p])
 #+END_SRC
 *** PSampleable

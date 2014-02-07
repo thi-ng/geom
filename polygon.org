@@ -6,7 +6,7 @@
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx :mkdip yes :padline no
   (ns thi.ng.geom.polygon
-    (:refer-clojure :exclude [* c- +])
+    (:refer-clojure :exclude [* - +])
     (:refer-clojure :rename {+ c+, - c-, * c*})
     (:require
      [thi.ng.common.data.core :as d]
@@ -232,11 +232,13 @@
 #+END_SRC
 *** TODO PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
-  g/PBoundary
+  g/PClassify
   (classify-point
    [this p] nil) ; TODO
+  g/PProximity
   (closest-point
    [this p] (g/closest-point* (g/edges this) p))
+  g/PBoundary
   (contains-point?
    [{points :points} p]
    (if (some #{p} points) true

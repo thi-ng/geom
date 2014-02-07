@@ -74,9 +74,11 @@
   g/PBoundary
   (contains-point?
    [{p :p r :r} q] (<= (g/dist-squared p q) (c* r r)))
+  g/PClassify
   (classify-point
    [{p :p r :r} q]
    (m/signum (c- (c* r r) (g/dist-squared p q)) *eps*))
+  g/PSampleable
   (random-point-inside
    [this]
    (+ (:p this) (g/randvec3 (m/random (:r this)))))
