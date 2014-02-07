@@ -14,6 +14,17 @@
      [thi.ng.geom.types :as types]
      [speclj.core :refer :all]))
 #+END_SRC
+** Test constants
+#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
+  (def a2 (vec2 1 2)) (def a3 (vec3 1 2 3))
+  (def b2 (vec2 10 20)) (def b3 (vec3 10 20 30))
+  
+  (def ax 1.0) (def ay 2.0) (def az 3.0)
+  (def bx 10.0) (def by 20.0) (def bz 30.0)
+  
+  (def av2 [1.0 2.0]) (def av3 [1.0 2.0 3.0])
+  (def bv2 [10.0 20.0]) (def bv3 [10.0 20.0 30.0])
+#+END_SRC
 ** Vector creation
 #+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
   (describe "Vector creation"
@@ -22,7 +33,7 @@
 #+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
   (context
    "2d"
-   (it "vec2?" (g/vec2? (vec2 1)))
+   (it "vec2?" (should (g/vec2? (vec2 1))))
    (it "uniform from single number" (should= [1.0 1.0] (vec2 1)))
    (it "two numbers" (should= [1.0 2.0] (vec2 1 2)))
    (it "single 2-vector" (should= [1.0 2.0] (vec2 [1 2])))
@@ -40,18 +51,18 @@
 #+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
   (context
    "3d"
-   (it "vec3?" (g/vec3? (vec3 1)))
-   (it "uniform from single number" (should= (vec3 1) [1.0 1.0 1.0]))
-   (it "2 numbers" (should= (vec3 1 2) [1.0 2.0 0.0]))
-   (it "3 numbers" (should= (vec3 1 2 3) [1.0 2.0 3.0]))
-   (it "single 2-vector" (should= (vec3 [1 2]) [1.0 2.0 0.0]))
-   (it "single 3-vector" (should= (vec3 [1 2 3]) [1.0 2.0 3.0]))
-   (it "single :x :y map" (should= (vec3 {:x 1 :y 2}) [1.0 2.0 0.0]))
-   (it "single :x :y :z map" (should= (vec3 {:x 1 :y 2 :z 3.0}) [1.0 2.0 3.0]))
-   (it "single :x map" (should= (vec3 {:x 1}) [1.0 0.0 0.0]))
-   (it "single :y map" (should= (vec3 {:y 2}) [0.0 2.0 0.0]))
-   (it "single :z map" (should= (vec3 {:z 3}) [0.0 0.0 3.0]))
-   (it "single empty map" (should= (vec3 {}) [0.0 0.0 0.0]))
+   (it "vec3?" (should (g/vec3? (vec3 1))))
+   (it "uniform from single number" (should= [1.0 1.0 1.0] (vec3 1)))
+   (it "2 numbers" (should= [1.0 2.0 0.0] (vec3 1 2)))
+   (it "3 numbers" (should= [1.0 2.0 3.0] (vec3 1 2 3)))
+   (it "single 2-vector" (should= [1.0 2.0 0.0] (vec3 [1 2])))
+   (it "single 3-vector" (should= [1.0 2.0 3.0] (vec3 [1 2 3])))
+   (it "single :x :y map" (should= [1.0 2.0 0.0] (vec3 {:x 1 :y 2})))
+   (it "single :x :y :z map" (should= [1.0 2.0 3.0] (vec3 {:x 1 :y 2 :z 3.0})))
+   (it "single :x map" (should= [1.0 0.0 0.0] (vec3 {:x 1})))
+   (it "single :y map" (should= [0.0 2.0 0.0] (vec3 {:y 2})))
+   (it "single :z map" (should= [0.0 0.0 3.0] (vec3 {:z 3})))
+   (it "single empty map" (should= [0.0 0.0 0.0] (vec3 {})))
    (it "fail w/ str arg v3" (should-throw (vec3 "a")))
    (it "fail w/ [str] arg v3" (should-throw (vec3 ["a"])))
    (it "fail w/ str map v3" (should-throw (vec3 {:x "a"})))
@@ -60,13 +71,6 @@
 #+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
    )
 #+END_SRC
-** Test constants
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
-  (def a2 (vec2 1 2))
-  (def b2 (vec2 10 20))
-  (def a3 (vec3 1 2 3))
-  (def b3 (vec3 10 20 30))
-#+END_SRC
 ** Swizzling
 #+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
   (describe
@@ -74,49 +78,49 @@
   
    (context
     "reading..."
-    (it ":x" (should (= 1.0 (:x a2) (:x a3))))
-    (it ":y" (should (= 2.0 (:y a2) (:y a3))))
-    (it ":z" (should= 3.0 (:z a3)))
+    (it ":x" (should (= ax (:x a2) (:x a3))))
+    (it ":y" (should (= ay (:y a2) (:y a3))))
+    (it ":z" (should= az (:z a3)))
     (it ":z fail a2" (should-throw (:z a2)))
     (it ":xy a2=a3" (should= (:xy a2) (:xy a3)))
-    (it ":xy" (should= [1.0 2.0] (:xy a2)))
+    (it ":xy" (should= [ax ay] (:xy a2)))
     (it ":yx a2=a3" (should= (:yx a2) (:yx a3)))
-    (it ":yx" (should= [2.0 1.0] (:yx a2)))
+    (it ":yx" (should= [ay ax] (:yx a2)))
     (it ":yy a2=a3" (should= (:yy a2) (:yy a3)))
-    (it ":yy" (should= [2.0 2.0] (:yy a2)))
-    (it ":yy" (should= [2.0 2.0] (:yy a3)))
-    (it ":yz" (should= [2.0 3.0] (:yz a3)))
+    (it ":yy" (should= [ay ay] (:yy a2)))
+    (it ":yy" (should= [ay ay] (:yy a3)))
+    (it ":yz" (should= [ay az] (:yz a3)))
     (it ":xyz fail a2" (should-throw (:xyz a2)))
-    (it ":xyz a3" (should= [1.0 2.0 3.0] (:xyz a3)))
-    (it ":zxy a3" (should= [3.0 1.0 2.0] (:zxy a3)))
+    (it ":xyz a3" (should= [ax ay az] (:xyz a3)))
+    (it ":zxy a3" (should= [az ax ay] (:zxy a3)))
     (it "idx 0" (should= (a2 0) (a3 0)))
     (it "idx 1" (should= (a2 1) (a3 1)))
-    (it "idx 2" (should= 3.0 (a3 2)))
+    (it "idx 2" (should= az (a3 2)))
     (it "idx 2 fail a2" (should-throw (a2 2)))
     (it "idx 3 fail a3" (should-throw (a3 3)))
     )
   
    (context
     "writing..."
-    (it ":x" (should= [10.0 2.0] (assoc a2 :x 10)))
-    (it ":x" (should= [10.0 2.0 3.0] (assoc a3 :x 10)))
-    (it ":y" (should= [1.0 20.0] (assoc a2 :y 20)))
-    (it ":y" (should= [1.0 20.0 3.0] (assoc a3 :y 20)))
-    (it ":z" (should= [1.0 2.0 30.0] (assoc a3 :z 30)))
-    (it ":xy" (should= [10.0 20.0] (assoc a2 :xy [10 20])))
-    (it ":xy" (should= [10.0 20.0 3.0] (assoc a3 :xy [10 20])))
-    (it ":yx" (should= [20.0 10.0] (assoc a2 :yx [10 20])))
-    (it ":yx" (should= [20.0 10.0 3.0] (assoc a3 :yx [10 20])))
-    (it ":xz" (should= [10.0 2.0 20.0] (assoc a3 :xz [10 20])))
-    (it ":xz fail 2d" (should-throw (assoc a2 :xz [10 20])))
-    (it ":zx" (should= [20.0 2.0 10.0] (assoc a3 :zx [10 20])))
-    (it ":zx fail 2d" (should-throw (assoc a2 :zx [10 20])))
-    (it ":yz" (should= [1.0 10.0 20.0] (assoc a3 :yz [10 20])))
-    (it ":yz fail 2d" (should-throw (assoc a2 :yz [10 20])))
-    (it ":zy" (should= [1.0 20.0 10.0] (assoc a3 :zy [10 20])))
-    (it ":zy fail 2d" (should-throw (assoc a2 :zy [10 20])))
-    (it ":xyz fail 2d" (should-throw (assoc a2 :xyz [10 20 30])))
-    (it ":xyz fail 3d" (should-throw (assoc a3 :xyz [10 20 30])))
+    (it ":x" (should= [bx ay] (assoc a2 :x bx)))
+    (it ":x" (should= [bx ay az] (assoc a3 :x bx)))
+    (it ":y" (should= [ax by] (assoc a2 :y by)))
+    (it ":y" (should= [ax by az] (assoc a3 :y by)))
+    (it ":z" (should= [ax ay bz] (assoc a3 :z bz)))
+    (it ":xy" (should= [bx by] (assoc a2 :xy [bx by])))
+    (it ":xy" (should= [bx by az] (assoc a3 :xy [bx by])))
+    (it ":yx" (should= [by bx] (assoc a2 :yx [bx by])))
+    (it ":yx" (should= [by bx az] (assoc a3 :yx [bx by])))
+    (it ":xz" (should= [bx ay by] (assoc a3 :xz [bx by])))
+    (it ":xz fail 2d" (should-throw (assoc a2 :xz [bx by])))
+    (it ":zx" (should= [by ay bx] (assoc a3 :zx [bx by])))
+    (it ":zx fail 2d" (should-throw (assoc a2 :zx [bx by])))
+    (it ":yz" (should= [ax bx by] (assoc a3 :yz [bx by])))
+    (it ":yz fail 2d" (should-throw (assoc a2 :yz [bx by])))
+    (it ":zy" (should= [ax by bx] (assoc a3 :zy [bx by])))
+    (it ":zy fail 2d" (should-throw (assoc a2 :zy [bx by])))
+    (it ":xyz fail 2d" (should-throw (assoc a2 :xyz [bx by bz])))
+    (it ":xyz fail 3d" (should-throw (assoc a3 :xyz [bx by bz])))
     ))
 #+END_SRC
 ** Clojure/Java protocol impls
@@ -124,218 +128,214 @@
   (describe
    "Protocol impls"
   
-   (with v2 (vec2 1 2))
-   (with v3 (vec3 1 2 3))
-  
-   (it "meta v2" (should= {:foo "bar"} (meta (with-meta @v2 {:foo "bar"}))))
-   (it "meta v3" (should= {:foo "bar"} (meta (with-meta @v3 {:foo "bar"}))))
-   (it "seq v2" (should= (seq @v2) (seq '(1.0 2.0))))
-   (it "rseq v2" (should= (rseq @v2) (rseq [1.0 2.0])))
-   (it "rseq a vec2?" (should (g/vec2? (rseq @v2))))
-   (it "seq v3" (should= (seq @v3) (seq '(1.0 2.0 3.0))))
-   (it "rseq v3" (should= (rseq @v3) (rseq [1.0 2.0 3.0])))
-   (it "rseq a vec3?" (should (g/vec3? (rseq @v3))))
-   (it "first v2" (should= 1.0 (first @v2)))
-   (it "first v3" (should= 1.0 (first @v3)))
-   (it "rest v2" (should= (rest @v2) [2.0]))
-   (it "next v2" (should= (next @v2) [2.0]))
-   (it "nnext v2 nil?" (should-be-nil (nnext @v2)))
-   (it "rest v3" (should= (rest @v3) [2.0 3.0]))
-   (it "next v3" (should= (next @v3) [2.0 3.0]))
-   (it "nnext v3" (should= (nnext @v3) [3.0]))
-   (it "nnext v3 nil?" (should-be-nil (next (nnext @v2))))
-   (it "nth v2" (should= 2.0 (nth @v2 1)))
-   (it "nth v2 default" (should= -1 (nth @v2 2 -1)))
-   (it "nth v2 fail" (should-throw (nth @v2 2)))
-   (it "nth v3" (should= 3.0 (nth @v3 2)))
-   (it "nth v3 default" (should= -1 (nth @v3 3 -1)))
-   (it "nth v3 fail" (should-throw (nth @v3 3)))
-   (it "peek v2" (should= 2.0 (peek @v2)))
-   (it "peek v3" (should= 3.0 (peek @v3)))
-   (it "pop v2" (should= (pop @v2) [1.0]))
-   (it "pop v2 type" (should= (type (pop @v2)) clojure.lang.PersistentVector))
-   (it "pop v3" (should= (pop @v3) [1.0 2.0]))
-   (it "pop v3 vec2?" (should (g/vec2? (pop @v3))))
-   (it "destructure v2" (should (let [[x y z] @v2] (and (= @v2 [x y]) (nil? z)))))
-   (it "destructure v3" (should (let [[x y z w] @v3] (and (= @v3 [x y z]) (nil? w)))))
-   (it "contains keys v2" (should (every? #(contains? @v2 %) [:x :y 0 1])))
-   (it "contains keys v3" (should (every? #(contains? @v3 %) [:x :y :z 0 1 2])))
-   (it "vec = v2" (should= [1.0 2.0] @v2))
-   (it "seq = v2" (should= (seq @v2) @v2))
-   (it "vec = v3" (should= [1.0 2.0 3.0] @v3))
-   (it "seq = v3" (should= (seq @v3) @v3))
-   (it "v2 != v3" (should-not= @v2 @v3))
-   (it "v3 != v2" (should-not= @v3 @v2))
-   (it "v2 != rseq" (should-not= @v2 (rseq @v2)))
-   (it "v3 != rseq" (should-not= @v3 (rseq @v3)))
-   (it "v2 != x" (should-not= @v2 1))
-   (it "v3 != x" (should-not= @v3 1))
-   (it "#{v2 a2}" (should= 2 (count (into #{} [@v2 [1.0 2.0] @v2]))))
-   (it "#{v3 a3}" (should= 2 (count (into #{} [@v3 [1.0 2.0 3.0] @v3]))))
-   (it "count v2" (should= 2 (count @v2)))
-   (it "count v3" (should= 3 (count @v3)))
-   (it "size v2" (should= 2 (.size @v2)))
-   (it "size v3" (should= 3 (.size @v3)))
-   (it "iterator v2" (should= [1.0 2.0] (iterator-seq (.iterator @v2))))
-   (it "iterator v3" (should= [1.0 2.0 3.0] (iterator-seq (.iterator @v3))))
-   (it "apply v2" (should= 1.0 (apply @v2 [0])))
-   (it "apply v2 kw" (should= 2.0 (apply @v2 [:y])))
-   (it "apply v2 swizzle" (should= [2.0 1.0] (apply @v2 [:yx])))
-   (it "apply v2 w/ default" (should= -1 (apply @v2 [:z -1])))
-   (it "apply v2 fail" (should-throw (apply @v2 [:z])))
-   (it "apply v3" (should= 1.0 (apply @v3 [0])))
-   (it "apply v3 kw" (should= 2.0 (apply @v3 [:y])))
-   (it "apply v3 swizzle" (should= [2.0 1.0 3.0] (apply @v3 [:yxz])))
-   (it "apply v3 w/ default" (should= -1 (apply @v3 [:w -1])))
-   (it "apply v3 fail" (should-throw (apply @v3 [:w])))
-   )
+   (it "meta a2" (should= {:foo "bar"} (meta (with-meta a2 {:foo "bar"}))))
+   (it "meta a3" (should= {:foo "bar"} (meta (with-meta a3 {:foo "bar"}))))
+   (it "seq a2" (should= (seq a2) (seq av2)))
+   (it "rseq a2" (should= (rseq a2) (rseq av2)))
+   (it "rseq a vec2?" (should (g/vec2? (rseq a2))))
+   (it "seq a3" (should= (seq a3) (seq av3)))
+   (it "rseq a3" (should= (rseq a3) (rseq av3)))
+   (it "rseq a vec3?" (should (g/vec3? (rseq a3))))
+   (it "first a2" (should= ax (first a2)))
+   (it "first a3" (should= ax (first a3)))
+   (it "rest a2" (should= (rest a2) [ay]))
+   (it "next a2" (should= (next a2) [ay]))
+   (it "nnext a2 nil?" (should-be-nil (nnext a2)))
+   (it "rest a3" (should= (rest a3) (rest av3)))
+   (it "next a3" (should= (next a3) (next av3)))
+   (it "nnext a3" (should= (nnext a3) [az]))
+   (it "nnext a3 nil?" (should-be-nil (next (nnext a2))))
+   (it "nth a2" (should= ay (nth a2 1)))
+   (it "nth a2 default" (should= -1 (nth a2 2 -1)))
+   (it "nth a2 fail" (should-throw (nth a2 2)))
+   (it "nth a3" (should= az (nth a3 2)))
+   (it "nth a3 default" (should= -1 (nth a3 3 -1)))
+   (it "nth a3 fail" (should-throw (nth a3 3)))
+   (it "peek a2" (should= ay (peek a2)))
+   (it "peek a3" (should= az (peek a3)))
+   (it "pop a2" (should= (pop a2) [ax]))
+   (it "pop a2 type" (should= (type (pop a2)) clojure.lang.PersistentVector))
+   (it "pop a3" (should= (pop a3) [ax ay]))
+   (it "pop a3 vec2?" (should (g/vec2? (pop a3))))
+   (it "destructure a2" (should (let [[x y z] a2] (and (= a2 [x y]) (nil? z)))))
+   (it "destructure a3" (should (let [[x y z w] a3] (and (= a3 [x y z]) (nil? w)))))
+   (it "contains keys a2" (should (every? #(contains? a2 %) [:x :y 0 1])))
+   (it "contains keys a3" (should (every? #(contains? a3 %) [:x :y :z 0 1 2])))
+   (it "vec = a2" (should= [ax ay] a2))
+   (it "seq = a2" (should= (seq a2) a2))
+   (it "vec = a3" (should= [ax ay az] a3))
+   (it "seq = a3" (should= (seq a3) a3))
+   (it "a2 != a3" (should-not= a2 a3))
+   (it "a3 != a2" (should-not= a3 a2))
+   (it "a2 != rseq" (should-not= a2 (rseq a2)))
+   (it "a3 != rseq" (should-not= a3 (rseq a3)))
+   (it "a2 != x" (should-not= a2 1))
+   (it "a3 != x" (should-not= a3 1))
+   (it "#{a2 a2}" (should= 2 (count (into #{} [a2 av2 a2]))))
+   (it "#{a3 a3}" (should= 2 (count (into #{} [a3 av3 a3]))))
+   (it "count a2" (should= 2 (count a2)))
+   (it "count a3" (should= 3 (count a3)))
+   (it "size a2" (should= 2 (.size a2)))
+   (it "size a3" (should= 3 (.size a3)))
+   (it "iterator a2" (should= (seq av2) (iterator-seq (.iterator a2))))
+   (it "iterator a3" (should= (seq av3) (iterator-seq (.iterator a3))))
+   (it "apply a2" (should= ax (apply a2 [0])))
+   (it "apply a2 kw" (should= ay (apply a2 [:y])))
+   (it "apply a2 swizzle" (should= [ay ax] (apply a2 [:yx])))
+   (it "apply a2 w/ default" (should= -1 (apply a2 [:z -1])))
+   (it "apply a2 fail" (should-throw (apply a2 [:z])))
+   (it "apply a3" (should= ax (apply a3 [0])))
+   (it "apply a3 kw" (should= ay (apply a3 [:y])))
+   (it "apply a3 swizzle" (should= [ay ax az] (apply a3 [:yxz])))
+   (it "apply a3 w/ default" (should= -1 (apply a3 [:w -1])))
+   (it "apply a3 fail" (should-throw (apply a3 [:w]))))
 #+END_SRC
 ** Vector algebra
+*** Callable contexts
 #+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
   (defn context-vec2-op
-    [op]
-    (let [op* (name op)
-          op (resolve op)]
-      (context
-       (str "op: " op*)
-       (it (str op* " v2 b3") (should= (op a2 b2) (op a2 b3)))
-       (it (str op* " v2 n m") (should= (op a2 b2) (op a2 10 20)))
-       (it (str op* " v2 [n m]") (should= (op a2 b2) (op a2 [10 20])))
-       (it (str op* " v2 b2 m") (should= (op (op a2 b2) 20) (op a2 b2 20)))
-       (it (str op* " v2 b2 b2") (should= (op (op a2 b2) b2) (op a2 b2 b2)))
-       (it (str op* " v2 n b2") (should= (op (op a2 10) b2) (op a2 10 b2))))))
+    [label op cop default]
+    (context
+     (str "op: " label)
+     (it (str label " a2 b2") (should= [(cop ax bx) (cop ay by)] (op a2 b2)))
+     (it (str label " a2 n") (should= [(cop ax 10) (cop ay 10)] (op a2 10)))
+     (it (str label " a2 b3") (should= (op a2 b2) (op a2 b3)))
+     (it (str label " a2 n m") (should= (op a2 b2) (op a2 bx by)))
+     (it (str label " a2 [n m]") (should= (op a2 b2) (op a2 [bx by])))
+     (it (str label " a2 b2 m") (should= (op (op a2 b2) by) (op a2 b2 by)))
+     (it (str label " a2 b2 b2") (should= (op (op a2 b2) b2) (op a2 b2 b2)))
+     (it (str label " a2 n b2") (should= (op (op a2 bx) b2) (op a2 bx b2)))
+     (if (= cop /)
+       (it (str label " a2 [n] fail") (should-throw (op a2 [10])))
+       (it (str label " a2 [n]") (should= (op a2 10 default) (op a2 [10]))))))
   
   (defn context-vec3-op
-    [op]
-    (let [op* (name op)
-          op (resolve op)]
-      (context
-       (str "op: " op*)
-       (it (str op* " v3 n m") (should= (op (op a3 10) 20) (op a3 10 20)))
-       (it (str op* " v3 b3 n") (should= (op (op a3 b3) 20) (op a3 b3 20)))
-       (it (str op* " v3 b3 b3") (should= (op (op a3 b3) b3) (op a3 b3 b3)))
-       (it (str op* " v3 n b3") (should= (op (op a3 10) b3) (op a3 10 b3)))
-       (it (str op* " v3 n m o") (should= (op a3 b3) (op a3 10 20 30)))
-       (it (str op* " v3 [n m o]") (should= (op a3 b3) (op a3 [10 20 30])))
-       (it (str op* " v3 b3 n m") (should= (op (op (op a3 b3) 20) 30) (op a3 b3 20 30)))
-       (it (str op* " v3 b3 b3 m") (should= (op (op (op a3 b3) b3) 30) (op a3 b3 b3 30)))
-       (it (str op* " v3 b3 b3 a3") (should= (op (op (op a3 b3) b3) a3) (op a3 b3 b3 a3)))
-       (it (str op* " v3 n m b3") (should= (op (op (op a3 10) 20) b3) (op a3 10 20 b3))))))
-  
+    [label op cop default]
+    (context
+     (str "op: " label)     
+     (it (str label " a3 b3") (should= [(cop ax bx) (cop ay by) (cop az bz)] (op a3 b3)))
+     (it (str label " a3 n") (should= [(cop ax 10) (cop ay 10) (cop az 10)] (op a3 10)))
+     (it (str label " a3 n m") (should= (op (op a3 bx) by) (op a3 bx by)))
+     (it (str label " a3 b3 n") (should= (op (op a3 b3) by) (op a3 b3 by)))
+     (it (str label " a3 b3 b3") (should= (op (op a3 b3) b3) (op a3 b3 b3)))
+     (it (str label " a3 n b3") (should= (op (op a3 bx) b3) (op a3 bx b3)))
+     (it (str label " a3 n m o") (should= (op a3 b3) (op a3 bx by bz)))
+     (it (str label " a3 [n m o]") (should= (op a3 b3) (op a3 [bx by bz])))
+     (it (str label " a3 b3 n m") (should= (op (op (op a3 b3) by) bz) (op a3 b3 by bz)))
+     (it (str label " a3 b3 b3 m") (should= (op (op (op a3 b3) b3) bz) (op a3 b3 b3 bz)))
+     (it (str label " a3 b3 b3 a3") (should= (op (op (op a3 b3) b3) a3) (op a3 b3 b3 a3)))
+     (it (str label " a3 n m b3") (should= (op (op (op a3 bx) by) b3) (op a3 bx by b3)))
+     (if (= cop /)
+       (it (str label " a3 [n m] fail") (should-throw (op a3 [10 20])))
+       (it (str label " a3 [n m]") (should= (op a3 10 20 default) (op a3 [10 20]))))))
+#+END_SRC
+*** Calling contexts
+#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
   (describe
    "Vector algebra"
-  
+#+END_SRC
+**** 2D ops
+#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
+  (context
+   "2d ops"
+   (it "+ a2" (should= [(c+ ax) (c+ ay)] (+ a2)))
+   (it "- a2" (should= [(c- ax) (c- ay)] (- a2)))
+   (it "* a2" (should= [(c* ax) (c* ay)] (* a2)))
+   (it "/ a2" (should= [(/ ax) (/ ay)] (div a2)))
+   (context-vec2-op "+" + c+ 0.0)
+   (context-vec2-op "-" - c- 0.0)
+   (context-vec2-op "*" * c* 1.0)
+   (context-vec2-op "/" div / 0.0))
+#+END_SRC
+**** 3D ops
+#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj    
+  (context
+   "3d ops"
+   (it "+ a3" (should= [(c+ ax) (c+ ay) (c+ az)] (+ a3)))
+   (it "- a3" (should= [(c- ax) (c- ay) (c- az)] (- a3)))
+   (it "* a3" (should= [(c* ax) (c* ay) (c* az)] (* a3)))
+   (it "/ a3" (should= [(/ ax) (/ ay) (/ az)] (div a3)))
+   (context-vec3-op "+" + c+ 0.0)
+   (context-vec3-op "-" - c- 0.0)
+   (context-vec3-op "*" * c* 1.0)
+   (context-vec3-op "/" div / 0.0))
+#+END_SRC
+**** Madd
+#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
+  (context
+   "madd"
+   (it "madd a2 n m" (should= (+ (* a2 bx) by) (g/madd a2 bx by)))
+   (it "madd a2 b2 n" (should= (+ (* a2 b2) bx) (g/madd a2 b2 bx)))
+   (it "madd a2 n b2" (should= (+ (* a2 bx) b2) (g/madd a2 bx b2)))
+   (it "madd a2 n b2 != a2 b2 n" (should-not= (g/madd a2 bx b2) (g/madd a2 b2 bx)))
+   (it "madd a2 b2 a2" (should= (+ (* a2 b2) a2) (g/madd a2 b2 a2)))
+    
+   (it "madd a3 n m" (should= (+ (* a3 bx) by) (g/madd a3 bx by)))
+   (it "madd a3 b3 n" (should= (+ (* a3 b3) bx) (g/madd a3 b3 bx)))
+   (it "madd a3 n b3" (should= (+ (* a3 bx) b3) (g/madd a3 bx b3)))
+   (it "madd a3 n b3 != a3 b3 n" (should-not= (g/madd a3 bx b3) (g/madd a3 b3 bx)))
+   (it "madd a3 b3 a3" (should= (+ (* a3 b3) a3) (g/madd a3 b3 a3))))
+#+END_SRC
+**** Dot product
+#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
+  (context
+   "dot product"
+   (it "dot a2 a2" (should== (g/mag-squared a2) (g/dot a2 a2)))
+   (it "dot 2d zero" (should== 0 (g/dot a2 [(c- ay) ax])))
+   (it "dot a2 b2" (should== (c+ (c* ax bx) (c* ay by))
+                             (g/dot a2 b2)))
+   (it "dot -a2 b2" (should== (c+ (c* (c- ax) bx) (c* (c- ay) by))
+                              (g/dot (- a2) b2)))
+   (it "dot a3 a3" (should== (g/mag-squared a3) (g/dot a3 a3)))
+   (it "dot 3d xy zero" (should== 0 (g/dot (vec3 1 0 0) (vec3 0 1 0))))
+   (it "dot 3d xz zero" (should== 0 (g/dot (vec3 1 0 0) (vec3 0 0 1))))
+   (it "dot 3d yz zero" (should== 0 (g/dot (vec3 0 1 0) (vec3 0 0 1))))
+   (it "dot a3 b3" (should== (c+ (c* ax bx) (c* ay by) (c* az bz))
+                             (g/dot a3 b3)))
+   (it "dot -a3 b3" (should== (c+ (c* (c- ax) bx) (c* (c- ay) by) (c* (c- az) bz))
+                              (g/dot (- a3) b3))))
+#+END_SRC
+**** Cross product
+#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
    (context
-    "2d ops"
-    (it "+ v2" (should= a2 (+ a2)))
-    (it "+ v2 b2" (should= [11.0 22.0] (+ a2 b2)))
-    (it "+ v2 n" (should= [11.0 12.0] (+ a2 10)))
-    (it "+ v2 [n]" (should= (+ a2 10 0) (+ a2 [10])))
-    (context-vec2-op '+)
-  
-    (it "- v2" (should= [-1.0 -2.0] (- a2)))
-    (it "- v2 b2" (should= [-9.0 -18.0] (- a2 b2)))
-    (it "- v2 n" (should= [-9.0 -8.0] (- a2 10)))
-    (it "- v2 [n]" (should= (+ a2 10 0) (+ a2 [10])))
-    (context-vec2-op '-)
-  
-    (it "* v2" (should= a2 (* a2)))
-    (it "* v2 b2" (should= [10.0 40.0] (* a2 b2)))
-    (it "* v2 n" (should= [10.0 20.0] (* a2 10)))
-    (it "* v2 [n]" (should= (* a2 10 1) (* a2 [10])))
-    (context-vec2-op '*)
-  
-    (it "/ v2" (should= [1.0 0.5] (div a2)))
-    (it "/ v2 b2" (should= [0.1 0.1] (div a2 b2)))
-    (it "/ v2 n" (should= [0.1 0.2] (div a2 10)))
-    (it "/ v2 [n] fail" (should-throw (div a2 [10])))
-    (context-vec2-op 'div))
-  
-   (context
-    "3d ops"
-    (it "+ v3" (should= a3 (+ a3)))
-    (it "+ v3 b3" (should= [11.0 22.0 33.0] (+ a3 b3)))
-    (it "+ v3 n" (should= [11.0 12.0 13.0] (+ a3 10)))
-    (it "+ v3 [n m]" (should= (+ a3 10 20 0) (+ a3 [10 20])))
-    (context-vec3-op '+)
-  
-    (it "- v3" (should= [-1.0 -2.0 -3.0] (- a3)))
-    (it "- v3 b3" (should= [-9.0 -18.0 -27.0] (- a3 b3)))
-    (it "- v3 n" (should= [-9.0 -8.0 -7.0] (- a3 10)))
-    (it "- v3 [n m]" (should= (- a3 10 20 0) (- a3 [10 20])))
-    (context-vec3-op '-)
-  
-    (it "* v3" (should= a3 (* a3)))
-    (it "* v3 b3" (should= [10.0 40.0 90.0] (* a3 b3)))
-    (it "* v3 n" (should= [10.0 20.0 30.0] (* a3 10)))
-    (it "* v3 [n m]" (should= (* a3 10 20 1) (* a3 [10 20])))
-    (context-vec3-op '*)
-  
-    (it "/ v3" (should= [1.0 0.5 (/ 3.0)] (div a3)))
-    (it "/ v3 b3" (should= [0.1 0.1 0.1] (div a3 b3)))
-    (it "/ v3 n" (should= [0.1 0.2 0.3] (div a3 10)))
-    (it "/ v3 [n m] fail" (should-throw (div a3 [10 20])))
-    (context-vec3-op 'div))
-  
-   (context
-    "madd"
-    (it "madd v2 n m" (should= (+ (* a2 10) 20) (g/madd a2 10 20)))
-    (it "madd v2 b2 n" (should= (+ (* a2 b2) 10) (g/madd a2 b2 10)))
-    (it "madd v2 n b2" (should= (+ (* a2 10) b2) (g/madd a2 10 b2)))
-    (it "madd v2 n b2 != v2 b2 n" (should-not= (g/madd a2 10 b2) (g/madd a3 b3 10)))
-    (it "madd v2 b2 a2" (should= (+ (* a2 b2) a2) (g/madd a2 b2 a2)))
-  
-    (it "madd v3 n m" (should= (+ (* a3 10) 20) (g/madd a3 10 20)))
-    (it "madd v3 b3 n" (should= (+ (* a3 b3) 10) (g/madd a3 b3 10)))
-    (it "madd v3 n b3" (should= (+ (* a3 10) b3) (g/madd a3 10 b3)))
-    (it "madd v3 n b3 != v3 b3 n" (should-not= (g/madd a3 10 b3) (g/madd a3 b3 10)))
-    (it "madd v3 b3 a3" (should= (+ (* a3 b3) a3) (g/madd a3 b3 a3))))
-  
-   (context
-    "dot"
-    (it "dot a2 a2" (should== (g/mag-squared a2) (g/dot a2 a2)))
-    (it "dot 2d zero" (should== 0 (g/dot a2 [(c- (:y a2)) (:x a2)])))
-    (it "dot a2 b2" (should== (c+ (c* (a2 :x) (b2 :x)) (c* (a2 :y) (b2 :y)))
-                              (g/dot a2 b2)))
-    (it "dot -a2 b2" (should== (c+ (c* (c- (a2 :x)) (b2 :x))
-                                   (c* (c- (a2 :y)) (b2 :y)))
-                               (g/dot (- a2) b2)))
-    (it "dot a3 a3" (should== (g/mag-squared a3) (g/dot a3 a3)))
-    (it "dot 3d xy zero" (should== 0 (g/dot (vec3 1 0 0) (vec3 0 1 0))))
-    (it "dot 3d xz zero" (should== 0 (g/dot (vec3 1 0 0) (vec3 0 0 1))))
-    (it "dot 3d yz zero" (should== 0 (g/dot (vec3 0 1 0) (vec3 0 0 1))))
-    (it "dot a3 b3" (should== (c+ (c* (a3 :x) (b3 :x))
-                                  (c* (a3 :y) (b3 :y))
-                                  (c* (a3 :z) (b3 :z)))
-                              (g/dot a3 b3)))
-    (it "dot -a3 b3" (should== (c+ (c* (c- (a3 :x)) (b3 :x))
-                                   (c* (c- (a3 :y)) (b3 :y))
-                                   (c* (c- (a3 :z)) (b3 :z)))
-                               (g/dot (- a3) b3))))
-  
-   (context
-    "mag"
-    (it "mag a2" (should== (Math/sqrt (c+ 1 4)) (g/mag a2)))
-    (it "mag -a2" (should== (Math/sqrt (c+ 1 4)) (g/mag (- a2))))
-    (it "mag b2" (should== (Math/sqrt (c+ 100 400)) (g/mag b2)))
-    (it "mag-squared a2" (should== (c+ 1 4) (g/mag-squared a2)))
-    (it "mag-squared -a2" (should== (c+ 1 4) (g/mag-squared (- a2))))
-    (it "mag-squared b2" (should== (c+ 100 400) (g/mag-squared b2)))
-    (it "mag a3" (should== (Math/sqrt (c+ 1 4 9)) (g/mag a3)))
-    (it "mag -a3" (should== (Math/sqrt (c+ 1 4 9)) (g/mag (- a3))))
-    (it "mag b3" (should== (Math/sqrt (c+ 100 400 900)) (g/mag b3)))
-    (it "mag-squared a3" (should== (c+ 1 4 9) (g/mag-squared a3)))
-    (it "mag-squared -a3" (should== (c+ 1 4 9) (g/mag-squared (- a3))))
-    (it "mag-squared b3" (should== (c+ 100 400 900) (g/mag-squared b3))))
-  
-   (context
-    "normalize"
-    (it "norm a2" (should== (let [m (g/mag a2)] [(/ (:x a2) m) (/ (:y a2) m)]) (g/normalize a2)))
-    (it "norm a2 10" (should== (let [m (/ 10 (g/mag a2))] [(c* m (:x a2)) (c* m (:y a2))]) (g/normalize a2 10)))
-    (it "mag = norm a2 10" (should== 10 (g/mag (g/normalize a2 10))))
-    (it "norm a3" (should== (let [m (g/mag a3)] [(/ (:x a3) m) (/ (:y a3) m) (/ (:z a3) m)]) (g/normalize a3)))
-    (it "norm a3 10" (should== (let [m (/ 10 (g/mag a3))] [(c* m (:x a3)) (c* m (:y a3)) (c* m (:z a3))]) (g/normalize a3 10)))
-    (it "mag = norm a3 10" (should== 10 (g/mag (g/normalize a3 10)))))
+    "cross product"
+    )
+#+END_SRC
+**** Magnitude
+#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
+  (context
+   "mag"
+   (it "mag a2" (should== (Math/sqrt (c+ (c* ax ax) (c* ay ay))) (g/mag a2)))
+   (it "mag -a2" (should== (Math/sqrt (c+ (c* ax ax) (c* ay ay))) (g/mag (- a2))))
+   (it "mag-squared a2" (should== (c+ (c* ax ax) (c* ay ay))
+                                  (g/mag-squared a2)))
+   (it "mag-squared -a2" (should== (c+ (c* ax ax) (c* ay ay))
+                                   (g/mag-squared (- a2))))
+   (it "mag a3" (should== (Math/sqrt (c+ (c* ax ax) (c* ay ay) (c* az az)))
+                          (g/mag a3)))
+   (it "mag -a3" (should== (Math/sqrt (c+ (c* ax ax) (c* ay ay) (c* az az)))
+                           (g/mag (- a3))))
+   (it "mag-squared a3" (should== (c+ (c* ax ax) (c* ay ay) (c* az az))
+                                  (g/mag-squared a3)))
+   (it "mag-squared -a3" (should== (c+ (c* ax ax) (c* ay ay) (c* az az))
+                                   (g/mag-squared (- a3)))))
+#+END_SRC
+**** Normalize
+#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
+  (context
+   "normalize"
+   (it "norm a2" (should== (let [m (g/mag a2)] [(/ ax m) (/ ay m)]) (g/normalize a2)))
+   (it "norm a2 10" (should== (let [m (/ 10 (g/mag a2))] [(c* m ax) (c* m ay)])
+                              (g/normalize a2 10)))
+   (it "mag = norm a2 10" (should== 10 (g/mag (g/normalize a2 10))))
+   (it "norm a3" (should== (let [m (g/mag a3)] [(/ ax m) (/ ay m) (/ az m)])
+                           (g/normalize a3)))
+   (it "norm a3 10" (should== (let [m (/ 10 (g/mag a3))] [(c* m ax) (c* m ay) (c* m az)])
+                              (g/normalize a3 10)))
+   (it "mag = norm a3 10" (should== 10 (g/mag (g/normalize a3 10)))))
+#+END_SRC
+**** Context end
+#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
    )
 #+END_SRC
 ** Trigger tests
