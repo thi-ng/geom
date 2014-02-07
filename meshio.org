@@ -68,7 +68,7 @@
     [^OutputStream stream {:keys [vertices vnormals faces]}]
     (let [vertices (keys vertices)
           vindex (zipmap vertices (range))
-          fhead #+clj (byte-array [(byte 3)]) #+cljs (into-array [0 0 0])
+          fhead #+clj (byte-array [(byte 0)]) #+cljs (into-array [0])
           write-props (fn [props]
                         (doseq [p props]
                           (b/write-str-bytes
@@ -91,6 +91,7 @@
         (when (seq vnormals)
           (b/write-vec3-le stream (get vnormals v))))
       (doseq [f faces]
+        (aset-byte fhead 0 (byte (count f)))
         (.write stream fhead)
         (write-vindex f))
       stream))
