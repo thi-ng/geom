@@ -1,0 +1,189 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+* thi.ng.geom.mesh.subdivision
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh/subdivision.cljx :mkdirp yes :padline no
+  (ns thi.ng.geom.mesh.subdivision
+    (:refer-clojure :exclude [+ - *])
+    (:refer-clojure :rename {+ c+, - c-, * c*})
+    (:require
+     [thi.ng.common.data.core :as d]
+     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.core :as g :refer [+ - *]]))
+#+END_SRC
+** Shared helpers
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh/subdivision.cljx
+
+#+END_SRC
+** Catmull-Clark
+  Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_subdivision_surface][Wikipedia]]
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh/subdivision.cljx
+  (defn cc-face-points
+    "Takes a seq of faces and returns map with faces as keys and their
+      centroids as values."
+    [faces]
+    (->> faces
+         (reduce
+          (fn [acc f] (assoc! acc f (g/centroid* f)))
+          (transient {}))
+         persistent!))
+  
+  (defn cc-subdiv-face
+    [face fp e-points]
+    (->> (d/wrap-seq face [(peek face)] [(first face)])
+         (d/successive-nth 3)
+         (reduce
+          (fn [acc [p c n]]
+            (let [ep1 (e-points #{p c})
+                  ep2 (e-points #{c n})]
+              (conj acc [ep1 c ep2 fp])))
+          [])))
+  
+  (defn cc-edge-points
+    [edges f-points]
+    (->> edges
+         (reduce
+          (fn [acc [e e-faces]]
+            (assoc! acc e (g/centroid* (concat (map f-points e-faces) e))))
+          (transient {}))
+         persistent!))
+  
+  (defn cc-subdiv-faces
+    [f-points e-points]
+    (->> f-points
+         (reduce
+          (fn [acc [f fp]]
+            (into acc (cc-subdiv-face f fp e-points)))
+          [])))
+  
+  (defn cc-replace-vertices
+    [mesh f-points e-points sd-faces]
+    (let [new-verts (->> mesh
+                         :vertices
+                         (keys)
+                         (reduce
+                          (fn [acc v]
+                            (let [f (g/centroid* (map f-points (gm/vertex-faces* mesh v)))
+                                  vn (gm/vertex-neighbors* mesh v)
+                                  n (count vn)
+                                  r (g/centroid* (map #(g/mix v %) vn))
+                                  v* (g/div (+ f (* r 2.0) (* v (c- n 3))) n)]
+                              (assoc! acc v v*)))
+                          (transient {}))
+                         persistent!)]
+      (->> sd-faces
+           (map (fn [f] (replace new-verts f)))
+           set)))
+  
+  (defn catmull-clark
+    [{:keys [faces edges] :as mesh}]
+    (let [f-points (cc-face-points faces)
+          e-points (cc-edge-points edges f-points)
+          sd-faces (cc-subdiv-faces f-points e-points)]
+      (->> sd-faces
+           (cc-replace-vertices mesh f-points e-points)
+           (reduce gm/add-face (gm/gmesh)))))
+#+END_SRC
+** Doo-Sabin
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh/subdivision.cljx
+  (defn ds-edge-midpoints
+    [edges]
+    (reduce
+     (fn [acc e]
+       (assoc acc e (g/mix (first e) (second e))))
+     {} edges))
+  
+  (defn ds-face-points*
+    [f e-points]
+    (let [fp (g/centroid* f)]
+      (->> (d/wrap-seq f [(peek f)] [(first f)])
+           (d/successive-nth 3)
+           (reduce
+            (fn [acc [p c n]]
+              (let [e1 (e-points #{p c})
+                    e2 (e-points #{c n})
+                    fp* (* (+ (+ fp e1 e2) c) 0.25)]
+                (assoc acc c fp*)))
+            {}))))
+  
+  (defn ds-face-points
+    [{:keys [faces edges] :as m}]
+    (let [e-points (ds-edge-midpoints (keys edges))]
+      (reduce
+       (fn [acc f]
+         (assoc acc f (ds-face-points* f e-points)))
+       {} faces)))
+  
+  (defn ds-fp-faces
+    "Construct new faces from face points"
+    [f-points]
+    (map (fn [[f fps]] (mapv fps f)) f-points))
+  
+  (defn ds-make-edge-loop___
+    [edges]
+    (loop [acc [(first edges)] edges (set (rest edges))]
+      (if (seq edges)
+        (let [x ((peek acc) 1)
+              y (first (filter #(= x (first %)) edges))]
+          (if y
+            (recur (conj acc y) (disj edges y))
+            acc))
+        acc)))
+  
+  (defn ds-make-edge-loop
+    [edges]
+    (loop [acc [(ffirst edges)] p (peek (first edges)) edges (set (rest edges))]
+      (if (seq edges)
+        (let [[v n :as e] (first (filter #(= p (first %)) edges))]
+          (recur (conj acc v) n (disj edges e)))
+        acc)))
+  
+  ;; TODO
+  (comment
+    {:vertices
+     {[0 0 0] {:next {[100 0 0] 'f1
+                      [0 100 0] 'f2}
+               :prev {[0 100 0] 'f1}}}})
+  
+  (defn ds-dual-faces
+    [{:keys [vertices] :as mesh} f-points]
+    (reduce
+     (fn [acc v]
+       (let [vn (gm/vertex-neighbors* mesh v)]
+         (if (< 2 (count vn))
+           (->> vn
+                (reduce
+                 (fn [acc* n]
+                   (let [f1 (->> v vertices (some #(if (= n (:prev %)) (:f %))))
+                         f2 (->> v vertices (some #(if (= n (:next %)) (:f %))))
+                         fp1 (get-in f-points [f2 v])
+                         fp2 (get-in f-points [f1 v])]
+                     (conj acc* [fp2 fp1])))
+                 [])
+                (ds-make-edge-loop)
+                (conj acc))
+           acc)))
+     [] (keys vertices)))
+  
+  (defn ds-edge-faces
+    [{:keys [vertices edges] :as mesh} f-points]
+    (reduce
+     (fn [acc [e e-faces]]
+       (if (= 2 (count e-faces))
+         (let [[a b] (seq e)
+               f1 (->> (vertices a) (some #(if (= b (:prev %)) (:f %))))
+               f2 (->> (vertices a) (some #(if (= b (:next %)) (:f %))))]
+           (conj acc (mapv #(get-in f-points %) [[f1 a] [f1 b] [f2 b] [f2 a]])))
+         acc))
+     [] edges))
+  
+  (defn doo-sabin
+    [mesh]
+    (let [f-points (ds-face-points mesh)
+          sd-faces (ds-fp-faces f-points)
+          e-faces (ds-edge-faces mesh f-points)
+          v-faces (ds-dual-faces mesh f-points)]
+      (reduce gm/add-face (gm/gmesh) (concat sd-faces e-faces v-faces))))
+#+END_SRC

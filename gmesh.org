@@ -1,0 +1,149 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+* thi.ng.geom.gmesh
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/gmesh.cljx
+  (ns thi.ng.geom.gmesh
+    (:refer-clojure :exclude [+ - *])
+    (:refer-clojure :rename {+ c+, - c-, * c*})
+    (:require
+     [thi.ng.common.data.core :as d]
+     [thi.ng.common.math.core :as m]
+     [thi.ng.geom.core :as g :refer [+ - * vec2 vec3]]
+     [thi.ng.geom.triangle :as t]
+     [thi.ng.geom.types :as types]
+     [clojure.set :as set])
+    #+clj
+    (:import
+     [thi.ng.geom.types Line3 AABB Sphere Mesh2 Mesh3]))
+#+END_SRC
+** Shared 2d/3d functions
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/gmesh.cljx
+  (defn add-face
+    [{:keys [vertices edges faces] :as mesh} verts]
+    {:pre [(< 2 (count verts))]}
+    (let [f (mapv #(get (find vertices %) 0 %) verts)]
+      (if (and (nil? (get faces f))
+               (= (count f) (count (set f))))
+        (let [vertices (->> (d/wrap-seq f [(peek f)] [(first f)])
+                            (d/successive-nth 3)
+                            (reduce
+                             (fn [acc [p c n]]
+                               (d/index-kv acc c {:next n :prev p :f f}))
+                             vertices))
+              edges (->> (conj f (first f))
+                         (d/successive-nth 2)
+                         (reduce
+                          (fn [acc pair] (d/index-kv acc (set pair) f))
+                          edges))]
+          (assoc mesh
+            :vertices vertices
+            :edges edges
+            :faces (conj faces f)))
+        mesh)))
+  
+  (defn vertices-planar?
+    [[a b c :as verts]]
+    (or (< (count verts) 4)
+        (let [n (g/normal3* a b c)]
+          (every? #(m/delta= n (g/normal3* %))
+                  (d/successive-nth 3 (conj (rest verts) a))))))
+  
+  (defn face-neighbors-shared-edges
+    [{:keys [edges]} f]
+    (->> (conj f (first f))
+         (d/successive-nth 2)
+         (reduce
+          (fn [acc pair] (into acc (-> pair set edges (disj f))))
+          [])))
+  
+  (defn vertex-neighbors*
+    [{vertices :vertices} v]
+    (set/union
+     (d/value-set :next vertices v)
+     (d/value-set :prev vertices v)))
+  
+  (defn vertex-valence*
+    [mesh v] (inc (count (get (:vertices mesh) v))))
+  
+  (defn vertex-faces*
+    [mesh v] (d/value-set :f (:vertices mesh) v))
+  
+  (defn remove-vertex*
+    [mesh v]
+    (if (find (:vertices mesh) v)
+      (reduce g/remove-face mesh (vertex-faces* mesh v))
+      mesh))
+  
+  (defn replace-vertex*
+    ([mesh v v2]
+       (let [vfaces (vertex-faces* mesh v)]
+         (-> (reduce g/remove-face mesh vfaces)
+             (replace-vertex* v v2 vfaces))))
+    ([mesh v v2 faces]
+       (reduce #(add-face % (replace {v v2} %2)) mesh faces)))
+  
+  (defn merge-vertices*
+    [mesh a b]
+    (if ((vertex-neighbors* mesh a) b)
+      (let [fa (vertex-faces* mesh a) fb (vertex-faces* mesh b)
+            ab-isec (set/intersection fa fb)
+            a-xor (set/difference fa ab-isec)
+            b-xor (set/difference fb ab-isec)
+            mp (g/mix a b)]
+        (-> (reduce g/remove-face mesh (set/union ab-isec a-xor b-xor))
+            (replace-vertex* a mp a-xor)
+            (replace-vertex* b mp b-xor)))
+      mesh))
+#+END_SRC
+** Constructors
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/gmesh.cljx
+  (defn gmesh
+    "Builds a new 2d mesh data structure and (optionally) populates it with
+        the given items (a seq of existing meshes and/or faces). Faces are defined
+        as 3-element vectors of their vertices."
+    ([] {:vertices {} :edges {} :fnormals {} :vnormals {}
+         :normals #{} :faces #{}}))
+  
+  (defn into-mesh
+    [m faces]
+    (reduce add-face m (if (map? faces) (:faces faces) faces)))
+  
+  (defn box
+    [p s & [flags]]
+    (let [s- (c- s)
+          a (+ p (vec3 s- s- s))
+          b (+ p (vec3 s s- s))
+          c (+ p (vec3 s s s))
+          d (+ p (vec3 s- s s))
+          e (+ p (vec3 s- s- s-))
+          f (+ p (vec3 s s- s-))
+          g (+ p (vec3 s s s-))
+          h (+ p (vec3 s- s s-))
+          opts (name flags)
+          [north south east west front back] (map #(<= 0 (.indexOf opts (str %))) "nsewfb")]
+      (into-mesh
+       (gmesh)
+       (filter
+        identity
+        [(if front [a b c d]) ;; front
+         (if back [f e h g])  ;; back
+         (if west [e a d h])  ;; left
+         (if east [b f g c])  ;; right
+         (if north [d c g h]) ;;top
+         (if south [e f b a]) ;; bottom
+         ]))))
+  
+  (defn saddle
+    [s]
+    (reduce
+     (fn [m [p flags]]
+       (into-mesh m (box p s flags)))
+     (gmesh)
+     [[(vec3) :ewsfb]
+      [(vec3 0 (c* s 2) 0) :wfb]
+      [(vec3 (c* s 2) (c* s 2) 0) :ensfb]
+      [(vec3 0 (c* s 4) 0) :ewnfb]]))
+#+END_SRC
