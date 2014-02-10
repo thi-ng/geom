@@ -90,10 +90,12 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh/subdivision.cljx
   (defn ds-edge-midpoints
     [edges]
-    (reduce
-     (fn [acc e]
-       (assoc acc e (g/mix (first e) (second e))))
-     {} edges))
+    (->> edges
+         (reduce
+          (fn [acc e]
+            (assoc! acc e (g/mix (first e) (second e))))
+          (transient {}))
+         persistent!))
   
   (defn ds-face-points*
     [f e-points]
@@ -111,79 +113,70 @@
   (defn ds-face-points
     [{:keys [faces edges] :as m}]
     (let [e-points (ds-edge-midpoints (keys edges))]
-      (reduce
-       (fn [acc f]
-         (assoc acc f (ds-face-points* f e-points)))
-       {} faces)))
+      (->> faces
+           (reduce
+            (fn [acc f]
+              (assoc! acc f (ds-face-points* f e-points)))
+            (transient {}))
+           persistent!)))
   
   (defn ds-fp-faces
     "Construct new faces from face points"
     [f-points]
     (map (fn [[f fps]] (mapv fps f)) f-points))
   
-  (defn ds-make-edge-loop___
-    [edges]
-    (loop [acc [(first edges)] edges (set (rest edges))]
-      (if (seq edges)
-        (let [x ((peek acc) 1)
-              y (first (filter #(= x (first %)) edges))]
-          (if y
-            (recur (conj acc y) (disj edges y))
-            acc))
-        acc)))
-  
   (defn ds-make-edge-loop
     [edges]
     (loop [acc [(ffirst edges)] p (peek (first edges)) edges (set (rest edges))]
       (if (seq edges)
         (let [[v n :as e] (first (filter #(= p (first %)) edges))]
-          (recur (conj acc v) n (disj edges e)))
+          (if e
+            (recur (conj acc v) n (disj edges e))
+            (g/throw! "Mesh not manifold")))
         acc)))
-  
-  ;; TODO
-  (comment
-    {:vertices
-     {[0 0 0] {:next {[100 0 0] 'f1
-                      [0 100 0] 'f2}
-               :prev {[0 100 0] 'f1}}}})
   
   (defn ds-dual-faces
     [{:keys [vertices] :as mesh} f-points]
-    (reduce
-     (fn [acc v]
-       (let [vn (gm/vertex-neighbors* mesh v)]
-         (if (< 2 (count vn))
-           (->> vn
-                (reduce
-                 (fn [acc* n]
-                   (let [f1 (->> v vertices (some #(if (= n (:prev %)) (:f %))))
-                         f2 (->> v vertices (some #(if (= n (:next %)) (:f %))))
-                         fp1 (get-in f-points [f2 v] v)
-                         fp2 (get-in f-points [f1 v] v)]
-                     (conj acc* [fp2 fp1])))
-                 [])
-                (ds-make-edge-loop)
-                (conj acc))
-           acc)))
-     [] (keys vertices)))
+    (->> vertices
+         keys
+         (reduce
+          (fn [acc v]
+            (let [vn (gm/vertex-neighbors* mesh v)]
+              (if (< 2 (count vn))
+                (->> vn
+                     (reduce
+                      (fn [acc* n]
+                        (let [f1 (->> v vertices (some #(if (= n (:prev %)) (:f %))))
+                              f2 (->> v vertices (some #(if (= n (:next %)) (:f %))))
+                              fp1 (get-in f-points [f2 v] v)
+                              fp2 (get-in f-points [f1 v] v)]
+                          (conj acc* [fp2 fp1])))
+                      [])
+                     (ds-make-edge-loop)
+                     (conj! acc))
+                acc)))
+          (transient []))
+         persistent!))
   
   (defn ds-edge-faces
     [{:keys [vertices edges] :as mesh} f-points]
-    (reduce
-     (fn [acc [e e-faces]]
-       (if (= 2 (count e-faces))
-         (let [[a b] (seq e)
-               f1 (->> (vertices a) (some #(if (= b (:prev %)) (:f %))))
-               f2 (->> (vertices a) (some #(if (= b (:next %)) (:f %))))]
-           (conj acc (mapv #(get-in f-points %) [[f1 a] [f1 b] [f2 b] [f2 a]])))
-         acc))
-     [] edges))
+    (->> edges
+         (reduce
+          (fn [acc [e e-faces]]
+            (if (= 2 (count e-faces))
+              (let [[a b] (seq e)
+                    f1 (->> (vertices a) (some #(if (= b (:prev %)) (:f %))))
+                    f2 (->> (vertices a) (some #(if (= b (:next %)) (:f %))))]
+                (conj! acc (mapv #(get-in f-points %) [[f1 a] [f1 b] [f2 b] [f2 a]])))
+              acc))
+          (transient []))
+         persistent!))
   
   (defn doo-sabin
     [mesh]
     (let [f-points (ds-face-points mesh)
-          sd-faces (ds-fp-faces f-points)
+          f-faces (ds-fp-faces f-points)
           e-faces (ds-edge-faces mesh f-points)
           v-faces (ds-dual-faces mesh f-points)]
-      (reduce gm/add-face (gm/gmesh) (concat sd-faces e-faces v-faces))))
+      (reduce gm/add-face (gm/gmesh) (concat f-faces e-faces v-faces))))
 #+END_SRC
