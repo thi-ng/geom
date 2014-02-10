@@ -158,8 +158,8 @@
                  (fn [acc* n]
                    (let [f1 (->> v vertices (some #(if (= n (:prev %)) (:f %))))
                          f2 (->> v vertices (some #(if (= n (:next %)) (:f %))))
-                         fp1 (get-in f-points [f2 v])
-                         fp2 (get-in f-points [f1 v])]
+                         fp1 (get-in f-points [f2 v] v)
+                         fp2 (get-in f-points [f1 v] v)]
                      (conj acc* [fp2 fp1])))
                  [])
                 (ds-make-edge-loop)
