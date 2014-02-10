@@ -122,7 +122,7 @@
           f (+ p (vec3 s s- s-))
           g (+ p (vec3 s s s-))
           h (+ p (vec3 s- s s-))
-          opts (name flags)
+          opts (name (or flags "nsewfb"))
           [north south east west front back] (map #(<= 0 (.indexOf opts (str %))) "nsewfb")]
       (into-mesh
        (gmesh)
