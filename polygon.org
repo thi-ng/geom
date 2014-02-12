@@ -17,6 +17,7 @@
      [thi.ng.geom.rect :as r]
      [thi.ng.geom.delaunay :as dl]
      [thi.ng.geom.mesh :as mesh]
+     [thi.ng.geom.gmesh :as gmesh]
      [thi.ng.geom.types :as types])
     ,#+clj
     (:import
@@ -27,6 +28,13 @@
   (defn polygon
     ([points] (thi.ng.geom.types.Polygon. (mapv vec2 points) []))
     ([p & more] (thi.ng.geom.types.Polygon. (mapv vec2 (cons p more)) [])))
+  
+  (defn cog
+    [radius teeth profile]
+    (-> (thi.ng.geom.types.Circle. (vec2) radius)
+        (g/vertices (* teeth (count profile)))
+        (->> (map (fn [p v] (g/* v p)) (cycle profile))
+             (polygon))))
 #+END_SRC
 ** Type specific functions
 *** Sutherland-Hodgeman convex clipping
@@ -272,87 +280,101 @@
 *** PExtrudeable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   g/PExtrudeable
-  (extrude
-   [{points :points :as _}
-    {:keys [depth offset scale top? bottom?] :or {depth 1.0 scale 1.0 top? true bottom? true}}]
-   (let [points (if (neg? (g/area _)) (reverse points) points)
-         tpoints (if (= 1.0 scale) points (:points (g/scale-size (polygon points) scale)))
-         off (or offset (vec3 0 0 depth))
-         points3 (mapv vec3 points)
-         tpoints3 (mapv #(+ off %) tpoints)]
-     (mesh/into-mesh
-      (mesh/mesh3) nil
-      (concat
-       (when bottom?
-         (->> points
-              (tessellate*)
-              (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)]))))
-       (mapcat (fn [[a1 b1] [a2 b2]] [[a1 b1 a2] [b1 b2 a2]])
+    (extrude
+      [{points :points :as _}
+       {:keys [depth offset scale top? bottom?] :or {depth 1.0 scale 1.0 top? true bottom? true}}]
+      (let [points (if (neg? (g/area _)) (reverse points) points)
+            tpoints (if (= 1.0 scale) points (:points (g/scale-size (polygon points) scale)))
+            off (or offset (vec3 0 0 depth))
+            points3 (mapv vec3 points)
+            tpoints3 (mapv #(+ off %) tpoints)
+            quad? (= 4 (count points))]
+        (gmesh/into-mesh
+         (gmesh/gmesh)
+         (concat
+          (when bottom?
+            (if quad?
+              [(rseq (mapv vec3 points))]
+              (->> points
+                   (tessellate*)
+                   (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)])))))
+          (map (fn [[a1 b1] [a2 b2]] [a1 b1 b2 a2])
                (d/successive-nth 2 (conj points3 (points3 0)))
                (d/successive-nth 2 (conj tpoints3 (tpoints3 0))))
-       (when top?
-         (->> tpoints
-              (tessellate*)
-              (map (fn [[a b c]] [(+ off a) (+ off b) (+ off c)]))))))))
-  (extrude-shell
-   [{points :points :as _}
-    {:keys [depth offset inset top? bottom? wall nump]
-     :or {wall 1.0 depth 1.0 inset 0.0 top? false bottom? false}}]
-   (let [points (if (neg? (g/area _)) (reverse points) points)
-         tpoints (if (zero? inset) points (:points (inset-polygon (polygon points) (c- inset))))
-         ipoints (:points (inset-polygon (polygon points) (c- wall)))
-         itpoints (:points (inset-polygon (polygon points) (c- (c- inset) wall)))
-         off (or offset (vec3 0 0 depth))
-         ioff (if bottom? (g/normalize off wall) (vec3))
-         itoff (if top? (g/normalize off (c- (g/mag off) wall)) off)
-         maxp (inc (count points))
-         nump (if nump (m/clamp nump 2 maxp) maxp)
-         np1 (dec nump)
-         complete? (= nump maxp)
-         maybe-loop #(if complete? (conj % (% 0)) (take nump %))
-         drop-wrap #(conj (vec (drop np1 %)) (first %))
-         tri-strip (fn [a b flip?]
-                     (mapcat
-                      (fn [[a1 b1] [a2 b2]]
-                        (if flip? [[a1 b1 a2] [b1 b2 a2]] [[a1 a2 b1] [b1 a2 b2]]))
-                      (d/successive-nth 2 a) (d/successive-nth 2 b)))
-         points3 (mapv #(vec3 %) points)
-         ipoints3 (mapv #(+ ioff %) ipoints)
-         tpoints3 (mapv #(+ off %) tpoints)
-         itpoints3 (mapv #(+ itoff %) itpoints)
-         outsides (tri-strip (maybe-loop points3) (maybe-loop tpoints3) true)
-         insides (tri-strip (maybe-loop ipoints3) (maybe-loop itpoints3) false)]
-     (mesh/into-mesh
-      (mesh/mesh3) nil
-      (concat
-       (if bottom?
+          (when top?
+            (if quad?
+              [(mapv #(+ off %) points)]
+              (->> tpoints
+                   (tessellate*)
+                   (map (fn [[a b c]] [(+ off a) (+ off b) (+ off c)])))))))))
+    (extrude-shell
+      [{points :points :as _}
+       {:keys [depth offset inset top? bottom? wall nump]
+        :or {wall 1.0 depth 1.0 inset 0.0 top? false bottom? false}}]
+      (let [points (if (neg? (g/area _)) (reverse points) points)
+            poly (polygon points)
+            tpoints (if (zero? inset) points (:points (inset-polygon poly (c- inset))))
+            ipoints (:points (inset-polygon poly (c- wall)))
+            itpoints (:points (inset-polygon poly (c- (c- inset) wall)))
+            off (or offset (vec3 0 0 depth))
+            ioff (if bottom? (g/normalize off wall) (vec3))
+            itoff (if top? (g/normalize off (c- (g/mag off) wall)) off)
+            maxp (inc (count points))
+            quad? (= 4 (count points))
+            nump (if nump (m/clamp nump 2 maxp) maxp)
+            np1 (dec nump)
+            complete? (= nump maxp)
+            maybe-loop #(if complete? (conj % (% 0)) (take nump %))
+            drop-wrap #(conj (vec (drop np1 %)) (first %))
+            quad-strip (fn [a b flip?]
+                         (map
+                          (fn [[a1 b1] [a2 b2]]
+                            (if flip? [a1 b1 b2 a2] [a1 a2 b2 b1]))
+                          (d/successive-nth 2 a) (d/successive-nth 2 b)))
+            points3 (mapv #(vec3 %) points)
+            ipoints3 (mapv #(+ ioff %) ipoints)
+            tpoints3 (mapv #(+ off %) tpoints)
+            itpoints3 (mapv #(+ itoff %) itpoints)
+            outsides (quad-strip (maybe-loop points3) (maybe-loop tpoints3) true)
+            insides (quad-strip (maybe-loop ipoints3) (maybe-loop itpoints3) false)]
+        (gmesh/into-mesh
+         (gmesh/gmesh)
          (concat
-          (->> points
-               (tessellate*)
-               (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)])))
-          (->> ipoints
-               (tessellate*)
-               (map (fn [[a b c]] [(+ ioff a) (+ ioff b) (+ ioff c)])))
+          (if bottom?
+            (concat
+             (if quad?
+               [(rseq (mapv vec3 points))]
+               (->> points
+                    (tessellate*)
+                    (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)]))))
+             (if quad?
+               [(mapv #(+ ioff %) ipoints)]
+               (->> ipoints
+                    (tessellate*)
+                    (map (fn [[a b c]] [(+ ioff a) (+ ioff b) (+ ioff c)]))))
+             (when-not complete?
+               (quad-strip (drop-wrap points3) (drop-wrap ipoints3) true)))
+            (quad-strip (maybe-loop points3) (maybe-loop ipoints3) false))
+          outsides
+          insides
           (when-not complete?
-            (tri-strip (drop-wrap points3) (drop-wrap ipoints3) true)))
-         (tri-strip (maybe-loop points3) (maybe-loop ipoints3) false))
-       outsides
-       insides
-       (when-not complete?
-         (let [a (points3 0) b (ipoints3 0) c (itpoints3 0) d (tpoints3 0)
-               e (points3 np1) f (ipoints3 np1) g (itpoints3 np1) h (tpoints3 np1)]
-           [[a c b] [a d c] [e f g] [e g h]]))
-       (if top?
-         (concat
-          (->> tpoints
-               (tessellate*)
-               (map (fn [[a b c]] [(+ off a) (+ off b) (+ off c)])))
-          (->> itpoints
-               (tessellate*)
-               (map (fn [[a b c]] [(+ itoff b) (+ itoff a) (+ itoff c)])))
-          (when-not complete? (tri-strip (drop-wrap tpoints3) (drop-wrap itpoints3) false)))
-         (tri-strip (maybe-loop tpoints3) (maybe-loop itpoints3) true))))))
-  
+            (let [a (points3 0) b (ipoints3 0) c (itpoints3 0) d (tpoints3 0)
+                  e (points3 np1) f (ipoints3 np1) g (itpoints3 np1) h (tpoints3 np1)]
+              [[d c b a] [e f g h]]))
+          (if top?
+            (concat
+             (if quad?
+               [(mapv #(+ off %) tpoints)]
+               (->> tpoints
+                    (tessellate*)
+                    (map (fn [[a b c]] [(+ off a) (+ off b) (+ off c)]))))
+             (if quad?
+               [(rseq (mapv #(+ itoff %) itpoints))]
+               (->> itpoints
+                    (tessellate*)
+                    (map (fn [[a b c]] [(+ itoff b) (+ itoff a) (+ itoff c)]))))
+             (when-not complete? (quad-strip (drop-wrap tpoints3) (drop-wrap itpoints3) false)))
+            (quad-strip (maybe-loop tpoints3) (maybe-loop itpoints3) true))))))  
 #+END_SRC
 *** PTransformable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
