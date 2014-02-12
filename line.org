@@ -54,7 +54,7 @@
   (defn sample-with-res*
     [a b res include-b?]
     (let [ls (for [t (m/norm-range res)] (g/mix a b t))]
-      (if include-b? (concat ls [b]) ls)))
+      (if include-b? ls (butlast ls))))
 #+END_SRC
 ** Line2
 *** Protocol implementations

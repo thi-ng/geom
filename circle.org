@@ -55,7 +55,7 @@
   (vertices
    ([_] (g/vertices _ *resolution*))
    ([_ res]
-      (map #(g/point-at _ %) (m/norm-range res))))
+      (map #(g/point-at _ %) (butlast (m/norm-range res)))))
   (edges
    ([_] (g/edges _ *resolution*))
    ([_ res]

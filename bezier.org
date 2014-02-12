@@ -32,7 +32,7 @@
   
   (defn sample-segment
     [seg res]
-    (map #(interpolate seg %) (m/norm-range res)))
+    (map #(interpolate seg %) (butlast (m/norm-range res))))
   
   (defn sample-with-res
     [res include-last? points]
