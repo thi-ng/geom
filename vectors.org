@@ -31,33 +31,33 @@
   ,#+cljs (-with-meta [_ m*] (Vec2. x y m*))
   
   ,#+clj clojure.lang.ILookup
-  ,#+clj (valAt [this k] (swizzle2 this k nil))
-  ,#+clj (valAt [this k nf] (swizzle2 this k nf))
+  ,#+clj (valAt [_ k] (swizzle2 _ k nil))
+  ,#+clj (valAt [_ k nf] (swizzle2 _ k nf))
   ,#+cljs ILookup
-  ,#+cljs (-lookup [this k] (swizzle2 this k nil))
-  ,#+cljs (-lookup [this k nf] (swizzle2 this k nf))
+  ,#+cljs (-lookup [_ k] (swizzle2 _ k nil))
+  ,#+cljs (-lookup [_ k nf] (swizzle2 _ k nf))
   
   ,#+clj java.util.concurrent.Callable
-  ,#+clj (call [this] (.invoke ^clojure.lang.IFn this))
+  ,#+clj (call [_] (.invoke ^clojure.lang.IFn _))
   ,#+clj java.lang.Runnable
-  ,#+clj (run [this] (.invoke ^clojure.lang.IFn this))
+  ,#+clj (run [_] (.invoke ^clojure.lang.IFn _))
   
   ,#+clj clojure.lang.IFn
-  ,#+clj (invoke [this k] (swizzle2 this k nil))
+  ,#+clj (invoke [_ k] (swizzle2 _ k nil))
   ,#+clj (applyTo
-         [this args]
+         [_ args]
          (condp = (count args)
-           1 (swizzle2 this (first args) nil)
-           2 (swizzle2 this (first args) (second args))
+           1 (swizzle2 _ (first args) nil)
+           2 (swizzle2 _ (first args) (second args))
            (arity-error (count args))))
   
   ,#+cljs IFn
-  ,#+cljs (-invoke [this k] (swizzle2 this k nil))
+  ,#+cljs (-invoke [_ k] (swizzle2 _ k nil))
   ,#+cljs (-applyTo
-          [this args]
+          [_ args]
           (condp = (count args)
-            1 (swizzle2 this (first args) nil)
-            2 (swizzle2 this (first args) (second args))
+            1 (swizzle2 _ (first args) nil)
+            2 (swizzle2 _ (first args) (second args))
             (arity-error (count args))))
   
   ,#+clj clojure.lang.IMapEntry
@@ -72,7 +72,7 @@
   ,#+clj (count [_] 2)
   ,#+clj (length [_] 2)
   ,#+clj (containsKey [_ k] (not (nil? (#{0 1 :x :y} k))))
-  ,#+clj (entryAt [this k] (map-entry k (case (int k) 0 x, 1 y, (key-error k))))
+  ,#+clj (entryAt [_ k] (map-entry k (case (int k) 0 x, 1 y, (key-error k))))
   ,#+clj (assoc [_ k v]
           (case k
             :x (Vec2. v y _meta) :y (Vec2. x v _meta)
@@ -84,26 +84,26 @@
                 (condp = k 0 (Vec2. v y _meta) 1 (Vec2. x v _meta) (key-error k)))
   
   ,#+cljs ICounted
-  ,#+cljs (-count [this] 2)
+  ,#+cljs (-count [_] 2)
   ,#+cljs IAssociative
   ,#+cljs IVector
-  ,#+cljs (-contains-key? [this k] (not (nil? (#{0 1 :x :y} k))))
-  ,#+cljs (-assoc [this k v]
+  ,#+cljs (-contains-key? [_ k] (not (nil? (#{0 1 :x :y} k))))
+  ,#+cljs (-assoc [_ k v]
                  (case k
                    :x (Vec2. v y _meta) :y (Vec2. x v _meta)
                    0 (Vec2. v y _meta) 1 (Vec2. x v _meta)
                    :xy (Vec2. (v 0) (v 1) _meta)
                    :yx (Vec2. (v 1) (v 0) _meta)
                    (key-error k)))
-  ,#+cljs (-assoc-n [this k v]
+  ,#+cljs (-assoc-n [_ k v]
                    (case k
                      0 (Vec2. v y _meta) 1 (Vec2. x v _meta) (key-error k)))
   
   ,#+clj java.util.Collection
-  ,#+clj (isEmpty [this] false)
-  ,#+clj (iterator [this] (.iterator ^java.util.Collection (list x y)))
-  ,#+clj (toArray [this] (double-array 2 [x y]))
-  ,#+clj (size [this] 2)
+  ,#+clj (isEmpty [_] false)
+  ,#+clj (iterator [_] (.iterator ^java.util.Collection (list x y)))
+  ,#+clj (toArray [_] (double-array 2 [x y]))
+  ,#+clj (size [_] 2)
   
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.Indexed
@@ -117,10 +117,10 @@
   ,#+clj (peek [_] y)
   ,#+clj (pop [_] [x])
   ,#+clj (rseq [_] (Vec2. y x _meta))
-  ,#+clj (seq [this] this)
-  ,#+clj (nth [this n] (case n 0 x, 1 y, (key-error n)))
+  ,#+clj (seq [_] _)
+  ,#+clj (nth [_ n] (case n 0 x, 1 y, (key-error n)))
   ,#+clj (nth [_ n nf] (case n 0 x, 1 y, nf))
-  ,#+clj (equiv [this o]
+  ,#+clj (equiv [_ o]
                (if (instance? Vec2 o)
                  (and (clojure.lang.Util/equiv x (.-x ^Vec2 o))
                       (clojure.lang.Util/equiv y (.-y ^Vec2 o)))
@@ -128,7 +128,7 @@
                       (= 2 (count o))
                       (clojure.lang.Util/equiv x (nth o 0))
                       (clojure.lang.Util/equiv y (nth o 1)))))
-  ,#+clj (equals [this o]
+  ,#+clj (equals [_ o]
                 (if (instance? Vec2 o)
                   (and (clojure.lang.Util/equals x (.-x ^Vec2 o))
                        (clojure.lang.Util/equals y (.-y ^Vec2 o)))
@@ -138,28 +138,28 @@
                        (clojure.lang.Util/equals y (nth o 1)))))
   ,#+cljs ISequential
   ,#+cljs ISeq
-  ,#+cljs (-first [this] x)
-  ,#+cljs (-rest [this] (cons y nil))
+  ,#+cljs (-first [_] x)
+  ,#+cljs (-rest [_] (cons y nil))
   ,#+cljs ISeqable
-  ,#+cljs (-seq [this] this)
+  ,#+cljs (-seq [_] _)
   ,#+cljs IReversible
-  ,#+cljs (-rseq [this] (Vec2. y x _meta))
+  ,#+cljs (-rseq [_] (Vec2. y x _meta))
   ,#+cljs IIndexed
-  ,#+cljs (-nth [this n] (case n 0 x, 1 y, (key-error n)))
-  ,#+cljs (-nth [this n nf] (case n 0 x, 1 y, nf))
+  ,#+cljs (-nth [_ n] (case n 0 x, 1 y, (key-error n)))
+  ,#+cljs (-nth [_ n nf] (case n 0 x, 1 y, nf))
   
   ,#+clj Comparable
-  ,#+clj (compareTo [this o]
+  ,#+clj (compareTo [_ o]
                    (if (instance? Vec2 o)
                      (let [c (compare x (.-x ^Vec2 o))]
                        (if (== 0 c) (compare y (.-y ^Vec2 o)) c))
                      (let [c (count o)]
-                       (if (== 2 c) (compare o this) (- 2 c)))))
+                       (if (== 2 c) (compare o _) (- 2 c)))))
   ,#+clj (hashCode [_]
                   (hash-combine (clojure.lang.Util/hash x) (clojure.lang.Util/hash y)))
   
   ,#+cljs IComparable
-  ,#+cljs (-compare [this o]
+  ,#+cljs (-compare [_ o]
                    (let [c (compare x (.-x ^Vec2 o))]
                      (if (== 0 c) (compare y (.-y ^Vec2 o)) c)))
   
@@ -172,111 +172,111 @@
 *** PTransformable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PTransformable
-  (scale [this a]
+  (scale [_ a]
     (if (instance? Vec2 a)
       (Vec2. (c* x (.-x ^Vec2 a)) (c* y (.-y ^Vec2 a)) _meta)
       (if (number? a)
         (Vec2. (c* x a) (c* y a) _meta)
         (Vec2. (c* x (nth a 0 1)) (c* y (nth a 1 1)) _meta))))
-  (scale [this a b]
+  (scale [_ a b]
     (if (number? a)
       (Vec2. (c* x a) (c* y b) _meta)
       (let [[ax ay] a [bx by] b]
         (Vec2. (c* (c* x ax) bx) (c* (c* y ay) by) _meta))))
-  (translate [this [tx ty]]
-    (+ this tx ty))
-  (rotate [this theta]
+  (translate [_ [tx ty]]
+    (+ _ tx ty))
+  (rotate [_ theta]
     (let [s (Math/sin theta) c (Math/cos theta)]
       (Vec2. (c- (c* x c) (c* y s)) (c+ (c* x s) (c* y c)) _meta)))
-  (rotate-z [this theta]
-    (rotate this theta))
-  (transform [this m])
+  (rotate-z [_ theta]
+    (rotate _ theta))
+  (transform [_ m])
 #+END_SRC
 *** PMathOps
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PMathOps
-  (abs [this] (Vec2. (m/abs x) (m/abs y) _meta))
-  (+ [this] this)
-  (+ [this a] (vec2-op-1 c+ this a 0.0 _meta))
-  (+ [this a b] (vec2-op-2 c+ this a b 0.0 0.0 _meta))
-  (+ [this a b c] (vec2-op-3 c+ this a b c 0.0 _meta))
+  (abs [_] (Vec2. (m/abs x) (m/abs y) _meta))
+  (+ [_] _)
+  (+ [_ a] (vec2-op-1 c+ _ a 0.0 _meta))
+  (+ [_ a b] (vec2-op-2 c+ _ a b 0.0 0.0 _meta))
+  (+ [_ a b c] (vec2-op-3 c+ _ a b c 0.0 _meta))
   
-  (- [this] (Vec2. (c- x) (c- y) _meta))
-  (- [this a] (vec2-op-1 c- this a 0.0 _meta))
-  (- [this a b] (vec2-op-2 c- this a b 0.0 0.0 _meta))
-  (- [this a b c] (vec2-op-3 c- this a b c 0.0 _meta))
+  (- [_] (Vec2. (c- x) (c- y) _meta))
+  (- [_ a] (vec2-op-1 c- _ a 0.0 _meta))
+  (- [_ a b] (vec2-op-2 c- _ a b 0.0 0.0 _meta))
+  (- [_ a b c] (vec2-op-3 c- _ a b c 0.0 _meta))
   
-  (* [this] this)
-  (* [this a] (vec2-op-1 c* this a 1.0 _meta))
-  (* [this a b] (vec2-op-2 c* this a b 1.0 1.0 _meta))
-  (* [this a b c] (vec2-op-3 c* this a b c 1.0 _meta))
+  (* [_] _)
+  (* [_ a] (vec2-op-1 c* _ a 1.0 _meta))
+  (* [_ a b] (vec2-op-2 c* _ a b 1.0 1.0 _meta))
+  (* [_ a b c] (vec2-op-3 c* _ a b c 1.0 _meta))
   
-  (div [this] (Vec2. (/ x) (/ y) _meta))
-  (div [this a] (vec2-op-1 / this a 0.0 _meta))
-  (div [this a b] (vec2-op-2 / this a b 0.0 0.0 _meta))
-  (div [this a b c] (vec2-op-3 / this a b c 0.0 _meta))
+  (div [_] (Vec2. (/ x) (/ y) _meta))
+  (div [_ a] (vec2-op-1 / _ a 0.0 _meta))
+  (div [_ a b] (vec2-op-2 / _ a b 0.0 0.0 _meta))
+  (div [_ a b c] (vec2-op-3 / _ a b c 0.0 _meta))
   
-  (madd [this a b] (vec2-op-2* c* c+ this a b 1.0 0.0 _meta))
+  (madd [_ a b] (vec2-op-2* c* c+ _ a b 1.0 0.0 _meta))
 #+END_SRC
 *** PDotProduct
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PDotProduct
-  (dot [this [ax ay]] (c+ (c* x ax) (c* y ay)))
+  (dot [_ [ax ay]] (c+ (c* x ax) (c* y ay)))
 #+END_SRC
 *** PCrossProduct
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx  
   PCrossProduct
-  (cross [this [ax ay]] (c- (c* x ay) (c* y ax)))
+  (cross [_ [ax ay]] (c- (c* x ay) (c* y ax)))
 #+END_SRC
 *** PLimit
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx  
   PLimit
-  (limit [this len]
-         (if (> (mag-squared this) (c* len len))
-           (normalize this len) this))
+  (limit [_ len]
+         (if (> (mag-squared _) (c* len len))
+           (normalize _ len) _))
 #+END_SRC
 *** PMinMax
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PMinMax
-  (min [this [ax ay]]
+  (min [_ [ax ay]]
        (Vec2. (cmin x ax) (cmin y ay) _meta))
-  (min [this [ax ay] [bx by]]
+  (min [_ [ax ay] [bx by]]
        (Vec2. (cmin (cmin x ax) bx) (cmin (cmin y ay) by) _meta))
-  (max [this [ax ay]]
+  (max [_ [ax ay]]
        (Vec2. (cmax x ax) (cmax y ay) _meta))
-  (max [this [ax ay] [bx by]]
+  (max [_ [ax ay] [bx by]]
        (Vec2. (cmax (cmax x ax) bx) (cmax (cmax y ay) by) _meta))
 #+END_SRC
 *** PMagnitude
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PMagnitude
-  (mag [this] (Math/sqrt (c+ (c* x x) (c* y y))))
-  (mag-squared [this] (c+ (c* x x) (c* y y)))
+  (mag [_] (Math/sqrt (c+ (c* x x) (c* y y))))
+  (mag-squared [_] (c+ (c* x x) (c* y y)))
 #+END_SRC
 *** PNormalize
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PNormalize
-  (normalize [this]
-    (let [l (mag this)]
-      (if (pos? l) (Vec2. (/ x l) (/ y l) _meta) this)))
-  (normalize [this len]
-    (let [l (mag this)]
+  (normalize [_]
+    (let [l (mag _)]
+      (if (pos? l) (Vec2. (/ x l) (/ y l) _meta) _)))
+  (normalize [_ len]
+    (let [l (mag _)]
       (if (pos? l)
-        (let [l (/ len l)] (Vec2. (c* x l) (c* y l) _meta)) this)))
-  (normalized? [this]
-    (m/delta= 1.0 (mag-squared this)))
+        (let [l (/ len l)] (Vec2. (c* x l) (c* y l) _meta)) _)))
+  (normalized? [_]
+    (m/delta= 1.0 (mag-squared _)))
 #+END_SRC
 *** PDistance
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PDistance
   (dist
-   [this a]
+   [_ a]
    (let [[dx dy] (if (instance? Vec2 a)
                    [(c- x (.-x ^Vec2 a)) (c- y (.-y ^Vec2 a))]
                    [(c- x (nth a 0)) (c- y (nth a 1))])]
      (Math/sqrt (c+ (c* dx dx) (c* dy dy)))))
   (dist-squared
-   [this a]
+   [_ a]
    (let [[dx dy] (if (instance? Vec2 a)
                    [(c- x (.-x ^Vec2 a)) (c- y (.-y ^Vec2 a))]
                    [(c- x (nth a 0)) (c- y (nth a 1))])]
@@ -285,41 +285,41 @@
 *** PReflect
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PReflect
-  (reflect [this [rx ry :as r]]
-    (let [d (c* (dot this r) 2.0)]
+  (reflect [_ [rx ry :as r]]
+    (let [d (c* (dot _ r) 2.0)]
       (Vec2. (c- (c* rx d) x) (c- (c* ry d) y) _meta)))
 #+END_SRC
 *** PInvertible
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
     PInvertible
-    (invert [this] (Vec2. (c- x) (c- y) _meta))
+    (invert [_] (Vec2. (c- x) (c- y) _meta))
 #+END_SRC
 *** PInterpolateable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PInterpolateable
-  (mix [this [ax ay]]
+  (mix [_ [ax ay]]
     (Vec2. (c+ x (c* (c- ax x) 0.5)) (c+ y (c* (c- ay y) 0.5)) _meta))
-  (mix [this [ax ay] t]
+  (mix [_ [ax ay] t]
     (Vec2. (c+ x (c* (c- ax x) t)) (c+ y (c* (c- ay y) t)) _meta))
 #+END_SRC
 *** PHeading
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PHeading
-  (heading-xy [this]
+  (heading-xy [_]
     (let [t (Math/atan2 y x)]
       (if (neg? t) (c+ TWO_PI t) t)))
-  (angle-between [this a]
-    (let [t (c- (heading-xy a) (heading-xy this))]
+  (angle-between [_ a]
+    (let [t (c- (heading-xy a) (heading-xy _))]
       (if (neg? t) (c+ TWO_PI t) t)))
-  (slope-xy [this] (/ y x))
-  (normal [this] (Vec2. (c- y) x _meta))
+  (slope-xy [_] (/ y x))
+  (normal [_] (Vec2. (c- y) x _meta))
 #+END_SRC
 *** PPolar
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
     PPolar
-    (as-polar [this]
-      (Vec2. (mag this) (heading-xy this) _meta))
-    (as-cartesian [this]
+    (as-polar [_]
+      (Vec2. (mag _) (heading-xy _) _meta))
+    (as-cartesian [_]
       (Vec2. (c* x (Math/cos y)) (c* x (Math/sin y)) _meta))
 #+END_SRC
 *** End of implementations
@@ -347,32 +347,32 @@
   ,#+cljs (-with-meta [_ m*] (Vec3. x y z m*))
   
   ,#+clj clojure.lang.ILookup
-  ,#+clj (valAt [this k] (swizzle3 this k nil))
-  ,#+clj (valAt [this k nf] (swizzle3 this k nf))
+  ,#+clj (valAt [_ k] (swizzle3 _ k nil))
+  ,#+clj (valAt [_ k nf] (swizzle3 _ k nf))
   ,#+cljs ILookup
-  ,#+cljs (-lookup [this k] (swizzle3 this k nil))
-  ,#+cljs (-lookup [this k nf] (swizzle3 this k nf))
+  ,#+cljs (-lookup [_ k] (swizzle3 _ k nil))
+  ,#+cljs (-lookup [_ k nf] (swizzle3 _ k nf))
   
   ,#+clj java.util.concurrent.Callable
-  ,#+clj (call [this] (.invoke ^clojure.lang.IFn this))
+  ,#+clj (call [_] (.invoke ^clojure.lang.IFn _))
   ,#+clj java.lang.Runnable
-  ,#+clj (run [this] (.invoke ^clojure.lang.IFn this))
+  ,#+clj (run [_] (.invoke ^clojure.lang.IFn _))
   
   ,#+clj clojure.lang.IFn
-  ,#+clj (invoke [this k] (swizzle3 this k nil))
+  ,#+clj (invoke [_ k] (swizzle3 _ k nil))
   ,#+clj (applyTo
-         [this args]
+         [_ args]
          (condp = (count args)
-           1 (swizzle3 this (first args) nil)
-           2 (swizzle3 this (first args) (second args))
+           1 (swizzle3 _ (first args) nil)
+           2 (swizzle3 _ (first args) (second args))
            (arity-error (count args))))
   ,#+cljs IFn
-  ,#+cljs (-invoke [this k] (swizzle3 this k nil))
+  ,#+cljs (-invoke [_ k] (swizzle3 _ k nil))
   ,#+cljs (-applyTo
-          [this args]
+          [_ args]
           (condp = (count args)
-            1 (swizzle3 this (first args) nil)
-            2 (swizzle3 this (first args) (second args))
+            1 (swizzle3 _ (first args) nil)
+            2 (swizzle3 _ (first args) (second args))
             (arity-error (count args))))
   
   ,#+clj clojure.lang.Associative
@@ -380,7 +380,7 @@
   ,#+clj (count [_] 3)
   ,#+clj (length [_] 3)
   ,#+clj (containsKey [_ k] (not (nil? (#{0 1 2 :x :y :z} k))))
-  ,#+clj (entryAt [this k] (map-entry k (case (int k) 0 x, 1 y, 2 z, (key-error k))))
+  ,#+clj (entryAt [_ k] (map-entry k (case (int k) 0 x, 1 y, 2 z, (key-error k))))
   ,#+clj (assoc [_ k v]
           (case k
             :x (Vec3. v y z _meta)
@@ -405,13 +405,13 @@
            (key-error k)))
   
   ,#+cljs ICounted
-  ,#+cljs (-count [this] 2)
+  ,#+cljs (-count [_] 2)
   ,#+cljs IAssociative
   ,#+cljs IVector
-  ,#+cljs (-contains-key? [this k]
+  ,#+cljs (-contains-key? [_ k]
                          (not (nil? (#{0 1 2 :x :y :z} k))))
   ,#+cljs (-assoc
-          [this k v]
+          [_ k v]
           (case k
             :x (Vec3. v y z _meta)
             :y (Vec3. x v z _meta)
@@ -427,7 +427,7 @@
             :zy (Vec3. x (v 1) (v 0) _meta) ;; (assoc [x y z] :zy [a b]) => [x b a]
             (key-error k)))
   ,#+cljs (-assoc-n
-          [this k v]
+          [_ k v]
           (case k
             0 (Vec3. v y z _meta)
             1 (Vec3. x v z _meta)
@@ -435,10 +435,10 @@
             (key-error k)))
   
   ,#+clj java.util.Collection
-  ,#+clj (isEmpty [this] false)
-  ,#+clj (iterator [this] (.iterator ^java.util.Collection (list x y z)))
-  ,#+clj (toArray [this] (double-array 3 [x y z]))
-  ,#+clj (size [this] 3)
+  ,#+clj (isEmpty [_] false)
+  ,#+clj (iterator [_] (.iterator ^java.util.Collection (list x y z)))
+  ,#+clj (toArray [_] (double-array 3 [x y z]))
+  ,#+clj (size [_] 3)
   
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.Indexed
@@ -452,11 +452,11 @@
   ,#+clj (peek [_] z)
   ,#+clj (pop [_] (Vec2. x y _meta))
   ,#+clj (rseq [_] (Vec3. z y x _meta))
-  ,#+clj (seq [this] this)
-  ,#+clj (nth [this n] (condp = n 0 x 1 y 2 z (key-error n)))
+  ,#+clj (seq [_] _)
+  ,#+clj (nth [_ n] (condp = n 0 x 1 y 2 z (key-error n)))
   ,#+clj (nth [_ n nf] (condp = n 0 x 1 y 2 z nf))
   ,#+clj (equiv
-         [this o]
+         [_ o]
          (if (instance? Vec3 o)
            (and (clojure.lang.Util/equiv x (.-x ^Vec3 o))
                 (clojure.lang.Util/equiv y (.-y ^Vec3 o))
@@ -467,7 +467,7 @@
                 (clojure.lang.Util/equiv y (nth o 1))
                 (clojure.lang.Util/equiv z (nth o 2)))))
   ,#+clj (equals
-         [this o]
+         [_ o]
          (if (instance? Vec3 o)
            (and (clojure.lang.Util/equals x (.-x ^Vec3 o))
                 (clojure.lang.Util/equals y (.-y ^Vec3 o))
@@ -479,19 +479,19 @@
                 (clojure.lang.Util/equals z (nth o 2)))))
   ,#+cljs ISequential
   ,#+cljs ISeq
-  ,#+cljs (-first [this] x)
-  ,#+cljs (-rest [this] (cons y (cons z nil)))
+  ,#+cljs (-first [_] x)
+  ,#+cljs (-rest [_] (cons y (cons z nil)))
   ,#+cljs ISeqable
-  ,#+cljs (-seq [this] this)
+  ,#+cljs (-seq [_] _)
   ,#+cljs IReversible
-  ,#+cljs (-rseq [this] (Vec3. z y x _meta))
+  ,#+cljs (-rseq [_] (Vec3. z y x _meta))
   ,#+cljs IIndexed
-  ,#+cljs (-nth [this n] (condp = n 0 x 1 y 2 z (key-error n)))
-  ,#+cljs (-nth [this n nf] (condp = n 0 x 1 y 2 z nf))
+  ,#+cljs (-nth [_ n] (condp = n 0 x 1 y 2 z (key-error n)))
+  ,#+cljs (-nth [_ n nf] (condp = n 0 x 1 y 2 z nf))
   
   ,#+clj Comparable
   ,#+clj (compareTo
-         [this o]
+         [_ o]
          (if (instance? Vec3 o)
            (let [c (compare x (.-x ^Vec3 o))]
              (if (== 0 c)
@@ -501,7 +501,7 @@
                    c))
                c))
            (let [c (count o)]
-             (if (== 3 c) (compare o this) (- 3 c)))))
+             (if (== 3 c) (compare o _) (- 3 c)))))
   ,#+clj (hashCode
          [_]
          (-> x
@@ -510,7 +510,7 @@
              (hash-combine (clojure.lang.Util/hash z))))
   ,#+cljs IComparable
   ,#+cljs (-compare
-          [this o]
+          [_ o]
           (let [c (compare x (.-x ^Vec3 o))]
             (if (== 0 c)
               (let [c (compare y (.-y ^Vec3 o))]
@@ -518,7 +518,7 @@
               c)))
   
   ,#+clj clojure.lang.IHashEq
-  ,#+clj (hasheq [this]
+  ,#+clj (hasheq [_]
                 (-> x
                     (clojure.lang.Util/hasheq)
                     (hash-combine (clojure.lang.Util/hasheq y))
@@ -532,113 +532,113 @@
 *** PTransformable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PTransformable
-  (scale [this a]
+  (scale [_ a]
     (if (instance? Vec3 a)
       (Vec3. (c* x (.-x ^Vec3 a)) (c* y (.-y ^Vec3 a)) (c* z (.-z ^Vec3 a)) _meta)
       (if (number? a)
         (Vec3. (c* x a) (c* y a) (c* z a) _meta)
         (Vec3. (c* x (nth a 0 1)) (c* y (nth a 1 1)) (c* z (nth a 2 1)) _meta))))
-  (scale [this a b]
+  (scale [_ a b]
     (if (number? a)
       (Vec3. (c* x a) (c* y b) z _meta)
       (let [[ax ay az] a [bx by bz] b]
         (Vec3. (c* (c* x ax) bx) (c* (c* y ay) by) (c* (c* z az) bz) _meta))))
-  (scale [this a b c]
+  (scale [_ a b c]
     (if (number? a)
       (Vec3. (c* x a) (c* y b) (c* z c) _meta)
       (let [[ax ay az] a [bx by bz] b [cx cy cz] c]
         (Vec3. (c* (c* (c* x ax) bx) cx) (c* (c* (c* y ay) by) cy) (c* (c* (c* z az) bz) cz) _meta))))
-  (translate [this t]
-    (+ this t))
-  (rotate-x [this theta]
+  (translate [_ t]
+    (+ _ t))
+  (rotate-x [_ theta]
     (let [s (Math/sin theta) c (Math/cos theta)]
       (Vec3. x (c- (c- (c* z c) (c* y s))) (c- (c+ (c* z s) (c* y c))) _meta)))
-  (rotate-y [this theta]
+  (rotate-y [_ theta]
     (let [s (Math/sin theta) c (Math/cos theta)]
       (Vec3. (c- (c- (c* x c) (c* z s))) y (c+ (c* x s) (c* z c)) _meta)))
-  (rotate-z [this theta]
+  (rotate-z [_ theta]
     (let [s (Math/sin theta) c (Math/cos theta)]
       (Vec3. (c- (c* x c) (c* y s)) (c+ (c* x s) (c* y c)) z _meta)))
-  (rotate [this theta]
-    (rotate-z this theta))
-  (transform [this m] (transform-vector m this))
+  (rotate [_ theta]
+    (rotate-z _ theta))
+  (transform [_ m] (transform-vector m _))
 #+END_SRC
 *** PMathOps
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PMathOps
-  (+ [this] this)
-  (+ [this a] (vec3-op-1 c+ this a 0.0 _meta))
-  (+ [this a b] (vec3-op-2 c+ c+ this a b 0.0 0.0 _meta))
-  (+ [this a b c] (vec3-op-3 c+ this a b c 0.0 _meta))
+  (+ [_] _)
+  (+ [_ a] (vec3-op-1 c+ _ a 0.0 _meta))
+  (+ [_ a b] (vec3-op-2 c+ c+ _ a b 0.0 0.0 _meta))
+  (+ [_ a b c] (vec3-op-3 c+ _ a b c 0.0 _meta))
   
-  (- [this] (Vec3. (c- x) (c- y) (c- z) _meta))
-  (- [this a] (vec3-op-1 c- this a 0.0 _meta))
-  (- [this a b] (vec3-op-2 c- c- this a b 0.0 0.0 _meta))
-  (- [this a b c] (vec3-op-3 c- this a b c 0.0 _meta))
+  (- [_] (Vec3. (c- x) (c- y) (c- z) _meta))
+  (- [_ a] (vec3-op-1 c- _ a 0.0 _meta))
+  (- [_ a b] (vec3-op-2 c- c- _ a b 0.0 0.0 _meta))
+  (- [_ a b c] (vec3-op-3 c- _ a b c 0.0 _meta))
   
-  (* [this] this)
-  (* [this a] (vec3-op-1 c* this a 1.0 _meta))
-  (* [this a b] (vec3-op-2 c* c* this a b 1.0 1.0 _meta))
-  (* [this a b c] (vec3-op-3 c* this a b c 1.0 _meta))
+  (* [_] _)
+  (* [_ a] (vec3-op-1 c* _ a 1.0 _meta))
+  (* [_ a b] (vec3-op-2 c* c* _ a b 1.0 1.0 _meta))
+  (* [_ a b c] (vec3-op-3 c* _ a b c 1.0 _meta))
   
-  (div [this] (Vec3. (/ x) (/ y) (/ z) _meta))
-  (div [this a] (vec3-op-1 / this a 0.0 _meta))
-  (div [this a b] (vec3-op-2 / / this a b 0.0 0.0 _meta))
-  (div [this a b c] (vec3-op-3 / this a b c 0.0 _meta))
+  (div [_] (Vec3. (/ x) (/ y) (/ z) _meta))
+  (div [_ a] (vec3-op-1 / _ a 0.0 _meta))
+  (div [_ a b] (vec3-op-2 / / _ a b 0.0 0.0 _meta))
+  (div [_ a b c] (vec3-op-3 / _ a b c 0.0 _meta))
   
-  (madd [this a b] (vec3-op-2 c* c+ this a b 1.0 0.0 _meta))
+  (madd [_ a b] (vec3-op-2 c* c+ _ a b 1.0 0.0 _meta))
   
   PDotProduct
-  (dot [this [ax ay az]] (c+ (c+ (c* x ax) (c* y ay)) (c* z az)))
+  (dot [_ [ax ay az]] (c+ (c+ (c* x ax) (c* y ay)) (c* z az)))
   
   PCrossProduct
-  (cross [this [ax ay az]]
+  (cross [_ [ax ay az]]
          (Vec3. (c- (c* y az) (c* ay z)) (c- (c* z ax) (c* az x)) (c- (c* x ay) (c* ax y)) _meta))
   
   PLimit
-  (limit [this len]
-         (if (> (mag-squared this) (c* len len)) (normalize this len) this))
+  (limit [_ len]
+         (if (> (mag-squared _) (c* len len)) (normalize _ len) _))
   
   PMinMax
-  (min [this [ax ay az]]
+  (min [_ [ax ay az]]
        (Vec3. (cmin x ax) (cmin y ay) (cmin z az) _meta))
-  (min [this [ax ay az] [bx by bz]]
+  (min [_ [ax ay az] [bx by bz]]
        (Vec3. (cmin (cmin x ax) bx) (cmin (cmin y ay) by) (cmin (cmin z az) bz) _meta))
-  (max [this [ax ay az]]
+  (max [_ [ax ay az]]
        (Vec3. (cmax x ax) (cmax y ay) (cmax z az) _meta))
-  (max [this [ax ay az] [bx by bz]]
+  (max [_ [ax ay az] [bx by bz]]
        (Vec3. (cmax (cmax x ax) bx) (cmax (cmax y ay) by) (cmax (cmax z az) bz) _meta))
 #+END_SRC
 *** PMagnitude
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PMagnitude
-  (mag [this] (Math/sqrt (c+ (c+ (c* x x) (c* y y)) (c* z z))))
-  (mag-squared [this] (c+ (c+ (c* x x) (c* y y)) (c* z z)))
+  (mag [_] (Math/sqrt (c+ (c+ (c* x x) (c* y y)) (c* z z))))
+  (mag-squared [_] (c+ (c+ (c* x x) (c* y y)) (c* z z)))
 #+END_SRC
 *** PNormalize
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PNormalize
-  (normalize [this]
-    (let [l (mag this)]
-      (if (pos? l) (Vec3. (/ x l) (/ y l) (/ z l) _meta) this)))
-  (normalize [this len]
-    (let [l (mag this)]
+  (normalize [_]
+    (let [l (mag _)]
+      (if (pos? l) (Vec3. (/ x l) (/ y l) (/ z l) _meta) _)))
+  (normalize [_ len]
+    (let [l (mag _)]
       (if (pos? l)
-        (let [l (/ len l)] (Vec3. (c* x l) (c* y l) (c* z l) _meta)) this)))
-  (normalized? [this]
-    (m/delta= 1.0 (mag-squared this)))
+        (let [l (/ len l)] (Vec3. (c* x l) (c* y l) (c* z l) _meta)) _)))
+  (normalized? [_]
+    (m/delta= 1.0 (mag-squared _)))
 #+END_SRC
 *** PDistance
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PDistance
   (dist
-   [this a]
+   [_ a]
    (let [[dx dy dz] (if (instance? Vec3 a)
                       [(c- x (.-x ^Vec3 a)) (c- y (.-y ^Vec3 a)) (c- z (.-z ^Vec3 a))]
                       [(c- x (nth a 0)) (c- y (nth a 1)) (c- z (nth a 2 0.0))])]
      (Math/sqrt (c+ (c+ (c* dx dx) (c* dy dy)) (c* dz dz)))))
   (dist-squared
-   [this a]
+   [_ a]
    (let [[dx dy dz] (if (instance? Vec3 a)
                       [(c- x (.-x ^Vec3 a)) (c- y (.-y ^Vec3 a)) (c- z (.-z ^Vec3 a))]
                       [(c- x (nth a 0)) (c- y (nth a 1)) (c- z (nth a 2 0.0))])]
@@ -647,33 +647,33 @@
 *** PReflect
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PReflect
-  (reflect [this [rx ry rz :as r]]
-    (let [d (c* (dot this r) 2.0)]
+  (reflect [_ [rx ry rz :as r]]
+    (let [d (c* (dot _ r) 2.0)]
       (Vec3. (c- (c* rx d) x) (c- (c* ry d) y) (c- (c* rz d) z) _meta)))
 #+END_SRC
 *** PInvertible
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PInvertible
-  (invert [this] (Vec3. (c- x) (c- y) (c- z) _meta))
+  (invert [_] (Vec3. (c- x) (c- y) (c- z) _meta))
 #+END_SRC
 *** PInterpolateable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   PInterpolateable
-  (mix [this [ax ay az]]
+  (mix [_ [ax ay az]]
     (Vec3. (c+ x (c* (c- ax x) 0.5)) (c+ y (c* (c- ay y) 0.5)) (c+ z (c* (c- az z) 0.5)) _meta))
-  (mix [this [ax ay az] t]
+  (mix [_ [ax ay az] t]
     (Vec3. (c+ x (c* (c- ax x) t)) (c+ y (c* (c- ay y) t)) (c+ z (c* (c- az z) t)) _meta))
 #+END_SRC
 *** PPolar
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   ;; http://mathworld.wolfram.com/SphericalCoordinates.html
   PPolar
-  (as-polar [this]
+  (as-polar [_]
     (let [r (Math/sqrt (c+ (c+ (c* x x) (c* y y)) (c* z z)))
           theta (Math/atan2 y x)
           phi (Math/acos (/ z r))]
       (Vec3. r theta phi _meta)))
-  (as-cartesian [this]
+  (as-cartesian [_]
     (let [rsphi (c* x (Math/sin z))]
       (Vec3. (c* (Math/cos y) rsphi) (c* (Math/sin y) rsphi) (c* x (Math/cos z)) _meta)))
 #+END_SRC
@@ -689,173 +689,173 @@
 *** 2D
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   (defn vec2-op-1
-    [op ^Vec2 this a d m]
+    [op ^Vec2 _ a d m]
     (if (instance? Vec2 a)
       (Vec2.
-       (op (.-x this) (.-x ^Vec2 a))
-       (op (.-y this) (.-y ^Vec2 a)) m)
+       (op (.-x _) (.-x ^Vec2 a))
+       (op (.-y _) (.-y ^Vec2 a)) m)
       (if (number? a)
-        (Vec2. (op (.-x this) a) (op (.-y this) a) m)
+        (Vec2. (op (.-x _) a) (op (.-y _) a) m)
         (Vec2.
-         (op (.-x this) (nth a 0 d))
-         (op (.-y this) (nth a 1 d)) m))))
+         (op (.-x _) (nth a 0 d))
+         (op (.-y _) (nth a 1 d)) m))))
   
   (defn vec2-op-2
-    [op ^Vec2 this a b d1 d2 m]
+    [op ^Vec2 _ a b d1 d2 m]
     (if (instance? Vec2 a)
       (if (instance? Vec2 b)
         (Vec2. ;; v v
-         (op (op (.-x this) (.-x ^Vec2 a)) (.-x ^Vec2 b))
-         (op (op (.-y this) (.-y ^Vec2 a)) (.-y ^Vec2 b)) m)
+         (op (op (.-x _) (.-x ^Vec2 a)) (.-x ^Vec2 b))
+         (op (op (.-y _) (.-y ^Vec2 a)) (.-y ^Vec2 b)) m)
         (if (number? b)
           (Vec2. ;; v n
-           (op (op (.-x this) (.-x ^Vec2 a)) b)
-           (op (op (.-y this) (.-y ^Vec2 a)) b) m)
+           (op (op (.-x _) (.-x ^Vec2 a)) b)
+           (op (op (.-y _) (.-y ^Vec2 a)) b) m)
           (Vec2. ;; v ?
-           (op (op (.-x this) (.-x ^Vec2 a)) (nth b 0 d2))
-           (op (op (.-y this) (.-y ^Vec2 a)) (nth b 1 d2)) m)))
+           (op (op (.-x _) (.-x ^Vec2 a)) (nth b 0 d2))
+           (op (op (.-y _) (.-y ^Vec2 a)) (nth b 1 d2)) m)))
       (let [an? (number? a) bn? (number? b)]
         (if (and an? bn?)
           (Vec2. ;; n n
-           (op (.-x this) a)
-           (op (.-y this) b) m)
+           (op (.-x _) a)
+           (op (.-y _) b) m)
           (let [[ax ay] (if an? [a a] a)
                 [bx by] (if bn? [b b] b)]
             (Vec2. ;; ? ?
-             (op (op (.-x this) (or ax d1)) (or bx d2))
-             (op (op (.-y this) (or ay d1)) (or by d2)) m))))))
+             (op (op (.-x _) (or ax d1)) (or bx d2))
+             (op (op (.-y _) (or ay d1)) (or by d2)) m))))))
   
   (defn vec2-op-2*
     "Similar to vec2-op-2 but takes 2 fn args and handles case with
     a & b being both numbers differently."
-    [op op2 ^Vec2 this a b d1 d2 m]
+    [op op2 ^Vec2 _ a b d1 d2 m]
     (if (instance? Vec2 a)
       (if (instance? Vec2 b)
         (Vec2. ;; v v
-         (op2 (op (.-x this) (.-x ^Vec2 a)) (.-x ^Vec2 b))
-         (op2 (op (.-y this) (.-y ^Vec2 a)) (.-y ^Vec2 b)) m)
+         (op2 (op (.-x _) (.-x ^Vec2 a)) (.-x ^Vec2 b))
+         (op2 (op (.-y _) (.-y ^Vec2 a)) (.-y ^Vec2 b)) m)
         (if (number? b)
           (Vec2. ;; v n
-           (op2 (op (.-x this) (.-x ^Vec2 a)) b)
-           (op2 (op (.-y this) (.-y ^Vec2 a)) b) m)
+           (op2 (op (.-x _) (.-x ^Vec2 a)) b)
+           (op2 (op (.-y _) (.-y ^Vec2 a)) b) m)
           (Vec2. ;; v ?
-           (op2 (op (.-x this) (.-x ^Vec2 a)) (nth b 0 d2))
-           (op2 (op (.-y this) (.-y ^Vec2 a)) (nth b 1 d2)) m)))
+           (op2 (op (.-x _) (.-x ^Vec2 a)) (nth b 0 d2))
+           (op2 (op (.-y _) (.-y ^Vec2 a)) (nth b 1 d2)) m)))
       (let [an? (number? a) bn? (number? b)]
         (if (and an? bn?)
           (Vec2. ;; n n
-           (op2 (op (.-x this) a) b)    ;; difference to vec2-op-2
-           (op2 (op (.-y this) a) b) m)
+           (op2 (op (.-x _) a) b)    ;; difference to vec2-op-2
+           (op2 (op (.-y _) a) b) m)
           (let [[ax ay] (if an? [a a] a)
                 [bx by] (if bn? [b b] b)]
             (Vec2. ;; ? ?
-             (op2 (op (.-x this) (or ax d1)) (or bx d2))
-             (op2 (op (.-y this) (or ay d1)) (or by d2)) m))))))
+             (op2 (op (.-x _) (or ax d1)) (or bx d2))
+             (op2 (op (.-y _) (or ay d1)) (or by d2)) m))))))
   
   (defn vec2-op-3
-    [op ^Vec2 this a b c d m]
+    [op ^Vec2 _ a b c d m]
     (if (instance? Vec2 a)
       (if (instance? Vec2 b)
         (if (instance? Vec2 c)
           (Vec2. ;; v v v
-           (op (op (op (.-x this) (.-x ^Vec2 a)) (.-x ^Vec2 b)) (.-x ^Vec2 c))
-           (op (op (op (.-y this) (.-y ^Vec2 a)) (.-y ^Vec2 b)) (.-y ^Vec2 c)) m)
+           (op (op (op (.-x _) (.-x ^Vec2 a)) (.-x ^Vec2 b)) (.-x ^Vec2 c))
+           (op (op (op (.-y _) (.-y ^Vec2 a)) (.-y ^Vec2 b)) (.-y ^Vec2 c)) m)
           (if (number? c)
             (Vec2. ;; v v n
-             (op (op (op (.-x this) (.-x ^Vec2 a)) (.-x ^Vec2 b)) c)
-             (op (op (op (.-y this) (.-y ^Vec2 a)) (.-y ^Vec2 b)) c) m)
+             (op (op (op (.-x _) (.-x ^Vec2 a)) (.-x ^Vec2 b)) c)
+             (op (op (op (.-y _) (.-y ^Vec2 a)) (.-y ^Vec2 b)) c) m)
             (Vec2. ;; v v ?
-             (op (op (op (.-x this) (.-x ^Vec2 a)) (.-x ^Vec2 b)) (nth c 0 d))
-             (op (op (op (.-y this) (.-y ^Vec2 a)) (.-y ^Vec2 b)) (nth c 1 d)) m)))
+             (op (op (op (.-x _) (.-x ^Vec2 a)) (.-x ^Vec2 b)) (nth c 0 d))
+             (op (op (op (.-y _) (.-y ^Vec2 a)) (.-y ^Vec2 b)) (nth c 1 d)) m)))
         (let [[bx by] (if (number? b) [b b] b)
               [cx cy] (if (number? c) [c c] c)]
           (Vec2. ;; v ? ?
-           (op (op (op (.-x this) (.-x ^Vec2 a)) (or bx d)) (or cx d))
-           (op (op (op (.-y this) (.-y ^Vec2 a)) (or by d)) (or cy d)) m)))
+           (op (op (op (.-x _) (.-x ^Vec2 a)) (or bx d)) (or cx d))
+           (op (op (op (.-y _) (.-y ^Vec2 a)) (or by d)) (or cy d)) m)))
       (let [[ax ay] (if (number? a) [a a] a)
             [bx by] (if (number? b) [b b] b)
             [cx cy] (if (number? c) [c c] c)]
         (Vec2. ;; ? ? ?
-         (op (op (op (.-x this) (or ax d)) (or bx d)) (or cx d))
-         (op (op (op (.-y this) (or ay d)) (or by d)) (or cy d)) m))))
+         (op (op (op (.-x _) (or ax d)) (or bx d)) (or cx d))
+         (op (op (op (.-y _) (or ay d)) (or by d)) (or cy d)) m))))
 #+END_SRC
 *** 3D
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   (defn vec3-op-1
-    [op ^Vec3 this a d m]
+    [op ^Vec3 _ a d m]
     (if (instance? Vec3 a)
       (Vec3.
-       (op (.-x this) (.-x ^Vec3 a))
-       (op (.-y this) (.-y ^Vec3 a))
-       (op (.-z this) (.-z ^Vec3 a)) m)
+       (op (.-x _) (.-x ^Vec3 a))
+       (op (.-y _) (.-y ^Vec3 a))
+       (op (.-z _) (.-z ^Vec3 a)) m)
       (if (number? a)
-        (Vec3. (op (.-x this) a) (op (.-y this) a) (op (.-z this) a) m)
+        (Vec3. (op (.-x _) a) (op (.-y _) a) (op (.-z _) a) m)
         (Vec3.
-         (op (.-x this) (nth a 0 d))
-         (op (.-y this) (nth a 1 d))
-         (op (.-z this) (nth a 2 d)) m))))
+         (op (.-x _) (nth a 0 d))
+         (op (.-y _) (nth a 1 d))
+         (op (.-z _) (nth a 2 d)) m))))
   
   (defn vec3-op-2
-    [op op2 ^Vec3 this a b d1 d2 m]
+    [op op2 ^Vec3 _ a b d1 d2 m]
     (if (instance? Vec3 a)
       (if (instance? Vec3 b)
         (Vec3. ;; v v
-         (op2 (op (.-x this) (.-x ^Vec3 a)) (.-x ^Vec3 b))
-         (op2 (op (.-y this) (.-y ^Vec3 a)) (.-y ^Vec3 b))
-         (op2 (op (.-z this) (.-z ^Vec3 a)) (.-z ^Vec3 b)) m)
+         (op2 (op (.-x _) (.-x ^Vec3 a)) (.-x ^Vec3 b))
+         (op2 (op (.-y _) (.-y ^Vec3 a)) (.-y ^Vec3 b))
+         (op2 (op (.-z _) (.-z ^Vec3 a)) (.-z ^Vec3 b)) m)
         (if (number? b)
           (Vec3. ;; v n
-           (op2 (op (.-x this) (.-x ^Vec3 a)) b)
-           (op2 (op (.-y this) (.-y ^Vec3 a)) b)
-           (op2 (op (.-z this) (.-z ^Vec3 a)) b) m)
+           (op2 (op (.-x _) (.-x ^Vec3 a)) b)
+           (op2 (op (.-y _) (.-y ^Vec3 a)) b)
+           (op2 (op (.-z _) (.-z ^Vec3 a)) b) m)
           (Vec3. ;; v ?
-           (op2 (op (.-x this) (.-x ^Vec3 a)) (nth b 0 d2))
-           (op2 (op (.-y this) (.-y ^Vec3 a)) (nth b 1 d2))
-           (op2 (op (.-z this) (.-z ^Vec3 a)) (nth b 2 d2)) m)))
+           (op2 (op (.-x _) (.-x ^Vec3 a)) (nth b 0 d2))
+           (op2 (op (.-y _) (.-y ^Vec3 a)) (nth b 1 d2))
+           (op2 (op (.-z _) (.-z ^Vec3 a)) (nth b 2 d2)) m)))
       (let [[ax ay az] (if (number? a) [a a a] a)
             [bx by bz] (if (number? b) [b b b] b)]
         (Vec3. ;; ? ? ?
-         (op2 (op (.-x this) (or ax d1)) (or bx d2))
-         (op2 (op (.-y this) (or ay d1)) (or by d2))
-         (op2 (op (.-z this) (or az d1)) (or bz d2)) m))))
+         (op2 (op (.-x _) (or ax d1)) (or bx d2))
+         (op2 (op (.-y _) (or ay d1)) (or by d2))
+         (op2 (op (.-z _) (or az d1)) (or bz d2)) m))))
   
   (defn vec3-op-3
-    [op ^Vec3 this a b c d m]
+    [op ^Vec3 _ a b c d m]
     (if (instance? Vec3 a)
       (if (instance? Vec3 b)
         (if (instance? Vec3 c)
           (Vec3. ;; v v v
-           (op (op (op (.-x this) (.-x ^Vec3 a)) (.-x ^Vec3 b)) (.-x ^Vec3 c))
-           (op (op (op (.-y this) (.-y ^Vec3 a)) (.-y ^Vec3 b)) (.-y ^Vec3 c))
-           (op (op (op (.-z this) (.-z ^Vec3 a)) (.-z ^Vec3 b)) (.-z ^Vec3 c)) m)
+           (op (op (op (.-x _) (.-x ^Vec3 a)) (.-x ^Vec3 b)) (.-x ^Vec3 c))
+           (op (op (op (.-y _) (.-y ^Vec3 a)) (.-y ^Vec3 b)) (.-y ^Vec3 c))
+           (op (op (op (.-z _) (.-z ^Vec3 a)) (.-z ^Vec3 b)) (.-z ^Vec3 c)) m)
           (if (number? c)
             (Vec3. ;; v v n
-             (op (op (op (.-x this) (.-x ^Vec3 a)) (.-x ^Vec3 b)) c)
-             (op (op (op (.-y this) (.-y ^Vec3 a)) (.-y ^Vec3 b)) c)
-             (op (op (op (.-z this) (.-z ^Vec3 a)) (.-z ^Vec3 b)) c) m)
+             (op (op (op (.-x _) (.-x ^Vec3 a)) (.-x ^Vec3 b)) c)
+             (op (op (op (.-y _) (.-y ^Vec3 a)) (.-y ^Vec3 b)) c)
+             (op (op (op (.-z _) (.-z ^Vec3 a)) (.-z ^Vec3 b)) c) m)
             (Vec3. ;; v v ?
-             (op (op (op (.-x this) (.-x ^Vec3 a)) (.-x ^Vec3 b)) (nth c 0 d))
-             (op (op (op (.-y this) (.-y ^Vec3 a)) (.-y ^Vec3 b)) (nth c 1 d))
-             (op (op (op (.-z this) (.-z ^Vec3 a)) (.-z ^Vec3 b)) (nth c 2 d)) m)))
+             (op (op (op (.-x _) (.-x ^Vec3 a)) (.-x ^Vec3 b)) (nth c 0 d))
+             (op (op (op (.-y _) (.-y ^Vec3 a)) (.-y ^Vec3 b)) (nth c 1 d))
+             (op (op (op (.-z _) (.-z ^Vec3 a)) (.-z ^Vec3 b)) (nth c 2 d)) m)))
         (let [[bx by bz] (if (number? b) [b b b] b)
               [cx cy cz] (if (number? c) [c c c] c)]
           (Vec3. ;; v ? ?
-           (op (op (op (.-x this) (.-x ^Vec3 a)) (or bx d)) (or cx d))
-           (op (op (op (.-y this) (.-y ^Vec3 a)) (or by d)) (or cy d))
-           (op (op (op (.-z this) (.-z ^Vec3 a)) (or bz d)) (or cz d)) m)))
+           (op (op (op (.-x _) (.-x ^Vec3 a)) (or bx d)) (or cx d))
+           (op (op (op (.-y _) (.-y ^Vec3 a)) (or by d)) (or cy d))
+           (op (op (op (.-z _) (.-z ^Vec3 a)) (or bz d)) (or cz d)) m)))
       (let [an? (number? a) bn? (number? b) cn? (number? c)]
         (if (and an? bn? cn?)
           (Vec3. ;; n n n
-           (op (.-x this) a)
-           (op (.-y this) b)
-           (op (.-z this) c) m)
+           (op (.-x _) a)
+           (op (.-y _) b)
+           (op (.-z _) c) m)
           (let [[ax ay az] (if (number? a) [a a a] a)
                 [bx by bz] (if (number? b) [b b b] b)
                 [cx cy cz] (if (number? c) [c c c] c)]
             (Vec3. ;; ? ? ?
-             (op (op (op (.-x this) (or ax d)) (or bx d)) (or cx d))
-             (op (op (op (.-y this) (or ay d)) (or by d)) (or cy d))
-             (op (op (op (.-z this) (or az d)) (or bz d)) (or cz d)) m))))))
+             (op (op (op (.-x _) (or ax d)) (or bx d)) (or cx d))
+             (op (op (op (.-y _) (or ay d)) (or by d)) (or cy d))
+             (op (op (op (.-z _) (or az d)) (or bz d)) (or cz d)) m))))))
 #+END_SRC
 ** Constants
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
@@ -920,44 +920,44 @@
 ** Swizzling
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
   (defn swizzle2
-    [^Vec2 this k default]
+    [^Vec2 _ k default]
     (if (number? k)
       (case (int k)
-        0 (.-x this)
-        1 (.-y this)
+        0 (.-x _)
+        1 (.-y _)
         (or default (key-error k)))
       (case k
-        :x (.-x this)
-        :y (.-y this)
+        :x (.-x _)
+        :y (.-y _)
         (let [n (name k) c (count n)]
           (case c
             2 (->> n
-                   (map #(case % \x (.-x this) \y (.-y this) (or default (key-error k))))
-                   ((fn [[x y]] (Vec2. x y (.-_meta this)))))
+                   (map #(case % \x (.-x _) \y (.-y _) (or default (key-error k))))
+                   ((fn [[x y]] (Vec2. x y (.-_meta _)))))
             3 (->> n
-                   (map #(case % \x (.-x this) \y (.-y this) (or default (key-error k))))
-                   ((fn [[x y z]] (Vec3. x y z (.-_meta this)))))
+                   (map #(case % \x (.-x _) \y (.-y _) (or default (key-error k))))
+                   ((fn [[x y z]] (Vec3. x y z (.-_meta _)))))
             (or default (key-error k)))))))
 
   (defn swizzle3
-    [^Vec3 this k default]
+    [^Vec3 _ k default]
     (if (number? k)
       (case (int k)
-        0 (.-x this)
-        1 (.-y this)
-        2 (.-z this)
+        0 (.-x _)
+        1 (.-y _)
+        2 (.-z _)
         (or default (key-error k)))
       (case k
-        :x (.-x this)
-        :y (.-y this)
-        :z (.-z this)
+        :x (.-x _)
+        :y (.-y _)
+        :z (.-z _)
         (let [n (name k) c (count n)]
           (case c
             2 (->> n
-                   (map #(case % \x (.-x this) \y (.-y this) \z (.-z this) (or default (key-error k))))
-                   ((fn [[x y]] (Vec2. x y (.-_meta this)))))
+                   (map #(case % \x (.-x _) \y (.-y _) \z (.-z _) (or default (key-error k))))
+                   ((fn [[x y]] (Vec2. x y (.-_meta _)))))
             3 (->> n
-                   (map #(case % \x (.-x this) \y (.-y this) \z (.-z this) (or default (key-error k))))
-                   ((fn [[x y z]] (Vec3. x y z (.-_meta this)))))
+                   (map #(case % \x (.-x _) \y (.-y _) \z (.-z _) (or default (key-error k))))
+                   ((fn [[x y z]] (Vec3. x y z (.-_meta _)))))
             (or default (key-error k)))))))
 #+END_SRC

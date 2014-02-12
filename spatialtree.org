@@ -17,11 +17,11 @@
 ** TreeOps protocol
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/spatialtree.cljx
   (defprotocol TreeOps
-    (child-index-for-point [this p])
-    (child-for-point [this p])
-    (make-child-for-point [this p add-p?])
-    (node-bounds [this])
-    (split-node [this]))
+    (child-index-for-point [_ p])
+    (child-for-point [_ p])
+    (make-child-for-point [_ p add-p?])
+    (node-bounds [_])
+    (split-node [_]))
 #+END_SRC
 ** Zipper functions
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/spatialtree.cljx
@@ -55,48 +55,48 @@
 ** Shared tree operations
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/spatialtree.cljx
   (defn add-point*
-    [this p path]
-    (if (:children this)
-      (let [[c i] (make-child-for-point this p false)]
-        (recur c p (conj path [this i])))
-      (let [data (:data this)]
+    [_ p path]
+    (if (:children _)
+      (let [[c i] (make-child-for-point _ p false)]
+        (recur c p (conj path [_ i])))
+      (let [data (:data _)]
         (if data
           (if (m/delta= data p)
-            (or (ffirst path) this)
-            (let [n (split-node this)
+            (or (ffirst path) _)
+            (let [n (split-node _)
                   [c i] (make-child-for-point n p true)]
               (-> n
                   (assoc-in [:children i] c)
                   (add-point* data [])
                   (commit-path path))))
-          (commit-path (assoc this :data p) path)))))
+          (commit-path (assoc _ :data p) path)))))
 
   (defn add-point
-    [this p]
-    (if (g/contains-point? (node-bounds this) p)
-      (add-point* this p [])
-      this))
+    [_ p]
+    (if (g/contains-point? (node-bounds _) p)
+      (add-point* _ p [])
+      _))
 
   (defn delete-point*
-    [this p path]
-    (if (:children this)
-      (let [[c i] (child-for-point this p)]
+    [_ p path]
+    (if (:children _)
+      (let [[c i] (child-for-point _ p)]
         (if c
-          (recur c p (conj path [this i]))
-          (or (ffirst path) this)))
-      (if (m/delta= p (:data this))
+          (recur c p (conj path [_ i]))
+          (or (ffirst path) _)))
+      (if (m/delta= p (:data _))
         (if (seq path)
           (let [[p i] (peek path)
                 p (assoc-in p [:children i] nil)]
             (commit-prune p (pop path)))
-          (assoc this :data nil))
-        (or (ffirst path) this))))
+          (assoc _ :data nil))
+        (or (ffirst path) _))))
 
   (defn delete-point
-    [this p]
-    (if (g/contains-point? (node-bounds this) p)
-      (delete-point* this p [])
-      this))
+    [_ p]
+    (if (g/contains-point? (node-bounds _) p)
+      (delete-point* _ p [])
+      _))
 #+END_SRC
 ** Constants
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/spatialtree.cljx
@@ -107,49 +107,49 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/spatialtree.cljx
   (defrecord QuadtreeNode [^double x ^double y ^double w ^double h children data]
     TreeOps
-    (child-index-for-point [this [px py]]
+    (child-index-for-point [_ [px py]]
       (if (< px (+ x w))
         (if (< py (+ y h)) 0 2)
         (if (< py (+ y h)) 1 3)))
-    (child-for-point [this p]
-      (let [idx (child-index-for-point this p)]
+    (child-for-point [_ p]
+      (let [idx (child-index-for-point _ p)]
         [(children idx) idx]))
-    (make-child-for-point [this p add?]
-      (let [idx (child-index-for-point this p)]
+    (make-child-for-point [_ p add?]
+      (let [idx (child-index-for-point _ p)]
         (if (children idx)
           [(children idx) idx]
           (let [cx (if (pos? (bit-and idx 1)) (+ x w) x)
                 cy (if (pos? (bit-and idx 2)) (+ y h) y)]
             [(QuadtreeNode. cx cy (* 0.5 w) (* 0.5 h) nil (if add? p)) idx]))))
-    (node-bounds [this]
+    (node-bounds [_]
       (thi.ng.geom.types.Rect. (g/vec2 x y) (* w 2.0) (* h 2.0)))
-    (split-node [this]
-      (assoc this :children qt-children :data nil)))
+    (split-node [_]
+      (assoc _ :children qt-children :data nil)))
 #+END_SRC
 ** Octree implementation
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/spatialtree.cljx
   (defrecord OctreeNode [^double x ^double y ^double z ^double w ^double h ^double d children data]
     TreeOps
-    (child-index-for-point [this [px py pz]]
+    (child-index-for-point [_ [px py pz]]
       (+ (if (< pz (+ z d)) 0 4)
          (if (< px (+ x w))
            (if (< py (+ y h)) 0 2)
            (if (< py (+ y h)) 1 3))))
-    (child-for-point [this p]
-      (let [idx (child-index-for-point this p)]
+    (child-for-point [_ p]
+      (let [idx (child-index-for-point _ p)]
         [(children idx) idx]))
-    (make-child-for-point [this p add?]
-      (let [idx (child-index-for-point this p)]
+    (make-child-for-point [_ p add?]
+      (let [idx (child-index-for-point _ p)]
         (if (children idx)
           [(children idx) idx]
           (let [cx (if (pos? (bit-and idx 1)) (+ x w) x)
                 cy (if (pos? (bit-and idx 2)) (+ y h) y)
                 cz (if (pos? (bit-and idx 4)) (+ z d) z)]
             [(OctreeNode. cx cy cz (* 0.5 w) (* 0.5 h) (* 0.5 d) nil (if add? p)) idx]))))
-    (node-bounds [this]
+    (node-bounds [_]
       (thi.ng.geom.types.AABB. (g/vec3 x y z) (g/vec3 (* w 2.0) (* h 2.0) (* d 2.0))))
-    (split-node [this]
-      (assoc this :children ot-children :data nil)))
+    (split-node [_]
+      (assoc _ :children ot-children :data nil)))
 #+END_SRC
 ** Constructors
 *** Quadtree

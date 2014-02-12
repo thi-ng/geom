@@ -157,10 +157,21 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PGraph
   (vertices
-   [this] [(:a this) (:b this) (:c this)])
+   [_] [(:a _) (:b _) (:c _)])
   (edges
    [{a :a b :b c :c}]
-   [(thi.ng.geom.types.Line2. a b) (thi.ng.geom.types.Line2. b c) (thi.ng.geom.types.Line2. c a)])
+   [(thi.ng.geom.types.Line2. a b)
+    (thi.ng.geom.types.Line2. b c)
+    (thi.ng.geom.types.Line2. c a)])
+  (vertex-neighbors
+   [{a :a b :b c :c} v]
+   (condp = (vec2 v)
+     a [c b]
+     b [a c]
+     c [b a]
+     nil))
+  (vertex-valence
+   [_ v] (if (#{(:a _) (:b _) (:c _)} (vec2 v)) 2 0))
 #+END_SRC
 **** PArea
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -171,9 +182,9 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PBounds
   (bounds [t] (g/bounding-rect* [(:a t) (:b t) (:c t)]))
-  (width [this] (g/axis-range* 0 [(:a this) (:b this) (:c this)]))
-  (height [this] (g/axis-range* 1 [(:a this) (:b this) (:c this)]))
-  (depth [this] 0)
+  (width [_] (g/axis-range* 0 [(:a _) (:b _) (:c _)]))
+  (height [_] (g/axis-range* 1 [(:a _) (:b _) (:c _)]))
+  (depth [_] 0)
 #+END_SRC
 **** PCenter
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -204,31 +215,31 @@
   g/PClassify
   ;; TODO add clockwise? check, currently assumes clockwise ordering
   (classify-point
-   [this p] (reduce cmin (map #(g/classify-point % p) (g/edges this))))
+   [_ p] (reduce cmin (map #(g/classify-point % p) (g/edges _))))
   g/PProximity
   (closest-point
-   [this p] (g/closest-point* (g/edges this) p))
+   [_ p] (g/closest-point* (g/edges _) p))
   g/PBoundary
   (contains-point?
-   [this p] (contains-point2* (:a this) (:b this) (:c this) p))
+   [_ p] (contains-point2* (:a _) (:b _) (:c _) p))
 #+END_SRC
 **** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PSampleable
   (point-at
-   [this t] (g/point-at* t [(:a this) (:b this) (:c this) (:a this)]))
+   [_ t] (g/point-at* t [(:a _) (:b _) (:c _) (:a _)]))
   (random-point
-   [this] (g/point-at this (m/random)))
+   [_] (g/point-at _ (m/random)))
   (random-point-inside
-   [this]
+   [_]
    (let [b1 (m/random)
          b2 (m/random (c- 1.0 b1))
          b3 (c- 1.0 (c+ b1 b2))]
      (g/from-barycentric*
-      [(:a this) (:b this) (:c this)] (shuffle [b1 b2 b3]))))
+      [(:a _) (:b _) (:c _)] (shuffle [b1 b2 b3]))))
   (sample-uniform
-   [this udist include-last?]
-   (g/sample-uniform* udist include-last? [(:a this) (:b this) (:c this) (:a this)]))
+   [_ udist include-last?]
+   (g/sample-uniform* udist include-last? [(:a _) (:b _) (:c _) (:a _)]))
 #+END_SRC
 **** PPolygonizable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -244,19 +255,19 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PSliceable
   (slice-with
-   ([this e]
-      (slice-with* (:a this) (:b this) (:c this) e g/classify-point))
-   ([this e classifier]
-      (slice-with* (:a this) (:b this) (:c this) e classifier)))
+   ([_ e]
+      (slice-with* (:a _) (:b _) (:c _) e g/classify-point))
+   ([_ e classifier]
+      (slice-with* (:a _) (:b _) (:c _) e classifier)))
 #+END_SRC
 **** PTransformable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PTransformable
   (scale
-   ([this s]
-    (thi.ng.geom.types.Triangle2. (* (:a this) s) (* (:b this) s) (* (:c this) s)))
-   ([this a b]
-    (thi.ng.geom.types.Triangle2. (* (:a this) a b) (* (:b this) a b) (* (:c this) a b))))
+   ([_ s]
+    (thi.ng.geom.types.Triangle2. (* (:a _) s) (* (:b _) s) (* (:c _) s)))
+   ([_ a b]
+    (thi.ng.geom.types.Triangle2. (* (:a _) a b) (* (:b _) a b) (* (:c _) a b))))
   (scale-size
    [{a :a b :b c :c} s]
    (let [cc (centroid* a b c)]
@@ -275,7 +286,7 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PGraph
   (vertices
-   [this] [(:a this) (:b this) (:c this)])
+   [_] [(:a _) (:b _) (:c _)])
   (edges
    [{a :a b :b c :c}]
    [(thi.ng.geom.types.Line3. a b)
@@ -289,7 +300,7 @@
      c [b a]
      nil))
   (vertex-valence
-   [{a :a b :b c :c} v] (if (#{a b c} (vec3 v)) 2 0))
+   [_ v] (if (#{(:a _) (:b _) (:c _)} (vec3 v)) 2 0))
 #+END_SRC
 **** PArea
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -300,9 +311,9 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PBounds
   (bounds [t] (g/bounding-box* [(:a t) (:b t) (:c t)]))
-  (width [this] (g/axis-range* 0 [(:a this) (:b this) (:c this)]))
-  (height [this] (g/axis-range* 1 [(:a this) (:b this) (:c this)]))
-  (depth [this] (g/axis-range* 2 [(:a this) (:b this) (:c this)]))
+  (width [_] (g/axis-range* 0 [(:a _) (:b _) (:c _)]))
+  (height [_] (g/axis-range* 1 [(:a _) (:b _) (:c _)]))
+  (depth [_] (g/axis-range* 2 [(:a _) (:b _) (:c _)]))
 #+END_SRC
 **** PCenter
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
@@ -327,23 +338,23 @@
 **** PVolume
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PVolume
-  (volume [this] 0.0)
+  (volume [_] 0.0)
 #+END_SRC
 **** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PClassify
-  (classify-point [this p] nil) ; TODO
+  (classify-point [_ p] nil) ; TODO
   g/PProximity
-  (closest-point [this p] nil) ; TODO
+  (closest-point [_ p] nil) ; TODO
   g/PBoundary
-  (contains-point? [this p] (contains-point3* (:a this) (:b this) (:c this) p))
+  (contains-point? [_ p] (contains-point3* (:a _) (:b _) (:c _) p))
 #+END_SRC
 **** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PSampleable
-  (point-at [this t] nil) ; TODO
+  (point-at [_ t] nil) ; TODO
   (random-point
-   [this] (g/point-at this (m/random)))
+   [_] (g/point-at _ (m/random)))
   (random-point-inside
    [t]
    (let [b1 (m/random)
@@ -377,19 +388,19 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PSliceable
   (slice-with
-   ([this e]
-      (slice-with* (:a this) (:b this) (:c this) e g/classify-point))
-   ([this e classifier]
-      (slice-with* (:a this) (:b this) (:c this) e classifier)))
+   ([_ e]
+      (slice-with* (:a _) (:b _) (:c _) e g/classify-point))
+   ([_ e classifier]
+      (slice-with* (:a _) (:b _) (:c _) e classifier)))
 #+END_SRC
 **** PTransformable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/triangle.cljx
   g/PTransformable
   (scale
-   ([this s]
-    (thi.ng.geom.types.Triangle3. (* (:a this) s) (* (:b this) s) (* (:c this) s)))
-   ([this a b]
-    (thi.ng.geom.types.Triangle3. (* (:a this) a b) (* (:b this) a b) (* (:c this) a b))))
+   ([_ s]
+    (thi.ng.geom.types.Triangle3. (* (:a _) s) (* (:b _) s) (* (:c _) s)))
+   ([_ a b]
+    (thi.ng.geom.types.Triangle3. (* (:a _) a b) (* (:b _) a b) (* (:c _) a b))))
   (scale-size
    [{a :a b :b c :c} s]
    (let [cc (centroid* a b c)]

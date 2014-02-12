@@ -46,28 +46,28 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   g/PBounds
   (bounds
-   [this] (thi.ng.geom.types.AABB. (:p this) (vec3 (:r this))))
-  (width  [this] (c* 2.0 (:r this)))
-  (height [this] (c* 2.0 (:r this)))
-  (depth  [this] (c* 2.0 (:r this)))
+   [_] (thi.ng.geom.types.AABB. (:p _) (vec3 (:r _))))
+  (width  [_] (c* 2.0 (:r _)))
+  (height [_] (c* 2.0 (:r _)))
+  (depth  [_] (c* 2.0 (:r _)))
 #+END_SRC
 *** PCenter
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   g/PCenter
   (center
-   ([this] (thi.ng.geom.types.Sphere. (vec3) (:r this)))
-   ([this p] (thi.ng.geom.types.Sphere. p (:r this))))
-  (centroid [this] (:p this))
+   ([_] (thi.ng.geom.types.Sphere. (vec3) (:r _)))
+   ([_ p] (thi.ng.geom.types.Sphere. p (:r _))))
+  (centroid [_] (:p _))
 #+END_SRC
 *** PBoundingSphere
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   g/PBoundingSphere
-  (bounding-sphere [this] this)
+  (bounding-sphere [_] _)
 #+END_SRC
 *** PVolume
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   g/PVolume
-  (volume [{r :r}] (* (/ 4.0 3.0) PI r r r))
+  (volume [{r :r}] (c* (/ 4.0 3.0) PI r r r))
 #+END_SRC
 *** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
@@ -80,18 +80,18 @@
    (m/signum (c- (c* r r) (g/dist-squared p q)) *eps*))
   g/PSampleable
   (random-point-inside
-   [this]
-   (+ (:p this) (g/randvec3 (m/random (:r this)))))
+   [_]
+   (+ (:p _) (g/randvec3 (m/random (:r _)))))
   (random-point
-   [this]
-   (+ (:p this) (g/randvec3 (:r this))))
+   [_]
+   (+ (:p _) (g/randvec3 (:r _))))
 #+END_SRC
 *** TODO PMeshable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx
   g/PMeshable
   (as-mesh
-   ([this] (g/as-mesh this *resolution*))
-   ([this res] nil))
+   ([_] (g/as-mesh _ *resolution*))
+   ([_ res] nil))
 #+END_SRC
 *** End of implementation                                          :noexport:
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/sphere.cljx

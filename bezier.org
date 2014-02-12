@@ -86,8 +86,8 @@
 #+END_SRC
 ** Concrete implementations for 2D/3D...
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
-  (def auto-spline2 (auto-spline* (find-cpoints* g/vec2)))
-  (def auto-spline3 (auto-spline* (find-cpoints* g/vec3)))
+  (def auto-spline2 (auto-spline* (find-cpoints* vec2)))
+  (def auto-spline3 (auto-spline* (find-cpoints* vec3)))
 #+END_SRC
 ** TODO Bezier2
 *** Protocol implementations
@@ -98,17 +98,17 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
   g/PGraph
   (vertices
-   ([this] (g/vertices this *resolution*))
+   ([_] (g/vertices _ *resolution*))
    ([{points :points} res]
       (map #(g/point-at* % points) (m/norm-range res))))
   (edges
-   ([this] (g/edges this *resolution*))
-   ([this res] (g/edges* line2 (g/vertices this res))))
+   ([_] (g/edges _ *resolution*))
+   ([_ res] (g/edges* #(thi.ng.geom.types.Line2. (% 0) (% 1)) (g/vertices _ res))))
   (vertex-neighbors
-   [this v] (d/neighbors v (:points this)))
+   [_ v] (d/neighbors v (:points _)))
   (vertex-valence
-   [this v] (if-let [p (d/neighbors v (:points this))]
-              (let [points (:points this)]
+   [_ v] (if-let [p (d/neighbors v (:points _))]
+              (let [points (:points _)]
                 (if (or (= p (first points)) (= p (peek points)))
                   1 2))
               0))

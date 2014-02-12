@@ -1,0 +1,275 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+* thi.ng.geom.quad
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  (ns thi.ng.geom.quad
+    (:refer-clojure :exclude [+ - *])
+    (:refer-clojure :rename {+ c+, - c-, * c*, min cmin, max cmax})
+    (:require
+     [thi.ng.common.data.core :as d]
+     [thi.ng.common.math.core :as m :refer [*eps*]]
+     [thi.ng.geom.core :as g :refer [+ - * vec2 vec3]]
+     [thi.ng.geom.line :as l]
+     [thi.ng.geom.triangle]
+     [thi.ng.geom.gmesh :as gmesh]
+     [thi.ng.geom.types :as types])
+    #+clj
+    (:import
+     [thi.ng.geom.types Quad3 Line3 Triangle3]))
+#+END_SRC
+** Constructor
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  (defn quad3
+    ([] (quad3 1.0))
+    ([w] (thi.ng.geom.types.Quad3. (vec3) (vec3 w 0.0 0.0) (vec3 w w 0.0) (vec3 0.0 w 0.0)))
+    ([a b c d] (thi.ng.geom.types.Quad3. (vec3 a) (vec3 b) (vec3 c) (vec3 d))))
+#+END_SRC
+** TODO Type specific functions
+- https://www.garagegames.com/community/forums/viewthread/76960/1#comment-543505
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  ;; FIXME
+  (defn map-uv
+    [{:keys[a b c d]} p]
+    (let [u1 (l/closest-point-coeff* p a b)
+          u2 (l/closest-point-coeff* p d c)
+          v1 (l/closest-point-coeff* p a d)
+          v2 (l/closest-point-coeff* p b c)
+          dab (g/dist p (g/mix a b u1))
+          ddc (g/dist p (g/mix d c u2))
+          dad (g/dist p (g/mix a d v1))
+          dbc (g/dist p (g/mix b c v2))
+          u* (c+ (c* u1 (/ dab (c+ dab ddc)))
+                 (c* u2 (/ ddc (c+ dab ddc))))
+          v* (c+ (c* v1 (/ dad (c+ dad dbc)))
+                 (c* v2 (/ dbc (c+ dad dbc))))]
+      (vec2 u* v*)))
+  
+  (defn unmap-uv
+    [{:keys[a b c d]} [u v]]
+    (g/mix (g/mix a b u) (g/mix d c u) v))
+#+END_SRC
+** Protocol implementations
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  (extend-type thi.ng.geom.types.Quad3
+#+END_SRC
+*** PGraph
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PGraph
+  (vertices
+   [_] [(:a _) (:b _) (:c _) (:d _)])
+  (edges
+   [{:keys [a b c d]}]
+   [(thi.ng.geom.types.Line3. a b)
+    (thi.ng.geom.types.Line3. b c)
+    (thi.ng.geom.types.Line3. c d)
+    (thi.ng.geom.types.Line3. d a)])
+  (vertex-neighbors
+   [_ v] (d/neighbors (vec3 v) (g/vertices _)))
+  (vertex-valence
+   [_ v] (if (#{(:a _) (:b _) (:c _) (:d _)} (vec3 v)) 2 0))
+#+END_SRC
+*** PArea
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PArea
+  (area [_] nil)
+#+END_SRC
+*** PCenter
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PCenter
+  (center
+   ([_]
+      (let [c (g/centroid _)]
+        (thi.ng.geom.types.Quad3.
+         (- (:a _) c) (- (:b _) c) (- (:c _) c) (- (:d _) c))))
+   ([_ o]
+      (let [d (- o (g/centroid _))]
+        (thi.ng.geom.types.Quad3.
+         (+ (:a _) d) (+ (:b _) d) (+ (:c _) d) (+ (:d _) d)))))
+  (centroid
+   [_] (g/centroid* [(:a _) (:b _) (:c _) (:d _)]))
+#+END_SRC
+*** PBounds
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PBounds
+  (bounds [_] (g/bounding-box* (g/vertices _)))
+  (width  [_] (g/axis-range* 0 (g/vertices _)))
+  (height [_] (g/axis-range* 1 (g/vertices _)))
+  (depth  [_] (g/axis-range* 2 (g/vertices _)))
+#+END_SRC
+*** PBoundingSphere
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PBoundingSphere
+  (bounding-sphere
+   [_] (g/bounding-sphere* (g/centroid _) (g/vertices _)))
+#+END_SRC
+*** PCircumference
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PCircumference
+  (circumference
+   [_] (g/arc-length* (conj (g/vertices _) (:a _))))
+#+END_SRC
+*** TODO PClassify
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PClassify
+  (classify-point
+   [_ p]
+   (reduce cmin (map #(g/classify-point % p) (g/edges _))))
+#+END_SRC
+*** TODO PProximity
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PProximity
+  (closest-point
+   [_ p] (g/closest-point* (g/edges _) p))
+#+END_SRC
+*** TODO PBoundary
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PBoundary
+  (contains-point?
+   [_ p] )
+#+END_SRC
+*** TODO PSampleable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PSampleable
+  (point-at
+   [_ t] (g/point-at* t (conj (g/vertices _) (:a _))))
+  (random-point
+   [_] (g/point-at _ (m/random)))
+  (random-point-inside
+   [_] nil)
+  (sample-uniform
+   [_ udist include-last?]
+   (g/sample-uniform* udist include-last? (conj (g/vertices _) (:a _))))
+#+END_SRC
+*** TODO PIntersectable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PIntersectable
+  (intersect-shape
+   [_ s])
+#+END_SRC
+*** TODO PSubdivideable
+    A rectangle can be subdivided into smaller ones, i.e. to create a
+    list of uniform grid cells. The following options can be given as
+    a 2nd argument map:
+
+    | Key     | Description                                                    | Default |
+    |---------+----------------------------------------------------------------+---------|
+    | =:num=  | number of cols/rows the rect will be uniformly subdivided into |       2 |
+    | =:cols= | number of times the rect will be subdivided along the X-axis   |       2 |
+    | =:rows= | number of times the rect will be subdivided along the Y-axis   |       2 |
+
+    When =:num= is given, the resulting rects will retain the aspect
+    ratio of the original rect. If specified, =:cols= and =:rows= will
+    take precedence over =:num=, but the latter will be used as
+    default for missing args. Rects are returned as a lazyseq with
+    top-left to bottom-right ordering and inner sorting along X.
+
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PSubdivideable
+  (subdivide
+   ([_] (g/subdivide _ {}))
+   ([_ {:keys [num cols rows] :or {num 2}}]
+      (let [dx (/ 1.0 (or cols num))
+            dy (/ 1.0 (or rows num))
+            rx (range 0.0 1.0 dx)
+            ry (range 0.0 1.0 dy)
+            w (* (:w _) dx)
+            h (* (:h _) dy)]
+        (for [y ry x rx
+              :let [[px py] (unmap-uv _ [x y])
+                    px (m/roundto px *eps*)
+                    py (m/roundto py *eps*)]]
+          ;;(thi.ng.geom.types.Quad3. (vec2 px py) w h)
+          nil))))
+#+END_SRC
+*** PTessellateable
+    A quad can be tessellated into a number of triangles. When called
+    without an options map as 2nd argument, the quad will be split
+    into 2 triangles: [a b c] & [a c d]. When called *with* options,
+    then these are used for a call to [[PSubdivideable][=subdivide=]] first and the
+    function returns a lazyseq of triangles of the subdivided quad.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PTessellateable
+  (tessellate
+   ([_]
+      [(thi.ng.geom.types.Triangle3. (:a _) (:b _) (:c _))
+       (thi.ng.geom.types.Triangle3. (:a _) (:c _) (:d _))])
+   ([_ opts]
+      (mapcat g/tessellate (g/subdivide _ opts))))
+#+END_SRC
+*** PMeshable
+    A quad's mesh representation is simply a quad mesh with a single
+    face.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PMeshable
+  (as-mesh [_] (gmesh/into-mesh (gmesh/gmesh) (g/vertices _)))
+#+END_SRC
+*** PExtrudeable
+    Extruding a quad along an axis vector results in a 3D quad mesh.
+    The =extrude= function supports the following options, given as
+    parameter map:
+
+    | Key       | Description                                | Default |
+    |-----------+--------------------------------------------+---------|
+    | =:depth=  | extrusion depth/length in normal direction | 1.0     |
+    | =:scale=  | scale factor of rect at extrusion depth    | 1.0     |
+    | =:offset= | extrusion vector (overrides :depth)        | nil     |
+
+    If =:depth= is used for extrusion, then the quad's normal is
+    computed from its =a=, =b= and =c= vertices only (in that order)
+    and the quad is assumed to be planar.
+ 
+    The process results in bevelled forms for =:scale= values other
+    than 1.0.
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PExtrudeable
+  (extrude
+   [_ {:keys [depth scale offset flags]
+          :or {depth 1.0 scale 1.0 flags "nsewfb"}}]
+   (let [[a b c d :as v] (g/vertices _)
+         offset (or offset (* (g/normal3* a b c) depth))
+         [a2 b2 c2 d2] (if (== 1.0 scale)
+                         (map #(+ offset %) v)
+                         (->> (g/scale-size _ scale)
+                              (g/vertices)
+                              (map #(+ offset %))))
+         [n s e w f b*] (d/demunge-flags-seq flags "nsewfb")]
+     (gmesh/into-mesh
+      (gmesh/gmesh)
+      (filter
+       identity
+       [(if f [d c c2 d2])
+        (if b* [b a a2 b2])
+        (if w [a d d2 a2])
+        (if e [c b b2 c2])
+        (if n [a2 b2 c2 d2])
+        (if s [d c b a])]))))
+#+END_SRC
+*** TODO PTransformable
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  g/PTransformable
+  (scale
+   ([_ s]
+      (thi.ng.geom.types.Quad3.
+       (* (:a _) s) (* (:b _) s) (* (:c _) s) (* (:d _) s)))
+   ([_ x y]
+      (thi.ng.geom.types.Quad3.
+       (* (:a _) x y) (* (:b _) x y) (* (:c _) x y) (* (:d _) x y)))
+   ([_ x y z]
+      (thi.ng.geom.types.Quad3.
+       (* (:a _) x y z) (* (:b _) x y z) (* (:c _) x y z) (* (:d _) x y z))))
+  (scale-size
+   [_ s]
+   (let [c (g/centroid _)]
+     (thi.ng.geom.types.Quad3.
+      (g/madd (- (:a _) c) s c)
+      (g/madd (- (:b _) c) s c)
+      (g/madd (- (:c _) c) s c)
+      (g/madd (- (:d _) c) s c))))
+#+END_SRC
+*** End of implementations                                         :noexport:
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
+  )
+#+END_SRC

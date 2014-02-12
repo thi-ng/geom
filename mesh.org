@@ -221,19 +221,19 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PGraph
   (edges
-   [this] (keys (:edges this)))
+   [_] (keys (:edges _)))
   (vertices
-   [this] (keys (:vertices this)))
+   [_] (keys (:vertices _)))
   (vertex-neighbors
-   [this v] (vertex-neighbors* this v))
+   [_ v] (vertex-neighbors* _ v))
   (vertex-valence
-   [this v] (vertex-valence* this v))
+   [_ v] (vertex-valence* _ v))
 #+END_SRC
 **** PArea
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PArea
-  (area [this]
-        (->> this
+  (area [_]
+        (->> _
              :faces
              (map #(-> % t/area2 m/abs))
              (reduce c+)))
@@ -241,27 +241,27 @@
 **** TODO PCircumference
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PCircumference
-  (circumference [this] 0)
+  (circumference [_] 0)
 #+END_SRC
 **** PBounds
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PBounds
-  (bounds [this] (g/bounding-rect* (keys (:vertices this))))
-  (width [this] (g/axis-range* 0 (keys (:vertices this))))
-  (height [this] (g/axis-range* 1 (keys (:vertices this))))
-  (depth [this] 0)
+  (bounds [_] (g/bounding-rect* (keys (:vertices _))))
+  (width [_] (g/axis-range* 0 (keys (:vertices _))))
+  (height [_] (g/axis-range* 1 (keys (:vertices _))))
+  (depth [_] 0)
 #+END_SRC
 **** PBoundingCircle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PBoundingCircle
   (bounding-circle
-   [this] (g/bounding-circle* (g/centroid this) (g/vertices this)))
+   [_] (g/bounding-circle* (g/centroid _) (g/vertices _)))
 #+END_SRC
 **** TODO PCenter
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PCenter
-  (center [this] this)
-  (centroid [this] (g/centroid* (keys (:vertices this))))
+  (center [_] _)
+  (centroid [_] (g/centroid* (keys (:vertices _))))
 #+END_SRC
 **** TODO PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
@@ -271,15 +271,15 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PMesh
   (faces
-   [this] (:faces this))
+   [_] (:faces _))
   (vertex-faces
-   [this v] (vertex-faces* this v))
+   [_ v] (vertex-faces* _ v))
   (compute-face-normals
-   [this] this)
+   [_] _)
   (compute-vertex-normals
-   [this] this)
+   [_] _)
   (remove-face
-   [{:keys [vertices edges faces] :as this} f]
+   [{:keys [vertices edges faces] :as _} f]
    (if (get faces f)
      (let [[vertices edges]
            (reduce
@@ -295,46 +295,46 @@
                   [(dissoc vertices a) edges])))
             [vertices edges]
             (d/successive-nth 2 (conj f (first f))))]
-       (assoc this
+       (assoc _
          :vertices vertices
          :edges edges
          :faces (disj faces f)))
-     this))
+     _))
   (remove-vertex
-   [this v] (remove-vertex* this v))
+   [_ v] (remove-vertex* _ v))
   (replace-vertex
-   [this v v2] (replace-vertex* this v v2))
+   [_ v v2] (replace-vertex* _ v v2))
   (merge-vertices
-   [this a b] (merge-vertices* this a b))
+   [_ a b] (merge-vertices* _ a b))
 #+END_SRC
 **** PMeshable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PMeshable
-  (as-mesh [this] this)
+  (as-mesh [_] _)
 #+END_SRC
 
 **** PSubdivideable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PSubdivideable
   (subdivide-edge
-   [this a b splits] (subdivide-edge* this a b splits))
+   [_ a b splits] (subdivide-edge* _ a b splits))
   (subdivide-face
-   [this f p opts]
-   (subdivide-face* this f p (:displace opts) (:splits opts)))
+   [_ f p opts]
+   (subdivide-face* _ f p (:displace opts) (:splits opts)))
   (subdivide
-   [this opts]
-   (subdivide* this opts))
+   [_ opts]
+   (subdivide* _ opts))
 #+END_SRC
 **** PSliceable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PSliceable
   (slice-with
-   ([this e]
-      (slice-with* this e g/classify-point (:faces this)))
-   ([this e classifier]
-      (slice-with* this e classifier (:faces this)))
-   ([this e classifier faces]
-      (slice-with* this e classifier faces)))
+   ([_ e]
+      (slice-with* _ e g/classify-point (:faces _)))
+   ([_ e classifier]
+      (slice-with* _ e classifier (:faces _)))
+   ([_ e classifier faces]
+      (slice-with* _ e classifier faces)))
 #+END_SRC
 **** End of implementation                                         :noexport:
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
@@ -348,20 +348,20 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PGraph
   (edges
-   [this] (map (fn [[p q]] (thi.ng.geom.types.Line3. p q)) (keys (:edges this))))
+   [_] (map (fn [[p q]] (thi.ng.geom.types.Line3. p q)) (keys (:edges _))))
   (vertices
-   [this] (keys (:vertices this)))
+   [_] (keys (:vertices _)))
   (vertex-neighbors
-   [this v] (vertex-neighbors* this v))
+   [_ v] (vertex-neighbors* _ v))
   (vertex-valence
-   [this v] (vertex-valence* this v))
+   [_ v] (vertex-valence* _ v))
 #+END_SRC
 **** PArea
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PArea
   (area
-   [this]
-   (->> this
+   [_]
+   (->> _
         :faces
         (map #(-> % t/area3 m/abs))
         (reduce c+)))
@@ -369,27 +369,27 @@
 **** PBounds
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PBounds
-  (bounds [this] (g/bounding-box* (keys (:vertices this))))
-  (width [this] (g/axis-range* 0 (keys (:vertices this))))
-  (height [this] (g/axis-range* 1 (keys (:vertices this))))
-  (depth [this] (g/axis-range* 2 (keys (:vertices this))))
+  (bounds [_] (g/bounding-box* (keys (:vertices _))))
+  (width [_] (g/axis-range* 0 (keys (:vertices _))))
+  (height [_] (g/axis-range* 1 (keys (:vertices _))))
+  (depth [_] (g/axis-range* 2 (keys (:vertices _))))
 #+END_SRC
 **** TODO PCenter
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PCenter
-  (center [this] this)
-  (centroid [this] (g/centroid* (keys (:vertices this))))
+  (center [_] _)
+  (centroid [_] (g/centroid* (keys (:vertices _))))
 #+END_SRC
 **** PBoundingSphere
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PBoundingSphere
   (bounding-sphere
-   [this] (g/bounding-sphere* (g/centroid this) (g/vertices this)))
+   [_] (g/bounding-sphere* (g/centroid _) (g/vertices _)))
 #+END_SRC
 **** TODO PVolume
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PVolume
-  (volume [this] 0)
+  (volume [_] 0)
 #+END_SRC
 **** TODO PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
@@ -399,26 +399,26 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PMesh
   (faces
-   [this] (:faces this))
+   [_] (:faces _))
   (vertex-faces
-   [this v] (vertex-faces* this v))
+   [_ v] (vertex-faces* _ v))
   (compute-face-normals
-   [{:keys [faces] :as this}]
+   [{:keys [faces] :as _}]
    (let [[normals fnormals]
          (reduce
           (fn [[norms fnorms] [a b c :as f]]
             (let [[norms n] (d/index! norms (g/normal3* a b c))]
               [norms (assoc! fnorms f n)]))
           [(transient #{}) (transient {})] faces)]
-     (assoc this
+     (assoc _
        :normals (persistent! normals)
        :fnormals (persistent! fnormals))))
   (compute-vertex-normals
-   [{:keys [vertices normals fnormals] :as this}]
+   [{:keys [vertices normals fnormals] :as _}]
    (let [[normals vnormals]
          (reduce
           (fn [[norms vnorms] v]
-            (let [faces (g/vertex-faces this v)
+            (let [faces (g/vertex-faces _ v)
                   n (->> faces
                          (map #(get fnormals %))
                          (reduce +)
@@ -426,11 +426,11 @@
                   [norms n] (d/index! norms n)]
               [norms (assoc! vnorms v n)]))
           [(transient normals) (transient {})] (keys vertices))]
-     (assoc this
+     (assoc _
        :normals (persistent! normals)
        :vnormals (persistent! vnormals))))
   (remove-face
-   [{:keys [vertices edges faces fnormals vnormals] :as this} f]
+   [{:keys [vertices edges faces fnormals vnormals] :as _} f]
    (if (get faces f)
      (let [[vertices vnormals edges]
            (reduce
@@ -445,41 +445,41 @@
                   [(dissoc vertices a) (dissoc vnormals a) edges])))
             [vertices vnormals edges]
             (d/successive-nth 2 (conj f (first f))))]
-       (assoc this
+       (assoc _
          :vertices vertices
          :vnormals vnormals
          :edges edges
          :faces (disj faces f)
          :fnormals (dissoc fnormals f)))
-     this))
+     _))
   (remove-vertex
-   [this v] (remove-vertex* this v))
+   [_ v] (remove-vertex* _ v))
   (replace-vertex
-   [this v v2] (replace-vertex* this v v2))
+   [_ v v2] (replace-vertex* _ v v2))
   (merge-vertices
-   [this a b] (merge-vertices* this a b))
+   [_ a b] (merge-vertices* _ a b))
 #+END_SRC
 **** PMeshable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PMeshable
-  (as-mesh [this] this)
+  (as-mesh [_] _)
 #+END_SRC
 
 **** PSubdivideable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PSubdivideable
-  (subdivide-edge [this a b splits] (subdivide-edge* this a b splits))
+  (subdivide-edge [_ a b splits] (subdivide-edge* _ a b splits))
   (subdivide-face
-   [this f p opts] (subdivide-face* this f p (:displace opts) (:splits opts)))
-  (subdivide [this opts] (subdivide* this opts))
+   [_ f p opts] (subdivide-face* _ f p (:displace opts) (:splits opts)))
+  (subdivide [_ opts] (subdivide* _ opts))
 #+END_SRC
 **** PSliceable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   g/PSliceable
   (slice-with
-   ([this e] (slice-with* this e g/classify-point (:faces this)))
-   ([this e classifier] (slice-with* this e classifier (:faces this)))
-   ([this e classifier faces] (slice-with* this e classifier faces)))
+   ([_ e] (slice-with* _ e g/classify-point (:faces _)))
+   ([_ e classifier] (slice-with* _ e classifier (:faces _)))
+   ([_ e classifier faces] (slice-with* _ e classifier faces)))
 #+END_SRC
 **** End of implementation                                         :noexport:
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
@@ -489,29 +489,29 @@
 *** TODO refactor transform as protocol method
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh.cljx
   (defn loop-subdivide-face
-    [this [a b c :as f]]
-    (let [{:keys [vertices edges faces] :as this} (g/remove-face this f)
+    [mesh [a b c :as f]]
+    (let [{:keys [vertices edges faces] :as mesh} (g/remove-face mesh f)
           [mab mbc mca] (map (fn [[p q]] (g/mix p q)) [[a b] [b c] [c a]])]
-      (reduce add-face this [[a mab mca] [mab b mbc] [mbc c mca] [mab mbc mca]])))
+      (reduce add-face mesh [[a mab mca] [mab b mbc] [mbc c mca] [mab mbc mca]])))
   
   (defn loop-subdivide-mesh
-    ([this] (loop-subdivide-mesh 1 this))
-    ([n this] (reduce (fn [this _] (reduce loop-subdivide-face this (:faces this))) this (range n)))
-    ([n f this] (reduce (fn [this _] (reduce loop-subdivide-face this (filter f (:faces this)))) this (range n))))
+    ([mesh] (loop-subdivide-mesh 1 mesh))
+    ([n mesh] (reduce (fn [mesh _] (reduce loop-subdivide-face mesh (:faces mesh))) mesh (range n)))
+    ([n f mesh] (reduce (fn [mesh _] (reduce loop-subdivide-face mesh (filter f (:faces mesh)))) mesh (range n))))
   
   (defn laplacian2
-    [{:keys[vnormals] :as this} amp]
+    [{:keys[vnormals] :as mesh} amp]
     (fn [p]
-      (let [neighbors (g/vertex-neighbors this p)]
+      (let [neighbors (g/vertex-neighbors mesh p)]
         (+ p
            (g/normalize
             (reduce + (vnormals p) (map (comp #(* % 0.5) vnormals) neighbors))
             amp)))))
   
   (defn laplacian
-    [this]
+    [mesh]
     (fn [p]
-      (let [neighbors (g/vertex-neighbors this p)
+      (let [neighbors (g/vertex-neighbors mesh p)
             nc (count neighbors)]
         (if (pos? nc)
           (* (reduce + neighbors) (/ 1.0 nc))
@@ -528,11 +528,11 @@
                   faces))))
   
   (defn keep-faces
-    ([this f] (keep-faces this f (:faces this)))
-    ([this f faces]
+    ([mesh f] (keep-faces mesh f (:faces mesh)))
+    ([mesh f faces]
        (reduce
-        (fn [this face] (if (f face) this (g/remove-face this face)))
-        this faces)))
+        (fn [mesh face] (if (f face) mesh (g/remove-face mesh face)))
+        mesh faces)))
   
   (defn trianglestrip-faces
     "Takes two seqs of linestrip style points and returns a lazyseq of

@@ -3,27 +3,29 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshops.cljx
   (ns thi.ng.geom.meshops
     (:require
-      [thi.ng.common.math.core :as m]
-      [thi.ng.geom.core :as g :refer [vec2 vec3]]
-      [thi.ng.geom.aabb :as a]
-      [thi.ng.geom.line :as l]
-      [thi.ng.geom.mesh :as mesh]
-      [thi.ng.geom.spatialtree :as st]
-      [clojure.set :as set]))
+     (:refer-clojure :exclude [+ - *])
+     (:refer-clojure :rename {+ c+, - c-, * c*})
+     [thi.ng.common.math.core :as m]
+     [thi.ng.geom.core :as g :refer [+ - * vec2 vec3]]
+     [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.line :as l]
+     [thi.ng.geom.mesh :as mesh]
+     [thi.ng.geom.spatialtree :as st]
+     [clojure.set :as set]))
 #+END_SRC
 ** Utilities
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshops.cljx
   (defn find-in-tree
     "Returns the first item in the bounding box with size `eps` surrounding `p` in the given octree."
     [t eps half-eps p]
-    (let [b (a/aabb (g/sub p half-eps) eps)]
+    (let [b (a/aabb (- p half-eps) eps)]
       (first (st/select-with-shape b t))))
-
+  
   (defn unique-point-tree
     [points eps]
     (let [{[bx by bz] :p [sx sy sz] :size} (g/bounding-box* points)
           eps (vec3 eps)
-          eps2 (g/scale eps 0.5)
+          eps2 (* eps 0.5)
           [tree dupes]
           (reduce
             (fn [[t dupes :as state] p]
@@ -33,7 +35,7 @@
             [(st/octree bx by bz sx sy sz) (transient [])]
             points)]
       [tree (persistent! dupes)]))
-
+  
   (defn collapse-edges
     [m eps]
     (reduce
@@ -42,18 +44,18 @@
       (filter
         (fn [e] (let [[a b] (vec e)] (< (g/dist-squared a b) eps)))
         (keys (:edges m)))))
-
+  
   (defn unify-vertices
     [{:keys [vertices faces]} eps]
     (let [[octree dupes] (unique-point-tree (keys vertices) eps)
           eps (vec3 eps)
-          eps2 (g/scale eps 0.5)
+          eps2 (* eps 0.5)
           lookup #(find-in-tree octree eps eps2 %)]
       [(reduce
          (fn [m [a b c]] (mesh/add-face m [(lookup a) (lookup b) (lookup c)]))
          (mesh/mesh3) faces)
        dupes]))
-
+  
   (defn make-watertight
     [{:keys [vertices edges] :as m} eps]
     (let [split-face (fn[v e [fa fb fc :as f]]

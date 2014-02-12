@@ -50,8 +50,8 @@
          f (vec3 x2 y2 z1) h (vec3 x2 y1 z2)]
      [a b c d e f g h]))
   (edges
-   [this]
-   (let [[a b c d e f g h] (g/vertices this)]
+   [_]
+   (let [[a b c d e f g h] (g/vertices _)]
      (for [[p q] [[a b] [b c] [c d] [d a] ;; left
                   [a e] [b f]             ;; back
                   [e f] [f g] [g h] [h e] ;; right
@@ -117,10 +117,10 @@
 *** PBounds
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
   g/PBounds
-  (bounds [this] this)
-  (width [this] ((:size this) 0))
-  (height [this] ((:size this) 1))
-  (depth [this] ((:size this) 2))
+  (bounds [_] _)
+  (width [_] ((:size _) 0))
+  (height [_] ((:size _) 1))
+  (depth [_] ((:size _) 2))
 #+END_SRC
 *** PCenter
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
@@ -130,7 +130,7 @@
       (thi.ng.geom.types.AABB. (- p (* size 0.5)) size))
    ([{size :size} q]
       (thi.ng.geom.types.AABB. (- q (* size 0.5)) size)))
-  (centroid [this] (+ (:p this) (* (:size this) 0.5)))
+  (centroid [_] (+ (:p _) (* (:size _) 0.5)))
 #+END_SRC
 *** PBoundingSphere
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
@@ -159,12 +159,13 @@
        [0 1 2]))
     :default (g/type-error "AABB" s)))
 #+END_SRC
-*** PMeshable
+*** TODO PMeshable
+**** TODO add face flags as in gmesh/box
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
   g/PMeshable
   (as-mesh
-   [this]
-   (let [[a b c d e f g h] (g/vertices this)]
+   [_]
+   (let [[a b c d e f g h] (g/vertices _)]
      (mesh/mesh3
       [a c b] [a d c] ;left
       [d g c] [d h g] ;front

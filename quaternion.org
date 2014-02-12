@@ -20,19 +20,19 @@
 ******
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
     PTransformable
-    (scale [this s]
+    (scale [_ s]
       (Quaternion. (* x s) (* y s) (* z s) (* w s) _meta))
 #+END_SRC
 *** PMatrix
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
   PMathOps
-  (+ [this q]
+  (+ [_ q]
      (let [q ^Quaternion q]
        (Quaternion. (c+ x (.-x q)) (c+ y (.-y q)) (c+ z (.-z q)) (c+ w (.-w q)) _meta)))
-  (- [this q]
+  (- [_ q]
      (let [q ^Quaternion q]
        (Quaternion. (c- x (.-x q)) (c- y (.-y q)) (c- z (.-z q)) (c- w (.-w q)) _meta)))
-  (* [this q]
+  (* [_ q]
      (let [q ^Quaternion q
            qx (.-x q) qy (.-y q) qz (.-z q) qw (.-w q)]
        (Quaternion.
@@ -45,33 +45,33 @@
 *** PDotProduct
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx  
   PDotProduct
-  (dot [this q]
+  (dot [_ q]
     (let [q ^Quaternion q]
       (c+ (c+ (c+ (c* x (.-x q)) (c* y (.-y q))) (c* z (.-z q))) (c* w (.-w q)))))
 #+END_SRC
 *** PMagnitude
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
   PMagnitude
-  (mag-squared [this]
+  (mag-squared [_]
     (c+ (c+ (c+ (c* x x) (c* y y)) (c* z z)) (c* w w)))
-  (mag [this]
+  (mag [_]
     (Math/sqrt (c+ (c+ (c+ (c* x x) (c* y y)) (c* z z)) (c* w w))))
 #+END_SRC
 *** PNormalize
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
   PNormalize
-  (normalize [this]
+  (normalize [_]
     (let [mag (c+ (c+ (c+ (c* x x) (c* y y)) (c* z z)) (c* w w))]
       (if (> mag *eps*)
         (let [m (/ mag)]
           (Quaternion. (c* x m) (c* y m) (c* z m) (c* w m) _meta))
-        this)))
+        _)))
 #+END_SRC
 *** PInvertible
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
   PInvertible
-  (invert [this]
-    (let [d (mag-squared this)
+  (invert [_]
+    (let [d (mag-squared _)
           d (if (zero? d) 0.0 (/ d))
           id (c- d)]
       (Quaternion. (c* x id) (c* y id) (c* z id) (c* w d) _meta)))
@@ -79,11 +79,11 @@
 *** PInterpolateable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
   PInterpolateable
-  (mix [this q] (mix this q 0.5))
-  (mix [this q t]
-    (let [d (dot this q)]
+  (mix [_ q] (mix _ q 0.5))
+  (mix [_ q t]
+    (let [d (dot _ q)]
       (if (>= (m/abs d) 1.0)
-        this
+        _
         (let [theta (Math/acos d)
               stheta (Math/sqrt (c- 1.0 (c* d d)))
               [a b] (if (< (m/abs stheta) 0.001)
@@ -101,7 +101,7 @@
 *** PMatrixConvert
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
   PMatrixConvert
-  (as-matrix [this]
+  (as-matrix [_]
     (let [x2 (c+ x x) y2 (c+ y y) z2 (c+ z z)
           xx (c* x x2) xy (c* x y2) xz (c* x z2)
           yy (c* y y2) yz (c* y z2) zz (c* z z2)
@@ -115,7 +115,7 @@
 *** PVectorTransform
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/quat.cljx
   PVectorTransform
-  (transform-vector [this [vx vy vz :as v]]
+  (transform-vector [_ [vx vy vz :as v]]
     (let [ix (c- (c+ (c* w vx) (c* y vz)) (c* z vy))
           iy (c- (c+ (c* w vy) (c* z vx)) (c* x vz))
           iz (c- (c+ (c* w vz) (c* x vy)) (c* y vx))

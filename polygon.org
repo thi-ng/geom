@@ -140,7 +140,7 @@
   (defn inset-polygon
     "For CW polygons, use positive distance to inset or negative to outset.
     For CCW polygons, use opposite."
-    [{points :points :as this} d]
+    [{points :points :as _} d]
     (thi.ng.geom.types.Polygon.
      (mapv
       (fn [[p c n]] (inset-corner p c n d))
@@ -148,8 +148,8 @@
      []))
 
   (defn smooth
-    [{points :points :as this} amp base-weight]
-    (let [pc (g/centroid this)]
+    [{points :points :as _} amp base-weight]
+    (let [pc (g/centroid _)]
       (thi.ng.geom.types.Polygon.
        (mapv
         (fn [[p c n]]
@@ -167,15 +167,15 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   g/PGraph
   (vertices
-   [this] (:points this))
+   [_] (:points _))
   (edges
    [{points :points}]
    (g/edges* #(thi.ng.geom.types.Line2. (% 0) (% 1))
-             (concat points [(first points)])))
+             (conj points (first points))))
   (vertex-neighbors
-   [this v] (d/neighbors v (g/vertices this)))
+   [_ v] (d/neighbors v (g/vertices _)))
   (vertex-valence
-   [this v] (if ((set (g/vertices this)) (vec2 v)) 2 0))
+   [_ v] (if ((set (g/vertices _)) (vec2 v)) 2 0))
 #+END_SRC
 *** PArea
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
@@ -191,37 +191,37 @@
 *** PBounds
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   g/PBounds
-  (bounds [this] (g/bounding-rect* (:points this)))
-  (width [this] (g/axis-range* 0 (:points this)))
-  (height [this] (g/axis-range* 1 (:points this)))
-  (depth [this] 0)
+  (bounds [_] (g/bounding-rect* (:points _)))
+  (width [_] (g/axis-range* 0 (:points _)))
+  (height [_] (g/axis-range* 1 (:points _)))
+  (depth [_] 0)
 #+END_SRC
 *** PCenter
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   g/PCenter
   (center
-   ([this] (g/center this [0.0 0.0]))
-   ([this o]
-      (let [d (- o (g/centroid this))
-            p (->> this
+   ([_] (g/center _ [0.0 0.0]))
+   ([_ o]
+      (let [d (- o (g/centroid _))
+            p (->> _
                    :points
                    (map #(+ d %))
                    (vec))]
         (thi.ng.geom.types.Polygon. p []))))
   (centroid
-   [{points :points :as this}]
+   [{points :points :as _}]
    (let [c (->> points
                 (d/rotate-left 1)
                 (reduce (fn [[c p] v] [(g/madd (+ p v) (g/cross p v) c) v])
                         [(vec2) (first points)])
                 (first))]
-     (* c (/ 1.0 (c* 6 (g/area this))))))  
+     (* c (/ 1.0 (c* 6 (g/area _))))))  
 #+END_SRC
 *** PBoundingCircle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   g/PBoundingCircle
   (bounding-circle
-   [this] (g/bounding-circle* (g/centroid this) (:points this)))
+   [_] (g/bounding-circle* (g/centroid _) (:points _)))
 #+END_SRC
 *** PCircumference
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
@@ -234,10 +234,10 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   g/PClassify
   (classify-point
-   [this p] nil) ; TODO
+   [_ p] nil) ; TODO
   g/PProximity
   (closest-point
-   [this p] (g/closest-point* (g/edges this) p))
+   [_ p] (g/closest-point* (g/edges _) p))
   g/PBoundary
   (contains-point?
    [{points :points} p]
@@ -257,8 +257,8 @@
   (point-at
    [{points :points} t] (g/point-at* t (conj points (first points))))
   (random-point
-   [this] (g/point-at this (m/random)))
-  (random-point-inside [this] nil) ; TODO
+   [_] (g/point-at _ (m/random)))
+  (random-point-inside [_] nil) ; TODO
   (sample-uniform
    [{points :points} udist include-last?]
    (g/sample-uniform* udist include-last? (conj points (first points))))
@@ -267,15 +267,15 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   g/PTessellateable
   (tessellate
-   [this] (map #(thi.ng.geom.types.Triangle2. (% 0) (% 1) (% 2)) (tessellate* this)))
+   [_] (map #(thi.ng.geom.types.Triangle2. (% 0) (% 1) (% 2)) (tessellate* _)))
 #+END_SRC
 *** PExtrudeable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   g/PExtrudeable
   (extrude
-   [{points :points :as this}
+   [{points :points :as _}
     {:keys [depth offset scale top? bottom?] :or {depth 1.0 scale 1.0 top? true bottom? true}}]
-   (let [points (if (neg? (g/area this)) (reverse points) points)
+   (let [points (if (neg? (g/area _)) (reverse points) points)
          tpoints (if (= 1.0 scale) points (:points (g/scale-size (polygon points) scale)))
          off (or offset (vec3 0 0 depth))
          points3 (mapv vec3 points)
@@ -295,10 +295,10 @@
               (tessellate*)
               (map (fn [[a b c]] [(+ off a) (+ off b) (+ off c)]))))))))
   (extrude-shell
-   [{points :points :as this}
+   [{points :points :as _}
     {:keys [depth offset inset top? bottom? wall nump]
      :or {wall 1.0 depth 1.0 inset 0.0 top? false bottom? false}}]
-   (let [points (if (neg? (g/area this)) (reverse points) points)
+   (let [points (if (neg? (g/area _)) (reverse points) points)
          tpoints (if (zero? inset) points (:points (inset-polygon (polygon points) (c- inset))))
          ipoints (:points (inset-polygon (polygon points) (c- wall)))
          itpoints (:points (inset-polygon (polygon points) (c- (c- inset) wall)))
@@ -358,16 +358,16 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
   g/PTransformable
   (scale
-   ([this s] (thi.ng.geom.types.Polygon. (mapv #(* % s) (:points this)) []))
-   ([this a b] (thi.ng.geom.types.Polygon. (mapv #(* % a b) (:points this)) [])))
+   ([_ s] (thi.ng.geom.types.Polygon. (mapv #(* % s) (:points _)) []))
+   ([_ a b] (thi.ng.geom.types.Polygon. (mapv #(* % a b) (:points _)) [])))
   (scale-size
-   [this s]
-   (let [c (g/centroid this)]
+   [_ s]
+   (let [c (g/centroid _)]
      (thi.ng.geom.types.Polygon.
-      (mapv #(-> % (- c) (g/madd s c)) (:points this)) [])))
+      (mapv #(-> % (- c) (g/madd s c)) (:points _)) [])))
   (translate
-   [this t]
-   (thi.ng.geom.types.Polygon. (mapv #(+ % t) (:points this)) []))
+   [_ t]
+   (thi.ng.geom.types.Polygon. (mapv #(+ % t) (:points _)) []))
 #+END_SRC
 *** End of implementations                                         :noexport:
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx

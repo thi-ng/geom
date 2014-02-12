@@ -126,57 +126,57 @@
 *** PGraph
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
   g/PGraph
-  (edges [this])
+  (edges [_])
   (vertices
-   [this res]
-   (first (sample-segments* res (:segments this))))
+   [_ res]
+   (first (sample-segments* res (:segments _))))
 #+END_SRC
 *** PArea
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
   g/PArea
-  (area [this])
+  (area [_])
 #+END_SRC
 *** PBounds
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
   g/PBounds
-  (bounds [this])
+  (bounds [_])
 #+END_SRC
 *** PCenter
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
   g/PCenter
   (center
-   ([this] nil)
-   ([this o] nil))
-  (centroid [this])
+   ([_] nil)
+   ([_ o] nil))
+  (centroid [_])
 #+END_SRC
 *** PBoundingCircle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
   g/PBoundingCircle
-  (bounding-cicle [this] nil)
+  (bounding-cicle [_] nil)
 #+END_SRC
 *** PCircumference
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
   g/PCircumference
-  (circumference [this] nil)
+  (circumference [_] nil)
 #+END_SRC
 *** TODO PBoundary
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
   g/PClassify
-  (classify-point [this p])
+  (classify-point [_ p])
   g/PProximity
-  (closest-point [this p])
+  (closest-point [_ p])
   g/PBoundary
-  (contains-point? [this p])
+  (contains-point? [_ p])
 #+END_SRC
 *** PSampleable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
   g/PSampleable
-  (point-at [this t])
-  (random-point [this])
-  (random-point-inside [this])
+  (point-at [_ t])
+  (random-point [_])
+  (random-point-inside [_])
   (sample-uniform
-   [this udist include-last?]
-   (->> this
+   [_ udist include-last?]
+   (->> _
         :segments
         (sample-segments* 8)
         (map #(g/sample-uniform* udist include-last? %))
@@ -186,8 +186,8 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
   g/PPolygonizable
   (as-polygon
-   ([this] nil)
-   ([this res] nil))
+   ([_] nil)
+   ([_ res] nil))
 #+END_SRC
 *** End of implementation                                          :noexport:
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/path.cljx
