@@ -9,9 +9,11 @@
     (:refer-clojure :exclude [+ - * min max])
     (:refer-clojure :rename {+ c+, - c-, * c*, min cmin, max cmax})
     (:require
+     [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [*eps*]]
      [thi.ng.geom.core :as g :refer [+ - * vec3 min max]]
      [thi.ng.geom.mesh :as mesh]
+     [thi.ng.geom.gmesh :as gmesh]
      [thi.ng.geom.types :as types])
     ,#+clj
     (:import
@@ -39,23 +41,32 @@
   (extend-type thi.ng.geom.types.AABB
 #+END_SRC
 *** PGraph
+
+  : h +----+ g
+  :   |\   :\
+  :   |e+----+ f
+  :   | |  : | 
+  : a +-|--+d|
+  :    \|   \|
+  :   b +----+ c
+
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
   g/PGraph
   (vertices
    [{a :p size :size}]
    (let [[x1 y1 z1] a
-         [x2 y2 z2 :as g] (+ a size)
-         b (vec3 x1 y2 z1) c (vec3 x1 y2 z2)
-         d (vec3 x1 y1 z2) e (vec3 x2 y1 z1)
-         f (vec3 x2 y2 z1) h (vec3 x2 y1 z2)]
+         [x2 y2 z2 :as f] (+ a size)
+         b (vec3 x1 y1 z2) c (vec3 x2 y1 z2)
+         d (vec3 x2 y1 z1) e (vec3 x1 y2 z2)
+         g (vec3 x2 y2 z1) h (vec3 x1 y2 z1)]
      [a b c d e f g h]))
   (edges
    [_]
    (let [[a b c d e f g h] (g/vertices _)]
-     (for [[p q] [[a b] [b c] [c d] [d a] ;; left
-                  [a e] [b f]             ;; back
-                  [e f] [f g] [g h] [h e] ;; right
-                  [c g] [d h]             ;; front
+     (for [[p q] [[a b] [b c] [c d] [d a] ;; bottom
+                  [h e] [e f] [f g] [g h] ;; top
+                  [a h] [b e]             ;; left
+                  [d g] [c f]             ;; right
                   ]]
        (thi.ng.geom.types.Line3. p q))))
 #+END_SRC
@@ -164,15 +175,17 @@
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
   g/PMeshable
   (as-mesh
-   [_]
-   (let [[a b c d e f g h] (g/vertices _)]
-     (mesh/mesh3
-      [a c b] [a d c] ;left
-      [d g c] [d h g] ;front
-      [h f g] [h e f] ;right
-      [e b f] [e a b] ;back
-      [c f b] [c g f] ;top
-      [e h d] [e d a]))) ; bottom
+   [_ {:keys [flags] :or {flags "nsewfb"}}]
+   (let [[a b c d e f g h] (g/vertices _)
+         [tp bt rt lf fr bk] (d/demunge-flags-seq flags "nsewfb")]
+     (->> [(if fr [b c f e])
+           (if bk [a h g d])
+           (if lf [a b e h])
+           (if rt [c d g f])
+           (if tp [e f g h])
+           (if bt [a d c b])]
+          (filter identity)
+          (gmesh/into-mesh (gmesh/gmesh)))))
 #+END_SRC
 *** End of implementation                                          :noexport:
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
