@@ -145,7 +145,7 @@
   (defn max-dist*
     [c points]
     (->> points
-         (map #(mag-squared (- c %)))
+         (map #(dist-squared c %))
          (reduce cmax)
          (Math/sqrt)))
 
@@ -175,6 +175,7 @@
     (let [xs (map #(nth % axis) coll)]
       (c- (reduce cmax xs) (reduce cmin xs))))
 
+  ;; TODO rename into arc-length-index*
   (defn total-length*
     [points]
     (->> points
@@ -182,6 +183,13 @@
          (map #(dist (% 0) (% 1)))
          (reductions c+ 0)
          (vec)))
+
+  (defn arc-length*
+    [points]
+    (->> points
+         (d/successive-nth 2)
+         (map #(dist (% 0) (% 1)))
+         (reduce c+)))
 
   (defn sample-uniform*
     [udist include-last? points]

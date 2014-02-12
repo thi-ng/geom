@@ -1,3 +1,7 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
 * thi.ng.geom.types
 ** 2D types
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
@@ -60,6 +64,10 @@
 *** Triangle
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
   (defrecord Triangle3 [a b c])
+#+END_SRC
+*** Quad
+#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/types.cljx
+  (defrecord Quad3 [a b c d])
 #+END_SRC
 *** AABB
       An Axis-aligned bounding box is defined as the cartesian volume

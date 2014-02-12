@@ -2,10 +2,10 @@
 #+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
 #+EXPORT_EXCLUDE_TAGS: noexport
 
-* thi.ng.geom.test.core
+* thi.ng.geom.specs.core
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj :mkdirp yes :padline no
-  (ns thi.ng.geom.test.core
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.specs.core
     (:refer-clojure :exclude [+ - * min max])
     (:refer-clojure :rename {+ c+, - c-, * c*, min cmin, max cmax})
     (:require
@@ -15,7 +15,7 @@
      [speclj.core :refer :all]))
 #+END_SRC
 ** Test constants
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj
   (def a2 (vec2 1 2)) (def a3 (vec3 1 2 3))
   (def b2 (vec2 10 20)) (def b3 (vec3 10 20 30))
   
@@ -25,55 +25,53 @@
   (def av2 [1.0 2.0]) (def av3 [1.0 2.0 3.0])
   (def bv2 [10.0 20.0]) (def bv3 [10.0 20.0 30.0])
 #+END_SRC
-** Vector creation
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
-  (describe "Vector creation"
+** Main context
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj
+   (describe "thi.ng.geom.core"
 #+END_SRC
-*** 2d
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
+*** Vector creation
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj
   (context
-   "2d"
-   (it "vec2?" (should (g/vec2? (vec2 1))))
-   (it "uniform from single number" (should= [1.0 1.0] (vec2 1)))
-   (it "two numbers" (should= [1.0 2.0] (vec2 1 2)))
-   (it "single 2-vector" (should= [1.0 2.0] (vec2 [1 2])))
-   (it "single 3-vector" (should= [1.0 2.0] (vec2 [1 2 3])))
-   (it "single :x/:y map" (should= [1.0 2.0] (vec2 {:x 1 :y 2})))
-   (it "single :x map" (should= [1.0 0.0] (vec2 {:x 1})))
-   (it "single :y map" (should= [0.0 2.0] (vec2 {:y 2})))
-   (it "single empty map" (should= [0.0 0.0] (vec2 {})))
-   (it "fail w/ str arg v2" (should-throw (vec2 "a")))
-   (it "fail w/ [str] arg v2" (should-throw (vec2 ["a"])))
-   (it "fail w/ str map v2" (should-throw (vec2 {:x "a"})))
-   (it "fail w/ str args v2" (should-throw (vec2 "a" "a"))))
+   "Vector creation"
+  
+   (context
+    "2d"
+    (it "vec2?" (should (g/vec2? (vec2 1))))
+    (it "uniform from single number" (should= [1.0 1.0] (vec2 1)))
+    (it "two numbers" (should= [1.0 2.0] (vec2 1 2)))
+    (it "single 2-vector" (should= [1.0 2.0] (vec2 [1 2])))
+    (it "single 3-vector" (should= [1.0 2.0] (vec2 [1 2 3])))
+    (it "single :x/:y map" (should= [1.0 2.0] (vec2 {:x 1 :y 2})))
+    (it "single :x map" (should= [1.0 0.0] (vec2 {:x 1})))
+    (it "single :y map" (should= [0.0 2.0] (vec2 {:y 2})))
+    (it "single empty map" (should= [0.0 0.0] (vec2 {})))
+    (it "fail w/ str arg v2" (should-throw (vec2 "a")))
+    (it "fail w/ [str] arg v2" (should-throw (vec2 ["a"])))
+    (it "fail w/ str map v2" (should-throw (vec2 {:x "a"})))
+    (it "fail w/ str args v2" (should-throw (vec2 "a" "a"))))
+  
+   (context
+    "3d"
+    (it "vec3?" (should (g/vec3? (vec3 1))))
+    (it "uniform from single number" (should= [1.0 1.0 1.0] (vec3 1)))
+    (it "2 numbers" (should= [1.0 2.0 0.0] (vec3 1 2)))
+    (it "3 numbers" (should= [1.0 2.0 3.0] (vec3 1 2 3)))
+    (it "single 2-vector" (should= [1.0 2.0 0.0] (vec3 [1 2])))
+    (it "single 3-vector" (should= [1.0 2.0 3.0] (vec3 [1 2 3])))
+    (it "single :x :y map" (should= [1.0 2.0 0.0] (vec3 {:x 1 :y 2})))
+    (it "single :x :y :z map" (should= [1.0 2.0 3.0] (vec3 {:x 1 :y 2 :z 3.0})))
+    (it "single :x map" (should= [1.0 0.0 0.0] (vec3 {:x 1})))
+    (it "single :y map" (should= [0.0 2.0 0.0] (vec3 {:y 2})))
+    (it "single :z map" (should= [0.0 0.0 3.0] (vec3 {:z 3})))
+    (it "single empty map" (should= [0.0 0.0 0.0] (vec3 {})))
+    (it "fail w/ str arg v3" (should-throw (vec3 "a")))
+    (it "fail w/ [str] arg v3" (should-throw (vec3 ["a"])))
+    (it "fail w/ str map v3" (should-throw (vec3 {:x "a"})))
+    (it "fail w/ str args v3" (should-throw (vec3 "a" "a")))))
 #+END_SRC
-*** 3d
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
+*** Swizzling
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj
   (context
-   "3d"
-   (it "vec3?" (should (g/vec3? (vec3 1))))
-   (it "uniform from single number" (should= [1.0 1.0 1.0] (vec3 1)))
-   (it "2 numbers" (should= [1.0 2.0 0.0] (vec3 1 2)))
-   (it "3 numbers" (should= [1.0 2.0 3.0] (vec3 1 2 3)))
-   (it "single 2-vector" (should= [1.0 2.0 0.0] (vec3 [1 2])))
-   (it "single 3-vector" (should= [1.0 2.0 3.0] (vec3 [1 2 3])))
-   (it "single :x :y map" (should= [1.0 2.0 0.0] (vec3 {:x 1 :y 2})))
-   (it "single :x :y :z map" (should= [1.0 2.0 3.0] (vec3 {:x 1 :y 2 :z 3.0})))
-   (it "single :x map" (should= [1.0 0.0 0.0] (vec3 {:x 1})))
-   (it "single :y map" (should= [0.0 2.0 0.0] (vec3 {:y 2})))
-   (it "single :z map" (should= [0.0 0.0 3.0] (vec3 {:z 3})))
-   (it "single empty map" (should= [0.0 0.0 0.0] (vec3 {})))
-   (it "fail w/ str arg v3" (should-throw (vec3 "a")))
-   (it "fail w/ [str] arg v3" (should-throw (vec3 ["a"])))
-   (it "fail w/ str map v3" (should-throw (vec3 {:x "a"})))
-   (it "fail w/ str args v3" (should-throw (vec3 "a" "a"))))
-#+END_SRC
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
-   )
-#+END_SRC
-** Swizzling
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
-  (describe
    "Vector swizzling"
   
    (context
@@ -123,9 +121,9 @@
     (it ":xyz fail 3d" (should-throw (assoc a3 :xyz [bx by bz])))
     ))
 #+END_SRC
-** Clojure/Java protocol impls
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
-  (describe
+*** Clojure/Java protocol impls
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj
+  (context
    "Protocol impls"
   
    (it "meta a2" (should= {:foo "bar"} (meta (with-meta a2 {:foo "bar"}))))
@@ -190,9 +188,9 @@
    (it "apply a3 w/ default" (should= -1 (apply a3 [:w -1])))
    (it "apply a3 fail" (should-throw (apply a3 [:w]))))
 #+END_SRC
-** Vector algebra
-*** Callable contexts
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
+*** Vector operations
+**** Callable contexts
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj
   (defn context-vec2-op
     [label op cop default]
     (context
@@ -229,13 +227,13 @@
        (it (str label " a3 [n m] fail") (should-throw (op a3 [10 20])))
        (it (str label " a3 [n m]") (should= (op a3 10 20 default) (op a3 [10 20]))))))
 #+END_SRC
-*** Calling contexts
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
-  (describe
-   "Vector algebra"
+**** Calling contexts
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj
+  (context
+   "Vector operations"
 #+END_SRC
-**** 2D ops
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
+***** 2D ops
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj  
   (context
    "2d ops"
    (it "+ a2" (should= [(c+ ax) (c+ ay)] (+ a2)))
@@ -247,8 +245,8 @@
    (context-vec2-op "*" * c* 1.0)
    (context-vec2-op "/" div / 0.0))
 #+END_SRC
-**** 3D ops
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj    
+***** 3D ops
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj    
   (context
    "3d ops"
    (it "+ a3" (should= [(c+ ax) (c+ ay) (c+ az)] (+ a3)))
@@ -260,8 +258,8 @@
    (context-vec3-op "*" * c* 1.0)
    (context-vec3-op "/" div / 0.0))
 #+END_SRC
-**** Madd
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
+***** Madd
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj  
   (context
    "madd"
    (it "madd a2 n m" (should= (+ (* a2 bx) by) (g/madd a2 bx by)))
@@ -276,8 +274,8 @@
    (it "madd a3 n b3 != a3 b3 n" (should-not= (g/madd a3 bx b3) (g/madd a3 b3 bx)))
    (it "madd a3 b3 a3" (should= (+ (* a3 b3) a3) (g/madd a3 b3 a3))))
 #+END_SRC
-**** Dot product
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
+***** Dot product
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj  
   (context
    "dot product"
    (it "dot a2 a2" (should== (g/mag-squared a2) (g/dot a2 a2)))
@@ -295,14 +293,14 @@
    (it "dot -a3 b3" (should== (c+ (c* (c- ax) bx) (c* (c- ay) by) (c* (c- az) bz))
                               (g/dot (- a3) b3))))
 #+END_SRC
-**** Cross product
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
+***** Cross product
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj  
    (context
     "cross product"
     )
 #+END_SRC
-**** Magnitude
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
+***** Magnitude
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj  
   (context
    "mag"
    (it "mag a2" (should== (Math/sqrt (c+ (c* ax ax) (c* ay ay))) (g/mag a2)))
@@ -320,8 +318,8 @@
    (it "mag-squared -a3" (should== (c+ (c* ax ax) (c* ay ay) (c* az az))
                                    (g/mag-squared (- a3)))))
 #+END_SRC
-**** Normalize
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
+***** Normalize
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj  
   (context
    "normalize"
    (it "norm a2" (should== (let [m (g/mag a2)] [(/ ax m) (/ ay m)]) (g/normalize a2)))
@@ -334,11 +332,23 @@
                               (g/normalize a3 10)))
    (it "mag = norm a3 10" (should== 10 (g/mag (g/normalize a3 10)))))
 #+END_SRC
-**** Context end
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj  
+***** Context end
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj  
    )
 #+END_SRC
+*** Matrix operations
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj
+  (context
+   "Matrix operations"
+  
+   )
+#+END_SRC
+*** End main context
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj
+   )
+#+END_SRC
+
 ** Trigger tests
-#+BEGIN_SRC clojure :tangle babel/spec/thi/ng/geom/test/core.clj
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/core.clj
   (run-specs)
 #+END_SRC

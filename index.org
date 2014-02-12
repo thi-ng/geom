@@ -105,7 +105,7 @@ http://code.thi.ng/geom
                       :hooks [leiningen.cljsbuild]}}
   
     :plugins [<<dep-speclj>>]
-    :test-paths ["spec"])
+    :test-paths ["specs"])
 #+END_SRC
 
 * Modules

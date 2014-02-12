@@ -1,0 +1,64 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+* thi.ng.geom.specs.protocols
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/protocols.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.specs.protocols
+    (:refer-clojure :exclude [+ - * min max])
+    (:refer-clojure :rename {+ c+, - c-, * c*, min cmin, max cmax})
+    (:require
+     [thi.ng.common.math.core :as m :refer [*eps*]]
+     [thi.ng.geom.core :as g :refer [+ - * div vec2 vec3 min max]]
+     [thi.ng.geom.types :as types]
+     [thi.ng.geom.aabb]
+     [thi.ng.geom.bezier]
+     [thi.ng.geom.circle]
+     [thi.ng.geom.line]
+     [thi.ng.geom.polygon]
+     [thi.ng.geom.quad]
+     [thi.ng.geom.rect]
+     [thi.ng.geom.triangle]
+     [thi.ng.geom.mesh]
+     [thi.ng.geom.sphere]
+     [thi.ng.geom.plane]
+     [thi.ng.geom.path]
+     [thi.ng.geom.aabb]
+     [speclj.core :as spec :refer :all])
+    (:import
+     [thi.ng.geom.types
+      Line2 LineStrip2 Bezier2 Triangle2 Circle Ellipse Rect Polygon Path2 Mesh2
+      Line3 LineStrip3 Bezier3 Plane Triangle3 Quad3 AABB Sphere Mesh3]))
+#+END_SRC
+** Helpers
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/protocols.clj
+  (defn all-satisfy?
+    [proto & types]
+    (context
+     (str (:on-interface proto))
+     (for [t types]
+       (it (.getName t) (should (extends? proto t))))))
+#+END_SRC
+
+** Main context
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/protocols.clj
+  (describe
+   "Protocol implementation checks"
+  
+   (map
+    (fn [[p types]] (apply all-satisfy? p types))
+    {g/PGraph
+     [Line2 LineStrip2 Bezier2 Triangle2 Circle Ellipse Rect Polygon Path2 Mesh2
+      Line3 LineStrip3 Bezier3 Plane Triangle3 Quad3 AABB Sphere Mesh3]
+  
+     g/PArea
+     [Line2 LineStrip2 Bezier2 Triangle2 Circle Ellipse Rect Polygon Path2 Mesh2
+      Line3 LineStrip3 Bezier3 Plane Triangle3 Quad3 AABB Sphere Mesh3]})
+  
+   )
+#+END_SRC
+** Trigger tests
+#+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/protocols.clj
+  (run-specs)
+#+END_SRC

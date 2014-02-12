@@ -128,3 +128,24 @@ digraph G {
 #+END_SRC
 
   #+RESULTS: file:test-dot.png
+* DITAA
+#+header: :exports results
+#+BEGIN_SRC ditaa :file assets/hello-world.png :cmdline -r
+  +---------------------+
+  |Amazing stuff!       |
+  |cFF0                 |
+  |         +-----------+        +------------------------+
+  |         |cF60       |        |cF0F                    |
+  |         |           |        | o in pink is nice too  |
+  +---------+           |        |                        +<-----------+
+  |c900 HOT |           |        |                        |            |
+  |         |           |        |                        |            |
+  +----+----+-----+-----+        +------+-----------------+            |
+       |          |                     |                              |
+       |          v                     v                              |
+       |    +-----+---------------------+---+                          |
+       |    |c0FF                           |                          |
+       +--->+ o more bullets                +--------------------------+
+            | o even more                   |
+            +-------------------------------+
+#+END_SRC
