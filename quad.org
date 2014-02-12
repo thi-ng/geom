@@ -150,9 +150,9 @@
    [_ s])
 #+END_SRC
 *** TODO PSubdivideable
-    A rectangle can be subdivided into smaller ones, i.e. to create a
-    list of uniform grid cells. The following options can be given as
-    a 2nd argument map:
+    A quad can be subdivided into smaller ones, i.e. to create a list
+    of grid cells. The following options can be given as a 2nd
+    parameter map:
 
     | Key     | Description                                                    | Default |
     |---------+----------------------------------------------------------------+---------|
@@ -160,34 +160,27 @@
     | =:cols= | number of times the rect will be subdivided along the X-axis   |       2 |
     | =:rows= | number of times the rect will be subdivided along the Y-axis   |       2 |
 
-    When =:num= is given, the resulting rects will retain the aspect
-    ratio of the original rect. If specified, =:cols= and =:rows= will
+    The resulting quads are *not* guaranteed to retain the aspect
+    ratio of the original quad. If specified, =:cols= and =:rows= will
     take precedence over =:num=, but the latter will be used as
-    default for missing args. Rects are returned as a lazyseq with
-    top-left to bottom-right ordering and inner sorting along X.
+    default for missing args.
 
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
   g/PSubdivideable
   (subdivide
    ([_] (g/subdivide _ {}))
    ([_ {:keys [num cols rows] :or {num 2}}]
-      (let [dx (/ 1.0 (or cols num))
-            dy (/ 1.0 (or rows num))
-            rx (range 0.0 1.0 dx)
-            ry (range 0.0 1.0 dy)
-            w (* (:w _) dx)
-            h (* (:h _) dy)]
-        (for [y ry x rx
-              :let [[px py] (unmap-uv _ [x y])
-                    px (m/roundto px *eps*)
-                    py (m/roundto py *eps*)]]
-          ;;(thi.ng.geom.types.Quad3. (vec2 px py) w h)
-          nil))))
+      (let [ru (d/successive-nth 2 (m/norm-range (or cols num)))
+            rv (d/successive-nth 2 (m/norm-range (or rows num)))
+            map-p (fn [p] (->> p (unmap-uv _) (map #(m/roundto % *eps*)) vec3))]
+        (for [[v1 v2] rv, [u1 u2] ru]
+          (thi.ng.geom.types.Quad3.
+           (map-p [u1 v1]) (map-p [u2 v1]) (map-p [u2 v2]) (map-p [u1 v2]))))))
 #+END_SRC
 *** PTessellateable
     A quad can be tessellated into a number of triangles. When called
     without an options map as 2nd argument, the quad will be split
-    into 2 triangles: [a b c] & [a c d]. When called *with* options,
+    into 2 triangles: =[a b c]= & =[a c d]=. When called *with* options,
     then these are used for a call to [[PSubdivideable][=subdivide=]] first and the
     function returns a lazyseq of triangles of the subdivided quad.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
@@ -204,7 +197,7 @@
     face.
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
   g/PMeshable
-  (as-mesh [_] (gmesh/into-mesh (gmesh/gmesh) (g/vertices _)))
+  (as-mesh [_] (gmesh/into-mesh (gmesh/gmesh) [(g/vertices _)]))
 #+END_SRC
 *** PExtrudeable
     Extruding a quad along an axis vector results in a 3D quad mesh.
@@ -227,25 +220,27 @@
   g/PExtrudeable
   (extrude
    [_ {:keys [depth scale offset flags]
-          :or {depth 1.0 scale 1.0 flags "nsewfb"}}]
+       :or {depth 1.0 scale 1.0 flags "nsewfb"}}]
    (let [[a b c d :as v] (g/vertices _)
-         offset (or offset (* (g/normal3* a b c) depth))
+         norm (g/normal3* a b c)
+         offset (or offset (* norm depth))
+         dp (g/dot norm (g/normalize offset))
+         order (if (neg? dp) rseq identity)
          [a2 b2 c2 d2] (if (== 1.0 scale)
                          (map #(+ offset %) v)
                          (->> (g/scale-size _ scale)
                               (g/vertices)
                               (map #(+ offset %))))
          [n s e w f b*] (d/demunge-flags-seq flags "nsewfb")]
-     (gmesh/into-mesh
-      (gmesh/gmesh)
-      (filter
-       identity
-       [(if f [d c c2 d2])
-        (if b* [b a a2 b2])
-        (if w [a d d2 a2])
-        (if e [c b b2 c2])
-        (if n [a2 b2 c2 d2])
-        (if s [d c b a])]))))
+     (->> [(if n [d2 c2 c d])
+           (if s [b2 a2 a b])
+           (if e [c2 b2 b c])
+           (if w [a2 d2 d a])
+           (if b* [a2 b2 c2 d2])
+           (if f [d c b a])]
+          (filter identity)
+          (map order)
+          (gmesh/into-mesh (gmesh/gmesh)))))
 #+END_SRC
 *** TODO PTransformable
 #+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/quad.cljx
