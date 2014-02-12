@@ -172,11 +172,15 @@
           (transient []))
          persistent!))
   
-  (defn doo-sabin
-    [mesh]
-    (let [f-points (ds-face-points mesh)
-          f-faces (ds-fp-faces f-points)
-          e-faces (ds-edge-faces mesh f-points)
-          v-faces (ds-dual-faces mesh f-points)]
-      (reduce gm/add-face (gm/gmesh) (concat f-faces e-faces v-faces))))
+  (defn custom-doo-sabin
+    [& {f* :faces, e* :edges, v* :vertices, :or {f* true, e* true, v* true}}]
+    (fn [mesh]
+      (let [f-points (ds-face-points mesh)
+            f-faces (ds-fp-faces f-points)
+            e-faces (if e* (ds-edge-faces mesh f-points))
+            v-faces (if v* (ds-dual-faces mesh f-points))]
+        (reduce gm/add-face
+                (gm/gmesh) (concat (if f* f-faces) e-faces v-faces)))))
+  
+  (def doo-sabin (custom-doo-sabin))
 #+END_SRC
