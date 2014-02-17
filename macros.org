@@ -7,20 +7,20 @@
 #+BEGIN_SRC clojure :noweb-ref mat-ops  
   (defmacro mat-item
     ([a1 a2 b1 b2]
-       `(c+ (c* ~a1 ~a2) (c* ~b1 ~b2)))
+       `(+ (* ~a1 ~a2) (* ~b1 ~b2)))
     ([a1 a2 b1 b2 c1 c2]
-       `(c+ (c+ (c* ~a1 ~a2) (c* ~b1 ~b2)) (c* ~c1 ~c2)))
+       `(+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)))
     ([a1 a2 b1 b2 c1 c2 d]
-       `(c+ (c+ (c+ (c* ~a1 ~a2) (c* ~b1 ~b2)) (c* ~c1 ~c2)) ~d))
+       `(+ (+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)) ~d))
     ([a1 a2 b1 b2 c1 c2 d1 d2]
-       `(c+ (c+ (c+ (c* ~a1 ~a2) (c* ~b1 ~b2)) (c* ~c1 ~c2)) (c* ~d1 ~d2))))
+       `(+ (+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)) (* ~d1 ~d2))))
   
   (defmacro det-item
-    [a b c d  e f g h  i j k l  m n o p]
-    `(c+ (c- (c- (c* (c* ~a ~b) (c* ~c ~d))
-              (c* (c* ~e ~f) (c* ~g ~h)))
-           (c* (c* ~i ~j) (c* ~k ~l)))
-        (c* (c* ~m ~n) (c* ~o ~p))))
+    [a b c d, e f g h, i j k l, m n o p]
+    `(+ (- (- (* (* ~a ~b) (* ~c ~d))
+              (* (* ~e ~f) (* ~g ~h)))
+           (* (* ~i ~j) (* ~k ~l)))
+        (* (* ~m ~n) (* ~o ~p))))
 #+END_SRC
 ** Voxel test
 #+BEGIN_SRC clojure :noweb-ref voxel-ops
@@ -29,14 +29,12 @@
     `(if (~voxels ~idx) ~id (bit-or ~id ~mask)))
 #+END_SRC
 ** Tangle for CLJ & CLJS                                     :noexport:
-#+BEGIN_SRC clojure :tangle babel/src-clj/thi/ng/geom/macros/core.clj :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.macros.core
-      (:refer-clojure :exclude [* - +])
-      (:refer-clojure :rename {+ c+, - c-, * c*}))
+#+BEGIN_SRC clojure :tangle babel/src/clj/thi/ng/geom/macros/core.clj :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.macros.core)
   
   <<mat-ops>>
 #+END_SRC
-#+BEGIN_SRC clojure :tangle babel/src-clj/thi/ng/geom/macros/voxel.clj :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle babel/src/clj/thi/ng/geom/macros/voxel.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.macros.voxel)
   
   <<voxel-ops>>

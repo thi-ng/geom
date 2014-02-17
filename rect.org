@@ -4,14 +4,12 @@
 
 * thi.ng.geom.rect
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.rect
-    (:refer-clojure :exclude [+ - * min max])
-    (:refer-clojure :rename {+ c+, - c-, * c*, min cmin, max cmax})
     (:require
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [*eps*]]
-     [thi.ng.geom.core :as g :refer [+ - * vec2 vec3 min max]]
+     [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as aabb]
      [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.types :as types])
@@ -21,7 +19,7 @@
 #+END_SRC
 ** Constructor
 *** TODO replace sequential? w/ coll?
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   (defn rect
     ([] (thi.ng.geom.types.Rect. (vec2) 1.0 1.0))
     ([w] (thi.ng.geom.types.Rect. (vec2) w w))
@@ -29,8 +27,8 @@
        (if (sequential? p)
          (if (sequential? q)
            (let [p (vec2 p) q (vec2 q)
-                 [p q] [(min p q) (max p q)]
-                 [w h] (- q p)]
+                 [p q] [(g/min p q) (g/max p q)]
+                 [w h] (g/- q p)]
              (thi.ng.geom.types.Rect. p w h))
            (thi.ng.geom.types.Rect. (vec2 p) q q))
          (thi.ng.geom.types.Rect. (vec2) p q)))
@@ -41,61 +39,61 @@
     ([x y w h] (thi.ng.geom.types.Rect. (vec2 x y) w h)))
 #+END_SRC
 ** Type specific functions
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   (defn union
     [{:keys[p w h]} {q :p qw :w qh :h}]
-    (let [[x1 y1 :as p*] (min p q)
-          x2 (cmax (c+ (p 0) w) (c+ (q 0) qw))
-          y2 (cmax (c+ (p 1) h) (c+ (q 1) qh))
-          w (c- x2 x1)
-          h (c- y2 y1)]
+    (let [[x1 y1 :as p*] (g/min p q)
+          x2 (max (+ (p 0) w) (+ (q 0) qw))
+          y2 (max (+ (p 1) h) (+ (q 1) qh))
+          w (- x2 x1)
+          h (- y2 y1)]
       (thi.ng.geom.types.Rect. p* w h)))
   
   ;; FIXME shouldn't it return vec2?
   (defn map-uv
     [{:keys[p w h]} [qx qy]]
-    [(/ (c- qx (p 0)) w) (/ (c- qy (p 1)) h)])
+    [(/ (- qx (p 0)) w) (/ (- qy (p 1)) h)])
   
   (defn unmap-uv
     [{:keys[p w h]} [qx qy]]
     [(m/madd qx w (p 0)) (m/madd qy h (p 1))])
   
   (defn left [r] ((:p r) 0))
-  (defn right [r] (c+ ((:p r) 0) (:w r)))
+  (defn right [r] (+ ((:p r) 0) (:w r)))
   (defn top [r] ((:p r) 1))
   (defn top-left [r] (:p r))
-  (defn bottom [r] (c+ ((:p r) 1) (:h r)))
-  (defn bottom-right [r] (+ (:p r) [(:w r) (:h r)]))
+  (defn bottom [r] (+ ((:p r) 1) (:h r)))
+  (defn bottom-right [r] (g/+ (:p r) [(:w r) (:h r)]))
   
   (defn intersect-rect?
     [{[px py] :p w :w h :h} {[qx qy] :p w2 :w h2 :h}]
-    (not (or (> px (c+ qx w2)) (> qx (c+ px w)) (> py (c+ qy h2)) (> qy (c+ py h)))))
+    (not (or (> px (+ qx w2)) (> qx (+ px w)) (> py (+ qy h2)) (> qy (+ py h)))))
   
   (defn intersect-circle?
     [{w :w h :h :as r} {c :p radius :r}]
     (let [p (g/centroid r)
-          [dx dy :as d] (g/abs (- c p))
-          w (c* w 0.5) h (c* h 0.5)]
-      (if (and (<= dx (c+ w radius))
-               (<= dy (c+ h radius)))
+          [dx dy :as d] (g/abs (g/- c p))
+          w (* w 0.5) h (* h 0.5)]
+      (if (and (<= dx (+ w radius))
+               (<= dy (+ h radius)))
         (if (or (<= dx w) (<= dy h))
           true
-          (<= (g/mag-squared (- d [w h])) (c* radius radius)))
+          (<= (g/mag-squared (g/- d [w h])) (* radius radius)))
         false)))
 #+END_SRC
 ** Protocol implementations
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   (extend-type thi.ng.geom.types.Rect
 #+END_SRC
 *** PGraph
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   g/PGraph
   (vertices
    [{[x y :as p] :p w :w h :h}]
-   (let [r (c+ x w) b (c+ y h)] [p (vec2 r y) (vec2 r b) (vec2 x b)]))
+   (let [r (+ x w) b (+ y h)] [p (vec2 r y) (vec2 r b) (vec2 x b)]))
   (edges
    [{[x y :as p] :p w :w h :h}]
-   (let [r (c+ x w) b (c+ y h)]
+   (let [r (+ x w) b (+ y h)]
      [(thi.ng.geom.types.Line2. p (vec2 r y))
       (thi.ng.geom.types.Line2. (vec2 r y) (vec2 r b))
       (thi.ng.geom.types.Line2. (vec2 r b) (vec2 x b))
@@ -106,12 +104,12 @@
    [_ v] (if ((set (g/vertices _)) (vec2 v)) 2 0))
 #+END_SRC
 *** PArea
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   g/PArea
-  (area [_] (c* (:w _) (:h _)))
+  (area [_] (* (:w _) (:h _)))
 #+END_SRC
 *** PBounds
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   g/PBounds
   (bounds[_] _)
   (width  [_] (:w _))
@@ -119,19 +117,19 @@
   (depth  [_] 0)
 #+END_SRC
 *** PCenter
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   g/PCenter
   (center
    ([{w :w h :h}]
-      (let [w2 (c* w 0.5) h2 (c* h 0.5)]
-        (thi.ng.geom.types.Rect. (vec2 (- w2) (- h2)) w h)))
+      (let [w2 (* w 0.5) h2 (* h 0.5)]
+        (thi.ng.geom.types.Rect. (vec2 (g/- w2) (g/- h2)) w h)))
    ([{w :w h :h} o]
-      (let [t [(c* w 0.5) (c* h 0.5)]]
-        (thi.ng.geom.types.Rect. (- o t) w h))))
-  (centroid [{p :p :as _}] (g/mix p (+ p (:w _) (:h _))))
+      (let [t [(* w 0.5) (* h 0.5)]]
+        (thi.ng.geom.types.Rect. (g/- o t) w h))))
+  (centroid [{p :p :as _}] (g/mix p (g/+ p (:w _) (:h _))))
 #+END_SRC
 *** PBoundingCircle
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   g/PBoundingCircle
   (bounding-circle
    [_]
@@ -139,39 +137,39 @@
      (g/bounding-circle* c (g/dist c (:p _)))))
 #+END_SRC
 *** PCircumference
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   g/PCircumference
-  (circumference [_] (c* 2.0 (c+ (:w _) (:h _))))
+  (circumference [_] (* 2.0 (+ (:w _) (:h _))))
 #+END_SRC
 *** PBoundary
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   g/PClassify
   (classify-point
-   [_ q] (reduce cmin (map #(g/classify-point % q) (g/edges _))))
+   [_ q] (reduce min (map #(g/classify-point % q) (g/edges _))))
   g/PProximity
   (closest-point
    [_ q] (g/closest-point* (g/edges _) q))
   g/PBoundary
   (contains-point?
    [{[px py] :p w :w h :h} [x y]]
-   (and (m/in-range? 0.0 w (c- x px)) (m/in-range? 0.0 h (c- y py))))
+   (and (m/in-range? 0.0 w (- x px)) (m/in-range? 0.0 h (- y py))))
 #+END_SRC
-*** PSampleable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/PSampleable
+*** PSample
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PSample
   (point-at
    [_ t] (g/point-at* t (conj (g/vertices _) (:p _))))
   (random-point
    [_] (g/point-at _ (m/random)))
   (random-point-inside
-   [_] (+ (:p _) (m/random (:w _)) (m/random (:h _))))
+   [_] (g/+ (:p _) (m/random (:w _)) (m/random (:h _))))
   (sample-uniform
    [_ udist include-last?]
    (g/sample-uniform* udist include-last? (conj (g/vertices _) (:p _))))
 #+END_SRC
-*** PIntersectable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/PIntersectable
+*** PIntersect
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PIntersect
   (intersect-shape
    [_ s]
    (cond
@@ -179,13 +177,13 @@
     (instance? thi.ng.geom.types.Circle s) (intersect-circle? _ s)
     :default (g/type-error "Rect" s)))
 #+END_SRC
-*** PPolygonizable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/PPolygonizable
+*** PPolygonConvert
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PPolygonConvert
   (as-polygon
    [_] (thi.ng.geom.types.Polygon. (g/vertices _) []))
 #+END_SRC
-*** PSubdivideable
+*** PSubdivide
     A rectangle can be subdivided into smaller ones, i.e. to create a
     list of uniform grid cells. The following options can be given as
     a 2nd argument map:
@@ -202,8 +200,8 @@
     default for missing args. Rects are returned as a lazyseq with
     top-left to bottom-right ordering and inner sorting along X.
 
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/PSubdivideable
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PSubdivide
   (subdivide
    ([_] (g/subdivide _ {}))
    ([_ {:keys [num cols rows] :or {num 2}}]
@@ -211,23 +209,23 @@
             dy (/ 1.0 (or rows num))
             rx (range 0.0 1.0 dx)
             ry (range 0.0 1.0 dy)
-            w (c* (:w _) dx)
-            h (c* (:h _) dy)]
+            w (* (:w _) dx)
+            h (* (:h _) dy)]
         (for [y ry x rx
               :let [[px py] (unmap-uv _ [x y])
                     px (m/roundto px *eps*)
                     py (m/roundto py *eps*)]]
           (thi.ng.geom.types.Rect. (vec2 px py) w h)))))
 #+END_SRC
-*** PTessellateable
+*** PTessellate
     A rectangle can be tessellated into a number of triangles. When
     called without options map as 2nd argument, the rect will be split
     into 2 triangles, each in anti-clockwise orientation: =[tl br tr]=
     & =[tl bl br]=. When called *with* options, then these are used
-    for a call to [[PSubdivideable][=subdivide=]] first and the function returns a lazyseq
+    for a call to [[PSubdivide][=subdivide=]] first and the function returns a lazyseq
     of triangles of the subdivided rects.
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/PTessellateable
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PTessellate
   (tessellate
    ([_]
       (let [[a b c d] (g/vertices _)]
@@ -235,15 +233,15 @@
    ([_ opts]
       (mapcat g/tessellate (g/subdivide _ opts))))
 #+END_SRC
-*** PMeshable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/PMeshable
+*** PMeshConvert
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PMeshConvert
   (as-mesh
    [_]
    (let [[a b c d] (g/vertices _)]
      (mesh/mesh2 [a b c] [a c d])))
 #+END_SRC
-*** PExtrudeable
+*** PExtrude
     Extruding a rectangle along the Z-axis results in a 3D mesh
     implementation. The =extrude= function supports the following
     options, given as parameter map:
@@ -256,8 +254,8 @@
 
     The process results is bevelled forms for =:scale= values other
     than 1.0.
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/PExtrudeable
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PExtrude
   (extrude
    [_ {:keys [depth scale offset] :or {depth 1.0 scale 1.0}}]
    (if (and (= scale 1.0) (nil? offset))
@@ -269,7 +267,7 @@
            [a b c d] (mapv vec3 (g/vertices _))
            [a2 b2 c2 d2] (->> (g/scale-size _ scale)
                               (g/vertices)
-                              (map #(+ offset %)))]
+                              (map #(g/+ offset %)))]
        (mesh/mesh3
         [a c b] [a d c]       ;;back
         [a2 b2 c2] [a2 c2 d2] ;; front
@@ -279,33 +277,33 @@
         [d d2 c2] [d c2 c]    ;; bottom
         ))))
 #+END_SRC
-*** TODO PTransformable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
-  g/PTransformable
+*** TODO PTransform
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PTransform
   (scale
    ([_ s]
       (if (number? s)
         (thi.ng.geom.types.Rect.
-         (* (:p _) s) (c* (:w _) s) (c* (:h _) s))
+         (g/* (:p _) s) (* (:w _) s) (* (:h _) s))
         (thi.ng.geom.types.Rect.
-         (* (:p _) s) (c* (:w _) (nth s 0 0)) (c* (:h _) (nth s 1 0)))))
+         (g/* (:p _) s) (* (:w _) (nth s 0 0)) (* (:h _) (nth s 1 0)))))
    ([_ a b]
       (if (number? a)
         (thi.ng.geom.types.Rect.
-         (* (:p _) a b) (c* (:w _) a) (c* (:h _) b))
+         (g/* (:p _) a b) (* (:w _) a) (* (:h _) b))
         (thi.ng.geom.types.Rect.
-         (* (:p _) a b)
-         (c* (:w _) (nth a 0 0) (nth b 0 0))
-         (c* (:h _) (nth a 1 0) (nth b 1 0))))))
+         (g/* (:p _) a b)
+         (* (:w _) (nth a 0 0) (nth b 0 0))
+         (* (:h _) (nth a 1 0) (nth b 1 0))))))
   (scale-size
    [{w :w h :h :as _} s]
    (let [[w2 h2] (if (number? s)
-                   [(c* w s) (c* h s)]
-                   [(c* w (nth s 0 0)) (c* h (nth s 1 0))])]
+                   [(* w s) (* h s)]
+                   [(* w (nth s 0 0)) (* h (nth s 1 0))])]
      (thi.ng.geom.types.Rect.
        (g/madd (vec2 w2 h2) -0.5 (g/centroid _)) w2 h2)))
 #+END_SRC
 *** End of implementations                                         :noexport:
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   )
 #+END_SRC

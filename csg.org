@@ -1,6 +1,6 @@
 * Namespace: thi.ng.geom.csg
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/csg.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/csg.cljx
   (ns thi.ng.geom.csg
     (:require
       [thi.ng.common.data.core :as d]
@@ -10,11 +10,11 @@
       [thi.ng.geom.triangle :as t]))
 #+END_SRC
 ** Forward declarations
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/csg.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/csg.cljx
   (declare csg-vertex csg-polygon)
 #+END_SRC
 ** Helper functions
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/csg.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/csg.cljx
   (defn interpolate-vertex
     "Linearly interpolates between the 2 vertices
     (computes both position & normal)."
@@ -22,7 +22,7 @@
     (csg-vertex (g/mix (:p a) (:p b) t) (g/mix (:n a) (:n b) t)))
 
   (defn flip-vertex
-    "Applies `invert3` to the `:n` (normal) value of a vertex."
+    "Applies `invert` to the `:n` (normal) value of a vertex."
     [x] (assoc x :n (g/invert (:n x))))
 
   (defn flip-plane
@@ -41,7 +41,7 @@
 
   (defn split-poly
     "Takes a plane and splits the given polygon with it. Returns a 4-element vector
-    of classified sub-shapes: coplanar (front), coplanar (back), front & back."
+    of classified sub-shapes: [coplanar-front coplanar-back front back]."
     [{:keys [n w]} {:keys [vertices plane] :as poly} cp-front cp-back front back]
     (let [inveps (- *eps*)
           [ptype types] (reduce
@@ -70,7 +70,7 @@
                                b (if (= ti 1) b (conj b vi))]
                            (if (= (bit-or ti tj) 3)
                              (let [vj (vertices j)
-                                   t (/ (- w (g/dot n (:p vi))) (g/dot n (g/sub (:p vj) (:p vi))))
+                                   t (/ (- w (g/dot n (:p vi))) (g/dot n (g/- (:p vj) (:p vi))))
                                    v (interpolate-vertex vi vj t)]
                                [(conj f v) (conj b v)])
                              [f b])))
@@ -80,7 +80,7 @@
              (if (>= (count b) 3) (conj back (csg-polygon b (:shared poly))) b)]))))
 #+END_SRC
 ** Public API
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/csg.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/csg.cljx
   (defn clip-polygons
     "Uses a CSG node's plane to recursively clip the given seq of polygons.
     Returns a flat seq of polygons classified as in-front of the plane
@@ -188,7 +188,7 @@
       (-> a (csg-node (all-polygons b)) invert all-polygons)))
 #+END_SRC
 ** Constructors
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/csg.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/csg.cljx
   (defn mesh->csg
     "Converts a regular Mesh3 into a seq of CSG polygons.
     First calls `compute-face-normals` on mesh if not already present."
@@ -215,7 +215,7 @@
   (defn csg-aabb
     [{:keys [p size] :as b}]
     (let [[cx cy cz] (g/centroid b)
-          [sx sy sz] (g/scale size 0.5)
+          [sx sy sz] (g/* size 0.5)
           v (fn [c s i mask] (m/madd s (if (pos? (bit-and i mask)) 1 -1) c))]
       (map
        (fn [[verts n]]
@@ -257,7 +257,7 @@
   (defn csg-cone
     ([s e radius res] (csg-cone s e radius radius res))
     ([s e r-south r-north res]
-       (let [dir (g/sub e s)
+       (let [dir (g/- e s)
              az (g/normalize dir)
              ax (-> (if (> (m/abs (az 1)) 0.5)
                       (vec3 1 0 0)
@@ -269,9 +269,9 @@
              ve (csg-vertex e az)
              f (fn [stack i blend r]
                  (let [theta (* m/TWO_PI i)
-                       out (g/madd ax (Math/cos theta) (g/scale ay (Math/sin theta)))
-                       norm (g/madd out (- 1.0 (m/abs blend)) (g/scale az blend))
-                       pos (g/add s (g/scale dir stack) (g/scale out r))]
+                       out (g/madd ax (Math/cos theta) (g/* ay (Math/sin theta)))
+                       norm (g/madd out (- 1.0 (m/abs blend)) (g/* az blend))
+                       pos (g/+ s (g/* dir stack) (g/* out r))]
                    (csg-vertex pos norm)))
              res (double res)]
          (mapcat

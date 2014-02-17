@@ -1,13 +1,13 @@
 * Namespace: thi.ng.geom.svo
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/svo.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/svo.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.svo
     (:require
      [thi.ng.geom.core :as g :refer [vec3]])
     ,#+clj (:import [thi.ng.geom.core Vec3]))
 #+END_SRC
 ** Constants
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/svo.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/svo.cljx
   (def ^:const depth-index
     (vec (reductions #(+ % (long (Math/pow 8 %2))) 0 (range 16))))
 
@@ -24,7 +24,7 @@
       [] (range 0x100)))
 #+END_SRC
 ** Helper & index functions
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/svo.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/svo.cljx
   (defn node-id
     [[ox oy oz] dim [px py pz]]
     (if (< pz (+ oz dim))

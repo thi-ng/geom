@@ -5,7 +5,7 @@
 * Protocols
 ** Math operations
 *** PMathOps
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx :mkdir yes
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx :mkdir yes
   (defprotocol PMathOps
     (+ [_] [_ a] [_ a b] [_ a b c])
     (- [_] [_ a] [_ a b] [_ a b c])
@@ -15,63 +15,63 @@
     (abs [_]))
 #+END_SRC
 *** PSetOps
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PSetOps
     (union [_ x])
     (intersection [_ y])
     (difference [_ x]))
 #+END_SRC
 *** PDotProduct
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PDotProduct
     (dot [_ a]))
 #+END_SRC
 *** PCrossProduct
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PCrossProduct
     (cross [_ a]))
 #+END_SRC
 *** PLimit
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PLimit
     (limit [_ x]))
 #+END_SRC
 *** PMinMax
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PMinMax
     (min [_ x] [_ a b])
     (max [_ y] [_ a b]))
 #+END_SRC
-*** PTransposable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
-  (defprotocol PTransposable
+*** PTranspose
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PTranspose
     (transpose [_]))
 #+END_SRC
 *** PNormalize
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PNormalize
     (normalize [_] [_ len])
     (normalized? [_]))
 #+END_SRC
-*** PInterpolateable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
-  (defprotocol PInterpolateable
+*** PInterpolate
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PInterpolate
     (mix [_ x] [_ x t]))
 #+END_SRC
 *** PMagnitude
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PMagnitude
     (mag [_])
     (mag-squared [_]))
 #+END_SRC
 *** PDistance
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PDistance
     (dist [_ a])
     (dist-squared [_ a]))
 #+END_SRC
 *** PHeading
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PHeading
     (heading-xy [_])
     (heading-xz [_])
@@ -83,7 +83,7 @@
     (slope-yz [_]))
 #+END_SRC
 *** PMatrix
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PMatrix
     (set-position [_ p] [_ x y])
     (set-scale [_ s] [_ sx sy])
@@ -92,12 +92,12 @@
     (determinant [_]))
 #+END_SRC
 *** PQuaternion
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PQuaternion
     (conjugate [_]))
 #+END_SRC
 *** PMatrixConvert
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PMatrixConvert
     (as-matrix [_]))
 #+END_SRC
@@ -106,13 +106,13 @@
    usually be manipulated via the three basic operations: rotate,
    scale & translate. Other, more complex transformations can be
    achieved through combination and repetition of these.
-*** PTransformable
+*** PTransform
   Rotation is always relative to the world origin. For 2D
   implementations, the rotation angle \theta (theta) is always
   interpreted clockwise and only the =rotate= method is
   implemented.
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
-  (defprotocol PTransformable
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PTransform
     (rotate-x [_ t])
     (rotate-y [_ t])
     (rotate-z [_ t])
@@ -125,17 +125,17 @@
     (transform [_ matrix]))
 #+END_SRC
 *** PVectorTransform
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PVectorTransform
     (transform-vector [_ v]))
 #+END_SRC
 *** PReflect
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PReflect
     (reflect [_ r]))
 #+END_SRC
 *** PPolar
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PPolar
     (as-polar [_])
     (as-cartesian [_]))
@@ -145,7 +145,7 @@ Most geometric shape constructs can be understood as an undirected
 graph of vertices, connected by edges. This protocol provides read
 access to entities in _ context.
 *** PGraph
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PGraph
     (cyclic? [_])
     (edges [_] [_ n])
@@ -154,37 +154,37 @@ access to entities in _ context.
     (vertex-neighbors [_ v]))
 #+END_SRC
 *** PDirectedGraph
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PDirectedGraph
     (in-vertices [_ v])
     (out-vertices [_ v]))
 #+END_SRC
 *** PGraphConvert
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PGraphConvert
     (as-graph [_] [_ opts]))
 #+END_SRC
 ** Shape based & structural operations
 *** PArea
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PArea
     (area [_]
       "Returns an entity's total surface area"))
 #+END_SRC
 *** PVolume
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PVolume
     (volume [_]
       "Returns an entity's inner volume."))
 #+END_SRC
 *** PCircumference
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PCircumference
     (circumference [_]
       "Returns an entity's circumference"))
 #+END_SRC
 *** PBounds
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PBounds
     (bounds [_]
       "Returns bounding rect for 2d entities or box for 3d")
@@ -196,115 +196,120 @@ access to entities in _ context.
       "Returns entity's extent along Z (zero for 2d)"))
 #+END_SRC
 *** PBoundingCircle
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PBoundingCircle
     (bounding-circle [_]))
 #+END_SRC
 *** PBoundingSphere
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PBoundingSphere
     (bounding-sphere [_]))
 #+END_SRC
 *** PBoundary
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PBoundary
     (contains-point? [_ p])
     (contains-entity? [_ s]))
 #+END_SRC
 *** PClassify
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PClassify
     (classify-point [_ p]))
 #+END_SRC
 *** PProximity
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PProximity
     (closest-point [_ p]))
 #+END_SRC
 *** PCenter
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PCenter
     (center [_] [_ p]
       "Returns updated entity centered around world origin or given point")
     (centroid [_]
       "Returns centroid of entity"))
 #+END_SRC
-*** PAlignable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
-  (defprotocol PAlignable
+*** PAlign
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PAlign
     (align-with [_ x opts]
       "Returns updated entity aligned with `x` in the specified manner"))
 #+END_SRC
-*** PSampleable
+*** PSample
 **** TODO move random-point-inside into PBoundary
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
-  (defprotocol PSampleable
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PSample
     (point-at [_ t] [_ u v])
     (random-point [_])
     (random-point-inside [_])
     (sample-uniform [_ dist include-last?])
     (sample-with-resolution [_ res]))
 #+END_SRC
-*** PPolygonizable
+*** PPolygonConvert
        Anything which can be turned into a polygon will implement _
        protocol consisting of just _ one function: =as-polygon=.
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
-  (defprotocol PPolygonizable
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PPolygonConvert
     (as-polygon [_] [_ res]
       "Transforms current entity into a Polygon instance"))
 #+END_SRC
-*** PMeshable
+*** PMeshConvert
        Anything which can be turned into a 2D or 3D mesh will implement _
        protocol consisting of just _ one function: =as-mesh=.
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
-  (defprotocol PMeshable
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PMeshConvert
     (as-mesh [_] [_ opts]
       "Transforms the current enitity into a Mesh instance"))
  #+END_SRC
-*** PIntersectable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
-  (defprotocol PIntersectable
+*** PIntersect
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PIntersect
     (intersect-line [_ l])
     (intersect-ray [_ r])
     (intersect-shape [_ s]))
 #+END_SRC
-*** PSliceable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
-  (defprotocol PSliceable
+*** PSlice
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PSlice
     (slice-with [_ e] [_ e classifier] [_ e classifier parts]))
 #+END_SRC
-*** PSubdivideable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
-  (defprotocol PSubdivideable
+*** PSubdivide
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PSubdivide
     (subdivide [_] [_ opts])
     (subdivide-edge [_ a b splits])
     (subdivide-face [_ f p displace splits]))
 #+END_SRC
-*** PTessellateable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
-  (defprotocol PTessellateable
+*** PTessellate
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PTessellate
     (tessellate [_] [_ opts]))
 #+END_SRC
-*** PExtrudeable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
-  (defprotocol PExtrudeable
+*** PExtrude
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PExtrude
     (extrude [_ opts])
     (extrude-shell [_ opts]))
 #+END_SRC
-*** PInvertible
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
-  (defprotocol PInvertible
+*** PInvert
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PInvert
     (invert [_]))
+#+END_SRC
+*** PReverse
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
+  (defprotocol PReverse
+    (reverse [_]))
 #+END_SRC
 ** Type specific operations
 *** PCurve
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PCurve
     (arc-length [_])
     (auto-spline [_]))
 #+END_SRC
 *** PMesh
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/protocols.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/protocols.cljx
   (defprotocol PMesh
     (faces [_])
     (vertex-faces [_ v])

@@ -29,7 +29,7 @@
     (:import
      [thi.ng.geom.types
       Line2 LineStrip2 Bezier2 Triangle2 Circle Ellipse Rect Polygon Path2 Mesh2
-      Line3 LineStrip3 Bezier3 Plane Triangle3 Quad3 AABB Sphere Mesh3]))
+      Line3 LineStrip3 Bezier3 Plane Triangle3 Tetrahedron Quad3 AABB Sphere Mesh3]))
 #+END_SRC
 ** Helpers
 #+BEGIN_SRC clojure :tangle ../babel/specs/thi/ng/geom/specs/protocols.clj
@@ -50,11 +50,11 @@
     (fn [[p types]] (apply all-satisfy? p types))
     {g/PGraph
      [Line2 LineStrip2 Bezier2 Triangle2 Circle Ellipse Rect Polygon Path2 Mesh2
-      Line3 LineStrip3 Bezier3 Plane Triangle3 Quad3 AABB Sphere Mesh3]
+      Line3 LineStrip3 Bezier3 Plane Triangle3 Tetrahedron Quad3 AABB Sphere Mesh3]
   
      g/PArea
      [Line2 LineStrip2 Bezier2 Triangle2 Circle Ellipse Rect Polygon Path2 Mesh2
-      Line3 LineStrip3 Bezier3 Plane Triangle3 Quad3 AABB Sphere Mesh3]})
+      Line3 LineStrip3 Bezier3 Plane Triangle3 Tetrahedron Quad3 AABB Sphere Mesh3]})
   
    )
 #+END_SRC

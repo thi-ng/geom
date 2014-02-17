@@ -4,48 +4,46 @@
 
 * thi.ng.geom.plane
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.plane
-    (:refer-clojure :exclude [* - +])
-    (:refer-clojure :rename {+ c+, - c-, * c*})
     (:require
      [thi.ng.common.math.core :as m :refer [*eps*]]
-     [thi.ng.geom.core :as g :refer [+ - * vec3]]
+     [thi.ng.geom.core :as g :refer [vec3]]
      [thi.ng.geom.mesh :refer [mesh3]])
     ,#+clj
     (:import
      [thi.ng.geom.types Plane]))
 #+END_SRC
 ** Constructor
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
   (defn plane
     [p n] (thi.ng.geom.types.Plane. (vec3 p) (g/normalize (vec3 n))))
 #+END_SRC
 ** TODO Protocol implementation
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
   (extend-type thi.ng.geom.types.Plane
 #+END_SRC
 *** PBoundary
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
   g/PClassify
   (classify-point
     [_ q]
-    (-> (- q (:p _)) (g/normalize) (g/dot (:n _)) (m/signum *eps*)))
+    (-> (g/- q (:p _)) (g/normalize) (g/dot (:n _)) (m/signum *eps*)))
   g/PBoundary
   (closest-point
     [{p :p n :n} q]
-    (let [sn (c- (g/dot n (- q p)))]
-      (+ q (g/normalize n sn))))
+    (let [sn (- (g/dot n (g/- q p)))]
+      (g/+ q (g/normalize n sn))))
 #+END_SRC
-*** PIntersectable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
-  g/PIntersectable
+*** PIntersect
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
+  g/PIntersect
   (intersect-line
     [{p :p n :n} {lp :p lq :q}]
-    (let [u (- lq lp)
-          w (- lp p)
+    (let [u (g/- lq lp)
+          w (g/- lp p)
           d (g/dot n u)
-          dn (c- (g/dot n w))]
+          dn (- (g/dot n w))]
       (if (m/delta= 0.0 d *eps*)
         {:type (if (zero? dn) :on-plane :parallel)}
         (let [du (/ dn d)
@@ -54,39 +52,39 @@
             {:type :intersect :p i}
             {:type :intersect-outside :p i})))))
 #+END_SRC
-*** PMeshable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
-  g/PMeshable
+*** PMeshConvert
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
+  g/PMeshConvert
   (as-mesh
    [{p :p n :n :as _} {:keys [width height size] :or {size 1.0}}]
-   (let [w (c* (or width size) 0.5)
-         h (c* (or height size) 0.5)
+   (let [w (* (or width size) 0.5)
+         h (* (or height size) 0.5)
          flip? (m/delta= -1.0 (g/dot n g/V3_Z))
          q (if flip?
              (g/quat 0 0 0 1)
              (g/alignment-quat n g/V3_Z))
-         [a b c d] (map #(+ p (g/transform-vector q %))
-                        [(vec3 (c- w) (c- h) 0) (vec3 (c- w) h 0)
-                         (vec3 w (c- h) 0) (vec3 w h 0)])]
+         [a b c d] (map #(g/+ p (g/transform-vector q %))
+                        [(vec3 (- w) (- h) 0) (vec3 (- w) h 0)
+                         (vec3 w (- h) 0) (vec3 w h 0)])]
      (if flip?
        (mesh3 [a b d] [a d c])
        (mesh3 [a d b] [a c d]))))
 #+END_SRC
 *** End implementation                                             :noexport:
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
   )
 #+END_SRC
 ** Intersections
 *** TODO refactor as intersect-shape
 *** TODO return map instead of vector
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/plane.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
   (defn intersect-plane
     [{a :p na :n} {b :p nb :n}]
     (let [da (g/dot a na) db (g/dot b nb)]
       (when-not (or (m/delta= na nb) (m/delta= da db))
         (let [od (g/dot na nb)
-              det (/ 1.0 (c- 1.0 (c* od od)))
-              ta (c* det (c- da (c* db od)))
-              tb (c* det (c- db (c* da od)))]
-          [(g/madd na ta (* nb tb)) (g/cross na nb)]))))
+              det (/ 1.0 (- 1.0 (* od od)))
+              ta (* det (- da (* db od)))
+              tb (* det (- db (* da od)))]
+          [(g/madd na ta (g/* nb tb)) (g/cross na nb)]))))
 #+END_SRC

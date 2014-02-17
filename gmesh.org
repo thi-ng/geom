@@ -4,14 +4,12 @@
 
 * thi.ng.geom.gmesh
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
   (ns thi.ng.geom.gmesh
-    (:refer-clojure :exclude [+ - *])
-    (:refer-clojure :rename {+ c+, - c-, * c*})
     (:require
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m]
-     [thi.ng.geom.core :as g :refer [+ - * vec2 vec3]]
+     [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.types :as types]
      [clojure.set :as set])
@@ -20,7 +18,7 @@
      [thi.ng.geom.types Line3 AABB Sphere Mesh2 Mesh3]))
 #+END_SRC
 ** Shared 2d/3d functions
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
   (defn add-face
     [{:keys [vertices edges faces] :as mesh} verts]
     {:pre [(< 2 (count verts))]}
@@ -99,7 +97,7 @@
       mesh))
 #+END_SRC
 ** Constructors
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
   (defn gmesh
     "Builds a new 2d mesh data structure and (optionally) populates it with
         the given items (a seq of existing meshes and/or faces). Faces are defined
@@ -111,39 +109,15 @@
     [m faces]
     (reduce add-face m (if (map? faces) (:faces faces) faces)))
   
-  (defn box
-    [p s & [flags]]
-    (let [s- (c- s)
-          a (+ p (vec3 s- s- s))
-          b (+ p (vec3 s s- s))
-          c (+ p (vec3 s s s))
-          d (+ p (vec3 s- s s))
-          e (+ p (vec3 s- s- s-))
-          f (+ p (vec3 s s- s-))
-          g (+ p (vec3 s s s-))
-          h (+ p (vec3 s- s s-))
-          opts (name (or flags "nsewfb"))
-          [north south east west front back] (map #(<= 0 (.indexOf opts (str %))) "nsewfb")]
-      (into-mesh
-       (gmesh)
-       (filter
-        identity
-        [(if front [a b c d]) ;; front
-         (if back [f e h g])  ;; back
-         (if west [e a d h])  ;; left
-         (if east [b f g c])  ;; right
-         (if north [d c g h]) ;;top
-         (if south [e f b a]) ;; bottom
-         ]))))
-  
   (defn saddle
     [s]
-    (reduce
-     (fn [m [p flags]]
-       (into-mesh m (box p s flags)))
-     (gmesh)
-     [[(vec3) :ewsfb]
-      [(vec3 0 (c* s 2) 0) :wfb]
-      [(vec3 (c* s 2) (c* s 2) 0) :ensfb]
-      [(vec3 0 (c* s 4) 0) :ewnfb]]))
+    (let [sv (vec3 s)]
+      (reduce
+       (fn [m [p flags]]
+         (into-mesh m (g/as-mesh (thi.ng.geom.types.AABB p s) {:flags flags})))
+       (gmesh)
+       [[(vec3) :ewsfb]
+        [(vec3 0 s 0) :wfb]
+        [(vec3 s s 0) :ensfb]
+        [(vec3 0 (* s 2) 0) :ewnfb]])))
 #+END_SRC

@@ -4,28 +4,26 @@
 
 * thi.ng.geom.bezier
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/bezier.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.bezier
-    (:refer-clojure :exclude [+ - *])
-    (:refer-clojure :rename {+ c+, - c-, * c*})
     (:require
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m]
-     [thi.ng.geom.core :as g :refer [+ - * vec2 vec3 *resolution*]]))
+     [thi.ng.geom.core :as g :refer [vec2 vec3 *resolution*]]))
 #+END_SRC
 ** The Bernstein polynomial
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/bezier.cljx
   (defn bernstein
     [t]
-    (let [it (c- 1.0 t) it2 (c* it it) t2 (c* t t)]
-      [(c* it it2) (c* 3 (c* t it2)) (c* 3 (c* it t2)) (c* t t2)]))
+    (let [it (- 1.0 t) it2 (* it it) t2 (* t t)]
+      [(* it it2) (* 3 (* t it2)) (* 3 (* it t2)) (* t t2)]))
 #+END_SRC
 ** Interpolation & curve samplings
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/bezier.cljx
   (defn interpolate
     [[a b c d] t]
     (let [[ta tb tc td] (bernstein t)]
-      (->> (* a ta)
+      (->> (g/* a ta)
            (g/madd b tb)
            (g/madd c tc)
            (g/madd d td))))
@@ -48,29 +46,29 @@
      The following two functions allow us to compute a bezier curve
      which passes through all given points and automatically computes
      the required control points.
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/bezier.cljx
   (defn- find-cpoints*
     [ctor]
     (fn [tight points]
       (let [np (count points)
             invt (/ 1.0 tight)
             points (vec points)
-            c1 (* (- (points 2) (first points)) tight)
+            c1 (g/* (g/- (points 2) (first points)) tight)
             [bi coeff] (reduce
                         (fn [[bi coeff] i]
-                          (let [b (/ -1.0 (c+ invt (peek bi)))
+                          (let [b (/ -1.0 (+ invt (peek bi)))
                                 c (peek coeff)
                                 p (get points (dec i))
                                 q (get points (inc i))]
                             [(conj bi b)
-                             (conj coeff (* (- q p c) (- b)))]))
-                        [[0 (c- tight)] [(ctor) c1]]
+                             (conj coeff (g/* (g/- q p c) (g/- b)))]))
+                        [[0 (- tight)] [(ctor) c1]]
                         (range 2 (dec np)))]
         (reduce
          (fn [delta i]
            (assoc delta i (g/madd (delta (inc i)) (bi i) (coeff i))))
          (vec (repeatedly np ctor))
-         (range (c- np 2) 0 -1)))))
+         (range (- np 2) 0 -1)))))
   
   (defn auto-spline*
     [find-cpoints]
@@ -81,21 +79,21 @@
             (d/successive-nth 2)
             (interleave (d/successive-nth 2 points))
             (partition 2)
-            (mapcat (fn [[[p q] [dp dq]]] [p (+ p dp) (- q dq)])))
+            (mapcat (fn [[[p q] [dp dq]]] [p (g/+ p dp) (g/- q dq)])))
        [(last points)])))
 #+END_SRC
 ** Concrete implementations for 2D/3D...
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/bezier.cljx
   (def auto-spline2 (auto-spline* (find-cpoints* vec2)))
   (def auto-spline3 (auto-spline* (find-cpoints* vec3)))
 #+END_SRC
 ** TODO Bezier2
 *** Protocol implementations
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/bezier.cljx
   (extend-type thi.ng.geom.types.Bezier2
 #+END_SRC
 **** PGraph
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/bezier.cljx
   g/PGraph
   (vertices
    ([_] (g/vertices _ *resolution*))
@@ -114,6 +112,6 @@
               0))
 #+END_SRC
 **** End of implementations                                        :noexport:
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/bezier.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/bezier.cljx
   )
 #+END_SRC

@@ -4,22 +4,20 @@
 
 * thi.ng.geom.mesh.subdivision
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh/subdivision.cljx :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.subdivision
-    (:refer-clojure :exclude [+ - *])
-    (:refer-clojure :rename {+ c+, - c-, * c*})
     (:require
      [thi.ng.common.data.core :as d]
      [thi.ng.geom.gmesh :as gm]
-     [thi.ng.geom.core :as g :refer [+ - *]]))
+     [thi.ng.geom.core :as g]))
 #+END_SRC
 ** Shared helpers
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh/subdivision.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
 
 #+END_SRC
 ** Catmull-Clark
   Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_subdivision_surface][Wikipedia]]
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh/subdivision.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
   (defn cc-face-points
     "Takes a seq of faces and returns map with faces as keys and their
       centroids as values."
@@ -69,7 +67,7 @@
                                   vn (gm/vertex-neighbors* mesh v)
                                   n (count vn)
                                   r (g/centroid* (map #(g/mix v %) vn))
-                                  v* (g/div (+ f (* r 2.0) (* v (c- n 3))) n)]
+                                  v* (g/div (g/+ f (g/* r 2.0) (g/* v (- n 3))) n)]
                               (assoc! acc v v*)))
                           (transient {}))
                          persistent!)]
@@ -87,7 +85,7 @@
            (reduce gm/add-face (gm/gmesh)))))
 #+END_SRC
 ** Doo-Sabin
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/mesh/subdivision.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
   (defn ds-edge-midpoints
     [edges]
     (->> edges
@@ -106,7 +104,7 @@
             (fn [acc [p c n]]
               (let [e1 (e-points #{p c})
                     e2 (e-points #{c n})
-                    fp* (* (+ (+ fp e1 e2) c) 0.25)]
+                    fp* (g/* (g/+ (g/+ fp e1 e2) c) 0.25)]
                 (assoc acc c fp*)))
             {}))))
   

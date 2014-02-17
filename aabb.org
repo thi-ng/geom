@@ -4,14 +4,12 @@
 
 * thi.ng.geom.aabb
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.aabb
-    (:refer-clojure :exclude [+ - * min max])
-    (:refer-clojure :rename {+ c+, - c-, * c*, min cmin, max cmax})
     (:require
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [*eps*]]
-     [thi.ng.geom.core :as g :refer [+ - * vec3 min max]]
+     [thi.ng.geom.core :as g :refer [vec3]]
      [thi.ng.geom.mesh :as mesh]
      [thi.ng.geom.gmesh :as gmesh]
      [thi.ng.geom.types :as types])
@@ -20,7 +18,7 @@
      [thi.ng.geom.types Line3 AABB Sphere]))
 #+END_SRC
 ** Constructors
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
   (defn aabb
     ([] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 1.0)))
     ([size] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 size)))
@@ -29,15 +27,15 @@
 
   (defn aabb-from-minmax
     [p q]
-    (let [a (min p q) b (max p q)]
-      (thi.ng.geom.types.AABB. a (- b a))))
+    (let [a (g/min p q) b (g/max p q)]
+      (thi.ng.geom.types.AABB. a (g/- b a))))
 #+END_SRC
 ** Type specific functions
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
 
 #+END_SRC
 ** Protocol implementations
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
   (extend-type thi.ng.geom.types.AABB
 #+END_SRC
 *** PGraph
@@ -50,12 +48,12 @@
   :    \|   \|
   :   b +----+ c
 
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
   g/PGraph
   (vertices
    [{a :p size :size}]
    (let [[x1 y1 z1] a
-         [x2 y2 z2 :as f] (+ a size)
+         [x2 y2 z2 :as f] (g/+ a size)
          b (vec3 x1 y1 z2) c (vec3 x2 y1 z2)
          d (vec3 x2 y1 z1) e (vec3 x1 y2 z2)
          g (vec3 x2 y2 z1) h (vec3 x1 y2 z1)]
@@ -72,12 +70,12 @@
 #+END_SRC
 *** PBoundary
 **** TODO implement closest-point
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
   g/PClassify
   (classify-point
    [{p :p size :size} [x y z :as q]]
    (let [[x1 y1 z1] p
-         [x2 y2 z2] (+ p size)
+         [x2 y2 z2] (g/+ p size)
          on-plane? (fn [[minp maxp p min1 max1 min2 max2 c1 c2]]
                      (and (or (m/delta= minp p *eps*)
                               (m/delta= maxp p *eps*))
@@ -96,24 +94,24 @@
   (contains-point?
    [{p :p size :size} [qx qy qz]]
    (let [[x1 y1 z1] p
-         [x2 y2 z2] (+ p size)]
+         [x2 y2 z2] (g/+ p size)]
      (and (m/in-range? x1 x2 qx)
           (m/in-range? y1 y2 qy)
           (m/in-range? z1 z2 qz))))
 #+END_SRC
-*** PSampleable
+*** PSample
 **** TODO implement point-at
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
-  g/PSampleable
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
+  g/PSample
   (random-point-inside
    [{p :p size :size}]
    (let [[x1 y1 z1] p
-         [x2 y2 z2] (+ p size)]
+         [x2 y2 z2] (g/+ p size)]
      (vec3 (m/random x1 x2) (m/random y1 y2) (m/random z1 z2))))
   (random-point
    [{p :p size :size}]
    (let [[x1 y1 z1] p
-         [x2 y2 z2] (+ p size)
+         [x2 y2 z2] (g/+ p size)
          id (int (m/random 6))]
      (cond
       (< id 2) (vec3 (if (zero? id) x1 x2) (m/random y1 y2) (m/random z1 z2))
@@ -121,12 +119,12 @@
       :default (vec3 (m/random x1 x2) (m/random y1 y2) (if (= 4 id) z1 z2)))))
 #+END_SRC
 *** PArea
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
   g/PArea
-  (area [{[w h d] :size}] (c* 2 (c+ (c+ (c* w h) (c* d h)) (c* w d))))
+  (area [{[w h d] :size}] (* 2 (+ (+ (* w h) (* d h)) (* w d))))
 #+END_SRC
 *** PBounds
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
   g/PBounds
   (bounds [_] _)
   (width [_] ((:size _) 0))
@@ -134,46 +132,46 @@
   (depth [_] ((:size _) 2))
 #+END_SRC
 *** PCenter
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
   g/PCenter
   (center
    ([{p :p size :size}]
-      (thi.ng.geom.types.AABB. (- p (* size 0.5)) size))
+      (thi.ng.geom.types.AABB. (g/- p (g/* size 0.5)) size))
    ([{size :size} q]
-      (thi.ng.geom.types.AABB. (- q (* size 0.5)) size)))
-  (centroid [_] (+ (:p _) (* (:size _) 0.5)))
+      (thi.ng.geom.types.AABB. (g/- q (g/* size 0.5)) size)))
+  (centroid [_] (g/+ (:p _) (g/* (:size _) 0.5)))
 #+END_SRC
 *** PBoundingSphere
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
   g/PBoundingSphere
   (bounding-sphere
    [{p :p size :size}]
-   (let [e (* size 0.5)]
-     (g/bounding-sphere* (+ p e) (g/mag e))))
+   (let [e (g/* size 0.5)]
+     (g/bounding-sphere* (g/+ p e) (g/mag e))))
 #+END_SRC
 *** PVolume
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
   g/PVolume
-  (volume [{[w h d] :size}] (c* (c* w h) d))
+  (volume [{[w h d] :size}] (* (* w h) d))
 #+END_SRC
-*** PIntersectable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
-  g/PIntersectable
+*** PIntersect
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
+  g/PIntersect
   (intersect-shape
    [{pa :p sa :size} s]
    (cond
     (instance? thi.ng.geom.types.AABB s)
     (let [{pb :p sb :size} s]
       (every?
-       #(and (<= (pa %) (c+ (pb %) (sb %)))
-             (<= (pb %) (c+ (pa %) (sa %))))
+       #(and (<= (pa %) (+ (pb %) (sb %)))
+             (<= (pb %) (+ (pa %) (sa %))))
        [0 1 2]))
     :default (g/type-error "AABB" s)))
 #+END_SRC
-*** TODO PMeshable
+*** TODO PMeshConvert
 **** TODO add face flags as in gmesh/box
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
-  g/PMeshable
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
+  g/PMeshConvert
   (as-mesh
    [_ {:keys [flags] :or {flags "nsewfb"}}]
    (let [[a b c d e f g h] (g/vertices _)
@@ -188,6 +186,6 @@
           (gmesh/into-mesh (gmesh/gmesh)))))
 #+END_SRC
 *** End of implementation                                          :noexport:
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/aabb.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
   )
 #+END_SRC

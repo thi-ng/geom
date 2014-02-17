@@ -12,16 +12,16 @@
   Furthermore, since we aim for full ClojureScript compatibiliy,
   the following implementations are quite lengthy.
 ** Declarations
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx :mkdirp yes
   (declare vec2-op-1 vec2-op-2 vec2-op-2* vec2-op-3)
   (declare vec3-op-1 vec3-op-2 vec3-op-3)
 #+END_SRC
 ** 2D
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx :mkdirp yes
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   (deftype Vec2 [^double x ^double y _meta]
 #+END_SRC
 *** Clojure protocols
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   ,#+clj clojure.lang.IObj
   ,#+clj (meta [_] _meta)
   ,#+clj (withMeta [_ m*] (Vec2. x y m*))
@@ -169,92 +169,92 @@
   Object
   (toString [_] (str "[" x " " y "]"))
 #+END_SRC
-*** PTransformable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
-  PTransformable
+*** PTransform
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
+  PTransform
   (scale [_ a]
     (if (instance? Vec2 a)
-      (Vec2. (c* x (.-x ^Vec2 a)) (c* y (.-y ^Vec2 a)) _meta)
+      (Vec2. (clojure.core/* x (.-x ^Vec2 a)) (clojure.core/* y (.-y ^Vec2 a)) _meta)
       (if (number? a)
-        (Vec2. (c* x a) (c* y a) _meta)
-        (Vec2. (c* x (nth a 0 1)) (c* y (nth a 1 1)) _meta))))
+        (Vec2. (clojure.core/* x a) (clojure.core/* y a) _meta)
+        (Vec2. (clojure.core/* x (nth a 0 1)) (clojure.core/* y (nth a 1 1)) _meta))))
   (scale [_ a b]
     (if (number? a)
-      (Vec2. (c* x a) (c* y b) _meta)
+      (Vec2. (clojure.core/* x a) (clojure.core/* y b) _meta)
       (let [[ax ay] a [bx by] b]
-        (Vec2. (c* (c* x ax) bx) (c* (c* y ay) by) _meta))))
+        (Vec2. (clojure.core/* (clojure.core/* x ax) bx) (clojure.core/* (clojure.core/* y ay) by) _meta))))
   (translate [_ [tx ty]]
     (+ _ tx ty))
   (rotate [_ theta]
     (let [s (Math/sin theta) c (Math/cos theta)]
-      (Vec2. (c- (c* x c) (c* y s)) (c+ (c* x s) (c* y c)) _meta)))
+      (Vec2. (clojure.core/- (clojure.core/* x c) (clojure.core/* y s)) (clojure.core/+ (clojure.core/* x s) (clojure.core/* y c)) _meta)))
   (rotate-z [_ theta]
     (rotate _ theta))
   (transform [_ m])
 #+END_SRC
 *** PMathOps
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   PMathOps
   (abs [_] (Vec2. (m/abs x) (m/abs y) _meta))
   (+ [_] _)
-  (+ [_ a] (vec2-op-1 c+ _ a 0.0 _meta))
-  (+ [_ a b] (vec2-op-2 c+ _ a b 0.0 0.0 _meta))
-  (+ [_ a b c] (vec2-op-3 c+ _ a b c 0.0 _meta))
+  (+ [_ a] (vec2-op-1 clojure.core/+ _ a 0.0 _meta))
+  (+ [_ a b] (vec2-op-2 clojure.core/+ _ a b 0.0 0.0 _meta))
+  (+ [_ a b c] (vec2-op-3 clojure.core/+ _ a b c 0.0 _meta))
   
-  (- [_] (Vec2. (c- x) (c- y) _meta))
-  (- [_ a] (vec2-op-1 c- _ a 0.0 _meta))
-  (- [_ a b] (vec2-op-2 c- _ a b 0.0 0.0 _meta))
-  (- [_ a b c] (vec2-op-3 c- _ a b c 0.0 _meta))
+  (- [_] (Vec2. (clojure.core/- x) (clojure.core/- y) _meta))
+  (- [_ a] (vec2-op-1 clojure.core/- _ a 0.0 _meta))
+  (- [_ a b] (vec2-op-2 clojure.core/- _ a b 0.0 0.0 _meta))
+  (- [_ a b c] (vec2-op-3 clojure.core/- _ a b c 0.0 _meta))
   
   (* [_] _)
-  (* [_ a] (vec2-op-1 c* _ a 1.0 _meta))
-  (* [_ a b] (vec2-op-2 c* _ a b 1.0 1.0 _meta))
-  (* [_ a b c] (vec2-op-3 c* _ a b c 1.0 _meta))
+  (* [_ a] (vec2-op-1 clojure.core/* _ a 1.0 _meta))
+  (* [_ a b] (vec2-op-2 clojure.core/* _ a b 1.0 1.0 _meta))
+  (* [_ a b c] (vec2-op-3 clojure.core/* _ a b c 1.0 _meta))
   
   (div [_] (Vec2. (/ x) (/ y) _meta))
   (div [_ a] (vec2-op-1 / _ a 0.0 _meta))
   (div [_ a b] (vec2-op-2 / _ a b 0.0 0.0 _meta))
   (div [_ a b c] (vec2-op-3 / _ a b c 0.0 _meta))
   
-  (madd [_ a b] (vec2-op-2* c* c+ _ a b 1.0 0.0 _meta))
+  (madd [_ a b] (vec2-op-2* clojure.core/* clojure.core/+ _ a b 1.0 0.0 _meta))
 #+END_SRC
 *** PDotProduct
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   PDotProduct
-  (dot [_ [ax ay]] (c+ (c* x ax) (c* y ay)))
+  (dot [_ [ax ay]] (clojure.core/+ (clojure.core/* x ax) (clojure.core/* y ay)))
 #+END_SRC
 *** PCrossProduct
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx  
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx  
   PCrossProduct
-  (cross [_ [ax ay]] (c- (c* x ay) (c* y ax)))
+  (cross [_ [ax ay]] (clojure.core/- (clojure.core/* x ay) (clojure.core/* y ax)))
 #+END_SRC
 *** PLimit
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx  
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx  
   PLimit
   (limit [_ len]
-         (if (> (mag-squared _) (c* len len))
+         (if (> (mag-squared _) (clojure.core/* len len))
            (normalize _ len) _))
 #+END_SRC
 *** PMinMax
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   PMinMax
   (min [_ [ax ay]]
-       (Vec2. (cmin x ax) (cmin y ay) _meta))
+       (Vec2. (clojure.core/min x ax) (clojure.core/min y ay) _meta))
   (min [_ [ax ay] [bx by]]
-       (Vec2. (cmin (cmin x ax) bx) (cmin (cmin y ay) by) _meta))
+       (Vec2. (clojure.core/min (clojure.core/min x ax) bx) (clojure.core/min (clojure.core/min y ay) by) _meta))
   (max [_ [ax ay]]
-       (Vec2. (cmax x ax) (cmax y ay) _meta))
+       (Vec2. (clojure.core/max x ax) (clojure.core/max y ay) _meta))
   (max [_ [ax ay] [bx by]]
-       (Vec2. (cmax (cmax x ax) bx) (cmax (cmax y ay) by) _meta))
+       (Vec2. (clojure.core/max (clojure.core/max x ax) bx) (clojure.core/max (clojure.core/max y ay) by) _meta))
 #+END_SRC
 *** PMagnitude
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   PMagnitude
-  (mag [_] (Math/sqrt (c+ (c* x x) (c* y y))))
-  (mag-squared [_] (c+ (c* x x) (c* y y)))
+  (mag [_] (Math/sqrt (clojure.core/+ (clojure.core/* x x) (clojure.core/* y y))))
+  (mag-squared [_] (clojure.core/+ (clojure.core/* x x) (clojure.core/* y y)))
 #+END_SRC
 *** PNormalize
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   PNormalize
   (normalize [_]
     (let [l (mag _)]
@@ -262,82 +262,82 @@
   (normalize [_ len]
     (let [l (mag _)]
       (if (pos? l)
-        (let [l (/ len l)] (Vec2. (c* x l) (c* y l) _meta)) _)))
+        (let [l (/ len l)] (Vec2. (clojure.core/* x l) (clojure.core/* y l) _meta)) _)))
   (normalized? [_]
     (m/delta= 1.0 (mag-squared _)))
 #+END_SRC
 *** PDistance
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   PDistance
   (dist
    [_ a]
    (let [[dx dy] (if (instance? Vec2 a)
-                   [(c- x (.-x ^Vec2 a)) (c- y (.-y ^Vec2 a))]
-                   [(c- x (nth a 0)) (c- y (nth a 1))])]
-     (Math/sqrt (c+ (c* dx dx) (c* dy dy)))))
+                   [(clojure.core/- x (.-x ^Vec2 a)) (clojure.core/- y (.-y ^Vec2 a))]
+                   [(clojure.core/- x (nth a 0)) (clojure.core/- y (nth a 1))])]
+     (Math/sqrt (clojure.core/+ (clojure.core/* dx dx) (clojure.core/* dy dy)))))
   (dist-squared
    [_ a]
    (let [[dx dy] (if (instance? Vec2 a)
-                   [(c- x (.-x ^Vec2 a)) (c- y (.-y ^Vec2 a))]
-                   [(c- x (nth a 0)) (c- y (nth a 1))])]
-     (c+ (c* dx dx) (c* dy dy))))
+                   [(clojure.core/- x (.-x ^Vec2 a)) (clojure.core/- y (.-y ^Vec2 a))]
+                   [(clojure.core/- x (nth a 0)) (clojure.core/- y (nth a 1))])]
+     (clojure.core/+ (clojure.core/* dx dx) (clojure.core/* dy dy))))
 #+END_SRC
 *** PReflect
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   PReflect
   (reflect [_ [rx ry :as r]]
-    (let [d (c* (dot _ r) 2.0)]
-      (Vec2. (c- (c* rx d) x) (c- (c* ry d) y) _meta)))
+    (let [d (clojure.core/* (dot _ r) 2.0)]
+      (Vec2. (clojure.core/- (clojure.core/* rx d) x) (clojure.core/- (clojure.core/* ry d) y) _meta)))
 #+END_SRC
-*** PInvertible
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
-    PInvertible
-    (invert [_] (Vec2. (c- x) (c- y) _meta))
+*** PInvert
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
+    PInvert
+    (invert [_] (Vec2. (clojure.core/- x) (clojure.core/- y) _meta))
 #+END_SRC
-*** PInterpolateable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
-  PInterpolateable
+*** PInterpolate
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
+  PInterpolate
   (mix [_ [ax ay]]
-    (Vec2. (c+ x (c* (c- ax x) 0.5)) (c+ y (c* (c- ay y) 0.5)) _meta))
+    (Vec2. (clojure.core/+ x (clojure.core/* (clojure.core/- ax x) 0.5)) (clojure.core/+ y (clojure.core/* (clojure.core/- ay y) 0.5)) _meta))
   (mix [_ [ax ay] t]
-    (Vec2. (c+ x (c* (c- ax x) t)) (c+ y (c* (c- ay y) t)) _meta))
+    (Vec2. (clojure.core/+ x (clojure.core/* (clojure.core/- ax x) t)) (clojure.core/+ y (clojure.core/* (clojure.core/- ay y) t)) _meta))
 #+END_SRC
 *** PHeading
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   PHeading
   (heading-xy [_]
     (let [t (Math/atan2 y x)]
-      (if (neg? t) (c+ TWO_PI t) t)))
+      (if (neg? t) (clojure.core/+ TWO_PI t) t)))
   (angle-between [_ a]
-    (let [t (c- (heading-xy a) (heading-xy _))]
-      (if (neg? t) (c+ TWO_PI t) t)))
+    (let [t (clojure.core/- (heading-xy a) (heading-xy _))]
+      (if (neg? t) (clojure.core/+ TWO_PI t) t)))
   (slope-xy [_] (/ y x))
-  (normal [_] (Vec2. (c- y) x _meta))
+  (normal [_] (Vec2. (clojure.core/- y) x _meta))
 #+END_SRC
 *** PPolar
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
     PPolar
     (as-polar [_]
       (Vec2. (mag _) (heading-xy _) _meta))
     (as-cartesian [_]
-      (Vec2. (c* x (Math/cos y)) (c* x (Math/sin y)) _meta))
+      (Vec2. (clojure.core/* x (Math/cos y)) (clojure.core/* x (Math/sin y)) _meta))
 #+END_SRC
 *** End of implementations
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   )
 #+END_SRC
 *** Override print methods
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   #+clj (require 'clojure.pprint)
   #+clj (prefer-method clojure.pprint/simple-dispatch clojure.lang.IPersistentVector clojure.lang.ISeq)
   #+clj (defmethod print-method Vec2 [o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 ** 3D
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   (deftype Vec3 [^double x ^double y ^double z _meta]
 #+END_SRC
 *** Clojure protocols
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   ,#+clj clojure.lang.IObj
   ,#+clj (meta [_] _meta)
   ,#+clj (withMeta [_ m*] (Vec3. x y z m*))
@@ -529,94 +529,94 @@
   Object
   (toString [_] (str "[" x " " y " " z "]"))
 #+END_SRC
-*** PTransformable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
-  PTransformable
+*** PTransform
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
+  PTransform
   (scale [_ a]
     (if (instance? Vec3 a)
-      (Vec3. (c* x (.-x ^Vec3 a)) (c* y (.-y ^Vec3 a)) (c* z (.-z ^Vec3 a)) _meta)
+      (Vec3. (clojure.core/* x (.-x ^Vec3 a)) (clojure.core/* y (.-y ^Vec3 a)) (clojure.core/* z (.-z ^Vec3 a)) _meta)
       (if (number? a)
-        (Vec3. (c* x a) (c* y a) (c* z a) _meta)
-        (Vec3. (c* x (nth a 0 1)) (c* y (nth a 1 1)) (c* z (nth a 2 1)) _meta))))
+        (Vec3. (clojure.core/* x a) (clojure.core/* y a) (clojure.core/* z a) _meta)
+        (Vec3. (clojure.core/* x (nth a 0 1)) (clojure.core/* y (nth a 1 1)) (clojure.core/* z (nth a 2 1)) _meta))))
   (scale [_ a b]
     (if (number? a)
-      (Vec3. (c* x a) (c* y b) z _meta)
+      (Vec3. (clojure.core/* x a) (clojure.core/* y b) z _meta)
       (let [[ax ay az] a [bx by bz] b]
-        (Vec3. (c* (c* x ax) bx) (c* (c* y ay) by) (c* (c* z az) bz) _meta))))
+        (Vec3. (clojure.core/* (clojure.core/* x ax) bx) (clojure.core/* (clojure.core/* y ay) by) (clojure.core/* (clojure.core/* z az) bz) _meta))))
   (scale [_ a b c]
     (if (number? a)
-      (Vec3. (c* x a) (c* y b) (c* z c) _meta)
+      (Vec3. (clojure.core/* x a) (clojure.core/* y b) (clojure.core/* z c) _meta)
       (let [[ax ay az] a [bx by bz] b [cx cy cz] c]
-        (Vec3. (c* (c* (c* x ax) bx) cx) (c* (c* (c* y ay) by) cy) (c* (c* (c* z az) bz) cz) _meta))))
+        (Vec3. (clojure.core/* (clojure.core/* (clojure.core/* x ax) bx) cx) (clojure.core/* (clojure.core/* (clojure.core/* y ay) by) cy) (clojure.core/* (clojure.core/* (clojure.core/* z az) bz) cz) _meta))))
   (translate [_ t]
     (+ _ t))
   (rotate-x [_ theta]
     (let [s (Math/sin theta) c (Math/cos theta)]
-      (Vec3. x (c- (c- (c* z c) (c* y s))) (c- (c+ (c* z s) (c* y c))) _meta)))
+      (Vec3. x (clojure.core/- (clojure.core/- (clojure.core/* z c) (clojure.core/* y s))) (clojure.core/- (clojure.core/+ (clojure.core/* z s) (clojure.core/* y c))) _meta)))
   (rotate-y [_ theta]
     (let [s (Math/sin theta) c (Math/cos theta)]
-      (Vec3. (c- (c- (c* x c) (c* z s))) y (c+ (c* x s) (c* z c)) _meta)))
+      (Vec3. (clojure.core/- (clojure.core/- (clojure.core/* x c) (clojure.core/* z s))) y (clojure.core/+ (clojure.core/* x s) (clojure.core/* z c)) _meta)))
   (rotate-z [_ theta]
     (let [s (Math/sin theta) c (Math/cos theta)]
-      (Vec3. (c- (c* x c) (c* y s)) (c+ (c* x s) (c* y c)) z _meta)))
+      (Vec3. (clojure.core/- (clojure.core/* x c) (clojure.core/* y s)) (clojure.core/+ (clojure.core/* x s) (clojure.core/* y c)) z _meta)))
   (rotate [_ theta]
     (rotate-z _ theta))
   (transform [_ m] (transform-vector m _))
 #+END_SRC
 *** PMathOps
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   PMathOps
   (+ [_] _)
-  (+ [_ a] (vec3-op-1 c+ _ a 0.0 _meta))
-  (+ [_ a b] (vec3-op-2 c+ c+ _ a b 0.0 0.0 _meta))
-  (+ [_ a b c] (vec3-op-3 c+ _ a b c 0.0 _meta))
+  (+ [_ a] (vec3-op-1 clojure.core/+ _ a 0.0 _meta))
+  (+ [_ a b] (vec3-op-2 clojure.core/+ clojure.core/+ _ a b 0.0 0.0 _meta))
+  (+ [_ a b c] (vec3-op-3 clojure.core/+ _ a b c 0.0 _meta))
   
-  (- [_] (Vec3. (c- x) (c- y) (c- z) _meta))
-  (- [_ a] (vec3-op-1 c- _ a 0.0 _meta))
-  (- [_ a b] (vec3-op-2 c- c- _ a b 0.0 0.0 _meta))
-  (- [_ a b c] (vec3-op-3 c- _ a b c 0.0 _meta))
+  (- [_] (Vec3. (clojure.core/- x) (clojure.core/- y) (clojure.core/- z) _meta))
+  (- [_ a] (vec3-op-1 clojure.core/- _ a 0.0 _meta))
+  (- [_ a b] (vec3-op-2 clojure.core/- clojure.core/- _ a b 0.0 0.0 _meta))
+  (- [_ a b c] (vec3-op-3 clojure.core/- _ a b c 0.0 _meta))
   
   (* [_] _)
-  (* [_ a] (vec3-op-1 c* _ a 1.0 _meta))
-  (* [_ a b] (vec3-op-2 c* c* _ a b 1.0 1.0 _meta))
-  (* [_ a b c] (vec3-op-3 c* _ a b c 1.0 _meta))
+  (* [_ a] (vec3-op-1 clojure.core/* _ a 1.0 _meta))
+  (* [_ a b] (vec3-op-2 clojure.core/* clojure.core/* _ a b 1.0 1.0 _meta))
+  (* [_ a b c] (vec3-op-3 clojure.core/* _ a b c 1.0 _meta))
   
   (div [_] (Vec3. (/ x) (/ y) (/ z) _meta))
   (div [_ a] (vec3-op-1 / _ a 0.0 _meta))
   (div [_ a b] (vec3-op-2 / / _ a b 0.0 0.0 _meta))
   (div [_ a b c] (vec3-op-3 / _ a b c 0.0 _meta))
   
-  (madd [_ a b] (vec3-op-2 c* c+ _ a b 1.0 0.0 _meta))
+  (madd [_ a b] (vec3-op-2 clojure.core/* clojure.core/+ _ a b 1.0 0.0 _meta))
   
   PDotProduct
-  (dot [_ [ax ay az]] (c+ (c+ (c* x ax) (c* y ay)) (c* z az)))
+  (dot [_ [ax ay az]] (clojure.core/+ (clojure.core/+ (clojure.core/* x ax) (clojure.core/* y ay)) (clojure.core/* z az)))
   
   PCrossProduct
   (cross [_ [ax ay az]]
-         (Vec3. (c- (c* y az) (c* ay z)) (c- (c* z ax) (c* az x)) (c- (c* x ay) (c* ax y)) _meta))
+         (Vec3. (clojure.core/- (clojure.core/* y az) (clojure.core/* ay z)) (clojure.core/- (clojure.core/* z ax) (clojure.core/* az x)) (clojure.core/- (clojure.core/* x ay) (clojure.core/* ax y)) _meta))
   
   PLimit
   (limit [_ len]
-         (if (> (mag-squared _) (c* len len)) (normalize _ len) _))
+         (if (> (mag-squared _) (clojure.core/* len len)) (normalize _ len) _))
   
   PMinMax
   (min [_ [ax ay az]]
-       (Vec3. (cmin x ax) (cmin y ay) (cmin z az) _meta))
+       (Vec3. (clojure.core/min x ax) (clojure.core/min y ay) (clojure.core/min z az) _meta))
   (min [_ [ax ay az] [bx by bz]]
-       (Vec3. (cmin (cmin x ax) bx) (cmin (cmin y ay) by) (cmin (cmin z az) bz) _meta))
+       (Vec3. (clojure.core/min (clojure.core/min x ax) bx) (clojure.core/min (clojure.core/min y ay) by) (clojure.core/min (clojure.core/min z az) bz) _meta))
   (max [_ [ax ay az]]
-       (Vec3. (cmax x ax) (cmax y ay) (cmax z az) _meta))
+       (Vec3. (clojure.core/max x ax) (clojure.core/max y ay) (clojure.core/max z az) _meta))
   (max [_ [ax ay az] [bx by bz]]
-       (Vec3. (cmax (cmax x ax) bx) (cmax (cmax y ay) by) (cmax (cmax z az) bz) _meta))
+       (Vec3. (clojure.core/max (clojure.core/max x ax) bx) (clojure.core/max (clojure.core/max y ay) by) (clojure.core/max (clojure.core/max z az) bz) _meta))
 #+END_SRC
 *** PMagnitude
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   PMagnitude
-  (mag [_] (Math/sqrt (c+ (c+ (c* x x) (c* y y)) (c* z z))))
-  (mag-squared [_] (c+ (c+ (c* x x) (c* y y)) (c* z z)))
+  (mag [_] (Math/sqrt (clojure.core/+ (clojure.core/+ (clojure.core/* x x) (clojure.core/* y y)) (clojure.core/* z z))))
+  (mag-squared [_] (clojure.core/+ (clojure.core/+ (clojure.core/* x x) (clojure.core/* y y)) (clojure.core/* z z)))
 #+END_SRC
 *** PNormalize
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   PNormalize
   (normalize [_]
     (let [l (mag _)]
@@ -624,70 +624,70 @@
   (normalize [_ len]
     (let [l (mag _)]
       (if (pos? l)
-        (let [l (/ len l)] (Vec3. (c* x l) (c* y l) (c* z l) _meta)) _)))
+        (let [l (/ len l)] (Vec3. (clojure.core/* x l) (clojure.core/* y l) (clojure.core/* z l) _meta)) _)))
   (normalized? [_]
     (m/delta= 1.0 (mag-squared _)))
 #+END_SRC
 *** PDistance
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   PDistance
   (dist
    [_ a]
    (let [[dx dy dz] (if (instance? Vec3 a)
-                      [(c- x (.-x ^Vec3 a)) (c- y (.-y ^Vec3 a)) (c- z (.-z ^Vec3 a))]
-                      [(c- x (nth a 0)) (c- y (nth a 1)) (c- z (nth a 2 0.0))])]
-     (Math/sqrt (c+ (c+ (c* dx dx) (c* dy dy)) (c* dz dz)))))
+                      [(clojure.core/- x (.-x ^Vec3 a)) (clojure.core/- y (.-y ^Vec3 a)) (clojure.core/- z (.-z ^Vec3 a))]
+                      [(clojure.core/- x (nth a 0)) (clojure.core/- y (nth a 1)) (clojure.core/- z (nth a 2 0.0))])]
+     (Math/sqrt (clojure.core/+ (clojure.core/+ (clojure.core/* dx dx) (clojure.core/* dy dy)) (clojure.core/* dz dz)))))
   (dist-squared
    [_ a]
    (let [[dx dy dz] (if (instance? Vec3 a)
-                      [(c- x (.-x ^Vec3 a)) (c- y (.-y ^Vec3 a)) (c- z (.-z ^Vec3 a))]
-                      [(c- x (nth a 0)) (c- y (nth a 1)) (c- z (nth a 2 0.0))])]
-     (c+ (c+ (c* dx dx) (c* dy dy)) (c* dz dz))))
+                      [(clojure.core/- x (.-x ^Vec3 a)) (clojure.core/- y (.-y ^Vec3 a)) (clojure.core/- z (.-z ^Vec3 a))]
+                      [(clojure.core/- x (nth a 0)) (clojure.core/- y (nth a 1)) (clojure.core/- z (nth a 2 0.0))])]
+     (clojure.core/+ (clojure.core/+ (clojure.core/* dx dx) (clojure.core/* dy dy)) (clojure.core/* dz dz))))
 #+END_SRC
 *** PReflect
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   PReflect
   (reflect [_ [rx ry rz :as r]]
-    (let [d (c* (dot _ r) 2.0)]
-      (Vec3. (c- (c* rx d) x) (c- (c* ry d) y) (c- (c* rz d) z) _meta)))
+    (let [d (clojure.core/* (dot _ r) 2.0)]
+      (Vec3. (clojure.core/- (clojure.core/* rx d) x) (clojure.core/- (clojure.core/* ry d) y) (clojure.core/- (clojure.core/* rz d) z) _meta)))
 #+END_SRC
-*** PInvertible
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
-  PInvertible
-  (invert [_] (Vec3. (c- x) (c- y) (c- z) _meta))
+*** PInvert
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
+  PInvert
+  (invert [_] (Vec3. (clojure.core/- x) (clojure.core/- y) (clojure.core/- z) _meta))
 #+END_SRC
-*** PInterpolateable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
-  PInterpolateable
+*** PInterpolate
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
+  PInterpolate
   (mix [_ [ax ay az]]
-    (Vec3. (c+ x (c* (c- ax x) 0.5)) (c+ y (c* (c- ay y) 0.5)) (c+ z (c* (c- az z) 0.5)) _meta))
+    (Vec3. (clojure.core/+ x (clojure.core/* (clojure.core/- ax x) 0.5)) (clojure.core/+ y (clojure.core/* (clojure.core/- ay y) 0.5)) (clojure.core/+ z (clojure.core/* (clojure.core/- az z) 0.5)) _meta))
   (mix [_ [ax ay az] t]
-    (Vec3. (c+ x (c* (c- ax x) t)) (c+ y (c* (c- ay y) t)) (c+ z (c* (c- az z) t)) _meta))
+    (Vec3. (clojure.core/+ x (clojure.core/* (clojure.core/- ax x) t)) (clojure.core/+ y (clojure.core/* (clojure.core/- ay y) t)) (clojure.core/+ z (clojure.core/* (clojure.core/- az z) t)) _meta))
 #+END_SRC
 *** PPolar
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   ;; http://mathworld.wolfram.com/SphericalCoordinates.html
   PPolar
   (as-polar [_]
-    (let [r (Math/sqrt (c+ (c+ (c* x x) (c* y y)) (c* z z)))
+    (let [r (Math/sqrt (clojure.core/+ (clojure.core/+ (clojure.core/* x x) (clojure.core/* y y)) (clojure.core/* z z)))
           theta (Math/atan2 y x)
           phi (Math/acos (/ z r))]
       (Vec3. r theta phi _meta)))
   (as-cartesian [_]
-    (let [rsphi (c* x (Math/sin z))]
-      (Vec3. (c* (Math/cos y) rsphi) (c* (Math/sin y) rsphi) (c* x (Math/cos z)) _meta)))
+    (let [rsphi (clojure.core/* x (Math/sin z))]
+      (Vec3. (clojure.core/* (Math/cos y) rsphi) (clojure.core/* (Math/sin y) rsphi) (clojure.core/* x (Math/cos z)) _meta)))
 #+END_SRC
 *** End of implementations
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
     )
 #+END_SRC
 *** Override print methods
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   #+clj (defmethod print-method Vec3 [o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 ** Vector operations
 *** 2D
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   (defn vec2-op-1
     [op ^Vec2 _ a d m]
     (if (instance? Vec2 a)
@@ -780,7 +780,7 @@
          (op (op (op (.-y _) (or ay d)) (or by d)) (or cy d)) m))))
 #+END_SRC
 *** 3D
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   (defn vec3-op-1
     [op ^Vec3 _ a d m]
     (if (instance? Vec3 a)
@@ -858,7 +858,7 @@
              (op (op (op (.-z _) (or az d)) (or bz d)) (or cz d)) m))))))
 #+END_SRC
 ** Constants
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   (def ^:const VEC2 (Vec2. 0.0 0.0 nil))
   (def ^:const VEC3 (Vec3. 0.0 0.0 0.0 nil))
 
@@ -882,7 +882,7 @@
       |                       |                                                    | =(vec3 {:x 1 :y 2})= | =[1.0 2.0 0.0]= |
       | Single number         | set all vector components                          | =(vec3 1)=           | =[1.0 1.0 1.0]= |
 
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   (defn vec2
     ([] (Vec2. 0.0 0.0 nil))
     ([x] (cond
@@ -908,7 +908,7 @@
   (defn vec3? [x] (instance? Vec3 x))
 #+END_SRC
 ** Random vectors
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   (defn randvec2
     ([] (normalize (vec2 (m/randnorm) (m/randnorm))))
     ([n] (normalize (vec2 (m/randnorm) (m/randnorm)) n)))
@@ -918,7 +918,7 @@
     ([n] (normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm)) n)))
 #+END_SRC
 ** Swizzling
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/core/vec.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core/vec.cljx
   (defn swizzle2
     [^Vec2 _ k default]
     (if (number? k)

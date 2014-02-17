@@ -1,12 +1,14 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
 * Namespace: thi.ng.geom.meshops
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshops.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/meshops.cljx
   (ns thi.ng.geom.meshops
     (:require
-     (:refer-clojure :exclude [+ - *])
-     (:refer-clojure :rename {+ c+, - c-, * c*})
      [thi.ng.common.math.core :as m]
-     [thi.ng.geom.core :as g :refer [+ - * vec2 vec3]]
+     [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.line :as l]
      [thi.ng.geom.mesh :as mesh]
@@ -14,18 +16,18 @@
      [clojure.set :as set]))
 #+END_SRC
 ** Utilities
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/meshops.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/meshops.cljx
   (defn find-in-tree
     "Returns the first item in the bounding box with size `eps` surrounding `p` in the given octree."
     [t eps half-eps p]
-    (let [b (a/aabb (- p half-eps) eps)]
+    (let [b (a/aabb (g/- p half-eps) eps)]
       (first (st/select-with-shape b t))))
   
   (defn unique-point-tree
     [points eps]
     (let [{[bx by bz] :p [sx sy sz] :size} (g/bounding-box* points)
           eps (vec3 eps)
-          eps2 (* eps 0.5)
+          eps2 (g/* eps 0.5)
           [tree dupes]
           (reduce
             (fn [[t dupes :as state] p]
@@ -49,7 +51,7 @@
     [{:keys [vertices faces]} eps]
     (let [[octree dupes] (unique-point-tree (keys vertices) eps)
           eps (vec3 eps)
-          eps2 (* eps 0.5)
+          eps2 (g/* eps 0.5)
           lookup #(find-in-tree octree eps eps2 %)]
       [(reduce
          (fn [m [a b c]] (mesh/add-face m [(lookup a) (lookup b) (lookup c)]))

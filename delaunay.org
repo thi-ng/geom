@@ -4,20 +4,18 @@
 
 * thi.ng.geom.delaunay
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/delaunay.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/delaunay.cljx
   (ns thi.ng.geom.delaunay
-    (:refer-clojure :exclude [* - + min max])
-    (:refer-clojure :rename {+ c+, - c-, * c*, min cmin, max cmax})
     (:require
      [thi.ng.common.math.core :as m :refer [*eps* delta=]]
-     [thi.ng.geom.core :as g :refer [+ - * min max]]
+     [thi.ng.geom.core :as g]
      [thi.ng.geom.triangle :refer [circumcircle-raw triangle2]])
     #+clj
     (:import
      [thi.ng.geom.types Triangle2]))
 #+END_SRC
 ** Implementation
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/delaunay.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/delaunay.cljx
   (defn- add-unique-edge!
     [edges p q]
     (let [e [p q]]
@@ -32,9 +30,9 @@
      (reduce
       (fn [state t]
         (if (complete t) state
-            (let [x (c- px (t 3))
-                  y (c- py (t 4))]
-              (if (<= (c+ (c* x x) (c* y y)) (t 5))
+            (let [x (- px (t 3))
+                  y (- py (t 4))]
+              (if (<= (+ (* x x) (* y y)) (t 5))
                 (assoc! state
                         0 (let [[a b c] t]
                             (-> (state 0)
@@ -49,7 +47,7 @@
   (defn- make-triangle
     [a b c]
     (let [[[ox oy] r] (circumcircle-raw a b c)]
-      [a b c ox oy (c* r r) (c+ ox r)]))
+      [a b c ox oy (* r r) (+ ox r)]))
   
   (defn shared-vertex?
     [[a1 b1 c1] [a2 b2 c2]]
@@ -60,13 +58,13 @@
   (defn triangulate
     [points]
     (let [points (sort-by #(% 0) points)
-          bmin (reduce min points)
-          bmax (reduce max points)
-          bext (- bmax bmin)
-          dm (cmax (bext 0) (bext 1))
-          d2 (c* 2.0 dm)
+          bmin (reduce g/min points)
+          bmax (reduce g/max points)
+          bext (g/- bmax bmin)
+          dm (max (bext 0) (bext 1))
+          d2 (* 2.0 dm)
           m (g/mix bmin bmax)
-          s (make-triangle (- m d2 dm) (+ m 0 d2) (+ m d2 (c- dm)))]
+          s (make-triangle (g/- m d2 dm) (g/+ m 0 d2) (g/+ m d2 (- dm)))]
       (loop [points points tris [s] complete (transient #{})]
         (if-let [[px :as p] (first points)]
           (let [complete (reduce #(if (< (%2 6) px) (conj! % %2) %) complete tris)

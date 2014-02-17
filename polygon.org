@@ -4,14 +4,12 @@
 
 * thi.ng.geom.polygon
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx :mkdip yes :padline no
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx :mkdip yes :padline no
   (ns thi.ng.geom.polygon
-    (:refer-clojure :exclude [* - +])
-    (:refer-clojure :rename {+ c+, - c-, * c*})
     (:require
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [PI HALF_PI THREE_HALVES_PI *eps*]]
-     [thi.ng.geom.core :as g :refer [+ - * vec2 vec3]]
+     [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.line :as l]
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.rect :as r]
@@ -24,7 +22,7 @@
      [thi.ng.geom.types Circle Line2 Rect Polygon]))
 #+END_SRC
 ** Constructor
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   (defn polygon
     ([points] (thi.ng.geom.types.Polygon. (mapv vec2 points) []))
     ([p & more] (thi.ng.geom.types.Polygon. (mapv vec2 (cons p more)) [])))
@@ -32,14 +30,14 @@
   (defn cog
     [radius teeth profile]
     (-> (thi.ng.geom.types.Circle. (vec2) radius)
-        (g/vertices (* teeth (count profile)))
+        (g/vertices (g/* teeth (count profile)))
         (->> (map (fn [p v] (g/* v p)) (cycle profile))
              (polygon))))
 #+END_SRC
 ** Type specific functions
 *** Sutherland-Hodgeman convex clipping
- - http://en.wikipedia.org/wiki/Sutherland-Hodgman_algorithm
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+ g/- http://en.wikipedia.org/wiki/Sutherland-Hodgman_algorithm
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   (defn clip-convex*
     [verts bounds]
     (let [verts (conj verts (first verts))
@@ -66,13 +64,13 @@
           (distinct (butlast points))))))
 #+END_SRC
 *** Convex hull
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   (defn- h-segment
     [verts [px py :as p] pred theta ps]
     (let [[q] (reduce
                (fn [state [qx qy :as q]]
                  (if (pred qy py)
-                   (let [d (m/abs-diff theta (g/heading-xy (vec2 (c- qx px) (c- qy py))))]
+                   (let [d (m/abs-diff theta (g/heading-xy (vec2 (- qx px) (- qy py))))]
                      (if (< d (state 1)) [q d] state))
                    state))
                [nil HALF_PI] ps)]
@@ -92,7 +90,7 @@
 #+END_SRC
 *** Tessellation
 **** TODO move delta-contains into core
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   (defn delta-contains
     [points p eps]
     (some #(m/delta= p % eps) points))
@@ -100,7 +98,7 @@
   (defn snip
     [points a b c nv verts]
     (let [[ax ay] a [bx by] b [cx cy] c
-          cp (c- (c* (c- bx ax) (c- cy ay)) (c* (c- by ay) (c- cx ax)))]
+          cp (- (* (- bx ax) (- cy ay)) (* (- by ay) (- cx ax)))]
       (when (< m/*eps* cp)
         (not (some #(t/contains-point2* a b c %)
                    (disj (set (map points (subvec verts 0 nv))) a b c))))))
@@ -111,7 +109,7 @@
                           [(:points p) (g/area p)] [(vec p) (g/area (polygon p))])
           nv (count points)
           verts (vec (if (pos? area) (range nv) (range (dec nv) -1 -1)))]
-      (loop [result [], verts verts, v (dec nv), nv nv, cnt (dec (c* 2 nv))]
+      (loop [result [], verts verts, v (dec nv), nv nv, cnt (dec (* 2 nv))]
         (if (= nv 2)
           result
           (when (pos? cnt)
@@ -125,22 +123,22 @@
                 (let [result (conj result [a b c])
                       verts (vec (concat (subvec verts 0 v) (subvec verts (inc v))))
                       nv (dec nv)]
-                  (recur result verts v nv (c* 2 nv)))
+                  (recur result verts v nv (* 2 nv)))
                 (recur result verts v nv (dec cnt)))))))))
 #+END_SRC
 **** Insetting
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   ;; http://alienryderflex.com/polygon_inset/
   (defn- inset-corner
     [prev curr next d]
-    (let [[dx1 dy1 :as d1] (- curr prev)
-          [dx2 dy2 :as d2] (- next curr)
+    (let [[dx1 dy1 :as d1] (g/- curr prev)
+          [dx2 dy2 :as d2] (g/- next curr)
           d1 (g/mag d1) d2 (g/mag d2)]
       (if-not (or (m/delta= 0.0 d1) (m/delta= 0.0 d2))
-        (let [i1 (* (* (vec2 dy1 (c- dx1)) (/ d1)) d) ;; TODO avoid double multiply
-              i2 (* (* (vec2 dy2 (c- dx2)) (/ d2)) d) ;; TODO ditto
-              c1 (+ curr i1), c2 (+ curr i2)
-              prev (+ prev i1), next (+ next i2)]
+        (let [i1 (g/* (g/* (vec2 dy1 (- dx1)) (/ d1)) d) ;; TODO avoid double multiply
+              i2 (g/* (g/* (vec2 dy2 (- dx2)) (/ d2)) d) ;; TODO ditto
+              c1 (g/+ curr i1), c2 (g/+ curr i2)
+              prev (g/+ prev i1), next (g/+ next i2)]
           (if (m/delta= c1 c2)
             c1 (:p (g/intersect-line (l/line2 prev c1) (l/line2 c2 next)))))
         curr)))
@@ -161,18 +159,18 @@
       (thi.ng.geom.types.Polygon.
        (mapv
         (fn [[p c n]]
-          (let [d (+ (- p c) (- n c))
-                d (g/madd (- c pc) base-weight d)]
+          (let [d (g/+ (g/- p c) (g/- n c))
+                d (g/madd (g/- c pc) base-weight d)]
             (g/madd d amp c)))
         (d/successive-nth 3 (d/wrap-seq points [(peek points)] [(first points)])))
        [])))
 #+END_SRC
 ** Protocol implementations
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   (extend-type thi.ng.geom.types.Polygon
 #+END_SRC
 *** PGraph
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PGraph
   (vertices
    [_] (:points _))
@@ -186,18 +184,18 @@
    [_ v] (if ((set (g/vertices _)) (vec2 v)) 2 0))
 #+END_SRC
 *** PArea
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PArea
   (area
    [{points :points}]
    (->> points
         (d/rotate-left 1)
-        (reduce (fn [[a p] v] [(c+ a (g/cross p v)) v]) [0.0 (first points)])
+        (reduce (fn [[a p] v] [(+ a (g/cross p v)) v]) [0.0 (first points)])
         first
-        (c* 0.5)))
+        (* 0.5)))
 #+END_SRC
 *** PBounds
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PBounds
   (bounds [_] (g/bounding-rect* (:points _)))
   (width [_] (g/axis-range* 0 (:points _)))
@@ -205,41 +203,41 @@
   (depth [_] 0)
 #+END_SRC
 *** PCenter
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PCenter
   (center
    ([_] (g/center _ [0.0 0.0]))
    ([_ o]
-      (let [d (- o (g/centroid _))
+      (let [d (g/- o (g/centroid _))
             p (->> _
                    :points
-                   (map #(+ d %))
+                   (map #(g/+ d %))
                    (vec))]
         (thi.ng.geom.types.Polygon. p []))))
   (centroid
    [{points :points :as _}]
    (let [c (->> points
                 (d/rotate-left 1)
-                (reduce (fn [[c p] v] [(g/madd (+ p v) (g/cross p v) c) v])
+                (reduce (fn [[c p] v] [(g/madd (g/+ p v) (g/cross p v) c) v])
                         [(vec2) (first points)])
                 (first))]
-     (* c (/ 1.0 (c* 6 (g/area _))))))  
+     (g/* c (/ 1.0 (* 6 (g/area _))))))  
 #+END_SRC
 *** PBoundingCircle
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PBoundingCircle
   (bounding-circle
    [_] (g/bounding-circle* (g/centroid _) (:points _)))
 #+END_SRC
 *** PCircumference
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PCircumference
   (circumference
    [{points :points}]
-   (d/reduce-pairs c+ g/dist (concat points [(first points)])))
+   (d/reduce-pairs + g/dist (concat points [(first points)])))
 #+END_SRC
 *** TODO PBoundary
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PClassify
   (classify-point
    [_ p] nil) ; TODO
@@ -255,13 +253,13 @@
           (reduce
            (fn [[in [px py]] [vx vy]]
              (if (and (or (and (< vy y) (>= py y)) (and (< py y) (>= vy y)))
-                      (< (c+ vx (c* (/ (c- y vy) (c- py vy)) (c- px vx))) x))
+                      (< (+ vx (* (/ (- y vy) (- py vy)) (- px vx))) x))
                [(not in) [vx vy]] [in [vx vy]]))
            [false (last points)] points)))))
 #+END_SRC
-*** TODO PSampleable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
-  g/PSampleable
+*** TODO PSample
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+  g/PSample
   (point-at
    [{points :points} t] (g/point-at* t (conj points (first points))))
   (random-point
@@ -271,15 +269,15 @@
    [{points :points} udist include-last?]
    (g/sample-uniform* udist include-last? (conj points (first points))))
 #+END_SRC
-*** PTessellateable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
-  g/PTessellateable
+*** PTessellate
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+  g/PTessellate
   (tessellate
    [_] (map #(thi.ng.geom.types.Triangle2. (% 0) (% 1) (% 2)) (tessellate* _)))
 #+END_SRC
-*** PExtrudeable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
-  g/PExtrudeable
+*** PExtrude
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+  g/PExtrude
     (extrude
       [{points :points :as _}
        {:keys [depth offset scale top? bottom?] :or {depth 1.0 scale 1.0 top? true bottom? true}}]
@@ -287,7 +285,7 @@
             tpoints (if (= 1.0 scale) points (:points (g/scale-size (polygon points) scale)))
             off (or offset (vec3 0 0 depth))
             points3 (mapv vec3 points)
-            tpoints3 (mapv #(+ off %) tpoints)
+            tpoints3 (mapv #(g/+ off %) tpoints)
             quad? (= 4 (count points))]
         (gmesh/into-mesh
          (gmesh/gmesh)
@@ -303,22 +301,22 @@
                (d/successive-nth 2 (conj tpoints3 (tpoints3 0))))
           (when top?
             (if quad?
-              [(mapv #(+ off %) points)]
+              [(mapv #(g/+ off %) points)]
               (->> tpoints
                    (tessellate*)
-                   (map (fn [[a b c]] [(+ off a) (+ off b) (+ off c)])))))))))
+                   (map (fn [[a b c]] [(g/+ off a) (g/+ off b) (g/+ off c)])))))))))
     (extrude-shell
       [{points :points :as _}
        {:keys [depth offset inset top? bottom? wall nump]
         :or {wall 1.0 depth 1.0 inset 0.0 top? false bottom? false}}]
       (let [points (if (neg? (g/area _)) (reverse points) points)
             poly (polygon points)
-            tpoints (if (zero? inset) points (:points (inset-polygon poly (c- inset))))
-            ipoints (:points (inset-polygon poly (c- wall)))
-            itpoints (:points (inset-polygon poly (c- (c- inset) wall)))
+            tpoints (if (zero? inset) points (:points (inset-polygon poly (- inset))))
+            ipoints (:points (inset-polygon poly (- wall)))
+            itpoints (:points (inset-polygon poly (- (- inset) wall)))
             off (or offset (vec3 0 0 depth))
             ioff (if bottom? (g/normalize off wall) (vec3))
-            itoff (if top? (g/normalize off (c- (g/mag off) wall)) off)
+            itoff (if top? (g/normalize off (- (g/mag off) wall)) off)
             maxp (inc (count points))
             quad? (= 4 (count points))
             nump (if nump (m/clamp nump 2 maxp) maxp)
@@ -332,9 +330,9 @@
                             (if flip? [a1 b1 b2 a2] [a1 a2 b2 b1]))
                           (d/successive-nth 2 a) (d/successive-nth 2 b)))
             points3 (mapv #(vec3 %) points)
-            ipoints3 (mapv #(+ ioff %) ipoints)
-            tpoints3 (mapv #(+ off %) tpoints)
-            itpoints3 (mapv #(+ itoff %) itpoints)
+            ipoints3 (mapv #(g/+ ioff %) ipoints)
+            tpoints3 (mapv #(g/+ off %) tpoints)
+            itpoints3 (mapv #(g/+ itoff %) itpoints)
             outsides (quad-strip (maybe-loop points3) (maybe-loop tpoints3) true)
             insides (quad-strip (maybe-loop ipoints3) (maybe-loop itpoints3) false)]
         (gmesh/into-mesh
@@ -348,10 +346,10 @@
                     (tessellate*)
                     (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)]))))
              (if quad?
-               [(mapv #(+ ioff %) ipoints)]
+               [(mapv #(g/+ ioff %) ipoints)]
                (->> ipoints
                     (tessellate*)
-                    (map (fn [[a b c]] [(+ ioff a) (+ ioff b) (+ ioff c)]))))
+                    (map (fn [[a b c]] [(g/+ ioff a) (g/+ ioff b) (g/+ ioff c)]))))
              (when-not complete?
                (quad-strip (drop-wrap points3) (drop-wrap ipoints3) true)))
             (quad-strip (maybe-loop points3) (maybe-loop ipoints3) false))
@@ -364,34 +362,34 @@
           (if top?
             (concat
              (if quad?
-               [(mapv #(+ off %) tpoints)]
+               [(mapv #(g/+ off %) tpoints)]
                (->> tpoints
                     (tessellate*)
-                    (map (fn [[a b c]] [(+ off a) (+ off b) (+ off c)]))))
+                    (map (fn [[a b c]] [(g/+ off a) (g/+ off b) (g/+ off c)]))))
              (if quad?
-               [(rseq (mapv #(+ itoff %) itpoints))]
+               [(rseq (mapv #(g/+ itoff %) itpoints))]
                (->> itpoints
                     (tessellate*)
-                    (map (fn [[a b c]] [(+ itoff b) (+ itoff a) (+ itoff c)]))))
+                    (map (fn [[a b c]] [(g/+ itoff b) (g/+ itoff a) (g/+ itoff c)]))))
              (when-not complete? (quad-strip (drop-wrap tpoints3) (drop-wrap itpoints3) false)))
             (quad-strip (maybe-loop tpoints3) (maybe-loop itpoints3) true))))))  
 #+END_SRC
-*** PTransformable
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
-  g/PTransformable
+*** PTransform
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+  g/PTransform
   (scale
-   ([_ s] (thi.ng.geom.types.Polygon. (mapv #(* % s) (:points _)) []))
-   ([_ a b] (thi.ng.geom.types.Polygon. (mapv #(* % a b) (:points _)) [])))
+   ([_ s] (thi.ng.geom.types.Polygon. (mapv #(g/* % s) (:points _)) []))
+   ([_ a b] (thi.ng.geom.types.Polygon. (mapv #(g/* % a b) (:points _)) [])))
   (scale-size
    [_ s]
    (let [c (g/centroid _)]
      (thi.ng.geom.types.Polygon.
-      (mapv #(-> % (- c) (g/madd s c)) (:points _)) [])))
+      (mapv #(-> % (g/- c) (g/madd s c)) (:points _)) [])))
   (translate
    [_ t]
-   (thi.ng.geom.types.Polygon. (mapv #(+ % t) (:points _)) []))
+   (thi.ng.geom.types.Polygon. (mapv #(g/+ % t) (:points _)) []))
 #+END_SRC
 *** End of implementations                                         :noexport:
-#+BEGIN_SRC clojure :tangle babel/src-cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   )
 #+END_SRC
