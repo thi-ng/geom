@@ -1,5 +1,6 @@
 #+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
 #+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
 #+TITLE:          Geometry Kit
 #+AUTHOR:         Karsten Schmidt
 #+EMAIL:          k@thi.ng
@@ -9,12 +10,10 @@
 #+HTML_DOCTYPE:   <!DOCTYPE html5>
 #+HTML_HEAD:      <link href='http://fonts.googleapis.com/css?family=Droid+Sans:400,700' rel='stylesheet' type='text/css'>
 #+HTML_HEAD:      <link rel="stylesheet" type="text/css" href="css/main.css" />
-#+EXPORT_EXCLUDE_TAGS: noexport
 #+LINK_UP:        ../index.html
 #+LINK_HOME:      ../index.html
 
 * About the project
-
 ** Injected properties                                             :noexport:
 #+BEGIN_SRC clojure :exports none :noweb-ref version
 0.2.0-SNAPSHOT
@@ -22,17 +21,27 @@
 #+BEGIN_SRC clojure :exports none :noweb-ref project-url
 http://code.thi.ng/geom
 #+END_SRC
+#+BEGIN_SRC clojure :exports none :noweb-ref gen-source-path
+target/generated-src
+#+END_SRC
+#+BEGIN_SRC clojure :exports none :noweb-ref gen-test-path
+target/generated-specs
+#+END_SRC
+#+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref cljs-artefact-path
+target/cljs/geom-<<version>>.js
+#+END_SRC
 ** Objectives
-** Literal programming format
-#+INCLUDE: "../literalprogramming/literalprogramming.org"
+** Literate programming format
+#+INCLUDE: "../literateprogramming/literateprogramming.org"
 ** License
    This project is open source and licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache Software License 2.0]].
 ** Dependencies
 *** Runtime
-**** [[https://github.com/clojure/clojure][Clojure]] & [[https://github.com/clojure/clojurescript][ClojureScript]]
+**** [[https://github.com/clojure/clojure][Clojure]]
 #+BEGIN_SRC clojure :noweb-ref dep-clj
 [org.clojure/clojure "1.5.1"]
 #+END_SRC
+**** [[https://github.com/clojure/clojurescript][ClojureScript]]
 #+BEGIN_SRC clojure :noweb-ref dep-cljs
 [org.clojure/clojurescript "0.0-2156"]
 #+END_SRC
@@ -52,7 +61,21 @@ http://code.thi.ng/geom
 **** [[http://speclj.com/][speclj]]
 #+BEGIN_SRC clojure :noweb-ref dep-speclj
 [speclj "2.9.1"]
+[specljs "2.9.1"]
 #+END_SRC
+**** [[][criterium]]
+#+BEGIN_SRC clojure :noweb-ref dep-criterium
+[criterium "0.4.1"]
+#+END_SRC
+**** [[][piggieback]]
+#+BEGIN_SRC clojure :noweb-ref dep-piggie
+[com.cemerick/piggieback "0.1.2"]
+#+END_SRC
+**** [[][austin]]
+#+BEGIN_SRC clojure :noweb-ref dep-austin
+[com.cemerick/austin "0.1.3"]
+#+END_SRC
+
 ** Authors
    | [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://thi.ng][thi.ng]]              |
    |                 |                                 | [[http://postspectacular.com][postspectacular.com]] |
@@ -63,49 +86,65 @@ http://code.thi.ng/geom
    |     0.1.0 | 2013-10-01 | initial development release |
 
 ** Leiningen coordinates
-#+BEGIN_SRC clojure :noweb yes
+#+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
   [thi.ng/geom <<version>>]
 #+END_SRC
-
 ** Leiningen project file                                          :noexport:
 #+BEGIN_SRC clojure :tangle babel/project.clj :noweb yes :mkdirp yes :padline no
   (defproject thi.ng/geom "<<version>>"
-    :description "Linked Data Kit - a Clojure toolkit for the Semantic Web"
+    :description "thing geometry kit"
     :url "<<project-url>>"
     :license {:name "Apache Software License"
               :url "http://www.eclipse.org/legal/epl-v10.html"}
     :dependencies [<<dep-clj>>
+                   <<dep-cljs>>
                    <<dep-common>>]
-    :jar-exclusions [#"\.cljx|\.DS_Store|\.js|\.html"]
-    :source-paths ["src-clj"]
+    :plugins [<<dep-cljx>>
+              <<dep-cljsbuild>>
+              <<dep-speclj>>]
+    
+    :source-paths ["src/clj" "<<gen-source-path>>/clj" "<<gen-source-path>>/cljs"]
+    :test-paths ["specs" "<<gen-test-path>>"]
   
-    :cljx {:builds [{:source-paths ["src-cljx"]
-                     :output-path "src-clj"
-                     :rules :clj}
-                    {:source-paths ["src-cljx"]
-                     :output-path "src-cljs"
-                     :rules :cljs}]}
-  
-    :cljsbuild {:builds
-                [{:id "dev"
-                  :source-paths ["src-cljs" "src-clj"]
-                  :compiler
-                  {:pretty-print true
-                   :output-to "resources/public/js/geom-<<version>>.js"
-                   :optimizations :simple}
-                  :jar true}]}
-  
-    :profiles {:dev {:plugins [<<dep-cljx>>
-                               <<dep-cljsbuild>>]
-                     :dependencies [<<dep-cljs>>
+    :profiles {:dev {:dependencies [<<dep-criterium>>
+                                    <<dep-piggie>>
                                     <<dep-speclj>>]
-                     :hooks [cljx.hooks]}
-               :cljs {:plugins [<<dep-cljsbuild>>]
-                      :dependencies [<<dep-cljs>>]
-                      :hooks [leiningen.cljsbuild]}}
+                     :plugins [<<dep-austin>>]
+                     :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}}
   
-    :plugins [<<dep-speclj>>]
-    :test-paths ["specs"])
+    :aliases {"autotest" ["do" "clean," "cljx" "once," "spec" "-a"]
+              "test-all" ["do" "clean," "cljx" "once," "spec," "cljsbuild" "test"]}
+  
+    :cljx {:builds [{:source-paths ["src/cljx"]
+                     :output-path "<<gen-source-path>>/clj"
+                     :rules :clj}
+                    {:source-paths ["src/cljx"]
+                     :output-path "<<gen-source-path>>/cljs"
+                     :rules :cljs}
+                    {:source-paths ["specs"]
+                     :output-path "<<gen-test-path>>"
+                     :rules :clj}
+                    {:source-paths ["specs"]
+                     :output-path "<<gen-test-path>>"
+                     :rules :cljs}]}
+    :cljsbuild {:builds [{:source-paths ["<<gen-source-path>>/cljs" "<<gen-test-path>>"]
+                          :id "ws-only"
+                          :compiler {:output-to "<<cljs-artefact-path>>"
+                                     :optimizations :whitespace
+                                     :pretty-print true}}
+                         {:source-paths ["<<gen-source-path>>/cljs" "<<gen-test-path>>"]
+                          :id "simple"
+                          :compiler {:output-to "<<cljs-artefact-path>>"
+                                     :optimizations :simple
+                                     :pretty-print true}}]
+                :test-commands {"unit-tests"
+                                ["phantomjs"
+                                 "specljs_runner.js" "<<cljs-artefact-path>>"]}})
+#+END_SRC
+** Store version in separate namespace
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/version.cljx :noweb yes :mkdirp yes :padline no
+(ns thi.ng.geom.version)
+(def ^:const version "<<version>>")
 #+END_SRC
 
 * Modules
@@ -132,14 +171,39 @@ http://code.thi.ng/geom
 #+INCLUDE: "meshio.org" :minlevel 2
 
 * ClojureScript test harness                                       :noexport:
-#+BEGIN_SRC html :tangle babel/resources/public/index.html
+  Test runner code taken from:
+  https://github.com/ecmendenhall/specljs-template/blob/master/src/leiningen/new/specljs/specljs_runner.js
+
+#+BEGIN_SRC shell :tangle babel/specljs_runner.js :mkdirp yes :padline no
+  #! /usr/bin/env phantomjs
+  
+  var fs = require("fs");
+  var p = require('webpage').create();
+  var sys = require('system');
+  
+  p.onConsoleMessage = function (x) {
+    fs.write("/dev/stdout", x, "w");
+  };
+  
+  p.injectJs(phantom.args[0]);
+  
+  var result = p.evaluate(function () {
+                 specljs.run.standard.armed = true;
+                 return specljs.run.standard.run_specs(
+                   cljs.core.keyword("color"), true
+                 );
+               });
+  
+  phantom.exit(result);
+#+END_SRC
+#+BEGIN_SRC html :tangle babel/index.html :noweb yes :mkdirp yes :padline no
   <!DOCTYPE html>
   <html lang="en">
     <head>
-      <title>thing-geom test</title>
+      <title><<lein-coords>> test</title>
     </head>
     <body>
-      <script type="text/javascript" src="js/geom.js"></script>
+      <script type="text/javascript" src="<<cljs-artefact-path>>"></script>
     </body>
   </html>
 #+END_SRC
