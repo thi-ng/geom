@@ -47,20 +47,6 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
   (extend-type thi.ng.geom.types.Circle
 #+END_SRC
-*** PGraph
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
-  g/PGraph
-  (vertices
-   ([_] (g/vertices _ *resolution*))
-   ([_ res]
-      (map #(g/point-at _ %) (butlast (m/norm-range res)))))
-  (edges
-   ([_] (g/edges _ *resolution*))
-   ([_ res]
-      (let [verts (g/vertices _ res)]
-        (g/edges* #(thi.ng.geom.types.Line2. (% 0) (% 1))
-                  (concat verts [(first verts)])))))
-#+END_SRC
 *** PArea
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
   g/PArea
@@ -76,6 +62,18 @@
   (height [_] (* 2.0 (:r _)))
   (depth  [_] 0)
 #+END_SRC
+*** PBoundingCircle
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
+  g/PBoundingCircle
+  (bounding-circle [_] _)
+#+END_SRC
+*** PBoundary
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
+  g/PBoundary
+  (contains-point?
+   [{p :p r :r} q]
+   (<= (g/mag-squared (g/- p q)) (* r r)))
+#+END_SRC
 *** PCenter
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
   g/PCenter
@@ -84,84 +82,17 @@
    ([_ p] (thi.ng.geom.types.Circle. (vec2 p) (:r _))))
   (centroid [_] (:p _))
 #+END_SRC
-*** PBoundingCircle
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
-  g/PBoundingCircle
-  (bounding-circle [_] _)
-#+END_SRC
 *** PCircumference
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
   g/PCircumference
   (circumference [_] (* TWO_PI (:r _)))
 #+END_SRC
-*** PBoundary
+*** PClassify
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
   g/PClassify
   (classify-point
    [_ q]
    (m/signum (- (:r _) (g/dist (:p _) q)) *eps*))
-  g/PProximity
-  (closest-point
-   [{p :p r :r} q]
-   (g/+ p (g/normalize (g/- q p) r)))
-  g/PBoundary
-  (contains-point?
-   [{p :p r :r} q]
-   (<= (g/mag-squared (g/- p q)) (* r r)))
-#+END_SRC
-*** PSample
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
-  g/PSample
-  (point-at
-   [_ t]
-   (g/+ (:p _) (g/as-cartesian (vec2 (:r _) (* t TWO_PI)))))
-  (random-point
-   [_] (g/point-at _ (m/random)))
-  (random-point-inside
-   [_]
-   (g/+ (:p _) (g/randvec2 (m/random (:r _)))))
-  (sample-uniform
-   [_ udist include-last?]
-   (let [points (g/vertices _)]
-     (g/sample-uniform* udist include-last? (conj (vec points) (first points)))))
-#+END_SRC
-*** PIntersect
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
-  g/PIntersect
-  (intersect-shape
-   [_ s]
-   (cond
-    (instance? thi.ng.geom.types.Circle s) (intersect-circle _ s)
-    (instance? thi.ng.geom.types.Rect s) (g/intersect-shape s _)
-    :default (g/type-error "Circle" s)))
-#+END_SRC
-*** PPolygonConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
-  g/PPolygonConvert
-  (as-polygon
-   ([_] (g/as-polygon _ *resolution*))
-   ([_ res] (thi.ng.geom.types.Polygon. (vec (g/vertices _ res)) [])))
-#+END_SRC
-*** PMeshConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
-  g/PMeshConvert
-  (as-mesh
-   ([_] (g/as-mesh _ *resolution*))
-   ([_ res] (mesh/into-mesh (mesh/mesh2) nil (g/tessellate* (:p _) (g/vertices _ res)))))
-#+END_SRC
-*** PTessellate
-     A circle can be tessellated into a list of uniform triangles,
-     each sharing the circle's centroid. If called without 2nd
-     argument the default circle =*resolution*= (a dynamic var defined
-     in [[file:geom.org][thi.ng.geom.core]]) will be used.
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
-  g/PTessellate
-  (tessellate
-   ([_] (g/tessellate _ *resolution*))
-   ([{p :p :as _} res]
-      (->> (g/vertices _ res)
-          (g/tessellate* p)
-          (map #(thi.ng.geom.types.Triangle2. (% 0) (% 1) (% 2))))))
 #+END_SRC
 *** PExtrude
 **** TODO don't use polygon as intermediary to ensure better tessellation using centroid
@@ -190,6 +121,86 @@
          (->> tpoints
               (g/tessellate* (:p _))
               (map (fn [[a b c]] [(g/+ off b) (g/+ off a) (g/+ off c)]))))))))
+#+END_SRC
+*** PGraph
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
+  g/PGraph
+  (vertices
+   ([_] (g/vertices _ *resolution*))
+   ([_ res]
+      (map #(g/point-at _ %) (butlast (m/norm-range res)))))
+  (edges
+   ([_] (g/edges _ *resolution*))
+   ([_ res]
+      (let [verts (g/vertices _ res)]
+        (g/edges* #(thi.ng.geom.types.Line2. (% 0) (% 1))
+                  (concat verts [(first verts)])))))
+#+END_SRC
+*** PIntersect
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
+  g/PIntersect
+  (intersect-shape
+   [_ s]
+   (cond
+    (instance? thi.ng.geom.types.Circle s) (intersect-circle _ s)
+    (instance? thi.ng.geom.types.Rect s) (g/intersect-shape s _)
+    :default (g/type-error "Circle" s)))
+#+END_SRC
+*** PMeshConvert
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
+  g/PMeshConvert
+  (as-mesh
+   ([_] (g/as-mesh _ *resolution*))
+   ([_ res] (mesh/into-mesh (mesh/mesh2) nil (g/tessellate* (:p _) (g/vertices _ res)))))
+#+END_SRC
+*** PPolygonConvert
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
+  g/PPolygonConvert
+  (as-polygon
+   ([_] (g/as-polygon _ *resolution*))
+   ([_ res] (thi.ng.geom.types.Polygon. (vec (g/vertices _ res)) [])))
+#+END_SRC
+*** PProximity
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
+  g/PProximity
+  (closest-point
+   [{p :p r :r} q]
+   (g/+ p (g/normalize (g/- q p) r)))
+#+END_SRC
+*** PSample
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
+  g/PSample
+  (point-at
+   [_ t]
+   (g/+ (:p _) (g/as-cartesian (vec2 (:r _) (* t TWO_PI)))))
+  (random-point
+   [_] (g/point-at _ (m/random)))
+  (random-point-inside
+   [_]
+   (g/+ (:p _) (g/randvec2 (m/random (:r _)))))
+  (sample-uniform
+   [_ udist include-last?]
+   (let [points (g/vertices _)]
+     (g/sample-uniform* udist include-last? (conj (vec points) (first points)))))
+#+END_SRC
+*** PTessellate
+     A circle can be tessellated into a list of uniform triangles,
+     each sharing the circle's centroid. If called without 2nd
+     argument the default circle =*resolution*= (a dynamic var defined
+     in [[file:geom.org][thi.ng.geom.core]]) will be used.
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
+  g/PTessellate
+  (tessellate
+   ([_] (g/tessellate _ *resolution*))
+   ([{p :p :as _} res]
+      (->> (g/vertices _ res)
+          (g/tessellate* p)
+          (map #(thi.ng.geom.types.Triangle2. (% 0) (% 1) (% 2))))))
+#+END_SRC
+*** PVolume
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
+  g/PVolume
+  (volume [_] 0)
 #+END_SRC
 *** End of implementations                                         :noexport:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx

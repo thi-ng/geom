@@ -29,12 +29,12 @@
     `(if (~voxels ~idx) ~id (bit-or ~id ~mask)))
 #+END_SRC
 ** Tangle for CLJ & CLJS                                     :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/clj/thi/ng/geom/macros/core.clj :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/core.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.macros.core)
   
   <<mat-ops>>
 #+END_SRC
-#+BEGIN_SRC clojure :tangle babel/src/clj/thi/ng/geom/macros/voxel.clj :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/voxel.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.macros.voxel)
   
   <<voxel-ops>>

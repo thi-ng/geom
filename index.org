@@ -22,13 +22,13 @@
 http://code.thi.ng/geom
 #+END_SRC
 #+BEGIN_SRC clojure :exports none :noweb-ref gen-source-path
-target/generated-src
+target/classes
 #+END_SRC
 #+BEGIN_SRC clojure :exports none :noweb-ref gen-test-path
-target/generated-specs
+target/test-classes
 #+END_SRC
 #+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref cljs-artefact-path
-target/cljs/geom-<<version>>.js
+target/geom-<<version>>.js
 #+END_SRC
 ** Objectives
 ** Literate programming format
@@ -39,7 +39,7 @@ target/cljs/geom-<<version>>.js
 *** Runtime
 **** [[https://github.com/clojure/clojure][Clojure]]
 #+BEGIN_SRC clojure :noweb-ref dep-clj
-[org.clojure/clojure "1.5.1"]
+[org.clojure/clojure "1.6.0-beta1"]
 #+END_SRC
 **** [[https://github.com/clojure/clojurescript][ClojureScript]]
 #+BEGIN_SRC clojure :noweb-ref dep-cljs
@@ -63,19 +63,18 @@ target/cljs/geom-<<version>>.js
 [speclj "2.9.1"]
 [specljs "2.9.1"]
 #+END_SRC
-**** [[][criterium]]
+**** [[https://github.com/hugoduncan/criterium][criterium]]
 #+BEGIN_SRC clojure :noweb-ref dep-criterium
 [criterium "0.4.1"]
 #+END_SRC
-**** [[][piggieback]]
-#+BEGIN_SRC clojure :noweb-ref dep-piggie
-[com.cemerick/piggieback "0.1.2"]
-#+END_SRC
-**** [[][austin]]
+**** [[https://github.com/cemerick/austin][austin]]
 #+BEGIN_SRC clojure :noweb-ref dep-austin
-[com.cemerick/austin "0.1.3"]
+[com.cemerick/austin "0.1.4"]
 #+END_SRC
-
+**** [[https://github.com/cemerick/clojurescript.test][clojurescript.test]]
+#+BEGIN_SRC clojure :noweb-ref dep-cljs-test
+[com.cemerick/clojurescript.test "0.2.2"]
+#+END_SRC
 ** Authors
    | [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://thi.ng][thi.ng]]              |
    |                 |                                 | [[http://postspectacular.com][postspectacular.com]] |
@@ -91,55 +90,44 @@ target/cljs/geom-<<version>>.js
 #+END_SRC
 ** Leiningen project file                                          :noexport:
 #+BEGIN_SRC clojure :tangle babel/project.clj :noweb yes :mkdirp yes :padline no
-  (defproject thi.ng/geom "<<version>>"
-    :description "thing geometry kit"
-    :url "<<project-url>>"
-    :license {:name "Apache Software License"
-              :url "http://www.eclipse.org/legal/epl-v10.html"}
-    :dependencies [<<dep-clj>>
-                   <<dep-cljs>>
-                   <<dep-common>>]
-    :plugins [<<dep-cljx>>
-              <<dep-cljsbuild>>
-              <<dep-speclj>>]
+    (defproject thi.ng/geom "<<version>>"
+      :description "thing geometry kit"
+      :url "<<project-url>>"
+      :license {:name "Apache Software License"
+                :url "http://www.eclipse.org/legal/epl-v10.html"}
+      :dependencies [<<dep-clj>>
+                     <<dep-common>>]
     
-    :source-paths ["src/clj" "<<gen-source-path>>/clj" "<<gen-source-path>>/cljs"]
-    :test-paths ["specs" "<<gen-test-path>>"]
-  
-    :profiles {:dev {:dependencies [<<dep-criterium>>
-                                    <<dep-piggie>>
-                                    <<dep-speclj>>]
-                     :plugins [<<dep-austin>>]
-                     :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}}
-  
-    :aliases {"autotest" ["do" "clean," "cljx" "once," "spec" "-a"]
-              "test-all" ["do" "clean," "cljx" "once," "spec," "cljsbuild" "test"]}
-  
-    :cljx {:builds [{:source-paths ["src/cljx"]
-                     :output-path "<<gen-source-path>>/clj"
-                     :rules :clj}
-                    {:source-paths ["src/cljx"]
-                     :output-path "<<gen-source-path>>/cljs"
-                     :rules :cljs}
-                    {:source-paths ["specs"]
-                     :output-path "<<gen-test-path>>"
-                     :rules :clj}
-                    {:source-paths ["specs"]
-                     :output-path "<<gen-test-path>>"
-                     :rules :cljs}]}
-    :cljsbuild {:builds [{:source-paths ["<<gen-source-path>>/cljs" "<<gen-test-path>>"]
-                          :id "ws-only"
-                          :compiler {:output-to "<<cljs-artefact-path>>"
-                                     :optimizations :whitespace
-                                     :pretty-print true}}
-                         {:source-paths ["<<gen-source-path>>/cljs" "<<gen-test-path>>"]
-                          :id "simple"
-                          :compiler {:output-to "<<cljs-artefact-path>>"
-                                     :optimizations :simple
-                                     :pretty-print true}}]
-                :test-commands {"unit-tests"
-                                ["phantomjs"
-                                 "specljs_runner.js" "<<cljs-artefact-path>>"]}})
+      :source-paths ["src/cljx"]
+      :test-paths ["<<gen-test-path>>"]
+    
+      :profiles {:dev {:dependencies [<<dep-cljs>>
+                                      <<dep-criterium>>]
+                       :plugins [<<dep-cljx>>
+                                 <<dep-cljsbuild>>
+                                 <<dep-cljs-test>>
+                                 <<dep-austin>>]
+                       :aliases {"cleantest" ["do" "clean," "cljx" "once," "test," "cljsbuild" "test"]}}}
+    
+      :cljx {:builds [{:source-paths ["src/cljx"]
+                       :output-path "<<gen-source-path>>"
+                       :rules :clj}
+                      {:source-paths ["src/cljx"]
+                       :output-path "<<gen-source-path>>"
+                       :rules :cljs}
+                      {:source-paths ["test/cljx"]
+                       :output-path "<<gen-test-path>>"
+                       :rules :clj}
+                      {:source-paths ["test/cljx"]
+                       :output-path "<<gen-test-path>>"
+                       :rules :cljs}]}
+    
+      :cljsbuild {:builds [{:source-paths ["<<gen-source-path>>" "<<gen-test-path>>"]
+                            :id "simple"
+                            :compiler {:output-to "<<cljs-artefact-path>>"
+                                       :optimizations :whitespace
+                                       :pretty-print true}}]
+                  :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}})
 #+END_SRC
 ** Store version in separate namespace
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/version.cljx :noweb yes :mkdirp yes :padline no
@@ -171,31 +159,6 @@ target/cljs/geom-<<version>>.js
 #+INCLUDE: "meshio.org" :minlevel 2
 
 * ClojureScript test harness                                       :noexport:
-  Test runner code taken from:
-  https://github.com/ecmendenhall/specljs-template/blob/master/src/leiningen/new/specljs/specljs_runner.js
-
-#+BEGIN_SRC shell :tangle babel/specljs_runner.js :mkdirp yes :padline no
-  #! /usr/bin/env phantomjs
-  
-  var fs = require("fs");
-  var p = require('webpage').create();
-  var sys = require('system');
-  
-  p.onConsoleMessage = function (x) {
-    fs.write("/dev/stdout", x, "w");
-  };
-  
-  p.injectJs(phantom.args[0]);
-  
-  var result = p.evaluate(function () {
-                 specljs.run.standard.armed = true;
-                 return specljs.run.standard.run_specs(
-                   cljs.core.keyword("color"), true
-                 );
-               });
-  
-  phantom.exit(result);
-#+END_SRC
 #+BEGIN_SRC html :tangle babel/index.html :noweb yes :mkdirp yes :padline no
   <!DOCTYPE html>
   <html lang="en">

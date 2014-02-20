@@ -36,7 +36,7 @@
 #+END_SRC
 ** Type specific functions
 *** Sutherland-Hodgeman convex clipping
- g/- http://en.wikipedia.org/wiki/Sutherland-Hodgman_algorithm
+ - http://en.wikipedia.org/wiki/Sutherland-Hodgman_algorithm
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   (defn clip-convex*
     [verts bounds]
@@ -169,20 +169,6 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   (extend-type thi.ng.geom.types.Polygon
 #+END_SRC
-*** PGraph
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
-  g/PGraph
-  (vertices
-   [_] (:points _))
-  (edges
-   [{points :points}]
-   (g/edges* #(thi.ng.geom.types.Line2. (% 0) (% 1))
-             (conj points (first points))))
-  (vertex-neighbors
-   [_ v] (d/neighbors v (g/vertices _)))
-  (vertex-valence
-   [_ v] (if ((set (g/vertices _)) (vec2 v)) 2 0))
-#+END_SRC
 *** PArea
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PArea
@@ -201,6 +187,27 @@
   (width [_] (g/axis-range* 0 (:points _)))
   (height [_] (g/axis-range* 1 (:points _)))
   (depth [_] 0)
+#+END_SRC
+*** PBoundingCircle
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+  g/PBoundingCircle
+  (bounding-circle
+   [_] (g/bounding-circle* (g/centroid _) (:points _)))
+#+END_SRC
+*** PBoundary
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+  g/PBoundary
+  (contains-point?
+   [{points :points} p]
+   (if (some #{p} points) true
+       (let [[x y] p]
+         (first
+          (reduce
+           (fn [[in [px py]] [vx vy]]
+             (if (and (or (and (< vy y) (>= py y)) (and (< py y) (>= vy y)))
+                      (< (+ vx (* (/ (- y vy) (- py vy)) (- px vx))) x))
+               [(not in) [vx vy]] [in [vx vy]]))
+           [false (last points)] points)))))
 #+END_SRC
 *** PCenter
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
@@ -223,12 +230,6 @@
                 (first))]
      (g/* c (/ 1.0 (* 6 (g/area _))))))  
 #+END_SRC
-*** PBoundingCircle
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
-  g/PBoundingCircle
-  (bounding-circle
-   [_] (g/bounding-circle* (g/centroid _) (:points _)))
-#+END_SRC
 *** PCircumference
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PCircumference
@@ -236,44 +237,23 @@
    [{points :points}]
    (d/reduce-pairs + g/dist (concat points [(first points)])))
 #+END_SRC
-*** TODO PBoundary
+*** TODO PClassify
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PClassify
   (classify-point
-   [_ p] nil) ; TODO
-  g/PProximity
-  (closest-point
-   [_ p] (g/closest-point* (g/edges _) p))
-  g/PBoundary
-  (contains-point?
-   [{points :points} p]
-   (if (some #{p} points) true
-       (let [[x y] p]
-         (first
-          (reduce
-           (fn [[in [px py]] [vx vy]]
-             (if (and (or (and (< vy y) (>= py y)) (and (< py y) (>= vy y)))
-                      (< (+ vx (* (/ (- y vy) (- py vy)) (- px vx))) x))
-               [(not in) [vx vy]] [in [vx vy]]))
-           [false (last points)] points)))))
+   [_ p] nil)
 #+END_SRC
-*** TODO PSample
+*** PClip
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
-  g/PSample
-  (point-at
-   [{points :points} t] (g/point-at* t (conj points (first points))))
-  (random-point
-   [_] (g/point-at _ (m/random)))
-  (random-point-inside [_] nil) ; TODO
-  (sample-uniform
-   [{points :points} udist include-last?]
-   (g/sample-uniform* udist include-last? (conj points (first points))))
+  g/PClip
+  (clip-with
+   [_ s] (polygon (clip-convex* (:points _) s)))
 #+END_SRC
-*** PTessellate
+*** PConvexHull
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
-  g/PTessellate
-  (tessellate
-   [_] (map #(thi.ng.geom.types.Triangle2. (% 0) (% 1) (% 2)) (tessellate* _)))
+  g/PConvexHull
+  (convex-hull
+   [_] (polygon (convex-hull* (:points _))))
 #+END_SRC
 *** PExtrude
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
@@ -373,6 +353,44 @@
                     (map (fn [[a b c]] [(g/+ itoff b) (g/+ itoff a) (g/+ itoff c)]))))
              (when-not complete? (quad-strip (drop-wrap tpoints3) (drop-wrap itpoints3) false)))
             (quad-strip (maybe-loop tpoints3) (maybe-loop itpoints3) true))))))  
+#+END_SRC
+*** PGraph
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+  g/PGraph
+  (vertices
+   [_] (:points _))
+  (edges
+   [{points :points}]
+   (g/edges* #(thi.ng.geom.types.Line2. (% 0) (% 1))
+             (conj points (first points))))
+  (vertex-neighbors
+   [_ v] (d/neighbors v (g/vertices _)))
+  (vertex-valence
+   [_ v] (if ((set (g/vertices _)) (vec2 v)) 2 0))
+#+END_SRC
+*** PProximity
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+  g/PProximity
+  (closest-point
+   [_ p] (g/closest-point* (g/edges _) p))
+#+END_SRC
+*** TODO PSample
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+  g/PSample
+  (point-at
+   [{points :points} t] (g/point-at* t (conj points (first points))))
+  (random-point
+   [_] (g/point-at _ (m/random)))
+  (random-point-inside [_] nil) ; TODO
+  (sample-uniform
+   [{points :points} udist include-last?]
+   (g/sample-uniform* udist include-last? (conj points (first points))))
+#+END_SRC
+*** PTessellate
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+  g/PTessellate
+  (tessellate
+   [_] (map #(thi.ng.geom.types.Triangle2. (% 0) (% 1) (% 2)) (tessellate* _)))
 #+END_SRC
 *** PTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
