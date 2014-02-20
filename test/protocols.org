@@ -1,0 +1,119 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+* thi.ng.geom.test.protocols
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/protocols.cljx :mkdirp yes :padline no
+  (ns thi.ng.geom.test.protocols
+    ,#+cljs
+    (:require-macros
+     [cemerick.cljs.test :refer (is deftest with-test run-tests testing)])
+    (:require
+     [thi.ng.common.math.core :as m :refer [*eps*]]
+     [thi.ng.geom.core :as g :refer [vec2 vec3]]
+     [thi.ng.geom.types :as types]
+     [thi.ng.geom.aabb]
+     [thi.ng.geom.bezier]
+     [thi.ng.geom.circle]
+     [thi.ng.geom.line]
+     [thi.ng.geom.polygon]
+     [thi.ng.geom.quad]
+     [thi.ng.geom.rect]
+     [thi.ng.geom.triangle]
+     [thi.ng.geom.tetrahedron]
+     [thi.ng.geom.mesh]
+     [thi.ng.geom.sphere]
+     [thi.ng.geom.plane]
+     [thi.ng.geom.path]
+     [thi.ng.geom.types]
+     ,#+clj [clojure.test :refer :all]
+     ,#+cljs [cemerick.cljs.test :as t])
+    ,#+clj
+    (:import
+     [thi.ng.geom.core
+      Matrix32 Matrix44 Quaternion Vec2 Vec3]
+     [thi.ng.geom.types
+      Line2 LineStrip2 Bezier2 Triangle2 Circle Ellipse Rect Polygon Path2 Mesh2
+      Line3 LineStrip3 Bezier3 Plane Triangle3 Tetrahedron Quad3 AABB Sphere Mesh3]))
+#+END_SRC
+** Helpers
+#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/protocols.cljx
+  (def proto-ids
+    {:area g/PGraph
+     :bounds g/PBounds
+     :bcircle g/PBoundingCircle
+     :bsphere g/PBoundingSphere
+     :boundary g/PBoundary
+     :center g/PCenter
+     :chull g/PConvexHull
+     :circum g/PCircumference
+     :class g/PClassify
+     :clip g/PClip
+     :cross g/PCrossProduct
+     :dist g/PDistance
+     :dot g/PDotProduct
+     :ext g/PExtrude
+     :graph g/PGraph
+     :head g/PHeading
+     :isec g/PIntersect
+     :inv g/PInvert
+     :limit g/PLimit
+     :mag g/PMagnitude
+     :mat g/PMatrix
+     :math g/PMathOps
+     :mesh g/PMeshConvert
+     :mimax g/PMinMax
+     :mix g/PInterpolate
+     :norm g/PNormalize
+     :polar g/PPolar
+     :poly g/PPolygonConvert
+     :prox g/PProximity
+     :refl g/PReflect
+     :sample g/PSample
+     :tess g/PTessellate
+     :tx g/PTransform
+     :vol g/PVolume
+     :vtx g/PVectorTransform})
+
+  #+clj
+  (defn satisfies-all?
+    [type & protos]
+    (testing
+        ,#+clj  (.getName type)
+        ,#+cljs (str type)
+        (doseq [p protos]
+          (is (true? (extends? (proto-ids p) type))
+              (str (get-in proto-ids [p :on-interface]))))))
+#+END_SRC
+** Main context
+#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/protocols.cljx
+  ,#+clj
+  (deftest proto-implementation-check
+    (dorun
+     (map
+      (fn [[t protos]] (apply satisfies-all? t protos))
+      {thi.ng.geom.types.AABB
+       [:area :bounds :bsphere :boundary :center :class :graph
+        :isec :mesh :prox :sample :tess :vol]
+  
+       thi.ng.geom.types.Circle
+       [:area :bounds :bcircle :boundary :center :circum :class
+        :ext :graph :isec :mesh :poly :prox :sample :tess :vol]
+  
+       thi.ng.geom.types.Polygon
+       [:area :bounds :bcircle :boundary :center :circum :chull
+        :class :clip :ext :graph :isec :mesh :poly :prox :sample :tess :tx :vol]
+  
+       ;; core types
+  
+       thi.ng.geom.core.Matrix32 [:math :mat :inv :tx :vtx]
+       thi.ng.geom.core.Matrix44 [:math :mat :inv :tx :vtx]
+  
+       thi.ng.geom.core.Vec2
+       [:math :dot :cross :dist :head :mix :limit :mag :norm :polar :refl :inv :tx]
+  
+       thi.ng.geom.core.Vec3
+       [:math :dot :cross :dist :head :mix :limit :mag :norm :polar :refl :inv :tx]})))
+#+END_SRC
+
