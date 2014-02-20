@@ -8,6 +8,7 @@
   (ns thi.ng.geom.aabb
     (:require
      [thi.ng.common.data.core :as d]
+     [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps*]]
      [thi.ng.geom.core :as g :refer [vec3]]
      [thi.ng.geom.mesh :as mesh]
@@ -144,7 +145,7 @@
        #(and (<= (pa %) (+ (pb %) (sb %)))
              (<= (pb %) (+ (pa %) (sa %))))
        [0 1 2]))
-    :default (g/type-error "AABB" s)))
+    :default (err/type-error! "AABB" s)))
 #+END_SRC
 *** TODO PMeshConvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx

@@ -18,6 +18,7 @@
      [thi.ng.geom.core :as g :refer [vec2]]
      [thi.ng.geom.bezier :as b]
      [thi.ng.geom.line :as l]
+     [thi.ng.common.error :as err]
      ,#+clj [clojure.xml :as xml])
     ,#+clj (:import [thi.ng.geom.types Line2 Path2]))
 #+END_SRC
@@ -101,9 +102,7 @@
                           (parse-svg-path more p0 p0)))
   
           :default
-          ,#+clj  (throw (UnsupportedOperationException.
-                         (str "non-implemented segment type" type)))
-          ,#+cljs (throw (js/Error. (str "non-implemented segment type" type)))))))
+          (err/unsupported! (str "Unsupported path segment type" type))))))
 #+END_SRC
 ** SVG path parser (Clojure only)
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx

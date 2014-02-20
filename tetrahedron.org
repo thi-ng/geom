@@ -8,6 +8,7 @@
   (ns thi.ng.geom.tetrahedron
     (:require
      [thi.ng.common.data.core :as d]
+     [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
      [thi.ng.geom.core :as g :refer [vec3]]
      [thi.ng.geom.triangle :as t]
@@ -255,7 +256,7 @@
     (intersect-tetrahedra? (g/vertices _) (g/vertices s))
     (and (sequential? s) (= 4 (count s)))
     (intersect-tetrahedra? (g/vertices _) s)
-    :default (g/type-error "Tetrahedron" s)))
+    :default (err/type-error! "Tetrahedron" s)))
   (intersect-line
    [_ l] nil)
   (intersect-ray

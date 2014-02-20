@@ -8,6 +8,7 @@
   (ns thi.ng.geom.circle
     (:require
      [thi.ng.common.data.core :as d]
+     [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [PI TWO_PI *eps*]]
      [thi.ng.geom.core :as g :refer [vec2 vec3 *resolution*]]
      [thi.ng.geom.mesh :as mesh]
@@ -144,7 +145,7 @@
    (cond
     (instance? thi.ng.geom.types.Circle s) (intersect-circle _ s)
     (instance? thi.ng.geom.types.Rect s) (g/intersect-shape s _)
-    :default (g/type-error "Circle" s)))
+    :default (err/type-error! "Circle" s)))
 #+END_SRC
 *** PMeshConvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx

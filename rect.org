@@ -8,6 +8,7 @@
   (ns thi.ng.geom.rect
     (:require
      [thi.ng.common.data.core :as d]
+     [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps*]]
      [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as aabb]
@@ -175,7 +176,7 @@
    (cond
     (instance? thi.ng.geom.types.Rect s) (intersect-rect? _ s)
     (instance? thi.ng.geom.types.Circle s) (intersect-circle? _ s)
-    :default (g/type-error "Rect" s)))
+    :default (err/type-error! "Rect" s)))
 #+END_SRC
 *** PPolygonConvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
