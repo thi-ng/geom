@@ -5,24 +5,45 @@
 * Helper macros
 ** Matrix item calculation
 #+BEGIN_SRC clojure :noweb-ref mat-ops  
-  (defmacro mat-item
-    ([a1 a2 b1 b2]
-       `(+ (* ~a1 ~a2) (* ~b1 ~b2)))
-    ([a1 a2 b1 b2 c]
-       `(+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) ~c))
-    ([a1 a2 b1 b2 c1 c2]
-       `(+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)))
-    ([a1 a2 b1 b2 c1 c2 d]
-       `(+ (+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)) ~d))
-    ([a1 a2 b1 b2 c1 c2 d1 d2]
-       `(+ (+ (+ (* ~a1 ~a2) (* ~b1 ~b2)) (* ~c1 ~c2)) (* ~d1 ~d2))))
+  (defmacro madd
+    ([a b c] `(+ (* ~a ~b) ~c))
+    ([a b c d]
+       `(+ (* ~a ~b) (* ~c ~d)))
+    ([a b c d c]
+       `(+ (+ (* ~a ~b) (* ~c ~d)) ~c))
+    ([a b c d e f]
+       `(+ (+ (* ~a ~b) (* ~c ~d)) (* ~e ~f)))
+    ([a b c d e f d]
+       `(+ (+ (+ (* ~a ~b) (* ~c ~d)) (* ~e ~f)) ~d))
+    ([a b c d e f g h]
+       `(+ (+ (+ (* ~a ~b) (* ~c ~d)) (* ~e ~f)) (* ~g ~h))))
+  
+  (defmacro msub
+    ([a b c] `(- (* ~a ~b) ~c))
+    ([a b c d] `(- (* ~a ~b) (* ~c ~d)))
+    ([a b c d e f] `(- (- (* ~a ~b) (* ~c ~d)) (* ~e ~f)))
+    ([a b c d e f g h] `(- (- (- (* ~a ~b) (* ~c ~d)) (* ~e ~f)) (* ~g ~h))))
+  
+  (defmacro maddsub
+    ([a b c d e f]
+       `(- (+ (* ~a ~b) (* ~c ~d)) (* ~e ~f)))
+    ([a b c d e f g h]
+       `(- (+ (+ (* ~a ~b) (* ~c ~d)) (* ~e ~f)) (* ~g ~h))))
   
   (defmacro det-item
     [a b c d, e f g h, i j k l, m n o p]
-    `(+ (- (- (* (* ~a ~b) (* ~c ~d))
-              (* (* ~e ~f) (* ~g ~h)))
-           (* (* ~i ~j) (* ~k ~l)))
-        (* (* ~m ~n) (* ~o ~p))))
+    `(+
+      (-
+       (-
+        (* (* ~a ~b) (* ~c ~d))
+        (* (* ~e ~f) (* ~g ~h)))
+       (* (* ~i ~j) (* ~k ~l)))
+      (* (* ~m ~n) (* ~o ~p))))
+  
+  (defmacro inv-item
+    [a b c d e f g]
+    `(* (+ (- (* ~a ~b) (* ~c ~d)) (* ~e ~f)) ~g))
+  ;;(* (madd e f (msub a b c d)) g)
 #+END_SRC
 ** Voxel test
 #+BEGIN_SRC clojure :noweb-ref voxel-ops

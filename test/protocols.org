@@ -50,7 +50,9 @@
      :circum g/PCircumference
      :class g/PClassify
      :clip g/PClip
+     :conj g/PConjugate
      :cross g/PCrossProduct
+     :det g/PDeterminant
      :dist g/PDistance
      :dot g/PDotProduct
      :ext g/PExtrude
@@ -61,7 +63,7 @@
      :inv g/PInvert
      :limit g/PLimit
      :mag g/PMagnitude
-     :mat g/PMatrix
+     :mat g/PMatrixConvert
      :math g/PMathOps
      :mesh g/PMeshConvert
      :mimax g/PMinMax
@@ -112,8 +114,9 @@
   
        ;; core types
   
-       thi.ng.geom.core.Matrix32 [:math :mat :inv :rotate :scale :tx :vtx]
-       thi.ng.geom.core.Matrix44 [:math :mat :inv :rotate :scale :tx :vtx]
+       thi.ng.geom.core.Matrix32 [:math :det :inv :rotate :scale :shear :tx :vtx]
+       thi.ng.geom.core.Matrix44 [:math :det :inv :rotate :scale :tx :vtx]
+       thi.ng.geom.core.Quaternion [:math :conj :dot :inv :mag :mat :mix :norm :scale :vtx]
   
        thi.ng.geom.core.Vec2
        [:math :dot :cross :dist :head :inv :mix :limit :mag :norm :polar
@@ -123,4 +126,3 @@
        [:math :dot :cross :dist :head :inv :mix :limit :mag :norm :polar
         :refl :rotate :scale :tx]})))
 #+END_SRC
-
