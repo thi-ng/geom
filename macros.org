@@ -6,15 +6,16 @@
 ** Matrix item calculation
 #+BEGIN_SRC clojure :noweb-ref mat-ops  
   (defmacro madd
-    ([a b c] `(+ (* ~a ~b) ~c))
+    ([a b c]
+       `(+ (* ~a ~b) ~c))
     ([a b c d]
        `(+ (* ~a ~b) (* ~c ~d)))
-    ([a b c d c]
-       `(+ (+ (* ~a ~b) (* ~c ~d)) ~c))
+    ([a b c d e]
+       `(+ (+ (* ~a ~b) (* ~c ~d)) ~e))
     ([a b c d e f]
        `(+ (+ (* ~a ~b) (* ~c ~d)) (* ~e ~f)))
-    ([a b c d e f d]
-       `(+ (+ (+ (* ~a ~b) (* ~c ~d)) (* ~e ~f)) ~d))
+    ([a b c d e f g]
+       `(+ (+ (+ (* ~a ~b) (* ~c ~d)) (* ~e ~f)) ~g))
     ([a b c d e f g h]
        `(+ (+ (+ (* ~a ~b) (* ~c ~d)) (* ~e ~f)) (* ~g ~h))))
   
