@@ -389,7 +389,7 @@ access to entities in _ context.
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (declare vec2 swizzle2 swizzle2-assoc)
   (declare vec3 swizzle3 swizzle3-assoc)
-  (declare ID32 ID44)
+  (declare M32 M44)
   (declare vec2-op-1 vec2-op-2 vec2-op-2* vec2-op-3)
   (declare vec3-op-1 vec3-op-2 vec3-op-3)
 #+END_SRC
@@ -1533,8 +1533,8 @@ access to entities in _ context.
 #+END_SRC
 **** Constants
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
-  (def ^:const VEC2 (Vec2. 0.0 0.0 nil))
-  (def ^:const VEC3 (Vec3. 0.0 0.0 0.0 nil))
+  (def ^:const V2 (Vec2. 0.0 0.0 nil))
+  (def ^:const V3 (Vec3. 0.0 0.0 0.0 nil))
 
   (def ^:const V2X (Vec2. 1.0 0.0 nil))
   (def ^:const V2Y (Vec2. 0.0 1.0 nil))
@@ -1558,7 +1558,7 @@ access to entities in _ context.
 
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defn vec2
-    ([] VEC2)
+    ([] V2)
     ([x] (cond
           (instance? Vec2 x) x
           (sequential? x) (Vec2. (nth x 0 0.0) (nth x 1 0.0) (meta x))
@@ -1568,7 +1568,7 @@ access to entities in _ context.
     ([x y] (Vec2. x y nil)))
   
   (defn vec3
-    ([] VEC3)
+    ([] V3)
     ([x] (cond
           (instance? Vec3 x) x
           (sequential? x) (Vec3. (nth x 0 0.0) (nth x 1 0.0) (nth x 2 0.0) (meta x))
@@ -1898,10 +1898,10 @@ access to entities in _ context.
   (scale
    [_ s]
    (let [[x y z] (if (number? s) [s s s] s)]   
-     (* _ (assoc ID44 :m00 x :m11 y :m22 z))))
+     (* _ (assoc M44 :m00 x :m11 y :m22 z))))
   (scale
    [_ x y z]
-   (* _ (assoc ID44 :m00 x :m11 y :m22 z))) ;; TODO add scale vec support
+   (* _ (assoc M44 :m00 x :m11 y :m22 z))) ;; TODO add scale vec support
   
   PRotate
   (rotate
@@ -1911,15 +1911,15 @@ access to entities in _ context.
   (rotate-x
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (* _ (assoc ID44 :m11 c :m12 (clojure.core/- s) :m21 s :m22 c))))
+     (* _ (assoc M44 :m11 c :m12 (clojure.core/- s) :m21 s :m22 c))))
   (rotate-y
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (* _ (assoc ID44 :m00 c :m02 s :m20 (clojure.core/- s) :m22 c))))
+     (* _ (assoc M44 :m00 c :m02 s :m20 (clojure.core/- s) :m22 c))))
   (rotate-z
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (* _ (assoc ID44 :m00 c :m01 (clojure.core/- s) :m10 s :m11 c))))
+     (* _ (assoc M44 :m00 c :m01 (clojure.core/- s) :m10 s :m11 c))))
   (rotate-around-axis
    [_ [x y z] theta]
    (let [s (Math/sin theta), c (Math/cos theta)
@@ -1940,7 +1940,7 @@ access to entities in _ context.
   (translate
    [_ t]
    (let [[x y z] (if (number? t) [t t t] t)]   
-     (* _ (assoc ID44 :m03 x :m13 y :m23 z))))
+     (* _ (assoc M44 :m03 x :m13 y :m23 z))))
   
   PTransform
   (transform
@@ -1966,12 +1966,12 @@ access to entities in _ context.
 #+END_SRC
 **** Constants
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
-  (def ^:const ID32
+  (def ^:const M32
     (Matrix32.
      1.0 0.0 0.0
      0.0 1.0 0.0))
 
-  (def ^:const ID44
+  (def ^:const M44
     (Matrix44.
      1.0 0.0 0.0 0.0
      0.0 1.0 0.0 0.0
@@ -1981,14 +1981,14 @@ access to entities in _ context.
 **** Constructors
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defn matrix32
-    ([] ID32)
+    ([] M32)
     ([[m00 m01 m02 m10 m11 m12]]
        (Matrix32. m00 m01 m02 m10 m11 m12))
     ([m00 m01 m02 m10 m11 m12]
        (Matrix32. m00 m01 m02 m10 m11 m12)))
 
   (defn matrix44
-    ([] ID44)
+    ([] M44)
     ([[m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]]
        (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33))
     ([m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]
