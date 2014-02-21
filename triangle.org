@@ -53,7 +53,7 @@
     (- (* (- bx ax) (- cy ay)) (* (- cx ax) (- by ay))))
   
   (defn norm-sign3
-    ([a b c] (g/dot (g/cross (g/- b a) (g/- c a)) g/V3_Z))
+    ([a b c] (g/dot (g/cross (g/- b a) (g/- c a)) g/V3Z))
     ([a b c n] (g/dot (g/cross (g/- b a) (g/- c a)) n)))
   
   (defn area2
@@ -68,7 +68,7 @@
     [a b c] (neg? (norm-sign2 a b c)))
   
   (defn clockwise3?
-    ([a b c] (neg? (norm-sign3 a b c g/V3_Z)))
+    ([a b c] (neg? (norm-sign3 a b c g/V3Z)))
     ([a b c n] (neg? (norm-sign3 a b c n))))
   
   (defn barycentric*

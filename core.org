@@ -393,7 +393,7 @@ access to entities in _ context.
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (declare vec2 swizzle2 swizzle2-assoc)
   (declare vec3 swizzle3 swizzle3-assoc)
-  (declare IDENTITY32 IDENTITY44)
+  (declare ID32 ID44)
   (declare vec2-op-1 vec2-op-2 vec2-op-2* vec2-op-3)
   (declare vec3-op-1 vec3-op-2 vec3-op-3)
 #+END_SRC
@@ -1564,12 +1564,12 @@ access to entities in _ context.
   (def ^:const VEC2 (Vec2. 0.0 0.0 nil))
   (def ^:const VEC3 (Vec3. 0.0 0.0 0.0 nil))
 
-  (def ^:const V2_X (Vec2. 1.0 0.0 nil))
-  (def ^:const V2_Y (Vec2. 0.0 1.0 nil))
+  (def ^:const V2X (Vec2. 1.0 0.0 nil))
+  (def ^:const V2Y (Vec2. 0.0 1.0 nil))
 
-  (def ^:const V3_X (Vec3. 1.0 0.0 0.0 nil))
-  (def ^:const V3_Y (Vec3. 0.0 1.0 0.0 nil))
-  (def ^:const V3_Z (Vec3. 0.0 0.0 1.0 nil))
+  (def ^:const V3X (Vec3. 1.0 0.0 0.0 nil))
+  (def ^:const V3Y (Vec3. 0.0 1.0 0.0 nil))
+  (def ^:const V3Z (Vec3. 0.0 0.0 1.0 nil))
 #+END_SRC
 **** Constructors
       To simplify vector type construction, factory functions
@@ -1586,7 +1586,7 @@ access to entities in _ context.
 
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defn vec2
-    ([] (Vec2. 0.0 0.0 nil))
+    ([] VEC2)
     ([x] (cond
           (instance? Vec2 x) x
           (sequential? x) (Vec2. (nth x 0 0.0) (nth x 1 0.0) (meta x))
@@ -1596,7 +1596,7 @@ access to entities in _ context.
     ([x y] (Vec2. x y nil)))
   
   (defn vec3
-    ([] (Vec3. 0.0 0.0 0.0 nil))
+    ([] VEC3)
     ([x] (cond
           (instance? Vec3 x) x
           (sequential? x) (Vec3. (nth x 0 0.0) (nth x 1 0.0) (nth x 2 0.0) (meta x))
@@ -1763,19 +1763,19 @@ access to entities in _ context.
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PRotate
   (rotate
-   [_ theta] (* _ (set-rotation IDENTITY32 theta)))
+   [_ theta] (* _ (set-rotation ID32 theta)))
   
   PScale
   (scale
-   [_ s] (* _ (set-scale IDENTITY32 s)))
+   [_ s] (* _ (set-scale ID32 s)))
   (scale
-   [_ sx sy] (* _ (set-scale IDENTITY32 sx sy)))
+   [_ sx sy] (* _ (set-scale ID32 sx sy)))
   
   PTranslate
   (translate
-   [_ t] (* _ (set-position IDENTITY32 t)))
+   [_ t] (* _ (set-position ID32 t)))
   (translate
-   [_ tx ty] (* _ (set-position IDENTITY32 tx ty)))
+   [_ tx ty] (* _ (set-position ID32 tx ty)))
   
   PTransform
   (transform
@@ -1935,10 +1935,10 @@ access to entities in _ context.
   PScale
   (scale
    [_ s]
-   (* _ (set-scale IDENTITY44 s)))
+   (* _ (set-scale ID44 s)))
   (scale
    [_ sx sy sz]
-   (* _ (set-scale IDENTITY44 [sx sy sz])))
+   (* _ (set-scale ID44 [sx sy sz])))
   
   PRotate
   (rotate
@@ -1948,15 +1948,15 @@ access to entities in _ context.
   (rotate-x
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (* _ (assoc IDENTITY44 :m11 c :m12 (clojure.core/- s) :m21 s :m22 c))))
+     (* _ (assoc ID44 :m11 c :m12 (clojure.core/- s) :m21 s :m22 c))))
   (rotate-y
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (* _ (assoc IDENTITY44 :m00 c :m02 s :m20 (clojure.core/- s) :m22 c))))
+     (* _ (assoc ID44 :m00 c :m02 s :m20 (clojure.core/- s) :m22 c))))
   (rotate-z
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (* _ (assoc IDENTITY44 :m00 c :m01 (clojure.core/- s) :m10 s :m11 c))))
+     (* _ (assoc ID44 :m00 c :m01 (clojure.core/- s) :m10 s :m11 c))))
   (rotate-around-axis
    [_ [x y z] theta]
    (let [s (Math/sin theta), c (Math/cos theta)
@@ -1982,7 +1982,7 @@ access to entities in _ context.
   PTranslate
   (translate
    [_ t]
-   (* _ (set-position IDENTITY44 t)))
+   (* _ (set-position ID44 t)))
   
   PTransform
   (transform
@@ -2003,12 +2003,12 @@ access to entities in _ context.
 #+END_SRC
 **** Constants
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
-  (def ^:const IDENTITY32
+  (def ^:const ID32
     (Matrix32.
      1.0 0.0 0.0
      0.0 1.0 0.0))
 
-  (def ^:const IDENTITY44
+  (def ^:const ID44
     (Matrix44.
      1.0 0.0 0.0 0.0
      0.0 1.0 0.0 0.0
@@ -2018,14 +2018,14 @@ access to entities in _ context.
 **** Constructors
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defn matrix32
-    ([] IDENTITY32)
+    ([] ID32)
     ([[m00 m01 m02 m10 m11 m12]]
        (Matrix32. m00 m01 m02 m10 m11 m12))
     ([m00 m01 m02 m10 m11 m12]
        (Matrix32. m00 m01 m02 m10 m11 m12)))
 
   (defn matrix44
-    ([] IDENTITY44)
+    ([] ID44)
     ([[m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]]
        (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33))
     ([m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]
