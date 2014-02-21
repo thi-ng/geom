@@ -260,7 +260,7 @@
 #+END_SRC
 **** PTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PTransform
+  g/PScale
   (scale
    ([_ s]
     (thi.ng.geom.types.Triangle2. (g/* (:a _) s) (g/* (:b _) s) (g/* (:c _) s)))
@@ -393,7 +393,7 @@
 #+END_SRC
 **** PTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PTransform
+  g/PScale
   (scale
    ([_ s]
     (thi.ng.geom.types.Triangle3. (g/* (:a _) s) (g/* (:b _) s) (g/* (:c _) s)))

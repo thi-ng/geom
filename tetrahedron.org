@@ -286,7 +286,7 @@
 #+END_SRC
 **** PTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
-  g/PTransform
+  g/PScale
   (scale
    ([_ s]
       (thi.ng.geom.types.Tetrahedron.

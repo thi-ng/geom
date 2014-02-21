@@ -280,7 +280,7 @@
 #+END_SRC
 *** TODO PTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
-  g/PTransform
+  g/PScale
   (scale
    ([_ s]
       (if (number? s)

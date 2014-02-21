@@ -242,7 +242,7 @@ g/- https://www.garagegames.com/community/forums/viewthread/76960/1#comment-5435
 #+END_SRC
 *** TODO PTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
-  g/PTransform
+  g/PScale
   (scale
    ([_ s]
       (thi.ng.geom.types.Quad3.

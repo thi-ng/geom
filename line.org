@@ -409,7 +409,7 @@ g/PCircumference
 #+END_SRC
 **** TODO PTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
-  g/PTransform
+  g/PScale
   (scale
    ([_ s] (thi.ng.geom.types.LineStrip2. (mapv #(g/* % s) (:points _))))
    ([_ sx sy] (thi.ng.geom.types.LineStrip2. (mapv #(g/* % sx sy) (:points _)))))
@@ -418,6 +418,7 @@ g/PCircumference
    (let [c (g/centroid _)]
      (thi.ng.geom.types.LineStrip2.
       (mapv #(-> % (g/- c) (g/madd s c)) (:points _)))))
+  g/PTranslate
   (translate
    [_ t] (thi.ng.geom.types.LineStrip2. (mapv #(g/+ % t) (:points _))))
 #+END_SRC

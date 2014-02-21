@@ -54,6 +54,7 @@
      :dist g/PDistance
      :dot g/PDotProduct
      :ext g/PExtrude
+     :flip g/PFlip
      :graph g/PGraph
      :head g/PHeading
      :isec g/PIntersect
@@ -70,7 +71,10 @@
      :poly g/PPolygonConvert
      :prox g/PProximity
      :refl g/PReflect
+     :rotate g/PRotate
      :sample g/PSample
+     :scale g/PScale
+     :shear g/PShear
      :tess g/PTessellate
      :tx g/PTransform
      :vol g/PVolume
@@ -95,25 +99,28 @@
       (fn [[t protos]] (apply satisfies-all? t protos))
       {thi.ng.geom.types.AABB
        [:area :bounds :bsphere :boundary :center :class :graph
-        :isec :mesh :prox :sample :tess :vol]
+        :isec :mesh :prox :sample :scale :tess :vol]
   
        thi.ng.geom.types.Circle
        [:area :bounds :bcircle :boundary :center :circum :class
-        :ext :graph :isec :mesh :poly :prox :sample :tess :vol]
+        :ext :graph :isec :mesh :poly :prox :rotate :sample :scale :tess :tx :vol]
   
        thi.ng.geom.types.Polygon
        [:area :bounds :bcircle :boundary :center :circum :chull
-        :class :clip :ext :graph :isec :mesh :poly :prox :sample :tess :tx :vol]
+        :class :clip :ext :flip :graph :isec :mesh :poly :prox :rotate
+        :sample :scale :tess :tx :vol]
   
        ;; core types
   
-       thi.ng.geom.core.Matrix32 [:math :mat :inv :tx :vtx]
-       thi.ng.geom.core.Matrix44 [:math :mat :inv :tx :vtx]
+       thi.ng.geom.core.Matrix32 [:math :mat :inv :rotate :scale :tx :vtx]
+       thi.ng.geom.core.Matrix44 [:math :mat :inv :rotate :scale :tx :vtx]
   
        thi.ng.geom.core.Vec2
-       [:math :dot :cross :dist :head :mix :limit :mag :norm :polar :refl :inv :tx]
+       [:math :dot :cross :dist :head :inv :mix :limit :mag :norm :polar
+        :refl :rotate :scale :tx]
   
        thi.ng.geom.core.Vec3
-       [:math :dot :cross :dist :head :mix :limit :mag :norm :polar :refl :inv :tx]})))
+       [:math :dot :cross :dist :head :inv :mix :limit :mag :norm :polar
+        :refl :rotate :scale :tx]})))
 #+END_SRC
 

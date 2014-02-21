@@ -374,6 +374,14 @@
   (closest-point
    [_ p] (g/closest-point* (g/edges _) p))
 #+END_SRC
+*** PFlip
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+  g/PFlip
+  (flip
+   [_]
+   (thi.ng.geom.types.Polygon.
+    (reverse (:points _)) []))
+#+END_SRC
 *** TODO PSample
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PSample
@@ -394,7 +402,7 @@
 #+END_SRC
 *** PTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
-  g/PTransform
+  g/PScale
   (scale
    ([_ s] (thi.ng.geom.types.Polygon. (mapv #(g/* % s) (:points _)) []))
    ([_ a b] (thi.ng.geom.types.Polygon. (mapv #(g/* % a b) (:points _)) [])))
@@ -403,6 +411,7 @@
    (let [c (g/centroid _)]
      (thi.ng.geom.types.Polygon.
       (mapv #(-> % (g/- c) (g/madd s c)) (:points _)) [])))
+  g/PTranslate
   (translate
    [_ t]
    (thi.ng.geom.types.Polygon. (mapv #(g/+ % t) (:points _)) []))
