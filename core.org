@@ -1157,26 +1157,18 @@ access to entities in _ context.
   (rotate-x
    [_ theta]
    (let [s (Math/sin theta) c (Math/cos theta)]
-     (Vec3.
-      x
-      (clojure.core/- (clojure.core/- (clojure.core/* z c) (clojure.core/* y s)))
-      (clojure.core/- (clojure.core/+ (clojure.core/* z s) (clojure.core/* y c))) _meta)))
+     (Vec3. x (mc/msub y c z s) (mc/madd y s z c) _meta)))
   (rotate-y
    [_ theta]
    (let [s (Math/sin theta) c (Math/cos theta)]
-     (Vec3.
-      (clojure.core/- (clojure.core/- (clojure.core/* x c) (clojure.core/* z s)))
-      y
-      (clojure.core/+ (clojure.core/* x s) (clojure.core/* z c)) _meta)))
+     (Vec3. (mc/madd x c z s) y (mc/msub z c x s) _meta)))
   (rotate-z
    [_ theta]
    (let [s (Math/sin theta) c (Math/cos theta)]
-     (Vec3.
-      (clojure.core/- (clojure.core/* x c) (clojure.core/* y s))
-      (clojure.core/+ (clojure.core/* x s) (clojure.core/* y c))
-      z _meta)))
-  (rotate-around-axis ;; TODO
-   [_ axis theta])
+     (Vec3. (mc/msub x c y s) (mc/madd x s y c) z _meta)))
+  (rotate-around-axis
+   [_ axis theta]
+   )
   
   PTransform
   (transform
@@ -1749,11 +1741,11 @@ access to entities in _ context.
    [_ tx ty]
    (if (number? tx)
      (if (number? ty)
-       (* _ (Matrix32. 0.0 0.0 tx, 0.0 1.0 ty))
-       (* _ (Matrix32. 0.0 0.0 (* tx (ty 0)), 0.0 1.0 (* tx (ty 1)))))
+       (* _ (Matrix32. 1.0 0.0 tx, 0.0 1.0 ty))
+       (* _ (Matrix32. 1.0 0.0 (* tx (ty 0)), 0.0 1.0 (* tx (ty 1)))))
      (if (number? ty)
-       (* _ (Matrix32. 0.0 0.0 (* ty (tx 0)), 0.0 1.0 (* ty (tx 1))))
-       (* _ (Matrix32. 0.0 0.0 (* (tx 0) (ty 0)), 0.0 1.0 (* (tx 1) (ty 1)))))))
+       (* _ (Matrix32. 1.0 0.0 (* ty (tx 0)), 0.0 1.0 (* ty (tx 1))))
+       (* _ (Matrix32. 1.0 0.0 (* (tx 0) (ty 0)), 0.0 1.0 (* (tx 1) (ty 1)))))))
   
   PTransform
   (transform
@@ -1774,7 +1766,6 @@ access to entities in _ context.
   )
 #+END_SRC
 **** 4x4 Matrix
-***** TODO add unproject from [[file:/Users/toxi/dev/js/gl-matrix.orig/gl-matrix.js::385]]
 ***** Implementation
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defrecord Matrix44
@@ -1922,7 +1913,8 @@ access to entities in _ context.
      (* _ (assoc M44 :m00 c :m01 (clojure.core/- s) :m10 s :m11 c))))
   (rotate-around-axis
    [_ [x y z] theta]
-   (let [s (Math/sin theta), c (Math/cos theta)
+   (let [theta (clojure.core/- theta)
+         s (Math/sin theta), c (Math/cos theta)
          sx (clojure.core/* s x)
          sy (clojure.core/* s y)
          sz (clojure.core/* s z)
@@ -2020,6 +2012,37 @@ access to entities in _ context.
     (clojure.core/* z s)
     (clojure.core/* w s) _meta))
 #+END_SRC
+***** PRotate3D
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
+  PRotate3D
+  (rotate-x
+   [_ theta]
+   (let [t (/ theta 2.0)
+         s (Math/sin t) c (Math/cos t)]
+     (Quaternion.
+      (mc/madd x c w s)
+      (mc/madd y c z s)
+      (mc/msub z c y s)
+      (mc/msub w c x s) _meta)))
+  (rotate-y
+   [_ theta]
+   (let [t (/ theta 2.0)
+         s (Math/sin t) c (Math/cos t)]
+     (Quaternion.
+      (mc/msub x c z s)
+      (mc/madd y c w s)
+      (mc/madd z c x s)
+      (mc/msub w c y s) _meta)))
+  (rotate-z
+   [_ theta]
+   (let [t (/ theta 2.0)
+         s (Math/sin t) c (Math/cos t)]
+     (Quaternion.
+      (mc/madd x c y s)
+      (mc/msub y c x s)
+      (mc/madd z c w s)
+      (mc/msub w c z s) _meta)))
+#+END_SRC
 ***** PMathOps
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PMathOps
@@ -2061,16 +2084,16 @@ access to entities in _ context.
 ***** PMagnitude
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PMagnitude
+  (mag
+   [_] (Math/sqrt (mc/madd x x y y z z w w)))
   (mag-squared
    [_] (mc/madd x x y y z z w w))
-  (mag [_]
-    (Math/sqrt (mc/madd x x y y z z w w)))
 #+END_SRC
 ***** PNormalize
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PNormalize
   (normalize [_]
-    (let [m (mc/madd x x y y z z w w)]
+    (let [m (Math/sqrt (mc/madd x x y y z z w w))]
       (if (> m *eps*)
         (Quaternion. (/ x m) (/ y m) (/ z m) (/ w m) _meta)
         _)))
@@ -2115,16 +2138,34 @@ access to entities in _ context.
 ***** PMatrixConvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PMatrixConvert
-  (as-matrix [_]
-    (let [x2 (clojure.core/+ x x) y2 (clojure.core/+ y y) z2 (clojure.core/+ z z)
-          xx (clojure.core/* x x2) xy (clojure.core/* x y2) xz (clojure.core/* x z2)
-          yy (clojure.core/* y y2) yz (clojure.core/* y z2) zz (clojure.core/* z z2)
-          wx (clojure.core/* w x2) wy (clojure.core/* w y2) wz (clojure.core/* w z2)]
-      (Matrix44.
-       (clojure.core/- 1.0 (clojure.core/+ yy zz)) (clojure.core/+ xy wz) (clojure.core/- xz wy) 0.0
-       (clojure.core/- xy wz) (clojure.core/- 1.0 (clojure.core/+ xx zz)) (clojure.core/+ yz wx) 0.0
-       (clojure.core/+ xz wy) (clojure.core/- yz wx) (clojure.core/- 1.0 (clojure.core/+ xx yy)) 0.0
-       0.0 0.0 0.0 1.0)))
+  (as-matrix
+   [_]
+   (let [x2 (clojure.core/+ x x)
+         y2 (clojure.core/+ y y)
+         z2 (clojure.core/+ z z)
+         xx (clojure.core/* x x2)
+         yx (clojure.core/* y x2)
+         yy (clojure.core/* y y2)
+         zx (clojure.core/* z x2)
+         zy (clojure.core/* z y2)
+         zz (clojure.core/* z z2)
+         wx (clojure.core/* w x2)
+         wy (clojure.core/* w y2)
+         wz (clojure.core/* w z2)]
+     (Matrix44.
+      (clojure.core/- (clojure.core/- 1.0 yy) zz) ; m00
+      (clojure.core/- yx wz) ;m10
+      (clojure.core/+ zx wy) ;m20
+      0.0
+      (clojure.core/+ yx wz) ;m01
+      (clojure.core/- (clojure.core/- 1.0 xx) zz) ;m11
+      (clojure.core/- zy wx) ;m21
+      0.0
+      (clojure.core/- zx wy) ;m02
+      (clojure.core/+ zy wx) ;m12
+      (clojure.core/- (clojure.core/- 1.0 xx) yy) ;m22
+      0.0
+      0.0 0.0 0.0 1.0)))
 #+END_SRC
 ***** PVectorTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
@@ -2160,59 +2201,51 @@ access to entities in _ context.
   
   (defn quat-from-euler
     [^double pitch ^double yaw ^double roll]
-    (let [pitch (clojure.core/* pitch 0.5) yaw (clojure.core/* yaw 0.5) roll (clojure.core/* roll 0.5)
+    (let [pitch (/ pitch 2.0) yaw (/ yaw 2.0) roll (/ roll 2.0)
           sp (Math/sin pitch) cp (Math/cos pitch)
           sy (Math/sin yaw) cy (Math/cos yaw)
           sr (Math/sin roll) cr (Math/cos roll)
           spsy (clojure.core/* sp sy) cpcy (clojure.core/* cp cy)]
       (Quaternion.
-       (clojure.core/- (clojure.core/* sr cpcy) (clojure.core/* cr spsy))
-       (clojure.core/+ (clojure.core/* (clojure.core/* cr sp) cy) (clojure.core/* (clojure.core/* sr cp) sy))
-       (clojure.core/- (clojure.core/* (clojure.core/* cr cp) sy) (clojure.core/* (clojure.core/* sr sp) cy))
-       (clojure.core/+ (clojure.core/* cr cpcy) (clojure.core/* sr spsy))
+       (mc/msub sr cpcy cr spsy)
+       (mc/madd (clojure.core/* cr sp) cy (clojure.core/* sr cp) sy)
+       (mc/msub (clojure.core/* cr cp) sy (clojure.core/* sr sp) cy)
+       (mc/madd cr cpcy sr spsy)
        nil)))
   
-  (defn quat-from-matrix44
+  ;; Allan and Mark Watt's "Advanced Animation and Rendering Techniques"
+  ;; (ACM Press 1992)
+  (defn quat-from-m44
     [^Matrix44 m]
     (let [trace (clojure.core/+ (clojure.core/+ (.-m00 m) (.-m11 m)) (.-m22 m))]
       (if (pos? trace)
         (let [s (Math/sqrt (clojure.core/+ 1.0 trace))
-              w (clojure.core/* s 0.5)
-              s (/ -0.5 s)]
+              w (/ s 2.0)
+              s (/ 0.5 s)]
           (Quaternion.
-           (mc/madd (.-m21 m) s (.-m12 m))
-           (mc/madd (.-m02 m) s (.-m20 m))
-           (mc/madd (.-m10 m) s (.-m01 m))
+           (mc/subm (.-m21 m) (.-m12 m) s)
+           (mc/subm (.-m02 m) (.-m20 m) s)
+           (mc/subm (.-m10 m) (.-m01 m) s)
            w nil))
-        (let [[i mi] (if (> (.-m11 m) (.-m00 m))
+        (let [[i ii] (if (> (.-m11 m) (.-m00 m))
                        [1 (.-m11 m)] [0 (.-m00 m)])
-              [i mi] (if (> (.-m22 m) mi)
-                       [2 (.-m22 m)] [i mi])]
-          (condp = i
-            0 (let [s (Math/sqrt (clojure.core/+ 1.0 (clojure.core/+ (clojure.core/- mi (.-m11 m)) (.-m22 m))))
-                    x (clojure.core/* s 0.5)
-                    s (/ 0.5 s)]
-                (Quaternion. ; i=0 j=1 k=2
-                 x
-                 (clojure.core/* (clojure.core/+ (.-m10 m) (.-m01 m)) s)
-                 (clojure.core/* (clojure.core/+ (.-m20 m) (.-m02 m)) s)
-                 (clojure.core/* (clojure.core/- (.-m21 m) (.-m12 m)) s) nil))
-            1 (let [s (Math/sqrt (clojure.core/+ 1.0 (clojure.core/+ (clojure.core/- mi (.-m22 m)) (.-m00 m))))
-                    x (clojure.core/* s 0.5)
-                    s (/ 0.5 s)]
-                (Quaternion. ; i=1 j=2 k=0
-                 (clojure.core/* (clojure.core/+ (.-m10 m) (.-m01 m)) s)
-                 x
-                 (clojure.core/* (clojure.core/+ (.-m12 m) (.-m21 m)) s)
-                 (clojure.core/* (clojure.core/- (.-m20 m) (.-m02 m)) s) nil))
-            2 (let [s (Math/sqrt (clojure.core/+ 1.0 (clojure.core/+ (clojure.core/- mi (.-m00 m)) (.-m11 m))))
-                    x (clojure.core/* s 0.5)
-                    s (/ 0.5 s)]
-                (Quaternion. ; i=2 j=0 k=1
-                 (clojure.core/* (clojure.core/+ (.-m20 m) (.-m02 m)) s)
-                 (clojure.core/* (clojure.core/+ (.-m21 m) (.-m12 m)) s)
-                 x
-                 (clojure.core/* (clojure.core/- (.-m01 m) (.-m10 m)) s) nil)))))))
+              [i ii] (if (> (.-m22 m) ii)
+                       [2 (.-m22 m)] [i ii])
+              [jj kk jk kj ij ji ik ki]
+              (case i
+                0 [(.-m11 m) (.-m22 m) (.-m12 m) (.-m21 m) (.-m01 m) (.-m10 m) (.-m02 m) (.-m20 m)]
+                1 [(.-m22 m) (.-m00 m) (.-m20 m) (.-m02 m) (.-m12 m) (.-m21 m) (.-m10 m) (.-m01 m)]
+                2 [(.-m00 m) (.-m11 m) (.-m01 m) (.-m10 m) (.-m20 m) (.-m02 m) (.-m21 m) (.-m12 m)])
+              s (Math/sqrt (inc (clojure.core/- ii (clojure.core/+ jj kk))))
+              x (/ s 2.0)
+              s (/ 0.5 s)
+              qj (mc/addm ij ji s)
+              qk (mc/addm ik ki s)
+              qw (mc/subm kj jk s)]
+          (case i
+            0 (Quaternion. x qj qk qw nil)
+            1 (Quaternion. qk x qj qw nil)
+            2 (Quaternion. qj qk x qw nil))))))
   
   (defn alignment-quat
     [target forward]

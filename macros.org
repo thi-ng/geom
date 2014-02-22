@@ -31,6 +31,14 @@
     ([a b c d e f g h]
        `(- (+ (+ (* ~a ~b) (* ~c ~d)) (* ~e ~f)) (* ~g ~h))))
   
+  (defmacro addm
+    ([a b c]
+       `(* (+ ~a ~b) ~c)))
+  
+  (defmacro subm
+    ([a b c]
+       `(* (- ~a ~b) ~c)))
+  
   (defmacro det-item
     [a b c d, e f g h, i j k l, m n o p]
     `(+
