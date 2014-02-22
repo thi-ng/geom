@@ -7,8 +7,8 @@
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.test.core
     (:require
-     [thi.ng.common.math.core :as m :refer [*eps*]]
-     [thi.ng.geom.core :as g :refer [vec2 vec3]]
+     [thi.ng.common.math.core :as m :refer [*eps* HALF_PI delta=]]
+     [thi.ng.geom.core :as g :refer [vec2 vec3 V2X V2Y V3X V3Y V3Z M32 M44]]
      [thi.ng.geom.types :as types]
      ,#+clj [clojure.test :refer :all]
      ,#+cljs [cemerick.cljs.test :as t])
@@ -18,16 +18,14 @@
 #+END_SRC
 ** Test constants
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx
-  (def a2 (vec2 1 2)) (def a3 (vec3 1 2 3))
-  (def b2 (vec2 10 20)) (def b3 (vec3 10 20 30))
-  
+  (def s 10.0)
   (def ax 1.0) (def ay 2.0) (def az 3.0)
-  (def bx 10.0) (def by 20.0) (def bz 30.0)
+  (def bx (* ax s)) (def by (* ay s)) (def bz (* az s))
+  (def a2 (vec2 ax ay)) (def a3 (vec3 ax ay az))
+  (def b2 (vec2 bx by)) (def b3 (vec3 bx by bz))
   
-  (def av2 [1.0 2.0]) (def av3 [1.0 2.0 3.0])
-  (def bv2 [10.0 20.0]) (def bv3 [10.0 20.0 30.0])
-
-  #+cljs (.log js/console "apply test: " (apply av3 [4 -1]))
+  (def av2 [ax ay]) (def av3 [ax ay az])
+  (def bv2 [bx by]) (def bv3 [bx by bz])
 #+END_SRC
 ** Vector creation
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx
@@ -192,7 +190,7 @@
     (testing
      (str "op: " label)
      (is (= [(cop ax bx) (cop ay by)] (op a2 b2)) (str label " a2 b2"))
-     (is (= [(cop ax 10) (cop ay 10)] (op a2 10)) (str label " a2 n"))
+     (is (= [(cop ax s) (cop ay s)] (op a2 s)) (str label " a2 n"))
      (is (= (op a2 b2) (op a2 b3)) (str label " a2 b3"))
      (is (= (op a2 b2) (op a2 bx by)) (str label " a2 n m"))
      (is (= (op a2 b2) (op a2 [bx by])) (str label " a2 [n m]"))
@@ -200,17 +198,17 @@
      (is (= (op (op a2 b2) b2) (op a2 b2 b2)) (str label " a2 b2 b2"))
      (is (= (op (op a2 bx) b2) (op a2 bx b2)) (str label " a2 n b2"))
      (if (= cop /)
-       (is #+clj  (thrown? ArithmeticException (op a2 [10]))
-           ,#+cljs (not (js/isFinite ((op a2 [10]) :y)))
+       (is #+clj  (thrown? ArithmeticException (op a2 [s]))
+           ,#+cljs (not (js/isFinite ((op a2 [s]) :y)))
            (str label " a2 [n] fail"))
-       (is (= (op a2 10 default) (op a2 [10])) (str label " a2 [n]")))))
+       (is (= (op a2 s default) (op a2 [s])) (str label " a2 [n]")))))
   
   (defn context-vec3-op
     [label op cop default]
     (testing
      (str "op: " label)     
      (is (= [(cop ax bx) (cop ay by) (cop az bz)] (op a3 b3)) (str label " a3 b3"))
-     (is (= [(cop ax 10) (cop ay 10) (cop az 10)] (op a3 10)) (str label " a3 n"))
+     (is (= [(cop ax s) (cop ay s) (cop az s)] (op a3 s)) (str label " a3 n"))
      (is (= (op (op a3 bx) by) (op a3 bx by)) (str label " a3 n m"))
      (is (= (op (op a3 b3) by) (op a3 b3 by)) (str label " a3 b3 n"))
      (is (= (op (op a3 b3) b3) (op a3 b3 b3)) (str label " a3 b3 b3"))
@@ -222,10 +220,10 @@
      (is (= (op (op (op a3 b3) b3) a3) (op a3 b3 b3 a3)) (str label " a3 b3 b3 a3"))
      (is (= (op (op (op a3 bx) by) b3) (op a3 bx by b3)) (str label " a3 n m b3"))
      (if (= cop /)
-       (is #+clj (thrown? #+clj ArithmeticException (op a3 [10 20]))
-           ,#+cljs (not (js/isFinite ((op a3 [10 20]) :z)))
+       (is #+clj (thrown? #+clj ArithmeticException (op a3 [bx by]))
+           ,#+cljs (not (js/isFinite ((op a3 [bx by]) :z)))
            (str label " a3 [n m] fail"))
-       (is (= (op a3 10 20 default) (op a3 [10 20])) (str label " a3 [n m]")))))
+       (is (= (op a3 bx by default) (op a3 [bx by])) (str label " a3 [n m]")))))
 #+END_SRC
 *** Calling contexts
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx
@@ -233,8 +231,7 @@
 #+END_SRC
 **** 2D ops
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
-  (testing
-   "2d ops"
+  (deftest vec2-math-ops
    (is (= [(+ ax) (+ ay)] (g/+ a2)) "+ a2")
    (is (= [(- ax) (- ay)] (g/- a2)) "- a2")
    (is (= [(* ax) (* ay)] (g/* a2)) "* a2")
@@ -246,8 +243,7 @@
 #+END_SRC
 **** 3D ops
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx    
-  (testing
-   "3d ops"
+  (deftest vec3-math-ops
    (is (= [(+ ax) (+ ay) (+ az)] (g/+ a3))) "+ a3"
    (is (= [(- ax) (- ay) (- az)] (g/- a3))) "- a3"
    (is (= [(* ax) (* ay) (* az)] (g/* a3))) "* a3"
@@ -289,7 +285,11 @@
 **** Cross product
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
    (deftest crossproduct
-    )
+    (is (== 0 (g/cross V2X V2X)) "x cross x = 0")
+    (is (== 1 (g/cross V2X V2Y)) "x cross y = 1")
+    (is (= V3Z (g/cross V3X V3Y)) "+x cross +y = +z")
+    (is (= V3Y (g/cross V3Z V3X)) "+z cross +x = +y")
+    (is (= V3X (g/cross V3Y V3Z)) "+y cross +z = +x"))
 #+END_SRC
 **** Magnitude
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
@@ -307,17 +307,67 @@
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
   (deftest normalize
     (is (= (let [m (g/mag a2)] [(/ ax m) (/ ay m)]) (g/normalize a2)) "norm a2")
-    (is (= (let [m (/ 10 (g/mag a2))] [(* m ax) (* m ay)])
-            (g/normalize a2 10)) "norm a2 10")
-    (is (== 10 (g/mag (g/normalize a2 10))) "mag = norm a2 10")
+    (is (= (let [m (/ s (g/mag a2))] [(* m ax) (* m ay)])
+            (g/normalize a2 s)) "norm a2 s")
+    (is (== s (g/mag (g/normalize a2 s))) "mag = norm a2 s")
     (is (= (let [m (g/mag a3)] [(/ ax m) (/ ay m) (/ az m)])
             (g/normalize a3)) "norm a3")
-    (is (= (let [m (/ 10 (g/mag a3))] [(* m ax) (* m ay) (* m az)])
-            (g/normalize a3 10)) "norm a3 10")
-    (is (== 10 (g/mag (g/normalize a3 10))) "mag = norm a3 10"))
+    (is (= (let [m (/ s (g/mag a3))] [(* m ax) (* m ay) (* m az)])
+            (g/normalize a3 s)) "norm a3 s")
+    (is (== s (g/mag (g/normalize a3 s))) "mag = norm a3 s"))
+#+END_SRC
+#+END_SRC
+**** Transformations
+#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
+  (deftest vec-transforms
+    (is (delta= V2Y (g/rotate V2X HALF_PI)) "rot2d(+x) = +y")
+    (is (delta= V3Z (g/rotate-x V2Y HALF_PI)) "rot2d-x(+y) = +z 3d")
+    (is (delta= (g/- V3Z) (g/rotate-y V2X HALF_PI)) "rot2d-y(+x) = -z 3d")
+    (is (delta= V3Y (g/rotate-z V2X HALF_PI)) "rot2d-z(+x) = +y 3d")
+    (is (delta= V3Z (g/rotate-x V3Y HALF_PI)) "rotx(+y) = +z")
+    (is (delta= V3X (g/rotate-y V3Z HALF_PI)) "roty(+z) = +x")
+    (is (delta= V3Y (g/rotate-z V3X HALF_PI)) "rotz(+x) = +y")
+    (is (delta= V3Z (g/rotate-around-axis V3Y V3X HALF_PI)) "rot-axis-x(+y) = +z")
+    (is (delta= V3X (g/rotate-around-axis V3Z V3Y HALF_PI)) "roty(+z) = +x")
+    (is (delta= V3Y (g/rotate-around-axis V3X V3Z HALF_PI)) "rotz(+x) = +y")
+
+    (context-vec2-op "scale" g/scale * 1.0)
+    (context-vec3-op "scale" g/scale * 1.0)
+    (context-vec2-op "translate" g/translate + 0.0)
+    (context-vec3-op "translate" g/translate + 0.0))
 #+END_SRC
 ** Matrix operations
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx
   (deftest matrix-ops
-   )
+    (is (delta= V2Y (-> M32 (g/rotate HALF_PI) (g/transform-vector V2X))))
+    (is (delta= V3Z (-> M44 (g/rotate-x HALF_PI) (g/transform-vector V3Y))) "rotx(+y) = +z")
+    (is (delta= V3Z (-> M44 (g/rotate-around-axis V3X HALF_PI) (g/transform-vector V3Y))) "rot-axis-x(+y) = +z")
+    (is (delta= V3X (-> M44 (g/rotate-y HALF_PI) (g/transform-vector V3Z))) "roty(+z) = +x")
+    (is (delta= V3X (-> M44 (g/rotate-around-axis V3Y HALF_PI) (g/transform-vector V3Z))) "rot-axis-y(+z) = +x")
+    (is (delta= V3Y (-> M44 (g/rotate-z HALF_PI) (g/transform-vector V3X))) "rotz(+x) = +y")
+    (is (delta= V3Y (-> M44 (g/rotate-around-axis V3Z HALF_PI) (g/transform-vector V3X))) "rot-axis-z(+x) = +y")
+    (is (delta= b2 (-> M32 (g/scale s) (g/transform-vector a2))) " a2 scale s")
+    (is (delta= (g/* a2 b2) (-> M32 (g/scale bx by) (g/transform-vector a2))) " a2 scale bx by")
+    (is (delta= (g/* a2 b2) (-> M32 (g/scale b2) (g/transform-vector a2))) " a2 scale b2")
+    (is (delta= b3 (-> M44 (g/scale s) (g/transform-vector a3))) " a3 scale s")
+    (is (delta= (g/* a3 b3) (-> M44 (g/scale bx by bz) (g/transform-vector a3))) " a3 scale bx by bz")
+    (is (delta= (g/* a3 b3) (-> M44 (g/scale b3) (g/transform-vector a3))) " a3 scale b3")
+    (is (delta= (g/+ a2 s) (-> M32 (g/translate s) (g/transform-vector a2))) " a2 trans s")
+    (is (delta= (g/+ a2 b2) (-> M32 (g/translate bx by) (g/transform-vector a2))) " a2 trans bx by")
+    (is (delta= (g/+ a2 b2) (-> M32 (g/translate b2) (g/transform-vector a2))) " a2 trans b2")
+    (is (delta= (g/+ a3 s) (-> M44 (g/translate s) (g/transform-vector a3))) " a3 trans s")
+    (is (delta= (g/+ a3 b3) (-> M44 (g/translate bx by bz) (g/transform-vector a3))) " a3 trans bx by bz")
+    (is (delta= (g/+ a3 b3) (-> M44 (g/translate b3) (g/transform-vector a3))) " a3 trans b3")
+    (is (delta= (-> V2X (g/scale s) (g/rotate m/QUARTER_PI) (g/translate b2))
+                (-> M32 (g/translate b2) (g/rotate m/QUARTER_PI) (g/scale s) (g/transform-vector V2X)))
+        "concat 2d")
+    (is (delta= (-> V3X (g/scale s) (g/rotate-z m/QUARTER_PI) (g/translate b3))
+                (-> M44 (g/translate b3) (g/rotate m/QUARTER_PI) (g/scale s) (g/transform-vector V3X)))
+        "concat 3d")
+    (is (delta= a2 (let [mat (-> M32 (g/translate b2) (g/rotate m/QUARTER_PI) (g/scale s))]
+                     (-> mat (g/transform-vector a2) (g/transform (g/invert mat)))))
+        "invert 2d")
+    (is (delta= a3 (let [mat (-> M44 (g/translate b3) (g/rotate-z m/QUARTER_PI) (g/scale s))]
+                     (-> mat (g/transform-vector a3) (g/transform (g/invert mat)))))
+        "invert 3d"))
 #+END_SRC

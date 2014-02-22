@@ -1167,8 +1167,26 @@ access to entities in _ context.
    (let [s (Math/sin theta) c (Math/cos theta)]
      (Vec3. (mc/msub x c y s) (mc/madd x s y c) z _meta)))
   (rotate-around-axis
-   [_ axis theta]
-   )
+   [_ [ax ay az] theta]
+   (let [ux (clojure.core/* ax x), uy (clojure.core/* ax y), uz (clojure.core/* ax z)
+         vx (clojure.core/* ay x), vy (clojure.core/* ay y), vz (clojure.core/* ay z)
+         wx (clojure.core/* az x), wy (clojure.core/* az y), wz (clojure.core/* az z)
+         ax2 (clojure.core/* ax ax), ay2 (clojure.core/* ay ay), az2 (clojure.core/* az az)
+         s (Math/sin theta), c (Math/cos theta)
+         uvw (clojure.core/+ (clojure.core/+ ux vy) wz)]
+     (Vec3.
+      (mc/madd uvw ax
+               (mc/msub (clojure.core/+ ay2 az2) x (clojure.core/+ vy wz) ax) c
+               (mc/subm vz wy s))
+  
+      (mc/madd uvw ay
+               (mc/msub (clojure.core/+ ax2 az2) y (clojure.core/+ ux wz) ay) c
+               (mc/subm wx uz s))
+  
+      (mc/madd uvw az
+               (mc/msub (clojure.core/+ ax2 ay2) z (clojure.core/+ ux vy) az) c
+               (mc/subm uy vx s))
+      _meta)))
   
   PTransform
   (transform
@@ -1883,7 +1901,7 @@ access to entities in _ context.
         m03 m13 m23 m33)
        (meta _)))
 #+END_SRC
-****** PTransform
+****** Transformations
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PScale
   (scale
@@ -1933,7 +1951,10 @@ access to entities in _ context.
    [_ t]
    (let [[x y z] (if (number? t) [t t t] t)]   
      (* _ (assoc M44 :m03 x :m13 y :m23 z))))
-  
+  (translate
+   [_ x y z]
+   (* _ (assoc M44 :m03 x :m13 y :m23 z)))
+
   PTransform
   (transform
    [_ matrix] (* _ matrix))
