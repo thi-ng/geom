@@ -24,7 +24,7 @@
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
      [thi.ng.geom.types :as types]
     #+clj [thi.ng.geom.macros.core :as mc])
-    #+cljs (:require-macros [thi.ng.geom.macros.core :as mc])
+    #+cljs (:require-macros [thi.ng.geom.macros.core-cljs :as mc])
     #+clj
     (:import
      [thi.ng.geom.types Circle Rect AABB Sphere]))
@@ -1372,6 +1372,14 @@ access to entities in _ context.
 **** Vector operations
 ***** 2D
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
+  (defn vec2-op-seq
+    [op ^Vec2 acc xs]
+    (loop [ax (.-x acc), ay (.-y acc), xs xs]
+      (if xs
+        (let [v ^Vec2 (first xs)]
+          (recur (op ax (.-x v)) (op ay (.-y v)) (next xs)))
+        (Vec2. ax ay (.-meta acc)))))
+  
   (defn vec2-op-1
     [op ^Vec2 _ a d m]
     (if (instance? Vec2 a)
@@ -1380,9 +1388,11 @@ access to entities in _ context.
        (op (.-y _) (.-y ^Vec2 a)) m)
       (if (number? a)
         (Vec2. (op (.-x _) a) (op (.-y _) a) m)
-        (Vec2.
-         (op (.-x _) (nth a 0 d))
-         (op (.-y _) (nth a 1 d)) m))))
+        (if (instance? Vec2 (first a))
+          (vec2-op-seq op _ a)
+          (Vec2.
+           (op (.-x _) (nth a 0 d))
+           (op (.-y _) (nth a 1 d)) m)))))
   
   (defn vec2-op-2
     [op ^Vec2 _ a b d1 d2 m]
@@ -1465,6 +1475,14 @@ access to entities in _ context.
 #+END_SRC
 ***** 3D
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
+  (defn vec3-op-seq
+    [op ^Vec3 acc xs]
+    (loop [ax (.-x acc), ay (.-y acc), az (.-z acc), xs xs]
+      (if xs
+        (let [v ^Vec3 (first xs)]
+          (recur (op ax (.-x v)) (op ay (.-y v)) (op az (.-z v)) (next xs)))
+        (Vec3. ax ay az (.-meta acc)))))
+  
   (defn vec3-op-1
     [op ^Vec3 _ a d m]
     (if (instance? Vec3 a)
@@ -1474,10 +1492,12 @@ access to entities in _ context.
        (op (.-z _) (.-z ^Vec3 a)) m)
       (if (number? a)
         (Vec3. (op (.-x _) a) (op (.-y _) a) (op (.-z _) a) m)
-        (Vec3.
-         (op (.-x _) (nth a 0 d))
-         (op (.-y _) (nth a 1 d))
-         (op (.-z _) (nth a 2 d)) m))))
+        (if (instance? Vec3 (first a))
+          (vec3-op-seq op _ a)
+          (Vec3.
+           (op (.-x _) (nth a 0 d))
+           (op (.-y _) (nth a 1 d))
+           (op (.-z _) (nth a 2 d)) m)))))
   
   (defn vec3-op-2
     [op op2 ^Vec3 _ a b d1 d2 m]
@@ -2093,6 +2113,21 @@ access to entities in _ context.
       (mc/maddsub z qw w qz x qy y qx)
       (mc/msub w qw x qx y qy z qz)
       _meta)))
+  (*
+   [_ q r]
+   (let [q ^Quaternion q r ^Quaternion r
+         qx (.-x q) qy (.-y q) qz (.-z q) qw (.-w q)
+         rx (.-x r) ry (.-y r) rz (.-z r) rw (.-w r)
+         x' (mc/maddsub x qw w qx y qz z qy)
+         y' (mc/maddsub y qw w qy z qx x qz)
+         z' (mc/maddsub z qw w qz x qy y qx)
+         w' (mc/msub w qw x qx y qy z qz)]
+     (Quaternion.
+      (mc/maddsub x' rw w' rx y' rz z' ry)
+      (mc/maddsub y' rw w' ry z' rx x' rz)
+      (mc/maddsub z' rw w' rz x' ry y' rx)
+      (mc/msub w' rw x' rx y' ry z' rz)
+      _meta)))
 #+END_SRC
 ***** PDotProduct
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx  
@@ -2211,6 +2246,7 @@ access to entities in _ context.
 **** Constructors
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defn quat
+    ([] (Quaternion. 0.0 0.0 0.0 1.0 nil))
     ([[x y z] w] (Quaternion. x y z w nil))
     ([[x y z w]] (Quaternion. x y z w nil))
     ([x y z w] (Quaternion. x y z w nil)))
@@ -2221,24 +2257,24 @@ access to entities in _ context.
       (quat (normalize (vec3 axis) (Math/sin theta)) (Math/cos theta))))
   
   (defn quat-from-euler
-    [^double pitch ^double yaw ^double roll]
-    (let [pitch (/ pitch 2.0) yaw (/ yaw 2.0) roll (/ roll 2.0)
-          sp (Math/sin pitch) cp (Math/cos pitch)
-          sy (Math/sin yaw) cy (Math/cos yaw)
-          sr (Math/sin roll) cr (Math/cos roll)
-          spsy (clojure.core/* sp sy) cpcy (clojure.core/* cp cy)]
-      (Quaternion.
-       (mc/msub sr cpcy cr spsy)
-       (mc/madd (clojure.core/* cr sp) cy (clojure.core/* sr cp) sy)
-       (mc/msub (clojure.core/* cr cp) sy (clojure.core/* sr sp) cy)
-       (mc/madd cr cpcy sr spsy)
-       nil)))
+    [order & [alpha beta gamma]]
+    (let [[a b c] (case order
+                    :xyz [V3X V3Y V3Z]
+                    :yxz [V3Y V3X V3Z]
+                    :xzy [V3X V3Z V3Y]
+                    :zxy [V3Z V3X V3Y]
+                    :yzx [V3Y V3Z V3X]
+                    :zyx [V3Z V3Y V3X]
+                    (err/illegal-arg! order))]
+      (* (quat-from-axis-angle a alpha)
+         (quat-from-axis-angle b beta)
+         (quat-from-axis-angle c gamma))))
   
   ;; Allan and Mark Watt's "Advanced Animation and Rendering Techniques"
   ;; (ACM Press 1992)
   (defn quat-from-m44
     [^Matrix44 m]
-    (let [trace (clojure.core/+ (clojure.core/+ (.-m00 m) (.-m11 m)) (.-m22 m))]
+    (let [trace (mc/add (.-m00 m) (.-m11 m) (.-m22 m))]
       (if (pos? trace)
         (let [s (Math/sqrt (clojure.core/+ 1.0 trace))
               w (/ s 2.0)
@@ -2269,13 +2305,14 @@ access to entities in _ context.
             2 (Quaternion. qj qk x qw nil))))))
   
   (defn alignment-quat
-    [target forward]
-    (let [target (normalize target)
-          forward (normalize forward)
-          axis (cross forward target)
-          len (mag axis)
-          theta (Math/atan2 len (dot forward target))]
-      (quat-from-axis-angle axis theta)))
+    [a b]
+    (let [d (dot a b)]
+      (cond
+       (< d -0.999999) (let [c (cross V3X a)
+                             c (if (< (mag c) 1e-6) (cross V3Y a) c)]
+                         (quat-from-axis-angle c PI))
+       (> d 0.999999) (quat)
+       :default (normalize (quat (cross a b) (inc d))))))
 #+END_SRC
 ** Constants
 *** Default circle resolution
@@ -2296,46 +2333,49 @@ access to entities in _ context.
     (reduce (fn [a b]
               (if (< (dist-squared q a) (dist-squared q b)) a b))
             (map #(closest-point % q) lines)))
-
+  
   (defn from-barycentric*
     [points weights]
     (reduce + (map * points weights)))
-
+  
   (defn centroid*
-    [coll]
-    (when (seq coll)
-      (* (reduce + coll) (/ 1.0 (count coll)))))
-
+    [[x & xs :as coll]]
+    (let [c (count coll)]
+      (if (> c 1)
+        (* ((if (instance? Vec2 x) vec2-op-seq vec3-op-seq) clojure.core/+ x xs)
+           (/ (count coll)))
+        x)))
+  
   (defn bounding-rect*
-    ([coll]
+    ([[x & xs :as coll]]
        (let [c (count coll)]
          (cond
-          (> c 1) (let [p (reduce min coll)
-                        q (reduce max coll)
+          (> c 1) (let [p (vec2-op-seq clojure.core/min x xs)
+                        q (vec2-op-seq clojure.core/max x xs)
                         [w h] (- q p)]
                     (thi.ng.geom.types.Rect. p w h))
-          (= c 1) (thi.ng.geom.types.Rect. (first coll) 0.0 0.0)
+          (= c 1) (thi.ng.geom.types.Rect. x 0.0 0.0)
           :default nil)))
     ([p w h] (thi.ng.geom.types.Rect. p w h)))
-
+  
   (defn bounding-box*
-    ([coll]
-       (let [cnt (count coll)]
+    ([[x & xs :as coll]]
+       (let [c (count coll)]
          (cond
-          (> cnt 1) (let [p (reduce min coll)
-                          q (reduce max coll)]
-                      (thi.ng.geom.types.AABB. p q))
-          (= cnt 1) (thi.ng.geom.types.AABB. (first coll) [0.0 0.0 0.0])
+          (> c 1) (let [p (vec3-op-seq clojure.core/min x xs)
+                        q (vec3-op-seq clojure.core/max x xs)]
+                    (thi.ng.geom.types.AABB. p (- q p)))
+          (= c 1) (thi.ng.geom.types.AABB. x (vec3))
           :default nil)))
     ([p q] (thi.ng.geom.types.AABB. p (- q p))))
-
+  
   (defn max-dist*
     [c points]
     (->> points
          (map #(dist-squared c %))
          (reduce clojure.core/max)
          (Math/sqrt)))
-
+  
   (defn bounding-circle*
     [c r-or-points]
     (thi.ng.geom.types.Circle.
@@ -2343,7 +2383,7 @@ access to entities in _ context.
      (if (coll? r-or-points)
        (max-dist* c r-or-points)
        r-or-points)))
-
+  
   (defn bounding-sphere*
     [c r-or-points]
     (thi.ng.geom.types.Sphere.
@@ -2351,17 +2391,17 @@ access to entities in _ context.
      (if (coll? r-or-points)
        (max-dist* c r-or-points)
        r-or-points)))
-
+  
   (defn axis-bounds*
     [axis coll]
     (let [xs (map #(nth % axis) coll)]
       [(reduce clojure.core/min xs) (reduce clojure.core/max xs)]))
-
+  
   (defn axis-range*
     [axis coll]
     (let [xs (map #(nth % axis) coll)]
       (clojure.core/- (reduce clojure.core/max xs) (reduce clojure.core/min xs))))
-
+  
   ;; TODO rename into arc-length-index*
   (defn total-length*
     [points]
@@ -2370,14 +2410,14 @@ access to entities in _ context.
          (map #(dist (% 0) (% 1)))
          (reductions clojure.core/+ 0)
          (vec)))
-
+  
   (defn arc-length*
     [points]
     (->> points
          (d/successive-nth 2)
          (map #(dist (% 0) (% 1)))
          (reduce clojure.core/+)))
-
+  
   (defn sample-uniform*
     [udist include-last? points]
     (let [idx (total-length* points)
@@ -2396,7 +2436,7 @@ access to entities in _ context.
       (if include-last?
         (conj samples (last points))
         samples)))
-
+  
   (defn point-at*
     ([t points] (point-at* t points nil))
     ([t points idx]
@@ -2416,18 +2456,18 @@ access to entities in _ context.
                            pi (idx (dec i))
                            frac (/ (clojure.core/- ct pi) (clojure.core/- (idx i) pi))]
                        (mix p q frac)))))))
-
+  
   (defn edges*
     [ctor points]
     (->> points (d/successive-nth 2) (mapv ctor)))
-
+  
   (defn tessellate*
     [c points]
     (->> [(first points)]
          (concat points)
          (d/successive-nth 2)
          (map #(vector (% 0) c (% 1)))))
-
+  
   (defn normal3*
     ([a b c] (normalize (cross (- b a) (- c a))))
     ([[a b c]] (normalize (cross (- b a) (- c a)))))

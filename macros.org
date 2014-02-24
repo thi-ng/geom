@@ -3,71 +3,128 @@
 #+EXPORT_EXCLUDE_TAGS: noexport
 
 * Helper macros
-** Matrix item calculation
-#+BEGIN_SRC clojure :noweb-ref mat-ops  
-  (defmacro madd
-    ([a b c]
-       `(+ (* ~a ~b) ~c))
-    ([a b c d]
-       `(+ (* ~a ~b) (* ~c ~d)))
-    ([a b c d e]
-       `(+ (+ (* ~a ~b) (* ~c ~d)) ~e))
-    ([a b c d e f]
-       `(+ (+ (* ~a ~b) (* ~c ~d)) (* ~e ~f)))
-    ([a b c d e f g]
-       `(+ (+ (+ (* ~a ~b) (* ~c ~d)) (* ~e ~f)) ~g))
-    ([a b c d e f g h]
-       `(+ (+ (+ (* ~a ~b) (* ~c ~d)) (* ~e ~f)) (* ~g ~h))))
+** Math operations
+*** Clojure
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/core.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.macros.core)
   
-  (defmacro msub
-    ([a b c] `(- (* ~a ~b) ~c))
-    ([a b c d] `(- (* ~a ~b) (* ~c ~d)))
-    ([a b c d e f] `(- (- (* ~a ~b) (* ~c ~d)) (* ~e ~f)))
-    ([a b c d e f g h] `(- (- (- (* ~a ~b) (* ~c ~d)) (* ~e ~f)) (* ~g ~h))))
+  (defmacro defmathop
+    "Constructs macro to build inlined nested expressions with f applied
+    to inner pairs and f2 to combine results."
+    [name f f2]
+    `(defmacro ~name
+       ([a# b# c#]
+          `(~~f2 (~~f ~a# ~b#) ~c#))
+       ([a# b# c# d#]
+          `(~~f2 (~~f ~a# ~b#) (~~f ~c# ~d#)))
+       ([a# b# c# d# e#]
+          `(~~f2 (~~f2 (~~f ~a# ~b#) (~~f ~c# ~d#)) ~e#))
+       ([a# b# c# d# e# f#]
+          `(~~f2 (~~f2 (~~f ~a# ~b#) (~~f ~c# ~d#)) (~~f ~e# ~f#)))
+       ([a# b# c# d# e# f# g#]
+          `(~~f2 (~~f2 (~~f2 (~~f ~a# ~b#) (~~f ~c# ~d#)) (~~f ~e# ~f#)) ~g#))
+       ([a# b# c# d# e# f# g# h#]
+          `(~~f2 (~~f2 (~~f2 (~~f ~a# ~b#) (~~f ~c# ~d#)) (~~f ~e# ~f#)) (~~f ~g# ~h#)))))
   
+  (defmathop add + +)
+  (defmathop sub - -)
+  (defmathop mul * *)
+  (defmathop div / /)
+  (defmathop madd * +)
+  (defmathop msub * -)
+  (defmathop addm + *)
+  (defmathop subm - *)
+#+END_SRC
+*** ClojureScript
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/core_cljs.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.macros.core-cljs)
+  
+  (defmacro defmathop
+    "Constructs macro to build inlined nested expressions with f applied
+      to inner pairs and f2 to combine results."
+    [name f f2]
+    `(defmacro ~name
+       ([a# b# c#]
+          (list '~'js* (str "((~{} " ~f " ~{}) "
+                            ~f2 " ~{})")
+                a# b# c#))
+       ([a# b# c# d#]
+          (list '~'js* (str "((~{} " ~f " ~{}) "
+                            ~f2 " (~{} " ~f " ~{}))")
+                a# b# c# d#))
+       ([a# b# c# d# e#]
+          (list '~'js* (str "(((~{} " ~f " ~{}) "
+                            ~f2 " (~{} " ~f " ~{}))"
+                            ~f2 " ~{})")
+                a# b# c# d# e#))
+       ([a# b# c# d# e# f#]
+          (list '~'js* (str "(((~{} " ~f " ~{}) "
+                            ~f2 " (~{} " ~f " ~{}))"
+                            ~f2 " (~{} " ~f " ~{}))")
+                a# b# c# d# e# f#))
+       ([a# b# c# d# e# f# g#]
+          (list '~'js* (str "((((~{} " ~f " ~{}) "
+                            ~f2 " (~{} " ~f " ~{}))"
+                            ~f2 " (~{} " ~f " ~{}))"
+                            ~f2 " ~{})")
+                a# b# c# d# e# f# g#))
+       ([a# b# c# d# e# f# g# h#]
+          (list '~'js* (str "((((~{} " ~f " ~{}) "
+                            ~f2 " (~{} " ~f " ~{}))"
+                            ~f2 " (~{} " ~f " ~{}))"
+                            ~f2 " (~{} " ~f " ~{}))")
+                a# b# c# d# e# f# g# h#))))
+
+  (defmathop add "+" "+")
+  (defmathop sub "-" "-")
+  (defmathop mul "*" "*")
+  (defmathop div "/" "/")
+  (defmathop madd "*" "+")
+  (defmathop msub "*" "-")
+  (defmathop addm "+" "*")
+  (defmathop subm "-" "*")
+#+END_SRC
+*** High level forms
+#+BEGIN_SRC clojure :noweb-ref math-ops  
   (defmacro maddsub
+    "Like madd, but the last 1 or 2 args are subtracted as product.
+    E.g. (maddsub a b c d e f) = (- (+ (* a b) (* c d)) (* e f))"
     ([a b c d e f]
-       `(- (+ (* ~a ~b) (* ~c ~d)) (* ~e ~f)))
+       `(- (madd ~a ~b ~c ~d) (* ~e ~f)))
     ([a b c d e f g h]
-       `(- (+ (+ (* ~a ~b) (* ~c ~d)) (* ~e ~f)) (* ~g ~h))))
+       `(- (madd ~a ~b ~c ~d ~e ~f) (* ~g ~h))))
   
-  (defmacro addm
-    ([a b c]
-       `(* (+ ~a ~b) ~c)))
-  
-  (defmacro subm
-    ([a b c]
-       `(* (- ~a ~b) ~c)))
+  (defmacro msubadd
+    "Like msub, but the last 1 or 2 args are added as product.
+    E.g. (msubadd a b c d e f) = (+ (- (* a b) (* c d)) (* e f))"
+    ([a b c d e f]
+       `(+ (msub ~a ~b ~c ~d) (* ~e ~f)))
+    ([a b c d e f g h]
+       `(+ (msub ~a ~b ~c ~d ~e ~f) (* ~g ~h))))
   
   (defmacro det-item
     [a b c d, e f g h, i j k l, m n o p]
-    `(+
-      (-
-       (-
-        (* (* ~a ~b) (* ~c ~d))
-        (* (* ~e ~f) (* ~g ~h)))
-       (* (* ~i ~j) (* ~k ~l)))
-      (* (* ~m ~n) (* ~o ~p))))
+    `(+ (sub (mul ~a ~b ~c ~d)
+             (mul ~e ~f ~g ~h)
+             (mul ~i ~j ~k ~l))
+        (mul ~m ~n ~o ~p)))
   
   (defmacro inv-item
     [a b c d e f g]
-    `(* (+ (- (* ~a ~b) (* ~c ~d)) (* ~e ~f)) ~g))
-  ;;(* (madd e f (msub a b c d)) g)
+    `(* (msubadd ~a ~b ~c ~d ~e ~f) ~g))
+#+END_SRC
+*** Tangle for CLJ & CLJS                                          :noexport:
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/core.clj :noweb yes
+  <<math-ops>>
+#+END_SRC
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/core_cljs.clj :noweb yes
+  <<math-ops>>
 #+END_SRC
 ** Voxel test
-#+BEGIN_SRC clojure :noweb-ref voxel-ops
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/voxel.clj :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.macros.voxel)
+
   (defmacro set-bit-if-index
     [voxels idx mask id]
     `(if (~voxels ~idx) ~id (bit-or ~id ~mask)))
-#+END_SRC
-** Tangle for CLJ & CLJS                                     :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/core.clj :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.macros.core)
-  
-  <<mat-ops>>
-#+END_SRC
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/voxel.clj :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.macros.voxel)
-  
-  <<voxel-ops>>
 #+END_SRC
