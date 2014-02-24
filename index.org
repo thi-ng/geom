@@ -1,5 +1,5 @@
 #+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
-#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+TAGS:           write(w) update(u) fix(f) verify(v) noexport(n)
 #+EXPORT_EXCLUDE_TAGS: noexport
 #+TITLE:          Geometry Kit
 #+AUTHOR:         Karsten Schmidt
@@ -8,8 +8,8 @@
 #+OPTIONS:        toc:4 h:4 html-postamble:auto html-preamble:t tex:t
 #+HTML_CONTAINER: div
 #+HTML_DOCTYPE:   <!DOCTYPE html5>
-#+HTML_HEAD:      <link href='http://fonts.googleapis.com/css?family=Droid+Sans:400,700' rel='stylesheet' type='text/css'>
-#+HTML_HEAD:      <link rel="stylesheet" type="text/css" href="css/main.css" />
+#+HTML_HEAD:      <link href="http://fonts.googleapis.com/css?family=Droid+Sans:400,700" rel="stylesheet" type="text/css" />
+#+HTML_HEAD:      <link href="css/main.css" rel="stylesheet" type="text/css" />
 #+LINK_UP:        ../index.html
 #+LINK_HOME:      ../index.html
 
@@ -31,8 +31,6 @@ target/test-classes
 target/geom-<<version>>.js
 #+END_SRC
 ** Objectives
-** Literate programming format
-#+INCLUDE: "../literateprogramming/literateprogramming.org"
 ** License
    This project is open source and licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache Software License 2.0]].
 ** Dependencies
@@ -43,31 +41,26 @@ target/geom-<<version>>.js
 #+END_SRC
 **** [[https://github.com/clojure/clojurescript][ClojureScript]]
 #+BEGIN_SRC clojure :noweb-ref dep-cljs
-[org.clojure/clojurescript "0.0-2156"]
+[org.clojure/clojurescript "0.0-2173"]
 #+END_SRC
 **** thi.ng/common
 #+BEGIN_SRC clojure :noweb-ref dep-common
 [thi.ng/common "0.1.1-SNAPSHOT"]
 #+END_SRC
 *** Development
-**** [[https://github.com/lynaghk/cljx][cljx]]
+**** [[https://github.com/lynaghk/cljx][Cljx]]
 #+BEGIN_SRC clojure :noweb-ref dep-cljx
 [com.keminglabs/cljx "0.3.2"]
 #+END_SRC
-**** [[https://github.com/emezeske/lein-cljsbuild][lein-cljsbuild]]
+**** [[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]
 #+BEGIN_SRC clojure :noweb-ref dep-cljsbuild
 [lein-cljsbuild "1.0.2"]
 #+END_SRC
-**** [[http://speclj.com/][speclj]]
-#+BEGIN_SRC clojure :noweb-ref dep-speclj
-[speclj "2.9.1"]
-[specljs "2.9.1"]
-#+END_SRC
-**** [[https://github.com/hugoduncan/criterium][criterium]]
+**** [[https://github.com/hugoduncan/criterium][Criterium]]
 #+BEGIN_SRC clojure :noweb-ref dep-criterium
 [criterium "0.4.1"]
 #+END_SRC
-**** [[https://github.com/cemerick/austin][austin]]
+**** [[https://github.com/cemerick/austin][Austin]]
 #+BEGIN_SRC clojure :noweb-ref dep-austin
 [com.cemerick/austin "0.1.4"]
 #+END_SRC
@@ -76,10 +69,12 @@ target/geom-<<version>>.js
 [com.cemerick/clojurescript.test "0.2.2"]
 #+END_SRC
 ** Authors
+
    | [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://thi.ng][thi.ng]]              |
    |                 |                                 | [[http://postspectacular.com][postspectacular.com]] |
 
 ** Changelog
+
    | *Version* | *Released* | *Description*               |
    |-----------+------------+-----------------------------|
    |     0.1.0 | 2013-10-01 | initial development release |
@@ -88,51 +83,75 @@ target/geom-<<version>>.js
 #+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
   [thi.ng/geom <<version>>]
 #+END_SRC
+
 ** Leiningen project file                                          :noexport:
 #+BEGIN_SRC clojure :tangle babel/project.clj :noweb yes :mkdirp yes :padline no
-    (defproject thi.ng/geom "<<version>>"
-      :description "thing geometry kit"
-      :url "<<project-url>>"
-      :license {:name "Apache Software License"
-                :url "http://www.eclipse.org/legal/epl-v10.html"}
-      :dependencies [<<dep-clj>>
-                     <<dep-common>>]
-    
-      :source-paths ["src/cljx"]
-      :test-paths ["<<gen-test-path>>"]
-    
-      :profiles {:dev {:dependencies [<<dep-cljs>>
-                                      <<dep-criterium>>]
-                       :plugins [<<dep-cljx>>
-                                 <<dep-cljsbuild>>
-                                 <<dep-cljs-test>>
-                                 <<dep-austin>>]
-                       :aliases {"cleantest" ["do" "clean," "cljx" "once," "test," "cljsbuild" "test"]}}}
-    
-      :cljx {:builds [{:source-paths ["src/cljx"]
-                       :output-path "<<gen-source-path>>"
-                       :rules :clj}
-                      {:source-paths ["src/cljx"]
-                       :output-path "<<gen-source-path>>"
-                       :rules :cljs}
-                      {:source-paths ["test/cljx"]
-                       :output-path "<<gen-test-path>>"
-                       :rules :clj}
-                      {:source-paths ["test/cljx"]
-                       :output-path "<<gen-test-path>>"
-                       :rules :cljs}]}
-    
-      :cljsbuild {:builds [{:source-paths ["<<gen-source-path>>" "<<gen-test-path>>"]
-                            :id "simple"
-                            :compiler {:output-to "<<cljs-artefact-path>>"
-                                       :optimizations :whitespace
-                                       :pretty-print true}}]
-                  :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}})
+  (defproject thi.ng/geom "<<version>>"
+    :description "thing geometry kit"
+    :url "<<project-url>>"
+    :license {:name "Apache Software License"
+              :url "http://www.eclipse.org/legal/epl-v10.html"}
+    :dependencies [<<dep-clj>>
+                   <<dep-common>>]
+  
+    :source-paths ["src/cljx"]
+    :test-paths ["<<gen-test-path>>"]
+  
+    :profiles {:dev {:dependencies [<<dep-cljs>>
+                                    <<dep-criterium>>]
+                     :plugins [<<dep-cljx>>
+                               <<dep-cljsbuild>>
+                               <<dep-cljs-test>>
+                               <<dep-austin>>]
+                     :aliases {"cleantest" ["do" "clean," "cljx" "once," "test," "cljsbuild" "test"]}}}
+  
+    :cljx {:builds [{:source-paths ["src/cljx"]
+                     :output-path "<<gen-source-path>>"
+                     :rules :clj}
+                    {:source-paths ["src/cljx"]
+                     :output-path "<<gen-source-path>>"
+                     :rules :cljs}
+                    {:source-paths ["test/cljx"]
+                     :output-path "<<gen-test-path>>"
+                     :rules :clj}
+                    {:source-paths ["test/cljx"]
+                     :output-path "<<gen-test-path>>"
+                     :rules :cljs}]}
+  
+    :cljsbuild {:builds [{:source-paths ["<<gen-source-path>>" "<<gen-test-path>>"]
+                          :id "simple"
+                          :compiler {:output-to "<<cljs-artefact-path>>"
+                                     :optimizations :whitespace
+                                     :pretty-print true}}]
+                :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}})
 #+END_SRC
-** Store version in separate namespace
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/version.cljx :noweb yes :mkdirp yes :padline no
-(ns thi.ng.geom.version)
-(def ^:const version "<<version>>")
+** ClojureScript test harness                                      :noexport:
+#+BEGIN_SRC html :tangle babel/index.html :noweb yes :mkdirp yes :padline no
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <title><<lein-coords>> test</title>
+    </head>
+    <body>
+      <script type="text/javascript" src="<<cljs-artefact-path>>"></script>
+    </body>
+  </html>
+#+END_SRC
+** Accessing library version during runtime
+
+  The autogenerated namespace =thi.ng.geom.version= contains a single
+  symbol =version= holding the version string defined above:
+
+#+BEGIN_SRC clojure :noweb yes
+  (use 'thi.ng.geom.version)
+  
+  (prn version)
+  ; "<<version>>"
+#+END_SRC
+
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/version.cljx :noweb yes :mkdirp yes :padline no :exports none
+  (ns thi.ng.geom.version)
+  (def ^:const version "<<version>>")
 #+END_SRC
 
 * Modules
@@ -158,15 +177,4 @@ target/geom-<<version>>.js
 ** Geometry IO
 #+INCLUDE: "meshio.org" :minlevel 2
 
-* ClojureScript test harness                                       :noexport:
-#+BEGIN_SRC html :tangle babel/index.html :noweb yes :mkdirp yes :padline no
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <title><<lein-coords>> test</title>
-    </head>
-    <body>
-      <script type="text/javascript" src="<<cljs-artefact-path>>"></script>
-    </body>
-  </html>
-#+END_SRC
+
