@@ -1,20 +1,20 @@
 #+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
-#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+TAGS:           write(w) update(u) fix(f) verify(v) noexport(n)
 #+EXPORT_EXCLUDE_TAGS: noexport
 
 * thi.ng.geom.test.core
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.test.core
+    ,#+cljs
+    (:require-macros
+     [cemerick.cljs.test :refer (is deftest with-test run-tests testing)])
     (:require
      [thi.ng.common.math.core :as m :refer [*eps* HALF_PI delta=]]
      [thi.ng.geom.core :as g :refer [vec2 vec3 V2X V2Y V3X V3Y V3Z M32 M44]]
      [thi.ng.geom.types :as types]
      ,#+clj [clojure.test :refer :all]
-     ,#+cljs [cemerick.cljs.test :as t])
-    ,#+cljs
-    (:require-macros
-     [cemerick.cljs.test :refer (is deftest with-test run-tests testing)]))
+     ,#+cljs [cemerick.cljs.test :as t]))
 #+END_SRC
 ** Test constants
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx
