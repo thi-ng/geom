@@ -1,7 +1,7 @@
 #+OPTIONS:    H:3 num:nil toc:2 \n:nil @:t ::t |:t ^:{} -:t f:t *:t TeX:t LaTeX:t skip:nil d:(HIDE) tags:not-in-toc
 #+STARTUP:    align fold nodlcheck hidestars oddeven lognotestate hideblocks
 #+SEQ_TODO:   TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
-#+TAGS:       Write(w) Update(u) Fix(f) Check(c) noexport(n)
+#+TAGS:       write(w) update(u) fix(f) verify(v) noexport(n)
 #+TITLE:      thi.ng.geom protocols & types
 #+AUTHOR:     Karsten Schmidt
 #+EMAIL:      k@thi.ng
@@ -18,60 +18,60 @@
 
 * Protocol implementations by type
 #+name: protocol-table
-| Vec2      | PVector | PMatrix | PTransform | PInterpolate | PInvert |        |         |         |           |         |            |            |           |             |          |            |
-| Vec3      | PVector | PMatrix | PTransform | PInterpolate | PInvert |        |         |         |           |         |            |            |           |             |          |            |
-| Matrix32  |         | PMatrix |            |              | PInvert |        |         |         |           |         |            |            |           |             |          |            |
-| Matrix44  |         | PMatrix |            |              | PInvert |        |         |         |           |         |            |            |           |             |          |            |
-| Line2     |         |         | PTransform | PInterpolate |         | PShape | PShape2 |         | PBoundary | PSample | PIntersect |            |           |             | PExtrude | PSubdivide |
-| Line3     |         |         | PTransform | PInterpolate |         | PShape |         | PShape3 | PBoundary | PSample | PIntersect |            |           |             | PExtrude | PSubdivide |
+| Vec2      | PVector | PMatrix | PTransform | PInterpolate | PInvert |        |         |         |           |         |            |                 |              |             |          |            |
+| Vec3      | PVector | PMatrix | PTransform | PInterpolate | PInvert |        |         |         |           |         |            |                 |              |             |          |            |
+| Matrix32  |         | PMatrix |            |              | PInvert |        |         |         |           |         |            |                 |              |             |          |            |
+| Matrix44  |         | PMatrix |            |              | PInvert |        |         |         |           |         |            |                 |              |             |          |            |
+| Line2     |         |         | PTransform | PInterpolate |         | PShape | PShape2 |         | PBoundary | PSample | PIntersect |                 |              |             | PExtrude | PSubdivide |
+| Line3     |         |         | PTransform | PInterpolate |         | PShape |         | PShape3 | PBoundary | PSample | PIntersect |                 |              |             | PExtrude | PSubdivide |
 | Triangle2 |         |         | PTransform | PInterpolate |         | PShape | PShape2 |         | PBoundary | PSample | PIntersect | PPolygonConvert | PMeshConvert | PTessellate | PExtrude | PSubdivide |
-| Triangle3 |         |         | PTransform | PInterpolate |         | PShape |         | PShape3 | PBoundary | PSample | PIntersect |            | PMeshConvert | PTessellate | PExtrude | PSubdivide |
+| Triangle3 |         |         | PTransform | PInterpolate |         | PShape |         | PShape3 | PBoundary | PSample | PIntersect |                 | PMeshConvert | PTessellate | PExtrude | PSubdivide |
 | Rect      |         |         | PTransform | PInterpolate |         | PShape | PShape2 |         | PBoundary | PSample | PIntersect | PPolygonConvert | PMeshConvert | PTessellate | PExtrude | PSubdivide |
 | Circle    |         |         | PTransform | PInterpolate |         | PShape | PShape2 |         | PBoundary | PSample | PIntersect | PPolygonConvert | PMeshConvert | PTessellate | PExtrude |            |
-| Polygon   |         |         | PTransform |              |         | PShape | PShape2 |         | PBoundary | PSample |            |            | PMeshConvert | PTessellate | PExtrude | PSubdivide |
-| Plane     |         |         | PTransform | PInterpolate |         | PShape |         | PShape3 | PBoundary | PSample | PIntersect |            | PMeshConvert | PTessellate |          |            |
-| AABB      |         |         | PTransform | PInterpolate |         | PShape |         | PShape3 | PBoundary | PSample | PIntersect |            | PMeshConvert | PTessellate |          | PSubdivide |
-| Sphere    |         |         | PTransform | PInterpolate |         | PShape |         | PShape3 | PBoundary | PSample | PIntersect |            | PMeshConvert | PTessellate |          |            |
-| Mesh2     |         |         | PTransform |              |         | PShape | PShape2 |         | PBoundary | PSample | PIntersect |            |           |             |          | PSubdivide |
-| Mesh3     |         |         | PTransform |              |         | PShape |         | PShape3 | PBoundary | PSample | PIntersect |            |           |             |          | PSubdivide |
+| Polygon   |         |         | PTransform |              |         | PShape | PShape2 |         | PBoundary | PSample |            |                 | PMeshConvert | PTessellate | PExtrude | PSubdivide |
+| Plane     |         |         | PTransform | PInterpolate |         | PShape |         | PShape3 | PBoundary | PSample | PIntersect |                 | PMeshConvert | PTessellate |          |            |
+| AABB      |         |         | PTransform | PInterpolate |         | PShape |         | PShape3 | PBoundary | PSample | PIntersect |                 | PMeshConvert | PTessellate |          | PSubdivide |
+| Sphere    |         |         | PTransform | PInterpolate |         | PShape |         | PShape3 | PBoundary | PSample | PIntersect |                 | PMeshConvert | PTessellate |          |            |
+| Mesh2     |         |         | PTransform |              |         | PShape | PShape2 |         | PBoundary | PSample | PIntersect |                 |              |             |          | PSubdivide |
+| Mesh3     |         |         | PTransform |              |         | PShape |         | PShape3 | PBoundary | PSample | PIntersect |                 |              |             |          | PSubdivide |
 
 * Protocol functions
   #+name: proto-fn-table
-  | PBoundary    | classify-point  | contains-point? | random-boundary-point |                    |        |       |           |             |      |              |      |      |
-  | PExtrude     | extrude         |                 |                       |                    |        |       |           |             |      |              |      |      |
-  | PInterpolate | mix             |                 |                       |                    |        |       |           |             |      |              |      |      |
-  | PIntersect   | intersect-line  | intersect-ray   | intersect-shape       |                    |        |       |           |             |      |              |      |      |
-  | PInvert      | invert          |                 |                       |                    |        |       |           |             |      |              |      |      |
+  | PBoundary       | classify-point  | contains-point? | random-boundary-point |                    |        |       |           |             |      |              |      |      |
+  | PExtrude        | extrude         |                 |                       |                    |        |       |           |             |      |              |      |      |
+  | PInterpolate    | mix             |                 |                       |                    |        |       |           |             |      |              |      |      |
+  | PIntersect      | intersect-line  | intersect-ray   | intersect-shape       |                    |        |       |           |             |      |              |      |      |
+  | PInvert         | invert          |                 |                       |                    |        |       |           |             |      |              |      |      |
   | PMeshConvert    | as-mesh         |                 |                       |                    |        |       |           |             |      |              |      |      |
-  | PPolygonConvert   | as-polygon      |                 |                       |                    |        |       |           |             |      |              |      |      |
-  | PSample      | point-at        | random-point    |                       |                    |        |       |           |             |      |              |      |      |
-  | PShape       | area            | bounds          | centroid              | center             |        |       |           |             |      |              |      |      |
-  | PShape2      | bounding-circle | circumference   |                       |                    |        |       |           |             |      |              |      |      |
-  | PShape3      | bounding-sphere | volume          |                       |                    |        |       |           |             |      |              |      |      |
-  | PSubdivide   | subdivide       |                 |                       |                    |        |       |           |             |      |              |      |      |
-  | PTessellate  | tessellate      |                 |                       |                    |        |       |           |             |      |              |      |      |
-  | PTransform   | rotate-x        | rotate-y        | rotate-z              | rotate-around-axis | rotate | scale | translate | transform   |      |              |      |      |
-  | PVector      | abs             | add             | sub                   | madd               | dot    | cross | mag       | mag-squared | dist | dist-squared | minv | maxv |
-  | PMatrix      | multiply        | determinant     |                       |                    |        |       |           |             |      |              |      |      |
+  | PPolygonConvert | as-polygon      |                 |                       |                    |        |       |           |             |      |              |      |      |
+  | PSample         | point-at        | random-point    |                       |                    |        |       |           |             |      |              |      |      |
+  | PShape          | area            | bounds          | centroid              | center             |        |       |           |             |      |              |      |      |
+  | PShape2         | bounding-circle | circumference   |                       |                    |        |       |           |             |      |              |      |      |
+  | PShape3         | bounding-sphere | volume          |                       |                    |        |       |           |             |      |              |      |      |
+  | PSubdivide      | subdivide       |                 |                       |                    |        |       |           |             |      |              |      |      |
+  | PTessellate     | tessellate      |                 |                       |                    |        |       |           |             |      |              |      |      |
+  | PTransform      | rotate-x        | rotate-y        | rotate-z              | rotate-around-axis | rotate | scale | translate | transform   |      |              |      |      |
+  | PVector         | abs             | add             | sub                   | madd               | dot    | cross | mag       | mag-squared | dist | dist-squared | minv | maxv |
+  | PMatrix         | multiply        | determinant     |                       |                    |        |       |           |             |      |              |      |      |
 
 * Protocol colors                                                  :noexport:
   #+name: proto-cols
-  | PBoundary    | cc9900 |
-  | PExtrude     | 00ffff |
-  | PInterpolate | 00ddff |
-  | PIntersect   | 00dddd |
-  | PInvert      | ff6699 |
+  | PBoundary       | cc9900 |
+  | PExtrude        | 00ffff |
+  | PInterpolate    | 00ddff |
+  | PIntersect      | 00dddd |
+  | PInvert         | ff6699 |
   | PMeshConvert    | 66ff00 |
-  | PPolygonConvert   | 44cc00 |
-  | PSample      | 00bbdd |
-  | PShape       | ffff00 |
-  | PShape2      | ffdd00 |
-  | PShape3      | ffbb00 |
-  | PSubdivide   | 0099dd |
-  | PTessellate  | 0066dd |
-  | PTransform   | ff0099 |
-  | PVector      | ff0000 |
-  | PMatrix      | ff0066 |
+  | PPolygonConvert | 44cc00 |
+  | PSample         | 00bbdd |
+  | PShape          | ffff00 |
+  | PShape2         | ffdd00 |
+  | PShape3         | ffbb00 |
+  | PSubdivide      | 0099dd |
+  | PTessellate     | 0066dd |
+  | PTransform      | ff0099 |
+  | PVector         | ff0000 |
+  | PMatrix         | ff0066 |
 
 * Overview of relationships
   #+name: make-dot
