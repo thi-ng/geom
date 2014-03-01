@@ -56,19 +56,20 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
   g/PMeshConvert
   (as-mesh
-   [{p :p n :n :as _} {:keys [width height size] :or {size 1.0}}]
-   (let [w (* (or width size) 0.5)
-         h (* (or height size) 0.5)
-         flip? (m/delta= -1.0 (g/dot n g/V3Z))
-         q (if flip?
-             (g/quat 0 0 0 1)
-             (g/alignment-quat n g/V3Z))
-         [a b c d] (map #(g/+ p (g/transform-vector q %))
-                        [(vec3 (- w) (- h) 0) (vec3 (- w) h 0)
-                         (vec3 w (- h) 0) (vec3 w h 0)])]
-     (if flip?
-       (mesh3 [a b d] [a d c])
-       (mesh3 [a d b] [a c d]))))
+   ([_] (g/as-mesh _ {}))
+   ([{p :p n :n :as _} {:keys [width height size] :or {size 1.0}}]
+      (let [w (* (or width size) 0.5)
+            h (* (or height size) 0.5)
+            flip? (m/delta= -1.0 (g/dot n g/V3Z))
+            q (if flip?
+                (g/quat 0 0 0 1)
+                (g/alignment-quat n g/V3Z))
+            [a b c d] (map #(g/+ p (g/transform-vector q %))
+                           [(vec3 (- w) (- h) 0) (vec3 (- w) h 0)
+                            (vec3 w (- h) 0) (vec3 w h 0)])]
+        (if flip?
+          (mesh3 [a b d] [a d c])
+          (mesh3 [a d b] [a c d])))))
 #+END_SRC
 *** End implementation                                             :noexport:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx

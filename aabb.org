@@ -151,17 +151,18 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
   g/PMeshConvert
   (as-mesh
-   [_ {:keys [flags] :or {flags "nsewfb"}}]
-   (let [[a b c d e f g h] (g/vertices _)
-         [tp bt rt lf fr bk] (d/demunge-flags-seq flags "nsewfb")]
-     (->> [(if fr [b c f e])
-           (if bk [a h g d])
-           (if lf [a b e h])
-           (if rt [c d g f])
-           (if tp [e f g h])
-           (if bt [a d c b])]
-          (filter identity)
-          (gmesh/into-mesh (gmesh/gmesh)))))
+   ([_] (g/as-mesh _ {}))
+   ([_ {:keys [flags] :or {flags "nsewfb"}}]
+      (let [[a b c d e f g h] (g/vertices _)
+            [tp bt rt lf fr bk] (d/demunge-flags-seq flags "nsewfb")]
+        (->> [(if fr [b c f e])
+              (if bk [a h g d])
+              (if lf [a b e h])
+              (if rt [c d g f])
+              (if tp [e f g h])
+              (if bt [a d c b])]
+             (filter identity)
+             (gmesh/into-mesh (gmesh/gmesh))))))
 #+END_SRC
 *** TODO PProximity
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
