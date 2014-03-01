@@ -2470,7 +2470,7 @@ access to entities in _ context.
     (->> [(first points)]
          (concat points)
          (d/successive-nth 2)
-         (map #(vector (% 0) c (% 1)))))
+         (map #(vector c (% 0) (% 1)))))
   
   (defn normal3*
     ([a b c] (normalize (cross (- b a) (- c a))))
