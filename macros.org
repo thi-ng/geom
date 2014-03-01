@@ -6,8 +6,7 @@
 ** Matrix operations
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/core.clj :mkdirp yes :padline no
   (ns thi.ng.geom.macros.core
-    #+clj  (:require [thi.ng.macromath.core :as mm])
-    #+cljs (:require-macros [thi.ng.macromath.core :as mm]))
+    (:require [thi.ng.macromath.core :as mm]))
 
   (defmacro det-item
     [a b c d, e f g h, i j k l, m n o p]
