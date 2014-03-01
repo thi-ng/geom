@@ -101,7 +101,7 @@
         (when (seq vnormals)
           (b/write-vec3-le stream (get vnormals v))))
       (doseq [f faces]
-        (aset-byte fhead 0 (byte (count f)))
+        (#+clj aset-byte #+cljs aset fhead 0 (byte (count f)))
         (.write stream fhead)
         (write-vindex f))
       stream))
