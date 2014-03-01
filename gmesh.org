@@ -21,7 +21,6 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
   (defn add-face
     [{:keys [vertices edges faces] :as mesh} verts]
-    {:pre [(< 2 (count verts))]}
     (let [f (mapv #(get (find vertices %) 0 %) verts)]
       (if (and (nil? (get faces f))
                (= (count f) (count (set f))))
@@ -120,4 +119,21 @@
         [(vec3 0 s 0) :wfb]
         [(vec3 s s 0) :ensfb]
         [(vec3 0 (* s 2) 0) :ewnfb]])))
+#+END_SRC
+** Tessellation
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+  (defn tessellate-face
+    [f]
+    (condp = (count f)
+      3 [f]
+      4 (let [[a b c d] f] [[a b c] [a c d]])
+      (g/tessellate* (g/centroid* f) f)))
+  
+  (defn tessellate-face4
+    [f]
+    (if (<= (count f) 4) [f] (g/tessellate* (g/centroid* f) f)))
+  
+  (defn tessellate
+    ([mesh] (tessellate mesh tessellate-face))
+    ([mesh f] (into-mesh (gmesh) (mapcat f (:faces mesh)))))
 #+END_SRC

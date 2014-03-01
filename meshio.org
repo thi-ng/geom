@@ -10,7 +10,7 @@
     (:require
      [thi.ng.common.data.byteutils :as b]
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.mesh :as m]
+     [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.triangle :as t])
     ,#+clj
     (:import
@@ -23,52 +23,62 @@
 ** STL
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/meshio.cljx
   (defn write-stl
+    "Writes the given mesh as binary STL to output stream. Mesh is
+    automatically tessellated into triangles."
     [^OutputStream stream {:keys [fnormals faces]}]
-    #+clj (.write stream (byte-array 80))
-    (b/write-int32-le stream (count faces))
-    (doseq [[a b c :as f] faces]
-      (b/write-vec3-le stream (or (get fnormals f) (g/normal3* f)))
-      (b/write-vec3-le stream a)
-      (b/write-vec3-le stream b)
-      (b/write-vec3-le stream c)
-      (b/write-int16-le stream 0))
-    stream)
-
+    (let [faces (mapcat gm/tessellate-face faces)]
+      (.write stream #+clj (byte-array 80) #+cljs (into-array (repeat 80 0)))
+      (b/write-int32-le stream (count faces))
+      (doseq [[a b c :as f] faces]
+        (b/write-vec3-le stream (or (get fnormals f) (g/normal3* f)))
+        (b/write-vec3-le stream a)
+        (b/write-vec3-le stream b)
+        (b/write-vec3-le stream c)
+        (b/write-int16-le stream 0))
+      stream))
+  
   (defn read-stl
+    "Returns binary STL inputstream as mesh."
     [^InputStream stream]
-    #+clj (.read stream (byte-array 80))
-    (let [nf (b/read-int32-le stream)
-          mesh (m/mesh3)]
-      (loop [[v e f] (m/begin-edit mesh) i nf]
-        (if (zero? i)
-          (m/commit-edit mesh [v e f])
-          (let [_ (b/read-vec3-le stream)
-                a (b/read-vec3-le stream)
-                b (b/read-vec3-le stream)
-                c (b/read-vec3-le stream)
-                _ (b/read-int16-le stream)]
-            (recur (m/add-face! [v e f] [a b c]) (dec i)))))))
-
-  (defn read-stl-vertices
-    [^InputStream stream]
-    #+clj (.read stream (byte-array 80))
-    (loop [vertices #{} nf (b/read-int32-le stream)]
-      (if (zero? nf)
-        vertices
+    (.read stream #+clj (byte-array 80) #+cljs (make-array 80))
+    (loop [mesh (gm/gmesh), i (b/read-int32-le stream)]
+      (if (pos? i)
         (let [_ (b/read-vec3-le stream)
               a (b/read-vec3-le stream)
               b (b/read-vec3-le stream)
               c (b/read-vec3-le stream)
               _ (b/read-int16-le stream)]
-          (recur (conj vertices a b c) (dec nf))))))
+          (recur (gm/add-face mesh [a b c]) (dec i)))
+        mesh)))
+  
+  (defn read-stl-vertices
+    "Reads all vertices from given STL input stream. A target collection
+    can be specified optionally. If none is given, a set of unique
+    vertices is returned."
+    ([^InputStream stream]
+       (read-stl-vertices stream #{}))
+    ([^InputStream stream vert-pool]
+       (.read stream #+clj (byte-array 80) #+cljs (make-array 80))
+       (loop [vertices vert-pool, nf (b/read-int32-le stream)]
+         (if (zero? nf)
+           vertices
+           (let [_ (b/read-vec3-le stream)
+                 a (b/read-vec3-le stream)
+                 b (b/read-vec3-le stream)
+                 c (b/read-vec3-le stream)
+                 _ (b/read-int16-le stream)]
+             (recur (conj vertices a b c) (dec nf)))))))
 #+END_SRC
 ** PLY
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/meshio.cljx
   (defn write-ply
+    "Writes the given mesh as binary PLY to output stream. For
+    compatibility with external tools mesh should already have been
+    tessellated before calling this fn."
     [^OutputStream stream {:keys [vertices vnormals faces]}]
     (let [vertices (keys vertices)
           vindex (zipmap vertices (range))
-          fhead #+clj (byte-array [(byte 0)]) #+cljs (into-array [0])
+          fhead #+clj (byte-array 1) #+cljs (make-array 1)
           write-props (fn [props]
                         (doseq [p props]
                           (b/write-str-bytes
@@ -102,25 +112,22 @@
     [^OutputStream stream {:keys [vertices vnormals faces]}]
     (let [vertices (keys vertices)
           has-vnormals? (not (nil? (seq vnormals)))
-          fmt-fn
-          #+clj (fn [prefix]
-                  (let [ff (str "%1." *precision* "f ")
-                        ff (str prefix " " ff ff ff "\n")]
-                    #(format ff %1 %2 %3)))
-          #+cljs (fn [prefix]
-                   #(str prefix " "
-                         (.toFixed (js/Number. %1) *precision*) " "
-                         (.toFixed (js/Number. %2) *precision*) " "
-                         (.toFixed (js/Number. %3) *precision*) "\n"))
+          fmt-fn (fn [prefix]
+                   ,#+clj (let [ff (str "%1." *precision* "f ")
+                               ff (str prefix " " ff ff ff "\n")]
+                           #(format ff %1 %2 %3))
+                   ,#+cljs #(str
+                            prefix " "
+                            (.toFixed (js/Number. %1) *precision*) " "
+                            (.toFixed (js/Number. %2) *precision*) " "
+                            (.toFixed (js/Number. %3) *precision*) "\n"))
           fmt-vertex (fmt-fn "v")
           fmt-vnormal (fmt-fn "vn")
-          fmt-face
-          #+clj (if has-vnormals?
-                  #(format "f %d//%d %d//%d %d//%d\n" %1 %2 %3 %4 %5 %6)
-                  #(format "f %d %d %d\n" %1 %2 %3))
-          #+cljs (if has-vnormals?
-                   (fn [a b c d e f] (str "f " a "//" b " " c "//" d " " e "//" f "\n"))
-                   (fn [a b c] (str "f " a " " b " " c "\n")))
+          fmt-fvert (if has-vnormals? #(str % "//" %2 " ") #(str % " "))
+          fmt-face (if has-vnormals?
+                     (fn [verts normals]
+                       (str "f " (apply str (map fmt-fvert verts normals)) "\n"))
+                     (fn [verts] (str "f " (apply str (map fmt-fvert verts)) "\n")))
           vindex (zipmap vertices (range))
           nindex (zipmap (vals vnormals) (range))]
       (doseq [[x y z] vertices]
@@ -129,21 +136,14 @@
       (doseq [[x y z] (vals vnormals)]
         (b/write-str-bytes stream (fmt-vnormal (double x) (double y) (double z))))
       (b/write-str-bytes stream "g\n")
-      (doseq [[a b c] faces]
+      (doseq [fverts faces]
         (b/write-str-bytes
          stream
          (if has-vnormals?
            (fmt-face
-            (inc (get vindex a))
-            (inc (get nindex (get vnormals a)))
-            (inc (get vindex b))
-            (inc (get nindex (get vnormals b)))
-            (inc (get vindex c))
-            (inc (get nindex (get vnormals c))))
-           (fmt-face
-            (inc (get vindex a))
-            (inc (get vindex b))
-            (inc (get vindex c))))))
+            (map #(inc (get vindex %)) fverts)
+            (map #(inc (get nindex (get vnormals %))) fverts))
+           (fmt-face (map #(inc (get vindex %)) fverts)))))
       stream))
 #+END_SRC
 ** OFF
@@ -151,20 +151,23 @@
   (defn write-off
     [^OutputStream stream {:keys [vertices faces]}]
     (let [vertices (keys vertices)
-          prc *precision*
           fmt-vertex
-          #+clj (let [ff (str "%1." prc "f ")
+          ,#+clj (let [ff (str "%1." *precision* "f ")
                       ff (str ff ff ff "\n")]
                   #(format ff %1 %2 %3))
-          #+cljs #(str (.toFixed (js/Number. %1) prc) " "
-                       (.toFixed (js/Number. %2) prc) " "
-                       (.toFixed (js/Number. %3) prc) "\n")
+          ,#+cljs #(str (.toFixed (js/Number. %1) *precision*) " "
+                       (.toFixed (js/Number. %2) *precision*) " "
+                       (.toFixed (js/Number. %3) *precision*) "\n")
           vindex (zipmap vertices (range))]
       (b/write-str-bytes stream "OFF\n")
       (b/write-str-bytes stream (str (count vertices) " " (count faces) " 0\n"))
       (doseq [[x y z] vertices]
-        (b/write-str-bytes stream (fmt-vertex (double x) (double y) (double z))))
-      (doseq [[a b c] faces]
         (b/write-str-bytes
-         stream (str "3 " (vindex a) " " (vindex b) " " (vindex c) "\n")))))
+         stream (fmt-vertex (double x) (double y) (double z))))
+      (doseq [fverts faces]
+        (b/write-str-bytes
+         stream
+         (str (count fverts) " "
+              (apply str (map #(str (vindex %) " ") fverts))
+              "\n")))))
 #+END_SRC
