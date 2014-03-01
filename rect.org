@@ -6,6 +6,9 @@
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.rect
+    ,#+cljs
+    (:require-macros
+     [thi.ng.macromath.core :as mm])
     (:require
      [thi.ng.common.data.core :as d]
      [thi.ng.common.error :as err]
@@ -13,7 +16,8 @@
      [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as aabb]
      [thi.ng.geom.mesh :as mesh]
-     [thi.ng.geom.types :as types])
+     [thi.ng.geom.types :as types]
+     ,#+clj [thi.ng.macromath.core :as mm])
     ,#+clj
     (:import
      [thi.ng.geom.types Circle Line2 Polygon Rect]))
@@ -57,7 +61,7 @@
   
   (defn unmap-uv
     [{:keys[p w h]} [qx qy]]
-    [(m/madd qx w (p 0)) (m/madd qy h (p 1))])
+    [(mm/madd qx w (p 0)) (mm/madd qy h (p 1))])
   
   (defn left [r] ((:p r) 0))
   (defn right [r] (+ ((:p r) 0) (:w r)))
