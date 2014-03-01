@@ -19,6 +19,7 @@
      [thi.ng.geom.types Line3 Triangle3]))
 #+END_SRC
 ** Typespecific functions
+*** TODO backport latest rev from tetra-plain.clj
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   (defn- subdot
     "Computes sum((a-b)*c), where a, b, c are 3D vectors."
@@ -148,7 +149,7 @@
        (check-faces-b
         (map #(g/- % qa) p)
         [[qb qa] [qc qa] [qd qa] [qc qb] [qd qb]]
-        p qa [[:f 0 1] [:f 2 0] [:f 1 2] [:f* 4 3]]))))
+        p qb [[:f 0 1] [:f 2 0] [:f 1 2] [:f* 4 3]]))))
 #+END_SRC
 ** Constructors
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx

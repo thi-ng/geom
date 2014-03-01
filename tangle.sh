@@ -1,5 +1,4 @@
 #!/bin/sh
-# -*- mode: shell-script -*-
 
 DIR=`pwd`
 FILES=""
