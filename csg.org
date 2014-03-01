@@ -1,13 +1,22 @@
+#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
+#+TAGS:           write(w) update(u) fix(f) verify(v) noexport(n)
+#+EXPORT_EXCLUDE_TAGS: noexport
+
 * Namespace: thi.ng.geom.csg
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/csg.cljx
   (ns thi.ng.geom.csg
+    ,#+cljs
+    (:require-macros
+     [thi.ng.macromath.core :as mm])
     (:require
-      [thi.ng.common.data.core :as d]
-      [thi.ng.common.math.core :as m :refer [PI TWO_PI *eps*]]
-      [thi.ng.geom.core :as g :refer [vec3]]
-      [thi.ng.geom.mesh :as mesh]
-      [thi.ng.geom.triangle :as t]))
+     [thi.ng.common.data.core :as d]
+     [thi.ng.common.math.core :as m :refer [PI TWO_PI *eps*]]
+     [thi.ng.geom.core :as g :refer [vec3]]
+     [thi.ng.geom.mesh :as mesh]
+     [thi.ng.geom.triangle :as t]
+     ,#+clj
+     [thi.ng.macromath.core :as mm]))
 #+END_SRC
 ** Forward declarations
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/csg.cljx
@@ -43,11 +52,11 @@
     "Takes a plane and splits the given polygon with it. Returns a 4-element vector
     of classified sub-shapes: [coplanar-front coplanar-back front back]."
     [{:keys [n w]} {:keys [vertices plane] :as poly} cp-front cp-back front back]
-    (let [inveps (- *eps*)
+    (let [ieps (- *eps*)
           [ptype types] (reduce
                          (fn [[ptype types] v]
                            (let [t (- (g/dot n (:p v)) w)
-                                 pt (cond (< t inveps) 2 (> t *eps*) 1 :default 0)]
+                                 pt (cond (< t ieps) 2 (> t *eps*) 1 :default 0)]
                              [(bit-or ptype pt) (conj types pt)]))
                          [0 []] vertices)]
       (condp = ptype
@@ -68,7 +77,7 @@
                                vi (vertices i)
                                f (if (= ti 2) f (conj f vi))
                                b (if (= ti 1) b (conj b vi))]
-                           (if (= (bit-or ti tj) 3)
+                           (if (== 3 (bit-or ti tj))
                              (let [vj (vertices j)
                                    t (/ (- w (g/dot n (:p vi))) (g/dot n (g/- (:p vj) (:p vi))))
                                    v (interpolate-vertex vi vj t)]
@@ -216,7 +225,7 @@
     [{:keys [p size] :as b}]
     (let [[cx cy cz] (g/centroid b)
           [sx sy sz] (g/* size 0.5)
-          v (fn [c s i mask] (m/madd s (if (pos? (bit-and i mask)) 1 -1) c))]
+          v (fn [c s i mask] (mm/madd s (if (pos? (bit-and i mask)) 1 -1) c))]
       (map
        (fn [[verts n]]
          (csg-polygon
