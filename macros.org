@@ -3,37 +3,24 @@
 #+EXPORT_EXCLUDE_TAGS: noexport
 
 * Helper macros
-** Math operations
-*** Clojure
+** Matrix operations
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/core.clj :mkdirp yes :padline no
   (ns thi.ng.geom.macros.core
-    (:require [thi.ng.common.math.macros :refer :all]))
-#+END_SRC
-*** ClojureScript
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/core_cljs.clj :mkdirp yes :padline no
-  (ns thi.ng.geom.macros.core-cljs
-    (:require [thi.ng.common.math.macros-cljs :refer :all]))
-#+END_SRC
-*** High level forms
-#+BEGIN_SRC clojure :noweb-ref math-ops
+    #+clj  (:require [thi.ng.macromath.core :as mm])
+    #+cljs (:require-macros [thi.ng.macromath.core :as mm]))
+
   (defmacro det-item
     [a b c d, e f g h, i j k l, m n o p]
-    `(+ (sub (mul ~a ~b ~c ~d)
-             (mul ~e ~f ~g ~h)
-             (mul ~i ~j ~k ~l))
-        (mul ~m ~n ~o ~p)))
+    `(+ (mm/sub (mm/mul ~a ~b ~c ~d)
+             (mm/mul ~e ~f ~g ~h)
+             (mm/mul ~i ~j ~k ~l))
+        (mm/mul ~m ~n ~o ~p)))
   
   (defmacro inv-item
     [a b c d e f g]
-    `(* (msubadd ~a ~b ~c ~d ~e ~f) ~g))
+    `(* (mm/msubadd ~a ~b ~c ~d ~e ~f) ~g))
 #+END_SRC
-*** Tangle for CLJ & CLJS                                          :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/core.clj :noweb yes
-  <<math-ops>>
-#+END_SRC
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/core_cljs.clj :noweb yes
-  <<math-ops>>
-#+END_SRC
+
 ** Voxel test
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/voxel.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.macros.voxel)

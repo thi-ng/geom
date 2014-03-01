@@ -23,12 +23,12 @@
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
      [thi.ng.geom.types :as types]
-     ,#+clj [thi.ng.common.math.macros :as mc]
+     ,#+clj [thi.ng.macromath.core :as mc]
      ,#+clj [thi.ng.geom.macros.core :as gmc])
     ,#+cljs
     (:require-macros
-     [thi.ng.common.math.macros-cljs :as mc]
-     [thi.ng.geom.macros.core-cljs :as gmc])
+     [thi.ng.macromath.core :as mc]
+     [thi.ng.geom.macros.core :as gmc])
     ,#+clj
     (:import
      [thi.ng.geom.types Circle Rect AABB Sphere]))
@@ -2429,7 +2429,7 @@ access to entities in _ context.
           delta (/ udist total)
           samples (loop [t 0.0 i 1 acc []]
                     (if (< t 1.0)
-                      (let [ct (* t total)
+                      (let [ct (clojure.core/* t total)
                             i (int (loop [i i] (if (>= ct (idx i)) (recur (inc i)) i)))
                             p (nth points (dec i))
                             q (nth points i)
@@ -2453,7 +2453,7 @@ access to entities in _ context.
             (= 1.0 t) (last points)
             :default (let [idx (or idx (total-length* points))
                            total (peek idx)
-                           ct (* t total)
+                           ct (clojure.core/* t total)
                            i (loop [i 1] (if (>= ct (idx i)) (recur (inc i)) i))
                            p (nth points (dec i))
                            q (nth points i)

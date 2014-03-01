@@ -30,9 +30,12 @@ target/test-classes
 #+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref cljs-artefact-path
 target/geom-<<version>>.js
 #+END_SRC
-** Objectives
+
+** Description
 ** License
-   This project is open source and licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache Software License 2.0]].
+
+This project is open source and licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache Software License 2.0]].
+
 ** Dependencies
 *** Runtime
 **** [[https://github.com/clojure/clojure][Clojure]]
@@ -45,7 +48,11 @@ target/geom-<<version>>.js
 #+END_SRC
 **** thi.ng/common
 #+BEGIN_SRC clojure :noweb-ref dep-common
-[thi.ng/common "0.1.1-SNAPSHOT"]
+[thi.ng/common "0.1.2-SNAPSHOT"]
+#+END_SRC
+**** [[https://github.com/thi-ng/macromath][Macromath]]
+#+BEGIN_SRC clojure :noweb-ref dep-mmath
+[thi.ng/macromath "0.2.0"]
 #+END_SRC
 *** Development
 **** [[https://github.com/lynaghk/cljx][Cljx]]
@@ -90,9 +97,10 @@ target/geom-<<version>>.js
     :description "thing geometry kit"
     :url "<<project-url>>"
     :license {:name "Apache Software License"
-              :url "http://www.eclipse.org/legal/epl-v10.html"}
+              :url "http://www.apache.org/licenses/LICENSE-2.0"}
     :dependencies [<<dep-clj>>
-                   <<dep-common>>]
+                   <<dep-common>>
+                   <<dep-mmath>>]
   
     :source-paths ["src/cljx"]
     :test-paths ["<<gen-test-path>>"]
@@ -148,8 +156,8 @@ target/geom-<<version>>.js
   (prn version)
   ; "<<version>>"
 #+END_SRC
-
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/version.cljx :noweb yes :mkdirp yes :padline no :exports none
+*** Version namespace                                              :noexport:
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/version.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.version)
   (def ^:const version "<<version>>")
 #+END_SRC
