@@ -1808,7 +1808,6 @@ access to entities in _ context.
   )
 #+END_SRC
 **** 4x4 Matrix
-***** Implementation
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defrecord Matrix44
     #+clj  [^double m00 ^double m01 ^double m02 ^double m03
@@ -1820,7 +1819,7 @@ access to entities in _ context.
             m20 m21 m22 m23
             m30 m31 m32 m33]
 #+END_SRC
-****** PMathOps
+***** PMathOps
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PMathOps
   (*
@@ -1849,7 +1848,7 @@ access to entities in _ context.
         (mc/madd m30 (.-m03 m) m31 (.-m13 m) m32 (.-m23 m) m33 (.-m33 m)))
        (meta _))))
 #+END_SRC
-****** PDeterminant
+***** PDeterminant
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PDeterminant
   (determinant
@@ -1863,7 +1862,7 @@ access to entities in _ context.
      (gmc/det-item m10 m01 m32 m23 m00 m11 m32 m23 m20 m11 m02 m33 m10 m21 m02 m33)
      (gmc/det-item m20 m01 m12 m33 m00 m21 m12 m33 m10 m01 m22 m33 m00 m11 m22 m33)]))
 #+END_SRC
-****** PInvert
+***** PInvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PInvert
   (invert
@@ -1912,7 +1911,7 @@ access to entities in _ context.
             (gmc/inv-item m20 n03 m21 n01 m22 n00 invd))
            (meta _))))))
 #+END_SRC
-****** PTranspose
+***** PTranspose
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
     PTranspose
     (transpose
@@ -1925,7 +1924,7 @@ access to entities in _ context.
         m03 m13 m23 m33)
        (meta _)))
 #+END_SRC
-****** Transformations
+***** Transformations
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PScale
   (scale
@@ -1983,7 +1982,7 @@ access to entities in _ context.
   (transform
    [_ matrix] (* _ matrix))
 #+END_SRC
-****** PVectorTransform
+***** PVectorTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PVectorTransform
   (transform-vector
@@ -1997,7 +1996,7 @@ access to entities in _ context.
       (mc/madd x m20 y m21 z m22 w m23)
       (mc/madd x m30 y m31 z m32 w m33)]))
 #+END_SRC
-****** End of implementation
+***** End of implementation
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
     )
 #+END_SRC
@@ -2034,7 +2033,9 @@ access to entities in _ context.
 *** Quaternion
 **** Implementation
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
-  (deftype Quaternion [^double x ^double y ^double z ^double w _meta]
+  (deftype Quaternion
+    ,#+clj  [^double x ^double y ^double z ^double w _meta]
+    ,#+cljs [x y z w _meta]
 #+END_SRC
 ***** Clojure protocols
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
