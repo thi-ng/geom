@@ -33,9 +33,8 @@
       (let [od (g/dot an bn)
             det (/ (mm/madd od od -1))
             u (* (mm/madd bw od (- aw)) det)
-            v (* (mm/madd aw od (- bw)) det)
-            p (g/madd an u (g/* bn v))]
-        {:p p :dir (g/normalize (g/cross an bn))})))
+            v (* (mm/madd aw od (- bw)) det)]
+        {:p (g/madd an u (g/* bn v)) :dir (g/normalize (g/cross an bn))})))
 #+END_SRC
 ** TODO Protocol implementation
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
@@ -102,4 +101,3 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
   )
 #+END_SRC
-
