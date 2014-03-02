@@ -21,16 +21,17 @@
   (defrecord Triangle2 [a b c])
 #+END_SRC
 *** Ellipse
-**** TODO rename circle ns into ellipse and add ellipse impl
-     Even though a circle is a specialization of an Ellipse, we define
-     an extra Circle type for performance reasons.
+
+Even though a circle is a specialization of an Ellipse, we define
+an extra Circle type for performance reasons.
+
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/types.cljx
-  (defrecord Ellipse [p ^double rx ^double ry])
-  (defrecord Circle [p ^double r])
+  (defrecord Circle #+clj [p ^double r] #+cljs [p r])
+  (defrecord Ellipse #+clj [p ^double rx ^double ry] #+cljs [p rx ry])
 #+END_SRC
 *** Rectangle
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/types.cljx
-  (defrecord Rect [p ^double w ^double h])
+  (defrecord Rect #+clj [p ^double w ^double h] #+cljs [p w h])
 #+END_SRC
 *** Polygon
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/types.cljx
@@ -59,7 +60,7 @@
       lying on the plane and normal vector =n= standing perpendicular
       on the plane. The latter defines the plane's orientation in space.
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/types.cljx
-  (defrecord Plane [p n])
+  (defrecord Plane #+clj [n ^double w] #+cljs [n w])
 #+END_SRC
 *** Triangle
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/types.cljx
@@ -84,9 +85,13 @@
       Just like a circle in 2D, a 3D sphere is uniquely defined via
       its center point =o= and radius =r=.
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/types.cljx
-  (defrecord Sphere [o ^double r])
+  (defrecord Sphere #+clj [o ^double r] #+cljs [o r])
 #+END_SRC
 *** Mesh
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/types.cljx
   (defrecord Mesh3 [vertices normals fnormals vnormals edges faces attribs])
+#+END_SRC
+*** GMesh
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/types.cljx
+  (defrecord GMesh [vertices normals fnormals vnormals edges faces attribs])
 #+END_SRC
