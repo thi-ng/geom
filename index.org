@@ -111,6 +111,7 @@ This project is open source and licensed under the [[http://www.apache.org/licen
                                <<dep-cljsbuild>>
                                <<dep-cljs-test>>
                                <<dep-austin>>]
+                     :hooks [cljx.hooks]
                      :aliases {"cleantest" ["do" "clean," "cljx" "once," "test," "cljsbuild" "test"]}}}
   
     :cljx {:builds [{:source-paths ["src/cljx"]
