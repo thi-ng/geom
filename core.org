@@ -299,8 +299,8 @@ access to entities in _ context.
 ***** PIntersect
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PIntersect
-    (intersect-line [_ l])
-    (intersect-ray [_ r])
+    (intersect-line [_ l] [_ p q])
+    (intersect-ray [_ r] [_ p dir])
     (intersect-shape [_ s]))
 #+END_SRC
 ***** PMeshConvert
