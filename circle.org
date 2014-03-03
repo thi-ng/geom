@@ -114,14 +114,14 @@
        (when bottom?
          (->> points
               (g/tessellate* (:p _))
-              (map (fn [[a b c]] [(vec3 a) (vec3 b) (vec3 c)]))))
+              (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)]))))
        (mapcat (fn [[a1 b1] [a2 b2]] [[a1 b1 a2] [b1 b2 a2]])
                (d/successive-nth 2 (conj points3 (points3 0)))
                (d/successive-nth 2 (conj tpoints3 (tpoints3 0))))
        (when top?
          (->> tpoints
               (g/tessellate* (:p _))
-              (map (fn [[a b c]] [(g/+ off b) (g/+ off a) (g/+ off c)]))))))))
+              (map (fn [[a b c]] [(g/+ off a) (g/+ off b) (g/+ off c)]))))))))
 #+END_SRC
 *** PGraph
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
