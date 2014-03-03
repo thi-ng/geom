@@ -15,7 +15,7 @@
      [clojure.set :as set])
     #+clj
     (:import
-     [thi.ng.geom.types Line3 AABB Sphere Mesh2 Mesh3]))
+     [thi.ng.geom.types Line3 AABB Sphere GMesh]))
 #+END_SRC
 ** Shared 2d/3d functions
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
@@ -99,10 +99,11 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
   (defn gmesh
     "Builds a new 2d mesh data structure and (optionally) populates it with
-        the given items (a seq of existing meshes and/or faces). Faces are defined
-        as 3-element vectors of their vertices."
-    ([] {:vertices {} :edges {} :fnormals {} :vnormals {}
-         :normals #{} :faces #{}}))
+    the given items (a seq of existing meshes and/or faces). Faces are defined
+    as vectors of their vertices."
+    ([] (types/map->GMesh
+         {:vertices {} :edges {} :fnormals {} :vnormals {}
+          :normals #{} :faces #{} :attribs {}})))
   
   (defn into-mesh
     [m faces]
@@ -133,7 +134,148 @@
     [f]
     (if (<= (count f) 4) [f] (g/tessellate* (g/centroid* f) f)))
   
-  (defn tessellate
-    ([mesh] (tessellate mesh tessellate-face))
-    ([mesh f] (into-mesh (gmesh) (mapcat f (:faces mesh)))))
+  (defn tessellate-face1
+    [f]
+    (if (> (count f) 3)
+      (let [[v0 & more] f]
+        (map (fn [[a b]] [v0 a b]) (d/successive-nth 2 more)))
+      [f]))
+  
+  (defn map-faces
+    "Applies f to all faces of given mesh and adds resulting faces to
+    new mesh. Thus f should return a seq of faces. Returns new mesh."
+    [f mesh] (into-mesh (gmesh) (mapcat f (:faces mesh))))
+#+END_SRC
+** Protocol implementations
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+  (extend-type thi.ng.geom.types.GMesh
+#+END_SRC
+*** PArea
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+  g/PArea
+  (area
+   [_]
+   (->> (:faces _)
+        (mapcat
+         (fn [f]
+           (->> f
+                tessellate-face1
+                (map #(m/abs (t/area3 %))))))
+        (reduce +)))
+#+END_SRC
+*** TODO PBoundary
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+
+#+END_SRC
+*** PBounds
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+  g/PBounds
+  (bounds [_] (g/bounding-box* (keys (:vertices _))))
+  (width [_] (g/axis-range* 0 (keys (:vertices _))))
+  (height [_] (g/axis-range* 1 (keys (:vertices _))))
+  (depth [_] (g/axis-range* 2 (keys (:vertices _))))
+#+END_SRC
+*** PBoundingSphere
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+  g/PBoundingSphere
+  (bounding-sphere
+   [_] (g/bounding-sphere* (g/centroid _) (g/vertices _)))
+#+END_SRC
+*** TODO PCenter
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+  g/PCenter
+  (center [_] _)
+  (centroid [_] (g/centroid* (keys (:vertices _))))
+#+END_SRC
+*** TODO PGraph
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+  g/PGraph
+  (connected-components
+   [_] [_]) ;; TODO
+  (edges
+   [_] (keys (:edges _)))
+  (vertices
+   [_] (keys (:vertices _)))
+  (vertex-neighbors
+   [_ v] (vertex-neighbors* _ v))
+  (vertex-valence
+   [_ v] (vertex-valence* _ v))
+  (remove-vertex
+   [_ v] (remove-vertex* _ v))
+  (replace-vertex
+   [_ v v2] (replace-vertex* _ v v2))
+  (merge-vertices
+   [_ a b] (merge-vertices* _ a b))
+#+END_SRC
+*** PMesh
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+  g/PMesh
+  (faces
+   [_] (:faces _))
+  (vertex-faces
+   [_ v] (vertex-faces* _ v))
+  (compute-face-normals
+   [_]
+   (loop [norms (transient #{}), fnorms (transient {}), faces (:faces _)]
+     (if faces
+       (let [[a b c :as f] (first faces)
+             [norms n] (d/index! norms (g/normal3* a b c))]
+         (recur norms (assoc! fnorms f n) (next faces)))
+       (assoc _
+         :normals (persistent! norms)
+         :fnormals (persistent! fnorms)))))
+  (compute-vertex-normals
+   [{:keys [vertices normals fnormals] :as _}]
+   (loop [norms (transient normals), vnorms (transient {}), verts (keys vertices)]
+     (if verts
+       (let [v (first verts)
+             n (->> v
+                    (g/vertex-faces _)
+                    (map #(get fnormals %))
+                    (reduce g/+)
+                    (g/normalize))
+             [norms n] (d/index! norms n)]
+         (recur norms (assoc! vnorms v n) (next verts)))
+       (assoc _
+         :normals (persistent! norms)
+         :vnormals (persistent! vnorms)))))
+  (remove-face
+   [{:keys [vertices edges faces fnormals vnormals] :as _} f]
+   (if (get faces f)
+     (loop [verts vertices
+            vnorms vnormals
+            edges edges
+            fedges (d/successive-nth 2 (conj f (first f)))]
+       (if fedges
+         (let [[a b] (first fedges)
+               e #{a b}
+               efaces (disj (get edges e) f)
+               edges (if (seq efaces)
+                       (assoc edges e efaces)
+                       (dissoc edges e))
+               ve (filter #(not= (:f %) f) (get verts a))]
+           (if (seq ve)
+             (recur (assoc verts a (into #{} ve)) vnorms edges (next fedges))
+             (recur (dissoc verts a) (dissoc vnorms a) edges (next fedges))))
+         (assoc _
+           :vertices verts
+           :vnormals vnorms
+           :edges edges
+           :faces (disj faces f)
+           :fnormals (dissoc fnormals f))))
+     _))
+#+END_SRC
+*** PMeshConvert
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+  g/PMeshConvert
+  (as-mesh [_] _)
+#+END_SRC
+*** TODO PVolume
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+  g/PVolume
+  (volume [_] 0)
+#+END_SRC
+*** End of implementation                                          :noexport:
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+  )
 #+END_SRC
