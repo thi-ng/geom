@@ -6,10 +6,12 @@
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
   (ns thi.ng.geom.sphere
+    #+cljs (:require-macros [thi.ng.macromath.core :as mm])
     (:require
-     [thi.ng.common.math.core :as m :refer [PI *eps*]]
+     #+clj [thi.ng.macromath.core :as mm]
+     [thi.ng.common.math.core :as m :refer [TWO_PI PI *eps*]]
      [thi.ng.geom.core :as g :refer [vec3 *resolution*]]
-     [thi.ng.geom.mesh :as mesh]
+     [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.types :as types])
     ,#+clj
     (:import
@@ -88,8 +90,34 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
   g/PMeshConvert
   (as-mesh
-   ([_] (g/as-mesh _ *resolution*))
-   ([_ res] nil))
+   ([_] (g/as-mesh _ {}))
+   ([{[x y z] :o r :r} {:keys [res slices stacks] :or {res *resolution*}}]
+      (let [slices (or slices res), stacks (or stacks res)
+            range-u (range slices), range-v (range stacks)]
+        (->> (for [i range-u, j range-v
+                   :let [u (/ i slices)
+                         v (/ j stacks)
+                         u1 (/ (inc i) slices)
+                         v1 (/ (inc j) stacks)
+                         verts [[u v]]
+                         verts (if (pos? j) (conj verts [u1 v]) verts)
+                         verts (if (< j (dec stacks)) (conj verts [u1 v1]) verts)]]
+               (conj verts [u v1]))
+             (reduce
+              (fn [m verts]
+                (->> verts
+                     (map
+                      (fn [[u v]]
+                        (let [theta (* TWO_PI u) ;; FIXME optimize trig
+                              phi (* PI v)
+                              st (Math/sin theta) ct (Math/cos theta)
+                              sp (Math/sin phi) cp (Math/cos phi)]
+                          (vec3
+                           (+ (mm/mul ct sp r) x)
+                           (mm/madd cp r y)
+                           (+ (mm/mul st sp r) z)))))
+                     (gm/add-face m)))
+              (gm/gmesh))))))
 #+END_SRC
 *** End of implementation                                          :noexport:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
