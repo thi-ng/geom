@@ -198,6 +198,7 @@ access to entities in _ context.
 ***** PGraph
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PGraph
+    (connected-components [_])
     (cyclic? [_])
     (edges [_] [_ n])
     (vertices [_] [_ n])
