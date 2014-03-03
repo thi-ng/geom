@@ -11,7 +11,7 @@
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [PI TWO_PI *eps*]]
      [thi.ng.geom.core :as g :refer [vec2 vec3 *resolution*]]
-     [thi.ng.geom.mesh :as mesh]
+     [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.types :as types])
     #+clj
     (:import
@@ -108,14 +108,14 @@
          off (or offset (vec3 0 0 depth))
          points3 (mapv vec3 points)
          tpoints3 (mapv #(g/+ off %) tpoints)]
-     (mesh/into-mesh
-      (mesh/mesh3) nil
+     (gm/into-mesh
+      (gm/gmesh)
       (concat
        (when bottom?
          (->> points
               (g/tessellate* (:p _))
               (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)]))))
-       (mapcat (fn [[a1 b1] [a2 b2]] [[a1 b1 a2] [b1 b2 a2]])
+       (mapcat (fn [[a1 b1] [a2 b2]] [[a1 b1 b2 a2]])
                (d/successive-nth 2 (conj points3 (points3 0)))
                (d/successive-nth 2 (conj tpoints3 (tpoints3 0))))
        (when top?
@@ -152,7 +152,12 @@
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ *resolution*))
-   ([_ res] (mesh/into-mesh (mesh/mesh2) nil (g/tessellate* (:p _) (g/vertices _ res)))))
+   ([_ res]
+      (->> res
+           (g/vertices _)
+           (map g/vec3)
+           (g/tessellate* (vec3 (:p _)))
+           (gm/into-mesh (gm/gmesh)))))
 #+END_SRC
 *** PPolygonConvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
@@ -194,9 +199,10 @@
   (tessellate
    ([_] (g/tessellate _ *resolution*))
    ([{p :p :as _} res]
-      (->> (g/vertices _ res)
-          (g/tessellate* p)
-          (map #(thi.ng.geom.types.Triangle2. (% 0) (% 1) (% 2))))))
+      (->> res
+           (g/vertices _)
+           (g/tessellate* p)
+           (map #(thi.ng.geom.types.Triangle2. (% 0) (% 1) (% 2))))))
 #+END_SRC
 *** PVolume
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
