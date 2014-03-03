@@ -203,7 +203,10 @@ access to entities in _ context.
     (edges [_] [_ n])
     (vertices [_] [_ n])
     (vertex-valence [_ v])
-    (vertex-neighbors [_ v]))
+    (vertex-neighbors [_ v])
+    (remove-vertex [_ v])
+    (replace-vertex [_ a b])
+    (merge-vertices [_ a b]))
 #+END_SRC
 ***** PDirectedGraph
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
@@ -374,10 +377,7 @@ access to entities in _ context.
     (remove-face [_ f])
     (add-mesh [_ m])
     (compute-face-normals [_])
-    (compute-vertex-normals [_])
-    (remove-vertex [_ v])
-    (replace-vertex [_ a b])
-    (merge-vertices [_ a b]))
+    (compute-vertex-normals [_]))
 #+END_SRC
 *** Vector implementations
     For performance reasons, we decided to define custom datatypes
