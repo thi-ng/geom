@@ -67,7 +67,7 @@
 *** PVolume
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
   g/PVolume
-  (volume [{r :r}] (* (/ 4.0 3.0) PI r r r))
+  (volume [{r :r}] (mm/mul (/ 4.0 3.0) PI r r r))
 #+END_SRC
 *** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
@@ -116,7 +116,7 @@
                            (+ (mm/mul ct sp r) x)
                            (mm/madd cp r y)
                            (+ (mm/mul st sp r) z)))))
-                     (gm/add-face m)))
+                     (g/add-face m)))
               (gm/gmesh))))))
 #+END_SRC
 *** End of implementation                                          :noexport:

@@ -438,7 +438,7 @@
          off (vec3 0 0 depth)
          bottom (map vec3 points)
          top (map #(g/+ off %) tpoints)]
-     (gm/into-mesh
+     (g/into-mesh
       (gm/gmesh)
       (mapcat
        (fn [[a1 a2] [b1 b2]] [[a1 b1 b2 a2]])

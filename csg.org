@@ -35,7 +35,7 @@
   
   (defn flip-poly
     "Flips the polygon's orientation by reversing its vertex order and
-    inverting all vertex normals and its plane normal."
+    inverting all vertex normals and its plane orientation."
     [{verts :vertices :as poly}]
     (assoc poly
       :vertices (loop [flipped [], i (dec (count verts))]
@@ -220,7 +220,7 @@
     [polygons]
     (->> polygons
          (map #(map :p (:vertices %)))
-         (gm/into-mesh (gm/gmesh))))
+         (g/into-mesh (gm/gmesh))))
   
   (defn csg-aabb
     [{:keys [p size] :as b}]

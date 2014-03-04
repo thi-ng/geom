@@ -88,7 +88,7 @@
 *** PMeshConvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
   g/PMeshConvert
-  (as-mesh ;; FIXME
+  (as-mesh
    ([_] (g/as-mesh _ {}))
    ([_ {:keys [p width height size] :or {size 1.0}}]
       (let [w (* (or width size) 0.5)
