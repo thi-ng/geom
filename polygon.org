@@ -215,27 +215,24 @@
   (center
    ([_] (g/center _ [0.0 0.0]))
    ([_ o]
-      (let [d (g/- o (g/centroid _))
-            p (->> _
-                   :points
-                   (map #(g/+ d %))
-                   (vec))]
-        (thi.ng.geom.types.Polygon. p []))))
+      (thi.ng.geom.types.Polygon.
+       (g/center* (g/centroid _) o (:points _)) [])))
   (centroid
    [{points :points :as _}]
    (let [c (->> points
                 (d/rotate-left 1)
-                (reduce (fn [[c p] v] [(g/madd (g/+ p v) (g/cross p v) c) v])
-                        [(vec2) (first points)])
+                (reduce
+                 (fn [[c p] v] [(g/madd (g/+ p v) (g/cross p v) c) v])
+                 [(vec2) (first points)])
                 (first))]
-     (g/* c (/ 1.0 (* 6 (g/area _))))))  
+     (g/* c (/ 1.0 (* 6.0 (g/area _))))))
 #+END_SRC
 *** PCircumference
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PCircumference
   (circumference
    [{points :points}]
-   (d/reduce-pairs + g/dist (concat points [(first points)])))
+   (d/reduce-pairs + g/dist (conj points (first points))))
 #+END_SRC
 *** TODO PClassify
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
@@ -354,6 +351,14 @@
              (when-not complete? (quad-strip (drop-wrap tpoints3) (drop-wrap itpoints3) false)))
             (quad-strip (maybe-loop tpoints3) (maybe-loop itpoints3) true))))))  
 #+END_SRC
+*** PFlip
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+  g/PFlip
+  (flip
+   [_]
+   (thi.ng.geom.types.Polygon.
+    (reverse (:points _)) []))
+#+END_SRC
 *** PGraph
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PGraph
@@ -373,14 +378,6 @@
   g/PProximity
   (closest-point
    [_ p] (g/closest-point* (g/edges _) p))
-#+END_SRC
-*** PFlip
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
-  g/PFlip
-  (flip
-   [_]
-   (thi.ng.geom.types.Polygon.
-    (reverse (:points _)) []))
 #+END_SRC
 *** TODO PSample
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
@@ -404,17 +401,26 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PScale
   (scale
-   ([_ s] (thi.ng.geom.types.Polygon. (mapv #(g/* % s) (:points _)) []))
-   ([_ a b] (thi.ng.geom.types.Polygon. (mapv #(g/* % a b) (:points _)) [])))
+   ([_ s]
+      (thi.ng.geom.types.Polygon.
+       (mapv #(g/* % s) (:points _)) []))
+   ([_ a b]
+      (thi.ng.geom.types.Polygon.
+       (mapv #(g/* % a b) (:points _)) [])))
   (scale-size
    [_ s]
-   (let [c (g/centroid _)]
-     (thi.ng.geom.types.Polygon.
-      (mapv #(-> % (g/- c) (g/madd s c)) (:points _)) [])))
+   (thi.ng.geom.types.Polygon.
+    (g/scale-size* (g/centroid _) s (:points _)) []))
   g/PTranslate
   (translate
    [_ t]
-   (thi.ng.geom.types.Polygon. (mapv #(g/+ % t) (:points _)) []))
+   (thi.ng.geom.types.Polygon.
+    (mapv #(g/+ % t) (:points _)) []))
+  g/PTransform
+  (transform
+   [_ tx]
+   (thi.ng.geom.types.Polygon.
+    (mapv #(g/transform-vector tx %) (:points _)) []))
 #+END_SRC
 *** End of implementations                                         :noexport:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
