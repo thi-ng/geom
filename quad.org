@@ -11,7 +11,7 @@
      [thi.ng.common.math.core :as m :refer [*eps*]]
      [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.line :as l]
-     [thi.ng.geom.triangle]
+     [thi.ng.geom.triangle :as t]
      [thi.ng.geom.gmesh :as gmesh]
      [thi.ng.geom.types :as types])
     #+clj
@@ -26,7 +26,9 @@
     ([a b c d] (thi.ng.geom.types.Quad3. (vec3 a) (vec3 b) (vec3 c) (vec3 d))))
 #+END_SRC
 ** TODO Type specific functions
-g/- https://www.garagegames.com/community/forums/viewthread/76960/1#comment-543505
+
+- https://www.garagegames.com/community/forums/viewthread/76960/1#comment-543505
+
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
   ;; FIXME
   (defn map-uv
@@ -72,7 +74,10 @@ g/- https://www.garagegames.com/community/forums/viewthread/76960/1#comment-5435
 *** PArea
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
   g/PArea
-  (area [_] nil)
+  (area
+   [_]
+   (+ (t/area3 (:a _) (:b _) (:c _))
+      (t/area3 (:a _) (:c _) (:d _))))
 #+END_SRC
 *** PCenter
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
@@ -136,7 +141,7 @@ g/- https://www.garagegames.com/community/forums/viewthread/76960/1#comment-5435
   (random-point
    [_] (g/point-at _ (m/random)))
   (random-point-inside
-   [_] nil)
+   [_] (unmap-uv _ (vec2 (m/random) (m/random))))
   (sample-uniform
    [_ udist include-last?]
    (g/sample-uniform* udist include-last? (conj (g/vertices _) (:a _))))
@@ -144,24 +149,30 @@ g/- https://www.garagegames.com/community/forums/viewthread/76960/1#comment-5435
 *** TODO PIntersect
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
   g/PIntersect
+  (intersect-line
+   [_ l])
+  (intersect-ray
+   [_ r])
   (intersect-shape
    [_ s])
 #+END_SRC
 *** TODO PSubdivide
-    A quad can be subdivided into smaller ones, i.e. to create a list
-    of grid cells. The following options can be given as a 2nd
-    parameter map:
 
-    | Key     | Description                                                    | Default |
-    |---------+----------------------------------------------------------------+---------|
-    | =:num=  | number of cols/rows the rect will be uniformly subdivided into |       2 |
-    | =:cols= | number of times the rect will be subdivided along the X-axis   |       2 |
-    | =:rows= | number of times the rect will be subdivided along the Y-axis   |       2 |
+A quad can be subdivided into smaller ones, i.e. to create a list
+of grid cells. The following options can be given as a 2nd
+parameter map:
 
-    The resulting quads are *not* guaranteed to retain the aspect
-    ratio of the original quad. If specified, =:cols= and =:rows= will
-    take precedence over =:num=, but the latter will be used as
-    default for missing args.
+| Key     | Description                                                      | Default |
+|---------+------------------------------------------------------------------+---------|
+| =:num=  | number of cols/rows the rect will be uniformly subdivided into   |       2 |
+| =:cols= | number of times the rect will be subdivided along the AB/CD edge |       2 |
+| =:rows= | number of times the rect will be subdivided along the BC/DA edge |       2 |
+
+The resulting quads are *not* guaranteed to retain the aspect
+ratio of the original quad (only kept if all of quad's inner
+angles are 90 degrees). If specified, =:cols= and =:rows= will
+take precedence over =:num=, but the latter will be used as
+default for missing args.
 
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
   g/PSubdivide
@@ -176,11 +187,13 @@ g/- https://www.garagegames.com/community/forums/viewthread/76960/1#comment-5435
            (map-p [u1 v1]) (map-p [u2 v1]) (map-p [u2 v2]) (map-p [u1 v2]))))))
 #+END_SRC
 *** PTessellate
-    A quad can be tessellated into a number of triangles. When called
-    without an options map as 2nd argument, the quad will be split
-    into 2 triangles: =[a b c]= & =[a c d]=. When called *with* options,
-    then these are used for a call to [[PSubdivide][=subdivide=]] first and the
-    function returns a lazyseq of triangles of the subdivided quad.
+
+A quad can be tessellated into a number of triangles. When called
+without an options map as 2nd argument, the quad will be split
+into 2 triangles: =[a b c]= & =[a c d]=. When called *with* options,
+then these are used for a call to [[PSubdivide][=subdivide=]] first and the
+function returns a lazyseq of triangles of the subdivided quad.
+
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
   g/PTessellate
   (tessellate
