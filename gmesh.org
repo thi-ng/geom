@@ -17,7 +17,7 @@
     (:import
      [thi.ng.geom.types Line3 AABB Sphere GMesh]))
 #+END_SRC
-** Shared 2d/3d functions
+** Helper functions
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
   (defn add-face
     [{:keys [vertices edges faces] :as mesh} verts]
@@ -210,6 +210,8 @@
 *** PMesh
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PMesh
+  (add-face
+   [_ f] (add-face _ f))
   (faces
    [_] (:faces _))
   (vertex-faces
@@ -239,6 +241,8 @@
        (assoc _
          :normals (persistent! norms)
          :vnormals (persistent! vnorms)))))
+  (into-mesh
+   [_ faces] (into-mesh _ faces))
   (remove-face
    [{:keys [vertices edges faces fnormals vnormals] :as _} f]
    (if (get faces f)
@@ -266,7 +270,7 @@
      _))
 #+END_SRC
 *** PMeshConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PMeshConvert
   (as-mesh [_] _)
 #+END_SRC
