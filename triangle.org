@@ -6,9 +6,12 @@
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.triangle
+    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     (:require
+     ,#+clj [thi.ng.macromath.core :as mm]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
+     [thi.ng.common.error :as err]
      [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.types :as types])
     ,#+clj
@@ -18,25 +21,31 @@
 ** Constructors
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
   (defn triangle2
-    [a b c] (thi.ng.geom.types.Triangle2. (vec2 a) (vec2 b) (vec2 c)))
+    ([t]
+       (cond
+        (map? t)        (thi.ng.geom.types.Triangle2.
+                         (vec2 (:a t)) (vec2 (:b t)) (vec2 (:c t)))
+        (sequential? t) (thi.ng.geom.types.Triangle2.
+                         (vec2 (nth t 0)) (vec2 (nth t 1)) (vec2 (nth t 2)))
+        :default (err/illegal-arg! t)))
+    ([a b c] (thi.ng.geom.types.Triangle2. (vec2 a) (vec2 b) (vec2 c))))
   
   (defn triangle3
     ([t]
        (cond
-        (or (instance? thi.ng.geom.types.Triangle2 t) (map? t))
-        (thi.ng.geom.types.Triangle3.
-         (vec3 (:a t)) (vec3 (:b t)) (vec3 (:c t)))
-        :default
-        (thi.ng.geom.types.Triangle3.
-         (vec3 (nth t 0 0)) (vec3 (nth t 1 0)) (vec3 (nth t 2 0)))))
+        (map? t)        (thi.ng.geom.types.Triangle3.
+                         (vec3 (:a t)) (vec3 (:b t)) (vec3 (:c t)))
+        (sequential? t) (thi.ng.geom.types.Triangle3.
+                         (vec3 (nth t 0)) (vec3 (nth t 1)) (vec3 (nth t 2)))
+        :default (err/illegal-arg! t)))
     ([a b c] (thi.ng.geom.types.Triangle3. (vec3 a) (vec3 b) (vec3 c))))
   
   (defn equilateral2
     ([l]
        (cond
-        (map? l) (equilateral2 (:a l) (:b l))
-        (sequential? l) (let [[a b] l] (equilateral2 a b))
-        :default (assert false "invalid argument, only map or sequential supported"))) ;; TODO
+        (map? l) (equilateral2 (:p l) (:q l))
+        (sequential? l) (equilateral2 (nth l 0) (nth l 1))
+        :default (err/illegal-arg! l)))
     ([a b]
        (let [a (vec2 a) b (vec2 b)
              dir (g/- a b)
@@ -50,7 +59,7 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
   (defn norm-sign2
     [[ax ay] [bx by] [cx cy]]
-    (- (* (- bx ax) (- cy ay)) (* (- cx ax) (- by ay))))
+    (- (mm/subm bx ax cy ay) (mm/subm cx ax by ay)))
   
   (defn norm-sign3
     ([a b c] (g/dot (g/cross (g/- b a) (g/- c a)) g/V3Z))
@@ -81,10 +90,11 @@
           d02 (g/dot e0 e2)
           d11 (g/mag-squared e1)
           d12 (g/dot e1 e2)
-          denom (/ 1.0 (- (* d00 d11) (* d01 d01)))
-          u (* denom (- (* d11 d02) (* d01 d12)))
-          v (* denom (- (* d00 d12) (* d01 d02)))]
-      [(- 1.0 (+ u v)) v u]))
+          denom (/ 1.0 (mm/msub d00 d11 d01 d01)) ;; (/ 1.0 (- (* d00 d11) (* d01 d01)))
+          u (* denom (mm/msub d11 d02 d01 d12)) ;; (* denom (- (* d11 d02) (* d01 d12)))
+          v (* denom (mm/msub d00 d12 d01 d02)) ;; (* denom (- (* d00 d12) (* d01 d02)))
+          ]
+      [(mm/add u v -1.0) v u]))
   
   (defn contains-point2*
     [a b c p]
@@ -151,77 +161,91 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
   (extend-type thi.ng.geom.types.Triangle2
 #+END_SRC
+**** PArea
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PArea
+  (area [_] (area2 (:a _) (:b _) (:c _)))
+#+END_SRC
+**** PClassify                                                       :verify:
+***** TODO add clockwise? check, currently assumes clockwise ordering
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PClassify
+  (classify-point
+   [_ p] (->> (g/edges _)
+              (map #(g/classify-point
+                     (thi.ng.geom.types.Line2. (% 0) (% 1)) p))
+              (reduce min)))
+#+END_SRC
+**** PBoundary                                                       :verify:
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PBoundary
+  (contains-point?
+   [_ p] (contains-point2* (:a _) (:b _) (:c _) p))
+#+END_SRC
+**** PBounds
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PBounds
+  (bounds [_] (g/bounding-rect* [(:a _) (:b _) (:c _)]))
+  (width [_] (g/axis-range* 0 [(:a _) (:b _) (:c _)]))
+  (height [_] (g/axis-range* 1 [(:a _) (:b _) (:c _)]))
+  (depth [_] 0)
+#+END_SRC
+**** PBoundingCircle
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PBoundingCircle
+  (bounding-circle
+   [_] (g/bounding-circle* (g/centroid _) [(:a _) (:b _) (:c _)]))
+#+END_SRC
+**** PCenter
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PCenter
+  (center
+   ([_] (let [ct (g/centroid _)]
+          (thi.ng.geom.types.Triangle2.
+           (g/- (:a _) ct) (g/- (:b _) ct) (g/- (:c _) ct))))
+   ([_ o] (let [ct (g/- o (g/centroid _))]
+            (thi.ng.geom.types.Triangle2.
+             (g/+ (:a _) ct) (g/+ (:b _) ct) (g/+ (:c _) ct)))))
+  (centroid [_] (centroid* (:a _) (:b _) (:c _)))
+#+END_SRC
+**** PCircumference
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PCircumference
+  (circumference
+   [{a :a b :b c :c}] (mm/add (g/dist a b) (g/dist b c) (g/dist c a)))
+#+END_SRC
+**** PFlip
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PFlip
+  (flip
+   [_] (thi.ng.geom.types.Triangle2. (:b _) (:a _) (:c _)))
+#+END_SRC
 **** PGraph
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
   g/PGraph
   (vertices
    [_] [(:a _) (:b _) (:c _)])
   (edges
-   [{a :a b :b c :c}]
-   [(thi.ng.geom.types.Line2. a b)
-    (thi.ng.geom.types.Line2. b c)
-    (thi.ng.geom.types.Line2. c a)])
+   [{a :a b :b c :c}] [[a b] [b c] [c a]])
   (vertex-neighbors
    [{a :a b :b c :c} v]
-   (condp = (vec2 v)
-     a [c b]
-     b [a c]
-     c [b a]
-     nil))
+   (condp = v, a [c b], b [a c], c [b a], nil))
   (vertex-valence
-   [_ v] (if (#{(:a _) (:b _) (:c _)} (vec2 v)) 2 0))
+   [_ v] (if (#{(:a _) (:b _) (:c _)} v) 2 0))
 #+END_SRC
-**** PArea
+**** PPolygonConvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PArea
-  (area [t] (area2 (:a t) (:b t) (:c t)))
+  g/PPolygonConvert
+  (as-polygon
+   [_] (thi.ng.geom.types.Polygon. [(:a _) (:b _) (:c _)] []))
 #+END_SRC
-**** PBounds
+**** PProximity
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PBounds
-  (bounds [t] (g/bounding-rect* [(:a t) (:b t) (:c t)]))
-  (width [_] (g/axis-range* 0 [(:a _) (:b _) (:c _)]))
-  (height [_] (g/axis-range* 1 [(:a _) (:b _) (:c _)]))
-  (depth [_] 0)
-#+END_SRC
-**** PCenter
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PCenter
-  (center
-   ([t] (let [ct (g/centroid t)]
-          (thi.ng.geom.types.Triangle2.
-           (g/- (:a t) ct) (g/- (:b t) ct) (g/- (:c t) ct))))
-   ([t o] (let [ct (g/- o (g/centroid t))]
-            (thi.ng.geom.types.Triangle2.
-             (g/+ (:a t) ct) (g/+ (:b t) ct) (g/+ (:c t) ct)))))
-  (centroid [t] (centroid* (:a t) (:b t) (:c t)))
-#+END_SRC
-**** PBoundingCircle
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PBoundingCircle
-  (bounding-circle
-   [t] (g/bounding-circle* (g/centroid t) [(:a t) (:b t) (:c t)]))
-#+END_SRC
-**** PCircumference
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PCircumference
-  (circumference
-   [{a :a b :b c :c}] (+ (+ (g/dist a b) (g/dist b c)) (g/dist c a)))
-#+END_SRC
-**** TODO PBoundary
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PClassify
-  ;; TODO add clockwise? check, currently assumes clockwise ordering
-  (classify-point
-   [_ p] (reduce min (map #(g/classify-point % p) (g/edges _))))
   g/PProximity
   (closest-point
-   [_ p] (g/closest-point* (g/edges _) p))
-  g/PBoundary
-  (contains-point?
-   [_ p] (contains-point2* (:a _) (:b _) (:c _) p))
+   [_ p] (g/closest-point* (mapv #(thi.ng.geom.types.Line2. (% 0) (% 1)) (g/edges _)) p))
 #+END_SRC
-**** PSample
+**** PSample                                                         :verify:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
   g/PSample
   (point-at
@@ -230,24 +254,11 @@
    [_] (g/point-at _ (m/random)))
   (random-point-inside
    [_]
-   (let [b1 (m/random)
-         b2 (m/random (- 1.0 b1))
-         b3 (- 1.0 (+ b1 b2))]
-     (g/from-barycentric*
-      [(:a _) (:b _) (:c _)] (shuffle [b1 b2 b3]))))
+   (g/from-barycentric*
+    [(:a _) (:b _) (:c _)] (m/normdist-weights 3)))
   (sample-uniform
    [_ udist include-last?]
    (g/sample-uniform* udist include-last? [(:a _) (:b _) (:c _) (:a _)]))
-#+END_SRC
-**** PPolygonConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PPolygonConvert
-  (as-polygon [t] (thi.ng.geom.types.Polygon. [(:a t) (:b t) (:c t)] []))
-#+END_SRC
-**** PInvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PInvert
-  (invert [t] (thi.ng.geom.types.Triangle2. (:b t) (:a t) (:c t)))
 #+END_SRC
 **** PSlice
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
@@ -267,10 +278,9 @@
    ([_ a b]
     (thi.ng.geom.types.Triangle2. (g/* (:a _) a b) (g/* (:b _) a b) (g/* (:c _) a b))))
   (scale-size
-   [{a :a b :b c :c} s]
-   (let [cc (centroid* a b c)]
-     (thi.ng.geom.types.Triangle2.
-      (-> a (g/- cc) (g/madd s cc)) (-> b (g/- cc) (g/madd s cc)) (-> c (g/- cc) (g/madd s cc)))))
+   [_ s]
+   (let [[a b c] (g/scale-size* s [(:a _) (:b _) (:c _)])]
+     (thi.ng.geom.types.Triangle2. a b c)))
 #+END_SRC
 **** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
@@ -280,7 +290,56 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
   (extend-type thi.ng.geom.types.Triangle3
 #+END_SRC
-**** PGraph
+**** PArea
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PArea
+  (area [_] (area3 (:a _) (:b _) (:c _)))
+#+END_SRC
+**** PBoundary
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PBoundary
+  (contains-point? [_ p] (contains-point3* (:a _) (:b _) (:c _) p))
+#+END_SRC
+**** PBounds
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PBounds
+  (bounds [_] (g/bounding-box* [(:a _) (:b _) (:c _)]))
+  (width [_] (g/axis-range* 0 [(:a _) (:b _) (:c _)]))
+  (height [_] (g/axis-range* 1 [(:a _) (:b _) (:c _)]))
+  (depth [_] (g/axis-range* 2 [(:a _) (:b _) (:c _)]))
+#+END_SRC
+**** PBoundingSphere
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PBoundingSphere
+  (bounding-sphere
+   [_] (g/bounding-sphere* (g/centroid _) [(:a _) (:b _) (:c _)]))
+#+END_SRC
+**** PCenter
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PCenter
+  (center
+   ([_]
+      (let [ct (g/centroid _)]
+        (thi.ng.geom.types.Triangle3.
+         (g/- (:a _) ct) (g/- (:b _) ct) (g/- (:c _) ct))))
+   ([_ o]
+      (let [ct (g/- o (g/centroid _))]
+        (thi.ng.geom.types.Triangle3.
+         (g/+ (:a _) ct) (g/+ (:b _) ct) (g/+ (:c _) ct)))))
+  (centroid [_] (centroid* (:a _) (:b _) (:c _)))
+#+END_SRC
+**** TODO PClassify
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PClassify
+  (classify-point [_ p] nil) ; TODO
+#+END_SRC
+**** PFlip
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PFlip
+  (flip
+   [_] (thi.ng.geom.types.Triangle3. (:b _) (:a _) (:c _)))
+#+END_SRC
+**** TODO PGraph
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
   g/PGraph
   (vertices
@@ -300,67 +359,6 @@
   (vertex-valence
    [_ v] (if (#{(:a _) (:b _) (:c _)} (vec3 v)) 2 0))
 #+END_SRC
-**** PArea
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PArea
-  (area [t] (area3 (:a t) (:b t) (:c t)))
-#+END_SRC
-**** PBounds
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PBounds
-  (bounds [t] (g/bounding-box* [(:a t) (:b t) (:c t)]))
-  (width [_] (g/axis-range* 0 [(:a _) (:b _) (:c _)]))
-  (height [_] (g/axis-range* 1 [(:a _) (:b _) (:c _)]))
-  (depth [_] (g/axis-range* 2 [(:a _) (:b _) (:c _)]))
-#+END_SRC
-**** PCenter
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PCenter
-  (center
-   ([t]
-      (let [ct (g/centroid t)]
-        (thi.ng.geom.types.Triangle3.
-         (g/- (:a t) ct) (g/- (:b t) ct) (g/- (:c t) ct))))
-   ([t o]
-      (let [ct (g/- o (g/centroid t))]
-        (thi.ng.geom.types.Triangle3.
-         (g/+ (:a t) ct) (g/+ (:b t) ct) (g/+ (:c t) ct)))))
-  (centroid [t] (centroid* (:a t) (:b t) (:c t)))
-#+END_SRC
-**** PBoundingSphere
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PBoundingSphere
-  (bounding-sphere
-   [t] (g/bounding-sphere* (g/centroid t) [(:a t) (:b t) (:c t)]))
-#+END_SRC
-**** PVolume
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PVolume
-  (volume [_] 0.0)
-#+END_SRC
-**** PBoundary
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PClassify
-  (classify-point [_ p] nil) ; TODO
-  g/PProximity
-  (closest-point [_ p] nil) ; TODO
-  g/PBoundary
-  (contains-point? [_ p] (contains-point3* (:a _) (:b _) (:c _) p))
-#+END_SRC
-**** PSample
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PSample
-  (point-at [_ t] nil) ; TODO
-  (random-point
-   [_] (g/point-at _ (m/random)))
-  (random-point-inside
-   [t]
-   (let [b1 (m/random)
-         b2 (m/random (- 1.0 b1))
-         b3 (- 1.0 (+ b1 b2))]
-     (g/from-barycentric*
-      [(:a t) (:b t) (:c t)] (shuffle [b1 b2 b3]))))
-#+END_SRC
 **** PIntersect
 ***** TODO update ray definition or protocol?
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
@@ -376,11 +374,19 @@
               (if (contains-point3* a b c ip)
                 {:p ip :n n :dist t :dir (g/normalize (g/- ip p))})))))))
 #+END_SRC
-**** PInvert
+**** TODO PProximity
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PInvert
-  (invert
-   [t] (thi.ng.geom.types.Triangle3. (:b t) (:a t) (:c t)))
+  g/PProximity
+  (closest-point [_ p] nil) ; TODO
+#+END_SRC
+**** PSample
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PSample
+  (point-at [_ t] nil) ; TODO
+  (random-point
+   [_] (g/point-at _ (m/random)))
+  (random-point-inside
+   [_] (g/from-barycentric* [(:a _) (:b _) (:c _)] (m/normdist-weights 3)))
 #+END_SRC
 **** PSlice
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
@@ -391,7 +397,7 @@
    ([_ e classifier]
       (slice-with* (:a _) (:b _) (:c _) e classifier)))
 #+END_SRC
-**** PTransform
+**** TODO PTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
   g/PScale
   (scale
@@ -404,6 +410,11 @@
    (let [cc (centroid* a b c)]
      (thi.ng.geom.types.Triangle3.
       (-> a (g/- cc) (g/madd s cc)) (-> b (g/- cc) (g/madd s cc)) (-> c (g/- cc) (g/madd s cc)))))
+#+END_SRC
+**** PVolume
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PVolume
+  (volume [_] 0.0)
 #+END_SRC
 **** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
