@@ -14,8 +14,8 @@
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps*]]
      [thi.ng.geom.core :as g :refer [vec2 vec3]]
-     [thi.ng.geom.aabb :as aabb]
-     [thi.ng.geom.mesh :as mesh]
+     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.line :as l]
      [thi.ng.geom.types :as types]
      ,#+clj [thi.ng.macromath.core :as mm])
     ,#+clj
@@ -90,28 +90,17 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   (extend-type thi.ng.geom.types.Rect
 #+END_SRC
-*** PGraph
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
-  g/PGraph
-  (vertices
-   [{[x y :as p] :p w :w h :h}]
-   (let [r (+ x w) b (+ y h)] [p (vec2 r y) (vec2 r b) (vec2 x b)]))
-  (edges
-   [{[x y :as p] :p w :w h :h}]
-   (let [r (+ x w) b (+ y h)]
-     [(thi.ng.geom.types.Line2. p (vec2 r y))
-      (thi.ng.geom.types.Line2. (vec2 r y) (vec2 r b))
-      (thi.ng.geom.types.Line2. (vec2 r b) (vec2 x b))
-      (thi.ng.geom.types.Line2. (vec2 x b) p)]))
-  (vertex-neighbors
-   [_ v] (d/neighbors (vec2 v) (g/vertices _)))
-  (vertex-valence
-   [_ v] (if ((set (g/vertices _)) (vec2 v)) 2 0))
-#+END_SRC
 *** PArea
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   g/PArea
   (area [_] (* (:w _) (:h _)))
+#+END_SRC
+*** PBoundary
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PBoundary
+  (contains-point?
+   [{[px py] :p w :w h :h} [x y]]
+   (and (m/in-range? 0.0 w (- x px)) (m/in-range? 0.0 h (- y py))))
 #+END_SRC
 *** PBounds
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
@@ -120,6 +109,14 @@
   (width  [_] (:w _))
   (height [_] (:h _))
   (depth  [_] 0)
+#+END_SRC
+*** PBoundingCircle
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PBoundingCircle
+  (bounding-circle
+   [_]
+   (let [c (g/centroid _)]
+     (g/bounding-circle* c (g/dist c (:p _)))))
 #+END_SRC
 *** PCenter
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
@@ -133,31 +130,94 @@
         (thi.ng.geom.types.Rect. (g/- o t) w h))))
   (centroid [{p :p :as _}] (g/mix p (g/+ p (:w _) (:h _))))
 #+END_SRC
-*** PBoundingCircle
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
-  g/PBoundingCircle
-  (bounding-circle
-   [_]
-   (let [c (g/centroid _)]
-     (g/bounding-circle* c (g/dist c (:p _)))))
-#+END_SRC
 *** PCircumference
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   g/PCircumference
   (circumference [_] (* 2.0 (+ (:w _) (:h _))))
 #+END_SRC
-*** PBoundary
+*** PClassify
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   g/PClassify
   (classify-point
    [_ q] (reduce min (map #(g/classify-point % q) (g/edges _))))
+#+END_SRC
+*** PExtrude                                                         :verify:
+
+Extruding a rectangle along the Z-axis results in a 3D mesh
+implementation. The =extrude= function supports the following
+options, given as parameter map:
+
+| Key       | Description                             | Default |
+|-----------+-----------------------------------------+---------|
+| =:depth=  | extrusion depth along positive Z        |     1.0 |
+| =:scale=  | scale factor of rect at extrusion depth |     1.0 |
+| =:offset= | extrusion vector (overrides :depth)     |     nil |
+
+The process results in bevelled forms for =:scale= values other
+than 1.0.
+
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PExtrude
+  (extrude
+   [_ {:keys [depth scale offset] :or {depth 1.0 scale 1.0} :as opts}]
+   (if (and (= scale 1.0) (nil? offset))
+     (g/as-mesh
+      (thi.ng.geom.types.AABB.
+       (vec3 (:p _))
+       (vec3 (:w _) (:h _) depth)))
+     (g/extrude (g/as-polygon _) opts)))
+  (extrude-shell
+   [_ opts] (g/extrude-shell (g/as-polygon _) opts))
+#+END_SRC
+*** PGraph
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PGraph
+  (vertices
+   [{[x y :as p] :p w :w h :h}]
+   (let [r (+ x w) b (+ y h)] [p (vec2 x b) (vec2 r b) (vec2 r y)]))
+  (edges
+   [{[x y :as p] :p w :w h :h}]
+   (let [r (+ x w) b (+ y h)]
+     [[p (vec2 r y)]
+      [(vec2 r y) (vec2 r b)]
+      [(vec2 r b) (vec2 x b)]
+      [(vec2 x b) p]]))
+  (vertex-neighbors
+   [_ v] (d/neighbors (vec2 v) (g/vertices _)))
+  (vertex-valence
+   [_ v] (if ((set (g/vertices _)) (vec2 v)) 2 0))
+#+END_SRC
+*** TODO PIntersect
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PIntersect
+  (intersect-line
+   [_ l])
+  (intersect-ray
+   [_ r])
+  (intersect-shape
+   [_ s]
+   (cond
+    (instance? thi.ng.geom.types.Rect s) (intersect-rect? _ s)
+    (instance? thi.ng.geom.types.Circle s) (intersect-circle? _ s)
+    :default (err/type-error! "Rect" s)))
+#+END_SRC
+*** PMeshConvert                                                     :verify:
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PMeshConvert
+  (as-mesh
+   [_] (g/add-face (gm/gmesh) (mapv vec3 (g/vertices _))))
+#+END_SRC
+*** PPolygonConvert
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PPolygonConvert
+  (as-polygon
+   [_] (thi.ng.geom.types.Polygon. (g/vertices _) []))
+#+END_SRC
+*** PProximity
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   g/PProximity
   (closest-point
-   [_ q] (g/closest-point* (g/edges _) q))
-  g/PBoundary
-  (contains-point?
-   [{[px py] :p w :w h :h} [x y]]
-   (and (m/in-range? 0.0 w (- x px)) (m/in-range? 0.0 h (- y py))))
+   [_ q] (g/closest-point* (mapv l/line2 (g/edges _)) q))
 #+END_SRC
 *** PSample
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
@@ -172,38 +232,23 @@
    [_ udist include-last?]
    (g/sample-uniform* udist include-last? (conj (g/vertices _) (:p _))))
 #+END_SRC
-*** PIntersect
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
-  g/PIntersect
-  (intersect-shape
-   [_ s]
-   (cond
-    (instance? thi.ng.geom.types.Rect s) (intersect-rect? _ s)
-    (instance? thi.ng.geom.types.Circle s) (intersect-circle? _ s)
-    :default (err/type-error! "Rect" s)))
-#+END_SRC
-*** PPolygonConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
-  g/PPolygonConvert
-  (as-polygon
-   [_] (thi.ng.geom.types.Polygon. (g/vertices _) []))
-#+END_SRC
 *** PSubdivide
-    A rectangle can be subdivided into smaller ones, i.e. to create a
-    list of uniform grid cells. The following options can be given as
-    a 2nd argument map:
 
-    | Key     | Description                                                    | Default |
-    |---------+----------------------------------------------------------------+---------|
-    | =:num=  | number of cols/rows the rect will be uniformly subdivided into |       2 |
-    | =:cols= | number of times the rect will be subdivided along the X-axis   |       2 |
-    | =:rows= | number of times the rect will be subdivided along the Y-axis   |       2 |
+A rectangle can be subdivided into smaller ones, i.e. to create a
+list of uniform grid cells. The following options can be given as
+a 2nd argument map:
 
-    When =:num= is given, the resulting rects will retain the aspect
-    ratio of the original rect. If specified, =:cols= and =:rows= will
-    take precedence over =:num=, but the latter will be used as
-    default for missing args. Rects are returned as a lazyseq with
-    top-left to bottom-right ordering and inner sorting along X.
+| Key     | Description                                                    | Default |
+|---------+----------------------------------------------------------------+---------|
+| =:num=  | number of cols/rows the rect will be uniformly subdivided into |       2 |
+| =:cols= | number of times the rect will be subdivided along the X-axis   |       2 |
+| =:rows= | number of times the rect will be subdivided along the Y-axis   |       2 |
+
+When =:num= is given, the resulting rects will retain the aspect
+ratio of the original rect. If specified, =:cols= and =:rows= will
+take precedence over =:num=, but the latter will be used as
+default for missing args. Rects are returned as a lazyseq with
+top-left to bottom-right ordering and inner sorting along X.
 
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   g/PSubdivide
@@ -223,12 +268,14 @@
           (thi.ng.geom.types.Rect. (vec2 px py) w h)))))
 #+END_SRC
 *** PTessellate
-    A rectangle can be tessellated into a number of triangles. When
-    called without options map as 2nd argument, the rect will be split
-    into 2 triangles, each in anti-clockwise orientation: =[tl br tr]=
-    & =[tl bl br]=. When called *with* options, then these are used
-    for a call to [[PSubdivide][=subdivide=]] first and the function returns a lazyseq
-    of triangles of the subdivided rects.
+
+A rectangle can be tessellated into a number of triangles. When
+called without options map as 2nd argument, the rect will be split
+into 2 triangles, each in anti-clockwise orientation: =[tl br tr]=
+& =[tl bl br]=. When called *with* options, then these are used
+for a call to [[PSubdivide][=subdivide=]] first and the function returns a lazyseq
+of triangles of the subdivided rects.
+
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   g/PTessellate
   (tessellate
@@ -237,50 +284,6 @@
         [(thi.ng.geom.types.Triangle2. a b c) (thi.ng.geom.types.Triangle2. a c d)]))
    ([_ opts]
       (mapcat g/tessellate (g/subdivide _ opts))))
-#+END_SRC
-*** PMeshConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
-  g/PMeshConvert
-  (as-mesh
-   [_]
-   (let [[a b c d] (g/vertices _)]
-     (mesh/mesh2 [a b c] [a c d])))
-#+END_SRC
-*** PExtrude
-    Extruding a rectangle along the Z-axis results in a 3D mesh
-    implementation. The =extrude= function supports the following
-    options, given as parameter map:
-
-    | Key       | Description                             | Default |
-    |-----------+-----------------------------------------+---------|
-    | =:depth=  | extrusion depth along positive Z        |     1.0 |
-    | =:scale=  | scale factor of rect at extrusion depth |     1.0 |
-    | =:offset= | extrusion vector (overrides :depth)     |     nil |
-
-    The process results is bevelled forms for =:scale= values other
-    than 1.0.
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
-  g/PExtrude
-  (extrude
-   [_ {:keys [depth scale offset] :or {depth 1.0 scale 1.0}}]
-   (if (and (= scale 1.0) (nil? offset))
-     (g/as-mesh
-      (thi.ng.geom.types.AABB.
-       (vec3 (:p _))
-       (vec3 (:w _) (:h _) depth)))
-     (let [offset (or offset (vec3 0 0 depth))
-           [a b c d] (mapv vec3 (g/vertices _))
-           [a2 b2 c2 d2] (->> (g/scale-size _ scale)
-                              (g/vertices)
-                              (map #(g/+ offset %)))]
-       (mesh/mesh3
-        [a c b] [a d c]       ;;back
-        [a2 b2 c2] [a2 c2 d2] ;; front
-        [a d2 d] [a a2 d2]    ;; left
-        [b2 c c2] [b2 b c]    ;; right
-        [a b2 a2] [a b b2]    ;; top
-        [d d2 c2] [d c2 c]    ;; bottom
-        ))))
 #+END_SRC
 *** TODO PTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
