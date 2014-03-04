@@ -107,7 +107,7 @@
          off (or offset (vec3 0 0 depth))
          points3 (mapv vec3 points)
          tpoints3 (mapv #(g/+ off %) tpoints)]
-     (gm/into-mesh
+     (g/into-mesh
       (gm/gmesh)
       (concat
        (when bottom?
@@ -121,6 +121,8 @@
          (->> tpoints
               (g/tessellate* (:p _))
               (map (fn [[a b c]] [(g/+ off a) (g/+ off b) (g/+ off c)]))))))))
+  (extrude-shell
+   [_ opts] (g/extrude-shell (g/as-polygon _) opts))
 #+END_SRC
 *** PGraph
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
@@ -153,9 +155,9 @@
    ([_ res]
       (->> res
            (g/vertices _)
-           (map g/vec3)
+           (mapv g/vec3)
            (g/tessellate* (vec3 (:p _)))
-           (gm/into-mesh (gm/gmesh)))))
+           (g/into-mesh (gm/gmesh)))))
 #+END_SRC
 *** PPolygonConvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
