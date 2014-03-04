@@ -2352,6 +2352,16 @@ access to entities in _ context.
            (/ (count coll)))
         x)))
   
+  (defn center*
+    ([coll]
+       (let [c (centroid* coll)] (mapv #(- % c) coll)))
+    ([c c' coll]
+       (let [d (- c' c)] (mapv #(+ % d) coll))))
+  
+  (defn scale-size*
+    ([s coll] (scale-size* (centroid* coll) s coll))
+    ([c s coll] (mapv #(-> % (- c) (madd s c)) coll)))
+  
   (defn bounding-rect*
     ([[x & xs :as coll]]
        (let [c (count coll)]
@@ -2408,8 +2418,7 @@ access to entities in _ context.
     (let [xs (map #(nth % axis) coll)]
       (clojure.core/- (reduce clojure.core/max xs) (reduce clojure.core/min xs))))
   
-  ;; TODO rename into arc-length-index*
-  (defn total-length*
+  (defn arc-length-index*
     [points]
     (->> points
          (d/successive-nth 2)
@@ -2426,18 +2435,18 @@ access to entities in _ context.
   
   (defn sample-uniform*
     [udist include-last? points]
-    (let [idx (total-length* points)
+    (let [idx (arc-length-index* points)
           total (peek idx)
           delta (/ udist total)
-          samples (loop [t 0.0 i 1 acc []]
+          samples (loop [t 0.0, i 1, acc []]
                     (if (< t 1.0)
                       (let [ct (clojure.core/* t total)
                             i (int (loop [i i] (if (>= ct (idx i)) (recur (inc i)) i)))
-                            p (nth points (dec i))
-                            q (nth points i)
-                            pi (idx (dec i))
-                            frac (/ (clojure.core/- ct pi) (clojure.core/- (idx i) pi))]
-                        (recur (clojure.core/+ t delta) i (conj acc (mix p q frac))))
+                            pi (idx (dec i))]
+                        (recur (clojure.core/+ t delta) i
+                               (conj acc
+                                     (mix (nth points (dec i)) (nth points i)
+                                          (mc/subdiv ct pi (idx i) pi)))))
                       acc))]
       (if include-last?
         (conj samples (last points))
@@ -2450,18 +2459,16 @@ access to entities in _ context.
          (let [n (count points)
                t (double t)]
            (cond
-            (= 0 n) nil
-            (= 1 n) (first points)
-            (= 1.0 t) (last points)
-            :default (let [idx (or idx (total-length* points))
+            (== 0 n) nil
+            (== 1 n) (first points)
+            (== 1.0 t) (last points)
+            :default (let [idx (or idx (arc-length-index* points))
                            total (peek idx)
                            ct (clojure.core/* t total)
-                           i (loop [i 1] (if (>= ct (idx i)) (recur (inc i)) i))
-                           p (nth points (dec i))
-                           q (nth points i)
-                           pi (idx (dec i))
-                           frac (/ (clojure.core/- ct pi) (clojure.core/- (idx i) pi))]
-                       (mix p q frac)))))))
+                           i (int (loop [i 1] (if (>= ct (idx i)) (recur (inc i)) i)))
+                           pi (idx (dec i))]
+                       (mix (nth points (dec i)) (nth points i)
+                            (mc/subdiv ct pi (idx i) pi))))))))
   
   (defn edges*
     [ctor points]
