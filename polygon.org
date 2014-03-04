@@ -366,8 +366,7 @@
    [_] (:points _))
   (edges
    [{points :points}]
-   (g/edges* #(thi.ng.geom.types.Line2. (% 0) (% 1))
-             (conj points (first points))))
+   (g/edges* vector (conj points (first points))))
   (vertex-neighbors
    [_ v] (d/neighbors v (g/vertices _)))
   (vertex-valence
@@ -377,7 +376,7 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PProximity
   (closest-point
-   [_ p] (g/closest-point* (g/edges _) p))
+   [_ p] (g/closest-point* (mapv l/line2 (g/edges _)) p))
 #+END_SRC
 *** TODO PSample
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
