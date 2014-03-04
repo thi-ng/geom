@@ -6,7 +6,9 @@
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.aabb
+    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     (:require
+     ,#+clj [thi.ng.macromath.core :as mm]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps*]]
@@ -42,7 +44,7 @@
 *** PArea
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
   g/PArea
-  (area [{[w h d] :size}] (* 2 (+ (+ (* w h) (* d h)) (* w d))))
+  (area [{[w h d] :size}] (* 2 (mm/madd w h d h w d)))
 #+END_SRC
 *** PBounds
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
@@ -79,7 +81,8 @@
       (thi.ng.geom.types.AABB. (g/- p (g/* size 0.5)) size))
    ([{size :size} q]
       (thi.ng.geom.types.AABB. (g/- q (g/* size 0.5)) size)))
-  (centroid [_] (g/+ (:p _) (g/* (:size _) 0.5)))
+  (centroid
+   [_] (g/madd (:size _) 0.5 (:p _)))
 #+END_SRC
 *** PClassify
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
@@ -131,9 +134,9 @@
                   [a h] [b e]             ;; left
                   [d g] [c f]             ;; right
                   ]]
-       (thi.ng.geom.types.Line3. p q))))
+       [p q])))
 #+END_SRC
-*** PIntersect
+*** PIntersect                                                       :verify:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
   g/PIntersect
   (intersect-shape

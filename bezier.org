@@ -22,11 +22,11 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/bezier.cljx
   (defn interpolate
     [[a b c d] t]
-    (let [[ta tb tc td] (bernstein t)]
-      (->> (g/* a ta)
-           (g/madd b tb)
-           (g/madd c tc)
-           (g/madd d td))))
+    (let [it (- 1.0 t), it2 (* it it), t2 (* t t)]
+      (->> (g/* a (* it it2))
+           (g/madd b (* 3 (* t it2)))
+           (g/madd c (* 3 (* it t2)))
+           (g/madd d (* t t2)))))
   
   (defn sample-segment
     [seg res]
@@ -100,8 +100,8 @@
    ([{points :points} res]
       (map #(g/point-at* % points) (m/norm-range res))))
   (edges
-   ([_] (g/edges _ *resolution*))
-   ([_ res] (g/edges* #(thi.ng.geom.types.Line2. (% 0) (% 1)) (g/vertices _ res))))
+   ([_] (g/edges* vector (g/vertices _ *resolution*)))
+   ([_ res] (g/edges* vector (g/vertices _ res))))
   (vertex-neighbors
    [_ v] (d/neighbors v (:points _)))
   (vertex-valence

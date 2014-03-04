@@ -96,7 +96,6 @@
    (m/signum (- (:r _) (g/dist (:p _) q)) *eps*))
 #+END_SRC
 *** PExtrude
-**** TODO don't use polygon as intermediary to ensure better tessellation using centroid
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
   g/PExtrude
   (extrude
@@ -129,13 +128,12 @@
   (vertices
    ([_] (g/vertices _ *resolution*))
    ([_ res]
-      (map #(g/point-at _ %) (butlast (m/norm-range res)))))
+      (mapv #(g/point-at _ %) (butlast (m/norm-range res)))))
   (edges
    ([_] (g/edges _ *resolution*))
    ([_ res]
       (let [verts (g/vertices _ res)]
-        (g/edges* #(thi.ng.geom.types.Line2. (% 0) (% 1))
-                  (concat verts [(first verts)])))))
+        (g/edges* vector (conj verts (first verts))))))
 #+END_SRC
 *** PIntersect
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
