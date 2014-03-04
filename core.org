@@ -3,14 +3,14 @@
 #+EXPORT_EXCLUDE_TAGS: noexport
 
 * Namespace: thi.ng.geom.core
-  Providing an easy-to-use & easy-to-learn API for both common and
-  advanced geometry operations is one of this project's main focal
-  points. We attempt to realise this by defining all operations in
-  the form of protocols which are then implemented by various core
-  types.
+Providing an easy-to-use & easy-to-learn API for both common and
+advanced geometry operations is one of this project's main focal
+points. We attempt to realise this by defining all operations in
+the form of protocols which are then implemented by various core
+types.
 
-  This namespace contains all basic vector operations and core
-  protocols related to common higher level geometric operations.
+This namespace contains all basic vector operations and core
+protocols related to common higher level geometric operations.
 
 #+INCLUDE: "types.org" :minlevel 3
 
@@ -235,8 +235,8 @@ access to entities in _ context.
 ***** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PBoundary
-    (contains-point? [_ p])
-    (contains-entity? [_ s]))
+    (contains-entity? [_ s])
+    (contains-point? [_ p]))
 #+END_SRC
 ***** PBoundingCircle
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
@@ -253,12 +253,12 @@ access to entities in _ context.
   (defprotocol PBounds
     (bounds [_]
       "Returns bounding rect for 2d entities or box for 3d")
-    (width [_]
-      "Returns entity's extent along X axis")
+    (depth [_]
+      "Returns entity's extent along Z (zero for 2d)")
     (height [_]
       "Returns entity's extent along Y axis")
-    (depth [_]
-      "Returns entity's extent along Z (zero for 2d)"))
+    (width [_]
+      "Returns entity's extent along X axis"))
 #+END_SRC
 ***** PCenter
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
@@ -279,12 +279,14 @@ access to entities in _ context.
   (defprotocol PClassify
     (classify-point [_ p]))
 #+END_SRC
-***** PClip
+***** TODO PClip
+****** TODO remove protocol, method is already part of PSetOps
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PClip
     (clip-with [_ s]))
 #+END_SRC
-***** PConvexHull
+***** TODO PConvexHull
+****** TODO rename into PConvex, add convex? method
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PConvexHull
     (convex-hull [_]))
@@ -308,8 +310,10 @@ access to entities in _ context.
     (intersect-shape [_ s]))
 #+END_SRC
 ***** PMeshConvert
-       Anything which can be turned into a 2D or 3D mesh will implement _
-       protocol consisting of just _ one function: =as-mesh=.
+
+Anything which can be turned into a 2D or 3D mesh will implement _
+protocol consisting of just _ one function: =as-mesh=.
+
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PMeshConvert
     (as-mesh [_] [_ opts]
@@ -358,8 +362,7 @@ access to entities in _ context.
 ***** PVolume
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PVolume
-    (volume [_]
-      "Returns an entity's inner volume."))
+    (volume [_] "Returns an entity's inner volume."))
 #+END_SRC
 **** Type specific operations
 ***** PCurve
@@ -371,13 +374,13 @@ access to entities in _ context.
 ***** PMesh
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PMesh
-    (faces [_])
-    (vertex-faces [_ v])
     (add-face [_ f])
-    (remove-face [_ f])
-    (add-mesh [_ m])
     (compute-face-normals [_])
-    (compute-vertex-normals [_]))
+    (compute-vertex-normals [_])
+    (faces [_])
+    (into-mesh [_ m])
+    (remove-face [_ f])
+    (vertex-faces [_ v]))
 #+END_SRC
 *** Vector implementations
     For performance reasons, we decided to define custom datatypes
