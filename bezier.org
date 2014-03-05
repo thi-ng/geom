@@ -115,7 +115,8 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/bezier.cljx
   g/PProximity
   (closest-point
-   [_ p] (g/closest-point* (mapv #(thi.ng.geom.types.Line2. (% 0) (% 1)) (g/edges _)) p))
+   [_ p]
+   (g/closest-point* (mapv #(thi.ng.geom.types.Line2. %) (g/edges _)) p))
 #+END_SRC
 **** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/bezier.cljx

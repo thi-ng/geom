@@ -15,7 +15,7 @@
      [clojure.set :as set])
     #+clj
     (:import
-     [thi.ng.geom.types Line3 AABB Sphere GMesh]))
+     [thi.ng.geom.types AABB Sphere GMesh]))
 #+END_SRC
 ** Helper functions
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx

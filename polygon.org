@@ -42,7 +42,7 @@
     [verts bounds]
     (let [verts (conj verts (first verts))
           bc (g/centroid bounds)
-          ec-pos (fn [e p q] (:p (g/intersect-line e (thi.ng.geom.types.Line2. p q))))]
+          ec-pos (fn [e p q] (:p (g/intersect-line e (thi.ng.geom.types.Line2. [p q]))))]
       (loop [cedges (g/edges bounds) points verts clipped []]
         (if-let [ce (first cedges)]
           (let [sign (g/classify-point ce bc)
@@ -100,7 +100,7 @@
     (let [[ax ay] a [bx by] b [cx cy] c
           cp (- (* (- bx ax) (- cy ay)) (* (- by ay) (- cx ax)))]
       (when (< m/*eps* cp)
-        (not (some #(t/contains-point2* a b c %)
+        (not (some #(t/contains-point2* [a b c] %)
                    (disj (set (map points (subvec verts 0 nv))) a b c))))))
 
   (defn tessellate*

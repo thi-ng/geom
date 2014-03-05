@@ -18,7 +18,7 @@
      [thi.ng.geom.types :as types])
     ,#+clj
     (:import
-     [thi.ng.geom.types Line3 Triangle3]))
+     [thi.ng.geom.types Triangle3]))
 #+END_SRC
 ** Typespecific functions
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
@@ -143,9 +143,9 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   (defn tetrahedron
     ([points]
-       (let [[a b c d] (orient-tetra (map g/vec3 points))]
-         (thi.ng.geom.types.Tetrahedron. a b c d)))
-    ([a b c d] (tetrahedron [a b c d])))  
+       (thi.ng.geom.types.Tetrahedron.
+        (orient-tetra (map g/vec3 points))))
+    ([a b c d] (tetrahedron [a b c d])))
 #+END_SRC
 ** Protocol implementations
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
@@ -155,7 +155,7 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PArea
   (area
-   [{a :a b :b c :c d :d}]
+   [{[a b c d] :points}]
    (->> [[a b c] [a b d] [b c d] [c a d]]
         (map (comp m/abs t/area3))
         (reduce +)))
@@ -187,40 +187,34 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PCenter
   (center
-   ([_]
-      (let [ct (g/centroid _)]
-        (thi.ng.geom.types.Tetrahedron.
-         (g/- (:a _) ct) (g/- (:b _) ct) (g/- (:c _) ct) (g/- (:d _) ct))))
-   ([_ o]
-      (let [ct (g/- o (g/centroid _))]
-        (thi.ng.geom.types.Tetrahedron.
-         (g/+ (:a _) ct) (g/+ (:b _) ct) (g/+ (:c _) ct) (g/+ (:d _) ct)))))
+   ([_] (thi.ng.geom.types.Tetrahedron. (g/center* (:points _))))
+   ([_ o] (thi.ng.geom.types.Tetrahedron. (g/center* o (:points _)))))
   (centroid [_] (g/centroid* (g/vertices _)))
 #+END_SRC
 **** PFlip
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PFlip
   (flip
-   [_] (thi.ng.geom.types.Tetrahedron. (:b _) (:a _) (:c _) (:d _)))
+   [{[a b c d] :points}] (thi.ng.geom.types.Tetrahedron. [b a c d]))
 #+END_SRC
 **** PGraph
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PGraph
   (vertices
-   [_] [(:a _) (:b _) (:c _) (:d _)])
+   [_] (:points _))
   (edges
-   [{a :a b :b c :c d :d}]
+   [{[a b c d] :points}]
    (mapv vector [a b c a b c] [b c a d d d]))
   (vertex-neighbors
-   [{a :a b :b c :c d :d} v]
-   (condp = (vec3 v)
+   [{[a b c d] :points} v]
+   (condp = v
      a [c b d]
      b [a c d]
      c [b a d]
      d [a b c]
      nil))
   (vertex-valence
-   [_ v] (if (#{(:a _) (:b _) (:c _) (:d _)} (vec3 v)) 3 0))
+   [_ v] (if ((set (:points _)) v) 3 0))
 #+END_SRC
 **** TODO PIntersect                                                 :verify:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
@@ -266,27 +260,45 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PTessellate
   (tessellate
-   [{a :a b :b c :c d :d}]
+   [{[a b c d] :points}]
    (map
-    (fn [[a b c]] (thi.ng.geom.types.Triangle3. a b c))
+    #(thi.ng.geom.types.Triangle3. %)
     [[a b c] [a d b] [b d c] [c d a]]))
 #+END_SRC
 **** PTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+  g/PRotate3D
+  (rotate-x
+   [_ theta]
+   (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-x % theta) (:points _))))
+  (rotate-y
+   [_ theta]
+   (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-y % theta) (:points _))))
+  (rotate-z
+   [_ theta]
+   (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-z % theta) (:points _))))
+  (rotate-around-axis
+   [_ axis theta]
+   (thi.ng.geom.types.Tetrahedron.
+    (mapv #(g/rotate-around-axis % axis theta) (:points _))))
   g/PScale
   (scale
    ([_ s]
-      (thi.ng.geom.types.Tetrahedron.
-       (g/* (:a _) s) (g/* (:b _) s) (g/* (:c _) s) (g/* (:d _) s)))
-   ([_ a b]
-      (thi.ng.geom.types.Tetrahedron.
-       (g/* (:a _) a b) (g/* (:b _) a b) (g/* (:c _) a b) (g/* (:d _) a b))))
+      (thi.ng.geom.types.Tetrahedron. (mapv #(g/* % s) (:points _))))
+   ([_ sx sy]
+      (thi.ng.geom.types.Tetrahedron. (mapv #(g/* % sx sy) (:points _))))
+   ([_ sx sy sz]
+      (thi.ng.geom.types.Tetrahedron. (mapv #(g/* % sx sy sz) (:points _)))))
   (scale-size
-   [{a :a b :b c :c d :d :as _} s]
-   (let [cc (g/centroid _)]
-     (thi.ng.geom.types.Tetrahedron.
-      (-> a (g/- cc) (g/madd s cc)) (-> b (g/- cc) (g/madd s cc))
-      (-> c (g/- cc) (g/madd s cc)) (-> d (g/- cc) (g/madd s cc)))))
+   [_ s] (thi.ng.geom.types.Tetrahedron. (g/scale-size* s (:points _))))
+  g/PTranslate
+  (translate
+   [_ t]
+   (thi.ng.geom.types.Tetrahedron. (mapv #(g/+ % t) (:points _))))
+  g/PTransform
+  (transform
+   [_ m]
+   (thi.ng.geom.types.Tetrahedron. (mapv #(g/transform-vector m %) (:points _))))
 #+END_SRC
 **** TODO PVolume
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx

@@ -2358,6 +2358,8 @@ protocol consisting of just _ one function: =as-mesh=.
   (defn center*
     ([coll]
        (let [c (centroid* coll)] (mapv #(- % c) coll)))
+    ([c' coll]
+       (center* (centroid* coll) c' coll))
     ([c c' coll]
        (let [d (- c' c)] (mapv #(+ % d) coll))))
   

@@ -2,7 +2,7 @@
 #+TAGS:           write(w) update(u) fix(f) verify(v) noexport(n)
 #+EXPORT_EXCLUDE_TAGS: noexport
 
-* thi.ng.geom.mesh
+* thi.ng.geom.mesh (deprecated)
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
   (ns thi.ng.geom.mesh
@@ -15,7 +15,7 @@
      [clojure.set :as set])
     #+clj
     (:import
-     [thi.ng.geom.types Line3 AABB Sphere Mesh2 Mesh3]))
+     [thi.ng.geom.types AABB Sphere Mesh2 Mesh3]))
 #+END_SRC
 ** Shared 2d/3d functions
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
@@ -346,7 +346,7 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PGraph
   (edges
-   [_] (map (fn [[p q]] (thi.ng.geom.types.Line3. p q)) (keys (:edges _))))
+   [_] (keys (:edges _)))
   (vertices
    [_] (keys (:vertices _)))
   (vertex-neighbors

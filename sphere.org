@@ -15,7 +15,7 @@
      [thi.ng.geom.types :as types])
     ,#+clj
     (:import
-     [thi.ng.geom.types Line3 AABB Sphere]))
+     [thi.ng.geom.types AABB Sphere]))
 #+END_SRC
 ** Constructor
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx

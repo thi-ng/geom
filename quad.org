@@ -16,14 +16,14 @@
      [thi.ng.geom.types :as types])
     #+clj
     (:import
-     [thi.ng.geom.types Quad3 Line3 Triangle3]))
+     [thi.ng.geom.types Quad3 Triangle3]))
 #+END_SRC
 ** Constructor
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
   (defn quad3
     ([] (quad3 1.0))
-    ([w] (thi.ng.geom.types.Quad3. (vec3) (vec3 w 0.0 0.0) (vec3 w w 0.0) (vec3 0.0 w 0.0)))
-    ([a b c d] (thi.ng.geom.types.Quad3. (vec3 a) (vec3 b) (vec3 c) (vec3 d))))
+    ([w] (thi.ng.geom.types.Quad3. [(vec3) (vec3 w 0.0 0.0) (vec3 w w 0.0) (vec3 0.0 w 0.0)]))
+    ([a b c d] (thi.ng.geom.types.Quad3. [(vec3 a) (vec3 b) (vec3 c) (vec3 d)])))
 #+END_SRC
 ** TODO Type specific functions
 
@@ -90,11 +90,11 @@
    ([_]
       (let [c (g/centroid _)]
         (thi.ng.geom.types.Quad3.
-         (g/- (:a _) c) (g/- (:b _) c) (g/- (:c _) c) (g/- (:d _) c))))
+         [(g/- (:a _) c) (g/- (:b _) c) (g/- (:c _) c) (g/- (:d _) c)])))
    ([_ o]
       (let [d (g/- o (g/centroid _))]
         (thi.ng.geom.types.Quad3.
-         (g/+ (:a _) d) (g/+ (:b _) d) (g/+ (:c _) d) (g/+ (:d _) d)))))
+         [(g/+ (:a _) d) (g/+ (:b _) d) (g/+ (:c _) d) (g/+ (:d _) d)]))))
   (centroid
    [_] (g/centroid* [(:a _) (:b _) (:c _) (:d _)]))
 #+END_SRC
@@ -233,7 +233,7 @@ default for missing args.
             map-p (fn [p] (->> p (unmap-uv _) (map #(m/roundto % *eps*)) vec3))]
         (for [[v1 v2] rv, [u1 u2] ru]
           (thi.ng.geom.types.Quad3.
-           (map-p [u1 v1]) (map-p [u2 v1]) (map-p [u2 v2]) (map-p [u1 v2]))))))
+           [(map-p [u1 v1]) (map-p [u2 v1]) (map-p [u2 v2]) (map-p [u1 v2])])))))
 #+END_SRC
 *** PTessellate
 
@@ -247,32 +247,45 @@ function returns a lazyseq of triangles of the subdivided quad.
   g/PTessellate
   (tessellate
    ([_]
-      [(thi.ng.geom.types.Triangle3. (:a _) (:b _) (:c _))
-       (thi.ng.geom.types.Triangle3. (:a _) (:c _) (:d _))])
+      [(thi.ng.geom.types.Triangle3. [(:a _) (:b _) (:c _)])
+       (thi.ng.geom.types.Triangle3. [(:a _) (:c _) (:d _)])])
    ([_ opts]
       (mapcat g/tessellate (g/subdivide _ opts))))
 #+END_SRC
-*** TODO PTransform
+*** PTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
+  g/PRotate3D
+  (rotate-x
+   [_ theta]
+   (thi.ng.geom.types.Quad3. (mapv #(g/rotate-x % theta) (:points _))))
+  (rotate-y
+   [_ theta]
+   (thi.ng.geom.types.Quad3. (mapv #(g/rotate-y % theta) (:points _))))
+  (rotate-z
+   [_ theta]
+   (thi.ng.geom.types.Quad3. (mapv #(g/rotate-z % theta) (:points _))))
+  (rotate-around-axis
+   [_ axis theta]
+   (thi.ng.geom.types.Quad3.
+    (mapv #(g/rotate-around-axis % axis theta) (:points _))))
   g/PScale
   (scale
    ([_ s]
-      (thi.ng.geom.types.Quad3.
-       (g/* (:a _) s) (g/* (:b _) s) (g/* (:c _) s) (g/* (:d _) s)))
-   ([_ x y]
-      (thi.ng.geom.types.Quad3.
-       (g/* (:a _) x y) (g/* (:b _) x y) (g/* (:c _) x y) (g/* (:d _) x y)))
-   ([_ x y z]
-      (thi.ng.geom.types.Quad3.
-       (g/* (:a _) x y z) (g/* (:b _) x y z) (g/* (:c _) x y z) (g/* (:d _) x y z))))
+      (thi.ng.geom.types.Quad3. (mapv #(g/* % s) (:points _))))
+   ([_ sx sy]
+      (thi.ng.geom.types.Quad3. (mapv #(g/* % sx sy) (:points _))))
+   ([_ sx sy sz]
+      (thi.ng.geom.types.Quad3. (mapv #(g/* % sx sy sz) (:points _)))))
   (scale-size
-   [_ s]
-   (let [c (g/centroid _)]
-     (thi.ng.geom.types.Quad3.
-      (g/madd (g/- (:a _) c) s c)
-      (g/madd (g/- (:b _) c) s c)
-      (g/madd (g/- (:c _) c) s c)
-      (g/madd (g/- (:d _) c) s c))))
+   [_ s] (thi.ng.geom.types.Quad3. (g/scale-size* s (:points _))))
+  g/PTranslate
+  (translate
+   [_ t]
+   (thi.ng.geom.types.Quad3. (mapv #(g/+ % t) (:points _))))
+  g/PTransform
+  (transform
+   [_ m]
+   (thi.ng.geom.types.Quad3. (mapv #(g/transform-vector m %) (:points _))))
 #+END_SRC
 *** End of implementations                                         :noexport:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
