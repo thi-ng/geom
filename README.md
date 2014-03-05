@@ -1,13 +1,17 @@
 # thing-geom
 
-A Clojure library designed to ... well, that part is up to you.
+Comprehensive geometry toolkit for Clojure/ClojureScript developed in a
+literate programming style.
+
+Currently ALPHA quality, pre-release software. Further breaking API
+changes forthcoming...
 
 ## Usage
 
-FIXME
+See [index.org](index.org)
 
 ## License
 
-Copyright © 2013 FIXME
+Copyright © 2013-2014 Karsten Schmidt
 
-Distributed under the Eclipse Public License, the same as Clojure.
+Distributed under the [Apache Software License 2.0](http://www.apache.org/licenses/LICENSE-2.0).
