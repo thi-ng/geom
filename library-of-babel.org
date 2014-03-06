@@ -1,3 +1,5 @@
+#+SETUPFILE: setup.org
+
 * The thing-geom Library of Babel
 
 This file contains shared and configurable code templates for various
@@ -56,6 +58,14 @@ these are defined in their own =.org= files.
    ([_ o] ({{type}}. (g/center* (g/centroid _) o (:points _)))))")
 #+END_SRC
 
+** PCircumference
+#+NAME: lob-geom-circum
+#+BEGIN_SRC clojure
+  g/PCircumference
+  (circumference
+   [{p :points}] (g/arc-length* (conj p (first p))))
+#+END_SRC
+
 ** PFlip
 #+NAME: lob-geom-flip
 #+BEGIN_SRC emacs-lisp :var type=""
@@ -70,7 +80,7 @@ these are defined in their own =.org= files.
 #+BEGIN_SRC clojure
   g/PPolygonConvert
   (as-polygon
-   [_] (thi.ng.geom.types.Polygon. (:points _) []))
+   [_] (thi.ng.geom.types.Polygon. (:points _)))
 #+END_SRC
 
 ** PProximity
@@ -105,7 +115,8 @@ these are defined in their own =.org= files.
   (replace-regexp-in-string "{{type}}" type
   "g/PRotate
   (rotate
-   [_ theta] ({{type}}. (mapv #(g/rotate % theta) (:points _))))")
+   [_ theta]
+   ({{type}}. (mapv #(g/rotate % theta) (:points _))))")
 #+END_SRC
 
 ** PRotate3D
@@ -150,7 +161,8 @@ these are defined in their own =.org= files.
   (replace-regexp-in-string "{{type}}" type
   "g/PTranslate
   (translate
-   [_ t] ({{type}}. (mapv #(g/+ % t) (:points _))))")
+   [_ t]
+   ({{type}}. (mapv #(g/+ % t) (:points _))))")
 #+END_SRC
 
 ** PTransform
@@ -159,5 +171,13 @@ these are defined in their own =.org= files.
   (replace-regexp-in-string "{{type}}" type
   "g/PTransform
   (transform
-   [_ m] ({{type}}. (mapv #(g/transform-vector m %) (:points _))))")
+   [_ m]
+   ({{type}}. (mapv #(g/transform-vector m %) (:points _))))")
+#+END_SRC
+
+** PVolume (zero)
+#+NAME: lob-geom-zerovol
+#+BEGIN_SRC clojure
+  g/PVolume
+  (volume [_] 0.0)
 #+END_SRC
