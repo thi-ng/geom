@@ -1,6 +1,4 @@
-#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
-#+TAGS:           write(w) update(u) fix(f) verify(v) noexport(n)
-#+EXPORT_EXCLUDE_TAGS: noexport
+#+SETUPFILE: setup.org
 
 * thi.ng.geom.rect
 ** Namespace declaration
@@ -211,7 +209,7 @@ than 1.0.
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
   g/PPolygonConvert
   (as-polygon
-   [_] (thi.ng.geom.types.Polygon. (g/vertices _) []))
+   [_] (thi.ng.geom.types.Polygon. (g/vertices _)))
 #+END_SRC
 *** PProximity
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx

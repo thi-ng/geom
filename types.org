@@ -1,6 +1,4 @@
-#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
-#+TAGS:           write(w) update(u) fix(f) verify(v) noexport(n)
-#+EXPORT_EXCLUDE_TAGS: noexport
+#+SETUPFILE: setup.org
 
 * thi.ng.geom.types
 ** 2D types
@@ -35,7 +33,7 @@ an extra Circle type for performance reasons.
 #+END_SRC
 *** Polygon
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/types.cljx
-  (defrecord Polygon [points holes])
+  (defrecord Polygon [points])
 #+END_SRC
 *** Path
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/types.cljx

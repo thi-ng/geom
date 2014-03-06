@@ -1,6 +1,4 @@
-#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
-#+TAGS:           write(w) fix(f) verify(v) noexport(n) template(t) usetemplate(u)
-#+EXPORT_EXCLUDE_TAGS: noexport
+#+SETUPFILE: setup.org
 
 * thi.ng.geom.triangle
 ** Namespace declaration
@@ -318,10 +316,9 @@
   <<lob-geom-translate(type="thi.ng.geom.types.Triangle2")>>
   <<lob-geom-tx(type="thi.ng.geom.types.Triangle2")>>
 #+END_SRC
-**** PVolume
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PVolume
-  (volume [_] 0.0)
+**** PVolume                                                    :usetemplate:
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+  <<lob-geom-zerovol>>
 #+END_SRC
 **** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
@@ -411,9 +408,8 @@
   <<lob-geom-tx(type="thi.ng.geom.types.Triangle3")>>
 #+END_SRC
 **** PVolume
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
-  g/PVolume
-  (volume [_] 0.0)
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+  <<lob-geom-zerovol>>
 #+END_SRC
 **** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/triangle.cljx
