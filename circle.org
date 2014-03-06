@@ -1,6 +1,4 @@
-#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
-#+TAGS:           write(w) update(u) fix(f) verify(v) noexport(n)
-#+EXPORT_EXCLUDE_TAGS: noexport
+#+SETUPFILE: setup.org
 
 * thi.ng.geom.circle
 ** Namespace declaration
@@ -164,7 +162,7 @@
   g/PPolygonConvert
   (as-polygon
    ([_] (g/as-polygon _ *resolution*))
-   ([_ res] (thi.ng.geom.types.Polygon. (vec (g/vertices _ res)) [])))
+   ([_ res] (thi.ng.geom.types.Polygon. (vec (g/vertices _ res)))))
 #+END_SRC
 *** PProximity
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
@@ -193,7 +191,7 @@
      A circle can be tessellated into a list of uniform triangles,
      each sharing the circle's centroid. If called without 2nd
      argument the default circle =*resolution*= (a dynamic var defined
-     in [[file:geom.org][thi.ng.geom.core]]) will be used.
+     in [[file:core.org][thi.ng.geom.core]]) will be used.
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
   g/PTessellate
   (tessellate
@@ -202,7 +200,24 @@
       (->> res
            (g/vertices _)
            (g/tessellate* p)
-           (map #(thi.ng.geom.types.Triangle2. (% 0) (% 1) (% 2))))))
+           (map #(thi.ng.geom.types.Triangle2. %)))))
+#+END_SRC
+*** TODO PTransform
+**** TODO scale with non-uniform values should return Ellipse
+
+Since transforming a circle with a matrix can produce non-circular
+results, the =transform= implementation returns a [[file:polygon.org][polygon]].
+
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
+  g/PRotate
+  (rotate [_ theta] (thi.ng.geom.types.Circle. (g/rotate (:p _) theta) (:r _)))
+  g/PScale
+  (scale [_ s] (thi.ng.geom.types.Circle. (g/* (:p _) s) (* (:r _) s)))
+  (scale-size [_ s] (thi.ng.geom.types.Circle. (:p _) (* (:r _) s)))
+  g/PTranslate
+  (translate [_ t] (thi.ng.geom.types.Circle. (g/+ (:p _) t) (:r _)))
+  g/PTransform
+  (transform [_ m] (g/transform (g/as-polygon _) m))
 #+END_SRC
 *** PVolume
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/circle.cljx
