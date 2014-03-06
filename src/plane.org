@@ -2,7 +2,7 @@
 
 * thi.ng.geom.plane
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/plane.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.plane
     ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     (:require
@@ -16,7 +16,7 @@
      [thi.ng.geom.types Plane]))
 #+END_SRC
 ** Constructor
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/plane.cljx
   (defn plane
     [n w] (thi.ng.geom.types.Plane. (g/normalize (vec3 n)) w))
   
@@ -32,7 +32,7 @@
          (thi.ng.geom.types.Plane. n (g/dot n a)))))
 #+END_SRC
 ** Helper functions
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/plane.cljx
   (defn intersect-plane
     [an aw bn bw]
     (when-not (or (m/delta= aw bw *eps*) (m/delta= an bn *eps*))
@@ -43,24 +43,24 @@
         {:p (g/madd an u (g/* bn v)) :dir (g/normalize (g/cross an bn))})))
 #+END_SRC
 ** TODO Protocol implementation
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/plane.cljx
   (extend-type thi.ng.geom.types.Plane
 #+END_SRC
 *** PClassify
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/plane.cljx
   g/PClassify
   (classify-point
     [_ p]
     (-> (:n _) (g/dot p) (- (:w _)) (m/signum *eps*)))
 #+END_SRC
 *** PFlip
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/plane.cljx
   g/PFlip
   (flip
     [_] (thi.ng.geom.types.Plane. (g/- (:n _)) (- (:w _))))
 #+END_SRC
 *** PIntersect
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/plane.cljx
   g/PIntersect
   (intersect-line
    ([_ line] (g/intersect-ray _ (:p line) (g/- (:q line) (:p line))))
@@ -84,7 +84,7 @@
     :default (err/illegal-arg! s)))
 #+END_SRC
 *** PMeshConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/plane.cljx
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
@@ -102,7 +102,7 @@
         (gm/add-face (gm/gmesh) (if flip? [a b c d] [d c b a])))))
 #+END_SRC
 *** PProximity
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/plane.cljx
   g/PProximity
   (closest-point
     [_ p]
@@ -113,6 +113,6 @@
          (g/- p)))
 #+END_SRC
 *** End implementation                                             :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/plane.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/plane.cljx
   )
 #+END_SRC

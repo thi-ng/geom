@@ -2,7 +2,7 @@
 
 * thi.ng.geom.mesh (deprecated)
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.mesh
     (:require
      [thi.ng.common.data.core :as d]
@@ -16,7 +16,7 @@
      [thi.ng.geom.types AABB Sphere Mesh2 Mesh3]))
 #+END_SRC
 ** Shared 2d/3d functions
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   (defn add-face
     [{:keys [vertices edges faces] :as mesh} [a b c] & attribs]
     (let [a (get (find vertices a) 0 a)
@@ -186,7 +186,7 @@
        [mesh []] faces)))
 #+END_SRC
 ** Constructors
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   (defn mesh2
     "Builds a new 2d mesh data structure and (optionally) populates it with
     the given items (a seq of existing meshes and/or faces). Faces are defined
@@ -210,11 +210,11 @@
 #+END_SRC
 ** Protocol implementations
 *** Mesh2
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   (extend-type thi.ng.geom.types.Mesh2
 #+END_SRC
 **** PGraph
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PGraph
   (edges
    [_] (keys (:edges _)))
@@ -226,7 +226,7 @@
    [_ v] (vertex-valence* _ v))
 #+END_SRC
 **** PArea
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PArea
   (area [_]
         (->> _
@@ -235,12 +235,12 @@
              (reduce +)))
 #+END_SRC
 **** TODO PCircumference
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PCircumference
   (circumference [_] 0)
 #+END_SRC
 **** PBounds
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PBounds
   (bounds [_] (g/bounding-rect* (keys (:vertices _))))
   (width [_] (g/axis-range* 0 (keys (:vertices _))))
@@ -248,23 +248,23 @@
   (depth [_] 0)
 #+END_SRC
 **** PBoundingCircle
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PBoundingCircle
   (bounding-circle
    [_] (g/bounding-circle* (g/centroid _) (g/vertices _)))
 #+END_SRC
 **** TODO PCenter
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PCenter
   (center [_] _)
   (centroid [_] (g/centroid* (keys (:vertices _))))
 #+END_SRC
 **** TODO PBoundary
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
 
 #+END_SRC
 **** PMesh
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PMesh
   (faces
    [_] (:faces _))
@@ -304,13 +304,13 @@
    [_ a b] (merge-vertices* _ a b))
 #+END_SRC
 **** PMeshConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PMeshConvert
   (as-mesh [_] _)
 #+END_SRC
 
 **** PSubdivide
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PSubdivide
   (subdivide-edge
    [_ a b splits] (subdivide-edge* _ a b splits))
@@ -322,7 +322,7 @@
    (subdivide* _ opts))
 #+END_SRC
 **** PSlice
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PSlice
   (slice-with
    ([_ e]
@@ -333,15 +333,15 @@
       (slice-with* _ e classifier faces)))
 #+END_SRC
 **** End of implementation                                         :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   )
 #+END_SRC
 *** Mesh3
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   (extend-type thi.ng.geom.types.Mesh3
 #+END_SRC
 **** PGraph
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PGraph
   (edges
    [_] (keys (:edges _)))
@@ -353,7 +353,7 @@
    [_ v] (vertex-valence* _ v))
 #+END_SRC
 **** PArea
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PArea
   (area
    [_]
@@ -363,7 +363,7 @@
         (reduce +)))
 #+END_SRC
 **** PBounds
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PBounds
   (bounds [_] (g/bounding-box* (keys (:vertices _))))
   (width [_] (g/axis-range* 0 (keys (:vertices _))))
@@ -371,28 +371,28 @@
   (depth [_] (g/axis-range* 2 (keys (:vertices _))))
 #+END_SRC
 **** TODO PCenter
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PCenter
   (center [_] _)
   (centroid [_] (g/centroid* (keys (:vertices _))))
 #+END_SRC
 **** PBoundingSphere
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PBoundingSphere
   (bounding-sphere
    [_] (g/bounding-sphere* (g/centroid _) (g/vertices _)))
 #+END_SRC
 **** TODO PVolume
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PVolume
   (volume [_] 0)
 #+END_SRC
 **** TODO PBoundary
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
 
 #+END_SRC
 **** PMesh
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PMesh
   (faces
    [_] (:faces _))
@@ -456,13 +456,13 @@
    [_ a b] (merge-vertices* _ a b))
 #+END_SRC
 **** PMeshConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PMeshConvert
   (as-mesh [_] _)
 #+END_SRC
 
 **** PSubdivide
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PSubdivide
   (subdivide-edge [_ a b splits] (subdivide-edge* _ a b splits))
   (subdivide-face
@@ -470,7 +470,7 @@
   (subdivide [_ opts] (subdivide* _ opts))
 #+END_SRC
 **** PSlice
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   g/PSlice
   (slice-with
    ([_ e] (slice-with* _ e g/classify-point (:faces _)))
@@ -478,12 +478,12 @@
    ([_ e classifier faces] (slice-with* _ e classifier faces)))
 #+END_SRC
 **** End of implementation                                         :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   )
 #+END_SRC
 ** Type specific functions
 *** TODO refactor transform as protocol method
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx
   (defn loop-subdivide-face
     [mesh [a b c :as f]]
     (let [{:keys [vertices edges faces] :as mesh} (g/remove-face mesh f)

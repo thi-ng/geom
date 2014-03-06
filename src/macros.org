@@ -2,7 +2,7 @@
 
 * Helper macros
 ** Matrix operations
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/core.clj :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/macros/core.clj :mkdirp yes :padline no
   (ns thi.ng.geom.macros.core
     (:require [thi.ng.macromath.core :as mm]))
 
@@ -19,7 +19,7 @@
 #+END_SRC
 
 ** Voxel test
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/macros/voxel.clj :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/macros/voxel.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.macros.voxel)
 
   (defmacro set-bit-if-index

@@ -12,7 +12,7 @@ emacs -Q --batch \
     --eval \
     "(progn
      (require 'org)(require 'ob)(require 'ob-tangle)(require 'ob-lob)
-     (org-babel-lob-ingest \"library-of-babel.org\")
+     (org-babel-lob-ingest \"src/library-of-babel.org\")
      (setq org-confirm-babel-evaluate nil)
      (mapc (lambda (file)
             (find-file (expand-file-name file \"$DIR\"))

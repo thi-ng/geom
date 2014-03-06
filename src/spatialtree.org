@@ -2,7 +2,7 @@
 
 * Namespace: thi.ng.geom.spatialtree
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.spatialtree
     (:require
      [thi.ng.common.math.core :as m]
@@ -13,7 +13,7 @@
     ,#+clj (:import [thi.ng.geom.types Rect AABB]))
 #+END_SRC
 ** TreeOps protocol
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   (defprotocol TreeOps
     (child-index-for-point [_ p])
     (child-for-point [_ p])
@@ -22,7 +22,7 @@
     (split-node [_]))
 #+END_SRC
 ** Zipper functions
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
 (defn commit-path
   [node path]
   (if (seq path)
@@ -51,7 +51,7 @@
       node)))
 #+END_SRC
 ** Shared tree operations
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   (defn add-point*
     [_ p path]
     (if (:children _)
@@ -97,12 +97,12 @@
       _))
 #+END_SRC
 ** Constants
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   (def ^{:const true :private true} qt-children [nil nil nil nil])
   (def ^{:const true :private true} ot-children [nil nil nil nil nil nil nil nil])
 #+END_SRC
 ** Quadtree implementation
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   (defrecord QuadtreeNode [^double x ^double y ^double w ^double h children data]
     TreeOps
     (child-index-for-point [_ [px py]]
@@ -125,7 +125,7 @@
       (assoc _ :children qt-children :data nil)))
 #+END_SRC
 ** Octree implementation
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   (defrecord OctreeNode [^double x ^double y ^double z ^double w ^double h ^double d children data]
     TreeOps
     (child-index-for-point [_ [px py pz]]
@@ -151,21 +151,21 @@
 #+END_SRC
 ** Constructors
 *** Quadtree
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   (defn quadtree
     "Create a new quadtree root node with the given XY position & dimensions."
     [x y w h]
     (QuadtreeNode. x y (* 0.5 w) (* 0.5 h) nil nil))
 #+END_SRC
 *** Octree
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   (defn octree
     "Create a new octree root node with the given XYZ position & dimensions."
     [x y z w h d]
     (OctreeNode. x y z (* 0.5 w) (* 0.5 h) (* 0.5 d) nil nil))
 #+END_SRC
 ** Tree selectors
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   (defn select-with
     "Produces a seq of points in the tree within a given region.
       Uses two predicate fns to logically define the query region:

@@ -10,7 +10,7 @@
    (close))
 #+END_SRC
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.path
     (:require
      [thi.ng.geom.core :as g :refer [vec2]]
@@ -21,7 +21,7 @@
     ,#+clj (:import [thi.ng.geom.types Line2 Path2]))
 #+END_SRC
 ** Constructor
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx
   (defn path
     ([segments]
        (thi.ng.geom.types.Path2. (vec segments)))
@@ -31,7 +31,7 @@
 ** Path segment processing
 *** TODO refactor to use protocols
 *** TODO move sample-with-res into [[file:geom.org]]::PSample
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx
   (defmulti sample-segment (fn [s res last?] (:type s)))
 
   (defmethod sample-segment :line
@@ -61,7 +61,7 @@
         paths)))
 #+END_SRC
 ** SVG path parser
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx
   (defn parse-svg-coords
     [coords]
     (->> coords
@@ -103,7 +103,7 @@
           (err/unsupported! (str "Unsupported path segment type" type))))))
 #+END_SRC
 ** SVG path parser (Clojure only)
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx
   ,#+clj
   (defn parse-svg
     [src res udist]
@@ -115,16 +115,16 @@
          (map path)))
 #+END_SRC
 ** Protocol implementations
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx
   (extend-type thi.ng.geom.types.Path2
 #+END_SRC
 *** TODO PArea
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx
   g/PArea
   (area [_])
 #+END_SRC
 *** TODO PBoundary
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx
   g/PClassify
   (classify-point [_ p])
   g/PProximity
@@ -133,17 +133,17 @@
   (contains-point? [_ p])
 #+END_SRC
 *** TODO PBounds
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx
   g/PBounds
   (bounds [_])
 #+END_SRC
 *** TODO PBoundingCircle
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx
   g/PBoundingCircle
   (bounding-cicle [_] nil)
 #+END_SRC
 *** TODO PCenter
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx
   g/PCenter
   (center
    ([_] nil)
@@ -151,12 +151,12 @@
   (centroid [_])
 #+END_SRC
 *** TODO PCircumference
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx
   g/PCircumference
   (circumference [_] nil)
 #+END_SRC
 *** TODO PGraph
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx
   g/PGraph
   (edges [_])
   (vertices
@@ -164,14 +164,14 @@
    (first (sample-segments* res (:segments _))))
 #+END_SRC
 *** TODO PPolygonConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx
   g/PPolygonConvert
   (as-polygon
    ([_] nil)
    ([_ res] nil))
 #+END_SRC
 *** TODO PSample
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx
   g/PSample
   (point-at [_ t])
   (random-point [_])
@@ -185,6 +185,6 @@
         (first)))
 #+END_SRC
 *** End of implementation                                          :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/path.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx
   )
 #+END_SRC

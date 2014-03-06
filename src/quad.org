@@ -3,7 +3,7 @@
 * thi.ng.geom.quad
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.quad
     (:require
      [thi.ng.common.data.core :as d]
@@ -18,7 +18,7 @@
      [thi.ng.geom.types Quad3 Triangle3]))
 #+END_SRC
 ** Constructor
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   (defn quad3
     ([] (quad3 1.0))
     ([w] (thi.ng.geom.types.Quad3. [(vec3) (vec3 w 0.0 0.0) (vec3 w w 0.0) (vec3 0.0 w 0.0)]))
@@ -28,7 +28,7 @@
 
 - https://www.garagegames.com/community/forums/viewthread/76960/1#comment-543505
 
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   ;; FIXME
   (defn map-uv
     [{:keys[a b c d]} p]
@@ -51,41 +51,41 @@
     (g/mix (g/mix a b u) (g/mix d c u) v))
 #+END_SRC
 ** Protocol implementations
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   (extend-type thi.ng.geom.types.Quad3
 #+END_SRC
 *** PArea
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   g/PArea
   (area
    [{[a b c d] :points}]
    (+ (t/area3 a b c) (t/area3 a c d)))
 #+END_SRC
 *** TODO PBoundary
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   g/PBoundary
   (contains-point?
    [_ p] )
 #+END_SRC
 *** PBounds                                                     :usetemplate:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
   <<lob-geom-bounds(fn="g/bounding-box*", depth="yes")>>
 #+END_SRC
 *** PBoundingSphere                                             :usetemplate:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
   <<lob-geom-bsphere>>
 #+END_SRC
 *** PCenter                                                     :usetemplate:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
   <<lob-geom-center(type="thi.ng.geom.types.Quad3")>>
   (centroid [_] (g/centroid* (:points _)))
 #+END_SRC
 *** PCircumference                                              :usetemplate:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
   <<lob-geom-circum>>
 #+END_SRC
 *** TODO PClassify
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   g/PClassify
   (classify-point
    [_ p]
@@ -112,7 +112,7 @@ and the quad is assumed to be planar.
 The process results in bevelled forms for =:scale= values other
 than 1.0.
 
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   g/PExtrude
   (extrude
    [_ {:keys [depth scale offset flags]
@@ -139,7 +139,7 @@ than 1.0.
           (gm/into-mesh (gm/gmesh)))))
 #+END_SRC
 *** PGraph
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   g/PGraph
   (vertices
    [_] (:points _))
@@ -151,7 +151,7 @@ than 1.0.
    [_ v] (if ((set (:points _)) v) 2 0))
 #+END_SRC
 *** TODO PIntersect
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   g/PIntersect
   (intersect-line
    [_ l])
@@ -164,16 +164,16 @@ than 1.0.
 
 A quad's mesh representation is simply a quad mesh with a single face.
 
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   g/PMeshConvert
   (as-mesh [_] (g/add-face (gm/gmesh) (:points _)))
 #+END_SRC
 *** TODO PProximity
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
   <<lob-geom-proxi(type="thi.ng.geom.types.Line3")>>
 #+END_SRC
 *** TODO PSample
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
   <<lob-geom-sample(n="4")>>
   ;;(random-point-inside
   ;; [_] (unmap-uv _ (vec2 (m/random) (m/random))))
@@ -196,7 +196,7 @@ angles are 90 degrees). If specified, =:cols= and =:rows= will
 take precedence over =:num=, but the latter will be used as
 default for missing args.
 
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   g/PSubdivide
   (subdivide
    ([_] (g/subdivide _ {}))
@@ -216,7 +216,7 @@ into 2 triangles: =[a b c]= & =[a c d]=. When called *with* options,
 then these are used for a call to [[PSubdivide][=subdivide=]] first and the
 function returns a lazyseq of triangles of the subdivided quad.
 
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   g/PTessellate
   (tessellate
    ([{[a b c d] :points}]
@@ -227,7 +227,7 @@ function returns a lazyseq of triangles of the subdivided quad.
 #+END_SRC
 
 *** PTransform                                                  :usetemplate:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
   <<lob-geom-rotate(type="thi.ng.geom.types.Quad3")>>
   <<lob-geom-rotate3d(type="thi.ng.geom.types.Quad3")>>
   <<lob-geom-scale(type="thi.ng.geom.types.Quad3")>>
@@ -236,11 +236,11 @@ function returns a lazyseq of triangles of the subdivided quad.
 #+END_SRC
 
 *** PVolume                                                     :usetemplate:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
   <<lob-geom-zerovol>>
 #+END_SRC
 
 *** End of implementations                                         :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   )
 #+END_SRC

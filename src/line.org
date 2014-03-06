@@ -3,7 +3,7 @@
 * thi.ng.geom.line
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.line
     ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     (:require
@@ -19,7 +19,7 @@
 #+END_SRC
 
 ** Constructors
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   (defn line2
     ([[p q]] (thi.ng.geom.types.Line2. [(vec2 p) (vec2 q)]))
     ([p q] (thi.ng.geom.types.Line2. [(vec2 p) (vec2 q)]))
@@ -38,7 +38,7 @@
 
 ** Shared helper functions
     This function is going to be used for both 2D/3D implementations:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   (defn closest-point-coeff*
     [p a b]
     (let [d (g/- b a)]
@@ -215,57 +215,57 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 
 ** Line2
 *** Protocol implementations
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   (extend-type thi.ng.geom.types.Line2
 #+END_SRC
 **** PArea
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PArea
   (area [_] 0)
 #+END_SRC
 **** PBoundary
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PBoundary
   (contains-point?
    [{p :points} q] (m/delta= (closest-point* (vec2 q) (p 0) (p 1)) q *eps*))
 #+END_SRC
 **** PBounds                                                       :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-bounds(fn="g/bounding-rect*")>>
   (depth  [_] 0)
 #+END_SRC
 **** PBoundingCircle
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PBoundingCircle
   (bounding-circle
    [{[p q] :points}]
    (thi.ng.geom.types.Circle. (g/mix p q) (* 0.5 (g/dist p q))))
 #+END_SRC
 **** PCenter                                                       :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-center(type="thi.ng.geom.types.Line2")>>
 #+END_SRC
 **** PCircumference                                                :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-circum>>
 #+END_SRC
 **** PClassify
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PClassify
   (classify-point
    [{[p q] :points} v]
    (m/signum (g/dot (g/- (vec2 v) p) (g/normal (g/- q p))) *eps*))
 #+END_SRC
 **** PExtrude                                                           :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-extrude>>
 #+END_SRC
 **** PGraph                                                        :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-graph>>
 #+END_SRC
 **** PIntersect
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PIntersect
   (intersect-line
    [{[[px1 py1 :as p] [qx1 qy1 :as q]] :points :as _}
@@ -292,48 +292,48 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
          {:type :parallel}))))
 #+END_SRC
 **** PMagnitude                                                    :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-mag>>
 #+END_SRC
 **** PNormalize                                                    :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-normalize(type="thi.ng.geom.types.Line2")>>
 #+END_SRC
 **** PProximity
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PProximity
   (closest-point
    [{p :points} q] (closest-point* (vec2 q) (p 0) (p 1)))
 #+END_SRC
 **** PReflect                                                      :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-reflect(type="thi.ng.geom.types.Line2", ctor="line2")>>
 #+END_SRC
 **** PSample                                                       :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-sample>>
 #+END_SRC
 **** PTransform                                                    :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-rotate(type="thi.ng.geom.types.Line2")>>
   <<tpl-tx(type="thi.ng.geom.types.Line2")>>
 #+END_SRC
 **** End of implementations                                        :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   )
 #+END_SRC
 ** Line3
 *** Protocol implementations
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   (extend-type thi.ng.geom.types.Line3
 #+END_SRC
 **** PArea
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PArea
   (area [_] 0)
 #+END_SRC
 **** TODO PBoundary
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PClassify
   (classify-point
    [{p :points} p] nil) ; TODO
@@ -345,58 +345,58 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
    [{p :points} q] (m/delta= (closest-point* (vec3 q) (p 0) (p 1)) q *eps*))
 #+END_SRC
 **** PBounds                                                       :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-bounds(fn="g/bounding-box*")>>
   (depth  [{p :points}] (m/abs (- ((p 0) 2) ((p 1) 2))))
 #+END_SRC
 **** PBoundingSphere
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PBoundingSphere
   (bounding-sphere
    [{[p q] :points}]
    (g/bounding-sphere* (g/mix p q) (* 0.5 (g/dist p q))))
 #+END_SRC
 **** PCenter                                                       :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-center(type="thi.ng.geom.types.Line3")>>
 #+END_SRC
 **** PCircumference                                                :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-circum>>
 #+END_SRC
 **** PExtrude                                                           :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-extrude>>
 #+END_SRC
 **** PGraph                                                        :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-graph>>
 #+END_SRC
 **** TODO PIntersect
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PIntersect
   (intersect-line [_ l])
   (intersect-ray [_ r])
   (intersect-shape [_ s])
 #+END_SRC
 **** PMagnitude                                                    :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-mag>>
 #+END_SRC
 **** PNormalize                                                    :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-normalize(type="thi.ng.geom.types.Line3")>>
 #+END_SRC
 **** PReflect                                               :verify:template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-reflect(type="thi.ng.geom.types.Line3", ctor="line3")>>
 #+END_SRC
 **** PSample                                                       :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   <<tpl-sample>>
 #+END_SRC
 **** PTransform                                                    :template:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes
   g/PRotate3D
   (rotate-x
    [{p :points} theta]
@@ -416,26 +416,26 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   <<tpl-tx(type="thi.ng.geom.types.Line3")>>
 #+END_SRC
 **** PVolume
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PVolume
   (volume [_] 0.0)
 #+END_SRC
 **** End of implementations                                        :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   )
 #+END_SRC
 ** TODO LineStrip2
 *** Protocol implementations
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   (extend-type thi.ng.geom.types.LineStrip2
 #+END_SRC
 **** PArea
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PArea
   (area [_] 0)
 #+END_SRC
 **** TODO PBoundary
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PBoundary
   (classify-point [_ v])
   g/PProximity
@@ -444,7 +444,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   (contains-point? [_ a])
 #+END_SRC
 **** PBounds
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PBounds
   (bounds [_] (g/bounding-rect* (:points _)))
   (width [_] (g/axis-range* 0 (:points _)))
@@ -452,13 +452,13 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   (depth [_] 0)
 #+END_SRC
 **** PBoundingCircle
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PBoundingCircle
   (bounding-circle
    [_] (g/bounding-circle* (g/centroid _) (:points _)))
 #+END_SRC
 **** PCenter
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PCenter
   (center
    ([_] (g/translate _ (g/- (g/centroid _))))
@@ -466,13 +466,13 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   (centroid [_] (g/centroid* (:points _)))
 #+END_SRC
 **** PCircumference
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PCircumference
   (circumference
    [_] (* 2.0 (g/mag _)))
 #+END_SRC
 **** PExtrude                                                        :verify:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PExtrude
   (extrude
    [{points :points :as _}
@@ -489,7 +489,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
        (d/successive-nth 2 top)))))
 #+END_SRC
 **** TODO PGraph                                                     :verify:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PGraph
   (vertices
    ([_] (:points _))
@@ -508,12 +508,12 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
      0))
 #+END_SRC
 **** TODO PIntersect
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PIntersect
   (intersect-line [_ l])
 #+END_SRC
 **** PMagnitude
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PMagnitude
   (mag
    [_] (d/reduce-pairs + g/dist (:points _)))
@@ -522,14 +522,14 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 #+END_SRC
 **** TODO PReflect
 ***** TODO add support for reflect-on-line
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PReflect
   (reflect
    [_ r]
    (thi.ng.geom.types.LineStrip2. (mapv #(g/reflect % r) (:points _))))
 #+END_SRC
 **** PSample
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PSample
   (point-at
    [_ t] (g/point-at* t (:points _) nil))
@@ -542,7 +542,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
    (g/sample-uniform* udist include-last? (:points _)))
 #+END_SRC
 **** TODO PTransform
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   g/PRotate
   (rotate
    [_ theta]
@@ -566,6 +566,6 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
    (thi.ng.geom.types.LineStrip2. (mapv #(g/transform-vector m %) (:points _))))
 #+END_SRC
 **** End of implementations                                        :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/line.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx
   )
 #+END_SRC

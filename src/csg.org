@@ -2,7 +2,7 @@
 
 * Namespace: thi.ng.geom.csg
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/csg.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/csg.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.csg
     ,#+cljs
     (:require-macros
@@ -16,11 +16,11 @@
      [thi.ng.geom.plane :as p]))
 #+END_SRC
 ** Forward declarations
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/csg.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/csg.cljx
   (declare csg-vertex csg-polygon)
 #+END_SRC
 ** Helper functions
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/csg.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/csg.cljx
   (defn interpolate-vertex
     "Linearly interpolates between the 2 vertices
     (computes both position & normal)."
@@ -92,7 +92,7 @@
              (if (>= (count b) 3) (conj back (csg-polygon b (:shared poly))) b)]))))
 #+END_SRC
 ** Public API
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/csg.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/csg.cljx
   (defn clip-polygons
     "Uses a CSG node's plane to recursively clip the given seq of polygons.
     Returns a flat seq of polygons classified as in-front of the plane
@@ -200,7 +200,7 @@
       (-> a (csg-node (all-polygons b)) invert all-polygons)))
 #+END_SRC
 ** Constructors
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/csg.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/csg.cljx
   (defn mesh->csg
     "Converts a regular Mesh3 into a seq of CSG polygons.
     First calls `compute-face-normals` on mesh if not already present."

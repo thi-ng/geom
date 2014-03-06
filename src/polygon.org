@@ -2,7 +2,7 @@
 
 * thi.ng.geom.polygon
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx :mkdip yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx :mkdip yes :padline no
   (ns thi.ng.geom.polygon
     (:require
      [thi.ng.common.data.core :as d]
@@ -17,7 +17,7 @@
      [thi.ng.geom.types Circle Line2 Rect Polygon]))
 #+END_SRC
 ** Constructor
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   (defn polygon
     ([points] (thi.ng.geom.types.Polygon. (mapv vec2 points)))
     ([p & more] (thi.ng.geom.types.Polygon. (mapv vec2 (cons p more)))))
@@ -32,7 +32,7 @@
 ** Type specific functions
 *** Sutherland-Hodgeman convex clipping
  - http://en.wikipedia.org/wiki/Sutherland-Hodgman_algorithm
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   (defn clip-convex*
     [verts bounds]
     (let [verts (conj verts (first verts))
@@ -59,7 +59,7 @@
           (distinct (butlast points))))))
 #+END_SRC
 *** Convex hull
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   (defn- h-segment
     [verts [px py :as p] pred theta ps]
     (let [[q] (reduce
@@ -85,7 +85,7 @@
 #+END_SRC
 *** Tessellation
 **** TODO move delta-contains into core
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   (defn delta-contains
     [points p eps]
     (some #(m/delta= p % eps) points))
@@ -122,7 +122,7 @@
                 (recur result verts v nv (dec cnt)))))))))
 #+END_SRC
 **** TODO Insetting
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   ;; http://alienryderflex.com/polygon_inset/
   (defn- inset-corner
     [prev curr next d]
@@ -159,11 +159,11 @@
         (d/successive-nth 3 (d/wrap-seq points [(peek points)] [(first points)]))))))
 #+END_SRC
 ** Protocol implementations
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   (extend-type thi.ng.geom.types.Polygon
 #+END_SRC
 *** PArea
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PArea
   (area
    [{points :points}]
@@ -174,15 +174,15 @@
         (* 0.5)))
 #+END_SRC
 *** PBounds                                                     :usetemplate:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
   <<lob-geom-bounds(fn="g/bounding-rect*")>>
 #+END_SRC
 *** PBoundingCircle                                             :usetemplate:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
   <<lob-geom-bcircle>>
 #+END_SRC
 *** PBoundary
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PBoundary
   (contains-point?
    [{points :points} p]
@@ -197,7 +197,7 @@
            [false (last points)] points)))))
 #+END_SRC
 *** PCenter                                                     :usetemplate:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
   <<lob-geom-center(type="thi.ng.geom.types.Polygon")>>
   (centroid
    [{points :points :as _}]
@@ -210,29 +210,29 @@
      (g/* c (/ 1.0 (* 6.0 (g/area _))))))
 #+END_SRC
 *** PCircumference                                              :usetemplate:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
   <<lob-geom-circum>>
 #+END_SRC
 *** TODO PClassify
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PClassify
   (classify-point
    [_ p] nil)
 #+END_SRC
 *** PClip
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PClip
   (clip-with
    [_ s] (polygon (clip-convex* (:points _) s)))
 #+END_SRC
 *** PConvexHull
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PConvexHull
   (convex-hull
    [_] (polygon (convex-hull* (:points _))))
 #+END_SRC
 *** PExtrude
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PExtrude
     (extrude
       [{points :points :as _}
@@ -331,11 +331,11 @@
             (quad-strip (maybe-loop tpoints3) (maybe-loop itpoints3) true))))))  
 #+END_SRC
 *** PFlip                                                       :usetemplate:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
   <<lob-geom-flip(type="thi.ng.geom.types.Polygon")>>
 #+END_SRC
 *** PGraph
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PGraph
   (vertices
    [_] (:points _))
@@ -348,7 +348,7 @@
    [_ v] (if ((set (g/vertices _)) v) 2 0))
 #+END_SRC
 *** TODO PIntersect
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PIntersect
   (intersect-line
    [_ l])
@@ -358,7 +358,7 @@
    [_ s])
 #+END_SRC
 *** PMeshConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PMeshConvert
   (as-mesh
    [_]
@@ -367,16 +367,16 @@
         (g/into-mesh (gm/gmesh))))
 #+END_SRC
 *** PPolygonConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PPolygonConvert
   (as-polygon [_] _)
 #+END_SRC
 *** PProximity                                                  :usetemplate:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
   <<lob-geom-proxi(type="thi.ng.geom.types.Line2")>>
 #+END_SRC
 *** TODO PSample
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PSample
   (point-at
    [{points :points} t] (g/point-at* t (conj points (first points))))
@@ -388,23 +388,23 @@
    (g/sample-uniform* udist include-last? (conj points (first points))))
 #+END_SRC
 *** PTessellate
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   g/PTessellate
   (tessellate
    [_] (map #(thi.ng.geom.types.Triangle2. %) (tessellate* _)))
 #+END_SRC
 *** PTransform                                                  :usetemplate:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
   <<lob-geom-rotate(type="thi.ng.geom.types.Polygon")>>
   <<lob-geom-scale(type="thi.ng.geom.types.Polygon")>>
   <<lob-geom-translate(type="thi.ng.geom.types.Polygon")>>
   <<lob-geom-tx(type="thi.ng.geom.types.Polygon")>>
 #+END_SRC
 *** PVolume                                                     :usetemplate:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes
   <<lob-geom-zerovol>>
 #+END_SRC
 *** End of implementations                                         :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/polygon.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   )
 #+END_SRC

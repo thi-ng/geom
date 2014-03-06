@@ -2,7 +2,7 @@
 
 * thi.ng.geom.rect
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.rect
     ,#+cljs
     (:require-macros
@@ -22,7 +22,7 @@
 #+END_SRC
 ** Constructor
 *** TODO replace sequential? w/ coll?
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   (defn rect
     ([] (thi.ng.geom.types.Rect. (vec2) 1.0 1.0))
     ([w] (thi.ng.geom.types.Rect. (vec2) w w))
@@ -42,7 +42,7 @@
     ([x y w h] (thi.ng.geom.types.Rect. (vec2 x y) w h)))
 #+END_SRC
 ** Type specific functions
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   (defn union
     [{:keys[p w h]} {q :p qw :w qh :h}]
     (let [[x1 y1 :as p*] (g/min p q)
@@ -85,23 +85,23 @@
         false)))
 #+END_SRC
 ** Protocol implementations
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   (extend-type thi.ng.geom.types.Rect
 #+END_SRC
 *** PArea
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PArea
   (area [_] (* (:w _) (:h _)))
 #+END_SRC
 *** PBoundary
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PBoundary
   (contains-point?
    [{[px py] :p w :w h :h} [x y]]
    (and (m/in-range? 0.0 w (- x px)) (m/in-range? 0.0 h (- y py))))
 #+END_SRC
 *** PBounds
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PBounds
   (bounds[_] _)
   (width  [_] (:w _))
@@ -109,7 +109,7 @@
   (depth  [_] 0)
 #+END_SRC
 *** PBoundingCircle
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PBoundingCircle
   (bounding-circle
    [_]
@@ -117,7 +117,7 @@
      (g/bounding-circle* c (g/dist c (:p _)))))
 #+END_SRC
 *** PCenter
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PCenter
   (center
    ([{w :w h :h}]
@@ -129,12 +129,12 @@
   (centroid [{p :p :as _}] (g/mix p (g/+ p (:w _) (:h _))))
 #+END_SRC
 *** PCircumference
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PCircumference
   (circumference [_] (* 2.0 (+ (:w _) (:h _))))
 #+END_SRC
 *** PClassify
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PClassify
   (classify-point
    [_ q] (reduce min (map #(g/classify-point % q) (g/edges _))))
@@ -154,7 +154,7 @@ options, given as parameter map:
 The process results in bevelled forms for =:scale= values other
 than 1.0.
 
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PExtrude
   (extrude
    [_ {:keys [depth scale offset] :or {depth 1.0 scale 1.0} :as opts}]
@@ -168,7 +168,7 @@ than 1.0.
    [_ opts] (g/extrude-shell (g/as-polygon _) opts))
 #+END_SRC
 *** PGraph
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PGraph
   (vertices
    [{[x y :as p] :p w :w h :h}]
@@ -186,7 +186,7 @@ than 1.0.
    [_ v] (if ((set (g/vertices _)) (vec2 v)) 2 0))
 #+END_SRC
 *** TODO PIntersect
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PIntersect
   (intersect-line
    [_ l])
@@ -200,25 +200,25 @@ than 1.0.
     :default (err/type-error! "Rect" s)))
 #+END_SRC
 *** PMeshConvert                                                     :verify:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PMeshConvert
   (as-mesh
    [_] (g/add-face (gm/gmesh) (mapv vec3 (g/vertices _))))
 #+END_SRC
 *** PPolygonConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PPolygonConvert
   (as-polygon
    [_] (thi.ng.geom.types.Polygon. (g/vertices _)))
 #+END_SRC
 *** PProximity
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PProximity
   (closest-point
    [_ q] (g/closest-point* (mapv l/line2 (g/edges _)) q))
 #+END_SRC
 *** PSample
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PSample
   (point-at
    [_ t] (g/point-at* t (conj (g/vertices _) (:p _))))
@@ -248,7 +248,7 @@ take precedence over =:num=, but the latter will be used as
 default for missing args. Rects are returned as a lazyseq with
 top-left to bottom-right ordering and inner sorting along X.
 
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PSubdivide
   (subdivide
    ([_] (g/subdivide _ {}))
@@ -274,7 +274,7 @@ into 2 triangles, each in anti-clockwise orientation: =[tl br tr]=
 for a call to [[PSubdivide][=subdivide=]] first and the function returns a lazyseq
 of triangles of the subdivided rects.
 
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PTessellate
   (tessellate
    ([_]
@@ -284,7 +284,7 @@ of triangles of the subdivided rects.
       (mapcat g/tessellate (g/subdivide _ opts))))
 #+END_SRC
 *** TODO PTransform
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   g/PScale
   (scale
    ([_ s]
@@ -310,6 +310,6 @@ of triangles of the subdivided rects.
        (g/madd (vec2 w2 h2) -0.5 (g/centroid _)) w2 h2)))
 #+END_SRC
 *** End of implementations                                         :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/rect.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   )
 #+END_SRC

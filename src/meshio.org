@@ -3,7 +3,7 @@
 * thi.ng.geom.meshio
 ** TODO make CLJS compatible
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/meshio.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/meshio.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.meshio
     (:require
      [thi.ng.common.data.byteutils :as b]
@@ -15,11 +15,11 @@
      [java.io OutputStream InputStream]))
 #+END_SRC
 ** Configuration parameters
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/meshio.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/meshio.cljx
   (def ^:dynamic *precision* 5)
 #+END_SRC
 ** STL
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/meshio.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/meshio.cljx
   (defn write-stl
     "Writes the given mesh as binary STL to output stream. Mesh is
     automatically tessellated into triangles."
@@ -68,7 +68,7 @@
              (recur (conj vertices a b c) (dec nf)))))))
 #+END_SRC
 ** PLY
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/meshio.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/meshio.cljx
   (defn write-ply
     "Writes the given mesh as binary PLY to output stream. For
     compatibility with external tools mesh should already have been
@@ -105,7 +105,7 @@
       stream))
 #+END_SRC
 ** OBJ
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/meshio.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/meshio.cljx
   (defn write-obj
     [^OutputStream stream {:keys [vertices vnormals faces]}]
     (let [vertices (keys vertices)
@@ -145,7 +145,7 @@
       stream))
 #+END_SRC
 ** OFF
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/meshio.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/meshio.cljx
   (defn write-off
     [^OutputStream stream {:keys [vertices faces]}]
     (let [vertices (keys vertices)

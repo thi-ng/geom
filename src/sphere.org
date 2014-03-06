@@ -2,7 +2,7 @@
 
 * thi.ng.geom.sphere
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.sphere
     #+cljs (:require-macros [thi.ng.macromath.core :as mm])
     (:require
@@ -16,28 +16,28 @@
      [thi.ng.geom.types AABB Sphere]))
 #+END_SRC
 ** Constructor
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
   (defn sphere
     ([] (thi.ng.geom.types.Sphere. (vec3) 1.0))
     ([r] (thi.ng.geom.types.Sphere. (vec3) #+clj (double r) #+cljs r))
     ([p r] (thi.ng.geom.types.Sphere. (vec3 p) #+clj (double r) #+cljs r)))
 #+END_SRC
 ** Type specific functions
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
 
 #+END_SRC
 ** Protocol implementations
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
   (extend-type thi.ng.geom.types.Sphere
 #+END_SRC
 *** PArea
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
   g/PArea
   (area
    [{r :r}] (* 4.0 PI r r))
 #+END_SRC
 *** PBounds
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
   g/PBounds
   (bounds
    [_] (thi.ng.geom.types.AABB. (g/- (:p _) (:r _)) (vec3 (* 2 (:r _)))))
@@ -46,12 +46,12 @@
   (depth  [_] (* 2.0 (:r _)))
 #+END_SRC
 *** PBoundingSphere
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
   g/PBoundingSphere
   (bounding-sphere [_] _)
 #+END_SRC
 *** PBoundary
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
   g/PBoundary
   (contains-point?
    [{p :p r :r} q] (<= (g/dist-squared p q) (* r r)))
@@ -68,7 +68,7 @@
    (g/+ (:p _) (g/randvec3 (:r _))))
 #+END_SRC
 *** PCenter
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
   g/PCenter
   (center
    ([_] (thi.ng.geom.types.Sphere. (vec3) (:r _)))
@@ -76,11 +76,11 @@
   (centroid [_] (:p _))
 #+END_SRC
 *** TODO PGraph
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
 
 #+END_SRC
 *** TODO PMeshConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
@@ -113,12 +113,12 @@
               (gm/gmesh))))))
 #+END_SRC
 *** PVolume
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
   g/PVolume
   (volume [{r :r}] (mm/mul (/ 4.0 3.0) PI r r r))
 #+END_SRC
 *** End of implementation                                          :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/sphere.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
   )
 #+END_SRC
 

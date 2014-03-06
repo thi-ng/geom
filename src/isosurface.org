@@ -2,7 +2,7 @@
 
 * Namespace: thi.ng.geom.isosurface
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/isosurface.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/isosurface.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.isosurface
     (:require
      [thi.ng.common.math.core :as m]
@@ -14,14 +14,14 @@
 #+END_SRC
 ** Marching cube lookup tables
 *** Edge offset table
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/isosurface.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/isosurface.cljx
   (def ^:const edge-offsets
     [[0 0 0 0] [1 0 0 2] [0 0 1 0] [0 0 0 2]
      [0 1 0 0] [1 1 0 2] [0 1 1 0] [0 1 0 2]
      [0 0 0 1] [1 0 0 1] [1 0 1 1] [0 0 1 1]])
 #+END_SRC
 *** Triangles per cube index
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/isosurface.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/isosurface.cljx
   (def ^:const cell-triangles
     [[]
      [[0 8 3]]
@@ -281,7 +281,7 @@
      []])
 #+END_SRC
 *** Edges per cube index
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/isosurface.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/isosurface.cljx
   (def ^:const compute-edges
     [0 7 1 6 0 7 1 6 4 3 5 2 4 3 5 2
      2 5 3 4 2 5 3 4 6 1 7 0 6 1 7 0
@@ -302,7 +302,7 @@
 #+END_SRC
 ** Helper functions
 *** Voxel lookups
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/isosurface.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/isosurface.cljx
   (defn voxel-id-front
     [voxels {:keys [stride stride-z]} idx]
     (let [y2 (+ idx stride) z2 (+ idx stride-z) yz (+ z2 stride)
@@ -353,7 +353,7 @@
       [id (* 3 idx) idx (voxel-cell config idx)]))
 #+END_SRC
 ** Isosurface computation
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/isosurface.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/isosurface.cljx
   (defn surface-mesh
     "Computes a triangle mesh of a voxel tree's iso surface
     at the given tree depth and iso value (between 0.0 ... 1.0)"

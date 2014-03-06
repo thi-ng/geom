@@ -80,7 +80,7 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 #+END_SRC
 
 ** Leiningen project file                                          :noexport:
-#+BEGIN_SRC clojure :tangle babel/project.clj :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
   (defproject thi.ng/geom "<<version>>"
     :description "thing geometry kit"
     :url "<<project-url>>"
@@ -123,7 +123,7 @@ This project is open source and licensed under the [[http://www.apache.org/licen
                 :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}})
 #+END_SRC
 ** ClojureScript test harness                                      :noexport:
-#+BEGIN_SRC html :tangle babel/index.html :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC html :tangle ../babel/index.html :noweb yes :mkdirp yes :padline no
   <!DOCTYPE html>
   <html lang="en">
     <head>
@@ -146,7 +146,7 @@ This project is open source and licensed under the [[http://www.apache.org/licen
   ; "<<version>>"
 #+END_SRC
 *** Version namespace                                              :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/version.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/version.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.version)
   (def ^:const version "<<version>>")
 #+END_SRC

@@ -2,7 +2,7 @@
 
 * thi.ng.geom.mesh.subdivision
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.subdivision
     (:require
      [thi.ng.common.data.core :as d]
@@ -10,7 +10,7 @@
      [thi.ng.geom.core :as g]))
 #+END_SRC
 ** Shared helpers
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
 
 #+END_SRC
 
@@ -18,7 +18,7 @@
 
 Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_subdivision_surface][Wikipedia]]
 
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
   (defn cc-face-points
     "Takes a seq of faces and returns map with faces as keys and their
       centroids as values."
@@ -87,7 +87,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
 #+END_SRC
 
 ** Doo-Sabin
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
   (defn ds-edge-midpoints
     [edges]
     (->> edges

@@ -2,7 +2,7 @@
 
 * thi.ng.geom.gmesh
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.gmesh
     (:require
      [thi.ng.common.data.core :as d]
@@ -16,7 +16,7 @@
      [thi.ng.geom.types AABB Sphere GMesh]))
 #+END_SRC
 ** Helper functions
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   (defn add-face
     [{:keys [vertices edges faces] :as mesh} verts]
     (let [f (mapv #(get (find vertices %) 0 %) verts)]
@@ -94,7 +94,7 @@
       mesh))
 #+END_SRC
 ** Constructors
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   (defn gmesh
     "Builds a new 2d mesh data structure and (optionally) populates it with
     the given items (a seq of existing meshes and/or faces). Faces are defined
@@ -120,7 +120,7 @@
         [(vec3 0 (* s 2) 0) :ewnfb]])))
 #+END_SRC
 ** Tessellation
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   (defn tessellate-face
     [f]
     (condp = (count f)
@@ -145,11 +145,11 @@
     [f mesh] (into-mesh (gmesh) (mapcat f (:faces mesh))))
 #+END_SRC
 ** Protocol implementations
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   (extend-type thi.ng.geom.types.GMesh
 #+END_SRC
 *** PArea
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PArea
   (area
    [_]
@@ -162,11 +162,11 @@
         (reduce +)))
 #+END_SRC
 *** TODO PBoundary
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
 
 #+END_SRC
 *** PBounds
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PBounds
   (bounds [_] (g/bounding-box* (keys (:vertices _))))
   (width [_] (g/axis-range* 0 (keys (:vertices _))))
@@ -174,19 +174,19 @@
   (depth [_] (g/axis-range* 2 (keys (:vertices _))))
 #+END_SRC
 *** PBoundingSphere
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PBoundingSphere
   (bounding-sphere
    [_] (g/bounding-sphere* (g/centroid _) (g/vertices _)))
 #+END_SRC
 *** TODO PCenter
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PCenter
   (center [_] _)
   (centroid [_] (g/centroid* (keys (:vertices _))))
 #+END_SRC
 *** TODO PGraph
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PGraph
   (connected-components
    [_] [_]) ;; TODO
@@ -206,7 +206,7 @@
    [_ a b] (merge-vertices* _ a b))
 #+END_SRC
 *** PMesh
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PMesh
   (add-face
    [_ f] (add-face _ f))
@@ -268,16 +268,16 @@
      _))
 #+END_SRC
 *** PMeshConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PMeshConvert
   (as-mesh [_] _)
 #+END_SRC
 *** TODO PVolume
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PVolume
   (volume [_] 0)
 #+END_SRC
 *** End of implementation                                          :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/gmesh.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   )
 #+END_SRC

@@ -2,7 +2,7 @@
 
 * thi.ng.geom.delaunay
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/delaunay.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/delaunay.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.delaunay
     (:require
      [thi.ng.common.math.core :as m :refer [*eps* delta=]]
@@ -13,7 +13,7 @@
      [thi.ng.geom.types Triangle2]))
 #+END_SRC
 ** Implementation
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/delaunay.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/delaunay.cljx
   (defn- add-unique-edge!
     [edges p q]
     (let [e [p q]]

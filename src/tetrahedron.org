@@ -2,7 +2,7 @@
 
 * thi.ng.geom.tetrahedron
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.tetrahedron
     ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     (:require
@@ -19,7 +19,7 @@
      [thi.ng.geom.types Triangle3]))
 #+END_SRC
 ** Typespecific functions
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   (defn orient-tetra
     "Takes a seq of 4 3D points, returns them as vector in the order so
     that the last point is on the opposite side of the plane defined by
@@ -138,7 +138,7 @@
              p qb [[:f 0 1] [:f 2 0] [:f 1 2] [:f* 4 3]])))))
 #+END_SRC
 ** Constructors
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   (defn tetrahedron
     ([points]
        (thi.ng.geom.types.Tetrahedron.
@@ -146,11 +146,11 @@
     ([a b c d] (tetrahedron [a b c d])))
 #+END_SRC
 ** Protocol implementations
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   (extend-type thi.ng.geom.types.Tetrahedron
 #+END_SRC
 **** PArea
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PArea
   (area
    [{[a b c d] :points}]
@@ -159,7 +159,7 @@
         (reduce +)))
 #+END_SRC
 **** TODO PBoundary
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PClassify
   (classify-point [_ p] nil) ; TODO
   g/PProximity
@@ -168,7 +168,7 @@
   (contains-point? [_ p] nil) ; TODO
 #+END_SRC
 **** PBounds
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PBounds
   (bounds [_] (g/bounding-box* (g/vertices _)))
   (width [_] (g/axis-range* 0 (g/vertices _)))
@@ -176,13 +176,13 @@
   (depth [_] (g/axis-range* 2 (g/vertices _)))
 #+END_SRC
 **** PBoundingSphere
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PBoundingSphere
   (bounding-sphere
    [_] (g/bounding-sphere* (g/centroid _) (g/vertices _)))
 #+END_SRC
 **** PCenter
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PCenter
   (center
    ([_] (thi.ng.geom.types.Tetrahedron. (g/center* (:points _))))
@@ -190,13 +190,13 @@
   (centroid [_] (g/centroid* (g/vertices _)))
 #+END_SRC
 **** PFlip
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PFlip
   (flip
    [{[a b c d] :points}] (thi.ng.geom.types.Tetrahedron. [b a c d]))
 #+END_SRC
 **** PGraph
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PGraph
   (vertices
    [_] (:points _))
@@ -215,7 +215,7 @@
    [_ v] (if ((set (:points _)) v) 3 0))
 #+END_SRC
 **** TODO PIntersect                                                 :verify:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PIntersect
   (intersect-shape
    [_ s]
@@ -231,7 +231,7 @@
    [_ {p :p dir :dir}] nil)
 #+END_SRC
 **** PMeshConvert
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PMeshConvert
   (as-mesh
    [_]
@@ -239,7 +239,7 @@
      (g/into-mesh (gm/gmesh) [[a b c] [a d b] [b d c] [c d a]])))
 #+END_SRC
 **** TODO PSample                                                    :verify:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PSample
   (point-at [_ t] nil) ; TODO
   (random-point
@@ -248,14 +248,14 @@
    [_] (g/from-barycentric* (g/vertices _) (m/normdist-weights 4)))
 #+END_SRC
 **** TODO PSlice
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PSlice
   (slice-with
    ([_ e] nil)
    ([_ e classifier] nil))
 #+END_SRC
 **** PTessellate
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PTessellate
   (tessellate
    [{[a b c d] :points}]
@@ -264,7 +264,7 @@
     [[a b c] [a d b] [b d c] [c d a]]))
 #+END_SRC
 **** PTransform
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PRotate3D
   (rotate-x
    [_ theta]
@@ -299,12 +299,12 @@
    (thi.ng.geom.types.Tetrahedron. (mapv #(g/transform-vector m %) (:points _))))
 #+END_SRC
 **** TODO PVolume
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PVolume
   (volume [_] nil)
 #+END_SRC
 **** End of implementations                                        :noexport:
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   )
 #+END_SRC
 

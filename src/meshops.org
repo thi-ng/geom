@@ -2,7 +2,7 @@
 
 * Namespace: thi.ng.geom.meshops
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/meshops.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/meshops.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.meshops
     (:require
      [thi.ng.common.math.core :as m]
@@ -14,7 +14,7 @@
      [clojure.set :as set]))
 #+END_SRC
 ** Utilities
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/meshops.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/meshops.cljx
   (defn find-in-tree
     "Returns the first item in the bounding box with size `eps` surrounding `p` in the given octree."
     [t eps half-eps p]
