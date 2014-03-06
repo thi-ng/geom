@@ -32,7 +32,7 @@
     ,#+clj
     (:import
      [thi.ng.geom.core
-      Matrix32 Matrix44 Quaternion Vec2 Vec3]
+      Matrix32 Matrix44 Quat4 Vec2 Vec3]
      [thi.ng.geom.types
       Line2 LineStrip2 Bezier2 Triangle2 Circle Ellipse Rect Polygon Path2 Mesh2
       Line3 LineStrip3 Bezier3 Plane Triangle3 Tetrahedron Quad3 AABB Sphere Mesh3]))
@@ -116,7 +116,7 @@
   
        thi.ng.geom.core.Matrix32 [:math :det :inv :rotate :scale :shear :tx :vtx]
        thi.ng.geom.core.Matrix44 [:math :det :inv :rotate :scale :tx :vtx]
-       thi.ng.geom.core.Quaternion [:math :conj :dot :inv :mag :mat :mix :norm :scale :vtx]
+       thi.ng.geom.core.Quat4 [:math :conj :dot :inv :mag :mat :mix :norm :scale :vtx]
   
        thi.ng.geom.core.Vec2
        [:math :dot :cross :dist :head :inv :mix :limit :mag :norm :polar

@@ -237,11 +237,11 @@
    (is (= [(+ ax) (+ ay)] (g/+ a2)) "+ a2")
    (is (= [(- ax) (- ay)] (g/- a2)) "- a2")
    (is (= [(* ax) (* ay)] (g/* a2)) "* a2")
-   (is (= [(/ ax) (/ ay)] (g/div a2)) "/ a2")
+   (is (= [(/ ax) (/ ay)] (g// a2)) "/ a2")
    (context-vec2-op "+" g/+ + 0.0)
    (context-vec2-op "-" g/- - 0.0)
    (context-vec2-op "*" g/* * 1.0)
-   (context-vec2-op "/" g/div / 0.0))
+   (context-vec2-op "/" g// / 0.0))
 #+END_SRC
 **** 3D ops
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx    
@@ -249,11 +249,11 @@
    (is (= [(+ ax) (+ ay) (+ az)] (g/+ a3))) "+ a3"
    (is (= [(- ax) (- ay) (- az)] (g/- a3))) "- a3"
    (is (= [(* ax) (* ay) (* az)] (g/* a3))) "* a3"
-   (is (= [(/ ax) (/ ay) (/ az)] (g/div a3))) "/ a3"
+   (is (= [(/ ax) (/ ay) (/ az)] (g// a3))) "/ a3"
    (context-vec3-op "+" g/+ + 0.0)
    (context-vec3-op "-" g/- - 0.0)
    (context-vec3-op "*" g/* * 1.0)
-   (context-vec3-op "/" g/div / 0.0)))
+   (context-vec3-op "/" g// / 0.0)))
 #+END_SRC
 **** Madd
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  

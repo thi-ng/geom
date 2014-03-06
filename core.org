@@ -15,7 +15,7 @@ protocols related to common higher level geometric operations.
 ** Namespace declaration                                           :noexport:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.core
-    (:refer-clojure :exclude [* - + min max])
+    (:refer-clojure :exclude [+ - * / min max])
     (:require
      [thi.ng.common.data.core :as d]
      [thi.ng.common.error :as err]
@@ -40,7 +40,7 @@ protocols related to common higher level geometric operations.
     (+ [_] [_ a] [_ a b] [_ a b c])
     (- [_] [_ a] [_ a b] [_ a b c])
     (* [_] [_ a] [_ a b] [_ a b c])
-    (div [_] [_ a] [_ a b] [_ a b c])
+    (/ [_] [_ a] [_ a b] [_ a b c])
     (madd [_ a b])
     (abs [_]))
 #+END_SRC
@@ -388,10 +388,10 @@ protocol consisting of just _ one function: =as-mesh=.
 ** Vector implementations
 
 For performance reasons we decided to define custom data types for
-vectors & matrices. These types can be used much like standard Clojure
-vectors since they all implement the same protocols and interfaces,
-but also provide implementations for the above protocols and custom key
-lookups to enable swizzling.
+vectors & matrices. Since they implement the necessary protocols and
+interfaces, these types can be used much like standard Clojure
+vectors/seqs, but also provide implementations for the above geometry
+protocols and custom key lookups to enable swizzling.
 
 Furthermore, since we aim for full ClojureScript compatibility,
 the following implementations are quite lengthy.
@@ -724,10 +724,10 @@ defined further on, but need to be declared already.
   (* [_ a b] (vec2-op-2 clojure.core/* _ a b 1.0 1.0 _meta))
   (* [_ a b c] (vec2-op-3 clojure.core/* _ a b c 1.0 _meta))
   
-  (div [_] (Vec2. (/ x) (/ y) _meta))
-  (div [_ a] (vec2-op-1 / _ a 0.0 _meta))
-  (div [_ a b] (vec2-op-2 / _ a b 0.0 0.0 _meta))
-  (div [_ a b c] (vec2-op-3 / _ a b c 0.0 _meta))
+  (/ [_] (Vec2. (clojure.core// x) (clojure.core// y) _meta))
+  (/ [_ a] (vec2-op-1 clojure.core// _ a 0.0 _meta))
+  (/ [_ a b] (vec2-op-2 clojure.core// _ a b 0.0 0.0 _meta))
+  (/ [_ a b c] (vec2-op-3 clojure.core// _ a b c 0.0 _meta))
   
   (madd [_ a b] (vec2-op-2* clojure.core/* clojure.core/+ _ a b 1.0 0.0 _meta))
 #+END_SRC
@@ -791,13 +791,13 @@ defined further on, but need to be declared already.
    [_]
    (let [l (Math/sqrt (mc/madd x x y y))]
      (if (pos? l)
-       (Vec2. (/ x l) (/ y l) _meta)
+       (Vec2. (clojure.core// x l) (clojure.core// y l) _meta)
        _)))
   (normalize
    [_ len]
    (let [l (Math/sqrt (mc/madd x x y y))]
      (if (pos? l)
-       (let [l (/ len l)]
+       (let [l (clojure.core// len l)]
          (Vec2. (clojure.core/* x l) (clojure.core/* y l) _meta))
        _)))
   (normalized?
@@ -866,7 +866,7 @@ defined further on, but need to be declared already.
    (let [t (clojure.core/- (heading-xy a) (heading-xy _))]
      (if (neg? t) (clojure.core/+ t TWO_PI) t)))
   (slope-xy
-   [_] (/ y x))
+   [_] (clojure.core// y x))
   (normal
    [_] (Vec2. (clojure.core/- y) x _meta))
 #+END_SRC
@@ -1232,10 +1232,10 @@ defined further on, but need to be declared already.
   (* [_ a b] (vec3-op-2 clojure.core/* clojure.core/* _ a b 1.0 1.0 _meta))
   (* [_ a b c] (vec3-op-3 clojure.core/* _ a b c 1.0 _meta))
   
-  (div [_] (Vec3. (/ x) (/ y) (/ z) _meta))
-  (div [_ a] (vec3-op-1 / _ a 0.0 _meta))
-  (div [_ a b] (vec3-op-2 / / _ a b 0.0 0.0 _meta))
-  (div [_ a b c] (vec3-op-3 / _ a b c 0.0 _meta))
+  (/ [_] (Vec3. (clojure.core// x) (clojure.core// y) (clojure.core// z) _meta))
+  (/ [_ a] (vec3-op-1 clojure.core// _ a 0.0 _meta))
+  (/ [_ a b] (vec3-op-2 clojure.core// clojure.core// _ a b 0.0 0.0 _meta))
+  (/ [_ a b c] (vec3-op-3 clojure.core// _ a b c 0.0 _meta))
   
   (madd
    [_ a b] (vec3-op-2 clojure.core/* clojure.core/+ _ a b 1.0 0.0 _meta))
@@ -1302,13 +1302,13 @@ defined further on, but need to be declared already.
    [_]
    (let [l (Math/sqrt (mc/madd x x y y z z))]
      (if (pos? l)
-       (Vec3. (/ x l) (/ y l) (/ z l) _meta)
+       (Vec3. (clojure.core// x l) (clojure.core// y l) (clojure.core// z l) _meta)
        _)))
   (normalize
    [_ len]
    (let [l (Math/sqrt (mc/madd x x y y z z))]
      (if (pos? l)
-       (let [l (/ len l)]
+       (let [l (clojure.core// len l)]
          (Vec3.
           (clojure.core/* x l)
           (clojure.core/* y l)
@@ -1385,9 +1385,9 @@ defined further on, but need to be declared already.
    [_ a]
    (let [t (clojure.core/- (heading-xy a) (heading-xy _))]
      (if (neg? t) (clojure.core/+ t TWO_PI) t)))
-  (slope-xy [_] (/ y x))
-  (slope-xz [_] (/ x x))
-  (slope-yz [_] (/ z y))
+  (slope-xy [_] (clojure.core// y x))
+  (slope-xz [_] (clojure.core// x x))
+  (slope-yz [_] (clojure.core// z y))
   (normal [_] (Vec2. (clojure.core/- y) x _meta))
 #+END_SRC
 **** PPolar
@@ -1398,7 +1398,7 @@ defined further on, but need to be declared already.
    [_]
     (let [r (mag _)
           theta (Math/atan2 y x)
-          phi (Math/acos (/ z r))]
+          phi (Math/acos (clojure.core// z r))]
       (Vec3. r theta phi _meta)))
   (as-cartesian [_]
     (let [rsphi (clojure.core/* x (Math/sin z))]
@@ -1778,8 +1778,8 @@ defined further on, but need to be declared already.
    (let [d (determinant _)]
      (when-not (zero? d)
        (Matrix32.
-        (/ m11 d) (clojure.core/- (/ m01 d)) (/ (clojure.core/- (clojure.core/* m01 m12) (clojure.core/* m11 m02)) d)
-        (clojure.core/- (/ m10 d)) (/ m00 d) (/ (clojure.core/- (clojure.core/* m10 m02) (clojure.core/* m00 m12)) d)))))
+        (clojure.core// m11 d) (clojure.core/- (clojure.core// m01 d)) (clojure.core// (clojure.core/- (clojure.core/* m01 m12) (clojure.core/* m11 m02)) d)
+        (clojure.core/- (clojure.core// m10 d)) (clojure.core// m00 d) (clojure.core// (clojure.core/- (clojure.core/* m10 m02) (clojure.core/* m00 m12)) d)))))
 #+END_SRC
 **** PRotate, PScale, PTranslate, PTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
@@ -1932,7 +1932,7 @@ defined further on, but need to be declared already.
              (clojure.core/* n04 n07))
             (clojure.core/* n05 n06))]
      (when-not (zero? d)
-       (let [invd (/ 1.0 d)]
+       (let [invd (clojure.core// 1.0 d)]
          (with-meta
            (Matrix44.
             (gmc/inv-item m11 n11 m12 n10 m13 n09 invd)
@@ -2075,7 +2075,7 @@ defined further on, but need to be declared already.
 ** Quaternion
 *** Implementation
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
-  (deftype Quaternion
+  (deftype Quat4
     ,#+clj  [^double x ^double y ^double z ^double w _meta]
     ,#+cljs [x y z w _meta]
 #+END_SRC
@@ -2083,18 +2083,21 @@ defined further on, but need to be declared already.
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
     ,#+clj clojure.lang.IObj
     ,#+clj (meta [_] _meta)
-    ,#+clj (withMeta [_ m*] (Quaternion. x y z w m*))
+    ,#+clj (withMeta [_ m*] (Quat4. x y z w m*))
     ,#+cljs IMeta
     ,#+cljs (-meta [_] _meta)
     ,#+cljs IWithMeta
-    ,#+cljs (-with-meta [_ m*] (Quaternion. x y z w m*))
+    ,#+cljs (-with-meta [_ m*] (Quat4. x y z w m*))
+
+    Object
+    (toString [_] (str "[" x " " y " " z " " w "]"))
 #+END_SRC
 **** PScale
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PScale
   (scale
    [_ s]
-   (Quaternion.
+   (Quat4.
     (clojure.core/* x s)
     (clojure.core/* y s)
     (clojure.core/* z s)
@@ -2105,27 +2108,27 @@ defined further on, but need to be declared already.
   PRotate3D
   (rotate-x
    [_ theta]
-   (let [t (/ theta 2.0)
+   (let [t (clojure.core// theta 2.0)
          s (Math/sin t) c (Math/cos t)]
-     (Quaternion.
+     (Quat4.
       (mc/madd x c w s)
       (mc/madd y c z s)
       (mc/msub z c y s)
       (mc/msub w c x s) _meta)))
   (rotate-y
    [_ theta]
-   (let [t (/ theta 2.0)
+   (let [t (clojure.core// theta 2.0)
          s (Math/sin t) c (Math/cos t)]
-     (Quaternion.
+     (Quat4.
       (mc/msub x c z s)
       (mc/madd y c w s)
       (mc/madd z c x s)
       (mc/msub w c y s) _meta)))
   (rotate-z
    [_ theta]
-   (let [t (/ theta 2.0)
+   (let [t (clojure.core// theta 2.0)
          s (Math/sin t) c (Math/cos t)]
-     (Quaternion.
+     (Quat4.
       (mc/madd x c y s)
       (mc/msub y c x s)
       (mc/madd z c w s)
@@ -2136,25 +2139,25 @@ defined further on, but need to be declared already.
   PMathOps
   (+
    [_ q]
-   (let [q ^Quaternion q]
-     (Quaternion.
+   (let [q ^Quat4 q]
+     (Quat4.
       (clojure.core/+ x (.-x q))
       (clojure.core/+ y (.-y q))
       (clojure.core/+ z (.-z q))
       (clojure.core/+ w (.-w q)) _meta)))
   (-
    [_ q]
-   (let [q ^Quaternion q]
-     (Quaternion.
+   (let [q ^Quat4 q]
+     (Quat4.
       (clojure.core/- x (.-x q))
       (clojure.core/- y (.-y q))
       (clojure.core/- z (.-z q))
       (clojure.core/- w (.-w q)) _meta)))
   (*
    [_ q]
-   (let [q ^Quaternion q
+   (let [q ^Quat4 q
          qx (.-x q) qy (.-y q) qz (.-z q) qw (.-w q)]
-     (Quaternion.
+     (Quat4.
       (mc/maddsub x qw w qx y qz z qy)
       (mc/maddsub y qw w qy z qx x qz)
       (mc/maddsub z qw w qz x qy y qx)
@@ -2162,14 +2165,14 @@ defined further on, but need to be declared already.
       _meta)))
   (*
    [_ q r]
-   (let [q ^Quaternion q r ^Quaternion r
+   (let [q ^Quat4 q r ^Quat4 r
          qx (.-x q) qy (.-y q) qz (.-z q) qw (.-w q)
          rx (.-x r) ry (.-y r) rz (.-z r) rw (.-w r)
          x' (mc/maddsub x qw w qx y qz z qy)
          y' (mc/maddsub y qw w qy z qx x qz)
          z' (mc/maddsub z qw w qz x qy y qx)
          w' (mc/msub w qw x qx y qy z qz)]
-     (Quaternion.
+     (Quat4.
       (mc/maddsub x' rw w' rx y' rz z' ry)
       (mc/maddsub y' rw w' ry z' rx x' rz)
       (mc/maddsub z' rw w' rz x' ry y' rx)
@@ -2181,7 +2184,7 @@ defined further on, but need to be declared already.
   PDotProduct
   (dot
    [_ q]
-   (let [q ^Quaternion q]
+   (let [q ^Quat4 q]
      (mc/madd x (.-x q) y (.-y q) z (.-z q) w (.-w q))))
 #+END_SRC
 **** PMagnitude
@@ -2198,23 +2201,23 @@ defined further on, but need to be declared already.
   (normalize [_]
     (let [m (Math/sqrt (mc/madd x x y y z z w w))]
       (if (> m *eps*)
-        (Quaternion. (/ x m) (/ y m) (/ z m) (/ w m) _meta)
+        (Quat4. (clojure.core// x m) (clojure.core// y m) (clojure.core// z m) (clojure.core// w m) _meta)
         _)))
 #+END_SRC
 **** PConjugate
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PConjugate
   (conjugate [_]
-    (Quaternion. (clojure.core/- x) (clojure.core/- y) (clojure.core/- z) w _meta))
+    (Quat4. (clojure.core/- x) (clojure.core/- y) (clojure.core/- z) w _meta))
 #+END_SRC
 **** PInvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PInvert
   (invert [_]
     (let [d (mag-squared _)
-          d (if (zero? d) 0.0 (/ d))
+          d (if (zero? d) 0.0 (clojure.core// d))
           id (clojure.core/- d)]
-      (Quaternion. (clojure.core/* x id) (clojure.core/* y id) (clojure.core/* z id) (clojure.core/* w d) _meta)))
+      (Quat4. (clojure.core/* x id) (clojure.core/* y id) (clojure.core/* z id) (clojure.core/* w d) _meta)))
 #+END_SRC
 **** PInterpolate
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
@@ -2228,10 +2231,10 @@ defined further on, but need to be declared already.
               stheta (Math/sqrt (clojure.core/- 1.0 (clojure.core/* d d)))
               [a b] (if (< (m/abs stheta) 0.001)
                       [0.5 0.5]
-                      [(/ (Math/sin (clojure.core/* theta (clojure.core/- 1.0 t))) stheta)
-                       (/ (Math/sin (clojure.core/* theta t)) stheta)])
-              q ^Quaternion q]
-          (Quaternion.
+                      [(clojure.core// (Math/sin (clojure.core/* theta (clojure.core/- 1.0 t))) stheta)
+                       (clojure.core// (Math/sin (clojure.core/* theta t)) stheta)])
+              q ^Quat4 q]
+          (Quat4.
            (mc/madd x a (.-x q) b)
            (mc/madd y a (.-y q) b)
            (mc/madd z a (.-z q) b)
@@ -2290,13 +2293,17 @@ defined further on, but need to be declared already.
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
     )
 #+END_SRC
+**** Override print methods
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
+  #+clj (defmethod print-method Quat4 [o ^java.io.Writer w] (.write w (.toString o)))
+#+END_SRC
 *** Constructors
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defn quat
-    ([] (Quaternion. 0.0 0.0 0.0 1.0 nil))
-    ([[x y z] w] (Quaternion. x y z w nil))
-    ([[x y z w]] (Quaternion. x y z w nil))
-    ([x y z w] (Quaternion. x y z w nil)))
+    ([] (Quat4. 0.0 0.0 0.0 1.0 nil))
+    ([[x y z] w] (Quat4. x y z w nil))
+    ([[x y z w]] (Quat4. x y z w nil))
+    ([x y z w] (Quat4. x y z w nil)))
   
   (defn quat-from-axis-angle
     [axis theta]
@@ -2324,9 +2331,9 @@ defined further on, but need to be declared already.
     (let [trace (mc/add (.-m00 m) (.-m11 m) (.-m22 m))]
       (if (pos? trace)
         (let [s (Math/sqrt (clojure.core/+ 1.0 trace))
-              w (/ s 2.0)
-              s (/ 0.5 s)]
-          (Quaternion.
+              w (clojure.core// s 2.0)
+              s (clojure.core// 0.5 s)]
+          (Quat4.
            (mc/subm (.-m21 m) (.-m12 m) s)
            (mc/subm (.-m02 m) (.-m20 m) s)
            (mc/subm (.-m10 m) (.-m01 m) s)
@@ -2341,15 +2348,15 @@ defined further on, but need to be declared already.
                 1 [(.-m22 m) (.-m00 m) (.-m20 m) (.-m02 m) (.-m12 m) (.-m21 m) (.-m10 m) (.-m01 m)]
                 2 [(.-m00 m) (.-m11 m) (.-m01 m) (.-m10 m) (.-m20 m) (.-m02 m) (.-m21 m) (.-m12 m)])
               s (Math/sqrt (inc (clojure.core/- ii (clojure.core/+ jj kk))))
-              x (/ s 2.0)
-              s (/ 0.5 s)
+              x (clojure.core// s 2.0)
+              s (clojure.core// 0.5 s)
               qj (mc/addm ij ji s)
               qk (mc/addm ik ki s)
               qw (mc/subm kj jk s)]
           (case i
-            0 (Quaternion. x qj qk qw nil)
-            1 (Quaternion. qk x qj qw nil)
-            2 (Quaternion. qj qk x qw nil))))))
+            0 (Quat4. x qj qk qw nil)
+            1 (Quat4. qk x qj qw nil)
+            2 (Quat4. qj qk x qw nil))))))
   
   (defn alignment-quat
     [a b]
@@ -2390,7 +2397,7 @@ defined further on, but need to be declared already.
     (let [c (count coll)]
       (if (> c 1)
         (* ((if (instance? Vec2 x) vec2-op-seq vec3-op-seq) clojure.core/+ x xs)
-           (/ (count coll)))
+           (clojure.core// (count coll)))
         x)))
   
   (defn center*
@@ -2477,7 +2484,7 @@ defined further on, but need to be declared already.
     [udist include-last? points]
     (let [idx (arc-length-index* points)
           total (peek idx)
-          delta (/ udist total)
+          delta (clojure.core// udist total)
           samples (loop [t 0.0, i 1, acc []]
                     (if (< t 1.0)
                       (let [ct (clojure.core/* t total)
@@ -2536,9 +2543,9 @@ defined further on, but need to be declared already.
           dy (clojure.core/- t b)
           dz (clojure.core/- f n)]
       (Matrix44.
-       (/ (* 2.0 n) dx) 0.0 (/ (clojure.core/+ r l) dx) 0.0
-       0.0 (/ (* 2.0 n) dy) (/ (clojure.core/+ t b) dy) 0.0
-       0.0 0.0 (* -1.0 (/ (clojure.core/+ f n) dz)) (/ (* (* -2.0 f) n) dz)
+       (clojure.core// (* 2.0 n) dx) 0.0 (clojure.core// (clojure.core/+ r l) dx) 0.0
+       0.0 (clojure.core// (* 2.0 n) dy) (clojure.core// (clojure.core/+ t b) dy) 0.0
+       0.0 0.0 (* -1.0 (clojure.core// (clojure.core/+ f n) dz)) (clojure.core// (* (* -2.0 f) n) dz)
        0.0 0.0 -1.0 0.0)))
   
   (defn frustum-bounds
@@ -2560,9 +2567,9 @@ defined further on, but need to be declared already.
          dy (clojure.core/- t b)
          dz (clojure.core/- f n)]
       (Matrix44.
-       (/ 2.0 dx) 0.0 0.0 (clojure.core/- (/ (clojure.core/+ r l) dx))
-       0.0 (/ 2.0 dy) 0.0 (clojure.core/- (/ (clojure.core/+ t b) dy))
-       0.0 0.0 (/ -2.0 dz) (clojure.core/- (/ (clojure.core/+ f n) dz))
+       (clojure.core// 2.0 dx) 0.0 0.0 (clojure.core/- (clojure.core// (clojure.core/+ r l) dx))
+       0.0 (clojure.core// 2.0 dy) 0.0 (clojure.core/- (clojure.core// (clojure.core/+ t b) dy))
+       0.0 0.0 (clojure.core// -2.0 dz) (clojure.core/- (clojure.core// (clojure.core/+ f n) dz))
        0.0 0.0 0.0 1.0)))
   
   (defn perspective
@@ -2573,11 +2580,11 @@ defined further on, but need to be declared already.
     This emulates the OpenGL function gluPerspective()."
     [fov aspect near far]
     (let [rad (* 0.5 (m/radians fov))
-          cot (/ (Math/cos rad) (Math/sin rad))
+          cot (clojure.core// (Math/cos rad) (Math/sin rad))
           deltaz (clojure.core/- far near)
-          a (/ cot aspect)
-          b (clojure.core/- (/ (clojure.core/+ far near) deltaz))
-          c (/ (* -2.0 near far) deltaz)]
+          a (clojure.core// cot aspect)
+          b (clojure.core/- (clojure.core// (clojure.core/+ far near) deltaz))
+          c (clojure.core// (* -2.0 near far) deltaz)]
       (Matrix44.
        a 0.0 0.0 0.0
        0.0 cot 0.0 0.0
@@ -2607,12 +2614,12 @@ defined further on, but need to be declared already.
     "Takes a vec3 in screenspace, view matrix, projection matrix and
     view rect. Returns vector in model space or nil."
     [v vmat pmat {:keys [p width height]}]
-    (let [x (mc/msub (clojure.core/- (v 0) (p 0)) (/ 2.0 width) 1.0)
-          y (mc/msub (clojure.core/- (v 1) (p 1)) (/ 2.0 height) 1.0)
+    (let [x (mc/msub (clojure.core/- (v 0) (p 0)) (clojure.core// 2.0 width) 1.0)
+          y (mc/msub (clojure.core/- (v 1) (p 1)) (clojure.core// 2.0 height) 1.0)
           z (mc/msub (v 2) 2.0 1.0)
           vpm (* pmat vmat)]
       (if (invert vpm)
         (let [v' (transform-vector vpm [x y z 1.0])]
           (if-not (zero? (v' 3))
-            (div (vec3 v') (v' 3)))))))
+            (/ (vec3 v') (v' 3)))))))
 #+END_SRC
