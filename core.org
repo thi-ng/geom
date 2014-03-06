@@ -1,6 +1,4 @@
-#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
-#+TAGS:           write(w) update(u) fix(f) verify(v) noexport(n)
-#+EXPORT_EXCLUDE_TAGS: noexport
+#+SETUPFILE: setup.org
 
 * Namespace: thi.ng.geom.core
 Providing an easy-to-use & easy-to-learn API for both common and
@@ -75,6 +73,7 @@ protocols related to common higher level geometric operations.
 **** PHeading
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PHeading
+    (heading [_])
     (heading-xy [_])
     (heading-xz [_])
     (heading-yz [_])
@@ -857,10 +856,11 @@ defined further on, but need to be declared already.
 **** PHeading
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PHeading
-  (heading-xy
+  (heading
    [_]
    (let [t (Math/atan2 y x)]
      (if (neg? t) (clojure.core/+ t TWO_PI) t)))
+  (heading-xy [_] (heading _))
   (angle-between
    [_ a]
    (let [t (clojure.core/- (heading-xy a) (heading-xy _))]
@@ -1153,7 +1153,7 @@ defined further on, but need to be declared already.
             (and (sequential? o) (= 3 (count o))
                  (= x (nth o 0)) (= y (nth o 1)) (= z (nth o 2)))))
 #+END_SRC
-**** TODO Transformations
+**** Transformations
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PScale
   (scale
@@ -1170,6 +1170,9 @@ defined further on, but need to be declared already.
    [_ a b] (vec3-op-2 clojure.core/+ clojure.core/+ _ a b 0.0 0.0 _meta))
   (translate
    [_ a b c] (vec3-op-3 clojure.core/+ _ a b c 0.0 _meta))
+  
+  PRotate
+  (rotate [_ theta] (rotate-z _ theta))
   
   PRotate3D
   (rotate-x
@@ -1361,6 +1364,31 @@ defined further on, but need to be declared already.
     (mc/madd (clojure.core/- ax x) t x)
     (mc/madd (clojure.core/- ay y) t y)
     (mc/madd (clojure.core/- az z) t z) _meta))
+#+END_SRC
+**** PHeading
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
+  PHeading
+  (heading [_] (heading-xy _))
+  (heading-xy
+   [_]
+   (let [t (Math/atan2 y x)]
+     (if (neg? t) (clojure.core/+ t TWO_PI) t)))
+  (heading-xz
+   [_]
+   (let [t (Math/atan2 z x)]
+     (if (neg? t) (clojure.core/+ t TWO_PI) t)))
+  (heading-yz
+   [_]
+   (let [t (Math/atan2 z y)]
+     (if (neg? t) (clojure.core/+ t TWO_PI) t)))
+  (angle-between
+   [_ a]
+   (let [t (clojure.core/- (heading-xy a) (heading-xy _))]
+     (if (neg? t) (clojure.core/+ t TWO_PI) t)))
+  (slope-xy [_] (/ y x))
+  (slope-xz [_] (/ x x))
+  (slope-yz [_] (/ z y))
+  (normal [_] (Vec2. (clojure.core/- y) x _meta))
 #+END_SRC
 **** PPolar
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
@@ -2443,7 +2471,7 @@ defined further on, but need to be declared already.
   
   (defn arc-length*
     [points]
-    (d/reduce-pairs clojure.core/+ g/dist points))
+    (d/reduce-pairs clojure.core/+ dist points))
   
   (defn sample-uniform*
     [udist include-last? points]
