@@ -1,6 +1,4 @@
-#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
-#+TAGS:           write(w) update(u) fix(f) verify(v) noexport(n)
-#+EXPORT_EXCLUDE_TAGS: noexport
+#+SETUPFILE: setup.org
 
 * thi.ng.geom.aabb
 ** Namespace declaration
@@ -189,10 +187,59 @@
       (< id 4) (vec3 (m/random x1 x2) (if (= 2 id) y1 y2) (m/random z1 z2))
       :default (vec3 (m/random x1 x2) (m/random y1 y2) (if (= 4 id) z1 z2)))))
 #+END_SRC
+*** TODO PTessellate
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
+  g/PTessellate
+  (tessellate
+   [_]
+   (let [[a b c d e f g h] (g/vertices _)]
+     (gmesh/into-mesh
+      (gmesh/gmesh)
+      [[b c f] [b f e]
+       [a h g] [a g d]
+       [a b e] [a e h]
+       [c d g] [c g f]
+       [e f g] [e g h]
+       [a d c] [a c b]])))
+#+END_SRC
+*** TODO Transformations
+**** TODO what is the result of transform?
+
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
+  g/PRotate
+  (rotate
+   [_ theta] (thi.ng.geom.types.AABB. (g/rotate-z (:p _) theta) (:size _)))
+  
+  g/PRotate3D
+  (rotate-x
+   [_ theta] (thi.ng.geom.types.AABB. (g/rotate-x (:p _) theta) (:size _)))
+  (rotate-y
+   [_ theta] (thi.ng.geom.types.AABB. (g/rotate-y (:p _) theta) (:size _)))
+  (rotate-z
+   [_ theta] (thi.ng.geom.types.AABB. (g/rotate-z (:p _) theta) (:size _)))
+  (rotate-around-axis
+   [_ axis theta]
+   (thi.ng.geom.types.AABB.
+    (g/rotate-around-axis (:p _) axis theta) (:size _)))
+  
+  g/PScale
+  (scale
+   [_ s] (thi.ng.geom.types.AABB. (g/* (:p _) s) (g/* (:size _) s)))
+  (scale
+   [_ sx sy] (thi.ng.geom.types.AABB. (g/* (:p _) sx sy) (g/* (:size _) sx sy)))
+  (scale
+   [_ sx sy sz] (thi.ng.geom.types.AABB. (g/* (:p _) sx sy sz) (g/* (:size _) sx sy sz)))
+  (scale-size
+   [_ s] (thi.ng.geom.types.AABB. (:p _) (g/* (:size _) s)))
+  
+  g/PTranslate
+  (translate
+   [_ t] (thi.ng.geom.types.AABB. (g/+ (:p _) t) (:size _)))
+#+END_SRC
 *** PVolume
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
   g/PVolume
-  (volume [{[w h d] :size}] (* (* w h) d))
+  (volume [{[w h d] :size}] (mm/mul w h d))
 #+END_SRC
 *** End of implementation                                          :noexport:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/aabb.cljx
