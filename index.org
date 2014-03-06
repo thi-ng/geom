@@ -1,17 +1,5 @@
-#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
-#+TAGS:           write(w) update(u) fix(f) verify(v) noexport(n)
-#+EXPORT_EXCLUDE_TAGS: noexport
+#+SETUPFILE: setup.org
 #+TITLE:          Geometry Kit
-#+AUTHOR:         Karsten Schmidt
-#+EMAIL:          k@thi.ng
-#+LANGUAGE:       en
-#+OPTIONS:        toc:4 h:4 html-postamble:auto html-preamble:t tex:t
-#+HTML_CONTAINER: div
-#+HTML_DOCTYPE:   <!DOCTYPE html5>
-#+HTML_HEAD:      <link href="http://fonts.googleapis.com/css?family=Droid+Sans:400,700" rel="stylesheet" type="text/css" />
-#+HTML_HEAD:      <link href="css/main.css" rel="stylesheet" type="text/css" />
-#+LINK_UP:        ../index.html
-#+LINK_HOME:      ../index.html
 
 * About the project
 ** Injected properties                                             :noexport:
@@ -88,7 +76,7 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 
 ** Leiningen coordinates
 #+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
-  [thi.ng/geom <<version>>]
+  [thi.ng/geom "<<version>>"]
 #+END_SRC
 
 ** Leiningen project file                                          :noexport:
@@ -165,9 +153,11 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 
 * Modules
 ** Core API
+
 #+INCLUDE: "core.org" :minlevel 2
 
 ** Geometric entities
+
 #+INCLUDE: "bezier.org" :minlevel 2
 #+INCLUDE: "circle.org" :minlevel 2
 #+INCLUDE: "line.org" :minlevel 2
@@ -179,11 +169,14 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 #+INCLUDE: "aabb.org" :minlevel 2
 #+INCLUDE: "sphere.org" :minlevel 2
 #+INCLUDE: "mesh.org" :minlevel 2
+#+INCLUDE: "gmesh.org" :minlevel 2
 
 ** Geometric operations
+
 #+INCLUDE: "delaunay.org" :minlevel 2
 
 ** Geometry IO
+
 #+INCLUDE: "meshio.org" :minlevel 2
 
 
