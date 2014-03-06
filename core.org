@@ -14,7 +14,7 @@ protocols related to common higher level geometric operations.
 
 #+INCLUDE: "types.org" :minlevel 3
 
-** Namespace declaration
+** Namespace declaration                                           :noexport:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.core
     (:refer-clojure :exclude [* - + min max])
@@ -33,10 +33,10 @@ protocols related to common higher level geometric operations.
     (:import
      [thi.ng.geom.types Circle Rect AABB Sphere]))
 #+END_SRC
-** Core implementations
-*** Protocols
-**** Math operations
-***** PMathOps
+
+** Protocols
+*** Math operations
+**** PMathOps
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PMathOps
     (+ [_] [_ a] [_ a b] [_ a b c])
@@ -46,33 +46,33 @@ protocols related to common higher level geometric operations.
     (madd [_ a b])
     (abs [_]))
 #+END_SRC
-***** PConjugate
+**** PConjugate
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PConjugate
     (conjugate [_]))
 #+END_SRC
-***** PCrossProduct
+**** PCrossProduct
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PCrossProduct
     (cross [_ a]))
 #+END_SRC
-***** PDeterminant
+**** PDeterminant
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PDeterminant
     (determinant [_]))
 #+END_SRC
-***** PDistance
+**** PDistance
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PDistance
     (dist [_ a])
     (dist-squared [_ a]))
 #+END_SRC
-***** PDotProduct
+**** PDotProduct
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PDotProduct
     (dot [_ a]))
 #+END_SRC
-***** PHeading
+**** PHeading
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PHeading
     (heading-xy [_])
@@ -84,73 +84,75 @@ protocols related to common higher level geometric operations.
     (slope-xz [_])
     (slope-yz [_]))
 #+END_SRC
-***** PInterpolate
+**** PInterpolate
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PInterpolate
     (mix [_ x] [_ x t]))
 #+END_SRC
-***** PInvert
+**** PInvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PInvert
     (invert [_]))
 #+END_SRC
-***** PSetOps
+**** PSetOps
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PSetOps
     (union [_ x])
     (intersection [_ y])
     (difference [_ x]))
 #+END_SRC
-***** PLimit
+**** PLimit
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PLimit
     (limit [_ x]))
 #+END_SRC
-***** PMagnitude
+**** PMagnitude
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PMagnitude
     (mag [_])
     (mag-squared [_]))
 #+END_SRC
-***** PMatrixConvert
+**** PMatrixConvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PMatrixConvert
     (as-matrix [_]))
 #+END_SRC
-***** PMinMax
+**** PMinMax
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PMinMax
     (min [_ x] [_ a b])
     (max [_ y] [_ a b]))
 #+END_SRC
-***** PNormalize
+**** PNormalize
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PNormalize
     (normalize [_] [_ len])
     (normalized? [_]))
 #+END_SRC
-***** PTranspose
+**** PTranspose
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PTranspose
     (transpose [_]))
 #+END_SRC
-**** Spatial transform operations
-     The position, size and orientation of spatial entities can
-     usually be manipulated via the three basic operations: rotate,
-     scale & translate. Other, more complex transformations can be
-     achieved through combination and repetition of these.
-***** PPolar
+*** Spatial transform operations
+
+The position, size and orientation of spatial entities can
+usually be manipulated via the three basic operations: rotate,
+scale & translate. Other, more complex transformations can be
+achieved through combination and repetition of these.
+
+**** PPolar
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PPolar
     (as-polar [_])
     (as-cartesian [_]))
 #+END_SRC
-***** PReflect
+**** PReflect
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PReflect
     (reflect [_ r]))
 #+END_SRC
-***** PRotate & PRotate3D
+**** PRotate & PRotate3D
   Rotation is always relative to the world origin. For 2D
   implementations, the rotation angle \theta (theta) is always
   interpreted clockwise and only the =rotate= method is
@@ -165,37 +167,39 @@ protocols related to common higher level geometric operations.
     (rotate-z [_ t])
     (rotate-around-axis [_ a t]))
 #+END_SRC
-***** PScale
+**** PScale
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx 
   (defprotocol PScale
     (scale [_ s] [_ a b] [_ a b c])
     (scale-size [_ s]))
 #+END_SRC
-***** PShear
+**** PShear
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx 
   (defprotocol PShear
     (shear [_ s] [_ sx sy] [_ sx sy sz]))
 #+END_SRC
-***** PTransform
+**** PTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx 
   (defprotocol PTransform
     (transform [_ matrix]))
 #+END_SRC
-***** PTranslate
+**** PTranslate
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx 
   (defprotocol PTranslate
     (translate [_ t] [_ x y] [_ x y z]))
 #+END_SRC
-***** PVectorTransform
+**** PVectorTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PVectorTransform
     (transform-vector [_ v]))
 #+END_SRC
-**** Graph operations
+*** Graph operations
+
 Most geometric shape constructs can be understood as an undirected
 graph of vertices, connected by edges. This protocol provides read
-access to entities in _ context.
-***** PGraph
+access to entities in this context.
+
+**** PGraph
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PGraph
     (connected-components [_])
@@ -208,47 +212,47 @@ access to entities in _ context.
     (replace-vertex [_ a b])
     (merge-vertices [_ a b]))
 #+END_SRC
-***** PDirectedGraph
+**** PDirectedGraph
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PDirectedGraph
     (in-vertices [_ v])
     (out-vertices [_ v]))
 #+END_SRC
-***** PGraphConvert
+**** PGraphConvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PGraphConvert
     (as-graph [_] [_ opts]))
 #+END_SRC
-**** Shape based & structural operations
-***** PAlign
+*** Shape based & structural operations
+**** PAlign
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PAlign
     (align-with [_ x opts]
       "Returns updated entity aligned with `x` in the specified manner"))
 #+END_SRC
-***** PArea
+**** PArea
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PArea
     (area [_]
       "Returns an entity's total surface area"))
 #+END_SRC
-***** PBoundary
+**** PBoundary
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PBoundary
     (contains-entity? [_ s])
     (contains-point? [_ p]))
 #+END_SRC
-***** PBoundingCircle
+**** PBoundingCircle
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PBoundingCircle
     (bounding-circle [_]))
 #+END_SRC
-***** PBoundingSphere
+**** PBoundingSphere
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PBoundingSphere
     (bounding-sphere [_]))
 #+END_SRC
-***** PBounds
+**** PBounds
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PBounds
     (bounds [_]
@@ -260,7 +264,7 @@ access to entities in _ context.
     (width [_]
       "Returns entity's extent along X axis"))
 #+END_SRC
-***** PCenter
+**** PCenter
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PCenter
     (center [_] [_ p]
@@ -268,48 +272,48 @@ access to entities in _ context.
     (centroid [_]
       "Returns centroid of entity"))
 #+END_SRC
-***** PCircumference
+**** PCircumference
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PCircumference
     (circumference [_]
       "Returns an entity's circumference"))
 #+END_SRC
-***** PClassify
+**** PClassify
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PClassify
     (classify-point [_ p]))
 #+END_SRC
-***** TODO PClip
-****** TODO remove protocol, method is already part of PSetOps
+**** TODO PClip
+***** TODO remove protocol, method is already part of PSetOps
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PClip
     (clip-with [_ s]))
 #+END_SRC
-***** TODO PConvexHull
-****** TODO rename into PConvex, add convex? method
+**** TODO PConvexHull
+***** TODO rename into PConvex, add convex? method
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PConvexHull
     (convex-hull [_]))
 #+END_SRC
-***** PExtrude
+**** PExtrude
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PExtrude
     (extrude [_ opts])
     (extrude-shell [_ opts]))
 #+END_SRC
-***** PFlip
+**** PFlip
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PFlip
     (flip [_]))
 #+END_SRC
-***** PIntersect
+**** PIntersect
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PIntersect
     (intersect-line [_ l] [_ p q])
     (intersect-ray [_ r] [_ p dir])
     (intersect-shape [_ s]))
 #+END_SRC
-***** PMeshConvert
+**** PMeshConvert
 
 Anything which can be turned into a 2D or 3D mesh will implement _
 protocol consisting of just _ one function: =as-mesh=.
@@ -319,7 +323,7 @@ protocol consisting of just _ one function: =as-mesh=.
     (as-mesh [_] [_ opts]
       "Transforms the current enitity into a Mesh instance"))
  #+END_SRC
-***** PPolygonConvert
+**** PPolygonConvert
        Anything which can be turned into a polygon will implement _
        protocol consisting of just _ one function: =as-polygon=.
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
@@ -327,13 +331,13 @@ protocol consisting of just _ one function: =as-mesh=.
     (as-polygon [_] [_ res]
       "Transforms current entity into a Polygon instance"))
 #+END_SRC
-***** PProximity
+**** PProximity
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PProximity
     (closest-point [_ p]))
 #+END_SRC
-***** PSample
-****** TODO move random-point-inside into PBoundary
+**** PSample
+***** TODO move random-point-inside into PBoundary
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PSample
     (point-at [_ t] [_ u v])
@@ -342,36 +346,36 @@ protocol consisting of just _ one function: =as-mesh=.
     (sample-uniform [_ dist include-last?])
     (sample-with-resolution [_ res]))
 #+END_SRC
-***** PSlice
+**** PSlice
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PSlice
     (slice-with [_ e] [_ e classifier] [_ e classifier parts]))
 #+END_SRC
-***** PSubdivide
+**** PSubdivide
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PSubdivide
     (subdivide [_] [_ opts])
     (subdivide-edge [_ a b splits])
     (subdivide-face [_ f p displace splits]))
 #+END_SRC
-***** PTessellate
+**** PTessellate
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PTessellate
     (tessellate [_] [_ opts]))
 #+END_SRC
-***** PVolume
+**** PVolume
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PVolume
     (volume [_] "Returns an entity's inner volume."))
 #+END_SRC
-**** Type specific operations
-***** PCurve
+*** Type specific operations
+**** PCurve
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PCurve
     (arc-length [_])
     (auto-spline [_]))
 #+END_SRC
-***** PMesh
+**** PMesh
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PMesh
     (add-face [_ f])
@@ -382,18 +386,22 @@ protocol consisting of just _ one function: =as-mesh=.
     (remove-face [_ f])
     (vertex-faces [_ v]))
 #+END_SRC
-*** Vector implementations
-    For performance reasons, we decided to define custom datatypes
-    for handling vectors & matrices. These types can be used much
-    like standard Clojure vectors since they all implement the same
-    protocols and interfaces, but also provide implementations for
-    [[PVector]] and provide custom key lookups to provide swizzling features.
+** Vector implementations
 
-    Furthermore, since we aim for full ClojureScript compatibiliy,
-    the following implementations are quite lengthy.
-**** Declarations
-    Some functions used by the following vector types will be
-    defined further on, but need to be declared already.
+For performance reasons we decided to define custom data types for
+vectors & matrices. These types can be used much like standard Clojure
+vectors since they all implement the same protocols and interfaces,
+but also provide implementations for the above protocols and custom key
+lookups to enable swizzling.
+
+Furthermore, since we aim for full ClojureScript compatibility,
+the following implementations are quite lengthy.
+
+*** Declarations
+
+Some functions used by the following vector types will be
+defined further on, but need to be declared already.
+
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (declare vec2 swizzle2 swizzle2-assoc)
   (declare vec3 swizzle3 swizzle3-assoc)
@@ -401,34 +409,36 @@ protocol consisting of just _ one function: =as-mesh=.
   (declare vec2-op-1 vec2-op-2 vec2-op-2* vec2-op-3)
   (declare vec3-op-1 vec3-op-2 vec3-op-3)
 #+END_SRC
-**** Protocol helpers
+*** Protocol helpers
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
-  #+clj
-  (defn map-entry [k ^double v]
+  ,#+clj
+  (defn map-entry
+    [k ^double v]
     (reify
       clojure.lang.IMapEntry
       java.util.Map$Entry
-
       (key [_] k)
       (getKey [_] k)
-
       (val [_] v)
       (getValue [_] v)
-
       (hashCode [_]
-        (bit-xor (clojure.lang.Util/hash k) (clojure.lang.Util/hash v)))
+        (hash-combine
+         (clojure.lang.Util/hash k)
+         (clojure.lang.Util/hash v)))
       (equals [_ x]
         (and (instance? java.util.Map$Entry x)
-             (clojure.lang.Util/equals k (.getKey ^java.util.Map$Entry x))
-             (clojure.lang.Util/equals v (.getValue ^java.util.Map$Entry x))))))
+             (clojure.lang.Util/equals
+              k (.getKey ^java.util.Map$Entry x))
+             (clojure.lang.Util/equals
+              v (.getValue ^java.util.Map$Entry x))))))
 #+END_SRC
-**** 2D
+*** 2D
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx :mkdirp yes
   (deftype Vec2
     ,#+clj [^double x ^double y _meta]
     ,#+cljs [x y _meta]
 #+END_SRC
-***** Clojure protocols
+**** Clojure protocols
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   ,#+clj clojure.lang.IObj
   ,#+clj (meta
@@ -562,7 +572,7 @@ protocol consisting of just _ one function: =as-mesh=.
   (toString
    [_] (str "[" x " " y "]"))
 #+END_SRC
-***** ClojureScript protocols
+**** ClojureScript protocols
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   ,#+cljs IMeta
   ,#+cljs (-meta
@@ -657,7 +667,7 @@ protocol consisting of just _ one function: =as-mesh=.
             (and (sequential? o) (= 2 (count o))
                  (= x (nth o 0)) (= y (nth o 1)))))
 #+END_SRC
-***** Transformations
+**** Transformations
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PScale
   (scale
@@ -696,7 +706,7 @@ protocol consisting of just _ one function: =as-mesh=.
   (transform
    [_ m] (transform-vector m _))
 #+END_SRC
-***** PMathOps
+**** PMathOps
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PMathOps
   (abs [_] (Vec2. (m/abs x) (m/abs y) _meta))
@@ -722,19 +732,19 @@ protocol consisting of just _ one function: =as-mesh=.
   
   (madd [_ a b] (vec2-op-2* clojure.core/* clojure.core/+ _ a b 1.0 0.0 _meta))
 #+END_SRC
-***** PDotProduct
+**** PDotProduct
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PDotProduct
   (dot
    [_ [ax ay]] (mc/madd x ax y ay))
 #+END_SRC
-***** PCrossProduct
+**** PCrossProduct
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx  
   PCrossProduct
   (cross
    [_ [ax ay]] (mc/msub x ay y ax))
 #+END_SRC
-***** PLimit
+**** PLimit
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx  
   PLimit
   (limit
@@ -742,7 +752,7 @@ protocol consisting of just _ one function: =as-mesh=.
    (if (> (mag-squared _) (clojure.core/* len len))
      (normalize _ len) _))
 #+END_SRC
-***** PMinMax
+**** PMinMax
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PMinMax
   (min
@@ -766,7 +776,7 @@ protocol consisting of just _ one function: =as-mesh=.
     (clojure.core/max (clojure.core/max x ax) bx)
     (clojure.core/max (clojure.core/max y ay) by) _meta))
 #+END_SRC
-***** PMagnitude
+**** PMagnitude
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PMagnitude
   (mag
@@ -775,7 +785,7 @@ protocol consisting of just _ one function: =as-mesh=.
   (mag-squared
    [_] (mc/madd x x y y))
 #+END_SRC
-***** PNormalize
+**** PNormalize
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PNormalize
   (normalize
@@ -794,7 +804,7 @@ protocol consisting of just _ one function: =as-mesh=.
   (normalized?
    [_] (m/delta= 1.0 (mag-squared _)))
 #+END_SRC
-***** PDistance
+**** PDistance
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PDistance
   (dist
@@ -814,7 +824,7 @@ protocol consisting of just _ one function: =as-mesh=.
                     (clojure.core/- y (nth a 1))])]
      (mc/madd dx dx dy dy)))
 #+END_SRC
-***** PReflect
+**** PReflect
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PReflect
   (reflect
@@ -824,13 +834,13 @@ protocol consisting of just _ one function: =as-mesh=.
        (mc/msub rx d x)
        (mc/msub ry d y) _meta)))
 #+END_SRC
-***** PInvert
+**** PInvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PInvert
   (invert
    [_] (Vec2. (clojure.core/- x) (clojure.core/- y) _meta))
 #+END_SRC
-***** PInterpolate
+**** PInterpolate
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PInterpolate
   (mix
@@ -844,7 +854,7 @@ protocol consisting of just _ one function: =as-mesh=.
     (mc/madd (clojure.core/- ax x) t x)
     (mc/madd (clojure.core/- ay y) t y) _meta))
 #+END_SRC
-***** PHeading
+**** PHeading
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PHeading
   (heading-xy
@@ -860,7 +870,7 @@ protocol consisting of just _ one function: =as-mesh=.
   (normal
    [_] (Vec2. (clojure.core/- y) x _meta))
 #+END_SRC
-***** PPolar
+**** PPolar
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PPolar
   (as-polar
@@ -872,23 +882,23 @@ protocol consisting of just _ one function: =as-mesh=.
     (clojure.core/* x (Math/cos y))
     (clojure.core/* x (Math/sin y)) _meta))
 #+END_SRC
-***** End of implementations
+**** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   )
 #+END_SRC
-***** Override print methods
+**** Override print methods
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   #+clj (require 'clojure.pprint)
   #+clj (prefer-method clojure.pprint/simple-dispatch clojure.lang.IPersistentVector clojure.lang.ISeq)
   #+clj (defmethod print-method Vec2 [o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
-**** 3D
+*** 3D
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (deftype Vec3
     #+clj [^double x ^double y ^double z _meta]
     #+cljs [x y z _meta]
 #+END_SRC
-***** Clojure protocols
+**** Clojure protocols
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   ,#+clj clojure.lang.IObj
   ,#+clj (meta
@@ -1036,7 +1046,7 @@ protocol consisting of just _ one function: =as-mesh=.
   (toString
     [_] (str "[" x " " y " " z "]"))
 #+END_SRC
-***** ClojureScript protocols
+**** ClojureScript protocols
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   ,#+cljs IMeta
   ,#+cljs (-meta
@@ -1143,7 +1153,7 @@ protocol consisting of just _ one function: =as-mesh=.
             (and (sequential? o) (= 3 (count o))
                  (= x (nth o 0)) (= y (nth o 1)) (= z (nth o 2)))))
 #+END_SRC
-***** TODO Transformations
+**** TODO Transformations
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PScale
   (scale
@@ -1200,7 +1210,7 @@ protocol consisting of just _ one function: =as-mesh=.
   (transform
    [_ m] (transform-vector m _))
 #+END_SRC
-***** PMathOps
+**** PMathOps
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PMathOps
   (abs [_] (Vec3. (m/abs x) (m/abs y) (m/abs z) _meta))
@@ -1273,7 +1283,7 @@ protocol consisting of just _ one function: =as-mesh=.
     (clojure.core/max (clojure.core/max y ay) by)
     (clojure.core/max (clojure.core/max z az) bz) _meta))
 #+END_SRC
-***** PMagnitude
+**** PMagnitude
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PMagnitude
   (mag
@@ -1282,7 +1292,7 @@ protocol consisting of just _ one function: =as-mesh=.
   (mag-squared
    [_] (mc/madd x x y y z z))
 #+END_SRC
-***** PNormalize
+**** PNormalize
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PNormalize
   (normalize
@@ -1303,7 +1313,7 @@ protocol consisting of just _ one function: =as-mesh=.
   (normalized?
    [_] (m/delta= 1.0 (mag-squared _)))
 #+END_SRC
-***** PDistance
+**** PDistance
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PDistance
   (dist
@@ -1319,7 +1329,7 @@ protocol consisting of just _ one function: =as-mesh=.
                        (clojure.core/- z (nth a 2 0.0))])]
      (mc/madd dx dx dy dy dz dz)))
 #+END_SRC
-***** PReflect
+**** PReflect
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PReflect
   (reflect
@@ -1330,13 +1340,13 @@ protocol consisting of just _ one function: =as-mesh=.
        (mc/msub ry d y)
        (mc/msub rz d z) _meta)))
 #+END_SRC
-***** PInvert
+**** PInvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PInvert
   (invert
    [_] (Vec3. (clojure.core/- x) (clojure.core/- y) (clojure.core/- z) _meta))
 #+END_SRC
-***** PInterpolate
+**** PInterpolate
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PInterpolate
   (mix
@@ -1352,7 +1362,7 @@ protocol consisting of just _ one function: =as-mesh=.
     (mc/madd (clojure.core/- ay y) t y)
     (mc/madd (clojure.core/- az z) t z) _meta))
 #+END_SRC
-***** PPolar
+**** PPolar
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   ;; http://mathworld.wolfram.com/SphericalCoordinates.html
   PPolar
@@ -1369,16 +1379,16 @@ protocol consisting of just _ one function: =as-mesh=.
        (clojure.core/* (Math/sin y) rsphi)
        (clojure.core/* x (Math/cos z)) _meta)))
 #+END_SRC
-***** End of implementations
+**** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
     )
 #+END_SRC
-***** Override print methods
+**** Override print methods
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   #+clj (defmethod print-method Vec3 [o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
-**** Vector operations
-***** 2D
+*** Vector operations
+**** 2D
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defn vec2-op-seq
     [op ^Vec2 acc xs]
@@ -1481,7 +1491,7 @@ protocol consisting of just _ one function: =as-mesh=.
          (op (op (op (.-x _) (or ax d)) (or bx d)) (or cx d))
          (op (op (op (.-y _) (or ay d)) (or by d)) (or cy d)) m))))
 #+END_SRC
-***** 3D
+**** 3D
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defn vec3-op-seq
     [op ^Vec3 acc xs]
@@ -1569,7 +1579,7 @@ protocol consisting of just _ one function: =as-mesh=.
              (op (op (op (.-y _) (or ay d)) (or by d)) (or cy d))
              (op (op (op (.-z _) (or az d)) (or bz d)) (or cz d)) m))))))
 #+END_SRC
-**** Constants
+*** Constants
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (def ^:const V2 (Vec2. 0.0 0.0 nil))
   (def ^:const V3 (Vec3. 0.0 0.0 0.0 nil))
@@ -1581,7 +1591,7 @@ protocol consisting of just _ one function: =as-mesh=.
   (def ^:const V3Y (Vec3. 0.0 1.0 0.0 nil))
   (def ^:const V3Z (Vec3. 0.0 0.0 1.0 nil))
 #+END_SRC
-**** Constructors
+*** Constructors
       To simplify vector type construction, factory functions
       are provided which coerce arguments into vectors with these
       rules:
@@ -1619,7 +1629,7 @@ protocol consisting of just _ one function: =as-mesh=.
   (defn vec2? [x] (instance? Vec2 x))
   (defn vec3? [x] (instance? Vec3 x))
 #+END_SRC
-**** Random vectors
+*** Random vectors
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defn randvec2
     ([] (normalize (vec2 (m/randnorm) (m/randnorm))))
@@ -1629,7 +1639,7 @@ protocol consisting of just _ one function: =as-mesh=.
     ([] (normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm))))
     ([n] (normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm)) n)))
 #+END_SRC
-**** Swizzling
+*** Swizzling
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defn- swizzle2
     [^Vec2 _ k default]
@@ -1701,15 +1711,15 @@ protocol consisting of just _ one function: =as-mesh=.
       :zy (Vec3. (.-x _) (v 1) (v 0) (.-_meta _)) ;; (assoc [x y z] :zy [a b]) => [x b a]
       (err/key-error! k)))
 #+END_SRC
-*** Matrix implementations
-**** 3x2 Matrix (Affine 2D transform)
+** Matrix implementations
+*** 3x2 Matrix (Affine 2D transform)
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defrecord Matrix32
     #+clj  [^double m00 ^double m01 ^double m02
             ^double m10 ^double m11 ^double m12]
     #+cljs [m00 m01 m02 m10 m11 m12]
 #+END_SRC
-***** PMathOps
+**** PMathOps
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PMathOps
   (*
@@ -1725,14 +1735,14 @@ protocol consisting of just _ one function: =as-mesh=.
         (mc/madd m10 (.-m02 m) m11 (.-m12 m) m12))
        (meta _))))
 #+END_SRC
-***** PDeterminant
+**** PDeterminant
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PDeterminant
   (determinant
    [_]
    (clojure.core/- (clojure.core/* m00 m11) (clojure.core/* m01 m10)))
 #+END_SRC
-***** PInvert
+**** PInvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PInvert
   (invert
@@ -1743,7 +1753,7 @@ protocol consisting of just _ one function: =as-mesh=.
         (/ m11 d) (clojure.core/- (/ m01 d)) (/ (clojure.core/- (clojure.core/* m01 m12) (clojure.core/* m11 m02)) d)
         (clojure.core/- (/ m10 d)) (/ m00 d) (/ (clojure.core/- (clojure.core/* m10 m02) (clojure.core/* m00 m12)) d)))))
 #+END_SRC
-***** PRotate, PScale, PTranslate, PTransform
+**** PRotate, PScale, PTranslate, PTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PRotate
   (rotate
@@ -1797,7 +1807,7 @@ protocol consisting of just _ one function: =as-mesh=.
   (transform
    [_ matrix] (* _ matrix))
 #+END_SRC
-***** PVectorTransform
+**** PVectorTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PVectorTransform
   (transform-vector
@@ -1807,11 +1817,11 @@ protocol consisting of just _ one function: =as-mesh=.
     (mc/madd x m10 y m11 m12)
     (meta v)))
 #+END_SRC
-***** End of implementations
+**** End of implementations
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   )
 #+END_SRC
-**** 4x4 Matrix
+*** 4x4 Matrix
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defrecord Matrix44
     #+clj  [^double m00 ^double m01 ^double m02 ^double m03
@@ -1823,7 +1833,7 @@ protocol consisting of just _ one function: =as-mesh=.
             m20 m21 m22 m23
             m30 m31 m32 m33]
 #+END_SRC
-***** PMathOps
+**** PMathOps
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PMathOps
   (*
@@ -1852,7 +1862,7 @@ protocol consisting of just _ one function: =as-mesh=.
         (mc/madd m30 (.-m03 m) m31 (.-m13 m) m32 (.-m23 m) m33 (.-m33 m)))
        (meta _))))
 #+END_SRC
-***** PDeterminant
+**** PDeterminant
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PDeterminant
   (determinant
@@ -1866,7 +1876,7 @@ protocol consisting of just _ one function: =as-mesh=.
      (gmc/det-item m10 m01 m32 m23 m00 m11 m32 m23 m20 m11 m02 m33 m10 m21 m02 m33)
      (gmc/det-item m20 m01 m12 m33 m00 m21 m12 m33 m10 m01 m22 m33 m00 m11 m22 m33)]))
 #+END_SRC
-***** PInvert
+**** PInvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PInvert
   (invert
@@ -1915,7 +1925,7 @@ protocol consisting of just _ one function: =as-mesh=.
             (gmc/inv-item m20 n03 m21 n01 m22 n00 invd))
            (meta _))))))
 #+END_SRC
-***** PTranspose
+**** PTranspose
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
     PTranspose
     (transpose
@@ -1928,7 +1938,7 @@ protocol consisting of just _ one function: =as-mesh=.
         m03 m13 m23 m33)
        (meta _)))
 #+END_SRC
-***** Transformations
+**** Transformations
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PScale
   (scale
@@ -1986,7 +1996,7 @@ protocol consisting of just _ one function: =as-mesh=.
   (transform
    [_ matrix] (* _ matrix))
 #+END_SRC
-***** PVectorTransform
+**** PVectorTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PVectorTransform
   (transform-vector
@@ -2000,11 +2010,11 @@ protocol consisting of just _ one function: =as-mesh=.
       (mc/madd x m20 y m21 z m22 w m23)
       (mc/madd x m30 y m31 z m32 w m33)]))
 #+END_SRC
-***** End of implementation
+**** End of implementation
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
     )
 #+END_SRC
-**** Constants
+*** Constants
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (def ^:const M32
     (Matrix32.
@@ -2018,7 +2028,7 @@ protocol consisting of just _ one function: =as-mesh=.
      0.0 0.0 1.0 0.0
      0.0 0.0 0.0 1.0))
 #+END_SRC
-**** Constructors
+*** Constructors
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defn matrix32
     ([] M32)
@@ -2034,14 +2044,14 @@ protocol consisting of just _ one function: =as-mesh=.
     ([m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]
        (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33)))
 #+END_SRC
-*** Quaternion
-**** Implementation
+** Quaternion
+*** Implementation
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (deftype Quaternion
     ,#+clj  [^double x ^double y ^double z ^double w _meta]
     ,#+cljs [x y z w _meta]
 #+END_SRC
-***** Clojure protocols
+**** Clojure protocols
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
     ,#+clj clojure.lang.IObj
     ,#+clj (meta [_] _meta)
@@ -2051,7 +2061,7 @@ protocol consisting of just _ one function: =as-mesh=.
     ,#+cljs IWithMeta
     ,#+cljs (-with-meta [_ m*] (Quaternion. x y z w m*))
 #+END_SRC
-***** PScale
+**** PScale
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PScale
   (scale
@@ -2062,7 +2072,7 @@ protocol consisting of just _ one function: =as-mesh=.
     (clojure.core/* z s)
     (clojure.core/* w s) _meta))
 #+END_SRC
-***** PRotate3D
+**** PRotate3D
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PRotate3D
   (rotate-x
@@ -2093,7 +2103,7 @@ protocol consisting of just _ one function: =as-mesh=.
       (mc/madd z c w s)
       (mc/msub w c z s) _meta)))
 #+END_SRC
-***** PMathOps
+**** PMathOps
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PMathOps
   (+
@@ -2138,7 +2148,7 @@ protocol consisting of just _ one function: =as-mesh=.
       (mc/msub w' rw x' rx y' ry z' rz)
       _meta)))
 #+END_SRC
-***** PDotProduct
+**** PDotProduct
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx  
   PDotProduct
   (dot
@@ -2146,7 +2156,7 @@ protocol consisting of just _ one function: =as-mesh=.
    (let [q ^Quaternion q]
      (mc/madd x (.-x q) y (.-y q) z (.-z q) w (.-w q))))
 #+END_SRC
-***** PMagnitude
+**** PMagnitude
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PMagnitude
   (mag
@@ -2154,7 +2164,7 @@ protocol consisting of just _ one function: =as-mesh=.
   (mag-squared
    [_] (mc/madd x x y y z z w w))
 #+END_SRC
-***** PNormalize
+**** PNormalize
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PNormalize
   (normalize [_]
@@ -2163,13 +2173,13 @@ protocol consisting of just _ one function: =as-mesh=.
         (Quaternion. (/ x m) (/ y m) (/ z m) (/ w m) _meta)
         _)))
 #+END_SRC
-***** PConjugate
+**** PConjugate
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PConjugate
   (conjugate [_]
     (Quaternion. (clojure.core/- x) (clojure.core/- y) (clojure.core/- z) w _meta))
 #+END_SRC
-***** PInvert
+**** PInvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PInvert
   (invert [_]
@@ -2178,7 +2188,7 @@ protocol consisting of just _ one function: =as-mesh=.
           id (clojure.core/- d)]
       (Quaternion. (clojure.core/* x id) (clojure.core/* y id) (clojure.core/* z id) (clojure.core/* w d) _meta)))
 #+END_SRC
-***** PInterpolate
+**** PInterpolate
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PInterpolate
   (mix [_ q] (mix _ q 0.5))
@@ -2200,7 +2210,7 @@ protocol consisting of just _ one function: =as-mesh=.
            (mc/madd w a (.-w q) b)
            _meta)))))
 #+END_SRC
-***** PMatrixConvert
+**** PMatrixConvert
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PMatrixConvert
   (as-matrix
@@ -2232,7 +2242,7 @@ protocol consisting of just _ one function: =as-mesh=.
       0.0
       0.0 0.0 0.0 1.0)))
 #+END_SRC
-***** PVectorTransform
+**** PVectorTransform
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   PVectorTransform
   (transform-vector
@@ -2248,11 +2258,11 @@ protocol consisting of just _ one function: =as-mesh=.
       (mc/maddsub iz w iw nz ix ny iy nx)
       (meta v))))
 #+END_SRC
-***** End of implementation
+**** End of implementation
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
     )
 #+END_SRC
-**** Constructors
+*** Constructors
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/core.cljx
   (defn quat
     ([] (Quaternion. 0.0 0.0 0.0 1.0 nil))
@@ -2433,10 +2443,7 @@ protocol consisting of just _ one function: =as-mesh=.
   
   (defn arc-length*
     [points]
-    (->> points
-         (d/successive-nth 2)
-         (map #(dist (% 0) (% 1)))
-         (reduce clojure.core/+)))
+    (d/reduce-pairs clojure.core/+ g/dist points))
   
   (defn sample-uniform*
     [udist include-last? points]
