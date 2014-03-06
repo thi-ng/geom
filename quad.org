@@ -1,8 +1,7 @@
-#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
-#+TAGS:           write(w) update(u) fix(f) verify(v) noexport(n)
-#+EXPORT_EXCLUDE_TAGS: noexport
+#+SETUPFILE: setup.org
 
 * thi.ng.geom.quad
+
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
   (ns thi.ng.geom.quad
@@ -12,7 +11,7 @@
      [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.line :as l]
      [thi.ng.geom.triangle :as t]
-     [thi.ng.geom.gmesh :as gmesh]
+     [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.types :as types])
     #+clj
     (:import
@@ -59,9 +58,8 @@
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
   g/PArea
   (area
-   [_]
-   (+ (t/area3 (:a _) (:b _) (:c _))
-      (t/area3 (:a _) (:c _) (:d _))))
+   [{[a b c d] :points}]
+   (+ (t/area3 a b c) (t/area3 a c d)))
 #+END_SRC
 *** TODO PBoundary
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
@@ -69,47 +67,31 @@
   (contains-point?
    [_ p] )
 #+END_SRC
-*** PBounds
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
-  g/PBounds
-  (bounds [_] (g/bounding-box* (g/vertices _)))
-  (width  [_] (g/axis-range* 0 (g/vertices _)))
-  (height [_] (g/axis-range* 1 (g/vertices _)))
-  (depth  [_] (g/axis-range* 2 (g/vertices _)))
+*** PBounds                                                     :usetemplate:
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+  <<lob-geom-bounds(fn="g/bounding-box*", depth="yes")>>
 #+END_SRC
-*** PBoundingSphere
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
-  g/PBoundingSphere
-  (bounding-sphere
-   [_] (g/bounding-sphere* (g/centroid _) (g/vertices _)))
+*** PBoundingSphere                                             :usetemplate:
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+  <<lob-geom-bsphere>>
 #+END_SRC
-*** PCenter
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
-  g/PCenter
-  (center
-   ([_]
-      (let [c (g/centroid _)]
-        (thi.ng.geom.types.Quad3.
-         [(g/- (:a _) c) (g/- (:b _) c) (g/- (:c _) c) (g/- (:d _) c)])))
-   ([_ o]
-      (let [d (g/- o (g/centroid _))]
-        (thi.ng.geom.types.Quad3.
-         [(g/+ (:a _) d) (g/+ (:b _) d) (g/+ (:c _) d) (g/+ (:d _) d)]))))
-  (centroid
-   [_] (g/centroid* [(:a _) (:b _) (:c _) (:d _)]))
+*** PCenter                                                     :usetemplate:
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+  <<lob-geom-center(type="thi.ng.geom.types.Quad3")>>
+  (centroid [_] (g/centroid* (:points _)))
 #+END_SRC
-*** PCircumference
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
-  g/PCircumference
-  (circumference
-   [_] (g/arc-length* (conj (g/vertices _) (:a _))))
+*** PCircumference                                              :usetemplate:
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+  <<lob-geom-circum>>
 #+END_SRC
 *** TODO PClassify
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
   g/PClassify
   (classify-point
    [_ p]
-   (reduce min (map #(g/classify-point % p) (g/edges _))))
+   (->> (g/edges _)
+        (map #(g/classify-point (thi.ng.geom.types.Line3. %) p))
+        (reduce min)))
 #+END_SRC
 *** PExtrude
 
@@ -154,19 +136,19 @@ than 1.0.
            (if f [d c b a])]
           (filter identity)
           (map order)
-          (gmesh/into-mesh (gmesh/gmesh)))))
+          (gm/into-mesh (gm/gmesh)))))
 #+END_SRC
 *** PGraph
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
   g/PGraph
   (vertices
-   [_] [(:a _) (:b _) (:c _) (:d _)])
+   [_] (:points _))
   (edges
-   [{:keys [a b c d]}] [[a b] [b c] [c d] [d a]])
+   [{[a b c d] :points}] [[a b] [b c] [c d] [d a]])
   (vertex-neighbors
-   [_ v] (d/neighbors (vec3 v) (g/vertices _)))
+   [_ v] (d/neighbors (vec3 v) (:points _)))
   (vertex-valence
-   [_ v] (if (#{(:a _) (:b _) (:c _) (:d _)} (vec3 v)) 2 0))
+   [_ v] (if ((set (:points _)) v) 2 0))
 #+END_SRC
 *** TODO PIntersect
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
@@ -184,26 +166,17 @@ A quad's mesh representation is simply a quad mesh with a single face.
 
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
   g/PMeshConvert
-  (as-mesh [{:keys [a b c d]}] (g/add-face (gmesh/gmesh) [a b c d]))
+  (as-mesh [_] (g/add-face (gm/gmesh) (:points _)))
 #+END_SRC
 *** TODO PProximity
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
-  g/PProximity
-  (closest-point
-   [_ p] (g/closest-point* (mapv l/line3 (g/edges _)) p))
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+  <<lob-geom-proxi(type="thi.ng.geom.types.Line3")>>
 #+END_SRC
 *** TODO PSample
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
-  g/PSample
-  (point-at
-   [_ t] (g/point-at* t (conj (g/vertices _) (:a _))))
-  (random-point
-   [_] (g/point-at _ (m/random)))
-  (random-point-inside
-   [_] (unmap-uv _ (vec2 (m/random) (m/random))))
-  (sample-uniform
-   [_ udist include-last?]
-   (g/sample-uniform* udist include-last? (conj (g/vertices _) (:a _))))
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+  <<lob-geom-sample(n="4")>>
+  ;;(random-point-inside
+  ;; [_] (unmap-uv _ (vec2 (m/random) (m/random))))
 #+END_SRC
 *** PSubdivide
 
@@ -246,47 +219,27 @@ function returns a lazyseq of triangles of the subdivided quad.
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
   g/PTessellate
   (tessellate
-   ([_]
-      [(thi.ng.geom.types.Triangle3. [(:a _) (:b _) (:c _)])
-       (thi.ng.geom.types.Triangle3. [(:a _) (:c _) (:d _)])])
+   ([{[a b c d] :points}]
+      [(thi.ng.geom.types.Triangle3. [a b c])
+       (thi.ng.geom.types.Triangle3. [a c d])])
    ([_ opts]
       (mapcat g/tessellate (g/subdivide _ opts))))
 #+END_SRC
-*** PTransform
-#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
-  g/PRotate3D
-  (rotate-x
-   [_ theta]
-   (thi.ng.geom.types.Quad3. (mapv #(g/rotate-x % theta) (:points _))))
-  (rotate-y
-   [_ theta]
-   (thi.ng.geom.types.Quad3. (mapv #(g/rotate-y % theta) (:points _))))
-  (rotate-z
-   [_ theta]
-   (thi.ng.geom.types.Quad3. (mapv #(g/rotate-z % theta) (:points _))))
-  (rotate-around-axis
-   [_ axis theta]
-   (thi.ng.geom.types.Quad3.
-    (mapv #(g/rotate-around-axis % axis theta) (:points _))))
-  g/PScale
-  (scale
-   ([_ s]
-      (thi.ng.geom.types.Quad3. (mapv #(g/* % s) (:points _))))
-   ([_ sx sy]
-      (thi.ng.geom.types.Quad3. (mapv #(g/* % sx sy) (:points _))))
-   ([_ sx sy sz]
-      (thi.ng.geom.types.Quad3. (mapv #(g/* % sx sy sz) (:points _)))))
-  (scale-size
-   [_ s] (thi.ng.geom.types.Quad3. (g/scale-size* s (:points _))))
-  g/PTranslate
-  (translate
-   [_ t]
-   (thi.ng.geom.types.Quad3. (mapv #(g/+ % t) (:points _))))
-  g/PTransform
-  (transform
-   [_ m]
-   (thi.ng.geom.types.Quad3. (mapv #(g/transform-vector m %) (:points _))))
+
+*** PTransform                                                  :usetemplate:
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+  <<lob-geom-rotate(type="thi.ng.geom.types.Quad3")>>
+  <<lob-geom-rotate3d(type="thi.ng.geom.types.Quad3")>>
+  <<lob-geom-scale(type="thi.ng.geom.types.Quad3")>>
+  <<lob-geom-translate(type="thi.ng.geom.types.Quad3")>>
+  <<lob-geom-tx(type="thi.ng.geom.types.Quad3")>>
 #+END_SRC
+
+*** PVolume                                                     :usetemplate:
+#+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+  <<lob-geom-zerovol>>
+#+END_SRC
+
 *** End of implementations                                         :noexport:
 #+BEGIN_SRC clojure :tangle babel/src/cljx/thi/ng/geom/quad.cljx
   )
