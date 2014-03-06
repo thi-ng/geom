@@ -8,7 +8,7 @@ changes forthcoming...
 
 ## Usage
 
-See [index.org](index.org)
+See [index.org](src/index.org)
 
 ## License
 
