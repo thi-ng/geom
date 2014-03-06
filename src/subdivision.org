@@ -68,7 +68,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
                                   vn (gm/vertex-neighbors* mesh v)
                                   n (count vn)
                                   r (g/centroid* (map #(g/mix v %) vn))
-                                  v* (g// (g/+ f (g/* r 2.0) (g/* v (- n 3))) n)]
+                                  v* (g/div (g/+ f (g/* r 2.0) (g/* v (- n 3))) n)]
                               (assoc! acc v v*)))
                           (transient {}))
                          persistent!)]

@@ -40,7 +40,7 @@ protocols related to common higher level geometric operations.
     (+ [_] [_ a] [_ a b] [_ a b c])
     (- [_] [_ a] [_ a b] [_ a b c])
     (* [_] [_ a] [_ a b] [_ a b c])
-    (/ [_] [_ a] [_ a b] [_ a b c])
+    (div [_] [_ a] [_ a b] [_ a b c])
     (madd [_ a b])
     (abs [_]))
 #+END_SRC
@@ -722,10 +722,10 @@ defined further on, but need to be declared already.
   (* [_ a b] (vec2-op-2 clojure.core/* _ a b 1.0 1.0 _meta))
   (* [_ a b c] (vec2-op-3 clojure.core/* _ a b c 1.0 _meta))
   
-  (/ [_] (Vec2. (clojure.core// x) (clojure.core// y) _meta))
-  (/ [_ a] (vec2-op-1 clojure.core// _ a 0.0 _meta))
-  (/ [_ a b] (vec2-op-2 clojure.core// _ a b 0.0 0.0 _meta))
-  (/ [_ a b c] (vec2-op-3 clojure.core// _ a b c 0.0 _meta))
+  (div [_] (Vec2. (clojure.core// x) (clojure.core// y) _meta))
+  (div [_ a] (vec2-op-1 clojure.core// _ a 0.0 _meta))
+  (div [_ a b] (vec2-op-2 clojure.core// _ a b 0.0 0.0 _meta))
+  (div [_ a b c] (vec2-op-3 clojure.core// _ a b c 0.0 _meta))
   
   (madd [_ a b] (vec2-op-2* clojure.core/* clojure.core/+ _ a b 1.0 0.0 _meta))
 #+END_SRC
@@ -1216,10 +1216,10 @@ defined further on, but need to be declared already.
   (* [_ a b] (vec3-op-2 clojure.core/* clojure.core/* _ a b 1.0 1.0 _meta))
   (* [_ a b c] (vec3-op-3 clojure.core/* _ a b c 1.0 _meta))
   
-  (/ [_] (Vec3. (clojure.core// x) (clojure.core// y) (clojure.core// z) _meta))
-  (/ [_ a] (vec3-op-1 clojure.core// _ a 0.0 _meta))
-  (/ [_ a b] (vec3-op-2 clojure.core// clojure.core// _ a b 0.0 0.0 _meta))
-  (/ [_ a b c] (vec3-op-3 clojure.core// _ a b c 0.0 _meta))
+  (div [_] (Vec3. (clojure.core// x) (clojure.core// y) (clojure.core// z) _meta))
+  (div [_ a] (vec3-op-1 clojure.core// _ a 0.0 _meta))
+  (div [_ a b] (vec3-op-2 clojure.core// clojure.core// _ a b 0.0 0.0 _meta))
+  (div [_ a b c] (vec3-op-3 clojure.core// _ a b c 0.0 _meta))
   
   (madd
    [_ a b] (vec3-op-2 clojure.core/* clojure.core/+ _ a b 1.0 0.0 _meta))
@@ -2595,5 +2595,5 @@ defined further on, but need to be declared already.
       (if (invert vpm)
         (let [v' (transform-vector vpm [x y z 1.0])]
           (if-not (zero? (v' 3))
-            (/ (vec3 v') (v' 3)))))))
+            (div (vec3 v') (v' 3)))))))
 #+END_SRC
