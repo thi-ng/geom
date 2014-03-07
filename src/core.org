@@ -1404,7 +1404,7 @@ defined further on, but need to be declared already.
       (if xs
         (let [v ^Vec2 (first xs)]
           (recur (op ax (.-x v)) (op ay (.-y v)) (next xs)))
-        (Vec2. ax ay (.-meta acc)))))
+        (Vec2. ax ay (.-_meta acc)))))
   
   (defn vec2-op-1
     [op ^Vec2 _ a d m]
@@ -1507,7 +1507,7 @@ defined further on, but need to be declared already.
       (if xs
         (let [v ^Vec3 (first xs)]
           (recur (op ax (.-x v)) (op ay (.-y v)) (op az (.-z v)) (next xs)))
-        (Vec3. ax ay az (.-meta acc)))))
+        (Vec3. ax ay az (.-_meta acc)))))
   
   (defn vec3-op-1
     [op ^Vec3 _ a d m]
