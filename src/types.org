@@ -83,7 +83,7 @@ an extra Circle type for performance reasons.
       Just like a circle in 2D, a 3D sphere is uniquely defined via
       its center point =o= and radius =r=.
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/types.cljx
-  (defrecord Sphere #+clj [o ^double r] #+cljs [o r])
+  (defrecord Sphere #+clj [p ^double r] #+cljs [p r])
 #+END_SRC
 *** Mesh
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/types.cljx
