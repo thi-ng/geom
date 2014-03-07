@@ -35,7 +35,7 @@
       Line2 LineStrip2 Bezier2 Triangle2 Circle Ellipse Rect Polygon Path2 Mesh2
       Line3 LineStrip3 Bezier3 Plane Triangle3 Tetrahedron Quad3 AABB Sphere Mesh3]))
 #+END_SRC
-** Helpers
+** Constants & helpers
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/protocols.cljx
   (def proto-ids
     {:area g/PArea
@@ -84,8 +84,8 @@
      :vtx g/PVectorTransform})
   
   (def shape-common
-    [:area :bounds :boundary :center :class :graph :mesh
-     :rotate :sample :scale :tess :translate :tx :vol])
+    #{:area :bounds :boundary :center :class :graph :mesh
+     :rotate :sample :scale :tess :translate :tx :vol})
   
   (def shape-common-2d
     (conj shape-common :bcircle :circum :ext :poly))
@@ -94,8 +94,8 @@
     (conj shape-common :bsphere))
   
   (def vec-common
-    [:cross :dist :dot :head :inv :limit :mag :math :mix
-     :norm :polar :refl :rotate :scale :translate :tx])
+    #{:cross :dist :dot :head :inv :limit :mag :math :mix
+     :norm :polar :refl :rotate :scale :translate :tx})
   
   ,#+clj
   (defn satisfies-all?
@@ -116,6 +116,9 @@
       {
        ;; 2d
   
+       thi.ng.geom.types.Line2
+       (-> shape-common-2d (disj :poly :mesh :tess) (conj :isec :prox))
+  
        thi.ng.geom.types.Circle
        (conj shape-common-2d :isec :prox)
   
@@ -129,6 +132,9 @@
        (conj shape-common-2d :flip :isec :prox :subdiv)
   
        ;; 3d
+  
+       thi.ng.geom.types.Line3
+       (-> shape-common-3d (disj :mesh :tess) (conj :isec :prox))
   
        thi.ng.geom.types.AABB
        (conj shape-common-3d :isec :prox :subdiv)
