@@ -36,6 +36,12 @@
   (area
    [{r :r}] (* 4.0 PI r r))
 #+END_SRC
+*** PBoundary
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+  g/PBoundary
+  (contains-point?
+   [{p :p r :r} q] (<= (g/dist-squared p q) (* r r)))
+#+END_SRC
 *** PBounds
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
   g/PBounds
@@ -50,23 +56,6 @@
   g/PBoundingSphere
   (bounding-sphere [_] _)
 #+END_SRC
-*** PBoundary
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
-  g/PBoundary
-  (contains-point?
-   [{p :p r :r} q] (<= (g/dist-squared p q) (* r r)))
-  g/PClassify
-  (classify-point
-   [{p :p r :r} q]
-   (m/signum (- (* r r) (g/dist-squared p q)) *eps*))
-  g/PSample
-  (random-point-inside
-   [_]
-   (g/+ (:p _) (g/randvec3 (m/random (:r _)))))
-  (random-point
-   [_]
-   (g/+ (:p _) (g/randvec3 (:r _))))
-#+END_SRC
 *** PCenter
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
   g/PCenter
@@ -75,16 +64,58 @@
    ([_ p] (thi.ng.geom.types.Sphere. (vec3 p) (:r _))))
   (centroid [_] (:p _))
 #+END_SRC
+*** PClassify
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+  g/PClassify
+  (classify-point
+   [{p :p r :r} q]
+   (m/signum (- (* r r) (g/dist-squared p q)) *eps*))
+#+END_SRC
 *** TODO PGraph
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
 
+#+END_SRC
+*** PIntersect
+
+If ray intersects sphere, the function will return a 2-element vector
+of distances from the ray's start point to the sphere surface. If
+either of those distances is negative the intersection point lies in
+the opposite ray direction. The actual intersection points can be
+computed by passing the distances into the following form:
+
+#+BEGIN_SRC clojure
+  ;; dir = ray direction
+  ;; p = ray start point
+  ;; t = distance
+  (g/madd dir t p)
+#+END_SRC
+
+If there's no intersection, the function returns =nil=.
+
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+  g/PIntersect
+  (intersect-ray
+   [{p :p r :r} {rp :p dir :dir}]
+   (let [q (g/- p rp)
+         ds (g/mag-squared q)
+         v (- (g/dot q dir))
+         d (mm/msub r r (- ds (* v v)))]
+     (if (>= d 0.0)
+       (let [d (Math/sqrt d)
+             a (+ v d)
+             b (- v d)]
+         (if-not (and (< a 0) (< b 0))
+           (if (and (> a 0) (> b 0))
+             (if (> a b) [b a] [a b])
+             (if (> b 0) [b a] [a b]))
+           [a b])))))
 #+END_SRC
 *** TODO PMeshConvert
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([{[x y z] :o r :r} {:keys [res slices stacks] :or {res *resolution*}}]
+   ([{[x y z] :p r :r} {:keys [res slices stacks] :or {res *resolution*}}]
       (let [slices (or slices res), stacks (or stacks res)
             range-u (range slices), range-v (range stacks)]
         (->> (for [i range-u, j range-v
@@ -111,6 +142,57 @@
                            (+ (mm/mul st sp r) z)))))
                      (g/add-face m)))
               (gm/gmesh))))))
+#+END_SRC
+*** PProximity
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+  g/PProximity
+  (closest-point
+   [{p :p r :r} q]
+   (g/+ p (g/normalize (g/- q p) r)))
+#+END_SRC
+*** PSample
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+  g/PSample
+  (random-point-inside
+   [_]
+   (g/+ (:p _) (g/randvec3 (m/random (:r _)))))
+  (random-point
+   [_]
+   (g/+ (:p _) (g/randvec3 (:r _))))
+#+END_SRC
+*** PTessellate
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+  g/PTessellate
+  (tessellate
+   [_] (g/tessellate _ {}))
+  (tessellate
+   [_ opts] (g/tessellate (g/as-mesh _ opts)))
+#+END_SRC
+
+*** TODO Transformations
+**** TODO scale with non-uniform values should return Ellipsoid
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+  g/PRotate
+  (rotate
+   [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-z (:p _) theta) (:r _)))
+  g/PRotate3D
+  (rotate-x
+   [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-x (:p _) theta) (:r _)))
+  (rotate-y
+   [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-y (:p _) theta) (:r _)))
+  (rotate-z
+   [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-z (:p _) theta) (:r _)))
+  (rotate-around-axis
+   [_ axis theta]
+   (thi.ng.geom.types.Sphere.
+    (g/rotate-around-axis (:p _) axis theta) (:r _)))
+  
+  g/PScale
+  (scale [_ s] (thi.ng.geom.types.Sphere. (g/* (:p _) s) (* (:r _) s)))
+  (scale-size [_ s] (thi.ng.geom.types.Sphere. (:p _) (* (:r _) s)))
+
+  g/PTranslate
+  (translate [_ t] (thi.ng.geom.types.Sphere. (g/+ (:p _) t) (:r _)))
 #+END_SRC
 *** PVolume
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
