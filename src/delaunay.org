@@ -4,7 +4,9 @@
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/delaunay.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.delaunay
+    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     (:require
+     ,#+clj [thi.ng.macromath.core :as mm]
      [thi.ng.common.math.core :as m :refer [*eps* delta=]]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.triangle :refer [circumcircle-raw triangle2]])
@@ -13,6 +15,12 @@
      [thi.ng.geom.types Triangle2]))
 #+END_SRC
 ** Implementation
+
+Algorithm fails if *all* points are arranged in a circle. A workaround
+is to add an additional point in the center.
+
+- http://astronomy.swin.edu.au/~pbourke/modelling/triangulate/
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/delaunay.cljx
   (defn- add-unique-edge!
     [edges p q]
@@ -30,7 +38,7 @@
         (if (complete t) state
             (let [x (- px (t 3))
                   y (- py (t 4))]
-              (if (<= (+ (* x x) (* y y)) (t 5))
+              (if (<= (mm/madd x x y y) (t 5))
                 (assoc! state
                         0 (let [[a b c] t]
                             (-> (state 0)
@@ -47,8 +55,8 @@
     (let [[[ox oy] r] (circumcircle-raw a b c)]
       [a b c ox oy (* r r) (+ ox r)]))
   
-  (defn shared-vertex?
-    [[a1 b1 c1] [a2 b2 c2]]
+  (defn- shared-vertex?
+    [a1 b1 c1 [a2 b2 c2]]
     (or (identical? a1 a2) (identical? a1 b2) (identical? a1 c2)
         (identical? b1 a2) (identical? b1 b2) (identical? b1 c2)
         (identical? c1 a2) (identical? c1 b2) (identical? c1 c2)))
@@ -62,8 +70,8 @@
           dm (max (bext 0) (bext 1))
           d2 (* 2.0 dm)
           m (g/mix bmin bmax)
-          s (make-triangle (g/- m d2 dm) (g/+ m 0 d2) (g/+ m d2 (- dm)))]
-      (loop [points points tris [s] complete (transient #{})]
+          [sa sb sc :as s] (make-triangle (g/- m d2 dm) (g/+ m 0 d2) (g/+ m d2 (- dm)))]
+      (loop [points points, tris [s], complete (transient #{})]
         (if-let [[px :as p] (first points)]
           (let [complete (reduce #(if (< (%2 6) px) (conj! % %2) %) complete tris)
                 [edges tris] (compute-edges complete tris p)
@@ -71,5 +79,5 @@
             (recur (rest points) (persistent! tris) complete))
           (map
            (fn [t] (triangle2 (t 1) (t 0) (t 2)))
-           (remove #(shared-vertex? s %) (persistent! (reduce conj! complete tris))))))))
+           (remove #(shared-vertex? sa sb sc %) (persistent! (reduce conj! complete tris))))))))
 #+END_SRC
