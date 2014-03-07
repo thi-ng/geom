@@ -22,21 +22,21 @@
     ([t]
        (cond
         (map? t)        (thi.ng.geom.types.Triangle2.
-                         (vec2 (:a t)) (vec2 (:b t)) (vec2 (:c t)))
+                         [(vec2 (:a t)) (vec2 (:b t)) (vec2 (:c t))])
         (sequential? t) (thi.ng.geom.types.Triangle2.
-                         (vec2 (nth t 0)) (vec2 (nth t 1)) (vec2 (nth t 2)))
+                         [(vec2 (nth t 0)) (vec2 (nth t 1)) (vec2 (nth t 2))])
         :default (err/illegal-arg! t)))
-    ([a b c] (thi.ng.geom.types.Triangle2. (vec2 a) (vec2 b) (vec2 c))))
+    ([a b c] (thi.ng.geom.types.Triangle2. [(vec2 a) (vec2 b) (vec2 c)])))
   
   (defn triangle3
     ([t]
        (cond
         (map? t)        (thi.ng.geom.types.Triangle3.
-                         (vec3 (:a t)) (vec3 (:b t)) (vec3 (:c t)))
+                         [(vec3 (:a t)) (vec3 (:b t)) (vec3 (:c t))])
         (sequential? t) (thi.ng.geom.types.Triangle3.
-                         (vec3 (nth t 0)) (vec3 (nth t 1)) (vec3 (nth t 2)))
+                         [(vec3 (nth t 0)) (vec3 (nth t 1)) (vec3 (nth t 2))])
         :default (err/illegal-arg! t)))
-    ([a b c] (thi.ng.geom.types.Triangle3. (vec3 a) (vec3 b) (vec3 c))))
+    ([a b c] (thi.ng.geom.types.Triangle3. [(vec3 a) (vec3 b) (vec3 c)])))
   
   (defn equilateral2
     ([l]
@@ -48,10 +48,18 @@
        (let [a (vec2 a) b (vec2 b)
              dir (g/- a b)
              n (g/normal dir)
-             c (-> n (g/normalize (g/* (g/mag dir) (g/* SQRT3 0.5))) (g/+ (g/mix a b)))]
+             c (-> n (g/normalize (mm/mul (g/mag dir) SQRT3 0.5)) (g/+ (g/mix a b)))]
          (triangle2 a b c)))
     ([x1 y1 x2 y2]
-       (equilateral2 [x1 y1] [x2 y2])))
+       (equilateral2 (vec2 x1 y1) (vec2 x2 y2))))
+
+  (defn equilateral3
+   [a b n]
+   (let [a (vec3 a) b (vec3 b)
+         dir (g/- b a)
+         n (g/normalize (g/cross dir n))
+         c (-> n (g/normalize (mm/mul (g/mag dir) SQRT3 0.5)) (g/+ (g/mix a b)))]
+      (thi.ng.geom.types.Triangle3. [a b c])))
 #+END_SRC
 ** Shared 2d/3d functions
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
@@ -165,29 +173,34 @@
     (let [ct (centroid* t)]
       [[a b t] [b c t] [c a t]]))
   
+  ;; http://astronomy.swin.edu.au/~pbourke/modelling/triangulate/
   (defn circumcircle-raw
     [[ax ay :as a] [bx by :as b] [cx cy :as c]]
     (let [eq-ab? (m/delta= ay by *eps*)
           eq-bc? (m/delta= by cy *eps*)]
       (when-not (and eq-ab? eq-bc?)
-        (let [[ox oy :as o]
-              (cond
-               eq-ab? (let [m2 (- (/ (- cx bx) (- cy by)))
-                            mx1 (* 0.5 (+ ax bx))
-                            [mx2 my2] (g/mix b c)]
-                        [mx1 (+ (* m2 (- mx1 mx2)) my2)])
-               eq-bc? (let [m1 (- (/ (- bx ax) (- by ay)))
-                            mx2 (* 0.5 (+ bx cx))
-                            [mx1 my1] (g/mix a b)]
-                        [mx2 (+ (* m1 (- mx2 mx1)) my1)])
-               :default (let [m1 (- (/ (- bx ax) (- by ay)))
-                              m2 (- (/ (- cx bx) (- cy by)))
-                              [mx1 my1] (g/mix a b)
-                              [mx2 my2] (g/mix b c)
-                              xx (-> (* m1 mx1) (- (* m2 mx2))
-                                     (+ my2) (- my1) (/ (- m1 m2)))]
-                          [xx (+ (* m1 (- xx mx1)) my1)]))]
-          [o (m/hypot (- bx ox) (- by oy))]))))
+        (let [o (cond
+                 eq-ab? (let [cx (mm/addm ax bx 0.5)]
+                          (vec2 cx (mm/submadd
+                                    cx (mm/addm bx cx 0.5)
+                                    (- (mm/subdiv cx bx cy by))
+                                    (mm/addm by cy 0.5))))
+                 eq-bc? (let [cx (mm/addm bx cx 0.5)]
+                          (vec2 cx (mm/submadd
+                                    cx (mm/addm ax bx 0.5)
+                                    (- (mm/subdiv bx ax by ay))
+                                    (mm/addm ay by 0.5))))
+                 :default (let [m1 (- (mm/subdiv bx ax by ay))
+                                m2 (- (mm/subdiv cx bx cy by))
+                                mx1 (mm/addm ax bx 0.5)
+                                my1 (mm/addm ay by 0.5)
+                                cx (/ (mm/add
+                                       (mm/msub m1 mx1 m2 (mm/addm bx cx 0.5))
+                                       (mm/addm by cy 0.5)
+                                       (- my1))
+                                      (- m1 m2))]
+                            (vec2 cx (mm/submadd cx mx1 m1 my1))))]
+          [o (g/dist o b)]))))
   
   (defn circumcircle
     ([t] (circumcircle (:a t) (:b t) (:c t)))
