@@ -187,6 +187,39 @@
       (< id 4) (vec3 (m/random x1 x2) (if (= 2 id) y1 y2) (m/random z1 z2))
       :default (vec3 (m/random x1 x2) (m/random y1 y2) (if (= 4 id) z1 z2)))))
 #+END_SRC
+*** PSubdivide
+
+An AABB can be subdivided into smaller ones, i.e. to create a seq of
+uniform grid cells. The following options can be given as a 2nd
+argument map:
+
+| Key       | Description                                                          | Default |
+|-----------+----------------------------------------------------------------------+---------|
+| =:num=    | number of cols/rows/slices the box will be uniformly subdivided into |       2 |
+| =:cols=   | number of times the box will be subdivided along the X-axis          |       2 |
+| =:rows=   | number of times the box will be subdivided along the Y-axis          |       2 |
+| =:slices= | number of times the box will be subdivided along the Z-axis          |       2 |
+
+When =:num= is given, the resulting AABBs will retain the aspect ratio
+of the original. If specified, =:cols=, =:rows= and =:slices= will
+take precedence over =:num=, but the latter will be used as default
+for missing args. AABBs are returned as a lazyseq starting from =:p=
+of the original with inner sorting over XYZ.
+
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/aabb.cljx
+  g/PSubdivide
+  (subdivide
+   ([_] (g/subdivide _ {}))
+   ([{p :p size :size} {:keys [num cols rows slices] :or {num 2}}]
+      (let [sx (or cols num)
+            sy (or rows num)
+            sz (or slices num)
+            s (g/div size sx sy sz)]
+        (for [z (butlast (m/norm-range sz))
+              y (butlast (m/norm-range sy))
+              x (butlast (m/norm-range sx))]
+          (thi.ng.geom.types.AABB. (g/madd (vec3 x y z) size p) s)))))
+#+END_SRC
 *** TODO PTessellate
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/aabb.cljx
   g/PTessellate
