@@ -298,10 +298,11 @@
    [_ m]
    (thi.ng.geom.types.Tetrahedron. (mapv #(g/transform-vector m %) (:points _))))
 #+END_SRC
-**** TODO PVolume
+**** PVolume                                                         :verify:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PVolume
-  (volume [_] nil)
+  (volume [{[a b c d] :points}]
+    (/ (g/dot (g/- a d) (g/normal3* d b c)) 6.0))
 #+END_SRC
 **** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
