@@ -152,14 +152,7 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PArea
   (area
-   [_]
-   (->> (:faces _)
-        (mapcat
-         (fn [f]
-           (->> f
-                tessellate-face1
-                (map #(m/abs (t/area3 %))))))
-        (reduce +)))
+   [_] (reduce #(+ % (m/abs (t/area3 %))) 0 (g/tessellate _)))
 #+END_SRC
 *** TODO PBoundary
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
@@ -271,6 +264,14 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PMeshConvert
   (as-mesh [_] _)
+#+END_SRC
+*** PTessellate
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
+  g/PTessellate
+  (tessellate
+   ([_] (g/tessellate _ {}))
+   ([_ {:keys [fn] :or {fn tessellate-face1}}]
+      (->> (:faces _) (mapcat fn) (map #(thi.ng.geom.types.Triangle3. %)))))
 #+END_SRC
 *** TODO PVolume
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
