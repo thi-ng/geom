@@ -1,6 +1,4 @@
-#+SEQ_TODO:       TODO(t) INPROGRESS(i) WAITING(w@) | DONE(d) CANCELED(c@)
-#+TAGS:           Write(w) Update(u) Fix(f) Check(c) noexport(n)
-#+EXPORT_EXCLUDE_TAGS: noexport
+#+SETUPFILE: ../src/setup.org
 
 * thi.ng.geom.test.protocols
 ** Namespace declaration
@@ -40,7 +38,7 @@
 ** Helpers
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/protocols.cljx
   (def proto-ids
-    {:area g/PGraph
+    {:area g/PArea
      :bounds g/PBounds
      :bcircle g/PBoundingCircle
      :bsphere g/PBoundingSphere
@@ -74,23 +72,39 @@
      :prox g/PProximity
      :refl g/PReflect
      :rotate g/PRotate
+     :rot3d g/PRotate3D
      :sample g/PSample
      :scale g/PScale
      :shear g/PShear
+     :subdiv g/PSubdivide
      :tess g/PTessellate
+     :translate g/PTranslate
      :tx g/PTransform
      :vol g/PVolume
      :vtx g/PVectorTransform})
-
-  #+clj
+  
+  (def shape-common
+    [:area :bounds :boundary :center :class :graph :mesh
+     :rotate :sample :scale :tess :translate :tx :vol])
+  
+  (def shape-common-2d
+    (conj shape-common :bcircle :circum :ext :poly))
+  
+  (def shape-common-3d
+    (conj shape-common :bsphere))
+  
+  (def vec-common
+    [:cross :dist :dot :head :inv :limit :mag :math :mix
+     :norm :polar :refl :rotate :scale :translate :tx])
+  
+  ,#+clj
   (defn satisfies-all?
     [type & protos]
     (testing
-        ,#+clj  (.getName type)
-        ,#+cljs (str type)
-        (doseq [p protos]
-          (is (true? (extends? (proto-ids p) type))
-              (str (get-in proto-ids [p :on-interface]))))))
+        (.getName type)
+      (doseq [p protos]
+        (is (true? (extends? (proto-ids p) type))
+            (str (get-in proto-ids [p :on-interface]))))))
 #+END_SRC
 ** Main context
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/protocols.cljx
@@ -99,18 +113,34 @@
     (dorun
      (map
       (fn [[t protos]] (apply satisfies-all? t protos))
-      {thi.ng.geom.types.AABB
-       [:area :bounds :bsphere :boundary :center :class :graph
-        :isec :mesh :prox :sample :scale :tess :vol]
+      {
+       ;; 2d
   
        thi.ng.geom.types.Circle
-       [:area :bounds :bcircle :boundary :center :circum :class
-        :ext :graph :isec :mesh :poly :prox :rotate :sample :scale :tess :tx :vol]
+       (conj shape-common-2d :isec :prox)
   
        thi.ng.geom.types.Polygon
-       [:area :bounds :bcircle :boundary :center :circum :chull
-        :class :clip :ext :flip :graph :isec :mesh :poly :prox :rotate
-        :sample :scale :tess :tx :vol]
+       (conj shape-common-2d :chull :clip :flip :isec :prox)
+  
+       thi.ng.geom.types.Rect
+       (conj shape-common-2d :isec :prox :subdiv)
+  
+       thi.ng.geom.types.Triangle2
+       (conj shape-common-2d :flip :isec :prox :subdiv)
+  
+       ;; 3d
+  
+       thi.ng.geom.types.AABB
+       (conj shape-common-3d :isec :prox :subdiv)
+  
+       thi.ng.geom.types.Quad3
+       (conj shape-common-3d :flip :isec :prox :subdiv)
+  
+       thi.ng.geom.types.Sphere
+       (conj shape-common-3d :isec :prox)
+  
+       thi.ng.geom.types.Triangle3
+       (conj shape-common-3d :flip :isec :prox :subdiv)
   
        ;; core types
   
@@ -119,10 +149,8 @@
        thi.ng.geom.core.Quat4 [:math :conj :dot :inv :mag :mat :mix :norm :scale :vtx]
   
        thi.ng.geom.core.Vec2
-       [:math :dot :cross :dist :head :inv :mix :limit :mag :norm :polar
-        :refl :rotate :scale :tx]
+       vec-common
   
        thi.ng.geom.core.Vec3
-       [:math :dot :cross :dist :head :inv :mix :limit :mag :norm :polar
-        :refl :rotate :scale :tx]})))
+       (conj vec-common :rot3d)})))
 #+END_SRC

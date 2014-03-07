@@ -281,6 +281,12 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
   <<tpl-circum>>    
 #+END_SRC
+**** PExtrude
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PExtrude
+  (extrude [_ opts] (g/extrude (g/as-polygon _) opts))
+  (extrude-shell [_ opts] (g/extrude-shell (g/as-polygon _) opts))
+#+END_SRC
 **** PFlip                                                      :usetemplate:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
   <<lob-geom-flip(type="thi.ng.geom.types.Triangle2")>>
@@ -288,6 +294,12 @@
 **** PGraph                                                     :usetemplate:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
   <<tpl-graph>>
+#+END_SRC
+**** PMeshConvert                                                       :fix:
+#+BEGIN_SRC clojure
+  ;; :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PMeshConvert
+  (as-mesh [_] (g/add-face (gm/gmesh) (mapv vec3 (:points _))))
 #+END_SRC
 **** PPolygonConvert                                            :usetemplate:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
@@ -308,6 +320,11 @@
 **** PSubdivide                                                 :usetemplate:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
   <<tpl-subdiv(type="thi.ng.geom.types.Triangle2")>>
+#+END_SRC
+**** PTessellate
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+  g/PTessellate
+  (tessellate [_] [_])
 #+END_SRC
 **** PTransform                                                 :usetemplate:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
@@ -382,6 +399,12 @@
               (if (contains-point3* points ip)
                 {:p ip :n n :dist t :dir (g/normalize (g/- ip p))})))))))
 #+END_SRC
+**** TODO PMeshConvert                                                  :fix:
+#+BEGIN_SRC clojure
+  ;; :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+  g/PMeshConvert
+  (as-mesh [_] (g/add-face (gm/gmesh) (:points _)))
+#+END_SRC
 **** TODO PProximity
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
   g/PProximity
@@ -399,6 +422,11 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
   <<tpl-subdiv(type="thi.ng.geom.types.Triangle3")>>
 #+END_SRC
+**** PTessellate
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+  g/PTessellate
+  (tessellate [_] [_])
+#+END_SRC
 **** PTransform                                                 :usetemplate:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
   <<lob-geom-rotate(type="thi.ng.geom.types.Triangle3")>>
@@ -407,7 +435,7 @@
   <<lob-geom-translate(type="thi.ng.geom.types.Triangle3")>>
   <<lob-geom-tx(type="thi.ng.geom.types.Triangle3")>>
 #+END_SRC
-**** PVolume
+**** PVolume                                                    :usetemplate:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
   <<lob-geom-zerovol>>
 #+END_SRC

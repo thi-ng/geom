@@ -138,6 +138,10 @@ than 1.0.
           (map order)
           (gm/into-mesh (gm/gmesh)))))
 #+END_SRC
+*** PFlip                                                       :usetemplate:
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes
+  <<lob-geom-flip(type="thi.ng.geom.types.Quad3")>>
+#+END_SRC
 *** PGraph
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   g/PGraph

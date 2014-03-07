@@ -285,6 +285,10 @@ of triangles of the subdivided rects.
 #+END_SRC
 *** TODO PTransform
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
+  g/PRotate
+  (rotate
+   [_ m] (g/rotate (g/as-polygon _) m))
+  
   g/PScale
   (scale
    ([_ s]
@@ -307,8 +311,21 @@ of triangles of the subdivided rects.
                    [(* w s) (* h s)]
                    [(* w (nth s 0 0)) (* h (nth s 1 0))])]
      (thi.ng.geom.types.Rect.
-       (g/madd (vec2 w2 h2) -0.5 (g/centroid _)) w2 h2)))
+      (g/madd (vec2 w2 h2) -0.5 (g/centroid _)) w2 h2)))
+  
+  g/PTranslate
+  (translate
+   [_ t] (thi.ng.geom.types.Rect. (g/+ (:p _) t) (:width _) (:height _)))
+  
+  g/PTransform
+  (transform
+   [_ m] (g/transform (g/as-polygon _) m))
 #+END_SRC
+*** PVolume                                                     :usetemplate:
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx :noweb yes
+  <<lob-geom-zerovol>>
+#+END_SRC
+
 *** End of implementations                                         :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
   )
