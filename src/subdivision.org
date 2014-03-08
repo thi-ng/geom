@@ -36,9 +36,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
          (d/successive-nth 3)
          (reduce
           (fn [acc [p c n]]
-            (let [ep1 (e-points #{p c})
-                  ep2 (e-points #{c n})]
-              (conj acc [ep1 c ep2 fp])))
+            (conj acc [(e-points #{p c}) c (e-points #{c n}) fp]))
           [])))
   
   (defn cc-edge-points
@@ -105,10 +103,11 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
            (d/successive-nth 3)
            (reduce
             (fn [acc [p c n]]
-              (let [e1 (e-points #{p c})
-                    e2 (e-points #{c n})
-                    fp* (g/* (g/+ (g/+ fp e1 e2) c) 0.25)]
-                (assoc acc c fp*)))
+              (assoc acc c
+                     (-> fp
+                         (g/+ (e-points #{p c}) (e-points #{c n}))
+                         (g/+ c)
+                         (g/* 0.25))))
             {}))))
   
   (defn ds-face-points
