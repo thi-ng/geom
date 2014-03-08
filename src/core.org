@@ -1415,7 +1415,7 @@ defined further on, but need to be declared already.
 *** Vector operations
 **** 2D
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
-  (defn vec2-op-seq
+  (defn- vec2-op-seq
     [op ^Vec2 acc xs]
     (loop [ax (.-x acc), ay (.-y acc), xs xs]
       (if xs
@@ -1423,7 +1423,7 @@ defined further on, but need to be declared already.
           (recur (op ax (.-x v)) (op ay (.-y v)) (next xs)))
         (Vec2. ax ay (.-_meta acc)))))
   
-  (defn vec2-op-1
+  (defn- vec2-op-1
     [op ^Vec2 _ a d m]
     (if (instance? Vec2 a)
       (Vec2.
@@ -1437,7 +1437,7 @@ defined further on, but need to be declared already.
            (op (.-x _) (nth a 0 d))
            (op (.-y _) (nth a 1 d)) m)))))
   
-  (defn vec2-op-2
+  (defn- vec2-op-2
     [op ^Vec2 _ a b d1 d2 m]
     (if (instance? Vec2 a)
       (if (instance? Vec2 b)
@@ -1462,7 +1462,7 @@ defined further on, but need to be declared already.
              (op (op (.-x _) (or ax d1)) (or bx d2))
              (op (op (.-y _) (or ay d1)) (or by d2)) m))))))
   
-  (defn vec2-op-2*
+  (defn- vec2-op-2*
     "Similar to vec2-op-2 but takes 2 fn args and handles case with
     a & b being both numbers differently."
     [op op2 ^Vec2 _ a b d1 d2 m]
@@ -1489,7 +1489,7 @@ defined further on, but need to be declared already.
              (op2 (op (.-x _) (or ax d1)) (or bx d2))
              (op2 (op (.-y _) (or ay d1)) (or by d2)) m))))))
   
-  (defn vec2-op-3
+  (defn- vec2-op-3
     [op ^Vec2 _ a b c d m]
     (if (instance? Vec2 a)
       (if (instance? Vec2 b)
@@ -1518,7 +1518,7 @@ defined further on, but need to be declared already.
 #+END_SRC
 **** 3D
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
-  (defn vec3-op-seq
+  (defn- vec3-op-seq
     [op ^Vec3 acc xs]
     (loop [ax (.-x acc), ay (.-y acc), az (.-z acc), xs xs]
       (if xs
@@ -1526,7 +1526,7 @@ defined further on, but need to be declared already.
           (recur (op ax (.-x v)) (op ay (.-y v)) (op az (.-z v)) (next xs)))
         (Vec3. ax ay az (.-_meta acc)))))
   
-  (defn vec3-op-1
+  (defn- vec3-op-1
     [op ^Vec3 _ a d m]
     (if (instance? Vec3 a)
       (Vec3.
@@ -1542,7 +1542,7 @@ defined further on, but need to be declared already.
            (op (.-y _) (nth a 1 d))
            (op (.-z _) (nth a 2 d)) m)))))
   
-  (defn vec3-op-2
+  (defn- vec3-op-2
     [op op2 ^Vec3 _ a b d1 d2 m]
     (if (instance? Vec3 a)
       (if (instance? Vec3 b)
@@ -1566,7 +1566,7 @@ defined further on, but need to be declared already.
          (op2 (op (.-y _) (or ay d1)) (or by d2))
          (op2 (op (.-z _) (or az d1)) (or bz d2)) m))))
   
-  (defn vec3-op-3
+  (defn- vec3-op-3
     [op ^Vec3 _ a b c d m]
     (if (instance? Vec3 a)
       (if (instance? Vec3 b)
