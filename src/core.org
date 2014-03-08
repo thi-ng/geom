@@ -368,6 +368,23 @@ protocol consisting of just _ one function: =as-mesh=.
     (volume [_] "Returns an entity's inner volume."))
 #+END_SRC
 *** Type specific operations
+**** TODO PSpatialTree
+***** TODO refactor to use conj & disj?
+***** TODO extract more general tree protocol?
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
+(defprotocol PSpatialTree
+  (add-point [_ p])
+  (child-index-for-point [_ p])
+  (child-for-point [_ p])
+  (delete-point [_ p])
+  (get-children [_])
+  (get-point [_])
+  (set-child [_ i c])
+  (set-children [_ c])
+  (set-point [_ p])
+  (make-child-for-point [_ p add-point?])
+  (split-node [_]))
+#+END_SRC
 **** PCurve
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PCurve
