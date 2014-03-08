@@ -2385,11 +2385,14 @@ defined further on, but need to be declared already.
   
   (defn centroid*
     [[x & xs :as coll]]
-    (let [c (count coll)]
-      (if (> c 1)
-        (* ((if (instance? Vec2 x) vec2-op-seq vec3-op-seq) clojure.core/+ x xs)
-           (clojure.core// (count coll)))
-        x)))
+    (case (count coll)
+      0 nil
+      1 x
+      2 (mix x (first xs))
+      3 (div (+ x (nth xs 0) (nth xs 1)) 3.0)
+      4 (div (+ (+ x (first xs) (nth xs 1)) (nth xs 2)) 4.0)
+      (* ((if (instance? Vec2 x) vec2-op-seq vec3-op-seq) clojure.core/+ x xs)
+         (clojure.core// (count coll)))))
   
   (defn center*
     ([coll]
