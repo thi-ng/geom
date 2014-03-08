@@ -6,6 +6,7 @@
   (ns thi.ng.geom.mesh.subdivision
     (:require
      [thi.ng.common.data.core :as d]
+     [thi.ng.common.error :as err]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.core :as g]))
 #+END_SRC
@@ -132,7 +133,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
         (let [[v n :as e] (first (filter #(= p (first %)) edges))]
           (if e
             (recur (conj acc v) n (disj edges e))
-            (g/throw! "Mesh not manifold")))
+            (err/throw! "Mesh not manifold")))
         acc)))
   
   (defn ds-dual-faces
