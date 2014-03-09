@@ -13,7 +13,11 @@
 #+END_SRC
 ** Shared helpers
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
+  (defn fold-into-map
+    [coll] (r/fold (r/monoid conj hash-map) coll))
 
+  (defn fold-into-vec
+    [coll] (r/fold (r/monoid conj vector) coll))
 #+END_SRC
 
 ** Catmull-Clark
@@ -23,26 +27,29 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
   (defn cc-face-points
     "Takes a seq of faces and returns map with faces as keys and their
-      centroids as values."
+    centroids as values."
     [faces]
     (->> faces
          (r/map (fn [f] [f (g/centroid* f)]))
-         (r/fold (r/monoid conj hash-map))))
+         (fold-into-map)))
   
   (defn cc-subdiv-face
     [face fp e-points]
     (->> (d/wrap-seq face [(peek face)] [(first face)])
          (d/successive-nth 3)
          (r/map (fn [[p c n]] [(e-points #{p c}) c (e-points #{c n}) fp]))
-         (r/fold (r/monoid conj vector))))
+         (fold-into-vec)))
   
   (defn cc-edge-points
     [edges f-points]
     (->> edges
          (r/map
           (fn [e e-faces]
-            [e (g/centroid* (into (mapv f-points e-faces) e))]))
-         (r/fold (r/monoid conj hash-map))))
+            [e (-> (mapv f-points e-faces)
+                   (conj (first e))
+                   (conj (second e))
+                   (g/centroid*))]))
+           (fold-into-map)))
   
   (defn cc-subdiv-faces
     [f-points e-points]
@@ -60,20 +67,18 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
                             (let [f (g/centroid* (mapv f-points (gm/vertex-faces* mesh v)))
                                   vn (gm/vertex-neighbors* mesh v)
                                   n (count vn)
-                                  r (g/centroid* (mapv #(g/mix v %) vn))
-                                  v* (g/div (g/+ f (g/* r 2.0) (g/* v (- n 3))) n)]
-                              [v v*])))
-                         (r/fold (r/monoid conj hash-map)))]
+                                  r (g/centroid* (mapv #(g/mix v %) vn))]
+                              [v (g/addm (g/madd r 2.0 f) (g/* v (- n 3)) (/ 1.0 n))])))
+                         (fold-into-map))]
       (->> sd-faces
            (r/map (fn [f] (replace new-verts f)))
-           (into #{}))))
+           (into []))))
   
   (defn catmull-clark
     [{:keys [faces edges] :as mesh}]
     (let [f-points (cc-face-points faces)
-          e-points (cc-edge-points edges f-points)
-          sd-faces (cc-subdiv-faces f-points e-points)]
-      (->> sd-faces
+          e-points (cc-edge-points edges f-points)]
+      (->> (cc-subdiv-faces f-points e-points)
            (cc-replace-vertices mesh f-points e-points)
            (reduce gm/add-face (gm/gmesh)))))
 #+END_SRC
@@ -83,35 +88,26 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
   (defn ds-edge-midpoints
     [edges]
     (->> edges
-         (reduce
-          (fn [acc e]
-            (assoc! acc e (g/mix (first e) (second e))))
-          (transient {}))
-         persistent!))
+         (r/map (fn [e] [e (g/mix (first e) (second e))]))
+         (fold-into-map)))
   
   (defn ds-face-points*
     [f e-points]
     (let [fp (g/centroid* f)]
       (->> (d/wrap-seq f [(peek f)] [(first f)])
            (d/successive-nth 3)
-           (reduce
-            (fn [acc [p c n]]
-              (assoc acc c
-                     (-> fp
-                         (g/+ (e-points #{p c}) (e-points #{c n}))
-                         (g/+ c)
-                         (g/* 0.25))))
-            {}))))
+           (r/map (fn [[p c n]]
+                    [c (-> fp
+                           (g/+ (e-points #{p c}) (e-points #{c n}))
+                           (g/addm c 0.25))]))
+           (fold-into-map))))
   
   (defn ds-face-points
     [{:keys [faces edges] :as m}]
     (let [e-points (ds-edge-midpoints (keys edges))]
       (->> faces
-           (reduce
-            (fn [acc f]
-              (assoc! acc f (ds-face-points* f e-points)))
-            (transient {}))
-           persistent!)))
+           (r/map (fn [f] [f (ds-face-points* f e-points)]))
+           (fold-into-map))))
   
   (defn ds-fp-faces
     "Construct new faces from face points"
@@ -120,50 +116,45 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
   
   (defn ds-make-edge-loop
     [edges]
-    (loop [acc [(ffirst edges)] p (peek (first edges)) edges (set (rest edges))]
+    (loop [acc [(ffirst edges)], p (peek (first edges)), edges (set (rest edges))]
       (if (seq edges)
-        (let [[v n :as e] (first (filter #(= p (first %)) edges))]
+        (let [e (some #(if (= p (first %)) %) edges)]
           (if e
-            (recur (conj acc v) n (disj edges e))
+            (recur (conj acc (first e)) (second e) (disj edges e))
             (err/throw! "Mesh not manifold")))
         acc)))
   
   (defn ds-dual-faces
     [{:keys [vertices] :as mesh} f-points]
     (->> vertices
-         keys
-         (reduce
-          (fn [acc v]
+         (r/map
+          (fn [v v-faces]
             (let [vn (gm/vertex-neighbors* mesh v)]
               (if (< 2 (count vn))
                 (->> vn
-                     (reduce
-                      (fn [acc* n]
-                        (let [f1 (->> v vertices (some #(if (= n (:prev %)) (:f %))))
-                              f2 (->> v vertices (some #(if (= n (:next %)) (:f %))))
-                              fp1 (get-in f-points [f2 v] v)
-                              fp2 (get-in f-points [f1 v] v)]
-                          (conj acc* [fp2 fp1])))
-                      [])
-                     (ds-make-edge-loop)
-                     (conj! acc))
-                acc)))
-          (transient []))
-         persistent!))
+                     (r/map
+                      (fn [n]
+                        (let [f1 (f-points (some #(if (= n (:prev %)) (:f %)) v-faces))
+                              f2 (f-points (some #(if (= n (:next %)) (:f %)) v-faces))]
+                          [(get f1 v v) (get f2 v v)])))
+                     (into [])
+                     (ds-make-edge-loop))))))
+         (r/filter identity)
+         (r/foldcat)))
   
   (defn ds-edge-faces
     [{:keys [vertices edges] :as mesh} f-points]
     (->> edges
-         (reduce
-          (fn [acc [e e-faces]]
+         (r/map
+          (fn [e e-faces]
             (if (= 2 (count e-faces))
               (let [[a b] (seq e)
-                    f1 (->> (vertices a) (some #(if (= b (:prev %)) (:f %))))
-                    f2 (->> (vertices a) (some #(if (= b (:next %)) (:f %))))]
-                (conj! acc (mapv #(get-in f-points %) [[f1 a] [f1 b] [f2 b] [f2 a]])))
-              acc))
-          (transient []))
-         persistent!))
+                    va (vertices a)
+                    f1 (f-points (some #(if (= b (:prev %)) (:f %)) va))
+                    f2 (f-points (some #(if (= b (:next %)) (:f %)) va))]
+                [(f1 a) (f1 b) (f2 b) (f2 a)]))))
+         (r/filter identity)
+         (r/foldcat)))
   
   (defn custom-doo-sabin
     [& {f* :faces, e* :edges, v* :vertices, :or {f* true, e* true, v* true}}]
@@ -172,8 +163,10 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
             f-faces (ds-fp-faces f-points)
             e-faces (if e* (ds-edge-faces mesh f-points))
             v-faces (if v* (ds-dual-faces mesh f-points))]
-        (reduce gm/add-face
-                (gm/gmesh) (concat (if f* f-faces) e-faces v-faces)))))
+        (reduce
+         gm/add-face
+         (gm/gmesh)
+         (concat (if f* f-faces) e-faces v-faces)))))
   
   (def doo-sabin (custom-doo-sabin))
 #+END_SRC

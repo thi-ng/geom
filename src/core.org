@@ -42,6 +42,7 @@ protocols related to common higher level geometric operations.
     (* [_] [_ a] [_ a b] [_ a b c])
     (div [_] [_ a] [_ a b] [_ a b c])
     (madd [_ a b])
+    (addm [_ a b])
     (abs [_]))
 #+END_SRC
 **** PConjugate
@@ -745,6 +746,7 @@ defined further on, but need to be declared already.
   (div [_ a b c] (vec2-op-3 clojure.core// _ a b c 0.0 _meta))
   
   (madd [_ a b] (vec2-op-2* clojure.core/* clojure.core/+ _ a b 1.0 0.0 _meta))
+  (addm [_ a b] (vec2-op-2* clojure.core/+ clojure.core/* _ a b 0.0 1.0 _meta))
 #+END_SRC
 **** PDotProduct
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
@@ -1240,6 +1242,8 @@ defined further on, but need to be declared already.
   
   (madd
    [_ a b] (vec3-op-2 clojure.core/* clojure.core/+ _ a b 1.0 0.0 _meta))
+  (addm
+   [_ a b] (vec3-op-2 clojure.core/+ clojure.core/* _ a b 0.0 1.0 _meta))
   
   PDotProduct
   (dot
@@ -2390,7 +2394,7 @@ defined further on, but need to be declared already.
       1 x
       2 (mix x (first xs))
       3 (div (+ x (nth xs 0) (nth xs 1)) 3.0)
-      4 (div (+ (+ x (first xs) (nth xs 1)) (nth xs 2)) 4.0)
+      4 (addm (+ x (first xs) (nth xs 1)) (nth xs 2) 0.25)
       (* ((if (instance? Vec2 x) vec2-op-seq vec3-op-seq) clojure.core/+ x xs)
          (clojure.core// (count coll)))))
   
