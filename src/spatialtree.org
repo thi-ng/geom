@@ -154,7 +154,7 @@
                      (g/vec2 x y) (* w 2.0) (* h 2.0))) bounds)))
   
       Object
-      (toString [_] (str "#" (.getName (class _))
+      (toString [_] (str "#thi.ng.geom.spatialtree.MutableQuadtreeNode"
                          "{:bounds " (pr-str (g/bounds _))
                          " :children " (pr-str children)
                          " :p " (pr-str point) "}")))
@@ -213,7 +213,7 @@
             bounds)))
   
       Object
-      (toString [_] (str "#" (.getName (class _))
+      (toString [_] (str "#thi.ng.geom.spatialtree.MutableOctreeNode"
                          "{:bounds " (pr-str (g/bounds _))
                          " :children " (pr-str children)
                          " :p " (pr-str point) "}")))
