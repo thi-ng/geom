@@ -150,7 +150,7 @@ or =tangle.sh=, then reload the namespace in the REPL via =(require
 
 ** Injected properties                                             :noexport:
 #+BEGIN_SRC clojure :exports none :noweb-ref version
-0.2.0-SNAPSHOT
+0.2.0
 #+END_SRC
 #+BEGIN_SRC clojure :exports none :noweb-ref project-url
 https://github.com/thi-ng/geom
@@ -181,7 +181,7 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 #+END_SRC
 **** [[https://github.com/thi-ng/common/][thi.ng/common]]
 #+BEGIN_SRC clojure :noweb-ref dep-common
-[thi.ng/common "0.1.2-SNAPSHOT"]
+[thi.ng/common "0.1.2"]
 #+END_SRC
 **** [[https://github.com/thi-ng/macromath][thi.ng/macromath]]
 #+BEGIN_SRC clojure :noweb-ref dep-mmath
@@ -305,7 +305,7 @@ symbol =version= holding the version string defined above:
 
 The following sections contain links to project modules, but are not
 visibile when reading this file on Github. Please navigate to the
-source files via the normal [[https://github.com/thi-ng/tree/master/][GH repo browser]].
+source files via the normal [[https://github.com/thi-ng/geom/tree/master/][GH repo browser]].
 
 ** Core API
 
