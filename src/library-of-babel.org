@@ -93,22 +93,6 @@ these are defined in their own =.org= files.
    (g/closest-point* (mapv #({{type}}. %) (g/edges _)) p))")
 #+END_SRC
 
-** PSample
-#+NAME: lob-geom-sample
-#+BEGIN_SRC emacs-lisp :var n="3"
-  (replace-regexp-in-string "{{n}}" n
-  "g/PSample
-  (point-at
-   [{p :points} t] (g/point-at* t (conj p (first p))))
-  (random-point
-   [{p :points}] (g/point-at* (m/random) (conj p (first p))))
-  (random-point-inside
-   [_] (g/from-barycentric* (:points _) (m/normdist-weights {{n}})))
-  (sample-uniform
-   [{p :points} udist include-last?]
-   (g/sample-uniform* udist include-last? (conj p (first p))))")
-#+END_SRC
-
 ** PRotate
 #+NAME: lob-geom-rotate
 #+BEGIN_SRC emacs-lisp :var type=""
@@ -137,6 +121,22 @@ these are defined in their own =.org= files.
    [_ axis theta]
    ({{type}}.
     (mapv #(g/rotate-around-axis % axis theta) (:points _))))")
+#+END_SRC
+
+** PSample
+#+NAME: lob-geom-sample
+#+BEGIN_SRC emacs-lisp :var n="3"
+  (replace-regexp-in-string "{{n}}" n
+  "g/PSample
+  (point-at
+   [{p :points} t] (g/point-at* t (conj p (first p))))
+  (random-point
+   [{p :points}] (g/point-at* (m/random) (conj p (first p))))
+  (random-point-inside
+   [_] (g/from-barycentric* (:points _) (m/normdist-weights {{n}})))
+  (sample-uniform
+   [{p :points} udist include-last?]
+   (g/sample-uniform* udist include-last? (conj p (first p))))")
 #+END_SRC
 
 ** PScale
