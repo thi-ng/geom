@@ -276,6 +276,20 @@
    ([_ {:keys [fn] :or {fn tessellate-face1}}]
       (->> (:faces _) (mapcat fn) (map #(thi.ng.geom.types.Triangle3. %)))))
 #+END_SRC
+*** PTransform
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
+  g/PTransform
+  (transform
+   ([_ m]
+      (let [new-verts (->> (:vertices _)
+                          (keys)
+                          (r/map (fn [v] [v (g/transform-vector m v)]))
+                          (into {}))]
+        (reduce
+         (fn [mesh f] (add-face mesh (replace new-verts f)))
+         (gmesh)
+         (:faces _)))))
+#+END_SRC
 *** TODO PVolume
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PVolume
