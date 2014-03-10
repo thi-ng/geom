@@ -122,11 +122,11 @@
   (center
    ([{w :w h :h}]
       (let [w2 (* w 0.5) h2 (* h 0.5)]
-        (thi.ng.geom.types.Rect. (vec2 (g/- w2) (g/- h2)) w h)))
+        (thi.ng.geom.types.Rect. (vec2 (- w2) (- h2)) w h)))
    ([{w :w h :h} o]
       (let [t [(* w 0.5) (* h 0.5)]]
         (thi.ng.geom.types.Rect. (g/- o t) w h))))
-  (centroid [{p :p :as _}] (g/mix p (g/+ p (:w _) (:h _))))
+  (centroid [{p :p :as _}] (g/madd (g/vec2 (:w _) (:h _)) 0.5 p))
 #+END_SRC
 *** PCircumference
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx
