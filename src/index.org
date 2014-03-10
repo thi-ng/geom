@@ -2,6 +2,84 @@
 #+TITLE:          Geometry Kit
 
 * About the project
+
+** Description
+
+This project is part of the [[https://github.com/thi-ng/][thi.ng]] collection of Clojure &
+Clojurescript libraries. It constitutes the current chapter-in-writing
+in a long, ongoing quest to create a comprehensive, cross-platform,
+yet easy-to-use API for various 2d/3d geometry operations, both common
+and more niché. Like with its Java based predecessor [[http://toxiclibs.org][toxiclibs]], the
+objective is *not* to produce a graphics engine for games or other
+specific use cases, but aims to provide geometry related functionality
+in a minimal, modular and as re-usable as possible context, thus
+making it easy to integrate into a wide number of scenarios: from
+architecture, digital fabrication to data visualization, generative
+design in general. We attempt to realise this goal by defining almost
+all operations as polymorphic protocols. These are implemented to
+different extends by various basic [[file:types.org][entities/types]] and together form a
+small domain-specific language (whilst remaining fully extensible) to
+easily create, transform & export geometry.
+
+Furthermore, providing all functionality under a common API for both
+Clojure & Clojurescript, makes it trivial to offload heavy operations
+(e.g. large mesh processing) to the server side.
+
+** Status
+
+The project is currently in its 4th iteration/rewrite cycle and should
+still be considered ALPHA quality with several breaking API changes
+planned over the next few weeks. On the other hand, the library has
+already been used successfully in several commercial projects over the
+past 2 years and can be considered stable for basic use cases.
+
+Full website & tutorial are actively being worked on.
+
+** Building & testing this project
+
+This project is written in a literate programming format and requires
+[[https://www.gnu.org/software/emacs/][Emacs]] & [[http://orgmode.org][Org-mode]] to generate usable source code in [[https://github.com/lynaghk/cljx][CLJX]] form. Assuming
+both tools are installed, the easiest way to generate a working
+project is via command line (make sure =emacs= is on your path or else
+edit its path in =tangle.sh=):
+
+#+BEGIN_SRC bash
+  git clone https://github.com/thi-ng/geom.git
+  cd geom
+  ./tangle src/*.org test/*.org
+#+END_SRC
+
+Tangling is the process of extracting & combining source blocks into
+an actual working source/project tree. This project currently consists
+of 6500+ lines of code, the tangling of which takes approx. 25 secs.
+
+Once tangling is complete, you can =cd= into the generated project
+directory (=babel= in this case) and then use =lein= as usual.
+
+*** Testing
+
+The =project.clj= file defines an alias to trigger a complete build &
+tests for both CLJ & CLJS versions. The are ~570 test cases for
+Clojure and approx. 270 for Clojurescript
+
+#+BEGIN_SRC bash
+  cd babel
+  lein cleantest # some tests currently fail due to still missing protocol impls
+#+END_SRC
+
+To build the Clojurescript version simply run =lein cljsbuild test=
+from the project directory. A small HTML harness for the generated JS
+file is also located in that folder (=babel/index.html=).
+
+*** Working with the REPL
+
+Since the generated =project.clj= (see below) includes REPL hooks for
+CLJX, editing files in Org-mode, then re-loading & testing changes is
+quite trivial. Simply launch a REPL (via lein or Emacs) as usual.
+Everytime you've made changes to an =.org= file, re-tangle it from Emacs
+or =tangle.sh=, then reload the namespace in the REPL via =(require
+'thi.ng.. :reload)=.
+
 ** Injected properties                                             :noexport:
 #+BEGIN_SRC clojure :exports none :noweb-ref version
 0.2.0-SNAPSHOT
@@ -19,9 +97,6 @@ target/test-classes
 target/geom-<<version>>.js
 #+END_SRC
 
-** Description
-
-
 ** License
 
 This project is open source and licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache Software License 2.0]].
@@ -36,11 +111,11 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 #+BEGIN_SRC clojure :noweb-ref dep-cljs
 [org.clojure/clojurescript "0.0-2173"]
 #+END_SRC
-**** thi.ng/common
+**** [[https://github.com/thi-ng/common/][thi.ng/common]]
 #+BEGIN_SRC clojure :noweb-ref dep-common
 [thi.ng/common "0.1.2-SNAPSHOT"]
 #+END_SRC
-**** [[https://github.com/thi-ng/macromath][Macromath]]
+**** [[https://github.com/thi-ng/macromath][thi.ng/macromath]]
 #+BEGIN_SRC clojure :noweb-ref dep-mmath
 [thi.ng/macromath "0.2.1"]
 #+END_SRC
@@ -65,17 +140,16 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 #+BEGIN_SRC clojure :noweb-ref dep-cljs-test
 [com.cemerick/clojurescript.test "0.2.2"]
 #+END_SRC
+** Release history
+
+| *Version* | *Released* | *Description*      | *Tagged Github URL*                       |
+|-----------+------------+--------------------+-------------------------------------------|
+|     0.2.0 | 2014-03-10 | 1st public release | https://github.com/thi-ng/geom/tree/0.2.0 |
+
 ** Authors
 
-| [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://thi.ng][thi.ng]]              |
-|                 |                                 | [[http://postspectacular.com][postspectacular.com]] |
-
-** Changelog
-
-| *Version* | *Released* | *Description*               |
-|-----------+------------+-----------------------------|
-|     0.1.0 | 2013-10-01 | initial development release |
-|     0.2.0 | 2014-03-07 | 1st public release          |
+| [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://postspectacular.com][postspectacular.com]] |
+|                 |                                 | [[http://thi.ng][thi.ng]]              |
 
 ** Leiningen coordinates
 #+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
