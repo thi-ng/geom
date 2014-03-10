@@ -1,39 +1,105 @@
 #+SETUPFILE: setup.org
-#+TITLE:          Geometry Kit
+#+TITLE: thi.ng/geom
 
 * About the project
 
-** Description
+** Overview
 
 This project is part of the [[https://github.com/thi-ng/][thi.ng]] collection of Clojure &
 Clojurescript libraries. It constitutes the current chapter-in-writing
 in a long, ongoing quest to create a comprehensive, cross-platform,
-yet easy-to-use API for various 2d/3d geometry operations, both common
-and more niché. Like with its Java based predecessor [[http://toxiclibs.org][toxiclibs]], the
+yet easy-to-use API for 2d/3d geometry operations, both common and
+more niché. Since geometry is fundamental to so many aspects of design
+production, as with its Java based predecessor [[http://toxiclibs.org][toxiclibs]], the
 objective is *not* to produce a graphics engine for games or other
 specific use cases, but aims to provide geometry related functionality
 in a minimal, modular and as re-usable as possible context, thus
 making it easy to integrate into a wide number of scenarios: from
 architecture, digital fabrication to data visualization, generative
 design in general. We attempt to realise this goal by defining almost
-all operations as polymorphic protocols. These are implemented to
-different extends by various basic [[file:types.org][entities/types]] and together form a
-small domain-specific language (whilst remaining fully extensible) to
-easily create, transform & export geometry.
+all operations as [[file:core.org][polymorphic protocols]] (currently approx. 50 of
+them). These are implemented to different extends by the various basic
+[[file:types.org][entities/types]] and together form a small domain-specific language
+(whilst remaining fully extensible) to easily create, transform &
+export geometry. At the core of this DSL is an extensive (and still
+growing) set of optimized vector, matrix & quaternion
+types/operations, which the rest of the library is built on.
 
 Furthermore, providing all functionality under a common API for both
 Clojure & Clojurescript, makes it trivial to offload heavy operations
 (e.g. large mesh processing) to the server side.
 
+Since this project does not provide any display & rendering
+functionality at all, a number of support libraries are being worked
+on, incl. WebGL & SVG support via Clojurescript. Together with sister
+libraries like [[https://github.com/thi-ng/luxor][luxor]], it's also possible to generate complete 3d
+scenes for high quality & high resolution rendering using [[http://luxrender.net][Luxrender]].
+
 ** Status
 
-The project is currently in its 4th iteration/rewrite cycle and should
-still be considered ALPHA quality with several breaking API changes
-planned over the next few weeks. On the other hand, the library has
-already been used successfully in several commercial projects over the
-past 2 years and can be considered stable for basic use cases.
+The project has been in development since late 2011 and is currently
+in its 4th iteration/rewrite cycle. It should still be considered
+ALPHA quality with several breaking API changes planned over the next
+few weeks. On the other hand, the library has already been used
+successfully in several commercial projects over the past 2 years and
+can be considered stable for basic use cases.
 
-Full website & tutorial are actively being worked on.
+A full test suite, website & tutorials are actively being worked on.
+Right now, focus of development is on features required for my [[https://devart.withgoogle.com/#/project/16501507][Google
+DevArt commission]] and a generative design workshop at [[http://resonate.io][Resonate]],
+beginning of April.
+
+** Example usage
+
+The examples below show some common usage patterns how entities can be
+created, dissected & transformed in a very functional way. Each
+results in 3D model file in Stanford PLY format and can then be
+imported into other 3D software. If you need a simple mesh viewer, we
+recommend [[http://meshlab.sf.net][Meshlab]].
+
+#+BEGIN_SRC clojure
+  (require
+   '[thi.ng.geom.core :as g]
+   '[thi.ng.geom.bezier :as b]
+   '[thi.ng.geom.circle :as c]
+   '[thi.ng.geom.polygon :as p]
+   '[thi.ng.geom.rect :as r]
+   '[thi.ng.geom.gmesh :as gm]
+   '[thi.ng.geom.meshio :as mio]
+   '[thi.ng.common.math.core :as m]
+   '[clojure.java.io :as io])
+  
+  (with-open [out (io/output-stream "grid.ply")]
+    (->> (for [x (range -4 5)                        ;; create 9x9 grid in XY plane
+               y (range -4 5)]
+           (-> (c/circle x y 0.5)                    ;; create circle at X,Y radius=0.5
+               (g/as-polygon 8)                      ;; convert into octagon
+               (g/extrude-shell                      ;; convert into walled, cylindrical mesh
+                {:depth (m/random 0.25 2) :wall 0.1});; ...with random height
+               (g/faces)))                           ;; only keep mesh faces
+         (reduce g/into-mesh (gm/gmesh))             ;; combine into single mesh
+         (mio/write-ply out)))                       ;; output as Stanford PLY file
+  
+  (with-open [out (io/output-stream "pedals.ply")]
+    (let [pedal (-> (r/rect 100 60)                  ;; create rect 100x50 wide
+                    (g/vertices)                     ;; get corner points
+                    (b/auto-spline2 true)            ;; convert to spline
+                    (g/sample-uniform 10 false)      ;; sample curve at uniform distance
+                    (p/polygon)                      ;; convert to polygon
+                    (g/as-mesh))]                    ;; tessellate & convert to mesh
+      (->> (range 16)
+           (map
+            (fn [i]
+              (-> pedal                              ;; replicate rotated around X & Z axis
+                  (g/transform                       ;; pedal transformed using 4x4 matrix
+                   (-> (g/matrix44)
+                       (g/translate 0 0 (* i 2))
+                       (g/rotate-z (* i m/PHI 0.5))  ;; Φ = golden ratio angle 
+                       (g/rotate-x (* m/PI 0.1))))   ;; slight tilt to minimize overlap
+                  (g/faces))))                       ;; only keep faces
+           (reduce g/into-mesh (gm/gmesh))           ;; combine into single mesh
+           (mio/write-ply out))))                    ;; output as Stanford PLY file
+#+END_SRC
 
 ** Building & testing this project
 
@@ -46,12 +112,13 @@ edit its path in =tangle.sh=):
 #+BEGIN_SRC bash
   git clone https://github.com/thi-ng/geom.git
   cd geom
-  ./tangle src/*.org test/*.org
+  ./tangle.sh src/*.org test/*.org
 #+END_SRC
 
-Tangling is the process of extracting & combining source blocks into
-an actual working source/project tree. This project currently consists
-of 6500+ lines of code, the tangling of which takes approx. 25 secs.
+Tangling is the process of extracting & combining source blocks from
+=.org= files into an actual working project/source tree. This project
+currently consists of 26 namespaces and 6500+ lines of code, the
+tangling of which takes approx. 20 secs.
 
 Once tangling is complete, you can =cd= into the generated project
 directory (=babel= in this case) and then use =lein= as usual.
@@ -60,7 +127,7 @@ directory (=babel= in this case) and then use =lein= as usual.
 
 The =project.clj= file defines an alias to trigger a complete build &
 tests for both CLJ & CLJS versions. The are ~570 test cases for
-Clojure and approx. 270 for Clojurescript
+Clojure and approx. 270 for Clojurescript so far.
 
 #+BEGIN_SRC bash
   cd babel
@@ -68,8 +135,9 @@ Clojure and approx. 270 for Clojurescript
 #+END_SRC
 
 To build the Clojurescript version simply run =lein cljsbuild test=
-from the project directory. A small HTML harness for the generated JS
-file is also located in that folder (=babel/index.html=).
+from the same directory. A small HTML harness for the resulting JS
+file is also located in that folder (=babel/index.html=), allowing for
+further experimentation in the browser.
 
 *** Working with the REPL
 
@@ -78,14 +146,14 @@ CLJX, editing files in Org-mode, then re-loading & testing changes is
 quite trivial. Simply launch a REPL (via lein or Emacs) as usual.
 Everytime you've made changes to an =.org= file, re-tangle it from Emacs
 or =tangle.sh=, then reload the namespace in the REPL via =(require
-'thi.ng.. :reload)=.
+'thi.ng.geom... :reload)= or similar.
 
 ** Injected properties                                             :noexport:
 #+BEGIN_SRC clojure :exports none :noweb-ref version
 0.2.0-SNAPSHOT
 #+END_SRC
 #+BEGIN_SRC clojure :exports none :noweb-ref project-url
-http://code.thi.ng/geom
+https://github.com/thi-ng/geom
 #+END_SRC
 #+BEGIN_SRC clojure :exports none :noweb-ref gen-source-path
 target/classes
@@ -148,6 +216,7 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 
 ** Authors
 
+| *Name*          | *Role*                          | *Website*           |
 | [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://postspectacular.com][postspectacular.com]] |
 |                 |                                 | [[http://thi.ng][thi.ng]]              |
 
@@ -159,7 +228,7 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 ** Leiningen project file                                          :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
   (defproject thi.ng/geom "<<version>>"
-    :description "thing geometry kit"
+    :description "thi.ng geometry kit"
     :url "<<project-url>>"
     :license {:name "Apache Software License"
               :url "http://www.apache.org/licenses/LICENSE-2.0"}
@@ -177,7 +246,7 @@ This project is open source and licensed under the [[http://www.apache.org/licen
                                <<dep-cljs-test>>
                                <<dep-austin>>]
                      :hooks [cljx.hooks]
-                     :aliases {"cleantest" ["do" "clean," "cljx" "once," "test," "cljsbuild" "test"]}}}
+                     :aliases {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]}}}
   
     :cljx {:builds [{:source-paths ["src/cljx"]
                      :output-path "<<gen-source-path>>"
@@ -200,7 +269,7 @@ This project is open source and licensed under the [[http://www.apache.org/licen
                 :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}})
 #+END_SRC
 
-** ClojureScript test harness                                      :noexport:
+** ClojureScript HTML harness                                      :noexport:
 #+BEGIN_SRC html :tangle ../babel/index.html :noweb yes :mkdirp yes :padline no
   <!DOCTYPE html>
   <html lang="en">
@@ -231,6 +300,12 @@ symbol =version= holding the version string defined above:
 #+END_SRC
 
 * Modules
+
+*** Note for Github users                                          :noexport:
+
+The following sections contain links to project modules, but are not
+visibile when reading this file on Github. Please navigate to the
+source files via the normal [[https://github.com/thi-ng/tree/master/][GH repo browser]].
 
 ** Core API
 
