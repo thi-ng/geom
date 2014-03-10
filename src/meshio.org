@@ -24,7 +24,7 @@
     "Writes the given mesh as binary STL to output stream. Mesh is
     automatically tessellated into triangles."
     [^OutputStream stream {:keys [fnormals faces]}]
-    (let [faces (mapcat gm/tessellate-face faces)]
+    (let [faces (mapcat gm/tessellate-face1 faces)]
       (.write stream #+clj (byte-array 80) #+cljs (into-array (repeat 80 0)))
       (b/write-int32-le stream (count faces))
       (doseq [[a b c :as f] faces]
@@ -48,24 +48,6 @@
               _ (b/read-int16-le stream)]
           (recur (gm/add-face mesh [a b c]) (dec i)))
         mesh)))
-  
-  (defn read-stl-vertices
-    "Reads all vertices from given STL input stream. A target collection
-    can be specified optionally. If none is given, a set of unique
-    vertices is returned."
-    ([^InputStream stream]
-       (read-stl-vertices stream #{}))
-    ([^InputStream stream vert-pool]
-       (.read stream #+clj (byte-array 80) #+cljs (make-array 80))
-       (loop [vertices vert-pool, nf (b/read-int32-le stream)]
-         (if (zero? nf)
-           vertices
-           (let [_ (b/read-vec3-le stream)
-                 a (b/read-vec3-le stream)
-                 b (b/read-vec3-le stream)
-                 c (b/read-vec3-le stream)
-                 _ (b/read-int16-le stream)]
-             (recur (conj vertices a b c) (dec nf)))))))
 #+END_SRC
 ** PLY
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/meshio.cljx
