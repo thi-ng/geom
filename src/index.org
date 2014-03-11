@@ -65,6 +65,10 @@ operations:
 - Shape extrusion as solid or walled mesh
 - Tesselation of simple 2D polygons
 - Insetting of simple 2D polygons
+- Area & volume calculations (incl. signed versions)
+- Entity intersection checks (vs. line, ray, shape)
+- Entity to mesh conversion (w/ many options)
+- Access entities as graph-like structures (vertices/edges)
 - Entity sampling (at fixed resolution or uniform distance)
 - Entity subdivision (only lines, rects, quads, tetrahedrons)
 - Subdivision meshes (Catmull-Clark & Doo-Sabin)
@@ -143,7 +147,7 @@ recommend [[http://meshlab.sf.net][Meshlab]].
                   (g/transform                       ;; pedal transformed using 4x4 matrix
                    (-> (g/matrix44)
                        (g/translate 0 0 (* i 2))
-                       (g/rotate-z (* i m/PHI 0.5))  ;; Φ = golden ratio angle 
+                       (g/rotate-z (* i m/PHI 0.5))  ;; Φ = golden ratio angle
                        (g/rotate-x (* m/PI 0.1))))   ;; slight tilt to minimize overlap
                   (g/faces))))                       ;; only keep faces
            (reduce g/into-mesh (gm/gmesh))           ;; combine into single mesh
