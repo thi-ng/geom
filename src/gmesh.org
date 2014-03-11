@@ -7,7 +7,7 @@
     (:require
      [clojure.core.reducers :as r]
      [thi.ng.common.data.core :as d]
-     [thi.ng.common.math.core :as m]
+     [thi.ng.common.math.core :as m :refer [*eps*]]
      [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.types :as types]
@@ -105,8 +105,42 @@
           :normals #{} :faces #{} :attribs {}})))
   
   (defn into-mesh
-    [m faces]
-    (reduce add-face m (if (map? faces) (:faces faces) faces)))
+    [mesh mesh-or-faces]
+    (reduce
+     add-face mesh
+     (if (satisfies? g/PMesh mesh-or-faces)
+       (g/faces mesh-or-faces)
+       mesh-or-faces)))
+  
+  (defn lathe-mesh
+    "Takes a seq of vec3's and treats them as lathe to form quad mesh.
+    Lathe is revolved around an axis using given rotation fn and radial
+    resolution. The rotation fn must accept two args: a point & rotation
+    angle. Optionally, each resulting quad can also be slightly scaled
+    (i.e. to create gaps), so resulting mesh might not be continous."
+    [points rot-fn res & [scale]]
+    (let [strips (mapv
+                  (fn [i]
+                    (let [theta (* i m/TWO_PI)]
+                      (mapv #(let [p (rot-fn % theta)]
+                               (if (m/delta= p % *eps*)
+                                 % p))
+                            points)))
+                  (butlast (m/norm-range res)))
+          make-face (if scale
+                      (fn [[a1 a2] [b1 b2]] (g/scale-size* scale [b1 b2 a2 a1]))
+                      (fn [[a1 a2] [b1 b2]]
+                        (cond
+                         (= a1 b1) [b1 b2 a2]
+                         (= a2 b2) [b1 a2 a1]
+                         :default [b1 b2 a2 a1])))]
+      (->> (d/successive-nth 2 (conj strips (first strips)))
+           (mapcat
+            (fn [[sa sb]]
+              (map make-face
+                   (d/successive-nth 2 sa)
+                   (d/successive-nth 2 sb))))
+           (into-mesh (gmesh)))))
   
   (defn saddle
     [s]
