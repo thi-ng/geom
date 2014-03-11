@@ -65,7 +65,8 @@ operations:
 - Shape extrusion as solid or walled mesh
 - Tesselation of simple 2D polygons
 - Insetting of simple 2D polygons
-- Area & volume calculations (incl. signed versions)
+- Sutherland-Hodgeman clipping of 2D polygons
+- Entity area, circumference & volume calculations
 - Entity intersection checks (vs. line, ray, shape)
 - Entity to mesh conversion (w/ many options)
 - Access entities as graph-like structures (vertices/edges)
@@ -98,15 +99,15 @@ successfully in several commercial projects over the past 2 years and
 can be considered stable for basic use cases.
 
 A full test suite, website & tutorials are actively being worked on.
-Right now, focus of development is on features required for my [[https://devart.withgoogle.com/#/project/16501507][Google
-DevArt commission]] and a generative design workshop at [[http://resonate.io][Resonate]],
+Right now, focus of development is on features required for my
+[[https://devart.withgoogle.com/#/project/16501507][Google DevArt commission]] and a generative design workshop at [[http://resonate.io][Resonate]],
 beginning of April.
 
 ** Example usage
 
 The examples below show some common usage patterns how entities can be
 created, dissected & transformed in a very functional way. Each
-results in 3D model file in Stanford PLY format and can then be
+results in a 3D model file in Stanford PLY format and can then be
 imported into other 3D software. If you need a simple mesh viewer, we
 recommend [[http://meshlab.sf.net][Meshlab]].
 
@@ -134,7 +135,7 @@ recommend [[http://meshlab.sf.net][Meshlab]].
          (mio/write-ply out)))                       ;; output as Stanford PLY file
   
   (with-open [out (io/output-stream "pedals.ply")]
-    (let [pedal (-> (r/rect 100 60)                  ;; create rect 100x50 wide
+    (let [pedal (-> (r/rect 100 60)                  ;; create rect 100x60 wide
                     (g/vertices)                     ;; get corner points
                     (b/auto-spline2 true)            ;; convert to spline
                     (g/sample-uniform 10 false)      ;; sample curve at uniform distance
