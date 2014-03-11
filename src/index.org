@@ -204,7 +204,7 @@ or =tangle.sh=, then reload the namespace in the REPL via =(require
 
 ** Injected properties                                             :noexport:
 #+BEGIN_SRC clojure :exports none :noweb-ref version
-0.2.0
+0.2.1-SNAPSHOT
 #+END_SRC
 #+BEGIN_SRC clojure :exports none :noweb-ref project-url
 https://github.com/thi-ng/geom
@@ -231,7 +231,7 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 #+END_SRC
 **** [[https://github.com/clojure/clojurescript][ClojureScript]]
 #+BEGIN_SRC clojure :noweb-ref dep-cljs
-[org.clojure/clojurescript "0.0-2173"]
+[org.clojure/clojurescript "0.0-2156"]
 #+END_SRC
 **** [[https://github.com/thi-ng/common/][thi.ng/common]]
 #+BEGIN_SRC clojure :noweb-ref dep-common
