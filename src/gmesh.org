@@ -95,6 +95,7 @@
       mesh))
 #+END_SRC
 ** Constructors
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   (defn gmesh
     "Builds a new 2d mesh data structure and (optionally) populates it with
@@ -111,30 +112,69 @@
      (if (satisfies? g/PMesh mesh-or-faces)
        (g/faces mesh-or-faces)
        mesh-or-faces)))
-  
+#+END_SRC
+*** Creating a mesh from a lathe
+
+Revolving a seq of points (usually all in a plane) around an axis is a
+classic and very powerful way to construct a symmetrical/cylindrical
+3d mesh. The =lathe-mesh= function does exactly this (but in a more
+flexible way): It takes a seq of =Vec3='s and treats them as lathe to
+form a mesh. The lathe is revolved around an axis using a given
+rotation fn and radial extend & resolution. The rotation fn must
+accept two args: a point & rotation angle. Apart from
+=rotate-around-axis= all other methods of the =PRotate3D= protocol
+(implemented by =Vec3=) satisfy this condition. To use
+=rotate-around-axis= as rotation fn, it needs to be wrapped in a
+closure with the axis pre-configured.
+
+The =lathe-mesh= fn first divides the given revolution angle Φ (phi)
+by the given resolution and creates a seq of rotated point strips. It
+then proceeds to form faces between pairs of these strips. If face
+points lie on the rotation axis, triangles will be created or faces
+skipped entirely to avoid degenerate meshes. Optionally, each
+resulting face can also be transformed before being added to the mesh
+(e.g. scaled to create gaps). This face transform fn should accept and
+return a seq of points (or return nil to skip a face).
+
+The rotation fn too can be used to not just rotate a point. E.g.
+Scaling points based on Θ (the rotation angle) post-rotation can
+produce very interesting results. The example function below does this for
+a lathe defined in the XZ plane and centered around the Z-axis:
+
+#+BEGIN_SRC clojure
+  (fn [p theta]
+    (let [s (inc (* (Math/sin (* theta 6)) 0.25))]
+      (-> p
+          (g/rotate-z theta) ;; first rotate
+          (g/* s s 1.0))))   ;; then scale in XY plane only
+#+END_SRC
+
+Finally, in order to create a fully closed mesh, the revolution angle
+Φ must be 2*Π and the first and last points of the lathe seq must be
+located on the rotation axis.
+
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   (defn lathe-mesh
-    "Takes a seq of vec3's and treats them as lathe to form quad mesh.
-    Lathe is revolved around an axis using given rotation fn and radial
-    resolution. The rotation fn must accept two args: a point & rotation
-    angle. Optionally, each resulting quad can also be slightly scaled
-    (i.e. to create gaps), so resulting mesh might not be continous."
-    [points rot-fn res & [scale]]
+    [points res phi rot-fn & [face-fn]]
     (let [strips (mapv
                   (fn [i]
-                    (let [theta (* i m/TWO_PI)]
+                    (let [theta (* i phi)]
                       (mapv #(let [p (rot-fn % theta)]
                                (if (m/delta= p % *eps*)
                                  % p))
                             points)))
                   (butlast (m/norm-range res)))
-          make-face (if scale
-                      (fn [[a1 a2] [b1 b2]] (g/scale-size* scale [b1 b2 a2 a1]))
-                      (fn [[a1 a2] [b1 b2]]
-                        (cond
-                         (= a1 b1) [b1 b2 a2]
-                         (= a2 b2) [b1 a2 a1]
-                         :default [b1 b2 a2 a1])))]
-      (->> (d/successive-nth 2 (conj strips (first strips)))
+          strips (if (m/delta= phi m/TWO_PI)
+                   (conj strips (first strips))
+                   strips)
+          make-face (fn [[a1 a2] [b1 b2]]
+                      (let [f (cond
+                               (< (count (hash-set a1 a2 b1 b2)) 3) nil
+                               (= a1 b1) [b1 b2 a2]
+                               (= a2 b2) [b1 a2 a1]
+                               :default [b1 b2 a2 a1])]
+                        (if (and f face-fn) (face-fn f) f)))]
+      (->> (d/successive-nth 2 strips)
            (mapcat
             (fn [[sa sb]]
               (map make-face
