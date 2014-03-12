@@ -129,9 +129,9 @@ recommend [[http://meshlab.sf.net][Meshlab]].
            (-> (c/circle x y 0.5)                    ;; create circle at X,Y radius=0.5
                (g/as-polygon 8)                      ;; convert into octagon
                (g/extrude-shell                      ;; convert into walled, cylindrical mesh
-                {:depth (m/random 0.25 2) :wall 0.1});; ...with random height
-               (g/faces)))                           ;; only keep mesh faces
-         (reduce g/into-mesh (gm/gmesh))             ;; combine into single mesh
+                {:depth (m/random 0.25 2)
+                 :wall 0.1})))
+         (reduce g/into-mesh)                        ;; combine into single mesh
          (mio/write-ply out)))                       ;; output as Stanford PLY file
   
   (with-open [out (io/output-stream "pedals.ply")]
@@ -149,9 +149,8 @@ recommend [[http://meshlab.sf.net][Meshlab]].
                    (-> (g/matrix44)
                        (g/translate 0 0 (* i 2))
                        (g/rotate-z (* i m/PHI 0.5))  ;; Φ = golden ratio angle
-                       (g/rotate-x (* m/PI 0.1))))   ;; slight tilt to minimize overlap
-                  (g/faces))))                       ;; only keep faces
-           (reduce g/into-mesh (gm/gmesh))           ;; combine into single mesh
+                       (g/rotate-x (* m/PI 0.1)))))));; slight tilt to minimize overlap
+           (reduce g/into-mesh)                      ;; combine into single mesh
            (mio/write-ply out))))                    ;; output as Stanford PLY file
 #+END_SRC
 
