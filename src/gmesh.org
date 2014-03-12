@@ -98,7 +98,7 @@
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   (defn gmesh
-    "Builds a new 2d mesh data structure and (optionally) populates it with
+    "Builds a new 3d mesh data structure and (optionally) populates it with
     the given items (a seq of existing meshes and/or faces). Faces are defined
     as vectors of their vertices."
     ([] (types/map->GMesh
@@ -106,12 +106,14 @@
           :normals #{} :faces #{} :attribs {}})))
   
   (defn into-mesh
-    [mesh mesh-or-faces]
-    (reduce
-     add-face mesh
-     (if (satisfies? g/PMesh mesh-or-faces)
-       (g/faces mesh-or-faces)
-       mesh-or-faces)))
+    ([mesh-or-faces]
+       (into-mesh (gmesh) mesh-or-faces))
+    ([mesh mesh-or-faces]
+       (reduce
+        add-face mesh
+        (if (satisfies? g/PMesh mesh-or-faces)
+          (g/faces mesh-or-faces)
+          mesh-or-faces))))
 #+END_SRC
 *** Creating a mesh from a lathe
 
@@ -133,8 +135,9 @@ then proceeds to form faces between pairs of these strips. If face
 points lie on the rotation axis, triangles will be created or faces
 skipped entirely to avoid degenerate meshes. Optionally, each
 resulting face can also be transformed before being added to the mesh
-(e.g. scaled to create gaps). This face transform fn should accept and
-return a seq of points (or return nil to skip a face).
+(e.g. scaled to create gaps or subdivide). This face transform fn
+should accept a seq of points and return a seq of faces (or return nil
+to skip a face).
 
 The rotation fn too can be used to not just rotate a point. E.g.
 Scaling points based on Θ (the rotation angle) post-rotation can
@@ -173,15 +176,17 @@ located on the rotation axis.
                                (= a1 b1) [b1 b2 a2]
                                (= a2 b2) [b1 a2 a1]
                                :default [b1 b2 a2 a1])]
-                        (if (and f face-fn) (face-fn f) f)))]
+                        (if (and f face-fn) (face-fn f) [f])))]
       (->> (d/successive-nth 2 strips)
            (mapcat
             (fn [[sa sb]]
-              (map make-face
+              (mapcat make-face
                    (d/successive-nth 2 sa)
                    (d/successive-nth 2 sb))))
            (into-mesh (gmesh)))))
-  
+#+END_SRC
+*** Predefined forms
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx  
   (defn saddle
     [s]
     (let [sv (vec3 s)]
