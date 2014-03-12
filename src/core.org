@@ -2520,11 +2520,12 @@ defined further on, but need to be declared already.
     (->> points (d/successive-nth 2) (mapv ctor)))
   
   (defn tessellate*
-    [c points]
-    (->> [(first points)]
-         (concat points)
-         (d/successive-nth 2)
-         (map #(vector c (% 0) (% 1)))))
+    ([points] (tessellate* (centroid* points) points))
+    ([c points]
+       (->> [(first points)]
+            (concat points)
+            (d/successive-nth 2)
+            (map #(vector c (% 0) (% 1))))))
   
   (defn normal3*
     ([a b c] (normalize (cross (- b a) (- c a))))
