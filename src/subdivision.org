@@ -170,3 +170,53 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
   
   (def doo-sabin (custom-doo-sabin))
 #+END_SRC
+** Butterfly
+
+- http://graphics.stanford.edu/courses/cs468-10-fall/LectureSlides/10_Subdivision.pdf
+
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
+  (defn bf-face-point
+    [f a b] (some #(if (and (not= % a) (not= % b)) %) f))
+  
+  (defn bf-butterfly-point
+    [edges a b f]
+    (bf-face-point (first (disj (edges #{a b}) f)) a b))
+
+  (defn bf-edge-points
+    [edges omega]
+    (let [om2 (* -0.5 omega)]
+      (->> edges
+           (r/map
+            (fn [[e e-faces]]
+              (let [[a b] (seq e)
+                    [efa efb] (seq e-faces)
+                    e1 (g/mix a b)
+                    d3 (bf-face-point efa a b)
+                    d4 (bf-face-point efb a b)]
+                (if (and d3 d4)
+                  (let [d6 (bf-butterfly-point edges a d3 efa)
+                        d5 (bf-butterfly-point edges b d3 efa)
+                        d8 (bf-butterfly-point edges a d4 efb)
+                        d7 (bf-butterfly-point edges b d4 efb)]
+                    (if (and d5 d6 d7 d8)
+                      [e (g/+ e1
+                              (g/addm d3 d4 omega)
+                              (g/addm (g/+ d5 d6) (g/+ d7 d8) om2))]
+                      [e e1]))
+                  [e e1]))))
+           (into {}))))
+  
+  (defn bf-faces-from-edge-points
+    [e-points [a b c]]
+    (let [ea (e-points #{a b}), eb (e-points #{b c}), ec (e-points #{c a})]
+      [[a ea ec] [b eb ea] [c ec eb] [ea eb ec]]))
+  
+  (defn butterfly
+    ([mesh] (butterfly mesh (/ 16.0)))
+    ([mesh omega]
+       (let [e-points (bf-edge-points (:edges mesh) omega)]
+         (->> (:faces mesh)
+              (map
+               (fn [f] (bf-faces-from-edge-points e-points f)))
+              (reduce g/into-mesh (gm/gmesh))))))
+#+END_SRC
