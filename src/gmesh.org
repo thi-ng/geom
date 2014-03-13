@@ -379,8 +379,9 @@ See [[file:triangle.org::*Triangle3][signed volume implementation of Triangle3]]
    [_]
    (->> (:faces _)
         (r/mapcat tessellate-face1)
-        (r/map (fn [[a b c]] (/ (g/dot a (g/cross b c)) 6)))
-        (r/fold +)))
+        (r/map (fn [[a b c]] (g/dot a (g/cross b c))))
+        (r/fold +)
+        (* (/ 6.0))))
 #+END_SRC
 *** End of implementation                                          :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
