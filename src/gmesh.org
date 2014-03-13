@@ -370,9 +370,17 @@ located on the rotation axis.
          (:faces _)))))
 #+END_SRC
 *** TODO PVolume
+
+See [[file:triangle.org::*Triangle3][signed volume implementation of Triangle3]]
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PVolume
-  (volume [_] 0)
+  (volume
+   [_]
+   (->> (:faces _)
+        (r/mapcat tessellate-face1)
+        (r/map (fn [[a b c]] (/ (g/dot a (g/cross b c)) 6)))
+        (r/fold +)))
 #+END_SRC
 *** End of implementation                                          :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx

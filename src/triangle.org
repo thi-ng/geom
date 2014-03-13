@@ -449,8 +449,14 @@
   <<lob-geom-tx(type="thi.ng.geom.types.Triangle3")>>
 #+END_SRC
 **** PVolume                                                    :usetemplate:
+
+Signed volume impl based on:
+https://web.archive.org/web/20090320013931/http://amp.ece.cmu.edu/Publication/Cha/icip01_Cha.pdf
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
   <<lob-geom-zerovol>>
+  (signed-volume
+   [{[a b c] :points}] (/ (g/dot a (g/cross b c)) 6.0))
 #+END_SRC
 **** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx

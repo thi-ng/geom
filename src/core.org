@@ -366,7 +366,8 @@ protocol consisting of just _ one function: =as-mesh=.
 **** PVolume
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PVolume
-    (volume [_] "Returns an entity's inner volume."))
+    (volume [_] "Returns an entity's inner volume.")
+    (signed-volume [_]))
 #+END_SRC
 *** Type specific operations
 **** TODO PSpatialTree
