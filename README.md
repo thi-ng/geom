@@ -1,4 +1,4 @@
-# thing-geom
+# thi.ng/geom
 
 Comprehensive geometry toolkit for Clojure/ClojureScript developed in a
 literate programming style.
@@ -6,7 +6,7 @@ literate programming style.
 Currently ALPHA quality, pre-release software. Further breaking API
 changes forthcoming...
 
-## Usage
+## Description & usage
 
 See [index.org](src/index.org)
 

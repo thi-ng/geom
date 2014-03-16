@@ -14,10 +14,10 @@
 ** Shared helpers
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
   (defn fold-into-map
-    [coll] (r/fold (r/monoid conj hash-map) coll))
+    [coll] (r/fold (r/monoid conj hash-map) conj coll))
 
   (defn fold-into-vec
-    [coll] (r/fold (r/monoid conj vector) coll))
+    [coll] (r/fold (r/monoid conj vector) conj coll))
 #+END_SRC
 
 ** Catmull-Clark

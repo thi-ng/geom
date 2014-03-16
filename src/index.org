@@ -72,7 +72,7 @@ operations:
 - Access entities as graph-like structures (vertices/edges)
 - Entity sampling (at fixed resolution or uniform distance)
 - Entity subdivision (only lines, rects, quads, tetrahedrons)
-- Subdivision meshes (Catmull-Clark & Doo-Sabin)
+- Subdivision meshes (Catmull-Clark, Doo-Sabin, Butterfly)
 - 3D Boolean operations on meshes (union, difference, intersection)
 - 3D geometry export (PLY, STL, OBJ, OFF formats)
 
@@ -263,9 +263,9 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 #+END_SRC
 ** Release history
 
-| *Version* | *Released* | *Description*      | *Tagged Github URL*                       |
-|-----------+------------+--------------------+-------------------------------------------|
-|     0.2.0 | 2014-03-10 | 1st public release | https://github.com/thi-ng/geom/tree/0.2.0 |
+| *Version* | *Released* | *Description*      | *Lein coordinates*      | *Tagged Github URL*                       |
+|-----------+------------+--------------------+-------------------------+-------------------------------------------|
+|     0.2.0 | 2014-03-10 | 1st public release | =[thi.ng/geom "0.2.0"]= | https://github.com/thi-ng/geom/tree/0.2.0 |
 
 ** Authors
 
