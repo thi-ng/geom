@@ -63,6 +63,14 @@
 #+END_SRC
 ** Shared 2d/3d functions
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+  (defn other-point-in-tri
+    [[ta tb tc] a b]
+    (if (= a ta)
+      (if (= b tb) tc tb)
+      (if (= a tb)
+        (if (= b ta) tc ta)
+        (if (= b ta) tb ta))))
+
   (defn norm-sign2
     [[ax ay] [bx by] [cx cy]]
     (- (mm/subm bx ax cy ay) (mm/subm cx ax by ay)))
