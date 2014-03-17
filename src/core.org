@@ -87,7 +87,7 @@ protocols related to common higher level geometric operations.
 **** PInterpolate
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PInterpolate
-    (mix [_ x] [_ x t]))
+    (mix [_ x] [_ x t] [_ a b c u v]))
 #+END_SRC
 **** PInvert
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
@@ -862,6 +862,14 @@ defined further on, but need to be declared already.
   (mix
    [_ [ax ay] t]
    (Vec2. (mm/submadd ax x t x) (mm/submadd ay y t y) _meta))
+  (mix
+   [_ [ax ay] [bx by] [cx cy] u v]
+   (let [ux (mm/submadd ax x u x)
+         uy (mm/submadd ay y u y)]
+     (Vec2.
+      (mm/submadd (mm/submadd cx bx u bx) ux v ux)
+      (mm/submadd (mm/submadd cy by u by) uy v uy)
+      _meta)))
 #+END_SRC
 **** PHeading
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
@@ -1367,6 +1375,16 @@ defined further on, but need to be declared already.
     (mm/submadd ax x t x)
     (mm/submadd ay y t y)
     (mm/submadd az z t z) _meta))
+  (mix
+   [_ [ax ay az] [bx by bz] [cx cy cz] u v]
+   (let [ux (mm/submadd ax x u x)
+         uy (mm/submadd ay y u y)
+         uz (mm/submadd az z u z)]
+     (Vec3.
+      (mm/submadd (mm/submadd cx bx u bx) ux v ux)
+      (mm/submadd (mm/submadd cy by u by) uy v uy)
+      (mm/submadd (mm/submadd cz bz u bz) uz v uz)
+      _meta)))
 #+END_SRC
 **** PHeading
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx

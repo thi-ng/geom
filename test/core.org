@@ -338,6 +338,15 @@
     (is (== s (g/mag (g/normalize a3 s))) "mag = norm a3 s"))
 #+END_SRC
 #+END_SRC
+**** Interpolation
+#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
+  (deftest mix
+    (is (delta= (g/mix (g/mix a2 b2 0.25) (g/mix b2 a2 0.25) 0.5)
+                (g/mix a2 b2 b2 a2 0.25 0.5)) "mix bilinear2")
+    (is (delta= (g/mix (g/mix a3 b3 0.25) (g/mix b3 a3 0.25) 0.5)
+                (g/mix a3 b3 b3 a3 0.25 0.5)) "mix bilinear3"))
+#+END_SRC
+#+END_SRC
 **** Transformations
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
   (deftest vec-transforms
