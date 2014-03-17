@@ -31,7 +31,7 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   ;; FIXME
   (defn map-uv
-    [{:keys[a b c d]} p]
+    [{[a b c d] :points} p]
     (let [u1 (l/closest-point-coeff* p a b)
           u2 (l/closest-point-coeff* p d c)
           v1 (l/closest-point-coeff* p a d)
@@ -47,8 +47,7 @@
       (vec2 u* v*)))
   
   (defn unmap-uv
-    [[a b c d] [u v]]
-    (g/mix (g/mix a b u) (g/mix d c u) v))
+    [[a b c d] [u v]] (g/mix a b d c u v))
 #+END_SRC
 ** Protocol implementations
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
