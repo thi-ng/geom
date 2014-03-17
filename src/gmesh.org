@@ -260,6 +260,11 @@ located on the rotation axis.
   (center [_] _)
   (centroid [_] (g/centroid* (keys (:vertices _))))
 #+END_SRC
+*** PFlip
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
+  g/PFlip
+  (flip [_] (map-faces (fn [f] [(vec (rseq f))]) _))
+#+END_SRC
 *** TODO PGraph
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PGraph
