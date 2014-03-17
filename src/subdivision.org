@@ -116,13 +116,13 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
   
   (defn ds-make-edge-loop
     [edges]
-    (loop [acc [(ffirst edges)], p (peek (first edges)), edges (set (rest edges))]
+    (loop [acc (transient [(ffirst edges)]), p (peek (first edges)), edges (set (rest edges))]
       (if (seq edges)
         (let [e (some #(if (= p (first %)) %) edges)]
           (if e
-            (recur (conj acc (first e)) (second e) (disj edges e))
+            (recur (conj! acc (first e)) (second e) (disj edges e))
             (err/throw! "Mesh not manifold")))
-        acc)))
+        (persistent! acc))))
   
   (defn ds-dual-faces
     [{:keys [vertices] :as mesh} f-points]
@@ -163,10 +163,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
             f-faces (ds-fp-faces f-points)
             e-faces (if e* (ds-edge-faces mesh f-points))
             v-faces (if v* (ds-dual-faces mesh f-points))]
-        (reduce
-         gm/add-face
-         (gm/gmesh)
-         (concat (if f* f-faces) e-faces v-faces)))))
+        (gm/into-mesh (concat (if f* f-faces) e-faces v-faces)))))
   
   (def doo-sabin (custom-doo-sabin))
 #+END_SRC
@@ -208,7 +205,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
                     (if (and d5 d6 d7 d8)
                       [e (g/+ e1
                               (g/addm d3 d4 omega)
-                              (g/* (g/+ d5 [d6 d7 d8]) om2))]
+                              (g/addm d5 [d6 d7 d8] om2))]
                       [e e1]))
                   [e e1]))))
            (fold-into-map))))
