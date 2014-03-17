@@ -14,10 +14,10 @@
 ** Shared helpers
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
   (defn fold-into-map
-    [coll] (r/fold (r/monoid conj hash-map) conj coll))
+    [coll] (r/fold (r/monoid into hash-map) conj coll))
 
   (defn fold-into-vec
-    [coll] (r/fold (r/monoid conj vector) conj coll))
+    [coll] (r/fold (r/monoid into vector) conj coll))
 #+END_SRC
 
 ** Catmull-Clark
@@ -38,7 +38,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
     (->> (d/wrap-seq face [(peek face)] [(first face)])
          (d/successive-nth 3)
          (r/map (fn [[p c n]] [(e-points #{p c}) c (e-points #{c n}) fp]))
-         (fold-into-vec)))
+         (r/foldcat)))
   
   (defn cc-edge-points
     [edges f-points]
@@ -54,8 +54,8 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
   (defn cc-subdiv-faces
     [f-points e-points]
     (->> f-points
-         (r/map (fn [f fp] (cc-subdiv-face f fp e-points)))
-         (r/fold (r/monoid into vector))))
+         (r/mapcat (fn [f fp] (cc-subdiv-face f fp e-points)))
+         (r/foldcat)))
   
   (defn cc-replace-vertices
     [mesh f-points e-points sd-faces]
@@ -72,7 +72,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
                          (fold-into-map))]
       (->> sd-faces
            (r/map (fn [f] (replace new-verts f)))
-           (into []))))
+           (r/foldcat))))
   
   (defn catmull-clark
     [{:keys [faces edges] :as mesh}]
@@ -80,7 +80,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
           e-points (cc-edge-points edges f-points)]
       (->> (cc-subdiv-faces f-points e-points)
            (cc-replace-vertices mesh f-points e-points)
-           (reduce gm/add-face (gm/gmesh)))))
+           (gm/into-mesh))))
 #+END_SRC
 
 ** Doo-Sabin
@@ -194,7 +194,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
     (let [om2 (* -0.5 omega)]
       (->> edges
            (r/map
-            (fn [[e e-faces]]
+            (fn [e e-faces]
               (let [[a b] (seq e)
                     [efa efb] (seq e-faces)
                     e1 (g/mix a b)
@@ -211,7 +211,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
                               (g/* (g/+ d5 [d6 d7 d8]) om2))]
                       [e e1]))
                   [e e1]))))
-           (into {}))))
+           (fold-into-map))))
   
   (defn bf-faces-from-edge-points
     [e-points [a b c]]
@@ -225,5 +225,5 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
          (->> (:faces mesh)
               (r/mapcat
                (fn [f] (bf-faces-from-edge-points e-points f)))
-              (g/into-mesh (gm/gmesh))))))
+              (gm/into-mesh)))))
 #+END_SRC
