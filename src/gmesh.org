@@ -358,7 +358,7 @@ located on the rotation axis.
   (tessellate
    ([_] (g/tessellate _ {}))
    ([_ {:keys [fn] :or {fn tessellate-face1}}]
-      (->> (:faces _) (mapcat fn) (map #(thi.ng.geom.types.Triangle3. %)))))
+      (map-faces fn _)))
 #+END_SRC
 *** PTransform
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
