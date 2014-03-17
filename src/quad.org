@@ -47,7 +47,7 @@
       (vec2 u* v*)))
   
   (defn unmap-uv
-    [{:keys[a b c d]} [u v]]
+    [[a b c d] [u v]]
     (g/mix (g/mix a b u) (g/mix d c u) v))
 #+END_SRC
 ** Protocol implementations
@@ -204,10 +204,10 @@ default for missing args.
   g/PSubdivide
   (subdivide
    ([_] (g/subdivide _ {}))
-   ([_ {:keys [num cols rows] :or {num 2}}]
+   ([{:keys [points]} {:keys [num cols rows] :or {num 2}}]
       (let [ru (d/successive-nth 2 (m/norm-range (or cols num)))
             rv (d/successive-nth 2 (m/norm-range (or rows num)))
-            map-p (fn [p] (->> p (unmap-uv _) (map #(m/roundto % *eps*)) vec3))]
+            map-p (fn [p] (->> p (unmap-uv points) (map #(m/roundto % *eps*)) vec3))]
         (for [[v1 v2] rv, [u1 u2] ru]
           (thi.ng.geom.types.Quad3.
            [(map-p [u1 v1]) (map-p [u2 v1]) (map-p [u2 v2]) (map-p [u1 v2])])))))
