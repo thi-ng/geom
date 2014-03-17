@@ -278,12 +278,16 @@
    (is (= (g/* (g/+ a2 bx) b2) (g/addm a2 bx b2)) "addm a2 n b2")
    (is (not= (g/addm a2 bx b2) (g/addm a2 b2 bx)) "addm a2 n b2 != a2 b2 n")
    (is (= (g/* (g/+ a2 b2) a2) (g/addm a2 b2 a2)) "addm a2 b2 a2")
+   (is (= (g/* (g/+ a2 b2 b2) a2) (g/addm a2 [b2 b2] a2)) "addm a2 [b2 b2] a2")
+   (is (= (g/* (g/+ a2 b2 b2) ax) (g/addm a2 [b2 b2] ax)) "addm a2 [b2 b2] ax")
     
    (is (= (g/* (g/+ a3 bx) by) (g/addm a3 bx by)) "addm a3 n m")
    (is (= (g/* (g/+ a3 b3) bx) (g/addm a3 b3 bx)) "addm a3 b3 n")
    (is (= (g/* (g/+ a3 bx) b3) (g/addm a3 bx b3)) "addm a3 n b3")
    (is (not= (g/addm a3 bx b3) (g/addm a3 b3 bx)) "addm a3 n b3 != a3 b3 n")
    (is (= (g/* (g/+ a3 b3) a3) (g/addm a3 b3 a3)) "addm a3 b3 a3"))
+   (is (= (g/* (g/+ a3 b3 b3) a3) (g/addm a3 [b3 b3] a3)) "addm a3 [b3 b3] a3")
+   (is (= (g/* (g/+ a3 b3 b3) ax) (g/addm a3 [b3 b3] ax)) "addm a3 [b3 b3] ax")
 #+END_SRC
 **** Dot product
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  

@@ -1428,6 +1428,15 @@ defined further on, but need to be declared already.
           (recur (op ax (.-x v)) (op ay (.-y v)) (next xs)))
         (Vec2. ax ay (.-_meta acc)))))
   
+  (defn- vec2-op-seq2
+    [op op2 ^Vec2 acc as b]
+    (loop [ax (.-x acc), ay (.-y acc), as as]
+      (if as
+        (let [v ^Vec2 (first as)]
+          (recur (op ax (.-x v)) (op ay (.-y v)) (next as)))
+        (let [[bx by] (if (number? b) [b b] b)]
+          (Vec2. (op2 ax bx) (op2 ay by) (.-_meta acc))))))
+  
   (defn- vec2-op-1
     [op ^Vec2 _ a d m]
     (if (instance? Vec2 a)
@@ -1483,16 +1492,18 @@ defined further on, but need to be declared already.
           (Vec2. ;; v ?
            (op2 (op (.-x _) (.-x ^Vec2 a)) (nth b 0 d2))
            (op2 (op (.-y _) (.-y ^Vec2 a)) (nth b 1 d2)) m)))
-      (let [an? (number? a) bn? (number? b)]
-        (if (and an? bn?)
-          (Vec2. ;; n n
-           (op2 (op (.-x _) a) b)    ;; difference to vec2-op-2
-           (op2 (op (.-y _) a) b) m)
-          (let [[ax ay] (if an? [a a] a)
-                [bx by] (if bn? [b b] b)]
-            (Vec2. ;; ? ?
-             (op2 (op (.-x _) (or ax d1)) (or bx d2))
-             (op2 (op (.-y _) (or ay d1)) (or by d2)) m))))))
+      (if (and (sequential? a) (instance? Vec2 (first a)))
+        (vec2-op-seq2 op op2 _ a b)
+        (let [an? (number? a) bn? (number? b)]
+          (if (and an? bn?)
+            (Vec2.               ;; n n
+             (op2 (op (.-x _) a) b) ;; difference to vec2-op-2
+             (op2 (op (.-y _) a) b) m)
+            (let [[ax ay] (if an? [a a] a)
+                  [bx by] (if bn? [b b] b)]
+              (Vec2. ;; ? ?
+               (op2 (op (.-x _) (or ax d1)) (or bx d2))
+               (op2 (op (.-y _) (or ay d1)) (or by d2)) m)))))))
   
   (defn- vec2-op-3
     [op ^Vec2 _ a b c d m]
@@ -1531,6 +1542,15 @@ defined further on, but need to be declared already.
           (recur (op ax (.-x v)) (op ay (.-y v)) (op az (.-z v)) (next xs)))
         (Vec3. ax ay az (.-_meta acc)))))
   
+  (defn- vec3-op-seq2
+    [op op2 ^Vec3 acc as b]
+    (loop [ax (.-x acc), ay (.-y acc), az (.-z acc), as as]
+      (if as
+        (let [v ^Vec3 (first as)]
+          (recur (op ax (.-x v)) (op ay (.-y v)) (op az (.-z v)) (next as)))
+        (let [[bx by bz] (if (number? b) [b b b] b)]
+          (Vec3. (op2 ax bx) (op2 ay by) (op2 az bz) (.-_meta acc))))))
+  
   (defn- vec3-op-1
     [op ^Vec3 _ a d m]
     (if (instance? Vec3 a)
@@ -1564,12 +1584,14 @@ defined further on, but need to be declared already.
            (op2 (op (.-x _) (.-x ^Vec3 a)) (nth b 0 d2))
            (op2 (op (.-y _) (.-y ^Vec3 a)) (nth b 1 d2))
            (op2 (op (.-z _) (.-z ^Vec3 a)) (nth b 2 d2)) m)))
-      (let [[ax ay az] (if (number? a) [a a a] a)
-            [bx by bz] (if (number? b) [b b b] b)]
-        (Vec3. ;; ? ? ?
-         (op2 (op (.-x _) (or ax d1)) (or bx d2))
-         (op2 (op (.-y _) (or ay d1)) (or by d2))
-         (op2 (op (.-z _) (or az d1)) (or bz d2)) m))))
+      (if (and (sequential? a) (instance? Vec3 (first a)))
+        (vec3-op-seq2 op op2 _ a b)
+        (let [[ax ay az] (if (number? a) [a a a] a)
+              [bx by bz] (if (number? b) [b b b] b)]
+          (Vec3. ;; ? ? ?
+           (op2 (op (.-x _) (or ax d1)) (or bx d2))
+           (op2 (op (.-y _) (or ay d1)) (or by d2))
+           (op2 (op (.-z _) (or az d1)) (or bz d2)) m)))))
   
   (defn- vec3-op-3
     [op ^Vec3 _ a b c d m]
