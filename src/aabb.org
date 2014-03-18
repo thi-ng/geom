@@ -105,9 +105,9 @@
 #+END_SRC
 *** PGraph
 
-  : h +----+ g
+  : e +----+ h
   :   |\   :\
-  :   |e+----+ f
+  :   |f+----+ g
   :   | |  : | 
   : a +-|--+d|
   :    \|   \|
@@ -118,20 +118,19 @@
   (vertices
    [{a :p size :size}]
    (let [[x1 y1 z1] a
-         [x2 y2 z2 :as f] (g/+ a size)
+         [x2 y2 z2 :as g] (g/+ a size)
          b (vec3 x1 y1 z2) c (vec3 x2 y1 z2)
-         d (vec3 x2 y1 z1) e (vec3 x1 y2 z2)
-         g (vec3 x2 y2 z1) h (vec3 x1 y2 z1)]
+         d (vec3 x2 y1 z1) e (vec3 x1 y2 z1)
+         f (vec3 x1 y2 z2) h (vec3 x2 y2 z1)]
      [a b c d e f g h]))
   (edges
    [_]
    (let [[a b c d e f g h] (g/vertices _)]
-     (for [[p q] [[a b] [b c] [c d] [d a] ;; bottom
-                  [h e] [e f] [f g] [g h] ;; top
-                  [a h] [b e]             ;; left
-                  [d g] [c f]             ;; right
-                  ]]
-       [p q])))
+     [[a b] [b c] [c d] [d a] ;; bottom
+      [h e] [e f] [f g] [g h] ;; top
+      [a e] [b f]             ;; left
+      [d h] [c g]             ;; right
+      ]))
 #+END_SRC
 *** PIntersect                                                       :verify:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/aabb.cljx
@@ -155,10 +154,10 @@
    ([_ {:keys [flags] :or {flags "nsewfb"}}]
       (let [[a b c d e f g h] (g/vertices _)
             [tp bt rt lf fr bk] (d/demunge-flags-seq flags "nsewfb")]
-        (->> [(if fr [b c f e])
-              (if bk [a h g d])
-              (if lf [a b e h])
-              (if rt [c d g f])
+        (->> [(if fr [b c g f])
+              (if bk [a e h d])
+              (if lf [a b f e])
+              (if rt [c d h g])
               (if tp [e f g h])
               (if bt [a d c b])]
              (filter identity)
@@ -224,16 +223,17 @@ of the original with inner sorting over XYZ.
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/aabb.cljx
   g/PTessellate
   (tessellate
-   [_]
-   (let [[a b c d e f g h] (g/vertices _)]
-     (gmesh/into-mesh
-      (gmesh/gmesh)
-      [[b c f] [b f e]
-       [a h g] [a g d]
-       [a b e] [a e h]
-       [c d g] [c g f]
-       [e f g] [e g h]
-       [a d c] [a c b]])))
+   ([_] (g/tessellate _ gmesh/tessellate-face1))
+   ([_ fn]
+      (let [[a b c d e f g h] (g/vertices _)]
+        (->> [[b c g f]
+              [a e h d]
+              [a b f e]
+              [c d h g]
+              [e f g h]
+              [a d c b]]
+             (mapcat fn)
+             (map #(thi.ng.geom.types.Triangle3. %))))))
 #+END_SRC
 *** TODO Transformations
 **** TODO what is the result of transform?
