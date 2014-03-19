@@ -223,17 +223,21 @@ of the original with inner sorting over XYZ.
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/aabb.cljx
   g/PTessellate
   (tessellate
-   ([_] (g/tessellate _ gmesh/tessellate-face1))
-   ([_ fn]
-      (let [[a b c d e f g h] (g/vertices _)]
-        (->> [[b c g f]
-              [a e h d]
-              [a b f e]
-              [c d h g]
-              [e f g h]
-              [a d c b]]
-             (mapcat fn)
-             (map #(thi.ng.geom.types.Triangle3. %))))))
+   ([_] (g/tessellate _ {}))
+   ([_ {tess-fn :fn :or {tess-fn gmesh/tessellate-face1} :as opts}]
+      (let [quads (fn [_]
+                    (let [[a b c d e f g h] (g/vertices _)]
+                      [[b c g f]
+                       [a e h d]
+                       [a b f e]
+                       [c d h g]
+                       [e f g h]
+                       [a d c b]]))]
+        (->> (g/subdivide _ opts)
+             (mapcat quads)
+             (mapcat tess-fn)
+             (map #(thi.ng.geom.types.Triangle3. %))
+             ))))
 #+END_SRC
 *** TODO Transformations
 **** TODO what is the result of transform?
