@@ -1419,13 +1419,13 @@ defined further on, but need to be declared already.
     (let [r (mag _)
           theta (Math/atan2 y x)
           phi (Math/acos (mm/div z r))]
-      (Vec3. r theta phi _meta)))
+      (Vec3. r (if (neg? theta) (m/add TWO_PI theta) theta) phi _meta)))
   (as-cartesian [_]
-    (let [rsphi (mm/mul x (Math/sin z))]
+    (let [rsphi (mm/mul (Math/sin z) x)]
       (Vec3.
        (mm/mul (Math/cos y) rsphi)
        (mm/mul (Math/sin y) rsphi)
-       (mm/mul x (Math/cos z)) _meta)))
+       (mm/mul (Math/cos z) x) _meta)))
 #+END_SRC
 **** End of implementations
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
