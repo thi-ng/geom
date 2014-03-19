@@ -7,6 +7,7 @@
   (ns thi.ng.geom.quad
     (:require
      [thi.ng.common.data.core :as d]
+     [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps*]]
      [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.line :as l]
@@ -21,7 +22,10 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
   (defn quad3
     ([] (quad3 1.0))
-    ([w] (thi.ng.geom.types.Quad3. [(vec3) (vec3 w 0.0 0.0) (vec3 w w 0.0) (vec3 0.0 w 0.0)]))
+    ([w] (cond
+          (and (sequential? w) (= 4 (count w))) (thi.ng.geom.types.Quad3. (mapv vec3 w))
+          (number? w) (thi.ng.geom.types.Quad3. [(vec3) (vec3 w 0.0 0.0) (vec3 w w 0.0) (vec3 0.0 w 0.0)])
+          :default (err/illegal-arg! w)))
     ([a b c d] (thi.ng.geom.types.Quad3. [(vec3 a) (vec3 b) (vec3 c) (vec3 d)])))
 #+END_SRC
 ** TODO Type specific functions
@@ -225,8 +229,10 @@ function returns a lazyseq of triangles of the subdivided quad.
    ([{[a b c d] :points}]
       [(thi.ng.geom.types.Triangle3. [a b c])
        (thi.ng.geom.types.Triangle3. [a c d])])
-   ([_ opts]
-      (mapcat g/tessellate (g/subdivide _ opts))))
+   ([_ {:keys [fn] :or {fn gm/tessellate-face1} :as opts}]
+      (->> (g/subdivide _ opts)
+           (mapcat #(fn (:points %)))
+           (map #(thi.ng.geom.types.Triangle3. %)))))
 #+END_SRC
 
 *** PTransform                                                  :usetemplate:
