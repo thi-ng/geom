@@ -232,8 +232,9 @@ located on the rotation axis.
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx
   g/PArea
   (area
-   [_] (->> (g/tessellate _)
-            (r/map (fn [t] (-> :points t/area3 m/abs)))
+   [_] (->> (:faces _)
+            (r/mapcat tessellate-face1)
+            (r/map #(-> % t/area3 m/abs))
             (r/fold +)))
 #+END_SRC
 *** TODO PBoundary
