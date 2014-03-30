@@ -235,7 +235,7 @@
   g/PMeshConvert
   (as-mesh
    [_]
-   (let [[a b c d] (orient-tetra _)]
+   (let [[a b c d] (orient-tetra (:points _))]
      (g/into-mesh (gm/gmesh) [[a b c] [a d b] [b d c] [c d a]])))
 #+END_SRC
 **** TODO PSample                                                    :verify:
