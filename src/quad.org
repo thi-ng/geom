@@ -45,13 +45,44 @@
           dad (g/dist p (g/mix a d v1))
           dbc (g/dist p (g/mix b c v2))
           u* (+ (* u1 (/ dab (+ dab ddc)))
-                 (* u2 (/ ddc (+ dab ddc))))
+                (* u2 (/ ddc (+ dab ddc))))
           v* (+ (* v1 (/ dad (+ dad dbc)))
-                 (* v2 (/ dbc (+ dad dbc))))]
+                (* v2 (/ dbc (+ dad dbc))))]
       (vec2 u* v*)))
-  
+
   (defn unmap-uv
+    "Takes a vector of four points defining a convex & planar quad and a
+    2d vector of normalized UV coordinates. Returns mapped point in quad."
     [[a b c d] [u v]] (g/mix a b d c u v))
+#+END_SRC
+
+*** Insetting
+
+The following functions can be used to inset the edges of a convex
+quad.
+
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
+  (defn inset-corner
+    "Takes the end points of two lines and an inset vector for each line.
+    Computes the shortest line segment between the two lines and returns
+    the end point lying on AB (the first line given). Returns nil if there
+    is no intersection (i.e. the given lines are parallel or zero length)."
+    [a b c d n1 n2]
+    (:a (l/closest-line* (g/+ a n1) (g/+ b n1) (g/+ c n2) (g/+ d n2))))
+
+  (defn inset-quad
+    "Takes a vector of four points defining a convex quad and an inset
+    distance (use negative value for offsetting). Returns vector of edge
+    intersections (the new corner points)."
+    [[a b c d] inset]
+    (let [nu (g/normalize (g/- (g/mix b c) (g/mix a d)) inset)
+          nv (g/normalize (g/- (g/mix d c) (g/mix a b)) inset)
+          iu (g/- nu)
+          iv (g/- nv)]
+      [(inset-corner a d a b nu nv)
+       (inset-corner b c a b iu nv)
+       (inset-corner b c c d iu iv)
+       (inset-corner a d c d nu iv)]))
 #+END_SRC
 ** Protocol implementations
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
@@ -121,7 +152,7 @@ than 1.0.
    [_ {:keys [depth scale offset flags]
        :or {depth 1.0 scale 1.0 flags "nsewfb"}}]
    (let [[a b c d :as v] (g/vertices _)
-         norm (g/normal3* a b c)
+         norm (g/ortho-normal* a b c)
          offset (or offset (g/* norm depth))
          dp (g/dot norm (g/normalize offset))
          order (if (neg? dp) rseq identity)
@@ -156,6 +187,12 @@ than 1.0.
    [_ v] (d/neighbors (vec3 v) (:points _)))
   (vertex-valence
    [_ v] (if ((set (:points _)) v) 2 0))
+#+END_SRC
+*** PInset
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
+  g/PInset
+  (inset
+   [_ inset] (thi.ng.geom.types.Quad3. (inset-quad (:points _) inset)))
 #+END_SRC
 *** TODO PIntersect
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
