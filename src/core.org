@@ -306,6 +306,11 @@ access to entities in this context.
   (defprotocol PFlip
     (flip [_]))
 #+END_SRC
+**** PInset
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
+  (defprotocol PInset
+    (inset [_ inset]))
+#+END_SRC
 **** PIntersect
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
   (defprotocol PIntersect
@@ -399,11 +404,22 @@ protocol consisting of just _ one function: =as-mesh=.
     (add-face [_ f])
     (compute-face-normals [_])
     (compute-vertex-normals [_])
-    (faces [_])
     (into-mesh [_ m])
     (remove-face [_ f])
     (vertex-faces [_ v]))
 #+END_SRC
+**** PFaceAccess
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
+  (defprotocol PFaceAccess
+    (faces [_]))
+#+END_SRC
+**** PNormalAccess
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
+  (defprotocol PNormalAccess
+    (face-normals [_])
+    (vertex-normals [_]))
+#+END_SRC
+
 ** Vector implementations
 
 For performance reasons we decided to define custom data types for
@@ -1403,9 +1419,7 @@ defined further on, but need to be declared already.
    (let [t (Math/atan2 z y)]
      (if (neg? t) (mm/add t TWO_PI) t)))
   (angle-between
-   [_ a]
-   (let [t (mm/sub (heading-xy a) (heading-xy _))]
-     (if (neg? t) (mm/add t TWO_PI) t)))
+   [_ a] (Math/acos (dot _ a)))
   (slope-xy [_] (mm/div y x))
   (slope-xz [_] (mm/div x x))
   (slope-yz [_] (mm/div z y))
@@ -2417,17 +2431,17 @@ defined further on, but need to be declared already.
     (binding [*resolution* res] ~@body))
 #+END_SRC
 ** Shared functions
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
   (defn closest-point*
     [lines q]
     (reduce (fn [a b]
               (if (< (dist-squared q a) (dist-squared q b)) a b))
             (map #(closest-point % q) lines)))
-  
+
   (defn from-barycentric*
     [points weights]
     (reduce + (map * points weights)))
-  
+
   (defn centroid*
     [[x & xs :as coll]]
     (case (count coll)
@@ -2438,7 +2452,7 @@ defined further on, but need to be declared already.
       4 (addm (+ x (first xs) (nth xs 1)) (nth xs 2) 0.25)
       (* ((if (instance? Vec2 x) vec2-op-seq vec3-op-seq) clojure.core/+ x xs)
          (clojure.core// (count coll)))))
-  
+
   (defn center*
     ([coll]
        (let [c (centroid* coll)] (mapv #(- % c) coll)))
@@ -2446,11 +2460,11 @@ defined further on, but need to be declared already.
        (center* (centroid* coll) c' coll))
     ([c c' coll]
        (let [d (- c' c)] (mapv #(+ % d) coll))))
-  
+
   (defn scale-size*
     ([s coll] (scale-size* (centroid* coll) s coll))
     ([c s coll] (mapv #(-> % (- c) (madd s c)) coll)))
-  
+
   (defn bounding-rect*
     ([[x & xs :as coll]]
        (let [c (count coll)]
@@ -2462,7 +2476,7 @@ defined further on, but need to be declared already.
           (= c 1) (thi.ng.geom.types.Rect. x 0.0 0.0)
           :default nil)))
     ([p w h] (thi.ng.geom.types.Rect. p w h)))
-  
+
   (defn bounding-box*
     ([[x & xs :as coll]]
        (let [c (count coll)]
@@ -2473,14 +2487,14 @@ defined further on, but need to be declared already.
           (= c 1) (thi.ng.geom.types.AABB. x (vec3))
           :default nil)))
     ([p q] (thi.ng.geom.types.AABB. p (- q p))))
-  
+
   (defn max-dist*
     [c points]
     (->> points
          (map #(dist-squared c %))
          (reduce clojure.core/max)
          (Math/sqrt)))
-  
+
   (defn bounding-circle*
     [c r-or-points]
     (thi.ng.geom.types.Circle.
@@ -2488,7 +2502,7 @@ defined further on, but need to be declared already.
      (if (coll? r-or-points)
        (max-dist* c r-or-points)
        r-or-points)))
-  
+
   (defn bounding-sphere*
     [c r-or-points]
     (thi.ng.geom.types.Sphere.
@@ -2496,17 +2510,17 @@ defined further on, but need to be declared already.
      (if (coll? r-or-points)
        (max-dist* c r-or-points)
        r-or-points)))
-  
+
   (defn axis-bounds*
     [axis coll]
     (let [xs (map #(nth % axis) coll)]
       [(reduce clojure.core/min xs) (reduce clojure.core/max xs)]))
-  
+
   (defn axis-range*
     [axis coll]
     (let [xs (map #(nth % axis) coll)]
       (mm/sub (reduce clojure.core/max xs) (reduce clojure.core/min xs))))
-  
+
   (defn arc-length-index*
     [points]
     (->> points
@@ -2514,11 +2528,11 @@ defined further on, but need to be declared already.
          (map #(dist (% 0) (% 1)))
          (reductions clojure.core/+ 0)
          (vec)))
-  
+
   (defn arc-length*
     [points]
     (d/reduce-pairs clojure.core/+ dist points))
-  
+
   (defn sample-uniform*
     [udist include-last? points]
     (let [idx (arc-length-index* points)
@@ -2537,7 +2551,7 @@ defined further on, but need to be declared already.
       (if include-last?
         (conj samples (last points))
         samples)))
-  
+
   (defn point-at*
     ([t points] (point-at* t points nil))
     ([t points idx]
@@ -2555,11 +2569,11 @@ defined further on, but need to be declared already.
                            pi (idx (dec i))]
                        (mix (nth points (dec i)) (nth points i)
                             (mm/subdiv ct pi (idx i) pi))))))))
-  
+
   (defn edges*
     [ctor points]
     (->> points (d/successive-nth 2) (mapv ctor)))
-  
+
   (defn tessellate*
     ([points] (tessellate* (centroid* points) points))
     ([c points]
@@ -2567,10 +2581,11 @@ defined further on, but need to be declared already.
             (concat points)
             (d/successive-nth 2)
             (map #(vector c (% 0) (% 1))))))
-  
-  (defn normal3*
-    ([a b c] (normalize (cross (- b a) (- c a))))
-    ([[a b c]] (normalize (cross (- b a) (- c a)))))
+
+  (defn ortho-normal*
+    ([[a b c]] (normalize (cross (- b a) (- c a))))
+    ([a b] (normalize (cross a b)))
+    ([a b c] (normalize (cross (- b a) (- c a)))))
 #+END_SRC
 ** Matrix functions
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx
@@ -2587,7 +2602,7 @@ defined further on, but need to be declared already.
        0.0 (mm/div (mm/mul 2.0 n) dy) (mm/adddiv t b dy) 0.0
        0.0 0.0 (clojure.core/- (mm/adddiv f n dz)) (mm/div (mm/mul -2.0 f n) dz)
        0.0 0.0 -1.0 0.0)))
-  
+
   (defn frustum-bounds
     [fov aspect near]
     (let [rad (mm/mul 0.5 (m/radians fov))
@@ -2597,7 +2612,7 @@ defined further on, but need to be declared already.
        :right right
        :top top
        :bottom (clojure.core/- top)}))
-  
+
   (defn ortho
     "Returns an orthographic projection matrix, in which objects are the same size no
     matter how far away or nearby they are.
@@ -2611,7 +2626,7 @@ defined further on, but need to be declared already.
        0.0 (mm/div 2.0 dy) 0.0 (clojure.core/- (mm/adddiv t b dy))
        0.0 0.0 (mm/div -2.0 dz) (clojure.core/- (mm/adddiv f n dz))
        0.0 0.0 0.0 1.0)))
-  
+
   (defn perspective
     "Returns a perspective transform matrix, which makes far away objects appear
     smaller than nearby objects. The `aspect` argument should be the width
@@ -2630,12 +2645,12 @@ defined further on, but need to be declared already.
        0.0 cot 0.0 0.0
        0.0 0.0 b c
        0.0 0.0 -1.0 0.0)))
-  
+
   (defn perspective-frustum
     [fov aspect near far]
     (let [{:keys [left right top bottom]} (frustum-bounds fov aspect near)]
       (frustum left top right bottom near far)))
-  
+
   (defn look-at
     "Returns a matrix that puts the camera at the eye position looking
     toward the target point with the given up direction.
@@ -2649,7 +2664,7 @@ defined further on, but need to be declared already.
        tx ty tz (clojure.core/- (dot t eye))
        fx fy fz (clojure.core/- (dot f eye))
        0.0 0.0 0.0 1.0)))
-  
+
   (defn unproject
     "Takes a vec3 in screenspace, view matrix, projection matrix and
     view rect. Returns vector in model space or nil."
@@ -2662,4 +2677,20 @@ defined further on, but need to be declared already.
         (let [v' (transform-vector vpm [x y z 1.0])]
           (if-not (zero? (v' 3))
             (div (vec3 v') (v' 3)))))))
+
+  (defn point-towards
+    "Takes an entity implementing PTransform, a reference point and two
+    direction vectors. Transforms the entity in such a way that the 1st
+    direction is aligned with the 2nd. Rotation is applied locally around
+    reference point, which is used a center of rotation. If no such point
+    is given, the centroid of the entity is used. The direction vectors
+    will be normalized automatically."
+    ([transformable from to]
+       (point-towards transformable (centroid transformable) from to))
+    ([transformable refp from to]
+       (let [q (alignment-quat (normalize from) (normalize to))
+             m (->> (translate M44 (- refp))
+                    (* (as-matrix q))
+                    (* (translate M44 refp)))]
+         (transform transformable m))))
 #+END_SRC
