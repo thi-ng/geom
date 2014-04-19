@@ -133,7 +133,7 @@
    ([_] (g/edges _ *resolution*))
    ([_ res]
       (let [verts (g/vertices _ res)]
-        (g/edges* vector (conj verts (first verts))))))
+        (g/edges* identity (conj verts (first verts))))))
 #+END_SRC
 *** PIntersect
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/circle.cljx

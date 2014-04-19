@@ -91,8 +91,8 @@ required control points.
    ([_] (g/vertices _ *resolution*))
    ([_ res] (sample-with-res res true (:points _))))
   (edges
-   ([_] (g/edges* vector (g/vertices _ *resolution*)))
-   ([_ res] (g/edges* vector (g/vertices _ res))))
+   ([_] (g/edges* identity (g/vertices _ *resolution*)))
+   ([_ res] (g/edges* identity (g/vertices _ res))))
   (vertex-neighbors
    [_ v] (d/neighbors v (g/vertices _)))
   (vertex-valence
