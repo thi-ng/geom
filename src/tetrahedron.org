@@ -25,7 +25,7 @@
     that the last point is on the opposite side of the plane defined by
     the first three points."
     [[a b c d :as t]]
-    (let [dp (-> d (g/- a) (g/normalize) (g/dot (g/normal3* a b c)))]
+    (let [dp (-> d (g/- a) (g/normalize) (g/dot (g/ortho-normal* a b c)))]
       (if (neg? dp) (vec t) [a c b d])))
   
   (defn- subdot
@@ -302,7 +302,7 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PVolume
   (volume [{[a b c d] :points}]
-    (/ (g/dot (g/- a d) (g/normal3* d b c)) 6.0))
+    (/ (g/dot (g/- a d) (g/ortho-normal* d b c)) 6.0))
 #+END_SRC
 **** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx

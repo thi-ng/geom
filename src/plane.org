@@ -28,7 +28,7 @@
   (defn plane-from-points
     ([[a b c]] (plane-from-points a b c))
     ([a b c]
-       (let [n (g/normal3* a b c)]
+       (let [n (g/ortho-normal* a b c)]
          (thi.ng.geom.types.Plane. n (g/dot n a)))))
 #+END_SRC
 ** Helper functions
@@ -52,6 +52,14 @@
   (classify-point
     [_ p]
     (-> (:n _) (g/dot p) (- (:w _)) (m/signum *eps*)))
+#+END_SRC
+*** PDistance
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/plane.cljx
+  g/PDistance
+  (dist
+   [_ p] (->> p (g/dot (:n _)) (+ (- (:w _)))))
+  (dist-squared
+   [_ p] (let [d (g/dist _ p)] (* d d)))
 #+END_SRC
 *** PFlip
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/plane.cljx
