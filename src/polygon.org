@@ -121,7 +121,7 @@
                   (recur result verts v nv (* 2 nv)))
                 (recur result verts v nv (dec cnt)))))))))
 #+END_SRC
-**** TODO Insetting
+*** Insetting
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
   ;; http://alienryderflex.com/polygon_inset/
   (defn- inset-corner
@@ -141,11 +141,10 @@
   (defn inset-polygon
     "For CW polygons, use positive distance to inset or negative to outset.
     For CCW polygons, use opposite."
-    [{points :points :as _} d]
-    (thi.ng.geom.types.Polygon.
-     (mapv
-      (fn [[p c n]] (inset-corner p c n d))
-      (d/successive-nth 3 (d/wrap-seq points [(peek points)] [(first points)])))))
+    [points d]
+    (mapv
+     (fn [[p c n]] (inset-corner p c n d))
+     (d/successive-nth 3 (d/wrap-seq points [(peek points)] [(first points)]))))
 
   (defn smooth
     [{points :points :as _} amp base-weight]
@@ -266,10 +265,9 @@
        {:keys [depth offset inset top? bottom? wall nump]
         :or {wall 1.0 depth 1.0 inset 0.0 top? false bottom? false}}]
       (let [points (if (neg? (g/area _)) (reverse points) points)
-            poly (polygon points)
-            tpoints (if (zero? inset) points (:points (inset-polygon poly (- inset))))
-            ipoints (:points (inset-polygon poly (- wall)))
-            itpoints (:points (inset-polygon poly (- (- inset) wall)))
+            tpoints (if (zero? inset) points (inset-polygon points (- inset)))
+            ipoints (inset-polygon points (- wall))
+            itpoints (inset-polygon points (- (- inset) wall))
             off (or offset (vec3 0 0 depth))
             ioff (if bottom? (g/normalize off wall) (vec3))
             itoff (if top? (g/normalize off (- (g/mag off) wall)) off)
@@ -341,11 +339,17 @@
    [_] (:points _))
   (edges
    [{points :points}]
-   (g/edges* vector (conj points (first points))))
+   (g/edges* identity (conj points (first points))))
   (vertex-neighbors
    [_ v] (d/neighbors v (g/vertices _)))
   (vertex-valence
    [_ v] (if ((set (g/vertices _)) v) 2 0))
+#+END_SRC
+*** PInset
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
+  g/PInset
+  (inset
+   [_ inset] (th.ng.geom.types.Polygon. (inset-polygon (:points _) inset)))
 #+END_SRC
 *** TODO PIntersect
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx
