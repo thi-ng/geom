@@ -2,6 +2,28 @@
 
 * Namespace: thi.ng.geom.core.matrix
 
+** Matrix macros
+
+Some matrix operations (e.g. computing the determinant or inverse of
+matrix) require quite long mathematical expressions and we therefore
+define some macros to simplify them.
+
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/macros.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.core.macros
+    (:require [thi.ng.macromath.core :as mm]))
+
+  (defmacro det-item
+    [a b c d, e f g h, i j k l, m n o p]
+    `(+ (mm/sub (mm/mul ~a ~b ~c ~d)
+             (mm/mul ~e ~f ~g ~h)
+             (mm/mul ~i ~j ~k ~l))
+        (mm/mul ~m ~n ~o ~p)))
+  
+  (defmacro inv-item
+    [a b c d e f g]
+    `(* (mm/msubadd ~a ~b ~c ~d ~e ~f) ~g))
+#+END_SRC
+
 ** Namespace declaration                                           :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.core.matrix
@@ -20,35 +42,22 @@
      [thi.ng.geom.core.vector Vec2 Vec3]))
 #+END_SRC
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
-  (declare M32 M44)
-#+END_SRC
-
-** Matrix macros
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/macros.clj :mkdirp yes :padline no
-  (ns thi.ng.geom.core.macros
-    (:require [thi.ng.macromath.core :as mm]))
-
-  (defmacro det-item
-    [a b c d, e f g h, i j k l, m n o p]
-    `(+ (mm/sub (mm/mul ~a ~b ~c ~d)
-             (mm/mul ~e ~f ~g ~h)
-             (mm/mul ~i ~j ~k ~l))
-        (mm/mul ~m ~n ~o ~p)))
-  
-  (defmacro inv-item
-    [a b c d e f g]
-    `(* (mm/msubadd ~a ~b ~c ~d ~e ~f) ~g))
-#+END_SRC
-
 ** Matrix implementations
 *** 3x2 Matrix (Affine 2D transform)
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
-  (defrecord Matrix32
+  (deftype Matrix32
     #+clj  [^double m00 ^double m01 ^double m02
             ^double m10 ^double m11 ^double m12]
     #+cljs [m00 m01 m02 m10 m11 m12]
 #+END_SRC
+
+**** Clojure protocols
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+  Object
+  (toString
+   [_] (str \[ (apply str (interpose \space [m00 m01 m02 m10 m11 m12])) \]))
+#+END_SRC
+
 **** PMathOps
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
   api/PMathOps
@@ -63,12 +72,14 @@
       (mm/madd m10 (.-m01 m) m11 (.-m11 m))
       (mm/madd m10 (.-m02 m) m11 (.-m12 m) m12))))
 #+END_SRC
+
 **** PDeterminant
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
   api/PDeterminant
   (determinant
    [_] (mm/msub m00 m11 m01 m10))
 #+END_SRC
+
 **** PInvert
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
   api/PInvert
@@ -80,6 +91,7 @@
         (mm/div m11 d) (- (mm/div m01 d)) (mm/div (mm/msub m01 m12 m11 m02) d)
         (- (mm/div m10 d)) (mm/div m00 d) (mm/div (mm/msub m10 m02 m00 m12) d)))))
 #+END_SRC
+
 **** PRotate, PScale, PTranslate, PTransform
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
   api/PRotate
@@ -99,10 +111,10 @@
    (if (number? sx)
      (if (number? sy)
        (api/* _ (Matrix32. sx 0.0 0.0, 0.0 sy 0.0))
-       (api/* _ (Matrix32. (mm/mul sx (sy 0)) 0.0 0.0, 0.0 (mm/mul sx (sy 1)) 0.0)))
+       (api/* _ (Matrix32. (* sx (sy 0)) 0.0 0.0, 0.0 (* sx (sy 1)) 0.0)))
      (if (number? sy)
-       (api/* _ (Matrix32. (mm/mul sy (sx 0)) 0.0 0.0, 0.0 (mm/mul sy (sx 1)) 0.0))
-       (api/* _ (Matrix32. (mm/mul (sx 0) (sy 0)) 0.0 0.0, 0.0 (mm/mul (sx 1) (sy 1)) 0.0)))))
+       (api/* _ (Matrix32. (* sy (sx 0)) 0.0 0.0, 0.0 (* sy (sx 1)) 0.0))
+       (api/* _ (Matrix32. (* (sx 0) (sy 0)) 0.0 0.0, 0.0 (* (sx 1) (sy 1)) 0.0)))))
 
   api/PShear
   (shear
@@ -125,15 +137,16 @@
    (if (number? tx)
      (if (number? ty)
        (api/* _ (Matrix32. 1.0 0.0 tx, 0.0 1.0 ty))
-       (api/* _ (Matrix32. 1.0 0.0 (mm/mul tx (ty 0)), 0.0 1.0 (mm/mul tx (ty 1)))))
+       (api/* _ (Matrix32. 1.0 0.0 (* tx (ty 0)), 0.0 1.0 (* tx (ty 1)))))
      (if (number? ty)
-       (api/* _ (Matrix32. 1.0 0.0 (mm/mul ty (tx 0)), 0.0 1.0 (mm/mul ty (tx 1))))
-       (api/* _ (Matrix32. 1.0 0.0 (mm/mul (tx 0) (ty 0)), 0.0 1.0 (mm/mul (tx 1) (ty 1)))))))
+       (api/* _ (Matrix32. 1.0 0.0 (* ty (tx 0)), 0.0 1.0 (* ty (tx 1))))
+       (api/* _ (Matrix32. 1.0 0.0 (* (tx 0) (ty 0)), 0.0 1.0 (* (tx 1) (ty 1)))))))
 
   api/PTransform
   (transform
    [_ matrix] (api/* _ matrix))
 #+END_SRC
+
 **** PVectorTransform
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
   api/PVectorTransform
@@ -143,13 +156,15 @@
     (mm/madd x m00 y m01 m02)
     (mm/madd x m10 y m11 m12)))
 #+END_SRC
+
 **** End of implementations
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
   )
 #+END_SRC
+
 *** 4x4 Matrix
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
-  (defrecord Matrix44
+  (deftype Matrix44
     #+clj  [^double m00 ^double m01 ^double m02 ^double m03
             ^double m10 ^double m11 ^double m12 ^double m13
             ^double m20 ^double m21 ^double m22 ^double m23
@@ -159,6 +174,18 @@
             m20 m21 m22 m23
             m30 m31 m32 m33]
 #+END_SRC
+
+**** Clojure protocols
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+  Object
+  (toString
+   [_]
+   (str
+    \[
+    (apply str (interpose \space [m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]))
+    \]))
+#+END_SRC
+
 **** PMathOps
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
   api/PMathOps
@@ -186,6 +213,7 @@
       (mm/madd m30 (.-m02 m) m31 (.-m12 m) m32 (.-m22 m) m33 (.-m32 m))
       (mm/madd m30 (.-m03 m) m31 (.-m13 m) m32 (.-m23 m) m33 (.-m33 m)))))
 #+END_SRC
+
 **** PDeterminant
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
   api/PDeterminant
@@ -200,6 +228,7 @@
      (gmc/det-item m10 m01 m32 m23 m00 m11 m32 m23 m20 m11 m02 m33 m10 m21 m02 m33)
      (gmc/det-item m20 m01 m12 m33 m00 m21 m12 m33 m10 m01 m22 m33 m00 m11 m22 m33)]))
 #+END_SRC
+
 **** PInvert
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
   api/PInvert
@@ -227,7 +256,7 @@
              (mm/mul n04 n07))
             (mm/mul n05 n06))]
      (when-not (zero? d)
-       (let [invd (mm/div 1.0 d)]
+       (let [invd (/ 1.0 d)]
          (Matrix44.
           (gmc/inv-item m11 n11 m12 n10 m13 n09 invd)
           (gmc/inv-item m02 n10 m03 n09 (- m01) n11 invd)
@@ -246,6 +275,7 @@
           (gmc/inv-item m31 n01 m32 n00 (- m30) n03 invd)
           (gmc/inv-item m20 n03 m21 n01 m22 n00 invd))))))
 #+END_SRC
+
 **** PTranspose
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
   api/PTranspose
@@ -257,69 +287,98 @@
     m02 m12 m22 m32
     m03 m13 m23 m33))
 #+END_SRC
+
 **** Transformations
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
   api/PScale
   (scale
    [_ s]
-   (let [[x y z] (if (number? s) [s s s] s)]   
-     (api/* _ (assoc M44 :m00 x :m11 y :m22 z))))
+   (let [[x y z] (if (number? s) [s s s] s)]
+     (api/* _ (Matrix44.
+               x 0.0 0.0 0.0
+               0.0 y 0.0 0.0
+               0.0 0.0 z 0.0
+               0.0 0.0 0.0 1.0))))
   (scale
    [_ x y z]
-   (api/* _ (assoc M44 :m00 x :m11 y :m22 z))) ;; TODO add scale vec support
-  
+   (api/* _ (Matrix44.
+             x 0.0 0.0 0.0
+             0.0 y 0.0 0.0
+             0.0 0.0 z 0.0
+             0.0 0.0 0.0 1.0)))
+
   api/PRotate
   (rotate
    [_ theta] (api/rotate-z _ theta))
-  
+
   api/PRotate3D
   (rotate-x
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (api/* _ (assoc M44 :m11 c :m12 (- s) :m21 s :m22 c))))
+     (api/* _ (Matrix44.
+               1.0 0.0 0.0 0.0
+               0.0 c (- s) 0.0
+               0.0 s c 0.0
+               0.0 0.0 0.0 1.0))))
   (rotate-y
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (api/* _ (assoc M44 :m00 c :m02 s :m20 (- s) :m22 c))))
+     (api/* _ (Matrix44.
+               c 0.0 s 0.0
+               0.0 1.0 0.0 0.0
+               (- s) 0.0 c 0.0
+               0.0 0.0 0.0 1.0))))
   (rotate-z
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (api/* _ (assoc M44 :m00 c :m01 (- s) :m10 s :m11 c))))
+     (api/* _ (Matrix44.
+               c (- s) 0.0 0.0
+               s c 0.0 0.0
+               0.0 0.0 1.0 0.0
+               0.0 0.0 0.0 1.0))))
   (rotate-around-axis
    [_ [x y z] theta]
    (let [theta (- theta)
          s (Math/sin theta), c (Math/cos theta)
-         sx (mm/mul s x)
-         sy (mm/mul s y)
-         sz (mm/mul s z)
-         t (mm/sub 1.0 c)
-         tx (mm/mul t x)
-         ty (mm/mul t y)]
-     (api/* _
-        (Matrix44.
-         (mm/madd tx x c) (mm/madd tx y sz) (mm/msub tx z sy) 0.0
-         (mm/msub tx y sz) (mm/madd ty y c) (mm/madd ty z sx) 0.0
-         (mm/madd tx z sy) (mm/msub ty z sx) (mm/madd (mm/mul t z) z c) 0.0
-         0.0 0.0 0.0 1.0))))
-  
+         sx (* s x)
+         sy (* s y)
+         sz (* s z)
+         t (- 1.0 c)
+         tx (* t x)
+         ty (* t y)]
+     (api/* _ (Matrix44.
+               (mm/madd tx x c) (mm/madd tx y sz) (mm/msub tx z sy) 0.0
+               (mm/msub tx y sz) (mm/madd ty y c) (mm/madd ty z sx) 0.0
+               (mm/madd tx z sy) (mm/msub ty z sx) (mm/madd (* t z) z c) 0.0
+               0.0 0.0 0.0 1.0))))
+
   api/PTranslate
   (translate
    [_ t]
-   (let [[x y z] (if (number? t) [t t t] t)]   
-     (api/* _ (assoc M44 :m03 x :m13 y :m23 z))))
+   (let [[x y z] (if (number? t) [t t t] t)]
+     (api/* _ (Matrix44.
+               1.0 0.0 0.0 x
+               0.0 1.0 0.0 y
+               0.0 0.0 1.0 z
+               0.0 0.0 0.0 1.0))))
   (translate
    [_ x y z]
-   (api/* _ (assoc M44 :m03 x :m13 y :m23 z)))
-  
+   (api/* _ (Matrix44.
+             1.0 0.0 0.0 x
+             0.0 1.0 0.0 y
+             0.0 0.0 1.0 z
+             0.0 0.0 0.0 1.0)))
+
   api/PTransform
   (transform
    [_ matrix] (api/* _ matrix))
 #+END_SRC
+
 **** PVectorTransform
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
   api/PVectorTransform
   (transform-vector
-   [_ [x y z w :as v]]
+   [_ [x y z w]]
    (if w
      [(mm/madd x m00 y m01 z m02 w m03)
       (mm/madd x m10 y m11 z m12 w m13)
@@ -330,11 +389,19 @@
       (mm/madd x m10 y m11 z m12 m13)
       (mm/madd x m20 y m21 z m22 m23))))
 #+END_SRC
+
 **** End of implementation
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
     )
 #+END_SRC
-*** Constants
+
+** Override print methods
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+  #+clj (defmethod print-method Matrix32 [^Matrix32 o ^java.io.Writer w] (.write w (.toString o)))
+  #+clj (defmethod print-method Matrix44 [^Matrix44 o ^java.io.Writer w] (.write w (.toString o)))
+#+END_SRC
+
+** Constants
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
   (def ^:const M32
     (Matrix32.
