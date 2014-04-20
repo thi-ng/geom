@@ -1,0 +1,251 @@
+#+SETUPFILE: ../../src/setup.org
+#+TITLE: thi.ng/geom-core
+
+* About the project
+
+** Overview
+
+*** Geometric entities
+
+| *2D*           | *3D*                      |
+|----------------+---------------------------|
+| Vec2           | Vec3                      |
+| Matrix32       | Matrix44                  |
+|                | Quaternion                |
+
+** Status
+
+The project has been in development since late 2011 and is currently
+in its 4th iteration/rewrite cycle. It should still be considered
+ALPHA quality with several breaking API changes planned over the next
+few weeks. On the other hand, the library has already been used
+successfully in several commercial projects over the past 2 years and
+can be considered stable for basic use cases.
+
+A full test suite, website & tutorials are actively being worked on.
+
+** Example usage
+
+** Building & testing this project
+
+This project is written in a literate programming format and requires
+[[https://www.gnu.org/software/emacs/][Emacs]] & [[http://orgmode.org][Org-mode]] to generate usable source code in [[https://github.com/lynaghk/cljx][CLJX]] form. Assuming
+both tools are installed, the easiest way to generate a working
+project is via command line (make sure =emacs= is on your path or else
+edit its path in =tangle.sh=):
+
+#+BEGIN_SRC bash
+  git clone https://github.com/thi-ng/geom.git
+  cd geom/geom-core
+  ./tangle.sh src/*.org test/*.org
+#+END_SRC
+
+Tangling is the process of extracting & combining source blocks from
+=.org= files into an actual working project/source tree. The entire
+**geom** project currently consists of 26 namespaces and 6500+ lines
+of code, the tangling of which takes approx. 20 secs.
+
+Once tangling is complete, you can =cd= into the generated project
+directory (=babel= in this case) and then use =lein= as usual.
+
+*** Testing
+
+The =project.clj= file defines an alias to trigger a complete build &
+tests for both CLJ & CLJS versions. The are ~570 test cases for
+Clojure and approx. 270 for Clojurescript so far.
+
+#+BEGIN_SRC bash
+  cd babel
+  lein cleantest # some tests currently fail due to still missing protocol impls
+#+END_SRC
+
+To build the Clojurescript version simply run =lein cljsbuild test=
+from the same directory. A small HTML harness for the resulting JS
+file is also located in that folder (=babel/index.html=), allowing for
+further experimentation in the browser.
+
+*** Working with the REPL
+
+Since the generated =project.clj= (see below) includes REPL hooks for
+CLJX, editing files in Org-mode, then re-loading & testing changes is
+quite trivial. Simply launch a REPL (via lein or Emacs) as usual.
+Everytime you've made changes to an =.org= file, re-tangle it from Emacs
+or =tangle.sh=, then reload the namespace in the REPL via =(require
+'thi.ng.geom... :reload)= or similar.
+
+** Injected properties                                             :noexport:
+#+BEGIN_SRC clojure :exports none :noweb-ref project-name
+thi.ng/geom-core
+#+END_SRC
+
+#+BEGIN_SRC clojure :exports none :noweb-ref version
+0.3.0-SNAPSHOT
+#+END_SRC
+#+BEGIN_SRC clojure :exports none :noweb-ref project-url
+https://github.com/thi-ng/geom
+#+END_SRC
+#+BEGIN_SRC clojure :exports none :noweb-ref gen-source-path
+target/classes
+#+END_SRC
+#+BEGIN_SRC clojure :exports none :noweb-ref gen-test-path
+target/test-classes
+#+END_SRC
+#+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref cljs-artefact-path
+target/geom-core-<<version>>.js
+#+END_SRC
+
+** License
+
+This project is open source and licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache Software License 2.0]].
+
+** Dependencies
+*** Runtime
+**** [[https://github.com/clojure/clojure][Clojure]]
+#+BEGIN_SRC clojure :noweb-ref dep-clj
+[org.clojure/clojure "1.6.0"]
+#+END_SRC
+**** [[https://github.com/clojure/clojurescript][ClojureScript]]
+#+BEGIN_SRC clojure :noweb-ref dep-cljs
+[org.clojure/clojurescript "0.0-2197"]
+#+END_SRC
+**** [[https://github.com/thi-ng/common/][thi.ng/common]]
+#+BEGIN_SRC clojure :noweb-ref dep-common
+[thi.ng/common "0.1.2"]
+#+END_SRC
+**** [[https://github.com/thi-ng/macromath][thi.ng/macromath]]
+#+BEGIN_SRC clojure :noweb-ref dep-mmath
+[thi.ng/macromath "0.2.1"]
+#+END_SRC
+*** Development
+**** [[https://github.com/lynaghk/cljx][Cljx]]
+#+BEGIN_SRC clojure :noweb-ref dep-cljx
+[com.keminglabs/cljx "0.3.2"]
+#+END_SRC
+**** [[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]
+#+BEGIN_SRC clojure :noweb-ref dep-cljsbuild
+[lein-cljsbuild "1.0.3"]
+#+END_SRC
+**** [[https://github.com/hugoduncan/criterium][Criterium]]
+#+BEGIN_SRC clojure :noweb-ref dep-criterium
+[criterium "0.4.1"]
+#+END_SRC
+**** [[https://github.com/cemerick/austin][Austin]]
+#+BEGIN_SRC clojure :noweb-ref dep-austin
+[com.cemerick/austin "0.1.4"]
+#+END_SRC
+**** [[https://github.com/cemerick/clojurescript.test][clojurescript.test]]
+#+BEGIN_SRC clojure :noweb-ref dep-cljs-test
+[com.cemerick/clojurescript.test "0.2.2"]
+#+END_SRC
+** Release history
+
+| *Version* | *Released* | *Description*      | *Lein coordinates*      | *Tagged Github URL*                       |
+|-----------+------------+--------------------+-------------------------+-------------------------------------------|
+|     0.2.0 | 2014-03-10 | 1st public release | =[thi.ng/geom "0.2.0"]= | https://github.com/thi-ng/geom/tree/0.2.0 |
+
+** Authors
+
+| *Name*          | *Role*                          | *Website*           |
+| [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://postspectacular.com][postspectacular.com]] |
+|                 |                                 | [[http://thi.ng][thi.ng]]              |
+
+** Leiningen coordinates
+#+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
+  [<<project-name>> "<<version>>"]
+#+END_SRC
+
+** Leiningen project file                                          :noexport:
+#+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
+  (defproject <<project-name>> "<<version>>"
+    :description "thi.ng geometry kit"
+    :url "<<project-url>>"
+    :license {:name "Apache Software License"
+              :url "http://www.apache.org/licenses/LICENSE-2.0"}
+    :dependencies [<<dep-clj>>
+                   <<dep-common>>
+                   <<dep-mmath>>]
+  
+    :source-paths ["src/cljx"]
+    :test-paths ["<<gen-test-path>>"]
+  
+    :profiles {:dev {:dependencies [<<dep-cljs>>
+                                    <<dep-criterium>>]
+                     :plugins [<<dep-cljx>>
+                               <<dep-cljsbuild>>
+                               <<dep-cljs-test>>
+                               <<dep-austin>>]
+                     :hooks [cljx.hooks]
+                     :aliases {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]}}}
+  
+    :cljx {:builds [{:source-paths ["src/cljx"]
+                     :output-path "<<gen-source-path>>"
+                     :rules :clj}
+                    {:source-paths ["src/cljx"]
+                     :output-path "<<gen-source-path>>"
+                     :rules :cljs}
+                    {:source-paths ["test/cljx"]
+                     :output-path "<<gen-test-path>>"
+                     :rules :clj}
+                    {:source-paths ["test/cljx"]
+                     :output-path "<<gen-test-path>>"
+                     :rules :cljs}]}
+  
+    :cljsbuild {:builds [{:source-paths ["<<gen-source-path>>" "<<gen-test-path>>"]
+                          :id "simple"
+                          :compiler {:output-to "<<cljs-artefact-path>>"
+                                     :optimizations :whitespace
+                                     :pretty-print true}}]
+                :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}})
+#+END_SRC
+
+** ClojureScript HTML harness                                      :noexport:
+#+BEGIN_SRC html :tangle ../babel/index.html :noweb yes :mkdirp yes :padline no
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <title><<lein-coords>> test</title>
+    </head>
+    <body>
+      <script type="text/javascript" src="<<cljs-artefact-path>>"></script>
+    </body>
+  </html>
+#+END_SRC
+
+** Accessing library version during runtime
+
+The autogenerated namespace =thi.ng.geom.version= contains a single
+symbol =version= holding the version string defined above:
+
+#+BEGIN_SRC clojure :noweb yes
+  (use 'thi.ng.geom.core.version)
+  
+  (prn version)
+  ; "<<version>>"
+#+END_SRC
+
+*** Version namespace                                              :noexport:
+
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/version.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.core.version)
+  (def ^:const version "<<version>>")
+#+END_SRC
+
+* Modules
+
+*** Note for Github users
+
+The following sections contain links to project modules, but are not
+visibile when reading this file on Github. Please navigate to the
+source files via the normal [[https://github.com/thi-ng/geom/tree/master/geom-core/][GH repo browser]].
+
+** Core API
+
+#+INCLUDE: "api.org" :minlevel 2
+#+INCLUDE: "vector.org" :minlevel 2
+#+INCLUDE: "matrix.org" :minlevel 2
+#+INCLUDE: "quaternion.org" :minlevel 2
+
+* Tests
+
+#+INCLUDE: "../test/core.org" :minlevel 2
+#+INCLUDE: "../test/protocols.org" :minlevel 2

@@ -1,0 +1,162 @@
+#+SETUPFILE: ../src/setup.org
+
+* thi.ng.geom.test.protocols
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/protocols.cljx :mkdirp yes :padline no
+  (ns thi.ng.geom.test.protocols
+    ,#+cljs
+    (:require-macros
+     [cemerick.cljs.test :refer (is deftest with-test run-tests testing)])
+    (:require
+     [thi.ng.common.math.core :as m :refer [*eps*]]
+     [thi.ng.geom.core :as g :refer [vec2 vec3]]
+     [thi.ng.geom.types :as types]
+     [thi.ng.geom.aabb]
+     [thi.ng.geom.bezier]
+     [thi.ng.geom.circle]
+     [thi.ng.geom.line]
+     [thi.ng.geom.polygon]
+     [thi.ng.geom.quad]
+     [thi.ng.geom.rect]
+     [thi.ng.geom.triangle]
+     [thi.ng.geom.tetrahedron]
+     [thi.ng.geom.mesh]
+     [thi.ng.geom.sphere]
+     [thi.ng.geom.plane]
+     [thi.ng.geom.path]
+     [thi.ng.geom.types]
+     ,#+clj [clojure.test :refer :all]
+     ,#+cljs [cemerick.cljs.test :as t])
+    ,#+clj
+    (:import
+     [thi.ng.geom.core
+      Matrix32 Matrix44 Quat4 Vec2 Vec3]
+     [thi.ng.geom.types
+      Line2 LineStrip2 Bezier2 Triangle2 Circle Ellipse Rect Polygon Path2 Mesh2
+      Line3 LineStrip3 Bezier3 Plane Triangle3 Tetrahedron Quad3 AABB Sphere Mesh3]))
+#+END_SRC
+** Constants & helpers
+#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/protocols.cljx
+  (def proto-ids
+    {:area g/PArea
+     :bounds g/PBounds
+     :bcircle g/PBoundingCircle
+     :bsphere g/PBoundingSphere
+     :boundary g/PBoundary
+     :center g/PCenter
+     :chull g/PConvexHull
+     :circum g/PCircumference
+     :class g/PClassify
+     :clip g/PClip
+     :conj g/PConjugate
+     :cross g/PCrossProduct
+     :det g/PDeterminant
+     :dist g/PDistance
+     :dot g/PDotProduct
+     :ext g/PExtrude
+     :flip g/PFlip
+     :graph g/PGraph
+     :head g/PHeading
+     :isec g/PIntersect
+     :inv g/PInvert
+     :limit g/PLimit
+     :mag g/PMagnitude
+     :mat g/PMatrixConvert
+     :math g/PMathOps
+     :mesh g/PMeshConvert
+     :mimax g/PMinMax
+     :mix g/PInterpolate
+     :norm g/PNormalize
+     :polar g/PPolar
+     :poly g/PPolygonConvert
+     :prox g/PProximity
+     :refl g/PReflect
+     :rotate g/PRotate
+     :rot3d g/PRotate3D
+     :sample g/PSample
+     :scale g/PScale
+     :shear g/PShear
+     :subdiv g/PSubdivide
+     :tess g/PTessellate
+     :translate g/PTranslate
+     :tx g/PTransform
+     :vol g/PVolume
+     :vtx g/PVectorTransform})
+  
+  (def shape-common
+    #{:area :bounds :boundary :center :class :graph :mesh
+     :rotate :sample :scale :tess :translate :tx :vol})
+  
+  (def shape-common-2d
+    (conj shape-common :bcircle :circum :ext :poly))
+  
+  (def shape-common-3d
+    (conj shape-common :bsphere))
+  
+  (def vec-common
+    #{:cross :dist :dot :head :inv :limit :mag :math :mix
+     :norm :polar :refl :rotate :scale :translate :tx})
+  
+  ,#+clj
+  (defn satisfies-all?
+    [type & protos]
+    (testing
+        (.getName type)
+      (doseq [p protos]
+        (is (true? (extends? (proto-ids p) type))
+            (str (get-in proto-ids [p :on-interface]))))))
+#+END_SRC
+** Main context
+#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/protocols.cljx
+  ,#+clj
+  (deftest proto-implementation-check
+    (dorun
+     (map
+      (fn [[t protos]] (apply satisfies-all? t protos))
+      {
+       ;; 2d
+  
+       thi.ng.geom.types.Line2
+       (-> shape-common-2d (disj :poly :mesh :tess) (conj :isec :prox))
+  
+       thi.ng.geom.types.Circle
+       (conj shape-common-2d :isec :prox)
+  
+       thi.ng.geom.types.Polygon
+       (conj shape-common-2d :chull :clip :flip :isec :prox)
+  
+       thi.ng.geom.types.Rect
+       (conj shape-common-2d :isec :prox :subdiv)
+  
+       thi.ng.geom.types.Triangle2
+       (conj shape-common-2d :flip :isec :prox :subdiv)
+  
+       ;; 3d
+  
+       thi.ng.geom.types.Line3
+       (-> shape-common-3d (disj :mesh :tess) (conj :isec :prox))
+  
+       thi.ng.geom.types.AABB
+       (conj shape-common-3d :isec :prox :subdiv)
+  
+       thi.ng.geom.types.Quad3
+       (conj shape-common-3d :flip :isec :prox :subdiv)
+  
+       thi.ng.geom.types.Sphere
+       (conj shape-common-3d :isec :prox)
+  
+       thi.ng.geom.types.Triangle3
+       (conj shape-common-3d :flip :isec :prox :subdiv)
+  
+       ;; core types
+  
+       thi.ng.geom.core.Matrix32 [:math :det :inv :rotate :scale :shear :tx :vtx]
+       thi.ng.geom.core.Matrix44 [:math :det :inv :rotate :scale :tx :vtx]
+       thi.ng.geom.core.Quat4 [:math :conj :dot :inv :mag :mat :mix :norm :scale :vtx]
+  
+       thi.ng.geom.core.Vec2
+       vec-common
+  
+       thi.ng.geom.core.Vec3
+       (conj vec-common :rot3d)})))
+#+END_SRC

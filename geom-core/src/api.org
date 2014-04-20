@@ -1,0 +1,174 @@
+#+SETUPFILE: ../../src/setup.org
+
+* Namespace: thi.ng.geom.core.api
+
+** Namespace declaration                                           :noexport:
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx :mkdirp yes :padline no
+  (ns thi.ng.geom.core.api
+    (:refer-clojure :exclude [+ - * min max]))
+#+END_SRC
+
+** Protocols
+*** Math operations
+**** PMathOps
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PMathOps
+    (+ [_] [_ a] [_ a b] [_ a b c])
+    (- [_] [_ a] [_ a b] [_ a b c])
+    (* [_] [_ a] [_ a b] [_ a b c])
+    (div [_] [_ a] [_ a b] [_ a b c])
+    (madd [_ a b])
+    (addm [_ a b])
+    (abs [_]))
+#+END_SRC
+**** PConjugate
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PConjugate
+    (conjugate [_]))
+#+END_SRC
+**** PCrossProduct
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PCrossProduct
+    (cross [_ a]))
+#+END_SRC
+**** PDeterminant
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PDeterminant
+    (determinant [_]))
+#+END_SRC
+**** PDistance
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PDistance
+    (dist [_ a])
+    (dist-squared [_ a]))
+#+END_SRC
+**** PDotProduct
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PDotProduct
+    (dot [_ a]))
+#+END_SRC
+**** PHeading
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PHeading
+    (heading [_])
+    (heading-xy [_])
+    (heading-xz [_])
+    (heading-yz [_])
+    (angle-between [_ a])
+    (normal [_] [_ a])
+    (slope-xy [_])
+    (slope-xz [_])
+    (slope-yz [_]))
+#+END_SRC
+**** PInterpolate
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PInterpolate
+    (mix [_ x] [_ x t] [_ a b c u v]))
+#+END_SRC
+**** PInvert
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PInvert
+    (invert [_]))
+#+END_SRC
+**** PSetOps
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PSetOps
+    (union [_ x])
+    (intersection [_ y])
+    (difference [_ x]))
+#+END_SRC
+**** PLimit
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PLimit
+    (limit [_ x]))
+#+END_SRC
+**** PMagnitude
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PMagnitude
+    (mag [_])
+    (mag-squared [_]))
+#+END_SRC
+**** PMatrixConvert
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PMatrixConvert
+    (as-matrix [_]))
+#+END_SRC
+**** PMinMax
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PMinMax
+    (min [_ x] [_ a b])
+    (max [_ y] [_ a b]))
+#+END_SRC
+**** PNormalize
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PNormalize
+    (normalize [_] [_ len])
+    (normalized? [_]))
+#+END_SRC
+**** PTranspose
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PTranspose
+    (transpose [_]))
+#+END_SRC
+
+*** Spatial transform operations
+
+The position, size and orientation of spatial entities can
+usually be manipulated via the three basic operations: rotate,
+scale & translate. Other, more complex transformations can be
+achieved through combination and repetition of these.
+
+**** PPolar
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PPolar
+    (as-polar [_])
+    (as-cartesian [_]))
+#+END_SRC
+**** PReflect
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PReflect
+    (reflect [_ r]))
+#+END_SRC
+**** PRotate & PRotate3D
+  Rotation is always relative to the world origin. For 2D
+  implementations, the rotation angle \theta (theta) is always
+  interpreted clockwise and only the =rotate= method is
+  implemented.
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PRotate
+    (rotate [_ t]))
+
+  (defprotocol PRotate3D
+    (rotate-x [_ t])
+    (rotate-y [_ t])
+    (rotate-z [_ t])
+    (rotate-around-axis [_ a t]))
+#+END_SRC
+**** PScale
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PScale
+    (scale [_ s] [_ a b] [_ a b c])
+    (scale-size [_ s]))
+#+END_SRC
+**** PShear
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PShear
+    (shear [_ s] [_ sx sy] [_ sx sy sz]))
+#+END_SRC
+**** PTransform
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PTransform
+    (transform [_ matrix]))
+#+END_SRC
+**** PTranslate
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PTranslate
+    (translate [_ t] [_ x y] [_ x y z]))
+#+END_SRC
+**** PVectorTransform
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/api.cljx
+  (defprotocol PVectorTransform
+    (transform-vector [_ v]))
+#+END_SRC
+
+
