@@ -6,7 +6,7 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.core.quaternion
     (:require
-     [thi.ng.geom.core.api :as api]
+     [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [V3X V3Y V3Z]]
      [thi.ng.geom.core.matrix :as mat]
      [thi.ng.common.error :as err]
@@ -29,6 +29,7 @@ defined further on, but need to be declared already.
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
   (declare swizzle4 swizzle4-assoc)
 #+END_SRC
+
 ** Templates
 *** apply
 #+BEGIN_SRC clojure :noweb-ref tpl-apply
@@ -320,14 +321,14 @@ defined further on, but need to be declared already.
 
 *** PScale
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
-  api/PScale
+  g/PScale
   (scale
    [_ s]
    (Quat4. (* x s) (* y s) (* z s) (* w s)))
 #+END_SRC
 *** PRotate3D
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
-  api/PRotate3D
+  g/PRotate3D
   (rotate-x
    [_ theta]
    (let [t (/ theta 2.0)
@@ -358,23 +359,23 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** PMathOps
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
-  api/PMathOps
+  g/PMathOps
   (+
    [_ q]
    (let [q ^Quat4 q]
      (Quat4.
-      (mm/add x (.-x q))
-      (mm/add y (.-y q))
-      (mm/add z (.-z q))
-      (mm/add w (.-w q)))))
+      (+ x (.-x q))
+      (+ y (.-y q))
+      (+ z (.-z q))
+      (+ w (.-w q)))))
   (-
    [_ q]
    (let [q ^Quat4 q]
      (Quat4.
-      (mm/sub x (.-x q))
-      (mm/sub y (.-y q))
-      (mm/sub z (.-z q))
-      (mm/sub w (.-w q)))))
+      (- x (.-x q))
+      (- y (.-y q))
+      (- z (.-z q))
+      (- w (.-w q)))))
   (*
    [_ q]
    (let [q ^Quat4 q
@@ -401,7 +402,7 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** PDotProduct
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
-  api/PDotProduct
+  g/PDotProduct
   (dot
    [_ q]
    (let [q ^Quat4 q]
@@ -409,7 +410,7 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** PMagnitude
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
-  api/PMagnitude
+  g/PMagnitude
   (mag
    [_] (Math/sqrt (mm/madd x x y y z z w w)))
   (mag-squared
@@ -417,7 +418,7 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** PNormalize
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
-  api/PNormalize
+  g/PNormalize
   (normalize [_]
     (let [m (Math/sqrt (mm/madd x x y y z z w w))]
       (if (> m *eps*)
@@ -426,25 +427,25 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** PConjugate
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
-  api/PConjugate
+  g/PConjugate
   (conjugate [_]
     (Quat4. (- x) (- y) (- z) w))
 #+END_SRC
 *** PInvert
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
-  api/PInvert
+  g/PInvert
   (invert [_]
-    (let [d (api/mag-squared _)
+    (let [d (g/mag-squared _)
           d (if (zero? d) 0.0 (/ d))
           id (- d)]
       (Quat4. (* x id) (* y id) (* z id) (* w d))))
 #+END_SRC
 *** PInterpolate
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
-  api/PInterpolate
-  (mix [_ q] (api/mix _ q 0.5))
+  g/PInterpolate
+  (mix [_ q] (g/mix _ q 0.5))
   (mix [_ q t]
-    (let [d (api/dot _ q)]
+    (let [d (g/dot _ q)]
       (if (< (m/abs d) 1.0)
         (let [theta (Math/acos d)
               stheta (Math/sqrt (mm/madd d d -1.0))
@@ -462,7 +463,7 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** PMatrixConvert
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
-  api/PMatrixConvert
+  g/PMatrixConvert
   (as-matrix
    [_]
    (let [x2 (+ x x)
@@ -494,7 +495,7 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** PVectorTransform
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
-  api/PVectorTransform
+  g/PVectorTransform
   (transform-vector
    [_ [vx vy vz :as v]]
    (let [ix (mm/maddsub w vx y vz z vy)
@@ -526,7 +527,7 @@ defined further on, but need to be declared already.
   (defn quat-from-axis-angle
     [axis theta]
     (let [theta (/ theta 2.0)]
-      (quat (api/normalize (v/vec3 axis) (Math/sin theta)) (Math/cos theta))))
+      (quat (g/normalize (v/vec3 axis) (Math/sin theta)) (Math/cos theta))))
 
   (defn quat-from-euler
     [order & [alpha beta gamma]]
@@ -538,7 +539,7 @@ defined further on, but need to be declared already.
                     :yzx [V3Y V3Z V3X]
                     :zyx [V3Z V3Y V3X]
                     (err/illegal-arg! order))]
-      (api/* (quat-from-axis-angle a alpha)
+      (g/* (quat-from-axis-angle a alpha)
              (quat-from-axis-angle b beta)
              (quat-from-axis-angle c gamma))))
 
@@ -577,17 +578,17 @@ defined further on, but need to be declared already.
 
   (defn alignment-quat
     [a b]
-    (let [d (api/dot a b)]
+    (let [d (g/dot a b)]
       (cond
-       (< d -0.999999) (let [c (api/cross V3X a)
-                             c (if (< (api/mag c) 1e-6) (api/cross V3Y a) c)]
+       (< d -0.999999) (let [c (g/cross V3X a)
+                             c (if (< (g/mag c) 1e-6) (g/cross V3Y a) c)]
                          (quat-from-axis-angle c PI))
        (> d 0.999999) (quat)
-       :default (api/normalize (quat (api/cross a b) (inc d))))))
+       :default (g/normalize (quat (g/cross a b) (inc d))))))
 #+END_SRC
 
 ** Swizzling
-#+BEGIN_SRC clojure
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
   (defn lookup4
     [^Quat4 _ k nf]
     (case k
@@ -641,5 +642,5 @@ defined further on, but need to be declared already.
         :y (Quat4. (.-x _) v (.-z _) (.-w _))
         :z (Quat4. (.-x _) (.-y _) v (.-w _))
         :w (Quat4. (.-x _) (.-y _) (.-z _) v)
-        (v/swizzle-assoc* _ quat4 {\x 0 \y 1 \z 2 \w 3} k v))))
+        (v/swizzle-assoc* _ quat {\x 0 \y 1 \z 2 \w 3} k v))))
 #+END_SRC

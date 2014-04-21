@@ -14,11 +14,12 @@ define some macros to simplify them.
 
   (defmacro det-item
     [a b c d, e f g h, i j k l, m n o p]
-    `(+ (mm/sub (mm/mul ~a ~b ~c ~d)
-             (mm/mul ~e ~f ~g ~h)
-             (mm/mul ~i ~j ~k ~l))
+    `(+ (mm/sub
+         (mm/mul ~a ~b ~c ~d)
+         (mm/mul ~e ~f ~g ~h)
+         (mm/mul ~i ~j ~k ~l))
         (mm/mul ~m ~n ~o ~p)))
-  
+
   (defmacro inv-item
     [a b c d e f g]
     `(* (mm/msubadd ~a ~b ~c ~d ~e ~f) ~g))
@@ -28,7 +29,7 @@ define some macros to simplify them.
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.core.matrix
     (:require
-     [thi.ng.geom.core.api :as api]
+     [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
      ,#+clj [thi.ng.macromath.core :as mm]
@@ -60,7 +61,7 @@ define some macros to simplify them.
 
 **** PMathOps
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
-  api/PMathOps
+  g/PMathOps
   (*
    [_ m]
    (let [m ^Matrix32 m]
@@ -75,81 +76,81 @@ define some macros to simplify them.
 
 **** PDeterminant
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
-  api/PDeterminant
+  g/PDeterminant
   (determinant
    [_] (mm/msub m00 m11 m01 m10))
 #+END_SRC
 
 **** PInvert
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
-  api/PInvert
+  g/PInvert
   (invert
    [_]
-   (let [d (api/determinant _)]
+   (let [d (g/determinant _)]
      (when-not (zero? d)
        (Matrix32.
-        (mm/div m11 d) (- (mm/div m01 d)) (mm/div (mm/msub m01 m12 m11 m02) d)
-        (- (mm/div m10 d)) (mm/div m00 d) (mm/div (mm/msub m10 m02 m00 m12) d)))))
+        (/ m11 d) (- (/ m01 d)) (/ (mm/msub m01 m12 m11 m02) d)
+        (- (/ m10 d)) (/ m00 d) (/ (mm/msub m10 m02 m00 m12) d)))))
 #+END_SRC
 
 **** PRotate, PScale, PTranslate, PTransform
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
-  api/PRotate
+  g/PRotate
   (rotate
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (api/* _ (Matrix32. c (- s) 0.0, s c 0.0))))
+     (g/* _ (Matrix32. c (- s) 0.0, s c 0.0))))
 
-  api/PScale
+  g/PScale
   (scale
    [_ s]
-   (api/* _ (Matrix32.
+   (g/* _ (Matrix32.
              (if (number? s) s (s 0)) 0.0 0.0
              0.0 (if (number? s) s (s 1)) 0.0)))
   (scale
    [_ sx sy]
    (if (number? sx)
      (if (number? sy)
-       (api/* _ (Matrix32. sx 0.0 0.0, 0.0 sy 0.0))
-       (api/* _ (Matrix32. (* sx (sy 0)) 0.0 0.0, 0.0 (* sx (sy 1)) 0.0)))
+       (g/* _ (Matrix32. sx 0.0 0.0, 0.0 sy 0.0))
+       (g/* _ (Matrix32. (* sx (sy 0)) 0.0 0.0, 0.0 (* sx (sy 1)) 0.0)))
      (if (number? sy)
-       (api/* _ (Matrix32. (* sy (sx 0)) 0.0 0.0, 0.0 (* sy (sx 1)) 0.0))
-       (api/* _ (Matrix32. (* (sx 0) (sy 0)) 0.0 0.0, 0.0 (* (sx 1) (sy 1)) 0.0)))))
+       (g/* _ (Matrix32. (* sy (sx 0)) 0.0 0.0, 0.0 (* sy (sx 1)) 0.0))
+       (g/* _ (Matrix32. (* (sx 0) (sy 0)) 0.0 0.0, 0.0 (* (sx 1) (sy 1)) 0.0)))))
 
-  api/PShear
+  g/PShear
   (shear
    [_ s]
-   (api/* _ (Matrix32.
+   (g/* _ (Matrix32.
              1.0 (if (number? s) s (s 0)) 0.0,
              (if (number? s) s (s 1)) 1.0 0.0)))
   (shear
    [_ sx sy]
-   (api/* _ (Matrix32. 1.0 sx 0.0, sy 1.0 0.0)))
+   (g/* _ (Matrix32. 1.0 sx 0.0, sy 1.0 0.0)))
 
-  api/PTranslate
+  g/PTranslate
   (translate
    [_ t]
-   (api/* _ (Matrix32.
+   (g/* _ (Matrix32.
              1.0 0.0 (if (number? t) t (t 0))
              0.0 1.0 (if (number? t) t (t 1)))))
   (translate
    [_ tx ty]
    (if (number? tx)
      (if (number? ty)
-       (api/* _ (Matrix32. 1.0 0.0 tx, 0.0 1.0 ty))
-       (api/* _ (Matrix32. 1.0 0.0 (* tx (ty 0)), 0.0 1.0 (* tx (ty 1)))))
+       (g/* _ (Matrix32. 1.0 0.0 tx, 0.0 1.0 ty))
+       (g/* _ (Matrix32. 1.0 0.0 (* tx (ty 0)), 0.0 1.0 (* tx (ty 1)))))
      (if (number? ty)
-       (api/* _ (Matrix32. 1.0 0.0 (* ty (tx 0)), 0.0 1.0 (* ty (tx 1))))
-       (api/* _ (Matrix32. 1.0 0.0 (* (tx 0) (ty 0)), 0.0 1.0 (* (tx 1) (ty 1)))))))
+       (g/* _ (Matrix32. 1.0 0.0 (* ty (tx 0)), 0.0 1.0 (* ty (tx 1))))
+       (g/* _ (Matrix32. 1.0 0.0 (* (tx 0) (ty 0)), 0.0 1.0 (* (tx 1) (ty 1)))))))
 
-  api/PTransform
+  g/PTransform
   (transform
-   [_ matrix] (api/* _ matrix))
+   [_ matrix] (g/* _ matrix))
 #+END_SRC
 
 **** PVectorTransform
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
-  api/PVectorTransform
+  g/PVectorTransform
   (transform-vector
    [_ [x y :as v]]
    (thi.ng.geom.core.vector.Vec2.
@@ -188,7 +189,7 @@ define some macros to simplify them.
 
 **** PMathOps
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
-  api/PMathOps
+  g/PMathOps
   (*
    [_ m]
    (let [^Matrix44 m m]
@@ -216,7 +217,7 @@ define some macros to simplify them.
 
 **** PDeterminant
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
-  api/PDeterminant
+  g/PDeterminant
   (determinant
    [_]
    (reduce
@@ -231,7 +232,7 @@ define some macros to simplify them.
 
 **** PInvert
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
-  api/PInvert
+  g/PInvert
   (invert
    [_]
    (let [n00 (mm/msub m00 m11 m01 m10)
@@ -246,15 +247,15 @@ define some macros to simplify them.
          n09 (mm/msub m21 m32 m22 m31)
          n10 (mm/msub m21 m33 m23 m31)
          n11 (mm/msub m22 m33 m23 m32)
-         d (mm/add
+         d (mm/madd
+            n05 n06
             (mm/sub
-             (mm/add
-              (mm/add
-               (mm/msub n00 n11 n01 n10)
-               (mm/mul n02 n09))
-              (mm/mul n03 n08))
-             (mm/mul n04 n07))
-            (mm/mul n05 n06))]
+             (mm/madd
+              n03 n08
+              (mm/madd
+               n02 n09
+               (mm/msub n00 n11 n01 n10)))
+             (mm/mul n04 n07)))]
      (when-not (zero? d)
        (let [invd (/ 1.0 d)]
          (Matrix44.
@@ -278,7 +279,7 @@ define some macros to simplify them.
 
 **** PTranspose
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
-  api/PTranspose
+  g/PTranspose
   (transpose
    [_]
    (Matrix44.
@@ -290,52 +291,52 @@ define some macros to simplify them.
 
 **** Transformations
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
-  api/PScale
+  g/PScale
   (scale
    [_ s]
    (let [[x y z] (if (number? s) [s s s] s)]
-     (api/* _ (Matrix44.
-               x 0.0 0.0 0.0
-               0.0 y 0.0 0.0
-               0.0 0.0 z 0.0
-               0.0 0.0 0.0 1.0))))
-  (scale
-   [_ x y z]
-   (api/* _ (Matrix44.
+     (g/* _ (Matrix44.
              x 0.0 0.0 0.0
              0.0 y 0.0 0.0
              0.0 0.0 z 0.0
-             0.0 0.0 0.0 1.0)))
+             0.0 0.0 0.0 1.0))))
+  (scale
+   [_ x y z]
+   (g/* _ (Matrix44.
+           x 0.0 0.0 0.0
+           0.0 y 0.0 0.0
+           0.0 0.0 z 0.0
+           0.0 0.0 0.0 1.0)))
 
-  api/PRotate
+  g/PRotate
   (rotate
-   [_ theta] (api/rotate-z _ theta))
+   [_ theta] (g/rotate-z _ theta))
 
-  api/PRotate3D
+  g/PRotate3D
   (rotate-x
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (api/* _ (Matrix44.
-               1.0 0.0 0.0 0.0
-               0.0 c (- s) 0.0
-               0.0 s c 0.0
-               0.0 0.0 0.0 1.0))))
+     (g/* _ (Matrix44.
+             1.0 0.0 0.0 0.0
+             0.0 c (- s) 0.0
+             0.0 s c 0.0
+             0.0 0.0 0.0 1.0))))
   (rotate-y
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (api/* _ (Matrix44.
-               c 0.0 s 0.0
-               0.0 1.0 0.0 0.0
-               (- s) 0.0 c 0.0
-               0.0 0.0 0.0 1.0))))
+     (g/* _ (Matrix44.
+             c 0.0 s 0.0
+             0.0 1.0 0.0 0.0
+             (- s) 0.0 c 0.0
+             0.0 0.0 0.0 1.0))))
   (rotate-z
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (api/* _ (Matrix44.
-               c (- s) 0.0 0.0
-               s c 0.0 0.0
-               0.0 0.0 1.0 0.0
-               0.0 0.0 0.0 1.0))))
+     (g/* _ (Matrix44.
+             c (- s) 0.0 0.0
+             s c 0.0 0.0
+             0.0 0.0 1.0 0.0
+             0.0 0.0 0.0 1.0))))
   (rotate-around-axis
    [_ [x y z] theta]
    (let [theta (- theta)
@@ -346,37 +347,37 @@ define some macros to simplify them.
          t (- 1.0 c)
          tx (* t x)
          ty (* t y)]
-     (api/* _ (Matrix44.
-               (mm/madd tx x c) (mm/madd tx y sz) (mm/msub tx z sy) 0.0
-               (mm/msub tx y sz) (mm/madd ty y c) (mm/madd ty z sx) 0.0
-               (mm/madd tx z sy) (mm/msub ty z sx) (mm/madd (* t z) z c) 0.0
-               0.0 0.0 0.0 1.0))))
+     (g/* _ (Matrix44.
+             (mm/madd tx x c) (mm/madd tx y sz) (mm/msub tx z sy) 0.0
+             (mm/msub tx y sz) (mm/madd ty y c) (mm/madd ty z sx) 0.0
+             (mm/madd tx z sy) (mm/msub ty z sx) (mm/madd (* t z) z c) 0.0
+             0.0 0.0 0.0 1.0))))
 
-  api/PTranslate
+  g/PTranslate
   (translate
    [_ t]
    (let [[x y z] (if (number? t) [t t t] t)]
-     (api/* _ (Matrix44.
-               1.0 0.0 0.0 x
-               0.0 1.0 0.0 y
-               0.0 0.0 1.0 z
-               0.0 0.0 0.0 1.0))))
-  (translate
-   [_ x y z]
-   (api/* _ (Matrix44.
+     (g/* _ (Matrix44.
              1.0 0.0 0.0 x
              0.0 1.0 0.0 y
              0.0 0.0 1.0 z
-             0.0 0.0 0.0 1.0)))
+             0.0 0.0 0.0 1.0))))
+  (translate
+   [_ x y z]
+   (g/* _ (Matrix44.
+           1.0 0.0 0.0 x
+           0.0 1.0 0.0 y
+           0.0 0.0 1.0 z
+           0.0 0.0 0.0 1.0)))
 
-  api/PTransform
+  g/PTransform
   (transform
-   [_ matrix] (api/* _ matrix))
+   [_ matrix] (g/* _ matrix))
 #+END_SRC
 
 **** PVectorTransform
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
-  api/PVectorTransform
+  g/PVectorTransform
   (transform-vector
    [_ [x y z w]]
    (if w
@@ -504,13 +505,13 @@ define some macros to simplify them.
     toward the target point with the given up direction.
     This emulates the OpenGL function `gluLookAt()`."
     [eye target upvec]
-    (let [[fx fy fz :as f] (api/normalize (api/- eye target))
-          [sx sy sz :as s] (api/normalize (api/cross upvec f)) ;; FIXME
-          [tx ty tz :as t] (api/normalize (api/cross f s))]    ;; FIXME
+    (let [[fx fy fz :as f] (g/normalize (g/- eye target))
+          [sx sy sz :as s] (g/normalize (g/cross upvec f)) ;; FIXME
+          [tx ty tz :as t] (g/normalize (g/cross f s))]    ;; FIXME
       (Matrix44.
-       sx sy sz (- (api/dot s eye))
-       tx ty tz (- (api/dot t eye))
-       fx fy fz (- (api/dot f eye))
+       sx sy sz (- (g/dot s eye))
+       tx ty tz (- (g/dot t eye))
+       fx fy fz (- (g/dot f eye))
        0.0 0.0 0.0 1.0)))
 
   ;; FIXME add arity for pre-computed vpm matrix
@@ -521,9 +522,9 @@ define some macros to simplify them.
     (let [x (mm/msub (- (v 0) (p 0)) (/ 2.0 width) 1.0)
           y (mm/msub (- (v 1) (p 1)) (/ 2.0 height) 1.0)
           z (mm/msub (v 2) 2.0 1.0)
-          vpm (api/* pmat vmat)]
-      (if (api/invert vpm)
-        (let [v' (api/transform-vector vpm [x y z 1.0])]
+          vpm (g/* pmat vmat)]
+      (if (g/invert vpm)
+        (let [v' (g/transform-vector vpm [x y z 1.0])]
           (if-not (zero? (v' 3))
-            (api/div (v/vec3 v') (v' 3)))))))
+            (g/div (v/vec3 v') (v' 3)))))))
 #+END_SRC

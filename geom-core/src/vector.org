@@ -15,18 +15,15 @@ the following implementations are quite lengthy.
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.core.vector
     (:require
-     [thi.ng.geom.core.api :as api]
+     [thi.ng.geom.core :as g]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
-     ,#+clj [thi.ng.macromath.core :as mm]
-    )
+     ,#+clj [thi.ng.macromath.core :as mm])
     ,#+cljs
     (:require-macros
-     [thi.ng.macromath.core :as mm])
-  )
+     [thi.ng.macromath.core :as mm]))
 #+END_SRC
-
 
 ** Declarations
 
@@ -39,7 +36,9 @@ defined further on, but need to be declared already.
   (declare vec2-op-1 vec2-op-2 vec2-op-2* vec2-op-3)
   (declare vec3-op-1 vec3-op-2 vec3-op-3)
 #+END_SRC
+
 ** Protocol helpers
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
   ,#+clj
   (defn map-entry
@@ -62,6 +61,7 @@ defined further on, but need to be declared already.
              (clojure.lang.Util/equals
               v (.getValue ^java.util.Map$Entry x))))))
 #+END_SRC
+
 ** 2D
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
   (deftype Vec2
@@ -174,7 +174,7 @@ defined further on, but need to be declared already.
                 (clojure.lang.Util/equals x (nth o 0))
                 (clojure.lang.Util/equals y (nth o 1)))))
   
-  ;; http://docs.oracle.com/javase/7/docs/api/java/util/List.html#hashCode()
+  ;; http://docs.oracle.com/javase/7/docs/g/java/util/List.html#hashCode()
   ,#+clj (hashCode
          [_]
          (-> 31
@@ -286,7 +286,7 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** Transformations
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PScale
+  g/PScale
   (scale
    [_ a] (vec2-op-1 * _ a 1.0))
   (scale
@@ -294,7 +294,7 @@ defined further on, but need to be declared already.
   (scale
    [_ a b c] (vec2-op-3 * _ a b c 1.0))
   
-  api/PTranslate
+  g/PTranslate
   (translate
    [_ a] (vec2-op-1 + _ a 0.0))
   (translate
@@ -302,28 +302,28 @@ defined further on, but need to be declared already.
   (translate
    [_ a b c] (vec2-op-3 + _ a b c 0.0))
   
-  api/PRotate
+  g/PRotate
   (rotate
    [_ theta]
    (let [s (Math/sin theta) c (Math/cos theta)]
      (Vec2. (mm/msub x c y s) (mm/madd x s y c))))
-  api/PRotate3D
+  g/PRotate3D
   (rotate-x
-   [_ theta] (api/rotate-x (vec3 _) theta))
+   [_ theta] (g/rotate-x (vec3 _) theta))
   (rotate-y
-   [_ theta] (api/rotate-y (vec3 _) theta))
+   [_ theta] (g/rotate-y (vec3 _) theta))
   (rotate-z
-   [_ theta] (vec3 (api/rotate _ theta)))
+   [_ theta] (vec3 (g/rotate _ theta)))
   (rotate-around-axis
-   [_ axis theta] (api/rotate-around-axis (vec3 _) axis theta))
+   [_ axis theta] (g/rotate-around-axis (vec3 _) axis theta))
   
-  api/PTransform
+  g/PTransform
   (transform
-   [_ m] (api/transform-vector m _))
+   [_ m] (g/transform-vector m _))
 #+END_SRC
 *** PMathOps
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PMathOps
+  g/PMathOps
   (abs [_] (Vec2. (m/abs x) (m/abs y)))
   (+ [_] _)
   (+ [_ a] (vec2-op-1 + _ a 0.0))
@@ -350,28 +350,28 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** PDotProduct
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PDotProduct
+  g/PDotProduct
   (dot
    [_ [ax ay]] (mm/madd x ax y ay))
 #+END_SRC
 *** PCrossProduct
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PCrossProduct
+  g/PCrossProduct
   (cross
    [_ [ax ay]] (mm/msub x ay y ax))
 #+END_SRC
 *** PLimit
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PLimit
+  g/PLimit
   (limit
    [_ len]
-   (if (> (api/mag-squared _) (mm/mul len len))
-     (api/normalize _ len)
+   (if (> (g/mag-squared _) (* len len))
+     (g/normalize _ len)
      _))
 #+END_SRC
 *** PMinMax
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PMinMax
+  g/PMinMax
   (min
    [_ [ax ay]]
    (Vec2. (min x ax) (min y ay)))
@@ -387,7 +387,7 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** PMagnitude
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PMagnitude
+  g/PMagnitude
   (mag
    [_]
    (Math/sqrt (mm/madd x x y y)))
@@ -396,56 +396,60 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** PNormalize
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PNormalize
+  g/PNormalize
   (normalize
    [_]
    (let [l (Math/sqrt (mm/madd x x y y))]
      (if (pos? l)
-       (Vec2. (mm/div x l) (mm/div y l))
+       (Vec2. (/ x l) (/ y l))
        _)))
   (normalize
    [_ len]
    (let [l (Math/sqrt (mm/madd x x y y))]
      (if (pos? l)
-       (let [l (mm/div len l)]
-         (Vec2. (mm/mul x l) (mm/mul y l)))
+       (let [l (/ len l)] (Vec2. (* x l) (* y l)))
        _)))
   (normalized?
-   [_] (m/delta= 1.0 (api/mag-squared _)))
+   [_] (m/delta= 1.0 (g/mag-squared _)))
+#+END_SRC
+*** PNormal
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+  g/PNormal
+  (normal [_] (Vec2. (- y) x))
 #+END_SRC
 *** PDistance
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PDistance
+  g/PDistance
   (dist
    [_ a]
    (let [[dx dy] (if (instance? Vec2 a)
-                   [(mm/sub x (.-x ^Vec2 a)) (mm/sub y (.-y ^Vec2 a))]
-                   [(mm/sub x (nth a 0)) (mm/sub y (nth a 1))])]
+                   [(- x (.-x ^Vec2 a)) (- y (.-y ^Vec2 a))]
+                   [(- x (nth a 0)) (- y (nth a 1))])]
      (Math/sqrt (mm/madd dx dx dy dy))))
   (dist-squared
    [_ a]
    (let [[dx dy] (if (instance? Vec2 a)
-                   [(mm/sub x (.-x ^Vec2 a)) (mm/sub y (.-y ^Vec2 a))]
-                   [(mm/sub x (nth a 0)) (mm/sub y (nth a 1))])]
+                   [(- x (.-x ^Vec2 a)) (- y (.-y ^Vec2 a))]
+                   [(- x (nth a 0)) (- y (nth a 1))])]
      (mm/madd dx dx dy dy)))
 #+END_SRC
 *** PReflect
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PReflect
+  g/PReflect
   (reflect
    [_ [rx ry :as r]]
-    (let [d (mm/mul (api/dot _ r) 2.0)]
+    (let [d (* (g/dot _ r) 2.0)]
       (Vec2. (mm/msub rx d x) (mm/msub ry d y))))
 #+END_SRC
 *** PInvert
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PInvert
+  g/PInvert
   (invert
    [_] (Vec2. (- x) (- y)))
 #+END_SRC
 *** PInterpolate
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PInterpolate
+  g/PInterpolate
   (mix
    [_ [ax ay]]
    (Vec2. (mm/submadd ax x 0.5 x) (mm/submadd ay y 0.5 y)))
@@ -462,27 +466,26 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** PHeading
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PHeading
+  g/PHeading
   (heading
    [_]
    (let [t (Math/atan2 y x)]
-     (if (neg? t) (mm/add t TWO_PI) t)))
+     (if (neg? t) (+ t TWO_PI) t)))
   (heading-xy
-    [_] (api/heading _))
+    [_] (g/heading _))
   (angle-between
    [_ a]
-   (let [t (mm/sub (api/heading-xy a) (api/heading-xy _))]
-     (if (neg? t) (mm/add t TWO_PI) t)))
-  (slope-xy [_] (mm/div y x))
-  (normal [_] (Vec2. (- y) x))
+   (let [t (- (g/heading-xy a) (g/heading-xy _))]
+     (if (neg? t) (+ t TWO_PI) t)))
+  (slope-xy [_] (/ y x))
 #+END_SRC
 *** PPolar
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PPolar
+  g/PPolar
   (as-polar
-   [_] (Vec2. (api/mag _) (api/heading-xy _)))
+   [_] (Vec2. (g/mag _) (g/heading-xy _)))
   (as-cartesian
-   [_] (Vec2. (mm/mul x (Math/cos y)) (mm/mul x (Math/sin y))))
+   [_] (Vec2. (* x (Math/cos y)) (* x (Math/sin y))))
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
@@ -744,7 +747,7 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** Transformations
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PScale
+  g/PScale
   (scale
    [_ a] (vec3-op-1 * _ a 1.0))
   (scale
@@ -752,7 +755,7 @@ defined further on, but need to be declared already.
   (scale
    [_ a b c] (vec3-op-3 * _ a b c 1.0))
   
-  api/PTranslate
+  g/PTranslate
   (translate
    [_ a] (vec3-op-1 + _ a 0.0))
   (translate
@@ -760,10 +763,10 @@ defined further on, but need to be declared already.
   (translate
    [_ a b c] (vec3-op-3 + _ a b c 0.0))
   
-  api/PRotate
-  (rotate [_ theta] (api/rotate-z _ theta))
+  g/PRotate
+  (rotate [_ theta] (g/rotate-z _ theta))
   
-  api/PRotate3D
+  g/PRotate3D
   (rotate-x
    [_ theta]
    (let [s (Math/sin theta) c (Math/cos theta)]
@@ -778,32 +781,32 @@ defined further on, but need to be declared already.
      (Vec3. (mm/msub x c y s) (mm/madd x s y c) z)))
   (rotate-around-axis
    [_ [ax ay az] theta]
-   (let [ux (mm/mul ax x), uy (mm/mul ax y), uz (mm/mul ax z)
-         vx (mm/mul ay x), vy (mm/mul ay y), vz (mm/mul ay z)
-         wx (mm/mul az x), wy (mm/mul az y), wz (mm/mul az z)
-         ax2 (mm/mul ax ax), ay2 (mm/mul ay ay), az2 (mm/mul az az)
+   (let [ux (* ax x), uy (* ax y), uz (* ax z)
+         vx (* ay x), vy (* ay y), vz (* ay z)
+         wx (* az x), wy (* az y), wz (* az z)
+         ax2 (* ax ax), ay2 (* ay ay), az2 (* az az)
          s (Math/sin theta), c (Math/cos theta)
-         uvw (mm/add (mm/add ux vy) wz)]
+         uvw (mm/add ux vy wz)]
      (Vec3.
       (mm/madd uvw ax
-               (mm/msub (mm/add ay2 az2) x (mm/add vy wz) ax) c
+               (mm/msub (+ ay2 az2) x (+ vy wz) ax) c
                (mm/subm vz wy s))
   
       (mm/madd uvw ay
-               (mm/msub (mm/add ax2 az2) y (mm/add ux wz) ay) c
+               (mm/msub (+ ax2 az2) y (+ ux wz) ay) c
                (mm/subm wx uz s))
   
       (mm/madd uvw az
-               (mm/msub (mm/add ax2 ay2) z (mm/add ux vy) az) c
+               (mm/msub (+ ax2 ay2) z (+ ux vy) az) c
                (mm/subm uy vx s)))))
   
-  api/PTransform
+  g/PTransform
   (transform
-   [_ m] (api/transform-vector m _))
+   [_ m] (g/transform-vector m _))
 #+END_SRC
 *** PMathOps
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PMathOps
+  g/PMathOps
   (abs [_] (Vec3. (m/abs x) (m/abs y) (m/abs z)))
   (+ [_] _)
   (+ [_ a] (vec3-op-1 + _ a 0.0))
@@ -830,12 +833,12 @@ defined further on, but need to be declared already.
   (addm
    [_ a b] (vec3-op-2 + * _ a b 0.0 1.0))
   
-  api/PDotProduct
+  g/PDotProduct
   (dot
    [_ [ax ay az]]
    (mm/madd x ax y ay z az))
   
-  api/PCrossProduct
+  g/PCrossProduct
   (cross
    [_ [ax ay az]]
    (Vec3.
@@ -843,14 +846,14 @@ defined further on, but need to be declared already.
     (mm/msub z ax az x)
     (mm/msub x ay ax y)))
   
-  api/PLimit
+  g/PLimit
   (limit
    [_ len]
-   (if (> (api/mag-squared _) (mm/mul len len))
-     (api/normalize _ len)
+   (if (> (g/mag-squared _) (* len len))
+     (g/normalize _ len)
      _))
   
-  api/PMinMax
+  g/PMinMax
   (min
    [_ [ax ay az]]
    (Vec3. (min x ax) (min y ay) (min z az)))
@@ -872,7 +875,7 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** PMagnitude
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PMagnitude
+  g/PMagnitude
   (mag
    [_]
    (Math/sqrt (mm/madd x x y y z z)))
@@ -881,56 +884,56 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** PNormalize
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PNormalize
+  g/PNormalize
   (normalize
    [_]
    (let [l (Math/sqrt (mm/madd x x y y z z))]
      (if (pos? l)
-       (Vec3. (mm/div x l) (mm/div y l) (mm/div z l))
+       (Vec3. (/ x l) (/ y l) (/ z l))
        _)))
   (normalize
    [_ len]
    (let [l (Math/sqrt (mm/madd x x y y z z))]
      (if (pos? l)
-       (let [l (mm/div len l)]
-         (Vec3. (mm/mul x l) (mm/mul y l) (mm/mul z l)))
+       (let [l (/ len l)]
+         (Vec3. (* x l) (* y l) (* z l)))
        _)))
   (normalized?
-   [_] (m/delta= 1.0 (api/mag-squared _)))
+   [_] (m/delta= 1.0 (g/mag-squared _)))
 #+END_SRC
 *** PDistance
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PDistance
+  g/PDistance
   (dist
-   [_ a] (Math/sqrt (api/dist-squared _ a)))
+   [_ a] (Math/sqrt (g/dist-squared _ a)))
   (dist-squared
    [_ a]
    (let [[dx dy dz] (if (instance? Vec3 a)
-                      [(mm/sub x (.-x ^Vec3 a))
-                       (mm/sub y (.-y ^Vec3 a))
-                       (mm/sub z (.-z ^Vec3 a))]
-                      [(mm/sub x (nth a 0))
-                       (mm/sub y (nth a 1))
-                       (mm/sub z (nth a 2 0.0))])]
+                      [(- x (.-x ^Vec3 a))
+                       (- y (.-y ^Vec3 a))
+                       (- z (.-z ^Vec3 a))]
+                      [(- x (nth a 0))
+                       (- y (nth a 1))
+                       (- z (nth a 2 0.0))])]
      (mm/madd dx dx dy dy dz dz)))
 #+END_SRC
 *** PReflect
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PReflect
+  g/PReflect
   (reflect
    [_ [rx ry rz :as r]]
-    (let [d (mm/mul (api/dot _ r) 2.0)]
+    (let [d (* (g/dot _ r) 2.0)]
       (Vec3. (mm/msub rx d x) (mm/msub ry d y) (mm/msub rz d z))))
 #+END_SRC
 *** PInvert
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PInvert
+  g/PInvert
   (invert
    [_] (Vec3. (- x) (- y) (- z)))
 #+END_SRC
 *** PInterpolate
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PInterpolate
+  g/PInterpolate
   (mix
    [_ [ax ay az]]
    (Vec3.
@@ -955,42 +958,42 @@ defined further on, but need to be declared already.
 #+END_SRC
 *** PHeading
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  api/PHeading
-  (heading [_] (api/heading-xy _))
+  g/PHeading
+  (heading [_] (g/heading-xy _))
   (heading-xy
    [_]
    (let [t (Math/atan2 y x)]
-     (if (neg? t) (mm/add t TWO_PI) t)))
+     (if (neg? t) (+ t TWO_PI) t)))
   (heading-xz
    [_]
    (let [t (Math/atan2 z x)]
-     (if (neg? t) (mm/add t TWO_PI) t)))
+     (if (neg? t) (+ t TWO_PI) t)))
   (heading-yz
    [_]
    (let [t (Math/atan2 z y)]
-     (if (neg? t) (mm/add t TWO_PI) t)))
+     (if (neg? t) (+ t TWO_PI) t)))
   (angle-between
-   [_ a] (Math/acos (api/dot _ a)))
-  (slope-xy [_] (mm/div y x))
-  (slope-xz [_] (mm/div x x))
-  (slope-yz [_] (mm/div z y))
+   [_ a] (Math/acos (g/dot _ a)))
+  (slope-xy [_] (/ y x))
+  (slope-xz [_] (/ x x))
+  (slope-yz [_] (/ z y))
 #+END_SRC
 *** PPolar
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
   ;; http://mathworld.wolfram.com/SphericalCoordinates.html
-  api/PPolar
+  g/PPolar
   (as-polar
    [_]
-    (let [r (api/mag _)
+    (let [r (g/mag _)
           theta (Math/atan2 y x)
-          phi (Math/acos (mm/div z r))]
-      (Vec3. r (if (neg? theta) (mm/add TWO_PI theta) theta) phi)))
+          phi (Math/acos (/ z r))]
+      (Vec3. r (if (neg? theta) (+ TWO_PI theta) theta) phi)))
   (as-cartesian [_]
-    (let [rsphi (mm/mul (Math/sin z) x)]
+    (let [rsphi (* (Math/sin z) x)]
       (Vec3.
-       (mm/mul (Math/cos y) rsphi)
-       (mm/mul (Math/sin y) rsphi)
-       (mm/mul (Math/cos z) x))))
+       (* (Math/cos y) rsphi)
+       (* (Math/sin y) rsphi)
+       (* (Math/cos z) x))))
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
@@ -1227,17 +1230,18 @@ defined further on, but need to be declared already.
   (def ^:const V3Z (Vec3. 0.0 0.0 1.0))
 #+END_SRC
 ** Constructors
-      To simplify vector type construction, factory functions
-      are provided which coerce arguments into vectors with these
-      rules:
 
-      | Input                 | Behavior                                           | Examples call        | Example result  |
-      |-----------------------+----------------------------------------------------+----------------------+-----------------|
-      | Clojure vector or seq | select first =n= elements or fill missing with 0.0 | =(vec2 [1 2 3 4])=   | =[1.0 2.0]=     |
-      |                       |                                                    | =(vec3 '(1 2)=       | =[1.0 2.0 0.0]= |
-      | Map                   | select values of =:x :y :z= or fill with 0.0       | =(vec2 {:x 1 :y 2})= | =[1.0 2.0]=     |
-      |                       |                                                    | =(vec3 {:x 1 :y 2})= | =[1.0 2.0 0.0]= |
-      | Single number         | set all vector components                          | =(vec3 1)=           | =[1.0 1.0 1.0]= |
+To simplify vector type construction, factory functions
+are provided which coerce arguments into vectors with these
+rules:
+
+| Input                 | Behavior                                           | Examples call        | Example result  |
+|-----------------------+----------------------------------------------------+----------------------+-----------------|
+| Clojure vector or seq | select first =n= elements or fill missing with 0.0 | =(vec2 [1 2 3 4])=   | =[1.0 2.0]=     |
+|                       |                                                    | =(vec3 '(1 2)=       | =[1.0 2.0 0.0]= |
+| Map                   | select values of =:x :y :z= or fill with 0.0       | =(vec2 {:x 1 :y 2})= | =[1.0 2.0]=     |
+|                       |                                                    | =(vec3 {:x 1 :y 2})= | =[1.0 2.0 0.0]= |
+| Single number         | set all vector components                          | =(vec3 1)=           | =[1.0 1.0 1.0]= |
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
   (defn vec2
@@ -1264,16 +1268,18 @@ defined further on, but need to be declared already.
   (defn vec2? [x] (instance? Vec2 x))
   (defn vec3? [x] (instance? Vec3 x))
 #+END_SRC
+
 ** Random vectors
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
   (defn randvec2
-    ([] (api/normalize (vec2 (m/randnorm) (m/randnorm))))
-    ([n] (api/normalize (vec2 (m/randnorm) (m/randnorm)) n)))
+    ([] (g/normalize (vec2 (m/randnorm) (m/randnorm))))
+    ([n] (g/normalize (vec2 (m/randnorm) (m/randnorm)) n)))
 
   (defn randvec3
-    ([] (api/normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm))))
-    ([n] (api/normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm)) n)))
+    ([] (g/normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm))))
+    ([n] (g/normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm)) n)))
 #+END_SRC
+
 ** Swizzling
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
   (defn lookup2

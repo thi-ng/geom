@@ -9,7 +9,7 @@
      [cemerick.cljs.test :refer (is deftest with-test run-tests testing)])
     (:require
      [thi.ng.common.math.core :as m :refer [*eps* HALF_PI delta=]]
-     [thi.ng.geom.core.api :as g]
+     [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V2X V2Y V3X V3Y V3Z]]
      [thi.ng.geom.core.matrix :as mat :refer [M32 M44]]
      [thi.ng.geom.core.quaternion :as q]
