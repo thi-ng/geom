@@ -1,0 +1,183 @@
+#+SETUPFILE: ../../src/setup.org
+#+TITLE: thi.ng/geom-types
+
+* About the project
+
+** Overview
+
+This is a sub-project of [[file:../../src/index.org][thi.ng/geom]]. It contains a large collection
+of 2D/3D geometric entities, each implementing a large number of
+[[file:../../geom-core/src/core.org][core protocols]].
+
+*** Geometric entities
+
+| *2D*           | *3D*                      |
+|----------------+---------------------------|
+| Vec2           | Vec3                      |
+| Matrix32       | Matrix44                  |
+|                | Quaternion                |
+
+** Status
+
+** Injected properties                                             :noexport:
+#+BEGIN_SRC clojure :exports none :noweb-ref project-name
+thi.ng/geom-types
+#+END_SRC
+#+BEGIN_SRC clojure :exports none :noweb-ref version
+0.3.0-SNAPSHOT
+#+END_SRC
+#+BEGIN_SRC clojure :exports none :noweb-ref project-url
+https://github.com/thi-ng/geom
+#+END_SRC
+#+BEGIN_SRC clojure :exports none :noweb-ref gen-source-path
+target/classes
+#+END_SRC
+#+BEGIN_SRC clojure :exports none :noweb-ref gen-test-path
+target/test-classes
+#+END_SRC
+#+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref cljs-artefact-path
+target/geom-types-<<version>>.js
+#+END_SRC
+
+** Dependencies
+*** Runtime
+**** [[https://github.com/clojure/clojure][Clojure]]
+#+BEGIN_SRC clojure :noweb-ref dep-clj
+[org.clojure/clojure "1.6.0"]
+#+END_SRC
+**** [[https://github.com/clojure/clojurescript][ClojureScript]]
+#+BEGIN_SRC clojure :noweb-ref dep-cljs
+[org.clojure/clojurescript "0.0-2197"]
+#+END_SRC
+**** [[https://github.com/thi-ng/geom/][thi.ng/geom-core]]
+#+BEGIN_SRC clojure :noweb-ref dep-geom-core
+[thi.ng/geom-core "0.3.0-SNAPSHOT"]
+#+END_SRC
+*** Development
+**** [[https://github.com/lynaghk/cljx][Cljx]]
+#+BEGIN_SRC clojure :noweb-ref dep-cljx
+[com.keminglabs/cljx "0.3.2"]
+#+END_SRC
+**** [[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]
+#+BEGIN_SRC clojure :noweb-ref dep-cljsbuild
+[lein-cljsbuild "1.0.3"]
+#+END_SRC
+**** [[https://github.com/hugoduncan/criterium][Criterium]]
+#+BEGIN_SRC clojure :noweb-ref dep-criterium
+[criterium "0.4.1"]
+#+END_SRC
+**** [[https://github.com/cemerick/austin][Austin]]
+#+BEGIN_SRC clojure :noweb-ref dep-austin
+[com.cemerick/austin "0.1.4"]
+#+END_SRC
+**** [[https://github.com/cemerick/clojurescript.test][clojurescript.test]]
+#+BEGIN_SRC clojure :noweb-ref dep-cljs-test
+[com.cemerick/clojurescript.test "0.2.2"]
+#+END_SRC
+** Release history
+
+| *Version* | *Released* | *Description*      | *Lein coordinates*      | *Tagged Github URL*                       |
+|-----------+------------+--------------------+-------------------------+-------------------------------------------|
+|     0.2.0 | 2014-03-10 | 1st public release | =[thi.ng/geom "0.2.0"]= | https://github.com/thi-ng/geom/tree/0.2.0 |
+
+** Authors
+
+| *Name*          | *Role*                          | *Website*           |
+| [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://postspectacular.com][postspectacular.com]] |
+|                 |                                 | [[http://thi.ng][thi.ng]]              |
+
+** Leiningen coordinates
+#+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
+  [<<project-name>> "<<version>>"]
+#+END_SRC
+
+** Leiningen project file                                          :noexport:
+#+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
+  (defproject <<project-name>> "<<version>>"
+    :description "thi.ng geometry kit"
+    :url "<<project-url>>"
+    :license {:name "Apache Software License"
+              :url "http://www.apache.org/licenses/LICENSE-2.0"}
+    :dependencies [<<dep-clj>>
+                   <<dep-geom-core>>]
+  
+    :source-paths ["src/cljx"]
+    :test-paths ["<<gen-test-path>>"]
+  
+    :profiles {:dev {:dependencies [<<dep-cljs>>
+                                    <<dep-criterium>>]
+                     :plugins [<<dep-cljx>>
+                               <<dep-cljsbuild>>
+                               <<dep-cljs-test>>
+                               <<dep-austin>>]
+                     :hooks [cljx.hooks]
+                     :aliases {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]}}}
+  
+    :cljx {:builds [{:source-paths ["src/cljx"]
+                     :output-path "<<gen-source-path>>"
+                     :rules :clj}
+                    {:source-paths ["src/cljx"]
+                     :output-path "<<gen-source-path>>"
+                     :rules :cljs}
+                    {:source-paths ["test/cljx"]
+                     :output-path "<<gen-test-path>>"
+                     :rules :clj}
+                    {:source-paths ["test/cljx"]
+                     :output-path "<<gen-test-path>>"
+                     :rules :cljs}]}
+  
+    :cljsbuild {:builds [{:source-paths ["<<gen-source-path>>" "<<gen-test-path>>"]
+                          :id "simple"
+                          :compiler {:output-to "<<cljs-artefact-path>>"
+                                     :optimizations :whitespace
+                                     :pretty-print true}}]
+                :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}})
+#+END_SRC
+
+** ClojureScript HTML harness                                      :noexport:
+#+BEGIN_SRC html :tangle ../babel/index.html :noweb yes :mkdirp yes :padline no
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <title><<lein-coords>> test</title>
+    </head>
+    <body>
+      <script type="text/javascript" src="<<cljs-artefact-path>>"></script>
+    </body>
+  </html>
+#+END_SRC
+
+** Accessing library version during runtime
+
+The autogenerated namespace =thi.ng.geom.types.version= contains a single
+symbol =version= holding the version string defined above:
+
+#+BEGIN_SRC clojure :noweb yes
+  (use 'thi.ng.geom.types.version)
+  
+  (prn version)
+  ; "<<version>>"
+#+END_SRC
+
+*** Version namespace                                              :noexport:
+
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/types/version.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.types.version)
+  (def ^:const version "<<version>>")
+#+END_SRC
+
+* Modules
+
+*** Note for Github users
+
+The following sections contain links to project modules, but are not
+visibile when reading this file on Github. Please navigate to the
+source files via the normal [[https://github.com/thi-ng/geom/tree/master/geom-types/][GH repo browser]].
+
+** Type definitions
+
+#+INCLUDE: "types.org" :minlevel 2
+
+* Tests
+
+#+INCLUDE: "../test/protocols.org" :minlevel 2

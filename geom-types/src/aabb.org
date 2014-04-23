@@ -1,0 +1,312 @@
+#+SETUPFILE: ../../src/setup.org
+
+* thi.ng.geom.aabb
+
+** Constructors
+#+BEGIN_SRC clojure :noweb-ref ctors
+  (defn aabb
+    ([] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 1.0)))
+    ([size] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 size)))
+    ([o size] (thi.ng.geom.types.AABB. (vec3 o) (vec3 size)))
+    ([sx sy sz] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 sx sy sz))))
+
+  (defn aabb-from-minmax
+    [p q]
+    (let [a (g/min p q)]
+      (thi.ng.geom.types.AABB. a (g/- (g/max p q) a))))
+#+END_SRC
+
+** Type specific functions
+#+BEGIN_SRC clojure :noweb-ref helpers
+
+#+END_SRC
+
+** Protocol implementations
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  (extend-type thi.ng.geom.types.AABB
+#+END_SRC
+
+*** PArea
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PArea
+  (area [{[w h d] :size}] (* 2 (mm/madd w h d h w d)))
+#+END_SRC
+
+*** PBounds
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PBounds
+  (bounds [_] _)
+  (width [_] ((:size _) 0))
+  (height [_] ((:size _) 1))
+  (depth [_] ((:size _) 2))
+#+END_SRC
+
+*** PBoundingSphere
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PBoundingSphere
+  (bounding-sphere
+   [{p :p size :size}]
+   (let [e (g/* size 0.5)]
+     (g/bounding-sphere* (g/+ p e) (g/mag e))))
+#+END_SRC
+
+*** PBoundary
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PBoundary
+  (contains-point?
+   [{p :p size :size} [qx qy qz]]
+   (let [[x1 y1 z1] p
+         [x2 y2 z2] (g/+ p size)]
+     (and (m/in-range? x1 x2 qx)
+          (m/in-range? y1 y2 qy)
+          (m/in-range? z1 z2 qz))))
+#+END_SRC
+
+*** PCenter
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PCenter
+  (center
+   ([{p :p size :size}]
+      (thi.ng.geom.types.AABB. (g/- p (g/* size 0.5)) size))
+   ([{size :size} q]
+      (thi.ng.geom.types.AABB. (g/- q (g/* size 0.5)) size)))
+  (centroid
+   [_] (g/madd (:size _) 0.5 (:p _)))
+#+END_SRC
+
+*** PClassify
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PClassify
+  (classify-point
+   [{p :p size :size} [x y z :as q]]
+   (let [[x1 y1 z1] p
+         [x2 y2 z2] (g/+ p size)
+         on-plane? (fn [[minp maxp p min1 max1 min2 max2 c1 c2]]
+                     (and (or (m/delta= minp p *eps*)
+                              (m/delta= maxp p *eps*))
+                          (m/in-range? min1 max1 c1)
+                          (m/in-range? min2 max2 c2)))]
+     (if (some on-plane?
+               [[x1 x2 x y1 y2 z1 z2 y z]
+                [y1 y2 y x1 x2 z1 z2 x z]
+                [z1 z2 z x1 x2 y1 y2 x y]])
+       0
+       (if (and (m/in-range? x1 x2 x)
+                (m/in-range? y1 y2 y)
+                (m/in-range? z1 z2 z))
+         1 -1))))
+#+END_SRC
+
+*** PGraph
+
+  : e +----+ h
+  :   |\   :\
+  :   |f+----+ g
+  :   | |  : | 
+  : a +-|--+d|
+  :    \|   \|
+  :   b +----+ c
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PGraph
+  (vertices
+   [{a :p size :size}]
+   (let [[x1 y1 z1] a
+         [x2 y2 z2 :as g] (g/+ a size)
+         b (vec3 x1 y1 z2) c (vec3 x2 y1 z2)
+         d (vec3 x2 y1 z1) e (vec3 x1 y2 z1)
+         f (vec3 x1 y2 z2) h (vec3 x2 y2 z1)]
+     [a b c d e f g h]))
+  (edges
+   [_]
+   (let [[a b c d e f g h] (g/vertices _)]
+     [[a b] [b c] [c d] [d a] ;; bottom
+      [h e] [e f] [f g] [g h] ;; top
+      [a e] [b f]             ;; left
+      [d h] [c g]             ;; right
+      ]))
+#+END_SRC
+
+*** PIntersect                                                       :verify:
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PIntersect
+  (intersect-shape
+   [{pa :p sa :size} s]
+   (cond
+    (instance? thi.ng.geom.types.AABB s)
+    (let [{pb :p sb :size} s]
+      (every?
+       #(and (<= (pa %) (+ (pb %) (sb %)))
+             (<= (pb %) (+ (pa %) (sa %))))
+       [0 1 2]))
+    :default (err/type-error! "AABB" s)))
+#+END_SRC
+
+*** TODO PMeshConvert
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PMeshConvert
+  (as-mesh
+   ([_] (g/as-mesh _ {}))
+   ([_ {:keys [flags] :or {flags "nsewfb"}}]
+      (let [[a b c d e f g h] (g/vertices _)
+            [tp bt rt lf fr bk] (d/demunge-flags-seq flags "nsewfb")]
+        (->> [(if fr [b c g f])
+              (if bk [a e h d])
+              (if lf [a b f e])
+              (if rt [c d h g])
+              (if tp [e f g h])
+              (if bt [a d c b])]
+             (filter identity)
+             (gmesh/into-mesh (gmesh/gmesh))))))
+#+END_SRC
+
+*** TODO PProximity
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PProximity
+  (closest-point [_ p] nil)
+#+END_SRC
+
+*** TODO PSample
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PSample
+  (random-point-inside
+   [{p :p size :size}]
+   (let [[x1 y1 z1] p
+         [x2 y2 z2] (g/+ p size)]
+     (vec3 (m/random x1 x2) (m/random y1 y2) (m/random z1 z2))))
+  (random-point
+   [{p :p size :size}]
+   (let [[x1 y1 z1] p
+         [x2 y2 z2] (g/+ p size)
+         id (int (m/random 6))]
+     (cond
+      (< id 2) (vec3 (if (zero? id) x1 x2) (m/random y1 y2) (m/random z1 z2))
+      (< id 4) (vec3 (m/random x1 x2) (if (= 2 id) y1 y2) (m/random z1 z2))
+      :default (vec3 (m/random x1 x2) (m/random y1 y2) (if (= 4 id) z1 z2)))))
+#+END_SRC
+
+*** PSubdivide
+
+An AABB can be subdivided into smaller ones, i.e. to create a seq of
+uniform grid cells. The following options can be given as a 2nd
+argument map:
+
+| Key       | Description                                                          | Default |
+|-----------+----------------------------------------------------------------------+---------|
+| =:num=    | number of cols/rows/slices the box will be uniformly subdivided into |       2 |
+| =:cols=   | number of times the box will be subdivided along the X-axis          |       2 |
+| =:rows=   | number of times the box will be subdivided along the Y-axis          |       2 |
+| =:slices= | number of times the box will be subdivided along the Z-axis          |       2 |
+
+When =:num= is given, the resulting AABBs will retain the aspect ratio
+of the original. If specified, =:cols=, =:rows= and =:slices= will
+take precedence over =:num=, but the latter will be used as default
+for missing args. AABBs are returned as a lazyseq starting from =:p=
+of the original with inner sorting over XYZ.
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PSubdivide
+  (subdivide
+   ([_] (g/subdivide _ {}))
+   ([{p :p size :size} {:keys [num cols rows slices] :or {num 2}}]
+      (let [sx (or cols num)
+            sy (or rows num)
+            sz (or slices num)
+            s (g/div size sx sy sz)]
+        (for [z (butlast (m/norm-range sz))
+              y (butlast (m/norm-range sy))
+              x (butlast (m/norm-range sx))]
+          (thi.ng.geom.types.AABB. (g/madd (vec3 x y z) size p) s)))))
+#+END_SRC
+
+*** TODO PTessellate
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PTessellate
+  (tessellate
+   ([_] (g/tessellate _ {}))
+   ([_ {tess-fn :fn :or {tess-fn gmesh/tessellate-face1} :as opts}]
+      (let [quads (fn [_]
+                    (let [[a b c d e f g h] (g/vertices _)]
+                      [[b c g f]
+                       [a e h d]
+                       [a b f e]
+                       [c d h g]
+                       [e f g h]
+                       [a d c b]]))]
+        (->> (g/subdivide _ opts)
+             (mapcat quads)
+             (mapcat tess-fn)
+             (map #(thi.ng.geom.types.Triangle3. %))
+             ))))
+#+END_SRC
+
+*** TODO Transformations
+**** TODO what is the result of transform?
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PRotate
+  (rotate
+   [_ theta] (thi.ng.geom.types.AABB. (g/rotate-z (:p _) theta) (:size _)))
+  
+  g/PRotate3D
+  (rotate-x
+   [_ theta] (thi.ng.geom.types.AABB. (g/rotate-x (:p _) theta) (:size _)))
+  (rotate-y
+   [_ theta] (thi.ng.geom.types.AABB. (g/rotate-y (:p _) theta) (:size _)))
+  (rotate-z
+   [_ theta] (thi.ng.geom.types.AABB. (g/rotate-z (:p _) theta) (:size _)))
+  (rotate-around-axis
+   [_ axis theta]
+   (thi.ng.geom.types.AABB.
+    (g/rotate-around-axis (:p _) axis theta) (:size _)))
+  
+  g/PScale
+  (scale
+   [_ s] (thi.ng.geom.types.AABB. (g/* (:p _) s) (g/* (:size _) s)))
+  (scale
+   [_ sx sy] (thi.ng.geom.types.AABB. (g/* (:p _) sx sy) (g/* (:size _) sx sy)))
+  (scale
+   [_ sx sy sz] (thi.ng.geom.types.AABB. (g/* (:p _) sx sy sz) (g/* (:size _) sx sy sz)))
+  (scale-size
+   [_ s] (thi.ng.geom.types.AABB. (:p _) (g/* (:size _) s)))
+  
+  g/PTranslate
+  (translate
+   [_ t] (thi.ng.geom.types.AABB. (g/+ (:p _) t) (:size _)))
+#+END_SRC
+
+*** PVolume
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PVolume
+  (volume [{[w h d] :size}] (mm/mul w h d))
+#+END_SRC
+
+*** End of implementation                                          :noexport:
+#+BEGIN_SRC clojure :noweb-ref impl
+  )
+#+END_SRC
+
+** Complete namespace definition                                   :noexport:
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/aabb.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.aabb
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :refer [vec3]]
+     [thi.ng.geom.gmesh :as gmesh]
+     [thi.ng.geom.types :as types]
+     [thi.ng.common.data.core :as d]
+     [thi.ng.common.error :as err]
+     [thi.ng.common.math.core :as m :refer [*eps*]]
+     ,#+clj [thi.ng.macromath.core :as mm])
+    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
+    ,#+clj
+    (:import
+     [thi.ng.geom.types AABB Sphere]))
+
+  <<ctors>>
+
+  <<helpers>>
+
+  <<impl>>
+#+END_SRC
