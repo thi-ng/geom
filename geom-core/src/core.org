@@ -392,14 +392,26 @@ protocol consisting of just _ one function: =as-mesh=.
     (into [_ m]))
 #+END_SRC
 
+** Constants
+*** Default circle resolution
+#+BEGIN_SRC clojure :noweb-ref constants
+  (def ^:dynamic *resolution* 20)
+#+END_SRC
+
 ** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core
     (:refer-clojure :exclude [+ - * min max into]))
 
+  <<constants>>
+
   <<protos-math>>
+
   <<protos-tx>>
+
   <<protos-graph>>
+
   <<protos-shape>>
+
   <<protos-types>>
 #+END_SRC

@@ -118,6 +118,10 @@
   (defn axis-range
     [axis coll]
     (- (apply - (axis-bounds axis coll))))
+
+  (defn delta-contains
+    [points p eps]
+    (some #(m/delta= p % eps) points))
 #+END_SRC
 
 *** Polyline & curve sampling
