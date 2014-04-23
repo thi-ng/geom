@@ -2,44 +2,129 @@
 
 * Namespace: thi.ng.geom.core.vector
 
-For performance reasons we decided to define custom data types for
-vectors & matrices. Since they implement the necessary protocols and
-interfaces, these types can be used much like standard Clojure
-vectors/seqs, but also provide implementations for the above geometry
-protocols and custom key lookups to enable swizzling.
+For reasons of performance & functionality we decided to define custom
+data types for vectors & matrices. Since they implement the necessary
+protocols and interfaces, these types can be used much like standard
+Clojure vectors/seqs, but also provide implementations for the above
+geometry protocols and custom key lookups to enable swizzling.
 
-Furthermore, since we aim for full ClojureScript compatibility,
-the following implementations are quite lengthy.
+** Templates
 
-** Namespace declaration                                           :noexport:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx :mkdirp yes :padline no
-  (ns thi.ng.geom.core.vector
-    (:require
-     [thi.ng.geom.core :as g]
-     [thi.ng.common.data.core :as d]
-     [thi.ng.common.error :as err]
-     [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
-     ,#+clj [thi.ng.macromath.core :as mm])
-    ,#+cljs
-    (:require-macros
-     [thi.ng.macromath.core :as mm]))
+In order to deduplicate shared code between both the 2d/3d vector
+versions and theor Clojure & ClojureScript protocol implementations,
+we first define a few snippets as re-usable templates, which are
+injected in the appropriate places of the code.
+
+*** apply
+#+NAME: tpl-apply
+#+BEGIN_SRC emacs-lisp :var fn=""
+  (replace-regexp-in-string "{{fn}}" fn
+  "(condp = (count args)
+    1 ({{fn}} _ (first args) nil)
+    2 ({{fn}} _ (first args) (second args))
+    (err/arity-error! (count args)))")
+#+END_SRC
+*** assocN
+#+BEGIN_SRC clojure :noweb-ref tpl-assoc-n2
+  (case (int k)
+    0 (Vec2. v y)
+    1 (Vec2. x v)
+    (err/key-error! k))
+#+END_SRC
+#+BEGIN_SRC clojure :noweb-ref tpl-assoc-n3
+  (case (int k)
+    0 (Vec3. v y z)
+    1 (Vec3. x v z)
+    2 (Vec3. x y v)
+    (err/key-error! k))
+#+END_SRC
+*** containsKey
+#+BEGIN_SRC clojure :noweb-ref tpl-contains-key2
+  (not (nil? (#{0 1 :x :y} k)))
+#+END_SRC
+#+BEGIN_SRC clojure :noweb-ref tpl-contains-key3
+  (not (nil? (#{0 1 2 :x :y :z} k)))
+#+END_SRC
+*** nth w/ error
+#+BEGIN_SRC clojure :noweb-ref tpl-nth-err2
+  (case (int k) 0 x, 1 y, (err/key-error! k))
+#+END_SRC
+#+BEGIN_SRC clojure :noweb-ref tpl-nth-err3
+  (case (int k) 0 x, 1 y, 2 z, (err/key-error! k))
+#+END_SRC
+*** nth w/ notfound
+#+BEGIN_SRC clojure :noweb-ref tpl-nth-nf2
+  (case (int k) 0 x, 1 y, nf)
+#+END_SRC
+#+BEGIN_SRC clojure :noweb-ref tpl-nth-nf3
+  (case (int k) 0 x, 1 y, 2 z, nf)
+#+END_SRC
+*** compare
+#+BEGIN_SRC clojure :noweb-ref tpl-compare2
+  (if (instance? Vec2 o)
+    (let [c (compare x (.-x ^Vec2 o))]
+      (if (== 0 c)
+        (compare y (.-y ^Vec2 o))
+        c))
+    (let [c (count o)]
+      (if (== 2 c) (compare o _) (- 2 c))))
+#+END_SRC
+#+BEGIN_SRC clojure :noweb-ref tpl-compare3
+  (if (instance? Vec3 o)
+    (let [c (compare x (.-x ^Vec3 o))]
+      (if (== 0 c)
+        (let [c (compare y (.-y ^Vec3 o))]
+          (if (== 0 c)
+            (compare z (.-z ^Vec3 o))
+            c))
+        c))
+    (let [c (count o)]
+      (if (== 3 c) (compare o _) (- 3 c))))
+#+END_SRC
+*** hashCode
+#+BEGIN_SRC clojure :noweb-ref tpl-hashcode2
+  (-> 31
+      (unchecked-add-int (hash x))
+      (unchecked-multiply-int 31)
+      (unchecked-add-int (hash y)))
+#+END_SRC
+#+BEGIN_SRC clojure :noweb-ref tpl-hashcode3
+  (-> 31
+      (unchecked-add-int (hash x))
+      (unchecked-multiply-int 31)
+      (unchecked-add-int (hash y))
+      (unchecked-multiply-int 31)
+      (unchecked-add-int (hash z)))
+#+END_SRC
+*** hashEq
+#+BEGIN_SRC clojure :noweb-ref tpl-hasheq2 :noweb yes
+  (mix-collection-hash
+    <<tpl-hashcode2>>
+    2)
+#+END_SRC
+#+BEGIN_SRC clojure :noweb-ref tpl-hasheq3 :noweb yes
+  (mix-collection-hash
+    <<tpl-hashcode3>>
+    3)
+#+END_SRC
+*** rest
+#+BEGIN_SRC clojure :noweb-ref tpl-rest2
+  (cons y nil)
+#+END_SRC
+#+BEGIN_SRC clojure :noweb-ref tpl-rest3
+  (cons y (cons z nil))
+#+END_SRC
+*** rseq
+#+BEGIN_SRC clojure :noweb-ref tpl-rseq2
+  (Vec2. y x)
+#+END_SRC
+#+BEGIN_SRC clojure :noweb-ref tpl-rseq3
+  (Vec3. z y x)
 #+END_SRC
 
-** Declarations
+** TODO Protocol helpers
 
-Some functions used by the following vector types will be
-defined further on, but need to be declared already.
-
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  (declare vec2 swizzle2 swizzle2-assoc)
-  (declare vec3 swizzle3 swizzle3-assoc)
-  (declare vec2-op-1 vec2-op-2 vec2-op-2* vec2-op-3)
-  (declare vec3-op-1 vec3-op-2 vec3-op-3)
-#+END_SRC
-
-** Protocol helpers
-
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref helpers
   ,#+clj
   (defn map-entry
     [k ^double v]
@@ -63,26 +148,26 @@ defined further on, but need to be declared already.
 #+END_SRC
 
 ** 2D
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   (deftype Vec2
     ,#+clj [^double x ^double y]
     ,#+cljs [x y]
 #+END_SRC
 *** Clojure protocols
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   ,#+clj clojure.lang.ILookup
   ,#+clj (valAt
          [_ k] (swizzle2 _ k nil))
   ,#+clj (valAt
          [_ k nf] (swizzle2 _ k nf))
-  
+
   ,#+clj java.util.concurrent.Callable
   ,#+clj (call
          [_] (.invoke ^clojure.lang.IFn _))
   ,#+clj java.lang.Runnable
   ,#+clj (run
-         [_] (.invoke ^clojure.lang.IFn _))
-  
+          [_] (.invoke ^clojure.lang.IFn _))
+
   ,#+clj clojure.lang.IFn
   ,#+clj (invoke
          [_ k] (swizzle2 _ k nil))
@@ -90,11 +175,8 @@ defined further on, but need to be declared already.
          [_ k nf] (swizzle2 _ k nf))
   ,#+clj (applyTo
          [_ args]
-         (condp = (count args)
-           1 (swizzle2 _ (first args) nil)
-           2 (swizzle2 _ (first args) (second args))
-           (err/arity-error! (count args))))
-  
+         <<tpl-apply(fn="swizzle2")>>)
+
   ,#+clj clojure.lang.IMapEntry
   ,#+clj java.util.Map$Entry
   ,#+clj (key
@@ -105,7 +187,7 @@ defined further on, but need to be declared already.
          [_] y)
   ,#+clj (getValue
          [_] y)
-  
+
   ,#+clj clojure.lang.Associative
   ,#+clj clojure.lang.IPersistentVector
   ,#+clj (count
@@ -113,14 +195,15 @@ defined further on, but need to be declared already.
   ,#+clj (length
          [_] 2)
   ,#+clj (containsKey
-         [_ k] (not (nil? (#{0 1 :x :y} k))))
+         [_ k] <<tpl-contains-key2>>)
   ,#+clj (entryAt
-         [_ k] (map-entry k (case (int k) 0 x, 1 y, (err/key-error! k))))
+         [_ k] (map-entry k <<tpl-nth-err2>>))
   ,#+clj (assoc
-            [_ k v] (swizzle2-assoc _ k v))
+         [_ k v] (swizzle2-assoc _ k v))
   ,#+clj (assocN
-         [_ k v] (case (int k) 0 (Vec2. v y), 1 (Vec2. x v), (err/key-error! k)))
-  
+         [_ k v]
+         <<tpl-assoc-n2>>)
+
   ,#+clj java.util.Collection
   ,#+clj (isEmpty
          [_] false)
@@ -129,7 +212,7 @@ defined further on, but need to be declared already.
   ,#+clj (toArray
          [_] (double-array 2 [x y]))
   ,#+clj (size [_] 2)
-  
+
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.Indexed
   ,#+clj clojure.lang.Sequential
@@ -152,9 +235,9 @@ defined further on, but need to be declared already.
   ,#+clj (seq
          [_] _)
   ,#+clj (nth
-         [_ n] (case (int n) 0 x, 1 y, (err/key-error! n)))
+         [_ k] <<tpl-nth-err2>>)
   ,#+clj (nth
-         [_ n nf] (case (int n) 0 x, 1 y, nf))
+         [_ k nf] <<tpl-nth-nf2>>)
   ,#+clj (equiv
          [_ o]
          (if (instance? Vec2 o)
@@ -173,31 +256,29 @@ defined further on, but need to be declared already.
                 (= 2 (count o))
                 (clojure.lang.Util/equals x (nth o 0))
                 (clojure.lang.Util/equals y (nth o 1)))))
-  
+
   ;; http://docs.oracle.com/javase/7/docs/g/java/util/List.html#hashCode()
   ,#+clj (hashCode
          [_]
-         (-> 31
-             (unchecked-add-int (hash x))
-             (unchecked-multiply-int 31)
-             (unchecked-add-int (hash y))))
-  
+         <<tpl-hashcode2>>)
+
   ;; http://clojure.org/data_structures#hash
   ,#+clj clojure.lang.IHashEq
   ,#+clj (hasheq
          [_]
-         (-> 31
-             (unchecked-add-int (hash x))
-             (unchecked-multiply-int 31)
-             (unchecked-add-int (hash y))
-             (mix-collection-hash 2)))
-  
+         <<tpl-hasheq2>>)
+
+  ,#+clj Comparable
+  ,#+clj (compareTo
+         [_ o]
+         <<tpl-compare2>>)
+
   Object
   (toString
    [_] (str "[" x " " y "]"))
 #+END_SRC
 *** ClojureScript protocols
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   ,#+cljs ICloneable
   ,#+cljs (-clone
           [_] (Vec2. x y))
@@ -220,24 +301,25 @@ defined further on, but need to be declared already.
   
   ,#+cljs IAssociative
   ,#+cljs (-contains-key?
-          [_ k] (not (nil? (#{0 1 :x :y} k))))
+          [_ k] <<tpl-contains-key2>>)
   ,#+cljs (-assoc
           [_ k v] (swizzle2-assoc _ k v))
   
   ,#+cljs IVector
   ,#+cljs (-assoc-n
-          [_ k v] (case k 0 (Vec2. v y), 1 (Vec2. x v), (err/key-error! k)))
+          [_ k v]
+          <<tpl-assoc-n2>>)
   
   ,#+cljs ISequential
   ,#+cljs ISeq
   ,#+cljs (-first
           [_] x)
   ,#+cljs (-rest
-          [_] (cons y nil))
+          [_] <<tpl-rest2>>)
   
   ,#+cljs INext
   ,#+cljs (-next
-          [_] (cons y nil))
+          [_] <<tpl-rest2>>)
   
   ,#+cljs ISeqable
   ,#+cljs (-seq
@@ -245,13 +327,13 @@ defined further on, but need to be declared already.
   
   ,#+cljs IReversible
   ,#+cljs (-rseq
-          [_] (Vec2. y x))
+          [_] <<tpl-rseq2>>)
   
   ,#+cljs IIndexed
   ,#+cljs (-nth
-          [_ n] (case n 0 x, 1 y, (err/key-error! n)))
+          [_ k] <<tpl-nth-err2>>)
   ,#+cljs (-nth
-          [_ n nf] (case n 0 x, 1 y, nf))
+          [_ k nf] <<tpl-nth-nf2>>)
   
   ,#+cljs ICollection
   ,#+cljs (-conj
@@ -266,11 +348,7 @@ defined further on, but need to be declared already.
   ,#+cljs IComparable
   ,#+cljs (-compare
           [_ o]
-          (if (instance? Vec2 o)
-            (let [c (compare x (.-x ^Vec2 o))]
-              (if (== 0 c) (compare y (.-y ^Vec2 o)) c))
-            (let [c (count o)]
-              (if (= 2 c) (compare o _) (- 2 c)))))
+          <<tpl-compare2>>)
   
   ,#+cljs IHash
   ,#+cljs (-hash
@@ -285,7 +363,7 @@ defined further on, but need to be declared already.
                  (= x (nth o 0)) (= y (nth o 1)))))
 #+END_SRC
 *** Transformations
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   g/PScale
   (scale
    [_ a] (vec2-op-1 * _ a 1.0))
@@ -322,7 +400,7 @@ defined further on, but need to be declared already.
    [_ m] (g/transform-vector m _))
 #+END_SRC
 *** PMathOps
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   g/PMathOps
   (abs [_] (Vec2. (m/abs x) (m/abs y)))
   (+ [_] _)
@@ -349,19 +427,19 @@ defined further on, but need to be declared already.
   (addm [_ a b] (vec2-op-2* + * _ a b 0.0 1.0))
 #+END_SRC
 *** PDotProduct
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   g/PDotProduct
   (dot
    [_ [ax ay]] (mm/madd x ax y ay))
 #+END_SRC
 *** PCrossProduct
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   g/PCrossProduct
   (cross
    [_ [ax ay]] (mm/msub x ay y ax))
 #+END_SRC
 *** PLimit
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   g/PLimit
   (limit
    [_ len]
@@ -370,7 +448,7 @@ defined further on, but need to be declared already.
      _))
 #+END_SRC
 *** PMinMax
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   g/PMinMax
   (min
    [_ [ax ay]]
@@ -386,7 +464,7 @@ defined further on, but need to be declared already.
    (Vec2. (max (max x ax) bx) (max (max y ay) by)))
 #+END_SRC
 *** PMagnitude
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   g/PMagnitude
   (mag
    [_]
@@ -395,7 +473,7 @@ defined further on, but need to be declared already.
    [_] (mm/madd x x y y))
 #+END_SRC
 *** PNormalize
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   g/PNormalize
   (normalize
    [_]
@@ -413,12 +491,12 @@ defined further on, but need to be declared already.
    [_] (m/delta= 1.0 (g/mag-squared _)))
 #+END_SRC
 *** PNormal
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   g/PNormal
   (normal [_] (Vec2. (- y) x))
 #+END_SRC
 *** PDistance
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   g/PDistance
   (dist
    [_ a]
@@ -434,7 +512,7 @@ defined further on, but need to be declared already.
      (mm/madd dx dx dy dy)))
 #+END_SRC
 *** PReflect
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   g/PReflect
   (reflect
    [_ [rx ry :as r]]
@@ -442,13 +520,13 @@ defined further on, but need to be declared already.
       (Vec2. (mm/msub rx d x) (mm/msub ry d y))))
 #+END_SRC
 *** PInvert
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   g/PInvert
   (invert
    [_] (Vec2. (- x) (- y)))
 #+END_SRC
 *** PInterpolate
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   g/PInterpolate
   (mix
    [_ [ax ay]]
@@ -465,7 +543,7 @@ defined further on, but need to be declared already.
       (mm/submadd (mm/submadd cy by u by) uy v uy))))
 #+END_SRC
 *** PHeading
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   g/PHeading
   (heading
    [_]
@@ -480,7 +558,7 @@ defined further on, but need to be declared already.
   (slope-xy [_] (/ y x))
 #+END_SRC
 *** PPolar
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   g/PPolar
   (as-polar
    [_] (Vec2. (g/mag _) (g/heading-xy _)))
@@ -488,23 +566,23 @@ defined further on, but need to be declared already.
    [_] (Vec2. (* x (Math/cos y)) (* x (Math/sin y))))
 #+END_SRC
 *** End of implementations
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   )
 #+END_SRC
 *** Override print methods
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec2
   #+clj (require 'clojure.pprint)
   #+clj (prefer-method clojure.pprint/simple-dispatch clojure.lang.IPersistentVector clojure.lang.ISeq)
   #+clj (defmethod print-method Vec2 [o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 ** 3D
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec3
   (deftype Vec3
     #+clj [^double x ^double y ^double z]
     #+cljs [x y z]
 #+END_SRC
 *** Clojure protocols
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec3
   ,#+clj clojure.lang.ILookup
   ,#+clj (valAt
          [_ k] (swizzle3 _ k nil))
@@ -525,10 +603,7 @@ defined further on, but need to be declared already.
          [_ k nf] (swizzle3 _ k nf))
   ,#+clj (applyTo
          [_ args]
-         (condp = (count args)
-           1 (swizzle3 _ (first args) nil)
-           2 (swizzle3 _ (first args) (second args))
-           (err/arity-error! (count args))))
+         <<tpl-apply(fn="swizzle3")>>)
   
   ,#+clj clojure.lang.Associative
   ,#+clj clojure.lang.IPersistentVector
@@ -537,18 +612,14 @@ defined further on, but need to be declared already.
   ,#+clj (length
          [_] 3)
   ,#+clj (containsKey
-         [_ k] (not (nil? (#{0 1 2 :x :y :z} k))))
+         [_ k] <<tpl-contains-key3>>)
   ,#+clj (entryAt
-         [_ k] (map-entry k (case (int k) 0 x, 1 y, 2 z, (err/key-error! k))))
+         [_ k] (map-entry k <<tpl-nth-err3>>))
   ,#+clj (assoc
             [_ k v] (swizzle3-assoc _ k v))
   ,#+clj (assocN
          [_ k v]
-         (case (int k)
-           0 (Vec3. v y z)
-           1 (Vec3. x v z)
-           2 (Vec3. x y v)
-           (err/key-error! k)))
+         <<tpl-assoc-n3>>)
   
   ,#+clj java.util.Collection
   ,#+clj (isEmpty
@@ -568,9 +639,9 @@ defined further on, but need to be declared already.
   ,#+clj (first
          [_] x)
   ,#+clj (next
-         [_] (cons y (cons z nil)))
+         [_] <<tpl-rest3>>)
   ,#+clj (more
-         [_] (cons y (cons z nil)))
+         [_] <<tpl-rest3>>)
   ,#+clj (cons
          [_ w] [x y z w])
   ,#+clj (peek
@@ -578,13 +649,13 @@ defined further on, but need to be declared already.
   ,#+clj (pop
          [_] (Vec2. x y))
   ,#+clj (rseq
-         [_] (Vec3. z y x))
+         [_] <<tpl-rseq3>>)
   ,#+clj (seq
          [_] _)
   ,#+clj (nth
-         [_ n] (condp = n 0 x 1 y 2 z (err/key-error! n)))
+         [_ k] <<tpl-nth-err3>>)
   ,#+clj (nth
-         [_ n nf] (condp = n 0 x 1 y 2 z nf))
+         [_ k nf] <<tpl-nth-nf3>>)
   ,#+clj (equiv
          [_ o]
          (if (instance? Vec3 o)
@@ -606,47 +677,27 @@ defined further on, but need to be declared already.
                 (= 3 (count o))
                 (clojure.lang.Util/equals x (nth o 0))
                 (clojure.lang.Util/equals y (nth o 1))
-                (clojure.lang.Util/equals z (nth o 2)))))
-  
-  ,#+clj Comparable
-  ,#+clj (compareTo
-         [_ o]
-         (if (instance? Vec3 o)
-           (let [c (compare x (.-x ^Vec3 o))]
-             (if (== 0 c)
-               (let [c (compare y (.-y ^Vec3 o))]
-                 (if (== 0 c)
-                   (compare z (.-z ^Vec3 o))
-                   c))
-               c))
-           (let [c (count o)]
-             (if (== 3 c) (compare o _) (- 3 c)))))
+                (clojure.lang.Util/equals z (nth o 2)))))  
   ,#+clj (hashCode
          [_]
-         (-> 31
-             (unchecked-add-int (hash x))
-             (unchecked-multiply-int 31)
-             (unchecked-add-int (hash y))
-             (unchecked-multiply-int 31)
-             (unchecked-add-int (hash z))))
+         <<tpl-hashcode3>>)
   
   ,#+clj clojure.lang.IHashEq
   ,#+clj (hasheq
            [_]
-           (-> 31
-               (unchecked-add-int (hash x))
-               (unchecked-multiply-int 31)
-               (unchecked-add-int (hash y))
-               (unchecked-multiply-int 31)
-               (unchecked-add-int (hash z))
-               (mix-collection-hash 3)))
+           <<tpl-hasheq3>>)
   
+  ,#+clj Comparable
+  ,#+clj (compareTo
+         [_ o]
+         <<tpl-compare3>>)
+
   Object
   (toString
     [_] (str "[" x " " y " " z "]"))
 #+END_SRC
 *** ClojureScript protocols
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec3
   ,#+cljs ICloneable
   ,#+cljs (-clone
           [_] (Vec3. x y z))
@@ -669,29 +720,25 @@ defined further on, but need to be declared already.
   
   ,#+cljs IAssociative
   ,#+cljs (-contains-key?
-          [_ k] (not (nil? (#{0 1 2 :x :y :z} k))))
+          [_ k] <<tpl-contains-key3>>)
   ,#+cljs (-assoc
           [_ k v] (swizzle3-assoc _ k v))
   
   ,#+cljs IVector
   ,#+cljs (-assoc-n
           [_ k v]
-          (case k
-            0 (Vec3. v y z)
-            1 (Vec3. x v z)
-            2 (Vec3. x y v)
-            (err/key-error! k)))
+          <<tpl-assoc-n3>>)
   
   ,#+cljs ISequential
   ,#+cljs ISeq
   ,#+cljs (-first
           [_] x)
   ,#+cljs (-rest
-          [_] (cons y (cons z nil)))
+          [_] <<tpl-rest3>>)
   
   ,#+cljs INext
   ,#+cljs (-next
-          [_] (cons y (cons z nil)))
+          [_] <<tpl-rest3>>)
   
   ,#+cljs ISeqable
   ,#+cljs (-seq
@@ -699,13 +746,13 @@ defined further on, but need to be declared already.
   
   ,#+cljs IReversible
   ,#+cljs (-rseq
-          [_] (Vec3. z y x))
+          [_] <<tpl-rseq3>>)
   
   ,#+cljs IIndexed
   ,#+cljs (-nth
-          [_ n] (case n 0 x, 1 y, 2 z, (err/key-error! n)))
+          [_ k] <<tpl-nth-err3>>)
   ,#+cljs (-nth
-          [_ n nf] (case n 0 x, 1 y, 2 z, nf))
+          [_ k nf] <<tpl-nth-nf3>>)
   
   ,#+cljs ICollection
   ,#+cljs (-conj
@@ -720,16 +767,7 @@ defined further on, but need to be declared already.
   ,#+cljs IComparable
   ,#+cljs (-compare
           [_ o]
-          (if (instance? Vec3 o)
-            (let [c (compare x (.-x ^Vec3 o))]
-              (if (== 0 c)
-                (let [c (compare y (.-y ^Vec3 o))]
-                  (if (== 0 c)
-                    (compare z (.-z ^Vec3 o))
-                    c))
-                c))
-            (let [c (count o)]
-              (if (= 3 c) (compare o _) (- 3 c)))))
+          <<tpl-compare3>>)
   
   ,#+cljs IHash
   ,#+cljs (-hash
@@ -746,7 +784,7 @@ defined further on, but need to be declared already.
                  (= x (nth o 0)) (= y (nth o 1)) (= z (nth o 2)))))
 #+END_SRC
 *** Transformations
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec3
   g/PScale
   (scale
    [_ a] (vec3-op-1 * _ a 1.0))
@@ -805,7 +843,7 @@ defined further on, but need to be declared already.
    [_ m] (g/transform-vector m _))
 #+END_SRC
 *** PMathOps
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec3
   g/PMathOps
   (abs [_] (Vec3. (m/abs x) (m/abs y) (m/abs z)))
   (+ [_] _)
@@ -874,7 +912,7 @@ defined further on, but need to be declared already.
     (max (max z az) bz)))
 #+END_SRC
 *** PMagnitude
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec3
   g/PMagnitude
   (mag
    [_]
@@ -883,7 +921,7 @@ defined further on, but need to be declared already.
    [_] (mm/madd x x y y z z))
 #+END_SRC
 *** PNormalize
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec3
   g/PNormalize
   (normalize
    [_]
@@ -902,7 +940,7 @@ defined further on, but need to be declared already.
    [_] (m/delta= 1.0 (g/mag-squared _)))
 #+END_SRC
 *** PDistance
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec3
   g/PDistance
   (dist
    [_ a] (Math/sqrt (g/dist-squared _ a)))
@@ -918,7 +956,7 @@ defined further on, but need to be declared already.
      (mm/madd dx dx dy dy dz dz)))
 #+END_SRC
 *** PReflect
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec3
   g/PReflect
   (reflect
    [_ [rx ry rz :as r]]
@@ -926,13 +964,13 @@ defined further on, but need to be declared already.
       (Vec3. (mm/msub rx d x) (mm/msub ry d y) (mm/msub rz d z))))
 #+END_SRC
 *** PInvert
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec3
   g/PInvert
   (invert
    [_] (Vec3. (- x) (- y) (- z)))
 #+END_SRC
 *** PInterpolate
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec3
   g/PInterpolate
   (mix
    [_ [ax ay az]]
@@ -957,7 +995,7 @@ defined further on, but need to be declared already.
       (mm/submadd (mm/submadd cz bz u bz) uz v uz))))
 #+END_SRC
 *** PHeading
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec3
   g/PHeading
   (heading [_] (g/heading-xy _))
   (heading-xy
@@ -979,7 +1017,7 @@ defined further on, but need to be declared already.
   (slope-yz [_] (/ z y))
 #+END_SRC
 *** PPolar
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec3
   ;; http://mathworld.wolfram.com/SphericalCoordinates.html
   g/PPolar
   (as-polar
@@ -996,17 +1034,17 @@ defined further on, but need to be declared already.
        (* (Math/cos z) x))))
 #+END_SRC
 *** End of implementations
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec3
     )
 #+END_SRC
 *** Override print methods
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref vec3
   #+clj (defmethod print-method Vec3 [o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 ** Vector operations
 *** 2D
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  (defn- vec2-op-seq
+#+BEGIN_SRC clojure :noweb-ref vec-ops
+  (defn vec2-op-seq
     [op ^Vec2 acc xs]
     (loop [ax (.-x acc), ay (.-y acc), xs xs]
       (if xs
@@ -1014,7 +1052,7 @@ defined further on, but need to be declared already.
           (recur (op ax (.-x v)) (op ay (.-y v)) (next xs)))
         (Vec2. ax ay))))
 
-  (defn- vec2-op-seq2
+  (defn vec2-op-seq2
     [op op2 ^Vec2 acc as b]
     (loop [ax (.-x acc), ay (.-y acc), as as]
       (if as
@@ -1023,7 +1061,7 @@ defined further on, but need to be declared already.
         (let [[bx by] (if (number? b) [b b] b)]
           (Vec2. (op2 ax bx) (op2 ay by))))))
 
-  (defn- vec2-op-1
+  (defn vec2-op-1
     [op ^Vec2 _ a d]
     (if (instance? Vec2 a)
       (Vec2.
@@ -1037,7 +1075,7 @@ defined further on, but need to be declared already.
            (op (.-x _) (nth a 0 d))
            (op (.-y _) (nth a 1 d)))))))
 
-  (defn- vec2-op-2
+  (defn vec2-op-2
     [op ^Vec2 _ a b d1 d2]
     (if (instance? Vec2 a)
       (if (instance? Vec2 b)
@@ -1062,7 +1100,7 @@ defined further on, but need to be declared already.
              (op (op (.-x _) (or ax d1)) (or bx d2))
              (op (op (.-y _) (or ay d1)) (or by d2))))))))
 
-  (defn- vec2-op-2*
+  (defn vec2-op-2*
     "Similar to vec2-op-2 but takes 2 fn args and handles case with
     a & b being both numbers differently."
     [op op2 ^Vec2 _ a b d1 d2]
@@ -1091,7 +1129,7 @@ defined further on, but need to be declared already.
                (op2 (op (.-x _) (or ax d1)) (or bx d2))
                (op2 (op (.-y _) (or ay d1)) (or by d2)))))))))
 
-  (defn- vec2-op-3
+  (defn vec2-op-3
     [op ^Vec2 _ a b c d]
     (if (instance? Vec2 a)
       (if (instance? Vec2 b)
@@ -1119,8 +1157,8 @@ defined further on, but need to be declared already.
          (op (op (op (.-y _) (or ay d)) (or by d)) (or cy d))))))
 #+END_SRC
 *** 3D
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
-  (defn- vec3-op-seq
+#+BEGIN_SRC clojure :noweb-ref vec-ops
+  (defn vec3-op-seq
     [op ^Vec3 acc xs]
     (loop [ax (.-x acc), ay (.-y acc), az (.-z acc), xs xs]
       (if xs
@@ -1128,7 +1166,7 @@ defined further on, but need to be declared already.
           (recur (op ax (.-x v)) (op ay (.-y v)) (op az (.-z v)) (next xs)))
         (Vec3. ax ay az))))
 
-  (defn- vec3-op-seq2
+  (defn vec3-op-seq2
     [op op2 ^Vec3 acc as b]
     (loop [ax (.-x acc), ay (.-y acc), az (.-z acc), as as]
       (if as
@@ -1137,7 +1175,7 @@ defined further on, but need to be declared already.
         (let [[bx by bz] (if (number? b) [b b b] b)]
           (Vec3. (op2 ax bx) (op2 ay by) (op2 az bz))))))
 
-  (defn- vec3-op-1
+  (defn vec3-op-1
     [op ^Vec3 _ a d]
     (if (instance? Vec3 a)
       (Vec3.
@@ -1153,7 +1191,7 @@ defined further on, but need to be declared already.
            (op (.-y _) (nth a 1 d))
            (op (.-z _) (nth a 2 d)))))))
 
-  (defn- vec3-op-2
+  (defn vec3-op-2
     [op op2 ^Vec3 _ a b d1 d2]
     (if (instance? Vec3 a)
       (if (instance? Vec3 b)
@@ -1179,7 +1217,7 @@ defined further on, but need to be declared already.
            (op2 (op (.-y _) (or ay d1)) (or by d2))
            (op2 (op (.-z _) (or az d1)) (or bz d2)))))))
 
-  (defn- vec3-op-3
+  (defn vec3-op-3
     [op ^Vec3 _ a b c d]
     (if (instance? Vec3 a)
       (if (instance? Vec3 b)
@@ -1218,7 +1256,7 @@ defined further on, but need to be declared already.
              (op (op (op (.-z _) (or az d)) (or bz d)) (or cz d))))))))
 #+END_SRC
 ** Constants
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref constants
   (def ^:const V2 (Vec2. 0.0 0.0))
   (def ^:const V3 (Vec3. 0.0 0.0 0.0))
 
@@ -1243,7 +1281,7 @@ rules:
 |                       |                                                    | =(vec3 {:x 1 :y 2})= | =[1.0 2.0 0.0]= |
 | Single number         | set all vector components                          | =(vec3 1)=           | =[1.0 1.0 1.0]= |
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref ctors
   (defn vec2
     ([] V2)
     ([x] (cond
@@ -1270,7 +1308,7 @@ rules:
 #+END_SRC
 
 ** Random vectors
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref ctors
   (defn randvec2
     ([] (g/normalize (vec2 (m/randnorm) (m/randnorm))))
     ([n] (g/normalize (vec2 (m/randnorm) (m/randnorm)) n)))
@@ -1281,7 +1319,7 @@ rules:
 #+END_SRC
 
 ** Swizzling
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx
+#+BEGIN_SRC clojure :noweb-ref swizzle
   (defn lookup2
     [^Vec2 _ k nf]
     (case k
@@ -1373,4 +1411,37 @@ rules:
       1 (Vec3. (.-x _) v (.-z _))
       2 (Vec3. (.-x _) (.-y _) v)
       (swizzle-assoc* _ vec3 {\x 0 \y 1 \z 2} k v)))
+#+END_SRC
+
+** Complete namespace definition                                   :noexport:
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.core.vector
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.common.data.core :as d]
+     [thi.ng.common.error :as err]
+     [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
+     ,#+clj [thi.ng.macromath.core :as mm])
+    ,#+cljs
+    (:require-macros
+     [thi.ng.macromath.core :as mm]))
+
+  (declare vec2 swizzle2 swizzle2-assoc)
+  (declare vec3 swizzle3 swizzle3-assoc)
+  (declare vec2-op-1 vec2-op-2 vec2-op-2* vec2-op-3)
+  (declare vec3-op-1 vec3-op-2 vec3-op-3)
+
+  <<helpers>>
+
+  <<vec2>>
+
+  <<vec3>>
+
+  <<vec-ops>>
+
+  <<constants>>
+
+  <<ctors>>
+
+  <<swizzle>>
 #+END_SRC

@@ -2,35 +2,13 @@
 
 * Namespace: thi.ng.geom.core.quaternion
 
-** Namespace declaration                                           :noexport:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx :mkdirp yes :padline no
-  (ns thi.ng.geom.core.quaternion
-    (:require
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [V3X V3Y V3Z]]
-     [thi.ng.geom.core.matrix :as mat]
-     [thi.ng.common.error :as err]
-     [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
-     ,#+clj [thi.ng.macromath.core :as mm])
-    ,#+cljs
-    (:require-macros
-     [thi.ng.macromath.core :as mm])
-    ,#+clj
-    (:import
-     [thi.ng.geom.core.vector Vec3]
-     [thi.ng.geom.core.matrix Matrix44]))
-#+END_SRC
-
-** Declarations
-
-Some functions used by the following vector types will be
-defined further on, but need to be declared already.
-
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
-  (declare swizzle4 swizzle4-assoc)
-#+END_SRC
-
 ** Templates
+
+In order to deduplicate shared code between the Clojure &
+ClojureScript protocol implementations, we first define a few snippets
+as re-usable templates, which are injected in the appropriate places
+of the code.
+
 *** apply
 #+BEGIN_SRC clojure :noweb-ref tpl-apply
   (condp = (count args)
@@ -104,13 +82,13 @@ defined further on, but need to be declared already.
 #+END_SRC
 
 ** Implementation
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref quat
   (deftype Quat4
     ,#+clj  [^double x ^double y ^double z ^double w]
     ,#+cljs [x y z w]
 #+END_SRC
 *** Clojure protocols
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref quat :noweb yes
   ,#+clj clojure.lang.ILookup
   ,#+clj (valAt
          [_ k] (swizzle4 _ k nil))
@@ -230,7 +208,7 @@ defined further on, but need to be declared already.
   #+clj (clone [_] (Quat4. x y z w))
 #+END_SRC
 *** ClojureScript protocols
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref quat :noweb yes
   ,#+cljs ICloneable
   ,#+cljs (-clone
           [_] (Quat4. x y z w))
@@ -320,14 +298,14 @@ defined further on, but need to be declared already.
 #+END_SRC
 
 *** PScale
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref quat
   g/PScale
   (scale
    [_ s]
    (Quat4. (* x s) (* y s) (* z s) (* w s)))
 #+END_SRC
 *** PRotate3D
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref quat
   g/PRotate3D
   (rotate-x
    [_ theta]
@@ -358,7 +336,7 @@ defined further on, but need to be declared already.
       (mm/msub w c z s))))
 #+END_SRC
 *** PMathOps
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref quat
   g/PMathOps
   (+
    [_ q]
@@ -401,7 +379,7 @@ defined further on, but need to be declared already.
       (mm/msub w' rw x' rx y' ry z' rz))))
 #+END_SRC
 *** PDotProduct
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref quat
   g/PDotProduct
   (dot
    [_ q]
@@ -409,7 +387,7 @@ defined further on, but need to be declared already.
      (mm/madd x (.-x q) y (.-y q) z (.-z q) w (.-w q))))
 #+END_SRC
 *** PMagnitude
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref quat
   g/PMagnitude
   (mag
    [_] (Math/sqrt (mm/madd x x y y z z w w)))
@@ -417,7 +395,7 @@ defined further on, but need to be declared already.
    [_] (mm/madd x x y y z z w w))
 #+END_SRC
 *** PNormalize
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref quat
   g/PNormalize
   (normalize [_]
     (let [m (Math/sqrt (mm/madd x x y y z z w w))]
@@ -426,13 +404,13 @@ defined further on, but need to be declared already.
         _)))
 #+END_SRC
 *** PConjugate
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref quat
   g/PConjugate
   (conjugate [_]
     (Quat4. (- x) (- y) (- z) w))
 #+END_SRC
 *** PInvert
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref quat
   g/PInvert
   (invert [_]
     (let [d (g/mag-squared _)
@@ -441,7 +419,7 @@ defined further on, but need to be declared already.
       (Quat4. (* x id) (* y id) (* z id) (* w d))))
 #+END_SRC
 *** PInterpolate
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref quat
   g/PInterpolate
   (mix [_ q] (g/mix _ q 0.5))
   (mix [_ q t]
@@ -462,7 +440,7 @@ defined further on, but need to be declared already.
         _)))
 #+END_SRC
 *** PMatrixConvert
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref quat
   g/PMatrixConvert
   (as-matrix
    [_]
@@ -494,7 +472,7 @@ defined further on, but need to be declared already.
       0.0 0.0 0.0 1.0)))
 #+END_SRC
 *** PVectorTransform
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref quat
   g/PVectorTransform
   (transform-vector
    [_ [vx vy vz :as v]]
@@ -509,15 +487,15 @@ defined further on, but need to be declared already.
       (mm/maddsub iz w iw nz ix ny iy nx))))
 #+END_SRC
 *** End of implementation
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref quat
     )
 #+END_SRC
 *** Override print methods
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref quat
   #+clj (defmethod print-method Quat4 [o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 ** Constructors
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref ctors
   (defn quat
     ([] (Quat4. 0.0 0.0 0.0 1.0))
     ([[x y z] w] (Quat4. x y z w))
@@ -588,7 +566,7 @@ defined further on, but need to be declared already.
 #+END_SRC
 
 ** Swizzling
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx
+#+BEGIN_SRC clojure :noweb-ref swizzle
   (defn lookup4
     [^Quat4 _ k nf]
     (case k
@@ -643,4 +621,28 @@ defined further on, but need to be declared already.
         :z (Quat4. (.-x _) (.-y _) v (.-w _))
         :w (Quat4. (.-x _) (.-y _) (.-z _) v)
         (v/swizzle-assoc* _ quat {\x 0 \y 1 \z 2 \w 3} k v))))
+#+END_SRC
+** Complete namespace definition                                         :noexport:
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.core.quaternion
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :as v :refer [V3X V3Y V3Z]]
+     [thi.ng.geom.core.matrix :as mat]
+     [thi.ng.common.error :as err]
+     [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
+     ,#+clj [thi.ng.macromath.core :as mm])
+    ,#+cljs
+    (:require-macros
+     [thi.ng.macromath.core :as mm])
+    ,#+clj
+    (:import
+     [thi.ng.geom.core.vector Vec3]
+     [thi.ng.geom.core.matrix Matrix44]))
+
+  (declare swizzle4 swizzle4-assoc)
+
+  <<quat>>
+  <<ctors>>
+  <<swizzle>>
 #+END_SRC

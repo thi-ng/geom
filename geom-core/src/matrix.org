@@ -25,42 +25,24 @@ define some macros to simplify them.
     `(* (mm/msubadd ~a ~b ~c ~d ~e ~f) ~g))
 #+END_SRC
 
-** Namespace declaration                                           :noexport:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx :mkdirp yes :padline no
-  (ns thi.ng.geom.core.matrix
-    (:require
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v]
-     [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
-     ,#+clj [thi.ng.macromath.core :as mm]
-     ,#+clj [thi.ng.geom.core.macros :as gmc])
-    ,#+cljs
-    (:require-macros
-     [thi.ng.macromath.core :as mm]
-     [thi.ng.geom.core.macros :as gmc])
-    ,#+clj
-    (:import
-     [thi.ng.geom.core.vector Vec2 Vec3]))
-#+END_SRC
-
 ** Matrix implementations
 *** 3x2 Matrix (Affine 2D transform)
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref mat32
   (deftype Matrix32
     #+clj  [^double m00 ^double m01 ^double m02
             ^double m10 ^double m11 ^double m12]
     #+cljs [m00 m01 m02 m10 m11 m12]
 #+END_SRC
 
-**** Clojure protocols
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+**** TODO Clojure protocols
+#+BEGIN_SRC clojure :noweb-ref mat32
   Object
   (toString
    [_] (str \[ (apply str (interpose \space [m00 m01 m02 m10 m11 m12])) \]))
 #+END_SRC
 
 **** PMathOps
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref mat32
   g/PMathOps
   (*
    [_ m]
@@ -75,14 +57,14 @@ define some macros to simplify them.
 #+END_SRC
 
 **** PDeterminant
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref mat32
   g/PDeterminant
   (determinant
    [_] (mm/msub m00 m11 m01 m10))
 #+END_SRC
 
 **** PInvert
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref mat32
   g/PInvert
   (invert
    [_]
@@ -94,7 +76,7 @@ define some macros to simplify them.
 #+END_SRC
 
 **** PRotate, PScale, PTranslate, PTransform
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref mat32
   g/PRotate
   (rotate
    [_ theta]
@@ -149,7 +131,7 @@ define some macros to simplify them.
 #+END_SRC
 
 **** PVectorTransform
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref mat32
   g/PVectorTransform
   (transform-vector
    [_ [x y :as v]]
@@ -159,12 +141,12 @@ define some macros to simplify them.
 #+END_SRC
 
 **** End of implementations
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref mat32
   )
 #+END_SRC
 
 *** 4x4 Matrix
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref mat44
   (deftype Matrix44
     #+clj  [^double m00 ^double m01 ^double m02 ^double m03
             ^double m10 ^double m11 ^double m12 ^double m13
@@ -176,19 +158,22 @@ define some macros to simplify them.
             m30 m31 m32 m33]
 #+END_SRC
 
-**** Clojure protocols
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+**** TODO Clojure protocols
+#+BEGIN_SRC clojure :noweb-ref mat44
   Object
   (toString
    [_]
    (str
     \[
-    (apply str (interpose \space [m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]))
+    (apply str (interpose \space [m00 m01 m02 m03    ;; FIXME replace with (seq _)
+                                  m10 m11 m12 m13
+                                  m20 m21 m22 m23
+                                  m30 m31 m32 m33]))
     \]))
 #+END_SRC
 
 **** PMathOps
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref mat44
   g/PMathOps
   (*
    [_ m]
@@ -216,7 +201,7 @@ define some macros to simplify them.
 #+END_SRC
 
 **** PDeterminant
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref mat44
   g/PDeterminant
   (determinant
    [_]
@@ -231,7 +216,7 @@ define some macros to simplify them.
 #+END_SRC
 
 **** PInvert
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref mat44
   g/PInvert
   (invert
    [_]
@@ -278,7 +263,7 @@ define some macros to simplify them.
 #+END_SRC
 
 **** PTranspose
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref mat44
   g/PTranspose
   (transpose
    [_]
@@ -290,7 +275,7 @@ define some macros to simplify them.
 #+END_SRC
 
 **** Transformations
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref mat44
   g/PScale
   (scale
    [_ s]
@@ -376,7 +361,7 @@ define some macros to simplify them.
 #+END_SRC
 
 **** PVectorTransform
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref mat44
   g/PVectorTransform
   (transform-vector
    [_ [x y z w]]
@@ -392,18 +377,18 @@ define some macros to simplify them.
 #+END_SRC
 
 **** End of implementation
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref mat44
     )
 #+END_SRC
 
 ** Override print methods
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref printers
   #+clj (defmethod print-method Matrix32 [^Matrix32 o ^java.io.Writer w] (.write w (.toString o)))
   #+clj (defmethod print-method Matrix44 [^Matrix44 o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 
 ** Constants
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref constants
   (def ^:const M32
     (Matrix32.
      1.0 0.0 0.0
@@ -419,7 +404,7 @@ define some macros to simplify them.
 
 ** Constructors
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref ctors
   (defn matrix32
     ([] M32)
     ([[m00 m01 m02 m10 m11 m12]]
@@ -437,7 +422,7 @@ define some macros to simplify them.
 
 ** Matrix functions
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx
+#+BEGIN_SRC clojure :noweb-ref helpers
   (defn frustum
     "Sets up a viewing frustum, shaped like a truncated pyramid with the
     camera where the tip of the pyramid would be.
@@ -528,3 +513,34 @@ define some macros to simplify them.
           (if-not (zero? (v' 3))
             (g/div (v/vec3 v') (v' 3)))))))
 #+END_SRC
+
+** Namespace declaration                                           :noexport:
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.core.matrix
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :as v]
+     [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
+     ,#+clj [thi.ng.macromath.core :as mm]
+     ,#+clj [thi.ng.geom.core.macros :as gmc])
+    ,#+cljs
+    (:require-macros
+     [thi.ng.macromath.core :as mm]
+     [thi.ng.geom.core.macros :as gmc])
+    ,#+clj
+    (:import
+     [thi.ng.geom.core.vector Vec2 Vec3]))
+
+  <<mat32>>
+
+  <<mat44>>
+
+  <<printers>>
+
+  <<constants>>
+
+  <<ctors>>
+
+  <<helpers>>
+#+END_SRC
+
