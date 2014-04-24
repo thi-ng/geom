@@ -65,10 +65,7 @@
       0 nil
       1 x
       2 (g/mix x (first xs))
-      3 (g/div (+ x (nth xs 0) (nth xs 1)) 3.0)
-      4 (g/addm (+ x (first xs) (nth xs 1)) (nth xs 2) 0.25)
-      (/ ((if (v/vec2? x) v/vec2-op-seq v/vec3-op-seq) + x xs)
-         (count coll))))
+      (g/addm x xs (/ 1.0 (count coll)))))
 
   (defn center
     ([coll]
