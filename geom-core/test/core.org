@@ -188,44 +188,60 @@
   (defn context-vec2-op
     [label op cop default]
     (testing
-     (str "op: " label)
-     (is (= [(cop ax bx) (cop ay by)] (op a2 b2)) (str label " a2 b2"))
-     (is (= [(cop ax s) (cop ay s)] (op a2 s)) (str label " a2 n"))
-     (is (= (op a2 b2) (op a2 b3)) (str label " a2 b3"))
-     (is (= (op a2 b2) (op a2 bx by)) (str label " a2 n m"))
-     (is (= (op a2 b2) (op a2 [bx by])) (str label " a2 [n m]"))
-     (is (= (op (op a2 b2) by) (op a2 b2 by)) (str label " a2 b2 m"))
-     (is (= (op (op a2 b2) b2) (op a2 b2 b2)) (str label " a2 b2 b2"))
-     (is (= (op (op a2 bx) b2) (op a2 bx b2)) (str label " a2 n b2"))
-     (is (= (op (op (op a2 b2) a2) b2) (op a2 [b2 a2 b2])) (str label " a2 [b2 a2 b2]"))
-     (if (= cop /)
-       (is #+clj  (thrown? ArithmeticException (op a2 [s]))
-           ,#+cljs (not (js/isFinite ((op a2 [s]) :y)))
-           (str label " a2 [n] fail"))
-       (is (= (op a2 s default) (op a2 [s])) (str label " a2 [n]")))))
-  
+        (str "op: " label)
+      (is (= [(cop ax bx) (cop ay by)] (op a2 b2)) (str label " a2 b2"))
+      (is (= [(cop ax s) (cop ay s)] (op a2 s)) (str label " a2 n"))
+      (is (= (op a2 b2) (op a2 b3)) (str label " a2 b3"))
+      (is (= (op a2 b2) (op a2 bx by)) (str label " a2 n m"))
+      (is (= (op a2 b2) (op a2 [bx by])) (str label " a2 [n m]"))
+      (is (= (op (op a2 b2) by) (op a2 b2 by)) (str label " a2 b2 m"))
+      (is (= (op (op a2 b2) b2) (op a2 b2 b2)) (str label " a2 b2 b2"))
+      (is (= (op (op a2 bx) b2) (op a2 bx b2)) (str label " a2 n b2"))
+      (is (= (op (op (op a2 b2) a2) b2) (op a2 [b2 a2 b2])) (str label " a2 [b2 a2 b2]"))
+      (if (= cop /)
+        (is #+clj  (thrown? ArithmeticException (op a2 [s]))
+            ,#+cljs (not (js/isFinite ((op a2 [s]) :y)))
+            (str label " a2 [n] fail"))
+        (is (= (op a2 s default) (op a2 [s])) (str label " a2 [n]")))))
+
   (defn context-vec3-op
     [label op cop default]
     (testing
-     (str "op: " label)     
-     (is (= [(cop ax bx) (cop ay by) (cop az bz)] (op a3 b3)) (str label " a3 b3"))
-     (is (= [(cop ax s) (cop ay s) (cop az s)] (op a3 s)) (str label " a3 n"))
-     (is (= (op (op a3 bx) by) (op a3 bx by)) (str label " a3 n m"))
-     (is (= (op (op a3 b3) by) (op a3 b3 by)) (str label " a3 b3 n"))
-     (is (= (op (op a3 b3) b3) (op a3 b3 b3)) (str label " a3 b3 b3"))
-     (is (= (op (op a3 bx) b3) (op a3 bx b3)) (str label " a3 n b3"))
-     (is (= (op a3 b3) (op a3 bx by bz)) (str label " a3 n m o"))
-     (is (= (op a3 b3) (op a3 [bx by bz])) (str label " a3 [n m o]"))
-     (is (= (op (op (op a3 b3) by) bz) (op a3 b3 by bz)) (str label " a3 b3 n m"))
-     (is (= (op (op (op a3 b3) b3) bz) (op a3 b3 b3 bz)) (str label " a3 b3 b3 m"))
-     (is (= (op (op (op a3 b3) b3) a3) (op a3 b3 b3 a3)) (str label " a3 b3 b3 a3"))
-     (is (= (op (op (op a3 bx) by) b3) (op a3 bx by b3)) (str label " a3 n m b3"))
-     (is (= (op (op (op a3 b3) a3) b3) (op a3 [b3 a3 b3])) (str label " a3 [b3 a3 b3]"))
-     (if (= cop /)
-       (is #+clj (thrown? #+clj ArithmeticException (op a3 [bx by]))
-           ,#+cljs (not (js/isFinite ((op a3 [bx by]) :z)))
-           (str label " a3 [n m] fail"))
-       (is (= (op a3 bx by default) (op a3 [bx by])) (str label " a3 [n m]")))))
+        (str "op: " label)
+      (is (= [(cop ax bx) (cop ay by) (cop az bz)] (op a3 b3)) (str label " a3 b3"))
+      (is (= [(cop ax s) (cop ay s) (cop az s)] (op a3 s)) (str label " a3 n"))
+      (is (= (op (op a3 bx) by) (op a3 bx by)) (str label " a3 n m"))
+      (is (= (op (op a3 b3) by) (op a3 b3 by)) (str label " a3 b3 n"))
+      (is (= (op (op a3 b3) b3) (op a3 b3 b3)) (str label " a3 b3 b3"))
+      (is (= (op (op a3 bx) b3) (op a3 bx b3)) (str label " a3 n b3"))
+      (is (= (op a3 b3) (op a3 bx by bz)) (str label " a3 n m o"))
+      (is (= (op a3 b3) (op a3 [bx by bz])) (str label " a3 [n m o]"))
+      (is (= (op (op (op a3 b3) by) bz) (op a3 b3 by bz)) (str label " a3 b3 n m"))
+      (is (= (op (op (op a3 b3) b3) bz) (op a3 b3 b3 bz)) (str label " a3 b3 b3 m"))
+      (is (= (op (op (op a3 b3) b3) a3) (op a3 b3 b3 a3)) (str label " a3 b3 b3 a3"))
+      (is (= (op (op (op a3 bx) by) b3) (op a3 bx by b3)) (str label " a3 n m b3"))
+      (is (= (op (op (op a3 b3) a3) b3) (op a3 [b3 a3 b3])) (str label " a3 [b3 a3 b3]"))
+      (if (= cop /)
+        (is #+clj (thrown? #+clj ArithmeticException (op a3 [bx by]))
+            ,#+cljs (not (js/isFinite ((op a3 [bx by]) :z)))
+            (str label " a3 [n m] fail"))
+        (is (= (op a3 bx by default) (op a3 [bx by])) (str label " a3 [n m]")))))
+
+  (defn context-dual-op
+    [label dop op1 op2]
+    (testing
+        (str "dual op: " label)
+      (is (= (op2 (op1 a2 bx) by) (dop a2 bx by)) (str label " a2 n m"))
+      (is (= (op2 (op1 a2 b2) bx) (dop a2 b2 bx)) (str label " a2 b2 n"))
+      (is (= (op2 (op1 a2 bx) b2) (dop a2 bx b2)) (str label " a2 n b2"))
+      (is (not= (dop a2 bx b2) (dop a2 b2 bx)) (str label " a2 n b2 != a2 b2 n"))
+      (is (= (op2 (op1 a2 b2) a2) (dop a2 b2 a2)) (str label " a2 b2 a2"))
+
+      (is (= (op2 (op1 a3 bx) by) (dop a3 bx by)) (str label " a3 n m"))
+      (is (= (op2 (op1 a3 b3) bx) (dop a3 b3 bx)) (str label " a3 b3 n"))
+      (is (= (op2 (op1 a3 bx) b3) (dop a3 bx b3)) (str label " a3 n b3"))
+      (is (not= (dop a3 bx b3) (dop a3 b3 bx)) (str label " a3 n b3 != a3 b3 n"))
+      (is (= (op2 (op1 a3 b3) a3) (dop a3 b3 a3)) (str label " a3 b3 a3"))))
 #+END_SRC
 
 *** Calling contexts
@@ -255,40 +271,13 @@
    (context-vec3-op "/" g/div / 0.0))
 #+END_SRC
 
-**** Madd
+**** Dual math ops
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
-  (deftest madd
-   (is (= (g/+ (g/* a2 bx) by) (g/madd a2 bx by)) "madd a2 n m")
-   (is (= (g/+ (g/* a2 b2) bx) (g/madd a2 b2 bx)) "madd a2 b2 n")
-   (is (= (g/+ (g/* a2 bx) b2) (g/madd a2 bx b2)) "madd a2 n b2")
-   (is (not= (g/madd a2 bx b2) (g/madd a2 b2 bx)) "madd a2 n b2 != a2 b2 n")
-   (is (= (g/+ (g/* a2 b2) a2) (g/madd a2 b2 a2)) "madd a2 b2 a2")
-    
-   (is (= (g/+ (g/* a3 bx) by) (g/madd a3 bx by)) "madd a3 n m")
-   (is (= (g/+ (g/* a3 b3) bx) (g/madd a3 b3 bx)) "madd a3 b3 n")
-   (is (= (g/+ (g/* a3 bx) b3) (g/madd a3 bx b3)) "madd a3 n b3")
-   (is (not= (g/madd a3 bx b3) (g/madd a3 b3 bx)) "madd a3 n b3 != a3 b3 n")
-   (is (= (g/+ (g/* a3 b3) a3) (g/madd a3 b3 a3)) "madd a3 b3 a3"))
-#+END_SRC
-
-**** Addm
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
-  (deftest addm
-   (is (= (g/* (g/+ a2 bx) by) (g/addm a2 bx by)) "addm a2 n m")
-   (is (= (g/* (g/+ a2 b2) bx) (g/addm a2 b2 bx)) "addm a2 b2 n")
-   (is (= (g/* (g/+ a2 bx) b2) (g/addm a2 bx b2)) "addm a2 n b2")
-   (is (not= (g/addm a2 bx b2) (g/addm a2 b2 bx)) "addm a2 n b2 != a2 b2 n")
-   (is (= (g/* (g/+ a2 b2) a2) (g/addm a2 b2 a2)) "addm a2 b2 a2")
-   (is (= (g/* (g/+ a2 b2 b2) a2) (g/addm a2 [b2 b2] a2)) "addm a2 [b2 b2] a2")
-   (is (= (g/* (g/+ a2 b2 b2) ax) (g/addm a2 [b2 b2] ax)) "addm a2 [b2 b2] ax")
-    
-   (is (= (g/* (g/+ a3 bx) by) (g/addm a3 bx by)) "addm a3 n m")
-   (is (= (g/* (g/+ a3 b3) bx) (g/addm a3 b3 bx)) "addm a3 b3 n")
-   (is (= (g/* (g/+ a3 bx) b3) (g/addm a3 bx b3)) "addm a3 n b3")
-   (is (not= (g/addm a3 bx b3) (g/addm a3 b3 bx)) "addm a3 n b3 != a3 b3 n")
-   (is (= (g/* (g/+ a3 b3) a3) (g/addm a3 b3 a3)) "addm a3 b3 a3")
-   (is (= (g/* (g/+ a3 b3 b3) a3) (g/addm a3 [b3 b3] a3)) "addm a3 [b3 b3] a3")
-   (is (= (g/* (g/+ a3 b3 b3) ax) (g/addm a3 [b3 b3] ax)) "addm a3 [b3 b3] ax"))
+  (deftest dual-math-ops
+    (context-dual-op "madd" g/madd g/* g/+)
+    (context-dual-op "addm" g/addm g/+ g/*)
+    (context-dual-op "msub" g/msub g/* g/-)
+    (context-dual-op "subm" g/subm g/- g/*))
 #+END_SRC
 
 **** Dot product

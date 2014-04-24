@@ -425,6 +425,8 @@ injected in the appropriate places of the code.
   
   (madd [_ a b] (vec2-op-2* * + _ a b 1.0 0.0))
   (addm [_ a b] (vec2-op-2* + * _ a b 0.0 1.0))
+  (msub [_ a b] (vec2-op-2* * - _ a b 1.0 0.0))
+  (subm [_ a b] (vec2-op-2* - * _ a b 0.0 1.0))
 #+END_SRC
 *** PDotProduct
 #+BEGIN_SRC clojure :noweb-ref vec2
@@ -866,10 +868,10 @@ injected in the appropriate places of the code.
   (div [_ a b] (vec3-op-2 / / _ a b 0.0 0.0))
   (div [_ a b c] (vec3-op-3 / _ a b c 0.0))
   
-  (madd
-   [_ a b] (vec3-op-2 * + _ a b 1.0 0.0))
-  (addm
-   [_ a b] (vec3-op-2 + * _ a b 0.0 1.0))
+  (madd [_ a b] (vec3-op-2 * + _ a b 1.0 0.0))
+  (addm [_ a b] (vec3-op-2 + * _ a b 0.0 1.0))
+  (msub [_ a b] (vec3-op-2 * - _ a b 1.0 0.0))
+  (subm [_ a b] (vec3-op-2 - * _ a b 0.0 1.0))
   
   g/PDotProduct
   (dot
