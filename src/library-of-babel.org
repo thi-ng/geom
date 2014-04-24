@@ -25,10 +25,10 @@ these are defined in their own =.org= files.
   (let ((body (replace-regexp-in-string "{{fn}}" fn
   "g/PBounds
   (bounds [_] ({{fn}} (:points _)))
-  (width [_] (g/axis-range* 0 (:points _)))
-  (height [_] (g/axis-range* 1 (:points _)))")))
+  (width [_] (gu/axis-range 0 (:points _)))
+  (height [_] (gu/axis-range 1 (:points _)))")))
     (if (string= "yes" depth)
-      (concat body "\n(depth [_] (g/axis-range* 2 (:points _)))")
+      (concat body "\n(depth [_] (gu/axis-range 2 (:points _)))")
       (concat body "\n(depth [_] 0)")))
 #+END_SRC
 
@@ -37,7 +37,7 @@ these are defined in their own =.org= files.
 #+BEGIN_SRC clojure
   g/PBoundingCircle
   (bounding-circle
-   [_] (g/bounding-circle* (g/centroid _) (:points _)))
+   [_] (gu/bounding-circle (g/centroid _) (:points _)))
 #+END_SRC
 
 ** PBoundingSphere
@@ -45,17 +45,20 @@ these are defined in their own =.org= files.
 #+BEGIN_SRC clojure
   g/PBoundingSphere
   (bounding-sphere
-   [_] (g/bounding-sphere* (g/centroid _) (:points _)))
+   [_] (gu/bounding-sphere (g/centroid _) (:points _)))
 #+END_SRC
 
 ** PCenter
 #+NAME: lob-geom-center
-#+BEGIN_SRC emacs-lisp :var type=""
-  (replace-regexp-in-string "{{type}}" type
-  "g/PCenter
+#+BEGIN_SRC emacs-lisp :var type="" :var vtype=""
+  (replace-regexp-in-string
+   "{{vtype}}" vtype
+   (replace-regexp-in-string
+    "{{type}}" type
+    "g/PCenter
   (center
-   ([_] ({{type}}. (g/center* (:points _))))
-   ([_ o] ({{type}}. (g/center* (g/centroid _) o (:points _)))))")
+   ([_] ({{type}}. (gu/center ({{vtype}}) (:points _))))
+   ([_ o] ({{type}}. (gu/center (g/centroid _) ({{vtype}} o) (:points _)))))"))
 #+END_SRC
 
 ** PCircumference
@@ -63,7 +66,7 @@ these are defined in their own =.org= files.
 #+BEGIN_SRC clojure
   g/PCircumference
   (circumference
-   [{p :points}] (g/arc-length* (conj p (first p))))
+   [{p :points}] (gu/arc-length (conj p (first p))))
 #+END_SRC
 
 ** PFlip
@@ -80,7 +83,7 @@ these are defined in their own =.org= files.
 #+BEGIN_SRC clojure
   g/PPolygonConvert
   (as-polygon
-   [_] (thi.ng.geom.types.Polygon. (:points _)))
+   [_] (thi.ng.geom.types.Polygon2. (:points _)))
 #+END_SRC
 
 ** PProximity
@@ -90,7 +93,7 @@ these are defined in their own =.org= files.
   "g/PProximity
   (closest-point
    [_ p]
-   (g/closest-point* (mapv #({{type}}. %) (g/edges _)) p))")
+   (gu/closest-point (mapv #({{type}}. %) (g/edges _)) p))")
 #+END_SRC
 
 ** PRotate
@@ -129,14 +132,14 @@ these are defined in their own =.org= files.
   (replace-regexp-in-string "{{n}}" n
   "g/PSample
   (point-at
-   [{p :points} t] (g/point-at* t (conj p (first p))))
+   [{p :points} t] (gu/point-at t (conj p (first p))))
   (random-point
-   [{p :points}] (g/point-at* (m/random) (conj p (first p))))
+   [{p :points}] (gu/point-at (m/random) (conj p (first p))))
   (random-point-inside
-   [_] (g/from-barycentric* (:points _) (m/normdist-weights {{n}})))
+   [_] (gu/from-barycentric (:points _) (m/normdist-weights {{n}})))
   (sample-uniform
    [{p :points} udist include-last?]
-   (g/sample-uniform* udist include-last? (conj p (first p))))")
+   (gu/sample-uniform udist include-last? (conj p (first p))))")
 #+END_SRC
 
 ** PScale
@@ -152,7 +155,7 @@ these are defined in their own =.org= files.
    ([_ sx sy sz]
       ({{type}}. (mapv #(g/* % sx sy sz) (:points _)))))
   (scale-size
-   [_ s] ({{type}}. (g/scale-size* s (:points _))))")
+   [_ s] ({{type}}. (gu/scale-size s (:points _))))")
 #+END_SRC
 
 ** PTranslate
