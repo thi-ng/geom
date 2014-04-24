@@ -68,12 +68,14 @@
       (g/addm x xs (/ 1.0 (count coll)))))
 
   (defn center
-    ([coll]
-       (center (centroid coll) (vec2) coll))
     ([c' coll]
        (center (centroid coll) c' coll))
     ([c c' coll]
-       (let [d (- c' c)] (mapv #(+ % d) coll))))
+       (let [d (- c' c)] (mapv #(g/+ % d) coll))))
+
+  (defn scale-size
+    ([s coll] (scale-size (centroid coll) s coll))
+    ([c s coll] (mapv #(-> % (g/- c) (g/madd s c)) coll)))
 #+END_SRC
 
 *** Bounds
@@ -84,8 +86,8 @@
     (let [c (count coll)]
       (cond
        (> c 1) (let [p (f min x xs)
-		     q (f max x xs)]
-		 [p (g/- q p)])
+                     q (f max x xs)]
+                 [p (g/- q p)])
        (= c 1) [x zero]
        :default nil)))
 
@@ -212,13 +214,29 @@
     ([[a b c]] (g/normalize (g/cross (g/- b a) (g/- c a))))
     ([a b] (g/normalize (g/cross a b)))
     ([a b c] (g/normalize (g/cross (g/- b a) (g/- c a)))))
+#+END_SRC
 
+** Triangles
+
+#+BEGIN_SRC clojure :noweb-ref triangles
   (defn norm-sign2
     [[ax ay] [bx by] [cx cy]]
     (- (mm/subm bx ax cy ay) (mm/subm cx ax by ay)))
 
   (defn norm-sign3
     [a b c] (g/mag (g/cross (g/- b a) (g/- c a))))
+
+  (defn tri-area2
+    [a b c] (* 0.5 (norm-sign2 a b c)))
+
+  (defn tri-area3
+    [a b c] (* 0.5 (norm-sign3 a b c)))
+
+  (defn clockwise2?
+    [a b c] (neg? (norm-sign2 a b c)))
+
+  (defn clockwise3?
+    [a b c] (neg? (norm-sign3 a b c)))
 #+END_SRC
 
 
@@ -249,4 +267,6 @@
   <<tessellate>>
 
   <<normals>>
+
+  <<triangles>>
 #+END_SRC
