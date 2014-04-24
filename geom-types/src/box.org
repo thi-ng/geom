@@ -7,19 +7,22 @@
   (defn box
     ([a b c d e f g h]
        (thi.ng.geom.types.Box. (mapv vec3 [a b c d e f g h])))
-    ([size-or-points]
-       (if (number? size-or-points)
-         (box (vec3) size-or-points)
-         (if (== 8 (count size-or-points))
-           (thi.ng.geom.types.Box. (mapv vec3 size-or-points))
-           (err/illegal-arg!
-            "wrong number of points, expected 8, but got"
-            (count size-or-points)))))
+    ([x]
+       (cond
+        (number? x)     (box (vec3) x)
+        (map? x)        (box (:p x) (:size x))
+        (sequential? x) (if (== 8 (count x))
+                          (thi.ng.geom.types.Box. (mapv vec3 x))
+                          (err/illegal-arg!
+                           "Wrong number of points, expected 8 but got"
+                           (count x)))
+        :default        (err/illegal-arg! x)))
     ([o size]
-       (let [a (vec3 o)
-             [b c d e f g h] (map #(g/madd (vec3 %) size a)
-                                  [[0 0 1] [1 0 1] [1 0 0]
-                                   [0 1 0] [0 1 1] [1 1 1] [1 1 0]])]
+       (let [[x1 y1 z1 :as a] (vec3 o)
+             [x2 y2 z2 :as g] (g/+ a size)
+             b (vec3 x1 y1 z2) c (vec3 x2 y1 z2)
+             d (vec3 x2 y1 z1) e (vec3 x1 y2 z1)
+             f (vec3 x1 y2 z2) h (vec3 x2 y2 z1)]
          (thi.ng.geom.types.Box. [a b c d e f g h]))))
 #+END_SRC
 
