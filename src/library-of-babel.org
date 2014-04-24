@@ -37,7 +37,7 @@ these are defined in their own =.org= files.
 #+BEGIN_SRC clojure
   g/PBoundingCircle
   (bounding-circle
-   [_] (gu/bounding-circle (g/centroid _) (:points _)))
+   [_] (tu/bounding-circle (g/centroid _) (:points _)))
 #+END_SRC
 
 ** PBoundingSphere
@@ -45,7 +45,7 @@ these are defined in their own =.org= files.
 #+BEGIN_SRC clojure
   g/PBoundingSphere
   (bounding-sphere
-   [_] (gu/bounding-sphere (g/centroid _) (:points _)))
+   [_] (tu/bounding-sphere (g/centroid _) (:points _)))
 #+END_SRC
 
 ** PCenter
