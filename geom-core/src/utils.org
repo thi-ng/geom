@@ -82,26 +82,23 @@
 *** Bounds
 
 #+BEGIN_SRC clojure :noweb-ref bounds
-  (defn bounding-rect
-    [[x & xs :as coll]]
+  (defn bounds*
+    [f zero [x & xs :as coll]]
     (let [c (count coll)]
       (cond
-       (> c 1) (let [p (v/vec2-op-seq min x xs)
-                     q (v/vec2-op-seq max x xs)
-                     [w h] (- q p)]
-                 [p w h])
-       (= c 1) [x 0.0 0.0]
+       (> c 1) (let [p (f min x xs)
+		     q (f max x xs)]
+		 [p (g/- q p)])
+       (= c 1) [x zero]
        :default nil)))
 
+  (defn bounding-rect
+    [points]
+    (bounds* v/vec2-op-seq V2 points))
+
   (defn bounding-box
-    [[x & xs :as coll]]
-    (let [c (count coll)]
-      (cond
-       (> c 1) (let [p (v/vec3-op-seq min x xs)
-                     q (v/vec3-op-seq max x xs)]
-                 [p (- q p)])
-       (= c 1) [x (vec3)]
-       :default nil)))
+    [points]
+    (bounds* v/vec3-op-seq V3 points))
 
   (defn radial-bounds
     [ctor c r-or-points]
@@ -233,7 +230,7 @@
   (ns thi.ng.geom.core.utils
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V2 V3]]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m]
      ,#+clj [thi.ng.macromath.core :as mm])
