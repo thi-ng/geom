@@ -47,8 +47,8 @@
   g/PBoundingSphere
   (bounding-sphere
    [{p :p size :size}]
-   (let [e (g/* size 0.5)]
-     (tu/bounding-sphere (g/+ p e) (g/mag e))))
+   (let [ext (g/* size 0.5)]
+     (tu/bounding-sphere (g/+ p ext) (g/mag ext))))
 #+END_SRC
 
 *** PBoundary
@@ -98,6 +98,24 @@
          1 -1))))
 #+END_SRC
 
+*** PFaceAccess                                                      :verify:
+
+Faces are always returned in this order: east, west, north, south,
+front, back (see diagram below).
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PFaceAccess
+  (faces
+   [_]
+   (let [[a b c d e f g h] (g/vertices _)]
+     [[c d h g]
+      [a b f e]
+      [e f g h]
+      [a d c b]
+      [b c g f]
+      [a e h d]]))
+#+END_SRC
+
 *** PGraph
 
   : e +----+ h
@@ -122,9 +140,9 @@
    [_]
    (let [[a b c d e f g h] (g/vertices _)]
      [[a b] [b c] [c d] [d a] ;; bottom
-      [h e] [e f] [f g] [g h] ;; top
+      [e f] [f g] [g h] [h e] ;; top
       [a e] [b f]             ;; left
-      [d h] [c g]             ;; right
+      [c g] [d h]             ;; right
       ]))
 #+END_SRC
 
@@ -194,10 +212,10 @@ argument map:
 
 | Key       | Description                                                          | Default |
 |-----------+----------------------------------------------------------------------+---------|
-| =:num=    | number of cols/rows/slices the box will be uniformly subdivided into |       2 |
-| =:cols=   | number of times the box will be subdivided along the X-axis          |       2 |
-| =:rows=   | number of times the box will be subdivided along the Y-axis          |       2 |
-| =:slices= | number of times the box will be subdivided along the Z-axis          |       2 |
+| =:num=    | number of cols/rows/slices the box will be uniformly subdivided into |       1 |
+| =:cols=   | number of times the box will be subdivided along the X-axis          |       1 |
+| =:rows=   | number of times the box will be subdivided along the Y-axis          |       1 |
+| =:slices= | number of times the box will be subdivided along the Z-axis          |       1 |
 
 When =:num= is given, the resulting AABBs will retain the aspect ratio
 of the original. If specified, =:cols=, =:rows= and =:slices= will
@@ -209,7 +227,7 @@ of the original with inner sorting over XYZ.
   g/PSubdivide
   (subdivide
    ([_] (g/subdivide _ {}))
-   ([{p :p size :size} {:keys [num cols rows slices] :or {num 2}}]
+   ([{p :p size :size} {:keys [num cols rows slices] :or {num 1}}]
       (let [sx (or cols num)
             sy (or rows num)
             sz (or slices num)
@@ -221,44 +239,34 @@ of the original with inner sorting over XYZ.
 #+END_SRC
 
 *** TODO PTessellate
+**** TODO Only keep faces on the surface of the original box (no inside walls)
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PTessellate
   (tessellate
    ([_] (g/tessellate _ {}))
-   ([_ {tess-fn :fn :or {tess-fn gu/tessellate-3} :as opts}]
-      (let [quads (fn [_]
-                    (let [[a b c d e f g h] (g/vertices _)]
-                      [[b c g f]
-                       [a e h d]
-                       [a b f e]
-                       [c d h g]
-                       [e f g h]
-                       [a d c b]]))]
-        (->> (if (some #{:num :cols :rows :slices} (keys opts))
-               (g/subdivide _ opts)
-               [_])
-             (mapcat quads)
-             (mapcat tess-fn)))))
+   ([_ {f :fn :or {f gu/tessellate-3} :as opts}]
+      (->> (if (some #{:num :cols :rows :slices} (keys opts))
+             (g/subdivide _ opts)
+             [_])
+           (mapcat g/faces)
+           (mapcat f))))
 #+END_SRC
 
-*** TODO Transformations
-**** TODO what is the result of transform?
+*** Transformations                                                  :verify:
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PRotate
   (rotate
-   [_ theta] (thi.ng.geom.types.AABB. (g/rotate-z (:p _) theta) (:size _)))
+   [_ theta] (g/rotate-z (box/box (:p _) (:size _)) theta))
   
   g/PRotate3D
   (rotate-x
-   [_ theta] (thi.ng.geom.types.AABB. (g/rotate-x (:p _) theta) (:size _)))
+   [_ theta] (g/rotate-x (box/box (:p _) (:size _)) theta))
   (rotate-y
-   [_ theta] (thi.ng.geom.types.AABB. (g/rotate-y (:p _) theta) (:size _)))
+   [_ theta] (g/rotate-y (box/box (:p _) (:size _)) theta))
   (rotate-z
-   [_ theta] (thi.ng.geom.types.AABB. (g/rotate-z (:p _) theta) (:size _)))
+   [_ theta] (g/rotate-z (box/box (:p _) (:size _)) theta))
   (rotate-around-axis
-   [_ axis theta]
-   (thi.ng.geom.types.AABB.
-    (g/rotate-around-axis (:p _) axis theta) (:size _)))
+   [_ axis theta] (g/rotate-around-axis (box/box (:p _) (:size _)) axis theta))
   
   g/PScale
   (scale
@@ -273,6 +281,10 @@ of the original with inner sorting over XYZ.
   g/PTranslate
   (translate
    [_ t] (thi.ng.geom.types.AABB. (g/+ (:p _) t) (:size _)))
+
+  g/PTransform
+  (transform
+   [_ m] (g/transform (box/box (:p _) (:size _)) m))
 #+END_SRC
 
 *** PVolume
@@ -293,6 +305,7 @@ of the original with inner sorting over XYZ.
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :refer [vec3]]
+     [thi.ng.geom.box :as box]
      ;;[thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
@@ -303,7 +316,7 @@ of the original with inner sorting over XYZ.
     ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     ,#+clj
     (:import
-     [thi.ng.geom.types AABB Sphere]))
+     [thi.ng.geom.types AABB Box Sphere]))
 
   <<ctors>>
 
