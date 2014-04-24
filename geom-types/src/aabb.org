@@ -30,7 +30,7 @@
 *** PArea
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PArea
-  (area [{[w h d] :size}] (* 2 (mm/madd w h d h w d)))
+  (area [{[w h d] :size}] (* 2.0 (mm/madd w h d h w d)))
 #+END_SRC
 
 *** PBounds
@@ -48,7 +48,7 @@
   (bounding-sphere
    [{p :p size :size}]
    (let [e (g/* size 0.5)]
-     (g/bounding-sphere* (g/+ p e) (g/mag e))))
+     (tu/bounding-sphere (g/+ p e) (g/mag e))))
 #+END_SRC
 
 *** PBoundary
@@ -144,7 +144,7 @@
 #+END_SRC
 
 *** TODO PMeshConvert
-#+BEGIN_SRC clojure :noweb-ref impl
+#+BEGIN_SRC clojure :noweb-ref excl
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
@@ -158,7 +158,7 @@
               (if tp [e f g h])
               (if bt [a d c b])]
              (filter identity)
-             (gmesh/into-mesh (gmesh/gmesh))))))
+             (gm/into-mesh (gm/gmesh))))))
 #+END_SRC
 
 *** TODO PProximity
@@ -186,7 +186,7 @@
       :default (vec3 (m/random x1 x2) (m/random y1 y2) (if (= 4 id) z1 z2)))))
 #+END_SRC
 
-*** PSubdivide
+*** TODO PSubdivide
 
 An AABB can be subdivided into smaller ones, i.e. to create a seq of
 uniform grid cells. The following options can be given as a 2nd
@@ -225,7 +225,7 @@ of the original with inner sorting over XYZ.
   g/PTessellate
   (tessellate
    ([_] (g/tessellate _ {}))
-   ([_ {tess-fn :fn :or {tess-fn gmesh/tessellate-face1} :as opts}]
+   ([_ {tess-fn :fn :or {tess-fn gu/tessellate-3} :as opts}]
       (let [quads (fn [_]
                     (let [[a b c d e f g h] (g/vertices _)]
                       [[b c g f]
@@ -234,11 +234,11 @@ of the original with inner sorting over XYZ.
                        [c d h g]
                        [e f g h]
                        [a d c b]]))]
-        (->> (g/subdivide _ opts)
+        (->> (if (some #{:num :cols :rows :slices} (keys opts))
+               (g/subdivide _ opts)
+               [_])
              (mapcat quads)
-             (mapcat tess-fn)
-             (map #(thi.ng.geom.types.Triangle3. %))
-             ))))
+             (mapcat tess-fn)))))
 #+END_SRC
 
 *** TODO Transformations
@@ -293,8 +293,9 @@ of the original with inner sorting over XYZ.
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :refer [vec3]]
-     [thi.ng.geom.gmesh :as gmesh]
-     [thi.ng.geom.types :as types]
+     ;;[thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.types]
+     [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps*]]
