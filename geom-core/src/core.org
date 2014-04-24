@@ -280,7 +280,7 @@ access to entities in this context.
 #+END_SRC
 **** PFaceAccess
 #+BEGIN_SRC clojure :noweb-ref protos-shape
-  (defprotocol PFaceted
+  (defprotocol PFaceAccess
     (add-face [_ f])
     (faces [_])
     (remove-face [_ f])
@@ -319,7 +319,9 @@ protocol consisting of just _ one function: =as-mesh=.
     (compute-face-normals [_])
     (compute-vertex-normals [_])
     (face-normals [_])
-    (vertex-normals [_]))
+    (face-normal [_ f])
+    (vertex-normals [_])
+    (vertex-normal [_ v]))
 #+END_SRC
 **** PPolygonConvert
        Anything which can be turned into a polygon will implement _
