@@ -122,7 +122,43 @@ injected in the appropriate places of the code.
   (Vec3. z y x)
 #+END_SRC
 
-** TODO Protocol helpers
+*** reduce
+#+BEGIN_SRC clojure :noweb-ref tpl-reduce2
+  (let [acc (f x y)] (if (reduced? acc) @acc acc))
+#+END_SRC
+#+BEGIN_SRC clojure :noweb-ref tpl-reduce3
+  (let [acc (f x y)]
+    (if (reduced? acc)
+      @acc
+      (let [acc (f acc z)]
+        (if (reduced? acc)
+          @acc
+          acc))))
+#+END_SRC
+*** reduce w/ init
+#+BEGIN_SRC clojure :noweb-ref tpl-reduce2-start
+  (let [acc (f start x)]
+    (if (reduced? acc)
+      @acc
+      (let [acc (f acc y)]
+        (if (reduced? acc)
+          @acc
+          acc))))
+#+END_SRC
+#+BEGIN_SRC clojure :noweb-ref tpl-reduce3-start
+  (let [acc (f start x)]
+    (if (reduced? acc)
+      @acc
+      (let [acc (f acc y)]
+        (if (reduced? acc)
+          @acc
+          (let [acc (f acc z)]
+            (if (reduced? acc)
+              @acc
+              acc))))))
+#+END_SRC
+
+** Protocol helpers
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   ,#+clj
@@ -136,9 +172,10 @@ injected in the appropriate places of the code.
       (val [_] v)
       (getValue [_] v)
       (hashCode [_]
-        (hash-combine
-         (clojure.lang.Util/hash k)
-         (clojure.lang.Util/hash v)))
+        (-> 31
+            (unchecked-add-int (hash k))
+            (unchecked-multiply-int 31)
+            (unchecked-add-int (hash v))))
       (equals [_ x]
         (and (instance? java.util.Map$Entry x)
              (clojure.lang.Util/equals
@@ -199,7 +236,7 @@ injected in the appropriate places of the code.
   ,#+clj (entryAt
          [_ k] (map-entry k <<tpl-nth-err2>>))
   ,#+clj (assoc
-         [_ k v] (swizzle2-assoc _ k v))
+            [_ k v] (swizzle2-assoc _ k v))
   ,#+clj (assocN
          [_ k v]
          <<tpl-assoc-n2>>)
@@ -210,7 +247,7 @@ injected in the appropriate places of the code.
   ,#+clj (iterator
          [_] (.iterator ^java.util.Collection (list x y)))
   ,#+clj (toArray
-         [_] (double-array 2 [x y]))
+         [_] (double-array 2 _))
   ,#+clj (size [_] 2)
 
   ,#+clj clojure.lang.IPersistentCollection
@@ -273,87 +310,106 @@ injected in the appropriate places of the code.
          [_ o]
          <<tpl-compare2>>)
 
-  Object
-  (toString
-   [_] (str "[" x " " y "]"))
+  ,#+clj cp/InternalReduce
+  ,#+clj (internal-reduce
+         [_ f start]
+         <<tpl-reduce2-start>>)
+
+  ,#+clj cp/CollReduce
+  ,#+clj (coll-reduce
+         [_ f]
+         <<tpl-reduce2>>)
+  ,#+clj (coll-reduce
+         [_ f start]
+         <<tpl-reduce2-start>>)
+
+  ,#+clj Object
+  ,#+clj (toString
+         [_]
+         (.toString
+          (doto (StringBuilder. "[")
+            (.append (pr-str x))
+            (.append " ")
+            (.append (pr-str y))
+            (.append "]"))))
 #+END_SRC
 *** ClojureScript protocols
 #+BEGIN_SRC clojure :noweb-ref vec2
   ,#+cljs ICloneable
   ,#+cljs (-clone
           [_] (Vec2. x y))
-  
+
   ,#+cljs ILookup
   ,#+cljs (-lookup
           [_ k] (swizzle2 _ k nil))
   ,#+cljs (-lookup
           [_ k nf] (swizzle2 _ k nf))
-  
+
   ,#+cljs IFn
   ,#+cljs (-invoke
           [_ k] (swizzle2 _ k nil))
   ,#+cljs (-invoke
           [_ k nf] (swizzle2 _ k nf))
-  
+
   ,#+cljs ICounted
   ,#+cljs (-count
           [_] 2)
-  
+
   ,#+cljs IAssociative
   ,#+cljs (-contains-key?
           [_ k] <<tpl-contains-key2>>)
   ,#+cljs (-assoc
           [_ k v] (swizzle2-assoc _ k v))
-  
+
   ,#+cljs IVector
   ,#+cljs (-assoc-n
           [_ k v]
           <<tpl-assoc-n2>>)
-  
+
   ,#+cljs ISequential
   ,#+cljs ISeq
   ,#+cljs (-first
           [_] x)
   ,#+cljs (-rest
           [_] <<tpl-rest2>>)
-  
+
   ,#+cljs INext
   ,#+cljs (-next
           [_] <<tpl-rest2>>)
-  
+
   ,#+cljs ISeqable
   ,#+cljs (-seq
           [_] _)
-  
+
   ,#+cljs IReversible
   ,#+cljs (-rseq
           [_] <<tpl-rseq2>>)
-  
+
   ,#+cljs IIndexed
   ,#+cljs (-nth
           [_ k] <<tpl-nth-err2>>)
   ,#+cljs (-nth
           [_ k nf] <<tpl-nth-nf2>>)
-  
+
   ,#+cljs ICollection
   ,#+cljs (-conj
           [_ z] (vec3 x y z))
-  
+
   ,#+cljs IStack
   ,#+cljs (-peek
           [_] y)
   ,#+cljs (-pop
           [_] [x])
-  
+
   ,#+cljs IComparable
   ,#+cljs (-compare
           [_ o]
           <<tpl-compare2>>)
-  
+
   ,#+cljs IHash
   ,#+cljs (-hash
           [_] (hash-combine (hash x) (hash y)))
-  
+
   ,#+cljs IEquiv
   ,#+cljs (-equiv
           [_ o]
@@ -361,6 +417,18 @@ injected in the appropriate places of the code.
             (and (== x (.-x ^Vec2 o)) (== y (.-y ^Vec2 o)))
             (and (sequential? o) (= 2 (count o))
                  (= x (nth o 0)) (= y (nth o 1)))))
+
+  ,#+cljs IReduce
+  ,#+cljs (-reduce
+          [coll f]
+          <<tpl-reduce2>>)
+  ,#+cljs (-reduce
+          [coll f start]
+          <<tpl-reduce2-start>>)
+
+  ,#+cljs Object
+  ,#+cljs (toString
+          [_] (str "[" x " " y "]"))
 #+END_SRC
 *** Transformations
 #+BEGIN_SRC clojure :noweb-ref vec2
@@ -573,9 +641,9 @@ injected in the appropriate places of the code.
 #+END_SRC
 *** Override print methods
 #+BEGIN_SRC clojure :noweb-ref vec2
-  #+clj (require 'clojure.pprint)
-  #+clj (prefer-method clojure.pprint/simple-dispatch clojure.lang.IPersistentVector clojure.lang.ISeq)
-  #+clj (defmethod print-method Vec2 [o ^java.io.Writer w] (.write w (.toString o)))
+  ,#+clj (require 'clojure.pprint)
+  ,#+clj (prefer-method clojure.pprint/simple-dispatch clojure.lang.IPersistentVector clojure.lang.ISeq)
+  ,#+clj (defmethod print-method Vec2 [^Vec2 o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 ** 3D
 #+BEGIN_SRC clojure :noweb-ref vec3
@@ -590,14 +658,14 @@ injected in the appropriate places of the code.
          [_ k] (swizzle3 _ k nil))
   ,#+clj (valAt
          [_ k nf] (swizzle3 _ k nf))
-  
+
   ,#+clj java.util.concurrent.Callable
   ,#+clj (call
          [_] (.invoke ^clojure.lang.IFn _))
   ,#+clj java.lang.Runnable
   ,#+clj (run
-         [_] (.invoke ^clojure.lang.IFn _))
-  
+          [_] (.invoke ^clojure.lang.IFn _))
+
   ,#+clj clojure.lang.IFn
   ,#+clj (invoke
          [_ k] (swizzle3 _ k nil))
@@ -606,7 +674,7 @@ injected in the appropriate places of the code.
   ,#+clj (applyTo
          [_ args]
          <<tpl-apply(fn="swizzle3")>>)
-  
+
   ,#+clj clojure.lang.Associative
   ,#+clj clojure.lang.IPersistentVector
   ,#+clj (count
@@ -622,17 +690,17 @@ injected in the appropriate places of the code.
   ,#+clj (assocN
          [_ k v]
          <<tpl-assoc-n3>>)
-  
+
   ,#+clj java.util.Collection
   ,#+clj (isEmpty
          [_] false)
   ,#+clj (iterator
          [_] (.iterator ^java.util.Collection (list x y z)))
   ,#+clj (toArray
-         [_] (double-array 3 [x y z]))
+         [_] (double-array 3 _))
   ,#+clj (size
          [_] 3)
-  
+
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.Indexed
   ,#+clj clojure.lang.Sequential
@@ -679,104 +747,125 @@ injected in the appropriate places of the code.
                 (= 3 (count o))
                 (clojure.lang.Util/equals x (nth o 0))
                 (clojure.lang.Util/equals y (nth o 1))
-                (clojure.lang.Util/equals z (nth o 2)))))  
+                (clojure.lang.Util/equals z (nth o 2)))))
   ,#+clj (hashCode
          [_]
          <<tpl-hashcode3>>)
-  
+
   ,#+clj clojure.lang.IHashEq
   ,#+clj (hasheq
-           [_]
-           <<tpl-hasheq3>>)
-  
+         [_]
+         <<tpl-hasheq3>>)
+
   ,#+clj Comparable
   ,#+clj (compareTo
          [_ o]
          <<tpl-compare3>>)
 
-  Object
-  (toString
-    [_] (str "[" x " " y " " z "]"))
+  ,#+clj cp/InternalReduce
+  ,#+clj (internal-reduce
+         [_ f start]
+         <<tpl-reduce3-start>>)
+
+  ,#+clj cp/CollReduce
+  ,#+clj (coll-reduce
+         [_ f]
+         <<tpl-reduce3>>)
+  ,#+clj (coll-reduce
+         [_ f start]
+         <<tpl-reduce3-start>>)
+
+  ,#+clj Object
+  ,#+clj (toString
+         [_]
+         (.toString
+          (doto (StringBuilder. "[")
+            (.append (pr-str x))
+            (.append " ")
+            (.append (pr-str y))
+            (.append " ")
+            (.append (pr-str z))
+            (.append "]"))))
 #+END_SRC
 *** ClojureScript protocols
 #+BEGIN_SRC clojure :noweb-ref vec3
   ,#+cljs ICloneable
   ,#+cljs (-clone
           [_] (Vec3. x y z))
-  
+
   ,#+cljs ILookup
   ,#+cljs (-lookup
           [_ k] (swizzle3 _ k nil))
   ,#+cljs (-lookup
           [_ k nf] (swizzle3 _ k nf))
-  
+
   ,#+cljs IFn
   ,#+cljs (-invoke
           [_ k] (swizzle3 _ k nil))
   ,#+cljs (-invoke
           [_ k nf] (swizzle3 _ k nf))
-  
+
   ,#+cljs ICounted
   ,#+cljs (-count
           [_] 3)
-  
+
   ,#+cljs IAssociative
   ,#+cljs (-contains-key?
           [_ k] <<tpl-contains-key3>>)
   ,#+cljs (-assoc
           [_ k v] (swizzle3-assoc _ k v))
-  
+
   ,#+cljs IVector
   ,#+cljs (-assoc-n
           [_ k v]
           <<tpl-assoc-n3>>)
-  
+
   ,#+cljs ISequential
   ,#+cljs ISeq
   ,#+cljs (-first
           [_] x)
   ,#+cljs (-rest
           [_] <<tpl-rest3>>)
-  
+
   ,#+cljs INext
   ,#+cljs (-next
           [_] <<tpl-rest3>>)
-  
+
   ,#+cljs ISeqable
   ,#+cljs (-seq
           [_] _)
-  
+
   ,#+cljs IReversible
   ,#+cljs (-rseq
           [_] <<tpl-rseq3>>)
-  
+
   ,#+cljs IIndexed
   ,#+cljs (-nth
           [_ k] <<tpl-nth-err3>>)
   ,#+cljs (-nth
           [_ k nf] <<tpl-nth-nf3>>)
-  
+
   ,#+cljs ICollection
   ,#+cljs (-conj
           [_ w] [x y z w])
-  
+
   ,#+cljs IStack
   ,#+cljs (-peek
           [_] z)
   ,#+cljs (-pop
           [_] (Vec2. x y))
-  
+
   ,#+cljs IComparable
   ,#+cljs (-compare
           [_ o]
           <<tpl-compare3>>)
-  
+
   ,#+cljs IHash
   ,#+cljs (-hash
           [_] (-> (hash x)
                   (hash-combine (hash y))
                   (hash-combine (hash z))))
-  
+
   ,#+cljs IEquiv
   ,#+cljs (-equiv
           [_ o]
@@ -784,6 +873,18 @@ injected in the appropriate places of the code.
             (and (== x (.-x ^Vec3 o)) (== y (.-y ^Vec3 o)) (== z (.-z ^Vec3 o)))
             (and (sequential? o) (= 3 (count o))
                  (= x (nth o 0)) (= y (nth o 1)) (= z (nth o 2)))))
+
+  ,#+cljs IReduce
+  ,#+cljs (-reduce
+          [coll f]
+          <<tpl-reduce3>>)
+  ,#+cljs (-reduce
+          [coll f start]
+          <<tpl-reduce3-start>>)
+
+  ,#+cljs Object
+  ,#+cljs (toString
+          [_] (str "[" x " " y " " z "]"))
 #+END_SRC
 *** Transformations
 #+BEGIN_SRC clojure :noweb-ref vec3
@@ -1423,7 +1524,8 @@ rules:
      [thi.ng.common.data.core :as d]
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
-     ,#+clj [thi.ng.macromath.core :as mm])
+     ,#+clj [thi.ng.macromath.core :as mm]
+     ,#+clj [clojure.core.protocols :as cp])
     ,#+cljs
     (:require-macros
      [thi.ng.macromath.core :as mm]))
