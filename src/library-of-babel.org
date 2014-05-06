@@ -88,12 +88,11 @@ these are defined in their own =.org= files.
 
 ** PProximity
 #+NAME: lob-geom-proxi
-#+BEGIN_SRC emacs-lisp :var type=""
-  (replace-regexp-in-string "{{type}}" type
-  "g/PProximity
+#+BEGIN_SRC clojure
+  g/PProximity
   (closest-point
    [_ p]
-   (gu/closest-point (mapv #({{type}}. %) (g/edges _)) p))")
+   (gu/closest-point-on-segments p (g/edges _)))
 #+END_SRC
 
 ** PRotate

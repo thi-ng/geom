@@ -8,7 +8,7 @@
   (defn polygon2
     ([points] (thi.ng.geom.types.Polygon2. (mapv vec2 points)))
     ([p & more] (thi.ng.geom.types.Polygon2. (mapv vec2 (cons p more)))))
-  
+
   (defn cog
     [radius teeth profile]
     (-> (thi.ng.geom.types.Circle2. (vec2) radius)
@@ -61,7 +61,7 @@
       (if q
         (recur (conj verts q) q pred theta (d/all-after q ps))
         verts)))
-  
+
   (defn convex-hull*
     [points]
     (let [[p & more :as ps] (sort-by first points)
@@ -87,7 +87,7 @@
   (defn tessellate*
     [p]
     (let [[points area] (if (instance? thi.ng.geom.types.Polygon2 p)
-                          [(:points p) (g/area p)] [(vec p) (g/area (polygon p))])
+                          [(:points p) (g/area p)] [(vec p) (g/area (polygon2 p))])
           nv (count points)
           verts (vec (if (pos? area) (range nv) (range (dec nv) -1 -1)))]
       (loop [result [], verts verts, v (dec nv), nv nv, cnt (dec (* 2 nv))]
@@ -216,14 +216,14 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PClip
   (clip-with
-   [_ s] (polygon (clip-convex* (:points _) s)))
+   [_ s] (polygon2 (clip-convex* (:points _) s)))
 #+END_SRC
 
 *** PConvexHull
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PConvexHull
   (convex-hull
-   [_] (polygon (convex-hull* (:points _))))
+   [_] (polygon2 (convex-hull* (:points _))))
 #+END_SRC
 
 *** PExtrude
@@ -233,7 +233,7 @@
       [{points :points :as _}
        {:keys [depth offset scale top? bottom?] :or {depth 1.0 scale 1.0 top? true bottom? true}}]
       (let [points (if (neg? (g/area _)) (reverse points) points)
-            tpoints (if (= 1.0 scale) points (:points (g/scale-size (polygon points) scale)))
+            tpoints (if (= 1.0 scale) points (:points (g/scale-size (polygon2 points) scale)))
             off (or offset (vec3 0 0 depth))
             points3 (mapv vec3 points)
             tpoints3 (mapv #(g/+ off %) tpoints)
@@ -322,7 +322,7 @@
                     (tessellate*)
                     (map (fn [[a b c]] [(g/+ itoff b) (g/+ itoff a) (g/+ itoff c)]))))
              (when-not complete? (quad-strip (drop-wrap tpoints3) (drop-wrap itpoints3) false)))
-            (quad-strip (maybe-loop tpoints3) (maybe-loop itpoints3) true))))))  
+            (quad-strip (maybe-loop tpoints3) (maybe-loop itpoints3) true))))))
 #+END_SRC
 
 *** PFlip                                                       :usetemplate:
@@ -382,7 +382,7 @@
 
 *** PProximity                                                  :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
-  <<lob-geom-proxi(type="thi.ng.geom.types.Line2")>>
+  <<lob-geom-proxi>>
 #+END_SRC
 
 *** TODO PSample
@@ -434,6 +434,7 @@
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.types :as types]
+     [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [PI HALF_PI THREE_HALVES_PI *eps*]])
     ,#+clj

@@ -1,0 +1,45 @@
+#+SETUPFILE: ../../src/setup.org
+
+* Namespace: thi.ng.geom.types.utils
+
+** Bounds
+
+#+BEGIN_SRC clojure :noweb-ref bounds
+  (defn bounding-rect
+    [points]
+    (let [[p size] (gu/bounding-rect points)]
+      (if p (thi.ng.geom.types.Rect2. p size))))
+
+  (defn bounding-box
+    [points]
+    (let [[p size] (gu/bounding-box points)]
+      (if p (thi.ng.geom.types.AABB. p size))))
+
+  (defn bounding-circle
+    ([points]
+       (bounding-circle (gu/centroid points) points))
+    ([c r-or-points]
+       (let [[c r] (gu/radial-bounds vec2 c r-or-points)]
+         (thi.ng.geom.types.Circle2. c r))))
+
+  (defn bounding-sphere
+    ([points]
+       (bounding-sphere (gu/centroid points) points))
+    ([c r-or-points]
+       (let [[c r] (gu/radial-bounds vec3 c r-or-points)]
+         (thi.ng.geom.types.Sphere. c r))))
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/types/utils.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.types.utils
+    (:require
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.types])
+    (:import
+     [thi.ng.geom.types Circle2 Rect2 AABB Sphere]))
+
+  <<bounds>>
+#+END_SRC

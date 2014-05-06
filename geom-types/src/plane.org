@@ -6,16 +6,16 @@
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn plane
     [n w] (thi.ng.geom.types.Plane. (g/normalize (vec3 n)) w))
-  
+
   (defn plane-with-p
     [p n]
     (let [n (g/normalize (vec3 n))]
       (thi.ng.geom.types.Plane. n (g/dot n p))))
-  
+
   (defn plane-from-points
     ([[a b c]] (plane-from-points a b c))
     ([a b c]
-       (let [n (g/ortho-normal* a b c)]
+       (let [n (gu/ortho-normal a b c)]
          (thi.ng.geom.types.Plane. n (g/dot n a)))))
 #+END_SRC
 ** Helper functions
@@ -86,11 +86,11 @@
    ([_ {:keys [p width height size] :or {size 1.0}}]
       (let [w (* (or width size) 0.5)
             h (* (or height size) 0.5)
-            flip? (m/delta= -1.0 (g/dot (:n _) g/V3Z))
-            p (g/closest-point _ (or p (g/vec3)))
+            flip? (m/delta= -1.0 (g/dot (:n _) v/V3Z))
+            p (g/closest-point _ (or p (vec3)))
             q (if flip?
-                (g/quat 0 0 0 1)
-                (g/alignment-quat g/V3Z (:n _)))
+                (q/quat 0 0 0 1)
+                (q/alignment-quat v/V3Z (:n _)))
             [a b c d] (map #(g/+ p (g/transform-vector q %))
                            [(vec3 (- w) (- h) 0) (vec3 (- w) h 0)
                             (vec3 w h 0) (vec3 w (- h) 0)])]
@@ -114,20 +114,23 @@
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/plane.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.plane
+    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :refer [vec3]]
+     [thi.ng.geom.core.vector :as v :refer [vec3]]
+     [thi.ng.geom.core.quaternion :as q]
      [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.types :as types]
+     [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps*]]
      ,#+clj [thi.ng.macromath.core :as mm])
-    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     ,#+clj
     (:import
      [thi.ng.geom.types Plane]))
 
-  <ctors>>
+  <<ctors>>
 
   <<helpers>>
 

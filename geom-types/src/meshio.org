@@ -17,13 +17,13 @@
       (.write stream #+clj (byte-array 80) #+cljs (into-array (repeat 80 0)))
       (b/write-int32-le stream (count faces))
       (doseq [[a b c :as f] faces]
-        (b/write-vec3-le stream (or (get fnormals f) (g/ortho-normal* f)))
+        (b/write-vec3-le stream (or (get fnormals f) (gu/ortho-normal f)))
         (b/write-vec3-le stream a)
         (b/write-vec3-le stream b)
         (b/write-vec3-le stream c)
         (b/write-int16-le stream 0))
       stream))
-  
+
   (defn read-stl
     "Returns binary STL inputstream as mesh."
     [^InputStream stream]

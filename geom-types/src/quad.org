@@ -201,7 +201,7 @@ A quad's mesh representation is simply a quad mesh with a single face.
 #+END_SRC
 *** TODO PProximity
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
-  <<lob-geom-proxi(type="thi.ng.geom.types.Line3")>>
+  <<lob-geom-proxi>>
 #+END_SRC
 *** TODO PSample
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
@@ -289,6 +289,7 @@ function returns a lazyseq of triangles of the subdivided quad.
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.types :as types]
+     [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps*]])
