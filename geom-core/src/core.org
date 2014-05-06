@@ -183,8 +183,6 @@ access to entities in this context.
   (defprotocol PGraph
     (connected-components [_])
     (cyclic? [_])
-    (edges [_] [_ n])
-    (vertices [_] [_ n])
     (vertex-valence [_ v])
     (vertex-neighbors [_ v])
     (remove-vertex [_ v])
@@ -201,6 +199,35 @@ access to entities in this context.
 #+BEGIN_SRC clojure :noweb-ref protos-graph
   (defprotocol PGraphConvert
     (as-graph [_] [_ opts]))
+#+END_SRC
+*** Sub-shape accessors
+**** PVertexAccess
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol PVertexAccess
+    (vertices [_] [_ opts]))
+#+END_SRC
+**** PEdgeAccess
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol PEdgeAccess
+    (edges [_] [_ opts]))
+#+END_SRC
+**** PFaceAccess
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol PFaceAccess
+    (add-face [_ f])
+    (faces [_])
+    (remove-face [_ f])
+    (vertex-faces [_ v]))
+#+END_SRC
+**** PNormalAccess
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol PNormalAccess
+    (compute-face-normals [_])
+    (compute-vertex-normals [_])
+    (face-normals [_])
+    (face-normal [_ f])
+    (vertex-normals [_])
+    (vertex-normal [_ v]))
 #+END_SRC
 *** Shape based & structural operations
 **** PAlign
@@ -280,14 +307,7 @@ access to entities in this context.
     (extrude [_ opts])
     (extrude-shell [_ opts]))
 #+END_SRC
-**** PFaceAccess
-#+BEGIN_SRC clojure :noweb-ref protos-shape
-  (defprotocol PFaceAccess
-    (add-face [_ f])
-    (faces [_])
-    (remove-face [_ f])
-    (vertex-faces [_ v]))
-#+END_SRC
+
 **** PFlip
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PFlip
@@ -315,16 +335,6 @@ protocol consisting of just _ one function: =as-mesh=.
     (as-mesh [_] [_ opts]
       "Transforms the current enitity into a Mesh instance"))
  #+END_SRC
-**** PNormalAccess
-#+BEGIN_SRC clojure :noweb-ref protos-shape
-  (defprotocol PNormalAccess
-    (compute-face-normals [_])
-    (compute-vertex-normals [_])
-    (face-normals [_])
-    (face-normal [_ f])
-    (vertex-normals [_])
-    (vertex-normal [_ v]))
-#+END_SRC
 **** PPolygonConvert
        Anything which can be turned into a polygon will implement _
        protocol consisting of just _ one function: =as-polygon=.

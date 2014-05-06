@@ -12,7 +12,7 @@
 #+END_SRC
 
 ** Constructor
-#+BEGIN_SRC clojure :noweb-ref ctor
+#+BEGIN_SRC clojure :noweb-ref ctors
   (defn path
     ([segments]
        (thi.ng.geom.types.Path2. (vec segments)))
@@ -160,11 +160,12 @@
 
 *** TODO PGraph
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PGraph
-  (edges [_])
+  g/PVertexAccess
   (vertices
    [_ res]
    (first (sample-segments* res (:segments _))))
+  g/PEdgeAccess
+  (edges [_])
 #+END_SRC
 
 *** TODO PPolygonConvert
@@ -186,7 +187,7 @@
    (->> _
         :segments
         (sample-segments* 8)
-        (map #(g/sample-uniform* udist include-last? %))
+        (map #(gu/sample-uniform udist include-last? %))
         (first)))
 #+END_SRC
 
@@ -201,7 +202,7 @@
   (ns thi.ng.geom.path
     (:require
      [thi.ng.geom.core :as g :refer [*resolution*]]
-     [thi.ng.geom.core.vector :refer [vec2]]
+     [thi.ng.geom.core.vector :as v :refer [vec2]]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.bezier :as b]
      [thi.ng.geom.line :as l]

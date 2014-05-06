@@ -6,22 +6,21 @@
 *** TODO replace sequential? w/ coll?
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn rect
-    ([] (thi.ng.geom.types.Rect2. (vec2) 1.0 1.0))
-    ([w] (thi.ng.geom.types.Rect2. (vec2) w w))
+    ([] (thi.ng.geom.types.Rect2. (vec2) (vec2 1.0)))
+    ([w] (thi.ng.geom.types.Rect2. (vec2) (vec2 w)))
     ([p q]
-       (if (coll? p)
-         (if (coll? q)
+       (if (sequential? p)
+         (if (sequential? q)
            (let [p (vec2 p) q (vec2 q)
-                 [p q] [(g/min p q) (g/max p q)]
-                 [w h] (g/- q p)]
-             (thi.ng.geom.types.Rect2. p w h))
-           (thi.ng.geom.types.Rect2. (vec2 p) q q))
-         (thi.ng.geom.types.Rect2. (vec2) p q)))
+                 [p q] [(g/min p q) (g/max p q)]]
+             (thi.ng.geom.types.Rect2. p (g/- q p)))
+           (thi.ng.geom.types.Rect2. (vec2 p) (vec2 q)))
+         (thi.ng.geom.types.Rect2. (vec2) (vec2 p q))))
     ([x y w]
        (if (number? x)
-         (thi.ng.geom.types.Rect2. (vec2 x y) w w)
-         (thi.ng.geom.types.Rect2. (vec2 x) y w)))
-    ([x y w h] (thi.ng.geom.types.Rect2. (vec2 x y) w h)))
+         (thi.ng.geom.types.Rect2. (vec2 x y) (vec2 w))
+         (thi.ng.geom.types.Rect2. (vec2 x) (vec2 y w))))
+    ([x y w h] (thi.ng.geom.types.Rect2. (vec2 x y) (vec2 w h))))
 #+END_SRC
 ** Type specific functions
 #+BEGIN_SRC clojure :noweb-ref helpers
@@ -96,7 +95,7 @@
   (bounding-circle
    [_]
    (let [c (g/centroid _)]
-     (g/bounding-circle* c (g/dist c (:p _)))))
+     (tu/bounding-circle c (g/dist c (:p _)))))
 #+END_SRC
 *** PCenter
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -108,7 +107,7 @@
    ([{w :w h :h} o]
       (let [t [(* w 0.5) (* h 0.5)]]
         (thi.ng.geom.types.Rect2. (g/- o t) w h))))
-  (centroid [{p :p :as _}] (g/madd (g/vec2 (:w _) (:h _)) 0.5 p))
+  (centroid [{p :p :as _}] (g/madd (vec2 (:w _) (:h _)) 0.5 p))
 #+END_SRC
 *** PCircumference
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -151,10 +150,11 @@ than 1.0.
 #+END_SRC
 *** PGraph
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PGraph
+  g/PVertexAccess
   (vertices
    [{[x y :as p] :p w :w h :h}]
    (let [r (+ x w) b (+ y h)] [p (vec2 x b) (vec2 r b) (vec2 r y)]))
+  g/PEdgeAccess
   (edges
    [{[x y :as p] :p w :w h :h}]
    (let [r (+ x w) b (+ y h)]
@@ -162,6 +162,7 @@ than 1.0.
       [(vec2 r y) (vec2 r b)]
       [(vec2 r b) (vec2 x b)]
       [(vec2 x b) p]]))
+  g/PGraph
   (vertex-neighbors
    [_ v] (d/neighbors (vec2 v) (g/vertices _)))
   (vertex-valence
@@ -197,20 +198,20 @@ than 1.0.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PProximity
   (closest-point
-   [_ q] (g/closest-point* (mapv l/line2 (g/edges _)) q))
+   [_ p] (gu/closest-point-on-segments p (g/edges _)))
 #+END_SRC
 *** PSample
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PSample
   (point-at
-   [_ t] (g/point-at* t (conj (g/vertices _) (:p _))))
+   [_ t] (gu/point-at t (conj (g/vertices _) (:p _))))
   (random-point
    [_] (g/point-at _ (m/random)))
   (random-point-inside
    [_] (g/+ (:p _) (m/random (:w _)) (m/random (:h _))))
   (sample-uniform
    [_ udist include-last?]
-   (g/sample-uniform* udist include-last? (conj (g/vertices _) (:p _))))
+   (gu/sample-uniform udist include-last? (conj (g/vertices _) (:p _))))
 #+END_SRC
 *** PSubdivide
 
@@ -318,7 +319,7 @@ of triangles of the subdivided rects.
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :refer [vec2 vec3]]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.line :as l]
      [thi.ng.geom.types :as types]

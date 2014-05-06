@@ -47,7 +47,7 @@
   g/PBounds
   (bounds
    [{p :p r :r}]
-   (let [d (* 2 r)] (thi.ng.geom.types.Rect2. (g/- p r) d d)))
+   (let [d (* 2 r)] (thi.ng.geom.types.Rect2. (g/- p r) (vec2 d))))
   (width  [_] (* 2.0 (:r _)))
   (height [_] (* 2.0 (:r _)))
   (depth  [_] 0)
@@ -104,19 +104,19 @@
          off (or offset (vec3 0 0 depth))
          points3 (mapv vec3 points)
          tpoints3 (mapv #(g/+ off %) tpoints)]
-     (g/into-mesh
+     (gm/into-mesh
       (gm/gmesh)
       (concat
        (when bottom?
          (->> points
-              (g/tessellate* (:p _))
+              (gu/tessellate-with-point (:p _))
               (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)]))))
        (mapcat (fn [[a1 b1] [a2 b2]] [[a1 b1 b2 a2]])
                (d/successive-nth 2 (conj points3 (points3 0)))
                (d/successive-nth 2 (conj tpoints3 (tpoints3 0))))
        (when top?
          (->> tpoints
-              (g/tessellate* (:p _))
+              (gu/tessellate-with-point (:p _))
               (map (fn [[a b c]] [(g/+ off a) (g/+ off b) (g/+ off c)]))))))))
   (extrude-shell
    [_ opts] (g/extrude-shell (g/as-polygon _) opts))
@@ -124,16 +124,17 @@
 
 *** PGraph
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PGraph
+  g/PVertexAccess
   (vertices
    ([_] (g/vertices _ *resolution*))
    ([_ res]
       (mapv #(g/point-at _ %) (butlast (m/norm-range res)))))
+  g/PEdgeAccess
   (edges
    ([_] (g/edges _ *resolution*))
    ([_ res]
       (let [verts (g/vertices _ res)]
-        (g/edges* identity (conj verts (first verts))))))
+        (d/successive-nth 2 (conj verts (first verts))))))
 #+END_SRC
 
 *** PIntersect
@@ -155,9 +156,9 @@
    ([_ res]
       (->> res
            (g/vertices _)
-           (mapv g/vec3)
-           (g/tessellate* (vec3 (:p _)))
-           (g/into-mesh (gm/gmesh)))))
+           (mapv vec3)
+           (gu/tessellate-with-point (vec3 (:p _)))
+           (gm/into-mesh (gm/gmesh)))))
 #+END_SRC
 
 *** PPolygonConvert
@@ -186,11 +187,11 @@
    [_] (g/point-at _ (m/random)))
   (random-point-inside
    [_]
-   (g/+ (:p _) (g/randvec2 (m/random (:r _)))))
+   (g/+ (:p _) (v/randvec2 (m/random (:r _)))))
   (sample-uniform
    [_ udist include-last?]
    (let [points (g/vertices _)]
-     (g/sample-uniform* udist include-last? (conj (vec points) (first points)))))
+     (gu/sample-uniform udist include-last? (conj (vec points) (first points)))))
 #+END_SRC
 
 *** PTessellate
@@ -207,7 +208,7 @@ in [[file:~/Documents/workspace.clj/thing/geom/geom-core/src/core.org][thi.ng.ge
    ([{p :p :as _} res]
       (->> res
            (g/vertices _)
-           (g/tessellate* p)
+           (gu/tessellate-with-point p)
            (map #(thi.ng.geom.types.Triangle2. %)))))
 #+END_SRC
 

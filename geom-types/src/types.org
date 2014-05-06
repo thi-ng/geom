@@ -2,6 +2,12 @@
 
 * thi.ng.geom.types
 
+** Graph types
+
+#+BEGIN_SRC clojure :noweb-ref types-graph
+  (defrecord Graph [vertices edges])
+#+END_SRC
+
 ** 2D types
 
 *** Bezier2
@@ -9,7 +15,7 @@
   (defrecord Bezier2 [points])
 #+END_SRC
 
-*** Circle & Ellipse
+*** Circle2 & Ellipse2
 
 Even though a circle is a specialization of an Ellipse, we define
 an extra Circle type for performance reasons.
@@ -40,7 +46,7 @@ an extra Circle type for performance reasons.
   (defrecord Polygon2 [points])
 #+END_SRC
 
-*** Rectangle
+*** Rect2
 #+BEGIN_SRC clojure :noweb-ref types2d
   (defrecord Rect2 #+clj [^Vec2 p ^Vec2 size] #+cljs [p size])
 #+END_SRC
@@ -131,6 +137,8 @@ center point =o= and radius =r=.
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/types.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.types
     ,#+clj (:import [thi.ng.geom.core.vector Vec2 Vec3]))
+
+  <<types-graph>>
 
   <<types2d>>
 

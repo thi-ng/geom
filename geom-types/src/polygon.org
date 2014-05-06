@@ -162,7 +162,7 @@
 
 *** PBounds                                                     :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
-  <<lob-geom-bounds(fn="g/bounding-rect*")>>
+  <<lob-geom-bounds(fn="tu/bounding-rect")>>
 #+END_SRC
 
 *** PBoundingCircle                                             :usetemplate:
@@ -238,7 +238,7 @@
             points3 (mapv vec3 points)
             tpoints3 (mapv #(g/+ off %) tpoints)
             quad? (= 4 (count points))]
-        (g/into-mesh
+        (gm/into-mesh
          (gm/gmesh)
          (concat
           (when bottom?
@@ -285,7 +285,7 @@
             itpoints3 (mapv #(g/+ itoff %) itpoints)
             outsides (quad-strip (maybe-loop points3) (maybe-loop tpoints3) true)
             insides (quad-strip (maybe-loop ipoints3) (maybe-loop itpoints3) false)]
-        (g/into-mesh
+        (gm/into-mesh
          (gm/gmesh)
          (concat
           (if bottom?
@@ -332,12 +332,14 @@
 
 *** PGraph
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PGraph
+  g/PVertexAccess
   (vertices
    [_] (:points _))
+  g/PEdgeAccess
   (edges
    [{points :points}]
-   (g/edges* identity (conj points (first points))))
+   (d/successive-nth 2 (conj points (first points))))
+  g/PGraph
   (vertex-neighbors
    [_ v] (d/neighbors v (g/vertices _)))
   (vertex-valence
@@ -369,7 +371,7 @@
    [_]
    (->> (tessellate* _)
         (map (fn [[a b c]] [(vec3 a) (vec3 b) (vec3 c)]))
-        (g/into-mesh (gm/gmesh))))
+        (gm/into-mesh (gm/gmesh))))
 #+END_SRC
 
 *** PPolygonConvert
@@ -387,13 +389,13 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PSample
   (point-at
-   [{points :points} t] (g/point-at* t (conj points (first points))))
+   [{points :points} t] (gu/point-at t (conj points (first points))))
   (random-point
    [_] (g/point-at _ (m/random)))
   (random-point-inside [_] nil) ; TODO
   (sample-uniform
    [{points :points} udist include-last?]
-   (g/sample-uniform* udist include-last? (conj points (first points))))
+   (gu/sample-uniform udist include-last? (conj points (first points))))
 #+END_SRC
 
 *** PTessellate
@@ -427,7 +429,7 @@
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vectors :refer [vec2 vec3]]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.line :as l]
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.gmesh :as gm]

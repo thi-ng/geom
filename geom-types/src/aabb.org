@@ -98,12 +98,38 @@
          1 -1))))
 #+END_SRC
 
-*** PFaceAccess                                                      :verify:
+*** PEdgeAccess, PFaceAccess & PVertexAccess                         :verify:
+
+  : e +----+ h
+  :   |\   :\
+  :   |f+----+ g
+  :   | |  : | 
+  : a +-|--+d|
+  :    \|   \|
+  :   b +----+ c
 
 Faces are always returned in this order: east, west, north, south,
 front, back (see diagram below).
 
 #+BEGIN_SRC clojure :noweb-ref impl
+  g/PVertexAccess
+  (vertices
+   [{a :p size :size}]
+   (let [[x1 y1 z1] a
+         [x2 y2 z2 :as g] (g/+ a size)
+         b (vec3 x1 y1 z2) c (vec3 x2 y1 z2)
+         d (vec3 x2 y1 z1) e (vec3 x1 y2 z1)
+         f (vec3 x1 y2 z2) h (vec3 x2 y2 z1)]
+     [a b c d e f g h]))
+  g/PEdgeAccess
+  (edges
+   [_]
+   (let [[a b c d e f g h] (g/vertices _)]
+     [[a b] [b c] [c d] [d a] ;; bottom
+      [e f] [f g] [g h] [h e] ;; top
+      [a e] [b f]             ;; left
+      [c g] [d h]             ;; right
+      ]))
   g/PFaceAccess
   (faces
    [_]
@@ -114,36 +140,6 @@ front, back (see diagram below).
       [a d c b]
       [b c g f]
       [a e h d]]))
-#+END_SRC
-
-*** PGraph
-
-  : e +----+ h
-  :   |\   :\
-  :   |f+----+ g
-  :   | |  : | 
-  : a +-|--+d|
-  :    \|   \|
-  :   b +----+ c
-
-#+BEGIN_SRC clojure :noweb-ref impl
-  g/PGraph
-  (vertices
-   [{a :p size :size}]
-   (let [[x1 y1 z1] a
-         [x2 y2 z2 :as g] (g/+ a size)
-         b (vec3 x1 y1 z2) c (vec3 x2 y1 z2)
-         d (vec3 x2 y1 z1) e (vec3 x1 y2 z1)
-         f (vec3 x1 y2 z2) h (vec3 x2 y2 z1)]
-     [a b c d e f g h]))
-  (edges
-   [_]
-   (let [[a b c d e f g h] (g/vertices _)]
-     [[a b] [b c] [c d] [d a] ;; bottom
-      [e f] [f g] [g h] [h e] ;; top
-      [a e] [b f]             ;; left
-      [c g] [d h]             ;; right
-      ]))
 #+END_SRC
 
 *** PIntersect                                                       :verify:
@@ -304,7 +300,7 @@ of the original with inner sorting over XYZ.
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :refer [vec3]]
+     [thi.ng.geom.core.vector :as v :refer [vec3]]
      [thi.ng.geom.box :as box]
      ;;[thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.types]

@@ -48,7 +48,7 @@ required control points.
     (let [np (count points)
           invt (/ 1.0 tight)
           points (vec points)
-          c1 (g/* (g/- (points 2) (first points)) tight)
+          c1 (g/subm (points 2) (first points) tight)
           [bi coeff] (reduce
                       (fn [[bi coeff] i]
                         (let [b (/ -1.0 (+ invt (peek bi)))
@@ -90,7 +90,7 @@ required control points.
     ([points closed?]
        (auto-spline2
         (if closed?
-          (conj points (first points))
+          (conj (vec points) (first points))
           points))))
 #+END_SRC
 
@@ -99,15 +99,21 @@ required control points.
   (extend-type thi.ng.geom.types.Bezier2
 #+END_SRC
 
-*** PGraph
+*** PEdgeAccess, PVertexAccess
 #+BEGIN_SRC clojure :noweb-ref impl2
-  g/PGraph
+  g/PVertexAccess
   (vertices
    ([_] (g/vertices _ *resolution*))
    ([_ res] (sample-with-res res true (:points _))))
+  g/PEdgeAccess
   (edges
-   ([_] (g/edges* identity (g/vertices _ *resolution*)))
-   ([_ res] (g/edges* identity (g/vertices _ res))))
+   ([_] (d/successive-nth 2 (g/vertices _ *resolution*)))
+   ([_ res] (d/successive-nth 2 (g/vertices _ res))))
+#+END_SRC
+
+*** PGraph
+#+BEGIN_SRC clojure :noweb-ref impl2
+  g/PGraph
   (vertex-neighbors
    [_ v] (d/neighbors v (g/vertices _)))
   (vertex-valence
@@ -124,21 +130,21 @@ required control points.
   g/PProximity
   (closest-point
    [_ p]
-   (g/closest-point* (mapv #(thi.ng.geom.types.Line2. %) (g/edges _)) p))
+   (gu/closest-point-on-segments p (g/edges _)))
 #+END_SRC
 
 *** TODO PSample
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   g/PSample
   (point-at
-   [_ t] (g/point-at* t (:points _) nil))
+   [_ t] (gu/point-at t (:points _) nil))
   (random-point
-   [_] (g/point-at* (m/random) (:points _) nil))
+   [_] (gu/point-at (m/random) (:points _) nil))
   (random-point-inside
    [_] (g/random-point _))
   (sample-uniform
    [_ udist include-last?]
-   (g/sample-uniform* udist include-last? (g/vertices _)))
+   (gu/sample-uniform udist include-last? (g/vertices _)))
 #+END_SRC
 
 *** End of implementations                                         :noexport:
@@ -147,12 +153,15 @@ required control points.
 #+END_SRC
 
 ** Complete namespace definition
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/bezier.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.bezier
     (:require
      [thi.ng.geom.core :as g :refer [*resolution*]]
-     [thi.ng.geom.core.vectors :as v :refer [vec2 vec3]]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.types]
+     [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m]))
 

@@ -187,7 +187,10 @@
     (is (= -1 (reduce (fn [_ _] (reduced -1)) a2)) "reduce a2 w/ reduced")
     (is (= -1 (reduce (fn [_ _] (reduced -1)) a3)) "reduce a3 w/ reduced")
     (is (= -1 (reduce (fn [acc _] (reduced acc)) -1 a2)) "reduce a2 w/ reduced + init")
-    (is (= -1 (reduce (fn [acc _] (reduced acc)) -1 a3)) "reduce a3 w/ reduced + init"))
+    (is (= -1 (reduce (fn [acc _] (reduced acc)) -1 a3)) "reduce a3 w/ reduced + init")
+    (is (= #+clj "[1.0 2.0]" #+cljs "[1 2]" (str a2)) "toString a2")
+    (is (= #+clj "[1.0 2.0 3.0]" #+cljs "[1 2 3]" (str a3)) "toString a3")
+    )
 #+END_SRC
 
 ** Vector operations

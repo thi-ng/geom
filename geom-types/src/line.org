@@ -126,13 +126,15 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 #+END_SRC
 *** PGraph
 #+BEGIN_SRC clojure :noweb-ref tpl-graph
-  g/PGraph
+  g/PVertexAccess
   (vertices
    ([_] (:points _))
    ([{p :points} res] (sample-with-res* (p 0) (p 1) res true)))
+  g/PEdgeAccess
   (edges
    ([_] [(:points _)])
-   ([_ res] (g/edges* identity (g/vertices _ res))))
+   ([_ res] (d/successive-nth 2 (g/vertices _ res))))
+  g/PGraph
   (vertex-neighbors
    [{[p q] :points} v] (condp = v, p q, q p, nil))
   (vertex-valence
@@ -193,7 +195,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
    [{p :points}] (g/mix (p 0) (p 1) (m/random)))
   (sample-uniform
    [_ dist include-last?]
-   (g/sample-uniform* dist include-last? (:points _)))
+   (gu/sample-uniform dist include-last? (:points _)))
 #+END_SRC
 *** PTransform
 #+NAME: tpl-tx
@@ -239,7 +241,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 #+END_SRC
 **** PBounds                                                       :template:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
-  <<tpl-bounds(fn="g/bounding-rect*")>>
+  <<tpl-bounds(fn="tu/bounding-rect")>>
   (depth  [_] 0)
 #+END_SRC
 **** PBoundingCircle
@@ -247,7 +249,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   g/PBoundingCircle
   (bounding-circle
    [{[p q] :points}]
-   (thi.ng.geom.types.Circle. (g/mix p q) (* 0.5 (g/dist p q))))
+   (thi.ng.geom.types.Circle2. (g/mix p q) (* 0.5 (g/dist p q))))
 #+END_SRC
 **** PCenter                                                       :template:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
@@ -354,7 +356,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 #+END_SRC
 **** PBounds                                                       :template:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
-  <<tpl-bounds(fn="g/bounding-box*")>>
+  <<tpl-bounds(fn="tu/bounding-box")>>
   (depth  [{p :points}] (m/abs (- ((p 0) 2) ((p 1) 2))))
 #+END_SRC
 **** PBoundingSphere
@@ -362,7 +364,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   g/PBoundingSphere
   (bounding-sphere
    [{[p q] :points}]
-   (g/bounding-sphere* (g/mix p q) (* 0.5 (g/dist p q))))
+   (tu/bounding-sphere (g/mix p q) (* 0.5 (g/dist p q))))
 #+END_SRC
 **** PCenter                                                       :template:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
@@ -457,16 +459,16 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 **** PBounds
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
   g/PBounds
-  (bounds [_] (g/bounding-rect* (:points _)))
-  (width [_] (g/axis-range* 0 (:points _)))
-  (height [_] (g/axis-range* 1 (:points _)))
+  (bounds [_] (tu/bounding-rect (:points _)))
+  (width [_] (gu/axis-range 0 (:points _)))
+  (height [_] (gu/axis-range 1 (:points _)))
   (depth [_] 0)
 #+END_SRC
 **** PBoundingCircle
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
   g/PBoundingCircle
   (bounding-circle
-   [_] (g/bounding-circle* (g/centroid _) (:points _)))
+   [_] (tu/bounding-circle (g/centroid _) (:points _)))
 #+END_SRC
 **** PCenter
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
@@ -474,7 +476,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   (center
    ([_] (g/translate _ (g/- (g/centroid _))))
    ([_ o] (g/translate _ (g/- (vec2 o) (g/centroid _)))))
-  (centroid [_] (g/centroid* (:points _)))
+  (centroid [_] (gu/centroid (:points _)))
 #+END_SRC
 **** PCircumference
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
@@ -492,7 +494,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
          off (vec3 0 0 depth)
          bottom (map vec3 points)
          top (map #(g/+ off %) tpoints)]
-     (g/into-mesh
+     (gm/into-mesh
       (gm/gmesh)
       (mapcat
        (fn [[a1 a2] [b1 b2]] [[a1 b1 b2 a2]])
@@ -501,14 +503,16 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 #+END_SRC
 **** TODO PGraph                                                     :verify:
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
-  g/PGraph
+  g/PVertexAccess
   (vertices
    ([_] (:points _))
    ([{points :points} res]
-      (map #(g/point-at* % points) (m/norm-range res))))
+      (map #(gu/point-at % points) (m/norm-range res))))
+  g/PEdgeAccess
   (edges
-   ([_] (g/edges* identity (g/vertices _)))
-   ([_ res] (g/edges* identity (g/vertices _ res))))
+   ([_] (d/successive-nth 2 (:points _)))
+   ([_ res] (d/successive-nth 2 (g/vertices _ res))))
+  g/PGraph
   (vertex-neighbors
    [_ v] (d/neighbors v (:points _)))
   (vertex-valence
@@ -543,14 +547,14 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
   g/PSample
   (point-at
-   [_ t] (g/point-at* t (:points _) nil))
+   [_ t] (gu/point-at t (:points _) nil))
   (random-point
-   [_] (g/point-at* (m/random) (:points _) nil))
+   [_] (gu/point-at (m/random) (:points _) nil))
   (random-point-inside
    [_] (g/random-point _))
   (sample-uniform
    [_ udist include-last?]
-   (g/sample-uniform* udist include-last? (:points _)))
+   (gu/sample-uniform udist include-last? (:points _)))
 #+END_SRC
 **** TODO PTransform
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
@@ -566,7 +570,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
       (thi.ng.geom.types.LineStrip2. (mapv #(g/* % sx sy) (:points _)))))
   (scale-size
    [_ s]
-   (thi.ng.geom.types.LineStrip2. (g/scale-size* s (:points _))))
+   (thi.ng.geom.types.LineStrip2. (gu/scale-size s (:points _))))
   g/PTranslate
   (translate
    [_ t]
@@ -587,9 +591,10 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :refer [vec2 vec3]]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.types :as types]
+     [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [*eps*]]
      ,#+clj [thi.ng.macromath.core :as mm])

@@ -120,9 +120,13 @@
     (some #(m/delta= p % eps) points))
 #+END_SRC
 
-*** Polyline & curve sampling
+*** Sampling
 
 #+BEGIN_SRC clojure :noweb-ref sample
+  (defn from-barycentric
+    [points weights]
+    (reduce g/+ (map g/* points weights)))
+
   (defn point-at*
     [points idx total t i]
     (let [ct (* t total)

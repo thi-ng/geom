@@ -29,8 +29,8 @@
   (defn vertices-planar?
     [[a b c :as verts]]
     (or (< (count verts) 4)
-        (let [n (g/ortho-normal* a b c)]
-          (every? #(m/delta= n (g/ortho-normal* %))
+        (let [n (gu/ortho-normal a b c)]
+          (every? #(m/delta= n (gu/ortho-normal %))
                   (d/successive-nth 3 (conj (rest verts) a))))))
   
   (defn face-neighbors-shared-edges
@@ -98,7 +98,7 @@
     ([mesh mesh-or-faces]
        (reduce
         add-face mesh
-        (if (satisfies? g/PMesh mesh-or-faces)
+        (if (satisfies? g/PFaceAccess mesh-or-faces)
           (g/faces mesh-or-faces)
           mesh-or-faces))))
 #+END_SRC
@@ -190,17 +190,17 @@ located on the rotation axis.
 #+END_SRC
 
 ** TODO Tessellation
-#+BEGIN_SRC clojure :noweb-ref helpers
+#+BEGIN_SRC clojure :noweb-ref tessellate
   (defn tessellate-face
     [f]
     (condp = (count f)
       3 [f]
       4 (let [[a b c d] f] [[a b c] [a c d]])
-      (g/tessellate* (g/centroid* f) f)))
+      (gu/tessellate-with-point f)))
   
   (defn tessellate-face4
     [f]
-    (if (<= (count f) 4) [f] (g/tessellate* (g/centroid* f) f)))
+    (if (<= (count f) 4) [f] (gu/tessellate-with-point f)))
   
   (defn tessellate-face1
     [f]
@@ -227,7 +227,7 @@ located on the rotation axis.
   (area
    [_] (->> (:faces _)
             (r/mapcat tessellate-face1)
-            (r/map #(-> % t/area3 m/abs))
+            (r/map #(->> % (apply gu/tri-area3) m/abs))
             (r/fold +)))
 #+END_SRC
 
@@ -239,27 +239,27 @@ located on the rotation axis.
 *** PBounds
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBounds
-  (bounds [_] (g/bounding-box* (keys (:vertices _))))
-  (width [_] (g/axis-range* 0 (keys (:vertices _))))
-  (height [_] (g/axis-range* 1 (keys (:vertices _))))
-  (depth [_] (g/axis-range* 2 (keys (:vertices _))))
+  (bounds [_] (tu/bounding-box (keys (:vertices _))))
+  (width [_] (gu/axis-range 0 (keys (:vertices _))))
+  (height [_] (gu/axis-range 1 (keys (:vertices _))))
+  (depth [_] (gu/axis-range 2 (keys (:vertices _))))
 #+END_SRC
 
 *** PBoundingSphere
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBoundingSphere
   (bounding-sphere
-   [_] (g/bounding-sphere* (g/centroid _) (g/vertices _)))
+   [_] (tu/bounding-sphere (g/centroid _) (g/vertices _)))
 #+END_SRC
 
 *** TODO PCenter
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PCenter
   (center
-   ([_] (g/center _ (g/vec3)))
-   ([_ o] (g/transform _ (g/translate g/M44 (g/- o (g/centroid _))))))
+   ([_] (g/center _ (vec3)))
+   ([_ o] (g/transform _ (g/translate M44 (g/- o (g/centroid _))))))
   (centroid
-   [_] (g/centroid* (keys (:vertices _))))
+   [_] (gu/centroid (keys (:vertices _))))
 #+END_SRC
 
 *** PFlip
@@ -273,10 +273,6 @@ located on the rotation axis.
   g/PGraph
   (connected-components
    [_] [_]) ;; TODO
-  (edges
-   [_] (keys (:edges _)))
-  (vertices
-   [_] (keys (:vertices _)))
   (vertex-neighbors
    [_ v] (vertex-neighbors* _ v))
   (vertex-valence
@@ -289,55 +285,21 @@ located on the rotation axis.
    [_ a b] (merge-vertices* _ a b))
 #+END_SRC
 
-*** TODO PFaceAccess
+*** PVertexAccess, PEdgeAccess & PFaceAccess
 #+BEGIN_SRC clojure :noweb-ref impl
+  g/PVertexAccess
+  (vertices
+   [_] (keys (:vertices _)))
+  g/PEdgeAccess
+  (edges
+   [_] (keys (:edges _)))
   g/PFaceAccess
   (faces
    [_] (:faces _))
-#+END_SRC
-
-*** TODO PNormalAccess
-#+BEGIN_SRC clojure :noweb-ref impl
-  (face-normals
-    [_] (or (:fnormals _) (:fnormals (g/compute-face-normals _))))
-  (vertex-normals
-    [_] (or (:vnormals _) (:vnormals (g/compute-vertex-normals _))))
-#+END_SRC
-
-*** PMesh
-#+BEGIN_SRC clojure :noweb-ref impl
-  g/PMesh
   (add-face
    [_ f] (add-face _ f))
   (vertex-faces
    [_ v] (vertex-faces* _ v))
-  (compute-face-normals
-   [_]
-   (loop [norms (transient #{}), fnorms (transient {}), faces (:faces _)]
-     (if faces
-       (let [[a b c :as f] (first faces)
-             [norms n] (d/index! norms (g/ortho-normal* a b c))]
-         (recur norms (assoc! fnorms f n) (next faces)))
-       (assoc _
-         :normals (persistent! norms)
-         :fnormals (persistent! fnorms)))))
-  (compute-vertex-normals
-   [{:keys [vertices normals fnormals] :as _}]
-   (loop [norms (transient normals), vnorms (transient {}), verts (keys vertices)]
-     (if verts
-       (let [v (first verts)
-             n (->> v
-                    (g/vertex-faces _)
-                    (map #(get fnormals %))
-                    (reduce g/+)
-                    (g/normalize))
-             [norms n] (d/index! norms n)]
-         (recur norms (assoc! vnorms v n) (next verts)))
-       (assoc _
-         :normals (persistent! norms)
-         :vnormals (persistent! vnorms)))))
-  (into-mesh
-   [_ faces] (into-mesh _ faces))
   (remove-face
    [{:keys [vertices edges faces fnormals vnormals] :as _} f]
    (if (get faces f)
@@ -363,6 +325,46 @@ located on the rotation axis.
            :faces (disj faces f)
            :fnormals (dissoc fnormals f))))
      _))
+#+END_SRC
+
+*** PNormalAccess
+#+BEGIN_SRC clojure :noweb-ref impl
+  (face-normals
+   [_] (or (:fnormals _) (:fnormals (g/compute-face-normals _))))
+  (vertex-normals
+   [_] (or (:vnormals _) (:vnormals (g/compute-vertex-normals _))))
+  (compute-face-normals
+   [_]
+   (loop [norms (transient #{}), fnorms (transient {}), faces (:faces _)]
+     (if faces
+       (let [[a b c :as f] (first faces)
+             [norms n] (d/index! norms (gu/ortho-normal a b c))]
+         (recur norms (assoc! fnorms f n) (next faces)))
+       (assoc _
+         :normals (persistent! norms)
+         :fnormals (persistent! fnorms)))))
+  (compute-vertex-normals
+   [{:keys [vertices normals fnormals] :as _}]
+   (loop [norms (transient normals), vnorms (transient {}), verts (keys vertices)]
+     (if verts
+       (let [v (first verts)
+             n (->> v
+                    (g/vertex-faces _)
+                    (map #(get fnormals %))
+                    (reduce g/+)
+                    (g/normalize))
+             [norms n] (d/index! norms n)]
+         (recur norms (assoc! vnorms v n) (next verts)))
+       (assoc _
+         :normals (persistent! norms)
+         :vnormals (persistent! vnorms)))))
+#+END_SRC
+
+*** PGeomContainer
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PGeomContainer
+  (into
+   [_ faces] (into-mesh _ faces))
 #+END_SRC
 
 *** PMeshConvert
@@ -433,9 +435,10 @@ See [[file:triangle.org::*Triangle3][signed volume implementation of Triangle3]]
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :refer [vec2 vec3]]
-     [thi.ng.geom.triangle :as t]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.core.matrix :refer [M44]]
      [thi.ng.geom.types :as types]
+     [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [*eps*]]
      [clojure.core.reducers :as r]
@@ -447,6 +450,8 @@ See [[file:triangle.org::*Triangle3][signed volume implementation of Triangle3]]
   <<helpers>>
 
   <<ctors>>
+
+  <<tessellate>>
 
   <<impl>>
 #+END_SRC

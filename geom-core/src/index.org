@@ -15,63 +15,11 @@
 
 ** Status
 
-The project has been in development since late 2011 and is currently
-in its 4th iteration/rewrite cycle. It should still be considered
-ALPHA quality with several breaking API changes planned over the next
-few weeks. On the other hand, the library has already been used
-successfully in several commercial projects over the past 2 years and
-can be considered stable for basic use cases.
-
-A full test suite, website & tutorials are actively being worked on.
-
-** Example usage
+ALPHA quality, in active development.
 
 ** Building & testing this project
 
-This project is written in a literate programming format and requires
-[[https://www.gnu.org/software/emacs/][Emacs]] & [[http://orgmode.org][Org-mode]] to generate usable source code in [[https://github.com/lynaghk/cljx][CLJX]] form. Assuming
-both tools are installed, the easiest way to generate a working
-project is via command line (make sure =emacs= is on your path or else
-edit its path in =tangle.sh=):
-
-#+BEGIN_SRC bash
-  git clone https://github.com/thi-ng/geom.git
-  cd geom/geom-core
-  ./tangle.sh src/*.org test/*.org
-#+END_SRC
-
-Tangling is the process of extracting & combining source blocks from
-=.org= files into an actual working project/source tree. The entire
-**geom** project currently consists of 26 namespaces and 6500+ lines
-of code, the tangling of which takes approx. 20 secs.
-
-Once tangling is complete, you can =cd= into the generated project
-directory (=babel= in this case) and then use =lein= as usual.
-
-*** Testing
-
-The =project.clj= file defines an alias to trigger a complete build &
-tests for both CLJ & CLJS versions. The are ~570 test cases for
-Clojure and approx. 270 for Clojurescript so far.
-
-#+BEGIN_SRC bash
-  cd babel
-  lein cleantest # some tests currently fail due to still missing protocol impls
-#+END_SRC
-
-To build the Clojurescript version simply run =lein cljsbuild test=
-from the same directory. A small HTML harness for the resulting JS
-file is also located in that folder (=babel/index.html=), allowing for
-further experimentation in the browser.
-
-*** Working with the REPL
-
-Since the generated =project.clj= (see below) includes REPL hooks for
-CLJX, editing files in Org-mode, then re-loading & testing changes is
-quite trivial. Simply launch a REPL (via lein or Emacs) as usual.
-Everytime you've made changes to an =.org= file, re-tangle it from Emacs
-or =tangle.sh=, then reload the namespace in the REPL via =(require
-'thi.ng.geom... :reload)= or similar.
+Please see the [[file:../src/index.org][parent project]] for further information.
 
 ** Injected properties                                             :noexport:
 #+BEGIN_SRC clojure :exports none :noweb-ref project-name
