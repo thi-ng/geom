@@ -11,6 +11,7 @@ this namespace.
 ** Constructors
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn box
+    ([] (box 1.0))
     ([a b c d e f g h]
        (thi.ng.geom.types.Box. (mapv vec3 [a b c d e f g h])))
     ([x]
@@ -95,7 +96,7 @@ this namespace.
   : e +----+ h
   :   |\   :\
   :   |f+----+ g
-  :   | |  : | 
+  :   | |  : |
   : a +-|--+d|
   :    \|   \|
   :   b +----+ c
@@ -136,7 +137,7 @@ front, back - assuming the vertex order given in the diagram.
 #+END_SRC
 
 *** TODO PMeshConvert                                                :verify:
-#+BEGIN_SRC clojure :noweb-ref excl
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
@@ -258,7 +259,7 @@ first vertex of the original with inner sorting over XYZ.
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec3]]
-     ;;[thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.data.core :as d]
