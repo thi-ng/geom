@@ -288,6 +288,10 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   <<tpl-rotate(type="thi.ng.geom.types.Line2")>>
   <<tpl-tx(type="thi.ng.geom.types.Line2")>>
 #+END_SRC
+**** PVolume                                                       :template:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<lob-geom-zerovol>>
+#+END_SRC
 **** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :noweb-ref impl2
   )
@@ -389,9 +393,8 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   <<tpl-tx(type="thi.ng.geom.types.Line3")>>
 #+END_SRC
 **** PVolume
-#+BEGIN_SRC clojure :noweb-ref impl3
-  g/PVolume
-  (volume [_] 0.0)
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<lob-geom-zerovol>>
 #+END_SRC
 **** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :noweb-ref impl3
@@ -436,7 +439,8 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   (center
    ([_] (g/translate _ (g/- (g/centroid _))))
    ([_ o] (g/translate _ (g/- (vec2 o) (g/centroid _)))))
-  (centroid [_] (gu/centroid (:points _)))
+  (centroid
+   [_] (gu/centroid (:points _)))
 #+END_SRC
 **** PCircumference
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
@@ -540,6 +544,11 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
    [_ m]
    (thi.ng.geom.types.LineStrip2. (mapv #(g/transform-vector m %) (:points _))))
 #+END_SRC
+**** PVolume
+#+BEGIN_SRC clojure :noweb-ref impl-ls2 :noweb yes
+  <<lob-geom-zerovol>>
+#+END_SRC
+
 **** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
   )
