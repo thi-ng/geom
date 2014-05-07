@@ -13,7 +13,7 @@
 
 ** Constructor
 #+BEGIN_SRC clojure :noweb-ref ctors
-  (defn path
+  (defn path2
     ([segments]
        (thi.ng.geom.types.Path2. (vec segments)))
     ([s & segments]
@@ -106,7 +106,7 @@
          (xml-seq)
          (filter #(= :path (:tag %)))
          (map #(parse-svg-path (get-in % [:attrs :d])))
-         (map path)))
+         (map path2)))
 #+END_SRC
 
 ** Protocol implementations
