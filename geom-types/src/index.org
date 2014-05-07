@@ -13,9 +13,47 @@ of 2D/3D geometric entities, each implementing a large number of
 
 | *2D*           | *3D*                      |
 |----------------+---------------------------|
-| Vec2           | Vec3                      |
-| Matrix32       | Matrix44                  |
-|                | Quaternion                |
+| Line2          | Line3                     |
+| LineStrip2     | LineStrip3 (TBD)          |
+| Bezier2        | Bezier3 (TBD)             |
+| Circle2        | Circle3 (TBD)             |
+|                | Sphere                    |
+| Ellipse2 (TBD) | Ellipsoid (TBD)           |
+| Rect2          | AABB                      |
+| Quad2 (TBD)    | Quad3                     |
+|                | Tetrahedron               |
+| Triangle2      | Triangle3                 |
+| Polygon2       | Polygon3 (TBD)            |
+| Path2          | Path3 (TBD)               |
+|                | Plane                     |
+|                | GMesh                     |
+
+Once the protocol API is finalized an overview table/graph will show
+which types implement which protocols. For now please consult the
+source code to see which operations are supported.
+
+*** Geometry operations
+
+In addition to these types, this module also implements these common
+operations:
+
+- Automatic spline generation from set of points
+- Basic SVG path parsing
+- 2D Delaunay triangulation
+- 2D convex hull
+- Shape extrusion as solid or walled mesh
+- Tesselation of simple 2D polygons
+- Insetting of simple 2D polygons & 3D convex/planar quads
+- Sutherland-Hodgeman clipping of 2D polygons
+- Entity area, circumference & volume calculations
+- Entity intersection checks (vs. line, ray, shape)
+- Entity to mesh conversion (w/ many options)
+- Access entities as graph-like structures (vertices/edges)
+- Entity sampling (at fixed resolution or uniform distance)
+- Entity subdivision (only lines, rects, quads, tetrahedrons)
+- Subdivision meshes (Catmull-Clark, Doo-Sabin, Butterfly)
+- 3D Boolean/CSG operations on meshes (union, difference, intersection)
+- 3D geometry export (PLY, STL, OBJ, OFF formats)
 
 ** Status
 

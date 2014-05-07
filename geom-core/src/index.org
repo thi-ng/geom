@@ -56,7 +56,7 @@ target/geom-core-<<conf-version>>.js
   [<<project-name>> "<<conf-version>>"]
 #+END_SRC
 
-** Leiningen project file
+** Leiningen project file                                          :noexport:
 
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
   (defproject <<project-name>> "<<conf-version>>"
