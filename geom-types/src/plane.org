@@ -7,7 +7,7 @@
   (defn plane
     [n w] (thi.ng.geom.types.Plane. (g/normalize (vec3 n)) w))
 
-  (defn plane-with-p
+  (defn plane-with-point
     [p n]
     (let [n (g/normalize (vec3 n))]
       (thi.ng.geom.types.Plane. n (g/dot n p))))
@@ -33,12 +33,37 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.Plane
 #+END_SRC
+*** PArea
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PArea
+  (area [_] INF+)
+#+END_SRC
+*** PBounds
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PBounds
+  (bounds
+   [_]
+   (let [s (vec3 (g/width _) (g/height _) (g/depth _))]
+     (thi.ng.geom.types.AABB. (g/madd s -0.5 (g/centroid _)) s)))
+  (width
+   [_] (if (m/delta= (g/abs (:n _)) v/V3X *eps*) 0.0 INF+))
+  (height
+   [_] (if (m/delta= (g/abs (:n _)) v/V3Y *eps*) 0.0 INF+))
+  (depth
+   [_] (if (m/delta= (g/abs (:n _)) v/V3Z *eps*) 0.0 INF+))
+#+END_SRC
+*** PBoundingSphere
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PBoundingSphere
+  (bounding-sphere
+    [_] (thi.ng.geom.types.Sphere. (g/centroid _) INF+))
+#+END_SRC
 *** PCenter
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PCenter
   (center
     ([_] (thi.ng.geom.types.Plane. (:n _) 0))
-    ([_ o] (plane-with-p o (:n _))))
+    ([_ o] (plane-with-point o (:n _))))
   (centroid
     ([_] (g/* (:n _) (:w _))))
 #+END_SRC
@@ -67,7 +92,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PIntersect
   (intersect-line
-   ([_ line] (g/intersect-ray _ (:p line) (g/- (:q line) (:p line))))
+   ([_ {[p q] :points}] (g/intersect-ray _ p (g/- q p)))
    ([_ p q] (g/intersect-ray _ p (g/- q p))))
   (intersect-ray
    ([_ ray] (g/intersect-ray _ (:p ray) (:dir ray)))
@@ -116,6 +141,29 @@
          (g/normalize (:n _))
          (g/- p)))
 #+END_SRC
+*** PTransform
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PScale
+  (scale
+   ([_ s] (plane-with-point (g/* (g/centroid _) s) (:n _)))
+   ([_ a b] (plane-with-point (g/* (g/centroid _) a b) (:n _)))
+   ([_ a b c] (plane-with-point (g/* (g/centroid _) a b c) (:n _))))
+  (scale-size
+   ([_ s] _))
+  g/PTranslate
+  (translate
+   [_ t] (plane-with-point (g/+ (g/centroid _) t) (:n _)))
+  g/PTransform
+  (transform
+   [_ m] (plane-with-point
+          (g/transform-vector m (g/centroid _))
+          (g/transform-vector m (:n _))))
+#+END_SRC
+*** PVolume
+#+BEGIN_SRC clojure :noweb-ref impl :noweb yes
+  <<lob-geom-zerovol>>
+#+END_SRC
+
 *** End implementation                                             :noexport:
 #+BEGIN_SRC clojure :noweb-ref impl
   )
@@ -133,7 +181,7 @@
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.error :as err]
-     [thi.ng.common.math.core :as m :refer [*eps*]]
+     [thi.ng.common.math.core :as m :refer [*eps* INF+]]
      ,#+clj [thi.ng.macromath.core :as mm])
     ,#+clj
     (:import
