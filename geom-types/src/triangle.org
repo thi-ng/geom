@@ -1,27 +1,9 @@
 #+SETUPFILE: ../../src/setup.org
 
 * thi.ng.geom.triangle
-** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :mkdirp yes :padline no
-  (ns thi.ng.geom.triangle
-    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
-    (:require
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     [thi.ng.geom.line :as l]
-     [thi.ng.geom.types :as types]
-     [thi.ng.geom.types.utils :as tu]
-     [thi.ng.common.data.core :as d]
-     [thi.ng.common.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
-     [thi.ng.common.error :as err]
-     ,#+clj [thi.ng.macromath.core :as mm])
-    ,#+clj
-    (:import
-     [thi.ng.geom.types Circle2 Line2 Line3 Rect2 Polygon2 Triangle2 Triangle3]))
-#+END_SRC
+
 ** Constructors
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+#+BEGIN_SRC clojure :noweb-ref ctors
   (defn triangle2
     ([t]
        (cond
@@ -65,8 +47,9 @@
          c (-> n (g/normalize (mm/mul (g/mag dir) SQRT3 0.5)) (g/+ (g/mix a b)))]
       (thi.ng.geom.types.Triangle3. [a b c])))
 #+END_SRC
+
 ** Shared 2d/3d functions
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+#+BEGIN_SRC clojure :noweb-ref helpers
   (defn other-point-in-tri
     [[ta tb tc] a b]
     (if (= a ta)
@@ -236,6 +219,7 @@
        (let [[o r] (circumcircle-raw a b c)]
          (thi.ng.geom.types.Circle2. o r))))
 #+END_SRC
+
 ** Reusable protocol templates for 2d/3d
 *** PArea                                                          :template:
 #+NAME: tpl-area
@@ -283,153 +267,154 @@
             (subdivide-with-centroid)
             (map #({{type}}. %))))")
 #+END_SRC
+
 ** Protocol implementations
+
 *** Triangle2
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+#+BEGIN_SRC clojure :noweb-ref impl2
   (extend-type thi.ng.geom.types.Triangle2
 #+END_SRC
 **** PArea                                                      :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<tpl-area(fn="area2")>>
 #+END_SRC
 **** PClassify                                                       :verify:
 ***** TODO add clockwise? check, currently assumes clockwise ordering
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+#+BEGIN_SRC clojure :noweb-ref impl2
   g/PClassify
   (classify-point
    [_ p] (->> (g/edges _)
-              (map #(g/classify-point (thi.ng.geom.types.Line2. %) p))
+              (map #(m/signum (apply gu/closest-point-coeff p %) *eps*))
               (reduce min)))
 #+END_SRC
 **** PBoundary                                                       :verify:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+#+BEGIN_SRC clojure :noweb-ref impl2
   g/PBoundary
   (contains-point?
    [_ p] (contains-point2* (:points _) p))
 #+END_SRC
 **** PBounds                                                    :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<lob-geom-bounds(fn="tu/bounding-rect")>>
 #+END_SRC
 **** PBoundingCircle                                            :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<lob-geom-bcircle>>
 #+END_SRC
 **** PCenter                                                    :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<lob-geom-center(type="thi.ng.geom.types.Triangle2")>>
   (centroid [_] (centroid* (:points _)))
 #+END_SRC
 **** PCircumference                                             :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<tpl-circum>>
 #+END_SRC
 **** PExtrude
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+#+BEGIN_SRC clojure :noweb-ref impl2
   g/PExtrude
   (extrude [_ opts] (g/extrude (g/as-polygon _) opts))
   (extrude-shell [_ opts] (g/extrude-shell (g/as-polygon _) opts))
 #+END_SRC
 **** PFlip                                                      :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<lob-geom-flip(type="thi.ng.geom.types.Triangle2")>>
 #+END_SRC
 **** PGraph                                                     :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<tpl-graph>>
 #+END_SRC
 **** PMeshConvert                                                       :fix:
-#+BEGIN_SRC clojure
-  ;; :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+#+BEGIN_SRC clojure :noweb-ref impl2
   g/PMeshConvert
   (as-mesh [_] (g/add-face (gm/gmesh) (mapv vec3 (:points _))))
 #+END_SRC
 **** PPolygonConvert                                            :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<lob-geom-as-polygon>>
 #+END_SRC
 **** PProximity                                                 :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<lob-geom-proxi>>
 #+END_SRC
 **** PSample                                             :verify:usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<lob-geom-sample(n="3")>>
 #+END_SRC
 **** PSlice                                                     :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<tpl-slice>>
 #+END_SRC
 **** PSubdivide                                                 :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<tpl-subdiv(type="thi.ng.geom.types.Triangle2")>>
 #+END_SRC
 **** PTessellate
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   g/PTessellate
   (tessellate [_] [_])
 #+END_SRC
 **** PTransform                                                 :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<lob-geom-rotate(type="thi.ng.geom.types.Triangle2")>>
   <<lob-geom-scale(type="thi.ng.geom.types.Triangle2")>>
   <<lob-geom-translate(type="thi.ng.geom.types.Triangle2")>>
   <<lob-geom-tx(type="thi.ng.geom.types.Triangle2")>>
 #+END_SRC
 **** PVolume                                                    :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<lob-geom-zerovol>>
 #+END_SRC
 **** End of implementations                                        :noexport:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+#+BEGIN_SRC clojure :noweb-ref impl2
   )
 #+END_SRC
 *** Triangle3
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+#+BEGIN_SRC clojure :noweb-ref impl3
   (extend-type thi.ng.geom.types.Triangle3
 #+END_SRC
 **** PArea                                                      :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<tpl-area(fn="area3")>>
 #+END_SRC
 **** PBoundary
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+#+BEGIN_SRC clojure :noweb-ref impl3
   g/PBoundary
   (contains-point? [_ p] (contains-point3* (:points _) p))
 #+END_SRC
 **** PBounds                                                    :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<lob-geom-bounds(fn="tu/bounding-box",depth="yes")>>
 #+END_SRC
 **** PBoundingSphere                                            :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<lob-geom-bsphere>>
 #+END_SRC
 **** PCenter                                                    :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<lob-geom-center(type="thi.ng.geom.types.Triangle3")>>
   (centroid [_] (centroid* (:points _)))
 #+END_SRC
 **** PCircumference                                             :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<tpl-circum>>
 #+END_SRC
 **** TODO PClassify
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+#+BEGIN_SRC clojure :noweb-ref impl3
   g/PClassify
   (classify-point [_ p] nil) ; TODO
 #+END_SRC
 **** PFlip                                                      :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<lob-geom-flip(type="thi.ng.geom.types.Triangle3")>>
 #+END_SRC
 **** PGraph                                                     :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<tpl-graph>>
 #+END_SRC
 **** TODO PIntersect
 ***** TODO update ray definition or protocol?
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+#+BEGIN_SRC clojure :noweb-ref impl3
   g/PIntersect
   (intersect-ray
    [{[a b c :as points] :points} {p :p dir :dir}]
@@ -447,35 +432,34 @@
 Because of Clojure's restriction on circular namespace references it's
 currently not possible to turn triangles into meshes.
 
-#+BEGIN_SRC clojure
-  ;; :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+#+BEGIN_SRC clojure :noweb-ref impl3
   g/PMeshConvert
   (as-mesh [_] (g/add-face (gm/gmesh) (:points _)))
 #+END_SRC
 **** TODO PProximity
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+#+BEGIN_SRC clojure :noweb-ref impl3
   g/PProximity
   (closest-point [_ p] nil) ; TODO
 #+END_SRC
 **** PSample                                             :verify:usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<lob-geom-sample(n="3")>>
 #+END_SRC
 **** PSlice                                                     :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<tpl-slice>>
 #+END_SRC
 **** PSubdivide                                                 :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<tpl-subdiv(type="thi.ng.geom.types.Triangle3")>>
 #+END_SRC
 **** PTessellate
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   g/PTessellate
   (tessellate [_] [_])
 #+END_SRC
 **** PTransform                                                 :usetemplate:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<lob-geom-rotate(type="thi.ng.geom.types.Triangle3")>>
   <<lob-geom-rotate3d(type="thi.ng.geom.types.Triangle3")>>
   <<lob-geom-scale(type="thi.ng.geom.types.Triangle3")>>
@@ -487,12 +471,41 @@ currently not possible to turn triangles into meshes.
 Signed volume impl based on:
 https://web.archive.org/web/20090320013931/http://amp.ece.cmu.edu/Publication/Cha/icip01_Cha.pdf
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<lob-geom-zerovol>>
   (signed-volume
    [{[a b c] :points}] (/ (g/dot a (g/cross b c)) 6.0))
 #+END_SRC
 **** End of implementations                                        :noexport:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx
+#+BEGIN_SRC clojure :noweb-ref impl3
   )
+#+END_SRC
+
+** Namespace declaration
+
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.triangle
+    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.types]
+     [thi.ng.geom.types.utils :as tu]
+     [thi.ng.common.data.core :as d]
+     [thi.ng.common.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
+     [thi.ng.common.error :as err]
+     ,#+clj [thi.ng.macromath.core :as mm])
+    ,#+clj
+    (:import
+     [thi.ng.geom.types Circle2 Rect2 Polygon2 Triangle2 Triangle3]))
+
+  <<ctors>>
+
+  <<helpers>>
+
+  <<impl2>>
+
+  <<impl3>>
 #+END_SRC
