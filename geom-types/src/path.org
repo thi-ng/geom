@@ -28,11 +28,11 @@
 
   (defmethod sample-segment :line
     [{[a b] :points} res last?]
-    (l/sample-with-res* a b res last?))
+    (gu/sample-segment-with-res a b res last?))
 
   (defmethod sample-segment :close
     [{[a b] :points} res last?]
-    (l/sample-with-res* a b res last?))
+    (gu/sample-segment-with-res a b res last?))
 
   (defmethod sample-segment :bezier
     [{points :points} res last?]
@@ -205,7 +205,6 @@
      [thi.ng.geom.core.vector :as v :refer [vec2]]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.bezier :as b]
-     [thi.ng.geom.line :as l]
      [thi.ng.common.error :as err]
      ,#+clj [clojure.xml :as xml])
     ,#+clj (:import [thi.ng.geom.types Line2 Path2]))

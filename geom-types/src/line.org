@@ -25,46 +25,6 @@
 These functions are used for both 2D/3D implementations:
 
 #+BEGIN_SRC clojure :noweb-ref helpers
-  (defn closest-point-coeff*
-    [p a b]
-    (let [d (g/- b a)]
-      (/ (g/dot (g/- p a) d) (g/mag-squared d))))
-
-  (defn closest-point*
-    [p a b]
-    (let [t (closest-point-coeff* p a b)]
-      (cond
-       (<= t 0.0) a
-       (> t 1.0) b
-       :default (g/mix a b t))))
-
-  (defn closest-line*
-    [a1 b1 a2 b2]
-    (let [p43 (g/- b2 a2)]
-      (if-not (m/delta= [0 0 0] p43 *eps*)
-        (let [p21 (g/- b1 a1)]
-          (if-not (m/delta= [0 0 0] p21 *eps*)
-            (let [p13 (g/- a1 a2)
-                  d1343 (g/dot p13 p43)
-                  d4321 (g/dot p43 p21)
-                  d1321 (g/dot p13 p21)
-                  d4343 (g/dot p43 p43)
-                  d2121 (g/dot p21 p21)
-                  d (mm/msub d2121 d4343 d4321 d4321)]
-              (if (m/delta= 0.0 d *eps*)
-                {:type :parallel}
-                (let [n (mm/msub d1343 d4321 d1321 d4343)
-                      ua (/ n d)
-                      ub (/ (mm/madd d4321 ua d1343) d4343)]
-                  {:type :intersect
-                   :a (g/madd p21 ua a1) :b (g/madd p43 ub a2)
-                   :ua ua :ub ub}))))))))
-
-  (defn sample-with-res*
-    [a b res include-b?]
-    (let [ls (for [t (m/norm-range res)] (g/mix a b t))]
-      (if include-b? ls (butlast ls))))
-
   (defn reflect-on-ray
     [ctor p q rc dir]
     (ctor
@@ -129,7 +89,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   g/PVertexAccess
   (vertices
    ([_] (:points _))
-   ([{p :points} res] (sample-with-res* (p 0) (p 1) res true)))
+   ([{p :points} res] (gu/sample-segment-with-res (p 0) (p 1) res true)))
   g/PEdgeAccess
   (edges
    ([_] [(:points _)])
@@ -237,7 +197,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 #+BEGIN_SRC clojure :noweb-ref impl2
   g/PBoundary
   (contains-point?
-   [{p :points} q] (m/in-range? 0.0 1.0 (closest-point-coeff* (vec2 q) (p 0) (p 1))))
+   [{p :points} q] (m/in-range? 0.0 1.0 (gu/closest-point-coeff (vec2 q) (p 0) (p 1))))
 #+END_SRC
 **** PBounds                                                       :template:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
@@ -313,7 +273,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 #+BEGIN_SRC clojure :noweb-ref impl2
   g/PProximity
   (closest-point
-   [{p :points} q] (closest-point* (vec2 q) (p 0) (p 1)))
+   [{p :points} q] (gu/closest-point-on-segment (vec2 q) (p 0) (p 1)))
 #+END_SRC
 **** PReflect                                                      :template:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
@@ -349,10 +309,10 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
    [{p :points} p] nil) ; TODO
   g/PProximity
   (closest-point
-   [{p :points} q] (closest-point* (vec3 q) (p 0) (p 1)))
+   [{p :points} q] (gu/closest-point-on-segment (vec3 q) (p 0) (p 1)))
   g/PBoundary
   (contains-point?
-   [{p :points} q] (m/in-range? 0.0 1.0 (closest-point-coeff* (vec3 q) (p 0) (p 1))))
+   [{p :points} q] (m/in-range? 0.0 1.0 (gu/closest-point-coeff (vec3 q) (p 0) (p 1))))
 #+END_SRC
 **** PBounds                                                       :template:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
@@ -388,7 +348,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   (intersect-line
    [{[a b] :points} l]
    (let [[c d] (if (sequential? l) l (:points l))]
-     (closest-line* a b c d)))
+     (gu/closest-line-between a b c d)))
   (intersect-ray [_ r])
   (intersect-shape [_ s])
 #+END_SRC

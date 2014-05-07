@@ -40,7 +40,7 @@
 
 The following two functions allow us to compute a bezier curve which
 passes through all given points and automatically computes the
-required control points.
+required control points. This only works for non-closed curves, though.
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn- find-cpoints*

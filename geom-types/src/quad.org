@@ -20,10 +20,10 @@
   ;; FIXME
   (defn map-uv
     [{[a b c d] :points} p]
-    (let [u1 (l/closest-point-coeff* p a b)
-          u2 (l/closest-point-coeff* p d c)
-          v1 (l/closest-point-coeff* p a d)
-          v2 (l/closest-point-coeff* p b c)
+    (let [u1 (gu/closest-point-coeff p a b)
+          u2 (gu/closest-point-coeff p d c)
+          v1 (gu/closest-point-coeff p a d)
+          v2 (gu/closest-point-coeff p b c)
           dab (g/dist p (g/mix a b u1))
           ddc (g/dist p (g/mix d c u2))
           dad (g/dist p (g/mix a d v1))
@@ -52,7 +52,7 @@ quad.
     the end point lying on AB (the first line given). Returns nil if there
     is no intersection (i.e. the given lines are parallel or zero length)."
     [a b c d n1 n2]
-    (:a (l/closest-line* (g/+ a n1) (g/+ b n1) (g/+ c n2) (g/+ d n2))))
+    (:a (gu/closest-line-between (g/+ a n1) (g/+ b n1) (g/+ c n2) (g/+ d n2))))
 
   (defn inset-quad
     "Takes a vector of four points defining a convex quad and an inset
