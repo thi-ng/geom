@@ -33,6 +33,15 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.Plane
 #+END_SRC
+*** PCenter
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PCenter
+  (center
+    ([_] (thi.ng.geom.types.Plane. (:n _) 0))
+    ([_ o] (plane-with-p o (:n _))))
+  (centroid
+    ([_] (g/* (:n _) (:w _))))
+#+END_SRC
 *** PClassify
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PClassify
