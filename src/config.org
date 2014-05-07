@@ -1,0 +1,95 @@
+#+SETUPFILE: setup.org
+
+* Shared library module configuration
+
+** Injected properties
+
+#+NAME: conf-version
+#+BEGIN_SRC clojure :noweb-ref conf-version
+0.3.0-SNAPSHOT
+#+END_SRC
+
+#+NAME: conf-project-url
+#+BEGIN_SRC clojure
+https://github.com/thi-ng/geom
+#+END_SRC
+
+#+NAME: conf-gen-source-path
+#+BEGIN_SRC clojure
+target/classes
+#+END_SRC
+
+#+NAME: conf-gen-test-path
+#+BEGIN_SRC clojure
+target/test-classes
+#+END_SRC
+
+** Dependencies
+
+*** Runtime
+**** [[https://github.com/clojure/clojure][Clojure]]
+#+NAME: dep-clj
+#+BEGIN_SRC clojure
+[org.clojure/clojure "1.6.0"]
+#+END_SRC
+
+**** [[https://github.com/clojure/clojurescript][ClojureScript]]
+#+NAME: dep-cljs
+#+BEGIN_SRC clojure
+[org.clojure/clojurescript "0.0-2202"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/geom/][thi.ng/geom-core]]
+#+NAME: dep-geom-core
+#+BEGIN_SRC clojure
+[thi.ng/geom-core "0.3.0-SNAPSHOT"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/geom/][thi.ng/geom-types]]
+#+NAME: dep-geom-types
+#+BEGIN_SRC clojure :noweb yes
+[thi.ng/geom-types "0.3.0-SNAPSHOT"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/common/][thi.ng/common]]
+#+NAME: dep-common
+#+BEGIN_SRC clojure
+[thi.ng/common "0.1.2"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/macromath][thi.ng/macromath]]
+#+NAME: dep-mmath
+#+BEGIN_SRC clojure
+[thi.ng/macromath "0.2.1"]
+#+END_SRC
+
+*** Development
+**** [[https://github.com/lynaghk/cljx][Cljx]]
+#+NAME: dep-cljx
+#+BEGIN_SRC clojure
+[com.keminglabs/cljx "0.3.2"]
+#+END_SRC
+
+**** [[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]
+#+NAME: dep-cljsbuild
+#+BEGIN_SRC clojure
+[lein-cljsbuild "1.0.3"]
+#+END_SRC
+
+**** [[https://github.com/hugoduncan/criterium][Criterium]]
+#+NAME: dep-criterium
+#+BEGIN_SRC clojure
+[criterium "0.4.3"]
+#+END_SRC
+
+**** [[https://github.com/cemerick/austin][Austin]]
+#+NAME: dep-austin
+#+BEGIN_SRC clojure
+[com.cemerick/austin "0.1.4"]
+#+END_SRC
+
+**** [[https://github.com/cemerick/clojurescript.test][clojurescript.test]]
+#+NAME: dep-cljs-test
+#+BEGIN_SRC clojure
+[com.cemerick/clojurescript.test "0.2.2"]
+#+END_SRC

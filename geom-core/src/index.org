@@ -5,6 +5,10 @@
 
 ** Overview
 
+This module defines all core protocols, vector & matrix types and
+common lowlevel functions used throughout the entire library (and
+the other library modules).
+
 *** Geometric entities
 
 | *2D*           | *3D*                      |
@@ -22,91 +26,42 @@ ALPHA quality, in active development.
 Please see the [[file:../src/index.org][parent project]] for further information.
 
 ** Injected properties                                             :noexport:
-#+BEGIN_SRC clojure :exports none :noweb-ref project-name
+
+This template uses shared project configuration defined in [[file:../../src/config.org][config.org]].
+Module specific settings are defined below:
+
+#+BEGIN_SRC clojure :noweb-ref project-name
 thi.ng/geom-core
 #+END_SRC
 
-#+BEGIN_SRC clojure :exports none :noweb-ref version
-0.3.0-SNAPSHOT
-#+END_SRC
-#+BEGIN_SRC clojure :exports none :noweb-ref project-url
-https://github.com/thi-ng/geom
-#+END_SRC
-#+BEGIN_SRC clojure :exports none :noweb-ref gen-source-path
-target/classes
-#+END_SRC
-#+BEGIN_SRC clojure :exports none :noweb-ref gen-test-path
-target/test-classes
-#+END_SRC
-#+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref cljs-artefact-path
-target/geom-core-<<version>>.js
+#+BEGIN_SRC clojure :noweb yes :noweb-ref cljs-artefact-path
+target/geom-core-<<conf-version>>.js
 #+END_SRC
 
-** License
-
-This project is open source and licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache Software License 2.0]].
-
-** Dependencies
-*** Runtime
-**** [[https://github.com/clojure/clojure][Clojure]]
-#+BEGIN_SRC clojure :noweb-ref dep-clj
-[org.clojure/clojure "1.6.0"]
-#+END_SRC
-**** [[https://github.com/clojure/clojurescript][ClojureScript]]
-#+BEGIN_SRC clojure :noweb-ref dep-cljs
-[org.clojure/clojurescript "0.0-2197"]
-#+END_SRC
-**** [[https://github.com/thi-ng/common/][thi.ng/common]]
-#+BEGIN_SRC clojure :noweb-ref dep-common
-[thi.ng/common "0.1.2"]
-#+END_SRC
-**** [[https://github.com/thi-ng/macromath][thi.ng/macromath]]
-#+BEGIN_SRC clojure :noweb-ref dep-mmath
-[thi.ng/macromath "0.2.1"]
-#+END_SRC
-*** Development
-**** [[https://github.com/lynaghk/cljx][Cljx]]
-#+BEGIN_SRC clojure :noweb-ref dep-cljx
-[com.keminglabs/cljx "0.3.2"]
-#+END_SRC
-**** [[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]
-#+BEGIN_SRC clojure :noweb-ref dep-cljsbuild
-[lein-cljsbuild "1.0.3"]
-#+END_SRC
-**** [[https://github.com/hugoduncan/criterium][Criterium]]
-#+BEGIN_SRC clojure :noweb-ref dep-criterium
-[criterium "0.4.1"]
-#+END_SRC
-**** [[https://github.com/cemerick/austin][Austin]]
-#+BEGIN_SRC clojure :noweb-ref dep-austin
-[com.cemerick/austin "0.1.4"]
-#+END_SRC
-**** [[https://github.com/cemerick/clojurescript.test][clojurescript.test]]
-#+BEGIN_SRC clojure :noweb-ref dep-cljs-test
-[com.cemerick/clojurescript.test "0.2.2"]
-#+END_SRC
 ** Release history
 
 | *Version* | *Released* | *Description*      | *Lein coordinates*      | *Tagged Github URL*                       |
 |-----------+------------+--------------------+-------------------------+-------------------------------------------|
 |     0.2.0 | 2014-03-10 | 1st public release | =[thi.ng/geom "0.2.0"]= | https://github.com/thi-ng/geom/tree/0.2.0 |
 
-** Authors
+** Contributors
 
 | *Name*          | *Role*                          | *Website*           |
 | [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://postspectacular.com][postspectacular.com]] |
 |                 |                                 | [[http://thi.ng][thi.ng]]              |
 
 ** Leiningen coordinates
+
 #+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
-  [<<project-name>> "<<version>>"]
+  [<<project-name>> "<<conf-version>>"]
 #+END_SRC
 
-** Leiningen project file                                          :noexport:
+** Leiningen project file
+
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
-  (defproject <<project-name>> "<<version>>"
-    :description "thi.ng geometry kit"
-    :url "<<project-url>>"
+  (defproject <<project-name>> "<<conf-version>>"
+    :description "thi.ng geometry kit - core module"
+    :url "<<conf-project-url>>"
     :license {:name "Apache Software License"
               :url "http://www.apache.org/licenses/LICENSE-2.0"}
     :dependencies [<<dep-clj>>
@@ -114,7 +69,7 @@ This project is open source and licensed under the [[http://www.apache.org/licen
                    <<dep-mmath>>]
   
     :source-paths ["src/cljx"]
-    :test-paths ["<<gen-test-path>>"]
+    :test-paths ["<<conf-gen-test-path>>"]
   
     :profiles {:dev {:dependencies [<<dep-cljs>>
                                     <<dep-criterium>>]
@@ -126,27 +81,33 @@ This project is open source and licensed under the [[http://www.apache.org/licen
                      :aliases {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]}}}
   
     :cljx {:builds [{:source-paths ["src/cljx"]
-                     :output-path "<<gen-source-path>>"
+                     :output-path "<<conf-gen-source-path>>"
                      :rules :clj}
                     {:source-paths ["src/cljx"]
-                     :output-path "<<gen-source-path>>"
+                     :output-path "<<conf-gen-source-path>>"
                      :rules :cljs}
                     {:source-paths ["test/cljx"]
-                     :output-path "<<gen-test-path>>"
+                     :output-path "<<conf-gen-test-path>>"
                      :rules :clj}
                     {:source-paths ["test/cljx"]
-                     :output-path "<<gen-test-path>>"
+                     :output-path "<<conf-gen-test-path>>"
                      :rules :cljs}]}
   
-    :cljsbuild {:builds [{:source-paths ["<<gen-source-path>>" "<<gen-test-path>>"]
+    :cljsbuild {:builds [{:source-paths ["<<conf-gen-source-path>>" "<<conf-gen-test-path>>"]
                           :id "simple"
                           :compiler {:output-to "<<cljs-artefact-path>>"
                                      :optimizations :whitespace
                                      :pretty-print true}}]
-                :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}})
+                :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}}
+
+    :pom-addition [:developers [:developer
+                                [:name "Karsten Schmidt"]
+                                [:url "http://postspectacular.com"]
+                                [:timezone "0"]]])
 #+END_SRC
 
 ** ClojureScript HTML harness                                      :noexport:
+
 #+BEGIN_SRC html :tangle ../babel/index.html :noweb yes :mkdirp yes :padline no
   <!DOCTYPE html>
   <html lang="en">
@@ -161,21 +122,21 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 
 ** Accessing library version during runtime
 
-The autogenerated namespace =thi.ng.geom.version= contains a single
+The autogenerated namespace =thi.ng.geom.core.version= contains a single
 symbol =version= holding the version string defined above:
 
 #+BEGIN_SRC clojure :noweb yes
   (use 'thi.ng.geom.core.version)
   
   (prn version)
-  ; "<<version>>"
+  ; "<<conf-version>>"
 #+END_SRC
 
 *** Version namespace                                              :noexport:
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/version.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.version)
-  (def ^:const version "<<version>>")
+  (def ^:const version "<<conf-version>>")
 #+END_SRC
 
 * Modules
@@ -188,12 +149,11 @@ source files via the normal [[https://github.com/thi-ng/geom/tree/master/geom-co
 
 ** Core API
 
-#+INCLUDE: "core.org" :minlevel 2
-#+INCLUDE: "vector.org" :minlevel 2
-#+INCLUDE: "matrix.org" :minlevel 2
-#+INCLUDE: "quaternion.org" :minlevel 2
+#+INCLUDE: "core.org"         :minlevel 2
+#+INCLUDE: "vector.org"       :minlevel 2
+#+INCLUDE: "matrix.org"       :minlevel 2
+#+INCLUDE: "quaternion.org"   :minlevel 2
 
 * Tests
 
 #+INCLUDE: "../test/core.org" :minlevel 2
-#+INCLUDE: "../test/protocols.org" :minlevel 2
