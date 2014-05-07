@@ -125,7 +125,7 @@
   g/PClassify
   (classify-point
    [_ q] (->> (g/edges _)
-              (map #(m/signum (apply gu/closest-point-coeff q %)))
+              (map #(m/signum (apply gu/closest-point-coeff q %) *eps*))
               (reduce min)))
 #+END_SRC
 
