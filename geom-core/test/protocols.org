@@ -1,33 +1,33 @@
-#+SETUPFILE: ../src/setup.org
+#+SETUPFILE: ../../src/setup.org
 
-* thi.ng.geom.test.protocols
+* thi.ng.geom.core.test.protocols
 
 ** Constants & helpers
 #+BEGIN_SRC clojure :noweb-ref helpers
   (def proto-ids
-    {:conj g/PConjugate
-     :cross g/PCrossProduct
-     :det g/PDeterminant
-     :dist g/PDistance
-     :dot g/PDotProduct
-     :head g/PHeading
-     :inv g/PInvert
-     :limit g/PLimit
-     :mag g/PMagnitude
-     :mat g/PMatrixConvert
-     :math g/PMathOps
-     :mimax g/PMinMax
-     :mix g/PInterpolate
-     :norm g/PNormalize
-     :polar g/PPolar
-     :refl g/PReflect
-     :rotate g/PRotate
-     :rot3d g/PRotate3D
-     :scale g/PScale
-     :shear g/PShear
+    {:conj      g/PConjugate
+     :cross     g/PCrossProduct
+     :det       g/PDeterminant
+     :dist      g/PDistance
+     :dot       g/PDotProduct
+     :head      g/PHeading
+     :inv       g/PInvert
+     :limit     g/PLimit
+     :mag       g/PMagnitude
+     :mat       g/PMatrixConvert
+     :math      g/PMathOps
+     :mimax     g/PMinMax
+     :mix       g/PInterpolate
+     :norm      g/PNormalize
+     :polar     g/PPolar
+     :refl      g/PReflect
+     :rotate    g/PRotate
+     :rot3d     g/PRotate3D
+     :scale     g/PScale
+     :shear     g/PShear
      :translate g/PTranslate
-     :tx g/PTransform
-     :vtx g/PVectorTransform})
+     :tx        g/PTransform
+     :vtx       g/PVectorTransform})
 
   (def vec-common
     #{:cross :dist :dot :head :inv :limit :mag :math :mix
