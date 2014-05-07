@@ -325,8 +325,8 @@ of triangles of the subdivided rects.
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.aabb :as a]
      [thi.ng.geom.gmesh :as gm]
-     [thi.ng.geom.line :as l]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.data.core :as d]
@@ -336,7 +336,7 @@ of triangles of the subdivided rects.
     ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     ,#+clj
     (:import
-     [thi.ng.geom.types Circle2 Line2 Polygon2 Rect2]))
+     [thi.ng.geom.types Circle2 Polygon2 Rect2]))
 
   <<ctors>>
 
