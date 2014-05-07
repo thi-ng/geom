@@ -136,6 +136,8 @@ center point =o= and radius =r=.
 ** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/types.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.types
+    (:require
+      [thi.ng.geom.core.vector])
     ,#+clj (:import [thi.ng.geom.core.vector Vec2 Vec3]))
 
   <<types-graph>>
