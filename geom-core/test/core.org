@@ -1,24 +1,9 @@
 #+SETUPFILE: ../../src/setup.org
 
-* thi.ng.geom.test.core
-** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx :mkdirp yes :padline no
-  (ns thi.ng.geom.test.core
-    ,#+cljs
-    (:require-macros
-     [cemerick.cljs.test :refer (is deftest with-test run-tests testing)])
-    (:require
-     [thi.ng.common.math.core :as m :refer [*eps* HALF_PI delta=]]
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V2X V2Y V3X V3Y V3Z]]
-     [thi.ng.geom.core.matrix :as mat :refer [M32 M44]]
-     [thi.ng.geom.core.quaternion :as q]
-     ,#+clj [clojure.test :refer :all]
-     ,#+cljs [cemerick.cljs.test :as t]))
-#+END_SRC
+* thi.ng.geom.core.test.core
 
 ** Test constants
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx
+#+BEGIN_SRC clojure :noweb-ref const
   (def s 10.0)
   (def ax 1.0) (def ay 2.0) (def az 3.0)
   (def bx (* ax s)) (def by (* ay s)) (def bz (* az s))
@@ -29,8 +14,69 @@
   (def bv2 [bx by]) (def bv3 [bx by bz])
 #+END_SRC
 
+** Callable contexts
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn context-vec2-op
+    [label op cop default]
+    (testing
+        (str "op: " label)
+      (is (= [(cop ax bx) (cop ay by)] (op a2 b2)) (str label " a2 b2"))
+      (is (= [(cop ax s) (cop ay s)] (op a2 s)) (str label " a2 n"))
+      (is (= (op a2 b2) (op a2 b3)) (str label " a2 b3"))
+      (is (= (op a2 b2) (op a2 bx by)) (str label " a2 n m"))
+      (is (= (op a2 b2) (op a2 [bx by])) (str label " a2 [n m]"))
+      (is (= (op (op a2 b2) by) (op a2 b2 by)) (str label " a2 b2 m"))
+      (is (= (op (op a2 b2) b2) (op a2 b2 b2)) (str label " a2 b2 b2"))
+      (is (= (op (op a2 bx) b2) (op a2 bx b2)) (str label " a2 n b2"))
+      (is (= (op (op (op a2 b2) a2) b2) (op a2 [b2 a2 b2])) (str label " a2 [b2 a2 b2]"))
+      (if (= cop /)
+        (is #+clj  (thrown? ArithmeticException (op a2 [s]))
+            ,#+cljs (not (js/isFinite ((op a2 [s]) :y)))
+            (str label " a2 [n] fail"))
+        (is (= (op a2 s default) (op a2 [s])) (str label " a2 [n]")))))
+
+  (defn context-vec3-op
+    [label op cop default]
+    (testing
+        (str "op: " label)
+      (is (= [(cop ax bx) (cop ay by) (cop az bz)] (op a3 b3)) (str label " a3 b3"))
+      (is (= [(cop ax s) (cop ay s) (cop az s)] (op a3 s)) (str label " a3 n"))
+      (is (= (op (op a3 bx) by) (op a3 bx by)) (str label " a3 n m"))
+      (is (= (op (op a3 b3) by) (op a3 b3 by)) (str label " a3 b3 n"))
+      (is (= (op (op a3 b3) b3) (op a3 b3 b3)) (str label " a3 b3 b3"))
+      (is (= (op (op a3 bx) b3) (op a3 bx b3)) (str label " a3 n b3"))
+      (is (= (op a3 b3) (op a3 bx by bz)) (str label " a3 n m o"))
+      (is (= (op a3 b3) (op a3 [bx by bz])) (str label " a3 [n m o]"))
+      (is (= (op (op (op a3 b3) by) bz) (op a3 b3 by bz)) (str label " a3 b3 n m"))
+      (is (= (op (op (op a3 b3) b3) bz) (op a3 b3 b3 bz)) (str label " a3 b3 b3 m"))
+      (is (= (op (op (op a3 b3) b3) a3) (op a3 b3 b3 a3)) (str label " a3 b3 b3 a3"))
+      (is (= (op (op (op a3 bx) by) b3) (op a3 bx by b3)) (str label " a3 n m b3"))
+      (is (= (op (op (op a3 b3) a3) b3) (op a3 [b3 a3 b3])) (str label " a3 [b3 a3 b3]"))
+      (if (= cop /)
+        (is #+clj (thrown? #+clj ArithmeticException (op a3 [bx by]))
+            ,#+cljs (not (js/isFinite ((op a3 [bx by]) :z)))
+            (str label " a3 [n m] fail"))
+        (is (= (op a3 bx by default) (op a3 [bx by])) (str label " a3 [n m]")))))
+
+  (defn context-dual-op
+    [label dop op1 op2]
+    (testing
+        (str "dual op: " label)
+      (is (= (op2 (op1 a2 bx) by) (dop a2 bx by)) (str label " a2 n m"))
+      (is (= (op2 (op1 a2 b2) bx) (dop a2 b2 bx)) (str label " a2 b2 n"))
+      (is (= (op2 (op1 a2 bx) b2) (dop a2 bx b2)) (str label " a2 n b2"))
+      (is (not= (dop a2 bx b2) (dop a2 b2 bx)) (str label " a2 n b2 != a2 b2 n"))
+      (is (= (op2 (op1 a2 b2) a2) (dop a2 b2 a2)) (str label " a2 b2 a2"))
+
+      (is (= (op2 (op1 a3 bx) by) (dop a3 bx by)) (str label " a3 n m"))
+      (is (= (op2 (op1 a3 b3) bx) (dop a3 b3 bx)) (str label " a3 b3 n"))
+      (is (= (op2 (op1 a3 bx) b3) (dop a3 bx b3)) (str label " a3 n b3"))
+      (is (not= (dop a3 bx b3) (dop a3 b3 bx)) (str label " a3 n b3 != a3 b3 n"))
+      (is (= (op2 (op1 a3 b3) a3) (dop a3 b3 a3)) (str label " a3 b3 a3"))))
+#+END_SRC
+
 ** Vector creation
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx
+#+BEGIN_SRC clojure :noweb-ref tests
   (deftest vec2-ctor
    (is (v/vec2? (vec2 1)) "vec2?")
    (is (= [1.0 1.0] (vec2 1)) "uniform from single number")
@@ -68,7 +114,7 @@
 #+END_SRC
 
 ** Swizzling
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx
+#+BEGIN_SRC clojure :noweb-ref tests
   (deftest swizzle-read
     (is (= ax (:x a2) (:x a3)) ":x")
     (is (= ay (:y a2) (:y a3)) ":y")
@@ -115,7 +161,7 @@
 #+END_SRC
 
 ** Clojure/Java protocol impls
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx
+#+BEGIN_SRC clojure :noweb-ref tests
   (deftest protocol-impls
     (is (= (seq a2) (seq av2)) "seq a2")
     (is (= (rseq a2) (rseq av2)) "rseq a2")
@@ -194,70 +240,8 @@
 #+END_SRC
 
 ** Vector operations
-*** Callable contexts
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx
-  (defn context-vec2-op
-    [label op cop default]
-    (testing
-        (str "op: " label)
-      (is (= [(cop ax bx) (cop ay by)] (op a2 b2)) (str label " a2 b2"))
-      (is (= [(cop ax s) (cop ay s)] (op a2 s)) (str label " a2 n"))
-      (is (= (op a2 b2) (op a2 b3)) (str label " a2 b3"))
-      (is (= (op a2 b2) (op a2 bx by)) (str label " a2 n m"))
-      (is (= (op a2 b2) (op a2 [bx by])) (str label " a2 [n m]"))
-      (is (= (op (op a2 b2) by) (op a2 b2 by)) (str label " a2 b2 m"))
-      (is (= (op (op a2 b2) b2) (op a2 b2 b2)) (str label " a2 b2 b2"))
-      (is (= (op (op a2 bx) b2) (op a2 bx b2)) (str label " a2 n b2"))
-      (is (= (op (op (op a2 b2) a2) b2) (op a2 [b2 a2 b2])) (str label " a2 [b2 a2 b2]"))
-      (if (= cop /)
-        (is #+clj  (thrown? ArithmeticException (op a2 [s]))
-            ,#+cljs (not (js/isFinite ((op a2 [s]) :y)))
-            (str label " a2 [n] fail"))
-        (is (= (op a2 s default) (op a2 [s])) (str label " a2 [n]")))))
-
-  (defn context-vec3-op
-    [label op cop default]
-    (testing
-        (str "op: " label)
-      (is (= [(cop ax bx) (cop ay by) (cop az bz)] (op a3 b3)) (str label " a3 b3"))
-      (is (= [(cop ax s) (cop ay s) (cop az s)] (op a3 s)) (str label " a3 n"))
-      (is (= (op (op a3 bx) by) (op a3 bx by)) (str label " a3 n m"))
-      (is (= (op (op a3 b3) by) (op a3 b3 by)) (str label " a3 b3 n"))
-      (is (= (op (op a3 b3) b3) (op a3 b3 b3)) (str label " a3 b3 b3"))
-      (is (= (op (op a3 bx) b3) (op a3 bx b3)) (str label " a3 n b3"))
-      (is (= (op a3 b3) (op a3 bx by bz)) (str label " a3 n m o"))
-      (is (= (op a3 b3) (op a3 [bx by bz])) (str label " a3 [n m o]"))
-      (is (= (op (op (op a3 b3) by) bz) (op a3 b3 by bz)) (str label " a3 b3 n m"))
-      (is (= (op (op (op a3 b3) b3) bz) (op a3 b3 b3 bz)) (str label " a3 b3 b3 m"))
-      (is (= (op (op (op a3 b3) b3) a3) (op a3 b3 b3 a3)) (str label " a3 b3 b3 a3"))
-      (is (= (op (op (op a3 bx) by) b3) (op a3 bx by b3)) (str label " a3 n m b3"))
-      (is (= (op (op (op a3 b3) a3) b3) (op a3 [b3 a3 b3])) (str label " a3 [b3 a3 b3]"))
-      (if (= cop /)
-        (is #+clj (thrown? #+clj ArithmeticException (op a3 [bx by]))
-            ,#+cljs (not (js/isFinite ((op a3 [bx by]) :z)))
-            (str label " a3 [n m] fail"))
-        (is (= (op a3 bx by default) (op a3 [bx by])) (str label " a3 [n m]")))))
-
-  (defn context-dual-op
-    [label dop op1 op2]
-    (testing
-        (str "dual op: " label)
-      (is (= (op2 (op1 a2 bx) by) (dop a2 bx by)) (str label " a2 n m"))
-      (is (= (op2 (op1 a2 b2) bx) (dop a2 b2 bx)) (str label " a2 b2 n"))
-      (is (= (op2 (op1 a2 bx) b2) (dop a2 bx b2)) (str label " a2 n b2"))
-      (is (not= (dop a2 bx b2) (dop a2 b2 bx)) (str label " a2 n b2 != a2 b2 n"))
-      (is (= (op2 (op1 a2 b2) a2) (dop a2 b2 a2)) (str label " a2 b2 a2"))
-
-      (is (= (op2 (op1 a3 bx) by) (dop a3 bx by)) (str label " a3 n m"))
-      (is (= (op2 (op1 a3 b3) bx) (dop a3 b3 bx)) (str label " a3 b3 n"))
-      (is (= (op2 (op1 a3 bx) b3) (dop a3 bx b3)) (str label " a3 n b3"))
-      (is (not= (dop a3 bx b3) (dop a3 b3 bx)) (str label " a3 n b3 != a3 b3 n"))
-      (is (= (op2 (op1 a3 b3) a3) (dop a3 b3 a3)) (str label " a3 b3 a3"))))
-#+END_SRC
-
-*** Calling contexts
-**** 2D ops
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
+*** 2D ops
+#+BEGIN_SRC clojure :noweb-ref tests  
   (deftest vec2-math-ops
    (is (= [(+ ax) (+ ay)] (g/+ a2)) "+ a2")
    (is (= [(- ax) (- ay)] (g/- a2)) "- a2")
@@ -269,8 +253,8 @@
    (context-vec2-op "/" g/div / 0.0))
 #+END_SRC
 
-**** 3D ops
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx    
+*** 3D ops
+#+BEGIN_SRC clojure :noweb-ref tests    
   (deftest vec3-math-ops
    (is (= [(+ ax) (+ ay) (+ az)] (g/+ a3))) "+ a3"
    (is (= [(- ax) (- ay) (- az)] (g/- a3))) "- a3"
@@ -282,8 +266,8 @@
    (context-vec3-op "/" g/div / 0.0))
 #+END_SRC
 
-**** Dual math ops
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
+*** Dual math ops
+#+BEGIN_SRC clojure :noweb-ref tests  
   (deftest dual-math-ops
     (context-dual-op "madd" g/madd g/* g/+)
     (context-dual-op "addm" g/addm g/+ g/*)
@@ -291,8 +275,8 @@
     (context-dual-op "subm" g/subm g/- g/*))
 #+END_SRC
 
-**** Dot product
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
+*** Dot product
+#+BEGIN_SRC clojure :noweb-ref tests  
   (deftest dotproduct
    (is (== (g/mag-squared a2) (g/dot a2 a2)) "dot a2 a2")
    (is (== 0 (g/dot a2 [(- ay) ax])) "dot 2d zero")
@@ -306,8 +290,8 @@
    (is (== (+ (* (- ax) bx) (* (- ay) by) (* (- az) bz)) (g/dot (g/- a3) b3)) "dot -a3 b3"))
 #+END_SRC
 
-**** Cross product
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
+*** Cross product
+#+BEGIN_SRC clojure :noweb-ref tests  
    (deftest crossproduct
     (is (== 0 (g/cross V2X V2X)) "x cross x = 0")
     (is (== 1 (g/cross V2X V2Y)) "x cross y = 1")
@@ -316,8 +300,8 @@
     (is (= V3X (g/cross V3Y V3Z)) "+y cross +z = +x"))
 #+END_SRC
 
-**** Magnitude
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
+*** Magnitude
+#+BEGIN_SRC clojure :noweb-ref tests  
   (deftest mag
     (is (== (Math/sqrt (+ (* ax ax) (* ay ay))) (g/mag a2)) "mag a2")
     (is (== (Math/sqrt (+ (* ax ax) (* ay ay))) (g/mag (g/- a2))) "mag -a2")
@@ -329,8 +313,8 @@
     (is (== (+ (* ax ax) (* ay ay) (* az az)) (g/mag-squared (g/- a3))) "mag-squared -a3"))
 #+END_SRC
 
-**** Normalize
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
+*** Normalize
+#+BEGIN_SRC clojure :noweb-ref tests  
   (deftest normalize
     (is (= (let [m (g/mag a2)] [(/ ax m) (/ ay m)]) (g/normalize a2)) "norm a2")
     (is (= (let [m (/ s (g/mag a2))] [(* m ax) (* m ay)])
@@ -343,8 +327,8 @@
     (is (== s (g/mag (g/normalize a3 s))) "mag = norm a3 s"))
 #+END_SRC
 
-**** Interpolation
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
+*** Interpolation
+#+BEGIN_SRC clojure :noweb-ref tests  
   (deftest mix
     (is (delta= (g/mix (g/mix a2 b2 0.25) (g/mix b2 a2 0.25) 0.5)
                 (g/mix a2 b2 b2 a2 0.25 0.5)) "mix bilinear2")
@@ -352,8 +336,8 @@
                 (g/mix a3 b3 b3 a3 0.25 0.5)) "mix bilinear3"))
 #+END_SRC
 
-**** Transformations
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx  
+*** Transformations
+#+BEGIN_SRC clojure :noweb-ref tests  
   (deftest vec-transforms
     (is (delta= V2Y (g/rotate V2X HALF_PI)) "rot2d(+x) = +y")
     (is (delta= V3Z (g/rotate-x V2Y HALF_PI)) "rot2d-x(+y) = +z 3d")
@@ -373,7 +357,7 @@
 #+END_SRC
 
 ** Matrix operations
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx
+#+BEGIN_SRC clojure :noweb-ref tests
   (deftest matrix-ops
     (is (delta= V2Y (-> M32 (g/rotate HALF_PI) (g/transform-vector V2X))))
     (is (delta= V3Z (-> M44 (g/rotate-x HALF_PI) (g/transform-vector V3Y))) "rotx(+y) = +z")
@@ -415,7 +399,7 @@
 #+END_SRC
 
 ** Quaternion operations
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/test/core.cljx
+#+BEGIN_SRC clojure :noweb-ref tests
   (deftest quat-ops
     (is (delta= a3 (-> (q/quat-from-axis-angle V3X 0.0) (g/transform-vector a3))))
     (is (delta= a3 (-> (q/quat-from-axis-angle V3Y 0.0) (g/transform-vector a3))))
@@ -440,4 +424,25 @@
                     (g/rotate-around-axis (g/normalize (vec3 1)) HALF_PI)
                     (q/quat-from-matrix)
                     (g/transform-vector a3)))))
+#+END_SRC
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/core/test/core.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.core.test.core
+    ,#+cljs
+    (:require-macros
+     [cemerick.cljs.test :refer (is deftest with-test run-tests testing)])
+    (:require
+     [thi.ng.common.math.core :as m :refer [*eps* HALF_PI delta=]]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V2X V2Y V3X V3Y V3Z]]
+     [thi.ng.geom.core.matrix :as mat :refer [M32 M44]]
+     [thi.ng.geom.core.quaternion :as q]
+     ,#+clj [clojure.test :refer :all]
+     ,#+cljs [cemerick.cljs.test :as t]))
+
+  <<const>>
+
+  <<helpers>>
+
+  <<tests>>
 #+END_SRC
