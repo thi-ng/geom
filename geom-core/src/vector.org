@@ -1369,6 +1369,12 @@ injected in the appropriate places of the code.
   (def ^:const V3X (Vec3. 1.0 0.0 0.0))
   (def ^:const V3Y (Vec3. 0.0 1.0 0.0))
   (def ^:const V3Z (Vec3. 0.0 0.0 1.0))
+
+  (def ^:const V2INF- (Vec2. INF- INF-))
+  (def ^:const V2INF+ (Vec2. INF+ INF+))
+
+  (def ^:const V3INF- (Vec3. INF- INF- INF-))
+  (def ^:const V3INF+ (Vec3. INF+ INF+ INF+))
 #+END_SRC
 ** Constructors
 
@@ -1523,7 +1529,7 @@ rules:
      [thi.ng.geom.core :as g]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.error :as err]
-     [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
+     [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI INF- INF+]]
      ,#+clj [thi.ng.macromath.core :as mm]
      ,#+clj [clojure.core.protocols :as cp])
     ,#+cljs
