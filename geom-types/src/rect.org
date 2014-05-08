@@ -150,7 +150,7 @@ than 1.0.
    [_ {:keys [depth scale offset] :or {depth 1.0 scale 1.0} :as opts}]
    (if (and (== scale 1.0) (nil? offset))
      (g/as-mesh
-      (thi.ng.geom.types.AABB. (vec3 (:p _)) ((:size _) :xyz depth)))
+      (thi.ng.geom.types.AABB. (vec3 (:p _)) (conj (:size _) depth)))
      (g/extrude (g/as-polygon _) opts)))
   (extrude-shell
    [_ opts] (g/extrude-shell (g/as-polygon _) opts))
