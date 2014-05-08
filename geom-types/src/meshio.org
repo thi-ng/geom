@@ -13,7 +13,7 @@
     "Writes the given mesh as binary STL to output stream. Mesh is
     automatically tessellated into triangles."
     [^OutputStream stream {:keys [fnormals faces]}]
-    (let [faces (mapcat gm/tessellate-face1 faces)]
+    (let [faces (mapcat gu/tessellate-with-first faces)]
       (.write stream #+clj (byte-array 80) #+cljs (into-array (repeat 80 0)))
       (b/write-int32-le stream (count faces))
       (doseq [[a b c :as f] faces]
@@ -84,7 +84,7 @@
           fmt-fn (fn [prefix]
                    ,#+clj (let [ff (str "%1." *precision* "f ")
                                ff (str prefix " " ff ff ff "\n")]
-                           #(format ff %1 %2 %3))
+                           #(format ff (double %1) (double %2) (double %3)))
                    ,#+cljs #(str
                             prefix " "
                             (.toFixed (js/Number. %1) *precision*) " "
@@ -95,15 +95,16 @@
           fmt-fvert (if has-vnormals? #(str % "//" %2 " ") #(str % " "))
           fmt-face (if has-vnormals?
                      (fn [verts normals]
-                       (str "f " (apply str (map fmt-fvert verts normals)) "\n"))
-                     (fn [verts] (str "f " (apply str (map fmt-fvert verts)) "\n")))
+                       (apply str (concat "f " (map fmt-fvert verts normals)) "\n"))
+                     (fn [verts]
+                       (apply str (concat "f " (map fmt-fvert verts)) "\n")))
           vindex (zipmap vertices (range))
           nindex (zipmap (vals vnormals) (range))]
       (doseq [[x y z] vertices]
         (b/write-str-bytes
-         stream (fmt-vertex (double x) (double y) (double z))))
+         stream (fmt-vertex x y z)))
       (doseq [[x y z] (vals vnormals)]
-        (b/write-str-bytes stream (fmt-vnormal (double x) (double y) (double z))))
+        (b/write-str-bytes stream (fmt-vnormal x y z)))
       (b/write-str-bytes stream "g\n")
       (doseq [fverts faces]
         (b/write-str-bytes
@@ -123,7 +124,7 @@
           fmt-vertex
           ,#+clj (let [ff (str "%1." *precision* "f ")
                       ff (str ff ff ff "\n")]
-                  #(format ff %1 %2 %3))
+                  #(format ff (double %1) (double %2) (double %3)))
           ,#+cljs #(str (.toFixed (js/Number. %1) *precision*) " "
                        (.toFixed (js/Number. %2) *precision*) " "
                        (.toFixed (js/Number. %3) *precision*) "\n")
@@ -132,13 +133,14 @@
       (b/write-str-bytes stream (str (count vertices) " " (count faces) " 0\n"))
       (doseq [[x y z] vertices]
         (b/write-str-bytes
-         stream (fmt-vertex (double x) (double y) (double z))))
+         stream (fmt-vertex x y z)))
       (doseq [fverts faces]
         (b/write-str-bytes
          stream
-         (str (count fverts) " "
-              (apply str (map #(str (vindex %) " ") fverts))
-              "\n")))))
+         (->> (concat [(count fverts)] " "
+                      (map #(str (vindex %) " ") fverts)
+                      "\n")
+              (apply str))))))
 #+END_SRC
 
 ** Complete namespace definition
