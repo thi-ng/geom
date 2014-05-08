@@ -247,7 +247,7 @@ injected in the appropriate places of the code.
   ,#+clj (iterator
          [_] (.iterator ^java.util.Collection (list x y)))
   ,#+clj (toArray
-         [_] (double-array 2 _))
+         [_] (object-array _))
   ,#+clj (size [_] 2)
 
   ,#+clj clojure.lang.IPersistentCollection
@@ -255,6 +255,7 @@ injected in the appropriate places of the code.
   ,#+clj clojure.lang.Sequential
   ,#+clj clojure.lang.ISeq
   ,#+clj clojure.lang.Seqable
+  ,#+clj clojure.lang.Reversible
   ,#+clj (first
          [_] x)
   ,#+clj (next
@@ -697,7 +698,7 @@ injected in the appropriate places of the code.
   ,#+clj (iterator
          [_] (.iterator ^java.util.Collection (list x y z)))
   ,#+clj (toArray
-         [_] (double-array 3 _))
+         [_] (object-array _))
   ,#+clj (size
          [_] 3)
 
@@ -706,6 +707,7 @@ injected in the appropriate places of the code.
   ,#+clj clojure.lang.Sequential
   ,#+clj clojure.lang.ISeq
   ,#+clj clojure.lang.Seqable
+  ,#+clj clojure.lang.Reversible
   ,#+clj (first
          [_] x)
   ,#+clj (next

@@ -25,6 +25,30 @@ define some macros to simplify them.
     `(* (mm/msubadd ~a ~b ~c ~d ~e ~f) ~g))
 #+END_SRC
 
+** Protocol helpers
+#+BEGIN_SRC clojure :noweb-ref proto-helpers
+  ,#+clj
+  (defn- hash-coll*
+    [coll]
+    (reduce
+     #(-> % (unchecked-multiply-int 31) (unchecked-add-int (hash %2)))
+     1 coll))
+
+  ,#+clj
+  (defn- hash-coll
+    [coll]
+    (mix-collection-hash (hash-coll* coll) (count coll)))
+
+  ,#+cljs
+  (defn- hash-coll
+    [coll]
+    (if (seq coll)
+      (loop [res (hash (first coll)) s (next coll)]
+        (if (nil? s)
+          res
+          (recur (hash-combine res (hash (first s))) (next s))))
+      0))
+#+END_SRC
 ** Matrix implementations
 *** 3x2 Matrix (Affine 2D transform)
 #+BEGIN_SRC clojure :noweb-ref mat32
@@ -36,9 +60,63 @@ define some macros to simplify them.
 
 **** TODO Clojure protocols
 #+BEGIN_SRC clojure :noweb-ref mat32
+  ,#+clj java.util.Collection
+  ,#+clj clojure.lang.IPersistentCollection
+  ,#+clj clojure.lang.IPersistentVector
+  ,#+clj clojure.lang.ISeq
+  ,#+clj clojure.lang.Seqable
+  ,#+clj clojure.lang.Sequential
+  ,#+clj clojure.lang.IHashEq
+  ,#+cljs ISequential
+  ,#+cljs ISeq
+  ,#+cljs ISeqable
+  ,#+cljs INext
+  ,#+cljs ICounted
+  ,#+cljs ICollection
+  ,#+cljs IEquiv
+  ,#+cljs IHash
+  ,#+clj (empty [_] (err/unsupported!))
+  (#+clj count #+cljs -count [_] 6)
+  (#+clj seq   #+cljs -seq   [_] _)
+  (#+clj more  #+cljs -rest  [_] (next _))
+  (#+clj first #+cljs -first [_] m00)
+  (#+clj next  #+cljs -next  [_] (seq [m01 m02 m10 m11 m12]))
+  (#+clj cons  #+cljs -conj  [_ x] [m00 m01 m02 m10 m11 m12 x])
+  (#+clj nth   #+cljs -nth [_ k]
+         (if (m/in-range? 0 5 k)
+           (case (int k)
+             0 m00 1 m01 2 m02 3 m10 4 m11 5 m12)
+           (err/illegal-arg! k)))
+  (#+clj nth   #+cljs -nth [_ k nf]
+         (if (m/in-range? 0 15 k)
+           (case (int k)
+             0 m00 1 m01 2 m02 3 m10 4 m11 5 m12)
+           nf))
+  (#+clj equiv  #+cljs -equiv [_ o]
+         (if (and (sequential? o) (= 6 (count o)))
+           (every? #(= (% 0) (% 1)) (map vector _ o))
+           false))
+  (#+clj hasheq #+cljs -hash  [_] (hash-coll _))
+
+  ,#+clj (hashCode [_] (hash-coll* _))
+  ,#+clj (equals
+         [_ o]
+         (if (and (sequential? o) (= 6 (count o)))
+           (every? #(clojure.lang.Util/equals (% 0) (% 1)) (map vector _ o))
+           false))
+  ,#+clj (isEmpty
+         [_] false)
+  ,#+clj (iterator
+         [_] (.iterator ^java.util.Collection
+                        (list m00 m01 m02 m10 m11 m12)))
+  ,#+clj (toArray
+         [_] (object-array _))
+  ,#+clj (size [_] 6)
+  ,#+clj (length [_] 6)
+
   Object
   (toString
-   [_] (str \[ (apply str (interpose \space [m00 m01 m02 m10 m11 m12])) \]))
+   [_] (apply str (concat "[" (interpose \space _) "]")))
 #+END_SRC
 
 **** PMathOps
@@ -160,16 +238,83 @@ define some macros to simplify them.
 
 **** TODO Clojure protocols
 #+BEGIN_SRC clojure :noweb-ref mat44
+  ,#+clj java.util.Collection
+  ,#+clj clojure.lang.IPersistentCollection
+  ,#+clj clojure.lang.IPersistentVector
+  ,#+clj clojure.lang.ISeq
+  ,#+clj clojure.lang.Seqable
+  ,#+clj clojure.lang.Sequential
+  ,#+clj clojure.lang.IHashEq
+  ,#+cljs ISequential
+  ,#+cljs ISeq
+  ,#+cljs ISeqable
+  ,#+cljs INext
+  ,#+cljs ICounted
+  ,#+cljs ICollection
+  ,#+cljs IEquiv
+  ,#+cljs IHash
+  ,#+clj (empty [_] (err/unsupported!))
+  (#+clj count #+cljs -count [_] 16)
+  (#+clj seq   #+cljs -seq   [_] _)
+  (#+clj more  #+cljs -rest  [_] (next _))
+  (#+clj first #+cljs -first [_] m00)
+  (#+clj next  #+cljs -next
+         [_] (seq [m01 m02 m03
+                   m10 m11 m12 m13
+                   m20 m21 m22 m23
+                   m30 m31 m32 m33]))
+  (#+clj cons  #+cljs -conj
+         [_ x]
+         [m00 m01 m02 m03
+          m10 m11 m12 m13
+          m20 m21 m22 m23
+          m30 m31 m32 m33 x])
+  (#+clj nth   #+cljs -nth [_ k]
+         (if (m/in-range? 0 15 k)
+           (case (int k)
+             0 m00  1 m01  2 m02  3 m03
+             4 m10  5 m11  6 m12  7 m13
+             8 m20  9 m21  10 m22 11 m23
+             12 m30 13 m31 14 m32 15 m33)
+           (err/illegal-arg! k)))
+  (#+clj nth   #+cljs -nth [_ k nf]
+         (if (m/in-range? 0 15 k)
+           (case (int k)
+             0 m00  1 m01  2 m02  3 m03
+             4 m10  5 m11  6 m12  7 m13
+             8 m20  9 m21  10 m22 11 m23
+             12 m30 13 m31 14 m32 15 m33)
+           nf))
+  (#+clj equiv  #+cljs -equiv [_ o]
+         (if (and (sequential? o) (= 16 (count o)))
+           (every? #(= (% 0) (% 1)) (map vector _ o))
+           false))
+  (#+clj hasheq #+cljs -hash  [_] (hash-coll _))
+
+  ,#+clj (hashCode [_] (hash-coll* _))
+  ,#+clj (equals
+         [_ o]
+         (if (and (sequential? o) (= 16 (count o)))
+           (every? #(clojure.lang.Util/equals (% 0) (% 1)) (map vector _ o))
+           false))
+
+  ,#+clj (isEmpty
+         [_] false)
+  ,#+clj (iterator
+         [_] (.iterator ^java.util.Collection
+                        (list m00 m01 m02 m03
+                              m10 m11 m12 m13
+                              m20 m21 m22 m23
+                              m30 m31 m32 m33)))
+  ,#+clj (toArray
+         [_] (object-array _))
+  ,#+clj (size [_] 16)
+  ,#+clj (length [_] 16)
+
   Object
   (toString
    [_]
-   (str
-    \[
-    (apply str (interpose \space [m00 m01 m02 m03    ;; FIXME replace with (seq _)
-                                  m10 m11 m12 m13
-                                  m20 m21 m22 m23
-                                  m30 m31 m32 m33]))
-    \]))
+   (apply str (concat "[" (interpose \space _) "]")))
 #+END_SRC
 
 **** PMathOps
@@ -521,6 +666,7 @@ define some macros to simplify them.
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
+     [thi.ng.common.error :as err]
      ,#+clj [thi.ng.macromath.core :as mm]
      ,#+clj [thi.ng.geom.core.macros :as gmc])
     ,#+cljs
@@ -530,6 +676,8 @@ define some macros to simplify them.
     ,#+clj
     (:import
      [thi.ng.geom.core.vector Vec2 Vec3]))
+
+  <<proto-helpers>>
 
   <<mat32>>
 
