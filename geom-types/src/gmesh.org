@@ -329,6 +329,7 @@ located on the rotation axis.
 
 *** PNormalAccess
 #+BEGIN_SRC clojure :noweb-ref impl
+  g/PNormalAccess
   (face-normals
    [_] (or (:fnormals _) (:fnormals (g/compute-face-normals _))))
   (vertex-normals
