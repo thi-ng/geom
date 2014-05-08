@@ -191,24 +191,6 @@ located on the rotation axis.
 
 ** TODO Tessellation
 #+BEGIN_SRC clojure :noweb-ref tessellate
-  (defn tessellate-face
-    [f]
-    (condp = (count f)
-      3 [f]
-      4 (let [[a b c d] f] [[a b c] [a c d]])
-      (gu/tessellate-with-point f)))
-  
-  (defn tessellate-face4
-    [f]
-    (if (<= (count f) 4) [f] (gu/tessellate-with-point f)))
-  
-  (defn tessellate-face1
-    [f]
-    (if (> (count f) 3)
-      (let [[v0 & more] f]
-        (map (fn [[a b]] [v0 a b]) (d/successive-nth 2 more)))
-      [f]))
-  
   (defn map-faces
     "Applies f to all faces of given mesh and adds resulting faces to
     new mesh. Thus f should return a seq of faces. Returns new mesh."
@@ -226,7 +208,7 @@ located on the rotation axis.
   g/PArea
   (area
    [_] (->> (:faces _)
-            (r/mapcat tessellate-face1)
+            (r/mapcat gu/tessellate-with-first)
             (r/map #(->> % (apply gu/tri-area3) m/abs))
             (r/fold +)))
 #+END_SRC
@@ -379,7 +361,7 @@ located on the rotation axis.
   g/PTessellate
   (tessellate
    ([_] (g/tessellate _ {}))
-   ([_ {:keys [fn] :or {fn tessellate-face1}}]
+   ([_ {:keys [fn] :or {fn gu/tessellate-with-first}}]
       (map-faces fn _)))
 #+END_SRC
 
@@ -419,7 +401,7 @@ See [[file:triangle.org::*Triangle3][signed volume implementation of Triangle3]]
   (volume
    [_]
    (->> (:faces _)
-        (r/mapcat tessellate-face1)
+        (r/mapcat gu/tessellate-with-first)
         (r/map (fn [[a b c]] (g/dot a (g/cross b c))))
         (r/fold +)
         (* (/ 6.0))))

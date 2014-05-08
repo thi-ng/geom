@@ -253,7 +253,7 @@ function returns a lazyseq of triangles of the subdivided quad.
    ([{[a b c d] :points}]
       [(thi.ng.geom.types.Triangle3. [a b c])
        (thi.ng.geom.types.Triangle3. [a c d])])
-   ([_ {tess-fn :fn :or {tess-fn gm/tessellate-face1} :as opts}]
+   ([_ {tess-fn :fn :or {tess-fn gu/tessellate-with-first} :as opts}]
       (->> (g/subdivide _ opts)
            (mapcat #(tess-fn (:points %)))
            (map #(thi.ng.geom.types.Triangle3. %)))))
