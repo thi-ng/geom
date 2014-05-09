@@ -1,20 +1,24 @@
-#+SETUPFILE: setup.org
+#+SETUPFILE: ../../src/setup.org
 
-* Namespace: thi.ng.geom.meshops
+* Namespace: thi.ng.geom.mesh.ops                                       :fix:
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/meshops.cljx :mkdirp yes :padline no
-  (ns thi.ng.geom.meshops
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/ops.cljx :mkdirp yes :padline no
+  (ns thi.ng.geom.mesh.ops
     (:require
      [thi.ng.common.math.core :as m]
-     [thi.ng.geom.core :as g :refer [vec2 vec3]]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.line :as l]
-     [thi.ng.geom.mesh :as mesh]
+     [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.spatialtree :as st]
+     [thi.ng.geom.types.utils :as tu]
      [clojure.set :as set]))
 #+END_SRC
+
 ** Utilities
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/meshops.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/ops.cljx
   (defn find-in-tree
     "Returns the first item in the bounding box with size `eps` surrounding `p` in the given octree."
     [t eps half-eps p]
@@ -23,7 +27,7 @@
   
   (defn unique-point-tree
     [points eps]
-    (let [{[bx by bz] :p [sx sy sz] :size} (g/bounding-box* points)
+    (let [{[bx by bz] :p [sx sy sz] :size} (tu/bounding-box points)
           eps (vec3 eps)
           eps2 (g/* eps 0.5)
           [tree dupes]
@@ -39,10 +43,10 @@
   (defn collapse-edges
     [m eps]
     (reduce
-      (fn[m e] (if (get-in m [:edges e]) (g/merge-vertices m (first e) (second e)) m))
+      (fn [m e] (if (get-in m [:edges e]) (gm/merge-vertices* m (first e) (second e)) m))
       m
       (filter
-        (fn [e] (let [[a b] (vec e)] (< (g/dist-squared a b) eps)))
+        (fn [e] (let [[a b] (seq e)] (< (g/dist-squared a b) eps)))
         (keys (:edges m)))))
   
   (defn unify-vertices
@@ -52,32 +56,32 @@
           eps2 (g/* eps 0.5)
           lookup #(find-in-tree octree eps eps2 %)]
       [(reduce
-         (fn [m [a b c]] (mesh/add-face m [(lookup a) (lookup b) (lookup c)]))
-         (mesh/mesh3) faces)
+         (fn [m [a b c]] (g/add-face m [(lookup a) (lookup b) (lookup c)]))
+         (gm/gmesh) faces)
        dupes]))
   
   (defn make-watertight
     [{:keys [vertices edges] :as m} eps]
-    (let [split-face (fn[v e [fa fb fc :as f]]
+    (let [split-face (fn [v e [fa fb fc :as f]]
                        (cond
                          (= e #{fa fb}) [f [fa v fc] [v fb fc]]
                          (= e #{fb fc}) [f [fa fb v] [v fc fa]]
                          :default [f [fc v fb] [v fa fb]]))
-          update-face (fn[m [f f1 f2]]
+          update-face (fn [m [f f1 f2]]
                        (-> (g/remove-face m f)
-                           (mesh/add-face f1)
-                           (mesh/add-face f2)))]
+                           (g/add-face f1)
+                           (g/add-face f2)))]
       (reduce
         (fn [m v]
-          (let [vedges (into #{} (map (fn[n] #{v n}) (g/vertex-neighbors m v)))
-                coeff #(l/closest-point-coeff* v % %2)
+          (let [vedges (into #{} (map (fn [n] #{v n}) (g/vertex-neighbors m v)))
+                coeff #(gu/closest-point-coeff v % %2)
                 v-on-edge? (fn [a b]
                              (let [t (coeff a b)
                                    p (if (m/in-range? 0.01 0.99 t) (g/mix a b t))]
                                (if (and p (< (g/dist-squared v p) eps)) p)))]
             (loop [edges (set/difference (into #{} (keys (:edges m))) vedges)]
               (if-let [e (first edges)]
-                (let [[a b] (vec e) p (v-on-edge? a b)]
+                (let [[a b] (seq e) p (v-on-edge? a b)]
                   (if p
                     (reduce update-face m (map #(split-face v e %) (get-in m [:edges e])))
                     (recur (rest edges))))

@@ -1,6 +1,6 @@
 #+SETUPFILE: ../../src/setup.org
 
-* thi.ng.geom.meshio
+* thi.ng.geom.mesh.io
 ** TODO make CLJS compatible
 
 ** Configuration parameters
@@ -144,8 +144,8 @@
 #+END_SRC
 
 ** Complete namespace definition
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/meshio.cljx :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.meshio
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/io.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.mesh.io
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]

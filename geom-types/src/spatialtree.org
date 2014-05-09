@@ -1,18 +1,25 @@
-#+SETUPFILE: setup.org
+#+SETUPFILE: ../../src/setup.org
 
 * Namespace: thi.ng.geom.spatialtree
+
 ** Namespace declaration
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx :mkdirp yes :padline no
   (ns thi.ng.geom.spatialtree
     (:require
-     [thi.ng.common.math.core :refer [*eps* delta=]]
-     [thi.ng.geom.core :as g :refer [vec2 vec3]]
-     [thi.ng.geom.rect :as r]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as a]
-     [thi.ng.geom.types])
-    ,#+clj (:import [thi.ng.geom.types Rect AABB]))
+     [thi.ng.geom.rect :as r]
+     [thi.ng.geom.types]
+     [thi.ng.geom.types.utils :as tu]
+     [thi.ng.common.math.core :refer [*eps* delta=]])
+    ,#+clj (:import [thi.ng.geom.types AABB Rect2]))
 #+END_SRC
+
 ** Tree operations
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   (defn path-for-point
     "Returns depth-first seq of nodes for given point."
@@ -55,7 +62,9 @@
                 (recur parents))))))
       root))
 #+END_SRC
+
 ** Tree selectors
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   (defn select-with
     "Produces a vector of points in the tree within a given region.
@@ -103,8 +112,11 @@
   (defn lazy-select-with-shape
     [s q] (lazy-select-with* #(g/intersect-shape s %) #(g/contains-point? s %) [q]))
 #+END_SRC
+
 ** Tree implementations
+
 *** Quadtree implementation
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   (deftype MutableQuadtreeNode
       ,#+clj [^double x ^double y ^double w ^double h
@@ -151,7 +163,7 @@
           bounds
           (do (set! bounds
                     (thi.ng.geom.types.Rect.
-                     (g/vec2 x y) (* w 2.0) (* h 2.0))) bounds)))
+                     (vec2 x y) (* w 2.0) (* h 2.0))) bounds)))
   
       Object
       (toString [_] (str "#thi.ng.geom.spatialtree.MutableQuadtreeNode"
@@ -159,7 +171,9 @@
                          " :children " (pr-str children)
                          " :p " (pr-str point) "}")))
 #+END_SRC
+
 *** Octree implementation
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   (deftype MutableOctreeNode
       ,#+clj [^double x ^double y ^double z ^double w ^double h ^double d
@@ -218,14 +232,19 @@
                          " :children " (pr-str children)
                          " :p " (pr-str point) "}")))
 #+END_SRC
+
 *** Override print methods
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   #+clj (require 'clojure.pprint)
   #+clj (defmethod print-method MutableQuadtreeNode [o ^java.io.Writer w] (.write w (.toString o)))
   #+clj (defmethod print-method MutableOctreeNode [o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
+
 ** Constructors
+
 *** Quadtree
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   (defn quadtree
     "Create a new quadtree root node with the given XY position & dimensions."
@@ -239,7 +258,9 @@
     ([x y w h]
        (MutableQuadtreeNode. x y (* 0.5 w) (* 0.5 h) nil nil nil)))
 #+END_SRC
+
 *** Octree
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   (defn octree
     "Create a new octree root node with the given XYZ position & dimensions."
@@ -253,7 +274,9 @@
     ([x y z w h d]
        (MutableOctreeNode. x y z (* 0.5 w) (* 0.5 h) (* 0.5 d) nil nil nil)))
 #+END_SRC
+
 ** Examples
+
 #+BEGIN_SRC clojure
   (def q (time (reduce add-point (quadtree 0 0 100 100) [[55 10] [25 10] [55 11] [52 11]])))
   (def o (time (reduce add-point (octree 0 0 0 100 100 100) [[55 10 25] [25 10 55] [55 11 25]])))

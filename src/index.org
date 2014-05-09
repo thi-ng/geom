@@ -35,14 +35,14 @@ the rest of the library is built on, currently:
 | Line2          | Line3                     |
 | LineStrip2     | LineStrip3 (TBD)          |
 | Bezier2        | Bezier3 (TBD)             |
-| Circle         | Sphere                    |
-| Ellipse (TBD)  | Ellipsoid (TBD)           |
-| Rect           | AABB                      |
+| Circle2        | Sphere                    |
+| Ellipse2 (TBD) | Ellipsoid (TBD)           |
+| Rect2          | AABB                      |
 | Quad2 (TBD)    | Quad3                     |
 |                | Tetrahedron               |
 | Triangle2      | Triangle3                 |
-| Polygon        | Polygon3 (TBD)            |
-| Path           | Path3 (TBD)               |
+| Polygon2       | Polygon3 (TBD)            |
+| Path2          | Path3 (TBD)               |
 |                | Plane                     |
 |                | GMesh                     |
 | Point quadtree | Point octree              |
@@ -89,6 +89,37 @@ Furthermore, providing all functionality under a common API for both
 Clojure & Clojurescript, makes it trivial to offload heavy operations
 (e.g. large mesh processing) to the server side.
 
+** Library module structure
+
+For the upcoming 0.3.0 release, the project has been restructured into
+a number of modules, each addressing a different level of abstraction
+and to group namespaces based on functionality. This reduces potential
+code bloat for CLJS applications, but should also make it less
+daunting for newcomers to navigate the project.
+
+*** [[file:~/work/clj/thing/geom/geom-core/src/index.org][geom-core]]
+
+This module forms the library's core and is required by all others. It
+defines approx. 50 protocols and provides implementations of
+fundamental geometry types/functions like 2d/3d vector algebra,
+matrices, quaternion (and related convenience constructors &
+conversions) and a number of often needed utility functions to deal
+with point collections, normals, sampling, triangles etc.
+
+*** [[file:../geom-types/src/index.org][geom-types]]
+
+This module defines all high-level 2d/3d data types and
+implementations of the various core protocols for each. From a user
+perspective this module should be considered part of the core, however
+it's been split out to dramatically reduce code size for use cases
+where only vectors/matrix ops are needed.
+
+*** [[file:../geom-meshops/src/index.org][geom-meshops]]
+
+This module provides several tools & operations related to working
+with meshes, incl. I/O, subdivisions, triangulation, cleaning,
+CSG/Boolean mesh merge etc.
+
 ** Status
 
 The project has been in development since late 2011 and is currently
@@ -100,16 +131,21 @@ can be considered stable for basic use cases.
 
 A full test suite, website & tutorials are actively being worked on.
 Right now, focus of development is on features required for my
-[[https://devart.withgoogle.com/#/project/16501507][Google DevArt commission]] and a generative design workshop at [[http://resonate.io][Resonate]],
-beginning of April.
+[[https://devart.withgoogle.com/#/project/16501507][Google DevArt commission]].
 
 ** Example usage
 
-The examples below show some common usage patterns how entities can be
-created, dissected & transformed in a very functional way. Each
-results in a 3D model file in Stanford PLY format and can then be
-imported into other 3D software. If you need a simple mesh viewer, we
-recommend [[http://meshlab.sf.net][Meshlab]].
+A preliminary list of other projects using this library:
+
+- [[http://github.com/learn-postspectacular/resonate-2014-workshop][Resonate 2014 workshop]]
+- [[http://github.com/thi-ng/luxor][Luxor]]
+- [[http://github.com/thi-ng/morphogen][Morphogen]]
+
+The basic examples below show some common usage patterns how entities
+can be created, dissected & transformed in a very functional/pipelined
+way. Each results in a 3D model file in PLY/STL formats and can
+then be imported into other 3D software. If you need a simple mesh
+viewer, we recommend [[http://meshlab.sf.net][Meshlab]].
 
 #+BEGIN_SRC clojure
   (require
@@ -119,7 +155,7 @@ recommend [[http://meshlab.sf.net][Meshlab]].
    '[thi.ng.geom.polygon :as p]
    '[thi.ng.geom.rect :as r]
    '[thi.ng.geom.gmesh :as gm]
-   '[thi.ng.geom.meshio :as mio]
+   '[thi.ng.geom.mesh.io :as mio]
    '[thi.ng.common.math.core :as m]
    '[clojure.java.io :as io])
   
@@ -131,10 +167,10 @@ recommend [[http://meshlab.sf.net][Meshlab]].
                (g/extrude-shell                      ;; convert into walled, cylindrical mesh
                 {:depth (m/random 0.25 2)
                  :wall 0.1})))
-         (reduce g/into-mesh)                        ;; combine into single mesh
+         (reduce g/into)                             ;; combine into single mesh
          (mio/write-ply out)))                       ;; output as Stanford PLY file
   
-  (with-open [out (io/output-stream "pedals.ply")]
+  (with-open [out (io/output-stream "pedals.stl")]
     (let [pedal (-> (r/rect 100 60)                  ;; create rect 100x60 wide
                     (g/vertices)                     ;; get corner points
                     (b/auto-spline2 true)            ;; convert to spline
@@ -150,8 +186,8 @@ recommend [[http://meshlab.sf.net][Meshlab]].
                        (g/translate 0 0 (* i 2))
                        (g/rotate-z (* i m/PHI 0.5))  ;; Φ = golden ratio angle
                        (g/rotate-x (* m/PI 0.1)))))));; slight tilt to minimize overlap
-           (reduce g/into-mesh)                      ;; combine into single mesh
-           (mio/write-ply out))))                    ;; output as Stanford PLY file
+           (reduce g/into)                           ;; combine into single mesh
+           (mio/write-stl out))))                    ;; output as Stanford PLY file
 #+END_SRC
 
 ** Building & testing this project
@@ -165,25 +201,32 @@ edit its path in =tangle.sh=):
 #+BEGIN_SRC bash
   git clone https://github.com/thi-ng/geom.git
   cd geom
-  ./tangle.sh src/*.org test/*.org
+
+  # tangle all modules...
+  ./tangle-all.sh
+
+  # ...or just tangle an individual module
+  ./tangle.sh geom-core/src/*.org geom-core/test/*.org
+
+  # ...or an individual file
+  ./tangle.sh geom-core/src/utils.org
 #+END_SRC
 
 Tangling is the process of extracting & combining source blocks from
 =.org= files into an actual working project/source tree. This project
-currently consists of 26 namespaces and 6500+ lines of code, the
+currently consists of 30 namespaces and 6800+ lines of code, the
 tangling of which takes approx. 20 secs.
 
 Once tangling is complete, you can =cd= into the generated project
-directory (=babel= in this case) and then use =lein= as usual.
+directory of a module (=babel= in this case) and then use =lein= as usual.
 
 *** Testing
 
-The =project.clj= file defines an alias to trigger a complete build &
-tests for both CLJ & CLJS versions. The are ~570 test cases for
-Clojure and approx. 270 for Clojurescript so far.
+The =project.clj= files of each module define an alias to trigger a
+complete build & tests for both CLJ & CLJS versions.
 
 #+BEGIN_SRC bash
-  cd babel
+  cd <<module-name>>/babel
   lein cleantest # some tests currently fail due to still missing protocol impls
 #+END_SRC
 
@@ -194,26 +237,19 @@ further experimentation in the browser.
 
 *** Working with the REPL
 
-Since the generated =project.clj= (see below) includes REPL hooks for
-CLJX, editing files in Org-mode, then re-loading & testing changes is
-quite trivial. Simply launch a REPL (via lein or Emacs) as usual.
-Everytime you've made changes to an =.org= file, re-tangle it from Emacs
-or =tangle.sh=, then reload the namespace in the REPL via =(require
-'thi.ng.geom... :reload)= or similar.
+Since the generated =project.clj= files include REPL hooks
+for CLJX, editing files in Org-mode, then re-loading & testing changes
+is quite trivial. Simply launch a REPL (via lein or Emacs) as usual.
+Everytime you've made changes to an =.org= file, re-tangle it from
+Emacs or =tangle.sh=, then reload the namespace in the REPL via
+=(require 'thi.ng.geom... :reload)= or similar.
 
 ** Injected properties                                             :noexport:
-#+BEGIN_SRC clojure :exports none :noweb-ref version
-0.3.0-SNAPSHOT
+
+#+BEGIN_SRC clojure :exports none :noweb-ref project-name
+thi.ng/geom
 #+END_SRC
-#+BEGIN_SRC clojure :exports none :noweb-ref project-url
-https://github.com/thi-ng/geom
-#+END_SRC
-#+BEGIN_SRC clojure :exports none :noweb-ref gen-source-path
-target/classes
-#+END_SRC
-#+BEGIN_SRC clojure :exports none :noweb-ref gen-test-path
-target/test-classes
-#+END_SRC
+
 #+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref cljs-artefact-path
 target/geom-<<version>>.js
 #+END_SRC
@@ -222,45 +258,6 @@ target/geom-<<version>>.js
 
 This project is open source and licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache Software License 2.0]].
 
-** Dependencies
-*** Runtime
-**** [[https://github.com/clojure/clojure][Clojure]]
-#+BEGIN_SRC clojure :noweb-ref dep-clj
-[org.clojure/clojure "1.6.0"]
-#+END_SRC
-**** [[https://github.com/clojure/clojurescript][ClojureScript]]
-#+BEGIN_SRC clojure :noweb-ref dep-cljs
-[org.clojure/clojurescript "0.0-2197"]
-#+END_SRC
-**** [[https://github.com/thi-ng/common/][thi.ng/common]]
-#+BEGIN_SRC clojure :noweb-ref dep-common
-[thi.ng/common "0.1.2"]
-#+END_SRC
-**** [[https://github.com/thi-ng/macromath][thi.ng/macromath]]
-#+BEGIN_SRC clojure :noweb-ref dep-mmath
-[thi.ng/macromath "0.2.1"]
-#+END_SRC
-*** Development
-**** [[https://github.com/lynaghk/cljx][Cljx]]
-#+BEGIN_SRC clojure :noweb-ref dep-cljx
-[com.keminglabs/cljx "0.3.2"]
-#+END_SRC
-**** [[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]
-#+BEGIN_SRC clojure :noweb-ref dep-cljsbuild
-[lein-cljsbuild "1.0.2"]
-#+END_SRC
-**** [[https://github.com/hugoduncan/criterium][Criterium]]
-#+BEGIN_SRC clojure :noweb-ref dep-criterium
-[criterium "0.4.1"]
-#+END_SRC
-**** [[https://github.com/cemerick/austin][Austin]]
-#+BEGIN_SRC clojure :noweb-ref dep-austin
-[com.cemerick/austin "0.1.4"]
-#+END_SRC
-**** [[https://github.com/cemerick/clojurescript.test][clojurescript.test]]
-#+BEGIN_SRC clojure :noweb-ref dep-cljs-test
-[com.cemerick/clojurescript.test "0.2.2"]
-#+END_SRC
 ** Release history
 
 | *Version* | *Released* | *Description*      | *Lein coordinates*      | *Tagged Github URL*                       |
@@ -280,17 +277,18 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 
 ** Leiningen project file                                          :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
-  (defproject thi.ng/geom "<<version>>"
-    :description "thi.ng geometry kit"
-    :url "<<project-url>>"
+  (defproject <<project-name>> "<<conf-version>>"
+    :description "thi.ng geometry kit - meta project spec including all modules"
+    :url "<<conf-project-url>>"
     :license {:name "Apache Software License"
               :url "http://www.apache.org/licenses/LICENSE-2.0"}
     :dependencies [<<dep-clj>>
-                   <<dep-common>>
-                   <<dep-mmath>>]
-  
+                   <<dep-geom-core>>
+                   <<dep-geom-types>>
+                   <<dep-geom-meshops>>]
+
     :source-paths ["src/cljx"]
-    :test-paths ["<<gen-test-path>>"]
+    :test-paths ["<<conf-gen-test-path>>"]
   
     :profiles {:dev {:dependencies [<<dep-cljs>>
                                     <<dep-criterium>>]
@@ -302,92 +300,30 @@ This project is open source and licensed under the [[http://www.apache.org/licen
                      :aliases {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]}}}
   
     :cljx {:builds [{:source-paths ["src/cljx"]
-                     :output-path "<<gen-source-path>>"
+                     :output-path "<<conf-gen-source-path>>"
                      :rules :clj}
                     {:source-paths ["src/cljx"]
-                     :output-path "<<gen-source-path>>"
+                     :output-path "<<conf-gen-source-path>>"
                      :rules :cljs}
                     {:source-paths ["test/cljx"]
-                     :output-path "<<gen-test-path>>"
+                     :output-path "<<conf-gen-test-path>>"
                      :rules :clj}
                     {:source-paths ["test/cljx"]
-                     :output-path "<<gen-test-path>>"
+                     :output-path "<<conf-gen-test-path>>"
                      :rules :cljs}]}
   
-    :cljsbuild {:builds [{:source-paths ["<<gen-source-path>>" "<<gen-test-path>>"]
+    :cljsbuild {:builds [{:source-paths ["<<conf-gen-source-path>>" "<<conf-gen-test-path>>"]
                           :id "simple"
                           :compiler {:output-to "<<cljs-artefact-path>>"
                                      :optimizations :whitespace
                                      :pretty-print true}}]
-                :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}})
+                :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}}
+
+    :pom-addition [:developers [:developer
+                                [:name "Karsten Schmidt"]
+                                [:url "http://postspectacular.com"]
+                                [:timezone "0"]]])
 #+END_SRC
 
-** ClojureScript HTML harness                                      :noexport:
-#+BEGIN_SRC html :tangle ../babel/index.html :noweb yes :mkdirp yes :padline no
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <title><<lein-coords>> test</title>
-    </head>
-    <body>
-      <script type="text/javascript" src="<<cljs-artefact-path>>"></script>
-    </body>
-  </html>
-#+END_SRC
 
-** Accessing library version during runtime
 
-The autogenerated namespace =thi.ng.geom.version= contains a single
-symbol =version= holding the version string defined above:
-
-#+BEGIN_SRC clojure :noweb yes
-  (use 'thi.ng.geom.version)
-  
-  (prn version)
-  ; "<<version>>"
-#+END_SRC
-*** Version namespace                                              :noexport:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/version.cljx :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.version)
-  (def ^:const version "<<version>>")
-#+END_SRC
-
-* Modules
-
-*** Note for Github users
-
-The following sections contain links to project modules, but are not
-visibile when reading this file on Github. Please navigate to the
-source files via the normal [[https://github.com/thi-ng/geom/tree/master/][GH repo browser]].
-
-** Core API
-
-#+INCLUDE: "core.org" :minlevel 2
-
-** Geometric entities
-
-#+INCLUDE: "aabb.org" :minlevel 2
-#+INCLUDE: "bezier.org" :minlevel 2
-#+INCLUDE: "circle.org" :minlevel 2
-#+INCLUDE: "gmesh.org" :minlevel 2
-#+INCLUDE: "line.org" :minlevel 2
-#+INCLUDE: "mesh.org" :minlevel 2
-#+INCLUDE: "path.org" :minlevel 2
-#+INCLUDE: "plane.org" :minlevel 2
-#+INCLUDE: "polygon.org" :minlevel 2
-#+INCLUDE: "rect.org" :minlevel 2
-#+INCLUDE: "sphere.org" :minlevel 2
-#+INCLUDE: "triangle.org" :minlevel 2
-
-** Geometric operations
-
-#+INCLUDE: "delaunay.org" :minlevel 2
-
-** Geometry IO
-
-#+INCLUDE: "meshio.org" :minlevel 2
-
-* Tests
-
-#+INCLUDE: "../test/core.org" :minlevel 2
-#+INCLUDE: "../test/protocols.org" :minlevel 2

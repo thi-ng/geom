@@ -1,6 +1,6 @@
 #+SETUPFILE: ../../src/setup.org
 
-* Namespace: thi.ng.geom.csg.core
+* Namespace: thi.ng.geom.mesh.csg
 
 ** Helper functions
 #+BEGIN_SRC clojure :noweb-ref helpers
@@ -276,8 +276,8 @@
 #+END_SRC
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/csg/core.cljx :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.csg.core
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/csg.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.mesh.csg
     ,#+cljs
     (:require-macros
      [thi.ng.macromath.core :as mm])
