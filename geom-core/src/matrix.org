@@ -35,19 +35,17 @@ define some macros to simplify them.
      1 coll))
 
   ,#+clj
-  (defn- hash-coll
+  (defn- hash-matrix
     [coll]
     (mix-collection-hash (hash-coll* coll) (count coll)))
 
   ,#+cljs
-  (defn- hash-coll
+  (defn- hash-matrix
     [coll]
-    (if (seq coll)
-      (loop [res (hash (first coll)) s (next coll)]
-        (if (nil? s)
-          res
-          (recur (hash-combine res (hash (first s))) (next s))))
-      0))
+    (loop [res (hash (first coll)) s (next coll)]
+      (if (nil? s)
+        res
+        (recur (hash-combine res (hash (first s))) (next s)))))
 #+END_SRC
 ** Matrix implementations
 *** 3x2 Matrix (Affine 2D transform)
@@ -68,20 +66,24 @@ define some macros to simplify them.
   ,#+clj clojure.lang.Sequential
   ,#+clj clojure.lang.IHashEq
   ,#+cljs ISequential
-  ,#+cljs ISeq
-  ,#+cljs ISeqable
-  ,#+cljs INext
-  ,#+cljs ICounted
-  ,#+cljs ICollection
-  ,#+cljs IEquiv
-  ,#+cljs IHash
   ,#+clj (empty [_] (err/unsupported!))
+
+  ,#+cljs ICounted
   (#+clj count #+cljs -count [_] 6)
+
+  ,#+cljs ISeqable
   (#+clj seq   #+cljs -seq   [_] _)
+
+  ,#+cljs ISeq
   (#+clj more  #+cljs -rest  [_] (next _))
   (#+clj first #+cljs -first [_] m00)
+  ,#+cljs INext
   (#+clj next  #+cljs -next  [_] (seq [m01 m02 m10 m11 m12]))
+
+  ,#+cljs ICollection
   (#+clj cons  #+cljs -conj  [_ x] [m00 m01 m02 m10 m11 m12 x])
+
+  ,#+cljs IIndexed
   (#+clj nth   #+cljs -nth [_ k]
          (if (m/in-range? 0 5 k)
            (case (int k)
@@ -92,11 +94,15 @@ define some macros to simplify them.
            (case (int k)
              0 m00 1 m01 2 m02 3 m10 4 m11 5 m12)
            nf))
+
+  ,#+cljs IEquiv
   (#+clj equiv  #+cljs -equiv [_ o]
          (if (and (sequential? o) (= 6 (count o)))
            (every? #(= (% 0) (% 1)) (map vector _ o))
            false))
-  (#+clj hasheq #+cljs -hash  [_] (hash-coll _))
+
+  ,#+cljs IHash
+  (#+clj hasheq #+cljs -hash  [_] (hash-matrix _))
 
   ,#+clj (hashCode [_] (hash-coll* _))
   ,#+clj (equals
@@ -246,29 +252,33 @@ define some macros to simplify them.
   ,#+clj clojure.lang.Sequential
   ,#+clj clojure.lang.IHashEq
   ,#+cljs ISequential
-  ,#+cljs ISeq
-  ,#+cljs ISeqable
-  ,#+cljs INext
-  ,#+cljs ICounted
-  ,#+cljs ICollection
-  ,#+cljs IEquiv
-  ,#+cljs IHash
   ,#+clj (empty [_] (err/unsupported!))
+
+  ,#+cljs ICounted
   (#+clj count #+cljs -count [_] 16)
+
+  ,#+cljs ISeqable
   (#+clj seq   #+cljs -seq   [_] _)
+
+  ,#+cljs ISeq
   (#+clj more  #+cljs -rest  [_] (next _))
   (#+clj first #+cljs -first [_] m00)
+  ,#+cljs INext
   (#+clj next  #+cljs -next
          [_] (seq [m01 m02 m03
                    m10 m11 m12 m13
                    m20 m21 m22 m23
                    m30 m31 m32 m33]))
+
+  ,#+cljs ICollection
   (#+clj cons  #+cljs -conj
          [_ x]
          [m00 m01 m02 m03
           m10 m11 m12 m13
           m20 m21 m22 m23
           m30 m31 m32 m33 x])
+
+  ,#+cljs IIndexed
   (#+clj nth   #+cljs -nth [_ k]
          (if (m/in-range? 0 15 k)
            (case (int k)
@@ -285,11 +295,15 @@ define some macros to simplify them.
              8 m20  9 m21  10 m22 11 m23
              12 m30 13 m31 14 m32 15 m33)
            nf))
+
+  ,#+cljs IEquiv
   (#+clj equiv  #+cljs -equiv [_ o]
          (if (and (sequential? o) (= 16 (count o)))
            (every? #(= (% 0) (% 1)) (map vector _ o))
            false))
-  (#+clj hasheq #+cljs -hash  [_] (hash-coll _))
+
+  ,#+cljs IHash
+  (#+clj hasheq #+cljs -hash  [_] (hash-matrix _))
 
   ,#+clj (hashCode [_] (hash-coll* _))
   ,#+clj (equals
