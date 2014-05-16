@@ -1,30 +1,22 @@
 #+SETUPFILE: ../../src/setup.org
 
-* Namespace: thi.ng.geom.mesh.csg
+* Namespace: thi.ng.geom.csg.core
 
 ** Helper functions
 #+BEGIN_SRC clojure :noweb-ref helpers
-  (defn interpolate-vertex
-    "Linearly interpolates between the 2 vertices
-    (computes both position & normal)."
-    [a b t]
-    (csg-vertex (g/mix (:p a) (:p b) t) (g/mix (:n a) (:n b) t)))
-  
-  (defn flip-vertex
-    "Applies `invert` to the `:n` (normal) value of a vertex."
-    [x] (assoc x :n (g/- (:n x))))
-  
-  (defn flip-poly
-    "Flips the polygon's orientation by reversing its vertex order and
-    inverting all vertex normals and its plane orientation."
-    [{verts :vertices :as poly}]
-    (assoc poly
-      :vertices (loop [flipped [], i (dec (count verts))]
-                  (if (>= i 0)
-                    (recur (conj flipped (flip-vertex (verts i))) (dec i))
-                    flipped))
-      :plane (g/flip (:plane poly))))
-  
+  (defrecord CSGVertex [^thi.ng.geom.core.vector.Vec3 p ^thi.ng.geom.core.vector.Vec3 n]
+    g/PInterpolate
+    (mix [_ v t]
+      (CSGVertex. (g/mix p (:p v) t) (g/mix n (:n v) t)))
+    g/PFlip
+    (flip [_]
+      (CSGVertex. p (g/- n))))
+
+  (defrecord CSGPolygon [plane vertices shared]
+    g/PFlip
+    (flip [_]
+      (CSGPolygon. (g/flip plane) (mapv g/flip vertices) shared)))
+
   (defn compute-split-types
     [n w vertices]
     (let [ieps (- *eps*)]
@@ -34,32 +26,31 @@
                 pt (if (< t ieps) 2 (if (> t *eps*) 1 0))]
             (recur (bit-or ptype pt) (conj types pt) (next vertices)))
           [ptype types]))))
-  
+
   (defn split-poly*
     [n w vertices types]
     (let [nv (count vertices)]
       (loop [f [], b [], i 0]
         (if (< i nv)
           (let [j (rem (inc i) nv)
-                vi (vertices i)
+                vi (nth vertices i)
                 ti (types i)
-                f (if (= ti 2) f (conj f vi))
-                b (if (= ti 1) b (conj b vi))]
+                f (if (== ti 2) f (conj f vi))
+                b (if (== ti 1) b (conj b vi))]
             (if (== 3 (bit-or ti (types j)))
-              (let [vj (vertices j)
+              (let [vj (nth vertices j)
                     p (:p vi)
-                    t (/ (- w (g/dot n p)) (g/dot n (g/- (:p vj) p)))
-                    v (interpolate-vertex vi vj t)]
+                    v (g/mix vi vj (/ (- w (g/dot n p)) (g/dot n (g/- (:p vj) p))))]
                 (recur (conj f v) (conj b v) (inc i)))
               (recur f b (inc i))))
           [f b]))))
-  
+
   (defn split-poly
     "Takes a plane and splits the given polygon with it. Returns a 4-element vector
     of classified sub-shapes: [coplanar-front coplanar-back front back]."
-    [{:keys [n w]} {:keys [vertices plane] :as poly} cp-front cp-back front back]
+    [{:keys [n w]} {:keys [vertices plane] :as poly} [cp-front cp-back front back]]
     (let [[ptype types] (compute-split-types n w vertices)]
-      (condp = ptype
+      (case ptype
         ;; co-planar
         0 (if (pos? (g/dot n (:n plane)))
             [(conj cp-front poly) cp-back front back]
@@ -86,8 +77,7 @@
       ps
       (let [[cp-front cp-back new-front new-back]
             (reduce
-             (fn [[cp-front cp-back front back] poly]
-               (split-poly plane poly cp-front cp-back front back))
+             (fn [state poly] (split-poly plane poly state))
              [[] [] [] []] ps)
             new-front (concat new-front cp-front)
             new-front (if front (clip-polygons front new-front) new-front)
@@ -105,7 +95,7 @@
   (defn invert
     [{:keys [front back plane] :as node}]
     (assoc node
-      :polygons (map flip-poly (:polygons node))
+      :polygons (mapv g/flip (:polygons node))
       :plane (if plane (g/flip plane))
       :front (if back (invert back))
       :back (if front (invert front))))
@@ -118,10 +108,6 @@
       :polygons (clip-polygons b (:polygons a))
       :front (if front (clip front b))
       :back (if back (clip back b))))
-  
-  (defn csg-vertex
-    "Creates a map of a position and normal vector."
-    [p n] {:p p :n n})
   
   (defn csg-plane
     "Creates a plane definition either from a seq of points or
@@ -137,12 +123,10 @@
     computes a plane definition using the first 3 vertices."
     ([vertices] (csg-polygon vertices nil))
     ([vertices shared]
-       {:vertices (vec vertices)
-        :shared shared
-        :plane (csg-plane vertices)}))
+       (CSGPolygon. (csg-plane vertices) (vec vertices) shared)))
   
   (defn csg-node
-    "Creates or refines a new CSG tree node and recursively
+    "Creates a new or refines a CSG tree node and recursively
     adds the given polygons to it."
     ([polygons] (csg-node nil polygons))
     ([{:keys [polygons plane front back] :as node} ps]
@@ -150,8 +134,7 @@
          (let [plane (or plane (:plane (first ps)))
                [cp-front cp-back new-front new-back]
                (reduce
-                (fn [[cp-front cp-back front back] poly]
-                  (split-poly plane poly cp-front cp-back front back))
+                (fn [state poly] (split-poly plane poly state))
                 [[] [] [] []] ps)]
            (assoc node
              :plane plane
@@ -195,7 +178,7 @@
       (map
        (fn [f]
          (let [n (fnormals f)]
-           (csg-polygon (map #(csg-vertex % n) f) nil)))
+           (csg-polygon (map #(CSGVertex. % n) f) nil)))
        faces)))
   
   (defn csg->mesh
@@ -203,49 +186,7 @@
     (->> polygons
          (map #(map :p (:vertices %)))
          (gm/into-mesh (gm/gmesh))))
-  
-  (defn csg-aabb
-    [{:keys [p size] :as b}]
-    (let [[cx cy cz] (g/centroid b)
-          [sx sy sz] (g/* size 0.5)
-          v (fn [c s i mask] (mm/madd s (if (pos? (bit-and i mask)) 1 -1) c))]
-      (map
-       (fn [[verts n]]
-         (csg-polygon
-          (map
-           (fn [i]
-             (csg-vertex
-              (vec3 (v cx sx i 1) (v cy sy i 2) (v cz sz i 4)) n))
-           verts)))
-       [[[0 4 6 2] (vec3 -1 0 0)]
-        [[1 3 7 5] (vec3 1 0 0)]
-        [[0 1 5 4] (vec3 0 -1 0)]
-        [[2 6 7 3] (vec3 0 1 0)]
-        [[0 2 3 1] (vec3 0 0 -1)]
-        [[4 5 7 6] (vec3 0 0 1)]])))
-  
-  (defn csg-sphere
-    [{:keys [p r]} slices stacks]
-    (map
-     (fn [verts]
-       (csg-polygon
-        (map
-         (fn [[u v]]
-           (let [theta (* TWO_PI u)
-                 phi (* PI v)
-                 st (Math/sin theta) ct (Math/cos theta)
-                 sp (Math/sin phi) cp (Math/cos phi)
-                 dir (vec3 (* ct sp) cp (* st sp))]
-             (csg-vertex (g/madd dir r p) dir)))
-         verts)))
-     (for [i (range slices) j (range stacks)
-           :let [u (/ i slices) v (/ j stacks)
-                 u1 (/ (inc i) slices) v1 (/ (inc j) stacks)
-                 verts [[u v]]
-                 verts (if (pos? j) (conj verts [u1 v]) verts)
-                 verts (if (< j (dec stacks)) (conj verts [u1 v1]) verts)]]
-       (conj verts [u v1]))))
-  
+    
   (defn csg-cone
     ([s e radius res] (csg-cone s e radius radius res))
     ([s e r-south r-north res]
@@ -257,14 +198,14 @@
                     (g/cross az)
                     (g/normalize))
              ay (-> ax (g/cross az) g/normalize)
-             vs (csg-vertex s (g/invert az))
-             ve (csg-vertex e az)
+             vs (CSGVertex. s (g/invert az))
+             ve (CSGVertex. e az)
              f (fn [stack i blend r]
                  (let [theta (* m/TWO_PI i)
-                       out (g/madd ax (Math/cos theta) (g/* ay (Math/sin theta)))
-                       norm (g/madd out (- 1.0 (m/abs blend)) (g/* az blend))
-                       pos (g/+ s (g/* dir stack) (g/* out r))]
-                   (csg-vertex pos norm)))
+                       out   (g/madd ax (Math/cos theta) (g/* ay (Math/sin theta)))
+                       norm  (g/madd out (- 1.0 (m/abs blend)) (g/* az blend))
+                       pos   (g/+ s (g/* dir stack) (g/* out r))]
+                   (CSGVertex. pos norm)))
              res (double res)]
          (mapcat
           (fn [i]
@@ -276,8 +217,8 @@
 #+END_SRC
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/csg.cljx :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.mesh.csg
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/csg/core.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.csg.core
     ,#+cljs
     (:require-macros
      [thi.ng.macromath.core :as mm])
@@ -290,7 +231,7 @@
      [thi.ng.common.math.core :as m :refer [PI TWO_PI *eps*]]
      ,#+clj [thi.ng.macromath.core :as mm]))
 
-  (declare csg-vertex csg-polygon)
+  (declare csg-polygon)
 
   <<helpers>>
 
