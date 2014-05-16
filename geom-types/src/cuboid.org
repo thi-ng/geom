@@ -1,25 +1,25 @@
 #+SETUPFILE: ../../src/setup.org
 
-* thi.ng.geom.box
+* thi.ng.geom.cuboid
 
 Unlike an axis-aligned bounding box ([[file:aabb.org][AABB]]), this type specifies a
-freeform box, which can be freely rotated & transformed. An AABB can
-be considered a logical subtype of this type and an AABB can be
-converted into a Box via the =box= constructor function defined in
-this namespace.
+freeform box/cuboid, defined by its 8 vertices and which can be freely
+rotated & transformed. An AABB can be considered a logical subtype of
+this type and an AABB can be converted into a cuboid via the =cuboid=
+constructor function defined in this namespace.
 
 ** Constructors
 #+BEGIN_SRC clojure :noweb-ref ctors
-  (defn box
-    ([] (box 1.0))
+  (defn cuboid
+    ([] (cuboid 1.0))
     ([a b c d e f g h]
-       (thi.ng.geom.types.Box. (mapv vec3 [a b c d e f g h])))
+       (thi.ng.geom.types.Cuboid. (mapv vec3 [a b c d e f g h])))
     ([x]
        (cond
-        (number? x)     (box (vec3) x)
-        (map? x)        (box (:p x) (:size x))
+        (number? x)     (cuboid (vec3) x)
+        (map? x)        (cuboid (:p x) (:size x))
         (sequential? x) (if (== 8 (count x))
-                          (thi.ng.geom.types.Box. (mapv vec3 x))
+                          (thi.ng.geom.types.Cuboid. (mapv vec3 x))
                           (err/illegal-arg!
                            "Wrong number of points, expected 8 but got"
                            (count x)))
@@ -30,15 +30,15 @@ this namespace.
              b (vec3 x1 y1 z2) c (vec3 x2 y1 z2)
              d (vec3 x2 y1 z1) e (vec3 x1 y2 z1)
              f (vec3 x1 y2 z2) h (vec3 x2 y2 z1)]
-         (thi.ng.geom.types.Box. [a b c d e f g h]))))
+         (thi.ng.geom.types.Cuboid. [a b c d e f g h]))))
 #+END_SRC
 
 ** Type specific functions
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn unmap-uvw
-    "Takes a seq of 8 points defining a box and vector of normalized
+    "Takes a seq of 8 points defining a cuboid and vector of normalized
     u,v,w coordinates. Applies trilinear interpolation to compute point
-    within the box:
+    within the cuboid:
     u is coord along AD/BC edge, v along AE/BF, w along AB/DC."
     [[a b c d e f g h] [u v w]]
     (g/mix (g/mix a d e h u v) (g/mix b c f g u v) w))
@@ -47,7 +47,7 @@ this namespace.
 ** Protocol implementations
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  (extend-type thi.ng.geom.types.Box
+  (extend-type thi.ng.geom.types.Cuboid
 #+END_SRC
 
 *** PArea                                                            :verify:
@@ -79,7 +79,7 @@ this namespace.
 
 *** PCenter                                                          :verify:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
-  <<lob-geom-center(type="thi.ng.geom.types.Box", vtype="vec3")>>
+  <<lob-geom-center(type="thi.ng.geom.types.Cuboid", vtype="vec3")>>
   (centroid
    [_] (gu/centroid (:points _)))
 #+END_SRC
@@ -141,7 +141,7 @@ front, back - assuming the vertex order given in the diagram.
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([_ {:keys [flags] :or {flags "nsewfb"}}]
+   ([_ {:keys [mesh flags] :or {flags "nsewfb"}}]
       (let [[a b c d e f g h] (g/vertices _)
             [tp bt rt lf fr bk] (d/demunge-flags-seq flags "nsewfb")]
         (->> [(if fr [b c g f])
@@ -151,7 +151,7 @@ front, back - assuming the vertex order given in the diagram.
               (if tp [e f g h])
               (if bt [a d c b])]
              (filter identity)
-             (gm/into-mesh (gm/gmesh))))))
+             (g/into (or mesh (gm/gmesh)))))))
 #+END_SRC
 
 *** TODO PProximity                                                     :fix:
@@ -181,22 +181,22 @@ front, back - assuming the vertex order given in the diagram.
 
 *** PSubdivide                                                       :verify:
 
-An Box can be subdivided into smaller ones, i.e. to create a seq of
+An Cuboid can be subdivided into smaller ones, i.e. to create a seq of
 uniform grid cells. The following options can be given as a 2nd
 argument map:
 
-| Key       | Description                                                          | Default |
-|-----------+----------------------------------------------------------------------+---------|
-| =:num=    | number of cols/rows/slices the box will be uniformly subdivided into |       1 |
-| =:cols=   | number of times the box will be subdivided along the X-axis          |       1 |
-| =:rows=   | number of times the box will be subdivided along the Y-axis          |       1 |
-| =:slices= | number of times the box will be subdivided along the Z-axis          |       1 |
+| Key       | Description                                                           | Default |
+|-----------+-----------------------------------------------------------------------+---------|
+| =:num=    | number of cols/rows/slices the form will be uniformly subdivided into |       1 |
+| =:cols=   | number of times the form will be subdivided along the X-axis          |       1 |
+| =:rows=   | number of times the form will be subdivided along the Y-axis          |       1 |
+| =:slices= | number of times the form will be subdivided along the Z-axis          |       1 |
 
-When =:num= is given, the resulting boxes will retain the aspect ratio
-of the original. If specified, =:cols=, =:rows= and =:slices= will
-take precedence over =:num=, but the latter will be used as default
-for missing args. Boxes are returned as a lazyseq starting from the
-first vertex of the original with inner sorting over XYZ.
+When =:num= is given, the resulting cuboids will retain the aspect
+ratio of the original. If specified, =:cols=, =:rows= and =:slices=
+will take precedence over =:num=, but the latter will be used as
+default for missing args. Cuboids are returned as a lazyseq starting
+from the first vertex of the original with inner sorting over XYZ.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PSubdivide
@@ -211,7 +211,7 @@ first vertex of the original with inner sorting over XYZ.
                          (map #(m/roundto % *eps*))
                          (vec3)))]
         (for [[w1 w2] rw, [v1 v2] rv, [u1 u2] ru]
-          (thi.ng.geom.types.Box.
+          (thi.ng.geom.types.Cuboid.
            (mapv map-p [[u1 v1 w1] [u1 v1 w2] [u2 v1 w2] [u2 v1 w1]
                         [u1 v2 w1] [u1 v2 w2] [u2 v2 w2] [u2 v2 w1]]))))))
 #+END_SRC
@@ -235,10 +235,10 @@ first vertex of the original with inner sorting over XYZ.
   g/PRotate
   (rotate
    [_ theta] (g/rotate-z _ theta))
-  <<lob-geom-rotate3d(type="thi.ng.geom.types.Box")>>
-  <<lob-geom-scale(type="thi.ng.geom.types.Box")>>
-  <<lob-geom-translate(type="thi.ng.geom.types.Box")>>
-  <<lob-geom-tx(type="thi.ng.geom.types.Box")>>
+  <<lob-geom-rotate3d(type="thi.ng.geom.types.Cuboid")>>
+  <<lob-geom-scale(type="thi.ng.geom.types.Cuboid")>>
+  <<lob-geom-translate(type="thi.ng.geom.types.Cuboid")>>
+  <<lob-geom-tx(type="thi.ng.geom.types.Cuboid")>>
 #+END_SRC
 
 *** TODO PVolume                                                        :fix:
@@ -253,8 +253,8 @@ first vertex of the original with inner sorting over XYZ.
 #+END_SRC
 
 ** Complete namespace definition                                   :noexport:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/box.cljx :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.box
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/cuboid.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.cuboid
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
@@ -269,7 +269,7 @@ first vertex of the original with inner sorting over XYZ.
     ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     ,#+clj
     (:import
-     [thi.ng.geom.types AABB Box Sphere]))
+     [thi.ng.geom.types AABB Cuboid Sphere]))
 
   <<ctors>>
 

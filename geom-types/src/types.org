@@ -68,14 +68,14 @@ positive infinity.
   (defrecord AABB [^Vec3 p size])
 #+END_SRC
 
-*** Box
+*** Cuboid
 
 In addition to the AABB type, we also define a free-form box, merely
 grouping a set of 8 vertices in a specific order (see
 [[file:box.org][type implementation]] for more details).
 
 #+BEGIN_SRC clojure :noweb-ref types3d
-  (defrecord Box [points])
+  (defrecord Cuboid [points])
 #+END_SRC
 
 *** Bezier3
@@ -136,6 +136,7 @@ center point =o= and radius =r=.
 ** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/types.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.types
+    ;;(:refer-clojure :exclude [->Box])
     (:require
       [thi.ng.geom.core.vector])
     ,#+clj (:import [thi.ng.geom.core.vector Vec2 Vec3]))
