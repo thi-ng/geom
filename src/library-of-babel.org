@@ -7,7 +7,9 @@ protocol implementations, which only require minor changes for
 different types.
 
 Some types also make use of more type specific templates, however
-these are defined in their own =.org= files.
+these are defined in their own =.org= files. The template names
+defined here are all using the prefix =lob= to clearly differentiate
+them from other templates.
 
 ** Master template builder
 #+NAME: lob-geom-tpl
