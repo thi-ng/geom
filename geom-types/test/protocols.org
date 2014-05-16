@@ -104,7 +104,7 @@
        thi.ng.geom.types.AABB
        (conj shape-common-3d :isec :prox :subdiv)
 
-       thi.ng.geom.types.Box
+       thi.ng.geom.types.Cuboid
        (conj shape-common-3d :isec :prox :subdiv)
 
        thi.ng.geom.types.Line3
@@ -140,6 +140,7 @@
      [thi.ng.geom.aabb]
      [thi.ng.geom.bezier]
      [thi.ng.geom.circle]
+     [thi.ng.geom.cuboid]
      [thi.ng.geom.gmesh]
      [thi.ng.geom.line]
      [thi.ng.geom.path]
@@ -151,12 +152,7 @@
      [thi.ng.geom.tetrahedron]
      [thi.ng.geom.triangle]
      ,#+clj [clojure.test :refer :all]
-     ,#+cljs [cemerick.cljs.test :as t])
-    ,#+clj
-    (:import
-     [thi.ng.geom.types
-      Line2 LineStrip2 Bezier2 Triangle2 Circle2 Ellipse2 Rect2 Polygon2 Path2 Mesh2
-      Line3 LineStrip3 Bezier3 Plane Triangle3 Tetrahedron Quad3 AABB Sphere Mesh3]))
+     ,#+cljs [cemerick.cljs.test :as t]))
 
   <<helpers>>
 

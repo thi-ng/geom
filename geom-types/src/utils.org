@@ -38,6 +38,7 @@
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.types])
+    ,#+clj
     (:import
      [thi.ng.geom.types Circle2 Rect2 AABB Sphere]))
 
