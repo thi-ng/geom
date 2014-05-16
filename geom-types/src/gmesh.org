@@ -353,7 +353,9 @@ located on the rotation axis.
 *** PMeshConvert
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PMeshConvert
-  (as-mesh [_] _)
+  (as-mesh
+   ([_] _)
+   ([_ opts] (g/into (:mesh opts) (:faces _))))
 #+END_SRC
 
 *** PTessellate

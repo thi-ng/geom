@@ -327,7 +327,9 @@
 **** PMeshConvert                                                       :fix:
 #+BEGIN_SRC clojure :noweb-ref impl2
   g/PMeshConvert
-  (as-mesh [_] (g/add-face (gm/gmesh) (mapv vec3 (:points _))))
+  (as-mesh
+   ([_] (g/as-mesh _ {}))
+   ([_ opts] (g/add-face (or (:mesh opts) (gm/gmesh)) (mapv vec3 (:points _)))))
 #+END_SRC
 **** PPolygonConvert                                            :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
@@ -434,7 +436,9 @@ currently not possible to turn triangles into meshes.
 
 #+BEGIN_SRC clojure :noweb-ref impl3
   g/PMeshConvert
-  (as-mesh [_] (g/add-face (gm/gmesh) (:points _)))
+  (as-mesh
+   ([_] (g/as-mesh _ {}))
+   ([_ opts] (g/add-face (or (:mesh opts) (gm/gmesh)) (:points _))))
 #+END_SRC
 **** TODO PProximity
 #+BEGIN_SRC clojure :noweb-ref impl3

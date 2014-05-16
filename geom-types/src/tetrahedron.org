@@ -239,9 +239,12 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
   g/PMeshConvert
   (as-mesh
-   [_]
-   (let [[a b c d] (orient-tetra (:points _))]
-     (gm/into-mesh (gm/gmesh) [[a b c] [a d b] [b d c] [c d a]])))
+   ([_] (g/as-mesh _ {}))
+   ([_ opts]
+      (let [[a b c d] (orient-tetra (:points _))]
+        (g/into
+         (or (:mesh opts) (gm/gmesh))
+         [[a b c] [a d b] [b d c] [c d a]]))))
 #+END_SRC
 **** TODO PSample                                                    :verify:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx

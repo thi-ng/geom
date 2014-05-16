@@ -117,7 +117,7 @@ If there's no intersection, the function returns =nil=.
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([{[x y z] :p r :r} {:keys [res slices stacks] :or {res *resolution*}}]
+   ([{[x y z] :p r :r} {:keys [mesh res slices stacks] :or {res *resolution*}}]
       (let [slices (or slices res), stacks (or stacks res)
             range-u (range slices), range-v (range stacks)]
         (->> (for [i range-u, j range-v
@@ -129,21 +129,20 @@ If there's no intersection, the function returns =nil=.
                          verts (if (pos? j) (conj verts [u1 v]) verts)
                          verts (if (< j (dec stacks)) (conj verts [u1 v1]) verts)]]
                (conj verts [u v1]))
-             (reduce
-              (fn [m verts]
-                (->> verts
-                     (map
-                      (fn [[u v]]
-                        (let [theta (* TWO_PI u) ;; FIXME optimize trig
-                              phi (* PI v)
-                              st (Math/sin theta) ct (Math/cos theta)
-                              sp (Math/sin phi) cp (Math/cos phi)]
-                          (vec3
-                           (+ (mm/mul ct sp r) x)
-                           (mm/madd cp r y)
-                           (+ (mm/mul st sp r) z)))))
-                     (g/add-face m)))
-              (gm/gmesh))))))
+             (map
+              (fn [verts]
+                (map
+                 (fn [[u v]]
+                   (let [theta (* TWO_PI u) ;; FIXME optimize trig
+                         phi (* PI v)
+                         st (Math/sin theta) ct (Math/cos theta)
+                         sp (Math/sin phi) cp (Math/cos phi)]
+                     (vec3
+                      (+ (mm/mul ct sp r) x)
+                      (mm/madd cp r y)
+                      (+ (mm/mul st sp r) z))))
+                 verts)))
+             (g/into (or mesh (gm/gmesh)))))))
 #+END_SRC
 *** PProximity
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx

@@ -150,7 +150,7 @@ than 1.0.
    [_ {:keys [depth scale offset] :or {depth 1.0 scale 1.0} :as opts}]
    (if (and (== scale 1.0) (nil? offset))
      (g/as-mesh
-      (thi.ng.geom.types.AABB. (vec3 (:p _)) (conj (:size _) depth)))
+      (thi.ng.geom.types.AABB. (vec3 (:p _)) (conj (:size _) depth)) (:mesh opts))
      (g/extrude (g/as-polygon _) opts)))
   (extrude-shell
    [_ opts] (g/extrude-shell (g/as-polygon _) opts))
@@ -197,7 +197,11 @@ than 1.0.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PMeshConvert
   (as-mesh
-   [_] (g/add-face (gm/gmesh) (mapv vec3 (g/vertices _))))
+   ([_] (g/as-mesh _ {}))
+   ([_ opts]
+      (g/add-face
+       (or (:mesh opts) (gm/gmesh))
+       (mapv vec3 (g/vertices _)))))
 #+END_SRC
 
 *** PPolygonConvert

@@ -112,7 +112,7 @@ quad.
         (map #(g/classify-point (thi.ng.geom.types.Line3. %) p))
         (reduce min)))
 #+END_SRC
-*** PExtrude
+*** TODO PExtrude
 
 Extruding a quad along an axis vector results in a 3D quad mesh.
 The =extrude= function supports the following options, given as
@@ -134,7 +134,7 @@ than 1.0.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PExtrude
   (extrude
-   [_ {:keys [depth scale offset flags]
+   [_ {:keys [mesh depth scale offset flags]
        :or {depth 1.0 scale 1.0 flags "nsewfb"}}]
    (let [[a b c d :as v] (g/vertices _)
          norm (gu/ortho-normal a b c)
@@ -155,7 +155,9 @@ than 1.0.
            (if f [d c b a])]
           (filter identity)
           (map order)
-          (gm/into-mesh (gm/gmesh)))))
+          (g/into (or mesh (gm/gmesh))))))
+  (extrude-shell
+   [_ opts] nil)
 #+END_SRC
 *** PFlip                                                       :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
@@ -197,7 +199,9 @@ A quad's mesh representation is simply a quad mesh with a single face.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PMeshConvert
-  (as-mesh [_] (g/add-face (gm/gmesh) (:points _)))
+  (as-mesh
+   ([_] (g/as-mesh _ {}))
+   ([_ opts] (g/add-face (or (:mesh opts) (gm/gmesh)) (:points _))))
 #+END_SRC
 *** TODO PProximity
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes

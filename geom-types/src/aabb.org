@@ -162,7 +162,7 @@ front, back (see diagram below).
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([_ {:keys [flags] :or {flags "nsewfb"}}]
+   ([_ {:keys [mesh flags] :or {flags "nsewfb"}}]
       (let [[a b c d e f g h] (g/vertices _)
             [tp bt rt lf fr bk] (d/demunge-flags-seq flags "nsewfb")]
         (->> [(if fr [b c g f])
@@ -172,7 +172,7 @@ front, back (see diagram below).
               (if tp [e f g h])
               (if bt [a d c b])]
              (filter identity)
-             (gm/into-mesh (gm/gmesh))))))
+             (g/into (or mesh (gm/gmesh)))))))
 #+END_SRC
 
 *** TODO PProximity
@@ -252,17 +252,17 @@ of the original with inner sorting over XYZ.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PRotate
   (rotate
-   [_ theta] (g/rotate-z (box/box (:p _) (:size _)) theta))
+   [_ theta] (g/rotate-z (cu/cuboid (:p _) (:size _)) theta))
 
   g/PRotate3D
   (rotate-x
-   [_ theta] (g/rotate-x (box/box (:p _) (:size _)) theta))
+   [_ theta] (g/rotate-x (cu/cuboid (:p _) (:size _)) theta))
   (rotate-y
-   [_ theta] (g/rotate-y (box/box (:p _) (:size _)) theta))
+   [_ theta] (g/rotate-y (cu/cuboid (:p _) (:size _)) theta))
   (rotate-z
-   [_ theta] (g/rotate-z (box/box (:p _) (:size _)) theta))
+   [_ theta] (g/rotate-z (cu/cuboid (:p _) (:size _)) theta))
   (rotate-around-axis
-   [_ axis theta] (g/rotate-around-axis (box/box (:p _) (:size _)) axis theta))
+   [_ axis theta] (g/rotate-around-axis (cu/cuboid (:p _) (:size _)) axis theta))
 
   g/PScale
   (scale
@@ -280,7 +280,7 @@ of the original with inner sorting over XYZ.
 
   g/PTransform
   (transform
-   [_ m] (g/transform (box/box (:p _) (:size _)) m))
+   [_ m] (g/transform (cu/cuboid (:p _) (:size _)) m))
 #+END_SRC
 
 *** PVolume
@@ -301,7 +301,7 @@ of the original with inner sorting over XYZ.
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec3]]
-     [thi.ng.geom.box :as box]
+     [thi.ng.geom.cuboid :as cu]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
@@ -312,7 +312,7 @@ of the original with inner sorting over XYZ.
     ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     ,#+clj
     (:import
-     [thi.ng.geom.types AABB Box Sphere]))
+     [thi.ng.geom.types AABB Cuboid Sphere]))
 
   <<ctors>>
 

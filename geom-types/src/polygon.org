@@ -231,15 +231,18 @@
   g/PExtrude
     (extrude
       [{points :points :as _}
-       {:keys [depth offset scale top? bottom?] :or {depth 1.0 scale 1.0 top? true bottom? true}}]
+       {:keys [mesh depth offset scale top? bottom?]
+        :or {depth 1.0 scale 1.0 top? true bottom? true}}]
       (let [points (if (neg? (g/area _)) (reverse points) points)
-            tpoints (if (= 1.0 scale) points (:points (g/scale-size (polygon2 points) scale)))
+            tpoints (if (= 1.0 scale)
+                      points
+                      (:points (g/scale-size (polygon2 points) scale)))
             off (or offset (vec3 0 0 depth))
             points3 (mapv vec3 points)
             tpoints3 (mapv #(g/+ off %) tpoints)
             quad? (= 4 (count points))]
-        (gm/into-mesh
-         (gm/gmesh)
+        (g/into
+         (or mesh (gm/gmesh))
          (concat
           (when bottom?
             (if quad?
@@ -258,7 +261,7 @@
                    (map (fn [[a b c]] [(g/+ off a) (g/+ off b) (g/+ off c)])))))))))
     (extrude-shell
       [{points :points :as _}
-       {:keys [depth offset inset top? bottom? wall nump]
+       {:keys [mesh depth offset inset top? bottom? wall nump]
         :or {wall 1.0 depth 1.0 inset 0.0 top? false bottom? false}}]
       (let [points (if (neg? (g/area _)) (reverse points) points)
             tpoints (if (zero? inset) points (inset-polygon points (- inset)))
@@ -285,8 +288,8 @@
             itpoints3 (mapv #(g/+ itoff %) itpoints)
             outsides (quad-strip (maybe-loop points3) (maybe-loop tpoints3) true)
             insides (quad-strip (maybe-loop ipoints3) (maybe-loop itpoints3) false)]
-        (gm/into-mesh
-         (gm/gmesh)
+        (g/into
+         (or mesh (gm/gmesh))
          (concat
           (if bottom?
             (concat
@@ -368,10 +371,11 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PMeshConvert
   (as-mesh
-   [_]
-   (->> (tessellate* _)
-        (map (fn [[a b c]] [(vec3 a) (vec3 b) (vec3 c)]))
-        (gm/into-mesh (gm/gmesh))))
+   ([_] (g/as-mesh _ {}))
+   ([_ opts]
+      (->> (tessellate* _)
+           (map (fn [[a b c]] [(vec3 a) (vec3 b) (vec3 c)]))
+           (g/into (or (:mesh opts) (gm/gmesh))))))
 #+END_SRC
 
 *** PPolygonConvert

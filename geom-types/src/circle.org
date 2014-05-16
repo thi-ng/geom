@@ -94,9 +94,8 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PExtrude
   (extrude
-   [_
-    {:keys [res depth offset scale top? bottom?]
-     :or {res *resolution*, depth 1.0, scale 1.0, top? true, bottom? true}}]
+   [_ {:keys [mesh res depth offset scale top? bottom?]
+       :or {res *resolution*, depth 1.0, scale 1.0, top? true, bottom? true}}]
    (let [points (g/vertices _ res)
          tpoints (if (= 1.0 scale)
                    points
@@ -104,8 +103,8 @@
          off (or offset (vec3 0 0 depth))
          points3 (mapv vec3 points)
          tpoints3 (mapv #(g/+ off %) tpoints)]
-     (gm/into-mesh
-      (gm/gmesh)
+     (g/into
+      (or mesh (gm/gmesh))
       (concat
        (when bottom?
          (->> points
@@ -152,13 +151,13 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PMeshConvert
   (as-mesh
-   ([_] (g/as-mesh _ *resolution*))
-   ([_ res]
+   ([_] (g/as-mesh _ {:res *resolution*}))
+   ([_ {:keys [mesh res]}]
       (->> res
            (g/vertices _)
            (mapv vec3)
            (gu/tessellate-with-point (vec3 (:p _)))
-           (gm/into-mesh (gm/gmesh)))))
+           (g/into (or (gm/gmesh))))))
 #+END_SRC
 
 *** PPolygonConvert

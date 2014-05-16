@@ -77,12 +77,12 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   g/PExtrude
   (extrude
    [{points :points :as _}
-    {:keys [depth scale offset] :or {depth 1.0 scale 1.0}}]
+    {:keys [mesh depth scale offset] :or {depth 1.0 scale 1.0}}]
    (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
          off (or offset (vec3 0 0 depth))
          a (vec3 (points 0)), b (vec3 (points 1))
          ta (g/+ off (tpoints 0)), tb (g/+ off (tpoints 1))]
-     (g/add-face (gm/gmesh) [a b tb ta])))
+     (g/add-face (or mesh (gm/gmesh)) [a b tb ta])))
 #+END_SRC
 *** PGraph
 #+BEGIN_SRC clojure :noweb-ref tpl-graph
@@ -453,13 +453,13 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   g/PExtrude
   (extrude
    [{points :points :as _}
-    {:keys [depth scale] :or {depth 1.0 scale 1.0}}]
+    {:keys [mesh depth scale] :or {depth 1.0 scale 1.0}}]
    (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
          off (vec3 0 0 depth)
          bottom (map vec3 points)
          top (map #(g/+ off %) tpoints)]
-     (gm/into-mesh
-      (gm/gmesh)
+     (g/into
+      (or mesh (gm/gmesh))
       (mapcat
        (fn [[a1 a2] [b1 b2]] [[a1 b1 b2 a2]])
        (d/successive-nth 2 bottom)
