@@ -4,10 +4,10 @@
 
 ** Helper functions
 #+BEGIN_SRC clojure :noweb-ref helpers
-  (defrecord CSGVertex [^thi.ng.geom.core.vector.Vec3 p ^thi.ng.geom.core.vector.Vec3 n]
+  (deftype CSGVertex [^thi.ng.geom.core.vector.Vec3 p ^thi.ng.geom.core.vector.Vec3 n]
     g/PInterpolate
     (mix [_ v t]
-      (CSGVertex. (g/mix p (:p v) t) (g/mix n (:n v) t)))
+      (CSGVertex. (g/mix p (.-p ^CSGVertex v) t) (g/mix n (.-n ^CSGVertex v) t)))
     g/PFlip
     (flip [_]
       (CSGVertex. p (g/- n))))
@@ -17,7 +17,9 @@
     (bounding-sphere
       [_] (if bsphere
             bsphere
-            (do (set! bsphere (tu/bounding-sphere (mapv :p vertices))) bsphere)))
+            (do
+              (set! bsphere (tu/bounding-sphere (mapv #(.-p ^CSGVertex %) vertices)))
+              bsphere)))
     g/PFlip
     (flip [_]
       (CSGPolygon. (g/flip plane) (mapv g/flip (rseq vertices)) shared bsphere)))
@@ -27,7 +29,7 @@
     (let [ieps (- *eps*)]
       (loop [ptype 0, types [], vertices vertices]
         (if vertices
-          (let [t (- (g/dot n (:p (first vertices))) w)
+          (let [t (- (g/dot n (.-p ^CSGVertex (first vertices))) w)
                 pt (if (< t ieps) 2 (if (> t *eps*) 1 0))]
             (recur (bit-or ptype pt) (conj types pt) (next vertices)))
           [ptype types]))))
@@ -38,14 +40,14 @@
       (loop [f [], b [], i 0]
         (if (< i nv)
           (let [j (rem (inc i) nv)
-                vi (nth vertices i)
+                ^CSGVertex vi (nth vertices i)
                 ti (types i)
                 f (if (== ti 2) f (conj f vi))
                 b (if (== ti 1) b (conj b vi))]
             (if (== 3 (bit-or ti (types j)))
-              (let [vj (nth vertices j)
-                    p (:p vi)
-                    v (g/mix vi vj (/ (- w (g/dot n p)) (g/dot n (g/- (:p vj) p))))]
+              (let [^CSGVertex vj (nth vertices j)
+                    p (.-p vi)
+                    v (g/mix vi vj (/ (- w (g/dot n p)) (g/dot n (g/- (.-p vj) p))))]
                 (recur (conj f v) (conj b v) (inc i)))
               (recur f b (inc i))))
           [f b]))))
@@ -53,29 +55,29 @@
   (defn split-poly
     "Takes a plane and splits the given polygon with it. Returns a 4-element vector
       of classified sub-shapes: [coplanar-front coplanar-back front back]."
-    [{:keys [n w]} ^CSGPolygon poly [cp-front cp-back front back]]
+    [{:keys [n w]} ^CSGPolygon poly state]
     (let [s (g/bounding-sphere poly)
           r (+ (:r s) *eps*)
           d (- (g/dot n (:p s)) w)]
       (cond
-       (> d r) [cp-front cp-back (conj front poly) back]
-       (< d (- r)) [cp-front cp-back front (conj back poly)]
+       (> d r) (assoc state 2 (conj (state 2) poly))
+       (< d (- r)) (assoc state 3 (conj (state 3) poly))
        :default
        (let [[ptype types] (compute-split-types n w (.-vertices poly))]
          (case ptype
            ;; co-planar
            0 (if (pos? (g/dot n (:n (.-plane poly))))
-               [(conj cp-front poly) cp-back front back]
-               [cp-front (conj cp-back poly) front back])
+               (assoc state 0 (conj (state 0) poly))
+               (assoc state 1 (conj (state 1) poly)))
            ;; front
-           1 [cp-front cp-back (conj front poly) back]
+           1 (assoc state 2 (conj (state 2) poly))
            ;; back
-           2 [cp-front cp-back front (conj back poly)]
+           2 (assoc state 3 (conj (state 3) poly))
            ;; both sides -> split
            3 (let [[f b] (split-poly* n w (.-vertices poly) types)]
-               [cp-front cp-back
-                (if (>= (count f) 3) (conj front (csg-polygon f (.-shared poly))) f)
-                (if (>= (count b) 3) (conj back (csg-polygon b (.-shared poly))) b)]))))))
+               [(state 0) (state 1)
+                (if (>= (count f) 3) (conj (state 2) (csg-polygon f (.-shared poly))) f)
+                (if (>= (count b) 3) (conj (state 3) (csg-polygon b (.-shared poly))) b)]))))))
 #+END_SRC
 
 ** Public API
@@ -125,10 +127,9 @@
     "Creates a plane definition either from a seq of points or
     a normal vector & w-constant."
     [[a b c]]
-    (p/plane-from-points
-     (if (map? a) (:p a) a)
-     (if (map? b) (:p b) b)
-     (if (map? c) (:p c) c)))
+    (if (instance? CSGVertex a)
+      (p/plane-from-points (.-p ^CSGVertex a) (.-p ^CSGVertex b) (.-p ^CSGVertex c))
+      (p/plane-from-points a b c)))
   
   (defn csg-polygon
     "Creates a CSG polygon map from the given vertices and
@@ -192,12 +193,12 @@
          (let [n (fnormals f)]
            (csg-polygon (map #(CSGVertex. % n) f) nil)))
        faces)))
-  
+
   (defn csg->mesh
     [polygons]
     (->> polygons
-         (map #(map :p (.-vertices ^CSGPolygon %)))
-         (gm/into-mesh (gm/gmesh))))
+         (map (fn [poly] (map #(.-p ^CSGVertex %) (.-vertices ^CSGPolygon poly))))
+         (g/into (gm/gmesh))))
     
   (defn csg-cone
     ([s e radius res] (csg-cone s e radius radius res))
