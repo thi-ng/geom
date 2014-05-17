@@ -181,7 +181,7 @@
           samples (loop [t 0.0, i 1, acc []]
                     (if (< t 1.0)
                       (let [[p i] (point-at* points idx total t i)]
-                        (recur (+ t delta) i (conj acc p)))
+                        (recur (+ t delta) (int i) (conj acc p)))
                       acc))]
       (if include-last?
         (conj samples (last points))
