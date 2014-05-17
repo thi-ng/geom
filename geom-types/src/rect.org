@@ -47,23 +47,8 @@
   (defn bottom-left [r] (:p r))
   (defn top [r] (+ ((:p r) 1) ((:size r) 1)))
   (defn top-right [r] (g/+ (:p r) (:size r)))
-
-  (defn intersect-rect?
-    [{[px py] :p [w h] :size} {[qx qy] :p [qw qh] :size}]
-    (not (or (> px (+ qx qw)) (> qx (+ px w)) (> py (+ qy qh)) (> qy (+ py h)))))
-
-  (defn intersect-circle?
-    [{[w h :as s] :size :as r} {c :p radius :r}]
-    (let [p (g/centroid r)
-          [dx dy :as d] (g/abs (g/- c p))
-          w (* w 0.5) h (* h 0.5)]
-      (if (and (<= dx (+ w radius))
-               (<= dy (+ h radius)))
-        (if (or (<= dx w) (<= dy h))
-          true
-          (<= (g/mag-squared (g/- d s)) (* radius radius)))
-        false)))
 #+END_SRC
+
 ** Protocol implementations
 
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -188,8 +173,8 @@ than 1.0.
   (intersect-shape
    [_ s]
    (cond
-    (instance? thi.ng.geom.types.Rect2 s) (intersect-rect? _ s)
-    (instance? thi.ng.geom.types.Circle2 s) (intersect-circle? _ s)
+    (instance? thi.ng.geom.types.Rect2 s) (gu/intersect-rect-rect? _ s)
+    (instance? thi.ng.geom.types.Circle2 s) (gu/intersect-aabb-sphere? _ s)
     :default (err/type-error! "Rect2" s)))
 #+END_SRC
 

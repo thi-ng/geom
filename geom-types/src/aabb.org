@@ -146,14 +146,12 @@ front, back (see diagram below).
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PIntersect
   (intersect-shape
-   [{pa :p sa :size} s]
+   [_ s]
    (cond
     (instance? thi.ng.geom.types.AABB s)
-    (let [{pb :p sb :size} s]
-      (every?
-       #(and (<= (pa %) (+ (pb %) (sb %)))
-             (<= (pb %) (+ (pa %) (sa %))))
-       [0 1 2]))
+      (gu/intersect-aabb-aabb? _ s)
+    (instance? thi.ng.geom.types.Sphere s)
+      (gu/intersect-aabb-sphere? _ s)
     :default (err/type-error! "AABB" s)))
 #+END_SRC
 

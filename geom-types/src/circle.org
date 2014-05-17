@@ -11,24 +11,14 @@
     ([x y r] (thi.ng.geom.types.Circle2. (vec2 x y) r)))
 #+END_SRC
 
+
 ** Type specific functions
-#+BEGIN_SRC clojure :noweb-ref helpers
-  (defn intersect-circle
-    [{p :p r1 :r} {q :p r2 :r}]
-    (let [delta (g/- q p)
-          d (g/mag delta)]
-      (when (and (<= d (+ r1 r2)) (>= d (m/abs (- r1 r2))))
-        (let [a (/ (+ (- (* r1 r1) (* r2 r2)) (* d d)) (* 2.0 d))
-              invd (/ 1.0 d)
-              p (g/madd delta (* a invd) p)
-              h (Math/sqrt (- (* r1 r1) (* a a)))
-              perp (g/* (g/normal delta) (* h invd))]
-          [(g/+ p perp) (g/- p perp)]))))
-  
+
+#+BEGIN_SRC clojure :noweb-ref helpers  
   (defn tangent-points
     [{p :p :as c} q]
     (let [m (g/mix p q)]
-      (intersect-circle c (circle m (g/dist m p)))))
+      (gu/intersect-circle-circle? c (circle m (g/dist m p)))))
 #+END_SRC
 
 ** Protocol implementations
@@ -142,8 +132,8 @@
   (intersect-shape
    [_ s]
    (cond
-    (instance? thi.ng.geom.types.Circle2 s) (intersect-circle _ s)
-    (instance? thi.ng.geom.types.Rect2 s) (g/intersect-shape s _)
+    (instance? thi.ng.geom.types.Circle2 s) (gu/intersect-circle-circle? _ s)
+    (instance? thi.ng.geom.types.Rect2 s) (gu/intersect-aabb-sphere? s _)
     :default (err/type-error! "Circle2" s)))
 #+END_SRC
 
