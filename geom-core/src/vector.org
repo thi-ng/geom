@@ -328,6 +328,7 @@ injected in the appropriate places of the code.
   ,#+clj (toString
          [_]
          (.toString
+          ^StringBuilder
           (doto (StringBuilder. "[")
             (.append (pr-str x))
             (.append " ")
@@ -781,6 +782,7 @@ injected in the appropriate places of the code.
   ,#+clj (toString
          [_]
          (.toString
+          ^StringBuilder
           (doto (StringBuilder. "[")
             (.append (pr-str x))
             (.append " ")
@@ -1144,7 +1146,7 @@ injected in the appropriate places of the code.
 #+END_SRC
 *** Override print methods
 #+BEGIN_SRC clojure :noweb-ref vec3
-  #+clj (defmethod print-method Vec3 [o ^java.io.Writer w] (.write w (.toString o)))
+  #+clj (defmethod print-method Vec3 [^Vec3 o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 ** Vector operations
 *** 2D
@@ -1154,7 +1156,7 @@ injected in the appropriate places of the code.
     (loop [ax (.-x acc), ay (.-y acc), xs xs]
       (if xs
         (let [v ^Vec2 (first xs)]
-          (recur (op ax (.-x v)) (op ay (.-y v)) (next xs)))
+          (recur (double (op ax (.-x v))) (double (op ay (.-y v))) (next xs)))
         (Vec2. ax ay))))
 
   (defn vec2-op-seq2
@@ -1162,7 +1164,7 @@ injected in the appropriate places of the code.
     (loop [ax (.-x acc), ay (.-y acc), as as]
       (if as
         (let [v ^Vec2 (first as)]
-          (recur (op ax (.-x v)) (op ay (.-y v)) (next as)))
+          (recur (double (op ax (.-x v))) (double (op ay (.-y v))) (next as)))
         (let [[bx by] (if (number? b) [b b] b)]
           (Vec2. (op2 ax bx) (op2 ay by))))))
 
@@ -1268,7 +1270,7 @@ injected in the appropriate places of the code.
     (loop [ax (.-x acc), ay (.-y acc), az (.-z acc), xs xs]
       (if xs
         (let [v ^Vec3 (first xs)]
-          (recur (op ax (.-x v)) (op ay (.-y v)) (op az (.-z v)) (next xs)))
+          (recur (double (op ax (.-x v))) (double (op ay (.-y v))) (double (op az (.-z v))) (next xs)))
         (Vec3. ax ay az))))
 
   (defn vec3-op-seq2
@@ -1276,7 +1278,7 @@ injected in the appropriate places of the code.
     (loop [ax (.-x acc), ay (.-y acc), az (.-z acc), as as]
       (if as
         (let [v ^Vec3 (first as)]
-          (recur (op ax (.-x v)) (op ay (.-y v)) (op az (.-z v)) (next as)))
+          (recur (double (op ax (.-x v))) (double (op ay (.-y v))) (double (op az (.-z v))) (next as)))
         (let [[bx by bz] (if (number? b) [b b b] b)]
           (Vec3. (op2 ax bx) (op2 ay by) (op2 az bz))))))
 
