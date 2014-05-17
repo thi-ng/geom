@@ -270,7 +270,9 @@ of the original with inner sorting over XYZ.
   (scale
    [_ sx sy sz] (thi.ng.geom.types.AABB. (g/* (:p _) sx sy sz) (g/* (:size _) sx sy sz)))
   (scale-size
-   [_ s] (thi.ng.geom.types.AABB. (:p _) (g/* (:size _) s)))
+   [_ s]
+   (let [s' (g/* (:size _) s)]
+     (thi.ng.geom.types.AABB. (g/madd (g/- s' (:size _)) -0.5 (:p _)) s')))
 
   g/PTranslate
   (translate
