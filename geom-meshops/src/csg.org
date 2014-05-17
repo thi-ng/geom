@@ -17,7 +17,7 @@
     (bounding-sphere
       [_] (if bsphere
             bsphere
-            (do (set! bsphere (tu/bounding-sphere vertices)) bsphere)))
+            (do (set! bsphere (tu/bounding-sphere (mapv :p vertices))) bsphere)))
     g/PFlip
     (flip [_]
       (CSGPolygon. (g/flip plane) (mapv g/flip (rseq vertices)) shared bsphere)))
@@ -54,21 +54,28 @@
     "Takes a plane and splits the given polygon with it. Returns a 4-element vector
       of classified sub-shapes: [coplanar-front coplanar-back front back]."
     [{:keys [n w]} ^CSGPolygon poly [cp-front cp-back front back]]
-    (let [[ptype types] (compute-split-types n w (.-vertices poly))]
-      (case ptype
-        ;; co-planar
-        0 (if (pos? (g/dot n (:n (.-plane poly))))
-            [(conj cp-front poly) cp-back front back]
-            [cp-front (conj cp-back poly) front back])
-        ;; front
-        1 [cp-front cp-back (conj front poly) back]
-        ;; back
-        2 [cp-front cp-back front (conj back poly)]
-        ;; both sides -> split
-        3 (let [[f b] (split-poly* n w (.-vertices poly) types)]
-            [cp-front cp-back
-             (if (>= (count f) 3) (conj front (csg-polygon f (.-shared poly))) f)
-             (if (>= (count b) 3) (conj back (csg-polygon b (.-shared poly))) b)]))))
+    (let [s (g/bounding-sphere poly)
+          r (+ (:r s) *eps*)
+          d (- (g/dot n (:p s)) w)]
+      (cond
+       (> d r) [cp-front cp-back (conj front poly) back]
+       (< d (- r)) [cp-front cp-back front (conj back poly)]
+       :default
+       (let [[ptype types] (compute-split-types n w (.-vertices poly))]
+         (case ptype
+           ;; co-planar
+           0 (if (pos? (g/dot n (:n (.-plane poly))))
+               [(conj cp-front poly) cp-back front back]
+               [cp-front (conj cp-back poly) front back])
+           ;; front
+           1 [cp-front cp-back (conj front poly) back]
+           ;; back
+           2 [cp-front cp-back front (conj back poly)]
+           ;; both sides -> split
+           3 (let [[f b] (split-poly* n w (.-vertices poly) types)]
+               [cp-front cp-back
+                (if (>= (count f) 3) (conj front (csg-polygon f (.-shared poly))) f)
+                (if (>= (count b) 3) (conj back (csg-polygon b (.-shared poly))) b)]))))))
 #+END_SRC
 
 ** Public API
