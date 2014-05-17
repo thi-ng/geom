@@ -12,10 +12,15 @@
     (flip [_]
       (CSGVertex. p (g/- n))))
 
-  (defrecord CSGPolygon [plane vertices shared]
+  (deftype CSGPolygon [plane vertices shared ^:unsynchronized-mutable bsphere]
+    g/PBoundingSphere
+    (bounding-sphere
+      [_] (if bsphere
+            bsphere
+            (do (set! bsphere (tu/bounding-sphere vertices)) bsphere)))
     g/PFlip
     (flip [_]
-      (CSGPolygon. (g/flip plane) (mapv g/flip vertices) shared)))
+      (CSGPolygon. (g/flip plane) (mapv g/flip (rseq vertices)) shared bsphere)))
 
   (defn compute-split-types
     [n w vertices]
@@ -47,12 +52,12 @@
 
   (defn split-poly
     "Takes a plane and splits the given polygon with it. Returns a 4-element vector
-    of classified sub-shapes: [coplanar-front coplanar-back front back]."
-    [{:keys [n w]} {:keys [vertices plane] :as poly} [cp-front cp-back front back]]
-    (let [[ptype types] (compute-split-types n w vertices)]
+      of classified sub-shapes: [coplanar-front coplanar-back front back]."
+    [{:keys [n w]} ^CSGPolygon poly [cp-front cp-back front back]]
+    (let [[ptype types] (compute-split-types n w (.-vertices poly))]
       (case ptype
         ;; co-planar
-        0 (if (pos? (g/dot n (:n plane)))
+        0 (if (pos? (g/dot n (:n (.-plane poly))))
             [(conj cp-front poly) cp-back front back]
             [cp-front (conj cp-back poly) front back])
         ;; front
@@ -60,10 +65,10 @@
         ;; back
         2 [cp-front cp-back front (conj back poly)]
         ;; both sides -> split
-        3 (let [[f b] (split-poly* n w vertices types)]
+        3 (let [[f b] (split-poly* n w (.-vertices poly) types)]
             [cp-front cp-back
-             (if (>= (count f) 3) (conj front (csg-polygon f (:shared poly))) f)
-             (if (>= (count b) 3) (conj back (csg-polygon b (:shared poly))) b)]))))
+             (if (>= (count f) 3) (conj front (csg-polygon f (.-shared poly))) f)
+             (if (>= (count b) 3) (conj back (csg-polygon b (.-shared poly))) b)]))))
 #+END_SRC
 
 ** Public API
@@ -123,7 +128,7 @@
     computes a plane definition using the first 3 vertices."
     ([vertices] (csg-polygon vertices nil))
     ([vertices shared]
-       (CSGPolygon. (csg-plane vertices) (vec vertices) shared)))
+       (CSGPolygon. (csg-plane vertices) (vec vertices) shared nil)))
   
   (defn csg-node
     "Creates a new or refines a CSG tree node and recursively
@@ -131,7 +136,7 @@
     ([polygons] (csg-node nil polygons))
     ([{:keys [polygons plane front back] :as node} ps]
        (if (seq ps)
-         (let [plane (or plane (:plane (first ps)))
+         (let [plane (or plane (.-plane ^CSGPolygon (first ps)))
                [cp-front cp-back new-front new-back]
                (reduce
                 (fn [state poly] (split-poly plane poly state))
@@ -184,7 +189,7 @@
   (defn csg->mesh
     [polygons]
     (->> polygons
-         (map #(map :p (:vertices %)))
+         (map #(map :p (.-vertices ^CSGPolygon %)))
          (gm/into-mesh (gm/gmesh))))
     
   (defn csg-cone
@@ -217,8 +222,8 @@
 #+END_SRC
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/csg/core.cljx :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.csg.core
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/csg.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.mesh.csg
     ,#+cljs
     (:require-macros
      [thi.ng.macromath.core :as mm])
