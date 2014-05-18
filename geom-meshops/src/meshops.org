@@ -23,8 +23,14 @@
   (defn find-in-tree
     "Queries an octree with a spherical region around `p` and with radius `eps`.
     Returns the first point found (if any)."
-    [t p eps]
-    (first (st/select-with-shape (s/sphere p eps) t)))
+    [tree p eps]
+    (let [eps2 (* eps eps)]
+      (->> tree
+           (st/select-with
+            #(gu/intersect-aabb-sphere? (:p %) (g/+ (:p %) (:size %)) p eps)
+            #(<= (g/dist-squared p %) eps2))
+           (persistent!)
+           (first))))
 
   (defn unique-point-tree
     [points eps]
