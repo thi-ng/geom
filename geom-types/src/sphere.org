@@ -11,6 +11,7 @@
      [thi.ng.geom.core.vector :as v :refer [vec3]]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.types :as types]
+     [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [TWO_PI PI *eps*]]
      ,#+clj [thi.ng.macromath.core :as mm])
     ,#+clj
@@ -111,6 +112,14 @@ If there's no intersection, the function returns =nil=.
              (if (> a b) [b a] [a b])
              (if (> b 0) [b a] [a b]))
            [a b])))))
+  (intersect-shape
+   [_ s]
+   (cond
+    (instance? thi.ng.geom.types.AABB s)
+    (gu/intersect-aabb-sphere? s _)
+    (instance? thi.ng.geom.types.Sphere s)
+    (gu/intersect-sphere-sphere? _ s)
+    :default (err/type-error! "Sphere" s)))
 #+END_SRC
 *** TODO PMeshConvert
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx

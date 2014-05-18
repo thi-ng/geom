@@ -318,6 +318,14 @@ Also works for rect/circle...
          (<= (apply + ds) (* r r)))))
 #+END_SRC
 
+#+BEGIN_SRC clojure :noweb-ref isec
+  (defn intersect-sphere-sphere?
+    ([{p1 :p r1 :r} {p2 :p r2 :r}]
+       (intersect-sphere-sphere? p1 r1 p2 r2))
+    ([p1 r1 p2 r2]
+       (<= (g/dist-squared p1 p2) (mm/addm r1 r1 r2 r2))))
+#+END_SRC
+
 ** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/utils.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.utils
