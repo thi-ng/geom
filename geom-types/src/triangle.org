@@ -74,14 +74,6 @@
     ([a b c]
        (g/normalize (g/- c (g/mix a b (gu/closest-point-coeff c a b))))))
 
-  (defn norm-sign3
-    ([a b c] (g/dot (g/cross (g/- b a) (g/- c a)) V3Z))
-    ([a b c n] (g/dot (g/cross (g/- b a) (g/- c a)) n)))
-
-  (defn clockwise3?
-    ([a b c] (neg? (norm-sign3 a b c V3Z)))
-    ([a b c n] (neg? (norm-sign3 a b c n))))
-
   (defn centroid*
     ([a b c] (g/* (g/+ a b c) THIRD))
     ([[a b c]] (g/* (g/+ a b c) THIRD)))

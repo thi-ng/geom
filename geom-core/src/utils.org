@@ -262,7 +262,7 @@
     [a b c] (neg? (norm-sign2 a b c)))
 
   (defn clockwise3?
-    [a b c] (neg? (norm-sign3 a b c)))
+    [a b c n] (pos? (g/dot (g/cross (g/- b a) (g/- c a)) n)))
 
   (defn triangle-barycentric-coords
     ([[a b c] p]
