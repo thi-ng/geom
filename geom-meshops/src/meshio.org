@@ -31,9 +31,9 @@
     (loop [mesh (gm/gmesh), i (b/read-int32-le stream)]
       (if (pos? i)
         (let [_ (b/read-vec3-le stream)
-              a (b/read-vec3-le stream)
-              b (b/read-vec3-le stream)
-              c (b/read-vec3-le stream)
+              a (vec3 (b/read-vec3-le stream))
+              b (vec3 (b/read-vec3-le stream))
+              c (vec3 (b/read-vec3-le stream))
               _ (b/read-int16-le stream)]
           (recur (gm/add-face mesh [a b c]) (dec i)))
         mesh)))
@@ -149,6 +149,7 @@
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :as v :refer [vec3]]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.triangle :as t]
      [thi.ng.common.data.byteutils :as b])
