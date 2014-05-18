@@ -219,6 +219,13 @@
         (map (fn [[a b]] [v0 a b]) (d/successive-nth 2 more)))
       [points]))
 
+  (defn tessellate-tri-with-midpoints
+    [[a b c]]
+    (let [ab (g/mix a b)
+	  bc (g/mix b c)
+	  ca (g/mix c a)]
+      [[a ab ca] [ab b bc] [bc c ca] [ab bc ca]]))
+
   (defn tessellate-3
     [points]
     (condp = (count points)
