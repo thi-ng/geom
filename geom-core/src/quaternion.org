@@ -539,7 +539,7 @@ of the code.
               [i ii] (if (> (.-m22 m) ii)
                        [2 (.-m22 m)] [i ii])
               [jj kk jk kj ij ji ik ki]
-              (case i
+              (case (int i)
                 0 [(.-m11 m) (.-m22 m) (.-m12 m) (.-m21 m) (.-m01 m) (.-m10 m) (.-m02 m) (.-m20 m)]
                 1 [(.-m22 m) (.-m00 m) (.-m20 m) (.-m02 m) (.-m12 m) (.-m21 m) (.-m10 m) (.-m01 m)]
                 2 [(.-m00 m) (.-m11 m) (.-m01 m) (.-m10 m) (.-m20 m) (.-m02 m) (.-m21 m) (.-m12 m)])
@@ -549,7 +549,7 @@ of the code.
               qj (mm/addm ij ji s)
               qk (mm/addm ik ki s)
               qw (mm/subm kj jk s)]
-          (case i
+          (case (int i)
             0 (Quat4. x qj qk qw)
             1 (Quat4. qk x qj qw)
             2 (Quat4. qj qk x qw))))))
