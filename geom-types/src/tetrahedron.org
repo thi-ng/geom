@@ -158,7 +158,7 @@
   (area
    [{[a b c d] :points}]
    (->> [[a b c] [a b d] [b c d] [c a d]]
-        (map (comp m/abs t/area3))
+        (map #(m/abs (apply gu/tri-area3 %)))
         (reduce +)))
 #+END_SRC
 **** TODO PBoundary

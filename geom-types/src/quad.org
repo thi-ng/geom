@@ -78,7 +78,7 @@ quad.
   g/PArea
   (area
    [{[a b c d] :points}]
-   (+ (t/area3 a b c) (t/area3 a c d)))
+   (+ (gu/tri-area3 a b c) (gu/tri-area3 a c d)))
 #+END_SRC
 *** TODO PBoundary
 #+BEGIN_SRC clojure :noweb-ref impl

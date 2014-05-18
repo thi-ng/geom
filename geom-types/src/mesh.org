@@ -216,9 +216,8 @@
 #+BEGIN_SRC clojure :noweb-ref impl2
   g/PArea
   (area [_]
-        (->> _
-             :faces
-             (map #(-> % t/area2 m/abs))
+        (->> (:faces _)
+             (map #(m/abs (apply gu/tri-area2 %)))
              (reduce +)))
 #+END_SRC
 **** TODO PCircumference
@@ -344,9 +343,8 @@
   g/PArea
   (area
    [_]
-   (->> _
-        :faces
-        (map #(-> % t/area3 m/abs))
+   (->> (:faces _)
+        (map #(m/abs (apply gu/tri-area3 %)))
         (reduce +)))
 #+END_SRC
 **** PBounds
