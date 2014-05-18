@@ -74,58 +74,13 @@
     ([a b c]
        (g/normalize (g/- c (g/mix a b (gu/closest-point-coeff c a b))))))
 
-  (defn norm-sign2
-    [[ax ay] [bx by] [cx cy]]
-    (- (mm/subm bx ax cy ay) (mm/subm cx ax by ay)))
-
   (defn norm-sign3
-    ([a b c] (g/dot (g/cross (g/- b a) (g/- c a)) v/V3Z))
+    ([a b c] (g/dot (g/cross (g/- b a) (g/- c a)) V3Z))
     ([a b c n] (g/dot (g/cross (g/- b a) (g/- c a)) n)))
 
-  (defn area2
-    ([a b c] (* 0.5 (norm-sign2 a b c)))
-    ([[a b c]] (* 0.5 (norm-sign2 a b c))))
-
-  (defn area3
-    ([a b c] (* 0.5 (g/mag (g/cross (g/- b a) (g/- c a)))))
-    ([[a b c]] (* 0.5 (g/mag (g/cross (g/- b a) (g/- c a))))))
-
-  (defn clockwise2?
-    [a b c] (neg? (norm-sign2 a b c)))
-
   (defn clockwise3?
-    ([a b c] (neg? (norm-sign3 a b c v/V3Z)))
+    ([a b c] (neg? (norm-sign3 a b c V3Z)))
     ([a b c n] (neg? (norm-sign3 a b c n))))
-
-  (defn barycentric*
-    [a b c p]
-    (let [e0 (g/- c a)
-          e1 (g/- b a)
-          e2 (g/- p a)
-          d00 (g/mag-squared e0)
-          d01 (g/dot e0 e1)
-          d02 (g/dot e0 e2)
-          d11 (g/mag-squared e1)
-          d12 (g/dot e1 e2)
-          denom (/ 1.0 (mm/msub d00 d11 d01 d01))
-          u (* denom (mm/msub d11 d02 d01 d12))
-          v (* denom (mm/msub d00 d12 d01 d02))]
-      [(mm/add u v -1.0) v u]))
-
-  (defn contains-point2*
-    [[a b c] p]
-    (if (clockwise2? a b c)
-      (and (>= (norm-sign2 a c p) 0.0)
-           (>= (norm-sign2 b a p) 0.0)
-           (>= (norm-sign2 c b p) 0.0))
-      (and (>= (norm-sign2 b c p) 0.0)
-           (>= (norm-sign2 a b p) 0.0)
-           (>= (norm-sign2 c a p) 0.0))))
-
-  (defn contains-point3*
-    [[a b c] p]
-    (let [[u v w] (barycentric* a b c p)]
-      (and (>= u 0.0) (>= v 0.0) (<= w 1.0))))
 
   (defn centroid*
     ([a b c] (g/* (g/+ a b c) THIRD))
@@ -226,7 +181,7 @@
 #+BEGIN_SRC emacs-lisp :var fn=""
   (replace-regexp-in-string "{{fn}}" fn
   "g/PArea
-  (area [_] ({{fn}} (:points _)))")
+  (area [_] (apply {{fn}} (:points _)))")
 #+END_SRC
 *** PCircumference                                                 :template:
 #+BEGIN_SRC clojure :noweb-ref tpl-circum
@@ -276,7 +231,7 @@
 #+END_SRC
 **** PArea                                                      :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
-  <<tpl-area(fn="area2")>>
+  <<tpl-area(fn="gu/tri-area2")>>
 #+END_SRC
 **** PClassify                                                       :verify:
 ***** TODO add clockwise? check, currently assumes clockwise ordering
@@ -291,7 +246,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl2
   g/PBoundary
   (contains-point?
-   [_ p] (contains-point2* (:points _) p))
+   [_ p] (gu/point-in-triangle2? p (:points _)))
 #+END_SRC
 **** PBounds                                                    :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
@@ -377,12 +332,12 @@
 #+END_SRC
 **** PArea                                                      :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
-  <<tpl-area(fn="area3")>>
+  <<tpl-area(fn="gu/tri-area3")>>
 #+END_SRC
 **** PBoundary
 #+BEGIN_SRC clojure :noweb-ref impl3
   g/PBoundary
-  (contains-point? [_ p] (contains-point3* (:points _) p))
+  (contains-point? [_ p] (gu/point-in-triangle3? p (:points _)))
 #+END_SRC
 **** PBounds                                                    :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
@@ -419,15 +374,8 @@
 #+BEGIN_SRC clojure :noweb-ref impl3
   g/PIntersect
   (intersect-ray
-   [{[a b c :as points] :points} {p :p dir :dir}]
-    (let [n (gu/ortho-normal a b c)
-          nd (g/dot n dir)]
-      (if (neg? nd)
-        (let [t (/ (- (g/dot n (g/- p a))) nd)]
-          (if (>= t *eps*)
-            (let [ip (g/madd dir t p)]
-              (if (contains-point3* points ip)
-                {:p ip :n n :dist t :dir (g/normalize (g/- ip p))})))))))
+   [{[a b c] :points} {p :p dir :dir}]
+    (gu/intersect-ray-triangle3? p dir a b c))
 #+END_SRC
 **** TODO PMeshConvert                                                  :fix:
 
@@ -493,7 +441,7 @@ https://web.archive.org/web/20090320013931/http://amp.ece.cmu.edu/Publication/Ch
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3Z]]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]

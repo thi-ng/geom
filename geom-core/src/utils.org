@@ -263,6 +263,43 @@
 
   (defn clockwise3?
     [a b c] (neg? (norm-sign3 a b c)))
+
+  (defn triangle-barycentric-coords
+    ([[a b c] p]
+       (triangle-barycentric-coords a b c p (g/- b a) (g/- c a)))
+    ([a b c p]
+       (triangle-barycentric-coords a b c p (g/- b a) (g/- c a)))
+    ([a b c p u v]
+       (let [w (g/- p a)
+             uu (g/mag-squared u)
+             vv (g/mag-squared v)
+             uv (g/dot u v)
+             wu (g/dot w u)
+             wv (g/dot w v)
+             denom (/ 1.0 (mm/msub uv uv uu vv))
+             s (* denom (mm/msub uv wv vv wu))
+             t (* denom (mm/msub uv wu uu wv))]
+         [(- 1.0 (+ s t)) s t])))
+
+  (defn point-in-triangle2?
+    [p a b c]
+    (if (clockwise2? a b c)
+      (and (>= (norm-sign2 a c p) 0.0)
+           (>= (norm-sign2 b a p) 0.0)
+           (>= (norm-sign2 c b p) 0.0))
+      (and (>= (norm-sign2 b c p) 0.0)
+           (>= (norm-sign2 a b p) 0.0)
+           (>= (norm-sign2 c a p) 0.0))))
+
+  (defn point-in-triangle3?
+    [p a b c]
+    (let [u (g/- b a)
+          v (g/- c a)
+          n (ortho-normal u v)
+          cl (- (g/dot n p) (g/dot n a))]
+      (if (m/delta= 0.0 cl)
+        (let [[u v w] (triangle-barycentric-coords a b c p u v)]
+          (and (>= u 0.0) (>= w 0.0) (m/in-range? 0.0 1.0 v))))))
 #+END_SRC
 
 ** Intersections
@@ -300,6 +337,7 @@
        (every? #(and (<= (pa %) (qb %)) (<= (pb %) (qa %))) [0 1 2])))
 #+END_SRC
 
+Source:
 Graphics Gems 2 / SO:
 http://stackoverflow.com/questions/4578967
 
@@ -324,6 +362,33 @@ Also works for rect/circle...
        (intersect-sphere-sphere? p1 r1 p2 r2))
     ([p1 r1 p2 r2]
        (<= (g/dist-squared p1 p2) (mm/addm r1 r2 r1 r2))))
+#+END_SRC
+
+Source: http://geomalgorithms.com/a06-_intersect-2.html
+
+#+BEGIN_SRC clojure :noweb-ref isec 
+  (defn intersect-ray-triangle3?
+    [p d a b c]
+    (let [u (g/- b a)
+          v (g/- c a)
+          n (g/cross u v)]
+      (if (m/delta= V3 n)
+        {:type :degenerate}
+        (let [w0 (g/- p a)
+              a' (- (g/dot n w0))
+              b' (g/dot n d)]
+          (if (m/delta= 0.0 b')
+            (if (m/delta= 0.0 a')
+              {:type :same-plane}
+              {:type :no-intersect})
+            (let [r (/ a' b')]
+              (if (< r 0.0)
+                {:type :no-intersect}
+                (let [i (g/madd d r p)
+                      [u v w] (triangle-barycentric-coords a b c i u v)]
+                  (if (and (>= u 0.0) (>= w 0.0) (m/in-range? 0.0 1.0 v))
+                    {:type :intersect :p i}
+                    {:type :no-intersect :p i})))))))))
 #+END_SRC
 
 ** Complete namespace definition                                   :noexport:
