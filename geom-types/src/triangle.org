@@ -74,7 +74,7 @@
     ([a b c]
        (g/normalize (g/- c (g/mix a b (gu/closest-point-coeff c a b))))))
 
-  (defn centroid*
+  (defn centroid
     ([a b c] (g/* (g/+ a b c) THIRD))
     ([[a b c]] (g/* (g/+ a b c) THIRD)))
 
@@ -118,18 +118,6 @@
                  (cmap [[0 1 4] [2 4 1] [2 3 4]]))
                (cmap [[0 1 2] [0 2 4] [3 4 2]]))
            nil))))
-
-  (defn subdivide-with-midpoints
-    [[a b c]]
-    (let [ab (g/mix a b)
-          bc (g/mix b c)
-          ca (g/mix c a)]
-      [[a ab ca] [bc ab b] [c ca bc] [ca ab bc]]))
-
-  (defn subdivide-with-centroid
-    [[a b c :as t]]
-    (let [ct (centroid* t)]
-      [[a b t] [b c t] [c a t]]))
 
   ;; http://astronomy.swin.edu.au/~pbourke/modelling/triangulate/
   (defn circumcircle-raw
@@ -251,7 +239,7 @@
 **** PCenter                                                    :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<lob-geom-center(type="thi.ng.geom.types.Triangle2")>>
-  (centroid [_] (centroid* (:points _)))
+  (centroid [_] (centroid (:points _)))
 #+END_SRC
 **** PCircumference                                             :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
@@ -342,7 +330,7 @@
 **** PCenter                                                    :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<lob-geom-center(type="thi.ng.geom.types.Triangle3")>>
-  (centroid [_] (centroid* (:points _)))
+  (centroid [_] (centroid (:points _)))
 #+END_SRC
 **** PCircumference                                             :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
