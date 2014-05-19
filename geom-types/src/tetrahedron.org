@@ -10,125 +10,18 @@
     the first three points."
     [[a b c d :as t]]
     (let [dp (-> d (g/- a) (g/normalize) (g/dot (gu/ortho-normal a b c)))]
-      (if (neg? dp) (vec t) [a c b d])))
-
-  (defn- subdot
-    "Computes sum((a-b)*c), where a, b, c are 3D vectors."
-    [a b c]
-    (let [d (g/* (g/- a b) c)] (mm/add (d 0) (d 1) (d 2))))
-
-  (defn- face-a
-    "Takes a transformation fn and the 4 delta vectors between tetra1/tetra2.
-    Returns 2-elem vec of [bitmask affine-coords]."
-    [f deltas]
-    (let [aff (mapv f deltas)]
-      [(mm/bitmask pos? (aff 0) (aff 1) (aff 2) (aff 3)) aff]))
-
-  (defn- face-b1?
-    "Takes the 4 delta vectors between tetra2/tetra1 and a normal.
-    Returns true if all dot products are positive."
-    [deltas n] (every? #(pos? (g/dot % n)) deltas))
-
-  (defn- face-b2?
-    "Like face-b1?, but optimized for last face of tetrahedron."
-    [verts refv n] (every? #(pos? (subdot % refv n)) verts))
-
-  (defn- edge-a
-    "Takes 2 bitmasks and edge flags, returns true if there's a
-    separating plane between the faces shared by that edge."
-    [ma mb ea eb]
-    (let [xa (bit-and ma (bit-xor ma mb))
-          xb (bit-and mb (bit-xor xa mb))
-          edge (fn [a b i j]
-                 (let [cp (mm/msub (ea i) (eb j) (ea j) (eb i))]
-                   (or (and (pos? cp) (pos? (bit-or xa a)) (pos? (bit-or xb b)))
-                       (and (neg? cp) (pos? (bit-or xa b)) (pos? (bit-or xb a))))))]
-      (not
-       (or
-        (not= 15 (bit-or ma mb))
-        (edge 1 2 1 0)
-        (edge 1 4 2 0)
-        (edge 1 8 3 0)
-        (edge 2 4 2 1)
-        (edge 2 8 3 1)
-        (edge 4 8 3 2)))))
-
-  (defn- get-edge
-    "Lazy edge evaluation. Takes a vector of edges, vector of edge
-    points and an edge id. Looks up edge for given id and if not yet
-    present constructs it. Returns 2-elem vector of [edges edge]."
-    [edges epoints id]
-    (let [e (edges id)]
-      (if e
-        [edges e]
-        (let [ep (epoints id), e (g/- (ep 0) (ep 1))]
-          [(assoc edges id e) e]))))
-
-  (defn- check-faces-a
-    "Takes the 4 delta vectors between the two tetras, edge definitions
-    of the 1st tetra, vertices of the 2nd, a reference point of the 1st
-    and a seq of specs, each encoding a specific check (either calls to
-    face-a* or edge-a). Returns vector of bitmasks or nil if fail early."
-    [deltas epoints verts p specs]
-    (loop [masks [], affine [], edges [nil nil nil nil nil], s specs]
-      (if s
-        (let [[f a b] (first s)]
-          (if (or (= :f f) (= :f* f))
-            (let [[edges ea] (get-edge edges epoints a)
-                  [edges eb] (get-edge edges epoints b)
-                  n (g/cross ea eb)
-                  [m a] (if (= :f f)
-                          (face-a #(g/dot % n) deltas)
-                          (face-a #(subdot % p n) verts))]
-              (if (< m 15)
-                (recur (conj masks m) (conj affine a) edges (next s))))
-            (if-not (edge-a (masks a) (masks b) (affine a) (affine b))
-              (recur masks affine edges (next s)))))
-        masks)))
-
-  (defn- check-faces-b
-    "Much like check-faces-a, but for 2nd tetra and specs encoding calls to face-b1/2?.
-    Returns true if tetras do intersect."
-    [deltas epoints verts p specs]
-    (loop [edges [nil nil nil nil nil], s specs]
-      (if s
-        (let [[f a b] (first s)
-              [edges ea] (get-edge edges epoints a)
-              [edges eb] (get-edge edges epoints b)]
-          (if-not (if (= :f f)
-                    (face-b1? deltas (g/cross ea eb))
-                    (face-b2? verts p (g/cross ea eb)))
-            (recur edges (next s))))
-        true)))
-
-  (defn intersect-tetrahedra?
-    "Takes 2 seqs of 4 3D points, each defining a tetrahedron. Returns
-    true if they intersect. Orientation of points is irrelevant (unlike
-    in the original algorithm this implementation is based on)."
-    [p q]
-    (let [[pa pb pc pd :as p] (orient-tetra p)
-          [qa qb qc qd :as q] (orient-tetra q)
-          masks (check-faces-a
-                 (map #(g/- % pa) q)
-                 [[pb pa] [pc pa] [pd pa] [pc pb] [pd pb]]
-                 q pb [[:f 0 1] [:f 2 0] [:e 0 1] [:f 1 2]
-                       [:e 0 2] [:e 1 2] [:f* 4 3] [:e 0 3]
-                       [:e 1 3] [:e 2 3]])]
-      (if masks
-        (or (not= 15 (reduce bit-or masks))
-            (check-faces-b
-             (map #(g/- % qa) p)
-             [[qb qa] [qc qa] [qd qa] [qc qb] [qd qb]]
-             p qb [[:f 0 1] [:f 2 0] [:f 1 2] [:f* 4 3]])))))
+      (if (neg? dp) [a b c d] [a c b d])))
 #+END_SRC
+
 ** Constructors
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn tetrahedron
     ([points]
        (thi.ng.geom.types.Tetrahedron.
-        (orient-tetra (map vec3 points))))
+        (orient-tetra (mapv vec3 points))))
     ([a b c d] (tetrahedron [a b c d])))
 #+END_SRC
+
 ** Protocol implementations
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.Tetrahedron
@@ -138,11 +31,15 @@
   g/PArea
   (area
    [{[a b c d] :points}]
-   (->> [[a b c] [a b d] [b c d] [c a d]]
+   (->> (g/faces _)
         (map #(m/abs (apply gu/tri-area3 %)))
         (reduce +)))
 #+END_SRC
 **** TODO PBoundary
+
+- use classify-point on all faces to check for containment (must be
+  neg for all)
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PClassify
   (classify-point [_ p] nil) ; TODO
@@ -211,7 +108,8 @@
    [_ s]
    (cond
     (instance? thi.ng.geom.types.Tetrahedron s)
-    (intersect-tetrahedra? (g/vertices _) (g/vertices s))
+    (isec/intersect-tetrahedra?
+     (orient-tetra (g/vertices _)) (orient-tetra (g/vertices s)))
     (and (sequential? s) (= 4 (count s)))
     (intersect-tetrahedra? (g/vertices _) s)
     :default (err/type-error! "Tetrahedron" s)))
