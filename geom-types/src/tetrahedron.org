@@ -1,28 +1,9 @@
 #+SETUPFILE: ../../src/setup.org
 
 * thi.ng.geom.tetrahedron
-** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx :mkdirp yes :padline no
-  (ns thi.ng.geom.tetrahedron
-    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
-    (:require
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec3]]
-     [thi.ng.geom.triangle :as t]
-     [thi.ng.geom.gmesh :as gm]
-     [thi.ng.geom.types :as types]
-     [thi.ng.geom.types.utils :as tu]
-     [thi.ng.common.data.core :as d]
-     [thi.ng.common.error :as err]
-     [thi.ng.common.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
-     ,#+clj [thi.ng.macromath.core :as mm])
-    ,#+clj
-    (:import
-     [thi.ng.geom.types Triangle3]))
-#+END_SRC
+
 ** Typespecific functions
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref helpers
   (defn orient-tetra
     "Takes a seq of 4 3D points, returns them as vector in the order so
     that the last point is on the opposite side of the plane defined by
@@ -141,7 +122,7 @@
              p qb [[:f 0 1] [:f 2 0] [:f 1 2] [:f* 4 3]])))))
 #+END_SRC
 ** Constructors
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref ctors
   (defn tetrahedron
     ([points]
        (thi.ng.geom.types.Tetrahedron.
@@ -149,11 +130,11 @@
     ([a b c d] (tetrahedron [a b c d])))
 #+END_SRC
 ** Protocol implementations
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.Tetrahedron
 #+END_SRC
 **** PArea
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PArea
   (area
    [{[a b c d] :points}]
@@ -162,7 +143,7 @@
         (reduce +)))
 #+END_SRC
 **** TODO PBoundary
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PClassify
   (classify-point [_ p] nil) ; TODO
   g/PProximity
@@ -171,7 +152,7 @@
   (contains-point? [_ p] nil) ; TODO
 #+END_SRC
 **** PBounds
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PBounds
   (bounds [_] (tu/bounding-box (g/vertices _)))
   (width [_] (gu/axis-range 0 (g/vertices _)))
@@ -179,34 +160,38 @@
   (depth [_] (gu/axis-range 2 (g/vertices _)))
 #+END_SRC
 **** PBoundingSphere
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PBoundingSphere
   (bounding-sphere
    [_] (tu/bounding-sphere (g/centroid _) (g/vertices _)))
 #+END_SRC
 **** PCenter
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PCenter
   (center
    ([_] (thi.ng.geom.types.Tetrahedron. (gu/center v/V3 (:points _))))
    ([_ o] (thi.ng.geom.types.Tetrahedron. (gu/center o (:points _)))))
-  (centroid [_] (gu/centroid (g/vertices _)))
+  (centroid [_] (gu/centroid (:points _)))
 #+END_SRC
 **** PFlip
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PFlip
   (flip
    [{[a b c d] :points}] (thi.ng.geom.types.Tetrahedron. [b a c d]))
 #+END_SRC
 **** PGraph
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PVertexAccess
   (vertices
    [_] (:points _))
   g/PEdgeAccess
   (edges
    [{[a b c d] :points}]
-   (mapv vector [a b c a b c] [b c a d d d]))
+   [[a b] [b c] [c a] [a d] [b d] [c d]])
+  g/PFaceAccess
+  (faces
+   [{[a b c d] :points}]
+   [[a b c] [a d b] [b d c] [c d a]])
   g/PGraph
   (vertex-neighbors
    [{[a b c d] :points} v]
@@ -220,7 +205,7 @@
    [_ v] (if ((set (:points _)) v) 3 0))
 #+END_SRC
 **** TODO PIntersect                                                 :verify:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PIntersect
   (intersect-shape
    [_ s]
@@ -236,18 +221,16 @@
    [_ {p :p dir :dir}] nil)
 #+END_SRC
 **** PMeshConvert
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
    ([_ opts]
       (let [[a b c d] (orient-tetra (:points _))]
-        (g/into
-         (or (:mesh opts) (gm/gmesh))
-         [[a b c] [a d b] [b d c] [c d a]]))))
+        (g/into (or (:mesh opts) (gm/gmesh)) (g/faces _)))))
 #+END_SRC
 **** TODO PSample                                                    :verify:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PSample
   (point-at [_ t] nil) ; TODO
   (random-point
@@ -256,23 +239,30 @@
    [_] (gu/from-barycentric (g/vertices _) (m/normdist-weights 4)))
 #+END_SRC
 **** TODO PSlice
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PSlice
   (slice-with
    ([_ e] nil)
    ([_ e classifier] nil))
 #+END_SRC
+**** PSubdivide
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PSubdivide
+  (subdivide
+   [_]
+   (let [cp (gu/centroid (:points _))]
+     (map #(tetrahedron (conj % cp)) (g/faces _))))
+#+END_SRC
 **** PTessellate
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PTessellate
   (tessellate
-   [{[a b c d] :points}]
-   (map
-    #(thi.ng.geom.types.Triangle3. %)
-    [[a b c] [a d b] [b d c] [c d a]]))
+   [_] (g/faces _))
 #+END_SRC
 **** PTransform
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PRotate
+  (rotate [_ theta] (g/rotate-z _ theta))
   g/PRotate3D
   (rotate-x
    [_ theta]
@@ -307,12 +297,35 @@
    (thi.ng.geom.types.Tetrahedron. (mapv #(g/transform-vector m %) (:points _))))
 #+END_SRC
 **** PVolume                                                         :verify:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PVolume
   (volume [{[a b c d] :points}]
     (/ (g/dot (g/- a d) (gu/ortho-normal d b c)) 6.0))
 #+END_SRC
 **** End of implementations                                        :noexport:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   )
+#+END_SRC
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.tetrahedron
+    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :as v :refer [vec3]]
+     [thi.ng.geom.triangle :as t]
+     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.types]
+     [thi.ng.geom.types.utils :as tu]
+     [thi.ng.common.data.core :as d]
+     [thi.ng.common.error :as err]
+     [thi.ng.common.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
+     ,#+clj [thi.ng.macromath.core :as mm]))
+
+  <<helpers>>
+
+  <<ctors>>
+
+  <<impl>>
 #+END_SRC
