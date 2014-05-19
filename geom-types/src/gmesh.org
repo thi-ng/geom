@@ -313,9 +313,9 @@ located on the rotation axis.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PNormalAccess
   (face-normals
-   [_] (or (:fnormals _) (:fnormals (g/compute-face-normals _))))
+   [_] (if (seq (:fnormals _)) (:fnormals _) (:fnormals (g/compute-face-normals _))))
   (vertex-normals
-   [_] (or (:vnormals _) (:vnormals (g/compute-vertex-normals _))))
+   [_] (if (seq (:vnormals _)) (:vnormals _) (:vnormals (g/compute-vertex-normals _))))
   (compute-face-normals
    [_]
    (loop [norms (transient #{}), fnorms (transient {}), faces (:faces _)]
@@ -328,7 +328,7 @@ located on the rotation axis.
          :fnormals (persistent! fnorms)))))
   (compute-vertex-normals
    [_]
-   (let [_ (if (:fnormals _) _ (g/compute-face-normals _))
+   (let [_ (if (seq (:fnormals _)) _ (g/compute-face-normals _))
          {:keys [vertices normals fnormals]} _]
      (loop [norms (transient normals), vnorms (transient {}), verts (keys vertices)]
        (if verts
