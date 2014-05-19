@@ -149,9 +149,9 @@ front, back (see diagram below).
    [_ s]
    (cond
     (instance? thi.ng.geom.types.AABB s)
-      (gu/intersect-aabb-aabb? _ s)
+      (isec/intersect-aabb-aabb? _ s)
     (instance? thi.ng.geom.types.Sphere s)
-      (gu/intersect-aabb-sphere? _ s)
+      (isec/intersect-aabb-sphere? _ s)
     :default (err/type-error! "AABB" s)))
 #+END_SRC
 
@@ -300,6 +300,7 @@ of the original with inner sorting over XYZ.
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec3]]
      [thi.ng.geom.cuboid :as cu]
      [thi.ng.geom.gmesh :as gm]

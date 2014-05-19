@@ -238,28 +238,9 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 #+BEGIN_SRC clojure :noweb-ref impl2
   g/PIntersect
   (intersect-line
-   [{[[px1 py1 :as p] [qx1 qy1 :as q]] :points :as _}
-    {[[px2 py2 :as lp] [qx2 qy2 :as lq]] :points}]
-   (let [dx1 (- qx1 px1), dy1 (- qy1 py1)
-         dx2 (- qx2 px2), dy2 (- qy2 py2)
-         dx12 (- px1 px2), dy12 (- py1 py2)
-         denom (mm/msub dy2 dx1 dx2 dy1)
-         na (mm/msub dx2 dy12 dy2 dx12)
-         nb (mm/msub dx1 dy12 dy1 dx12)]
-     (if-not (zero? denom)
-       (let [ua (/ na denom)
-             ub (/ nb denom)
-             ipos (g/mix p q ua)]
-         (if (and (>= ua 0.0) (<= ua 1.0) (>= ub 0.0) (<= ub 1.0))
-           {:type :intersect :p ipos :ua ua :ub ub}
-           {:type :intersect-outside :p ipos :ua ua :ub ub}))
-       (if (and (zero? na) (zero? nb))
-         (let [ip (g/closest-point _ lp)
-               iq (g/closest-point _ lq)]
-           (if (or (m/delta= ip lp) (m/delta= iq lq))
-             {:type :coincident :p ip :q iq}
-             {:type :coincident-no-intersect :p ip :q iq}))
-         {:type :parallel}))))
+   [{[a b] :points} l]
+   (let [[c d] (or (:points l) l)]
+     (isec/intersect-line2-line2? a b c d)))
 #+END_SRC
 **** PMagnitude                                                    :template:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
@@ -310,7 +291,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 #+BEGIN_SRC clojure :noweb-ref impl3
   g/PClassify
   (classify-point
-   [{p :points} p] nil) ; TODO
+   [{p :points} p] nil) ; TODO needs normal to define plane to classify
   g/PProximity
   (closest-point
    [{p :points} q] (gu/closest-point-on-segment (vec3 q) (p 0) (p 1)))
@@ -351,7 +332,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   g/PIntersect
   (intersect-line
    [{[a b] :points} l]
-   (let [[c d] (if (sequential? l) l (:points l))]
+   (let [[c d] (or (:points l) l)]
      (gu/closest-line-between a b c d)))
   (intersect-ray [_ r])
   (intersect-shape [_ s])
@@ -415,7 +396,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   g/PBoundary
   (classify-point [_ v])
   g/PProximity
-  (closest-point [_ a])
+  (closest-point [{points :points} p])
   g/PBoundary
   (contains-point? [_ a])
 #+END_SRC
@@ -560,6 +541,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.types :as types]

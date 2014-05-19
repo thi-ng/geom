@@ -173,8 +173,8 @@ than 1.0.
   (intersect-shape
    [_ s]
    (cond
-    (instance? thi.ng.geom.types.Rect2 s) (gu/intersect-rect-rect? _ s)
-    (instance? thi.ng.geom.types.Circle2 s) (gu/intersect-aabb-sphere? _ s)
+    (instance? thi.ng.geom.types.Rect2 s) (isec/intersect-rect-rect? _ s)
+    (instance? thi.ng.geom.types.Circle2 s) (isec/intersect-aabb-sphere? _ s)
     :default (err/type-error! "Rect2" s)))
 #+END_SRC
 
@@ -313,6 +313,7 @@ of triangles of the subdivided rects.
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.gmesh :as gm]

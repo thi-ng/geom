@@ -8,6 +8,7 @@
      [thi.ng.common.math.core :as m]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.sphere :as s]
@@ -27,7 +28,7 @@
     (let [eps2 (* eps eps)]
       (->> tree
            (st/select-with
-            #(gu/intersect-aabb-sphere? (:p %) (g/+ (:p %) (:size %)) p eps)
+            #(isec/intersect-aabb-sphere? (:p %) (g/+ (:p %) (:size %)) p eps)
             #(<= (g/dist-squared p %) eps2))
            (persistent!)
            (first))))
