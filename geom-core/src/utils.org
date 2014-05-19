@@ -222,8 +222,8 @@
   (defn tessellate-tri-with-midpoints
     [[a b c]]
     (let [ab (g/mix a b)
-	  bc (g/mix b c)
-	  ca (g/mix c a)]
+          bc (g/mix b c)
+          ca (g/mix c a)]
       [[a ab ca] [ab b bc] [bc c ca] [ab bc ca]]))
 
   (defn tessellate-3
@@ -309,95 +309,6 @@
           (and (>= u 0.0) (>= w 0.0) (m/in-range? 0.0 1.0 v))))))
 #+END_SRC
 
-** Intersections
-
-#+BEGIN_SRC clojure :noweb-ref isec
-  (defn intersect-circle-circle?
-    ([{p :p r1 :r} {q :p r2 :r}]
-       (intersect-circle-circle? p r1 q r2))
-    ([p r1 q r2]
-       (let [delta (g/- q p)
-             d (g/mag delta)]
-         (when (and (<= d (+ r1 r2)) (>= d (m/abs (- r1 r2))))
-           (let [a (/ (+ (- (* r1 r1) (* r2 r2)) (* d d)) (* 2.0 d))
-                 invd (/ 1.0 d)
-                 p (g/madd delta (* a invd) p)
-                 h (Math/sqrt (- (* r1 r1) (* a a)))
-                 perp (g/* (g/normal delta) (* h invd))]
-             [(g/+ p perp) (g/- p perp)])))))
-#+END_SRC
-
-#+BEGIN_SRC clojure :noweb-ref isec
-  (defn intersect-rect-rect?
-    ([{[px py] :p [w h] :size} {[qx qy] :p [qw qh] :size}]
-       (not (or (> px (+ qx qw)) (> qx (+ px w)) (> py (+ qy qh)) (> qy (+ py h)))))
-    ([[px1 py1] [qx1 qy1] [px2 py2] [qx2 qy2]]
-       (not (or (> px1 qx2) (> px2 qx1) (> py1 qy2) (> py2 qy1)))))
-#+END_SRC
-
-#+BEGIN_SRC clojure :noweb-ref isec
-  (defn intersect-aabb-aabb?
-    ([{pa :p sa :size} {pb :p sb :size}]
-       (every?
-        #(and (<= (pa %) (+ (pb %) (sb %))) (<= (pb %) (+ (pa %) (sa %)))) [0 1 2]))
-    ([pa pb qa qb]
-       (every? #(and (<= (pa %) (qb %)) (<= (pb %) (qa %))) [0 1 2])))
-#+END_SRC
-
-Source:
-Graphics Gems 2 / SO:
-http://stackoverflow.com/questions/4578967
-
-Also works for rect/circle...
-
-#+BEGIN_SRC clojure :noweb-ref isec
-  (defn intersect-aabb-sphere?
-    ([{p :p sz :size} {s :p r :r}]
-       (intersect-aabb-sphere? p (g/+ p sz) s r))
-    ([p q c r]
-       (let [sq #(* % %)
-             ds (mapv
-                 (fn [x1 x2 sx]
-                   (if (< sx x1) (sq (- sx x1)) (if (> sx x2) (sq (- sx x2)) 0.0)))
-                 p q c)]
-         (<= (apply + ds) (* r r)))))
-#+END_SRC
-
-#+BEGIN_SRC clojure :noweb-ref isec
-  (defn intersect-sphere-sphere?
-    ([{p1 :p r1 :r} {p2 :p r2 :r}]
-       (intersect-sphere-sphere? p1 r1 p2 r2))
-    ([p1 r1 p2 r2]
-       (<= (g/dist-squared p1 p2) (mm/addm r1 r2 r1 r2))))
-#+END_SRC
-
-Source: http://geomalgorithms.com/a06-_intersect-2.html
-
-#+BEGIN_SRC clojure :noweb-ref isec 
-  (defn intersect-ray-triangle3?
-    [p d a b c]
-    (let [u (g/- b a)
-          v (g/- c a)
-          n (g/cross u v)]
-      (if (m/delta= V3 n)
-        {:type :degenerate}
-        (let [w0 (g/- p a)
-              a' (- (g/dot n w0))
-              b' (g/dot n d)]
-          (if (m/delta= 0.0 b')
-            (if (m/delta= 0.0 a')
-              {:type :same-plane}
-              {:type :no-intersect})
-            (let [r (/ a' b')]
-              (if (< r 0.0)
-                {:type :no-intersect}
-                (let [i (g/madd d r p)
-                      [u v w] (triangle-barycentric-coords a b c i u v)]
-                  (if (and (>= u 0.0) (>= w 0.0) (m/in-range? 0.0 1.0 v))
-                    {:type :intersect :p i}
-                    {:type :no-intersect :p i})))))))))
-#+END_SRC
-
 ** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/utils.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.utils
@@ -427,6 +338,4 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
   <<normals>>
 
   <<triangles>>
-
-  <<isec>>
 #+END_SRC
