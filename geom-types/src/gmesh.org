@@ -327,20 +327,22 @@ located on the rotation axis.
          :normals (persistent! norms)
          :fnormals (persistent! fnorms)))))
   (compute-vertex-normals
-   [{:keys [vertices normals fnormals] :as _}]
-   (loop [norms (transient normals), vnorms (transient {}), verts (keys vertices)]
-     (if verts
-       (let [v (first verts)
-             n (->> v
-                    (g/vertex-faces _)
-                    (map #(get fnormals %))
-                    (reduce g/+)
-                    (g/normalize))
-             [norms n] (d/index! norms n)]
-         (recur norms (assoc! vnorms v n) (next verts)))
-       (assoc _
-         :normals (persistent! norms)
-         :vnormals (persistent! vnorms)))))
+   [_]
+   (let [_ (if (:fnormals _) _ (g/compute-face-normals _))
+         {:keys [vertices normals fnormals]} _]
+     (loop [norms (transient normals), vnorms (transient {}), verts (keys vertices)]
+       (if verts
+         (let [v (first verts)
+               n (->> v
+                      (g/vertex-faces _)
+                      (map #(get fnormals %))
+                      (reduce g/+)
+                      (g/normalize))
+               [norms n] (d/index! norms n)]
+           (recur norms (assoc! vnorms v n) (next verts)))
+         (assoc _
+           :normals (persistent! norms)
+           :vnormals (persistent! vnorms))))))
 #+END_SRC
 
 *** PGeomContainer
