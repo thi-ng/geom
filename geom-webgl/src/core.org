@@ -6,7 +6,8 @@
 
 #+BEGIN_SRC clojure :noweb-ref protos
   (defprotocol PWebGLConvert
-    (as-webgl-buffer-spec [_ opts]))
+    (as-webgl-buffer-spec [_ opts])
+    (into-buffer [_ buf idx]))
 
   (defprotocol PRelease
     (release [_]))
@@ -19,26 +20,82 @@
 ** Helpers
 
 #+BEGIN_SRC clojure :noweb-ref helpers
-  (defn- face-normals
-    [m]
-    (let [fnorms (g/face-normals m)]
-      (mapcat
-       (fn [f] (mapcat identity (repeat (count f) (fnorms f))))
-       (:faces m))))
-
-  (defn- vertex-normals
-    [m]
-    (let [vnorms (g/vertex-normals m)]
-      (mapcat (fn [f] (mapcat vnorms f)) (:faces m))))
-
   (defn get-script-text
     [id]
     (if-let [e (.getElementById js/document id)]
       (.-text e)
-      (err/illegal-arg! (str "No element: " id))))
+      (err/illegal-arg! (str "Unknown DOM element: " id))))
+
+  (defn loop-kv
+    [f xs]
+    (loop [xs xs]
+      (if xs
+        (let [x (first xs)]
+          (f (nth x 0) (nth x 1))
+          (recur (next xs))))))
+
+  (defn- face-normals
+    [m]
+    (let [fnorms (g/face-normals m)
+          faces (:faces m)
+          buf (arrays/float32 (* (count faces) 3 3))]
+      (loop [idx 0, faces faces]
+        (if faces
+          (let [[nx ny nz] (fnorms (first faces))]
+            (doto buf
+              (aset idx       nx)
+              (aset (+ idx 1) ny)
+              (aset (+ idx 2) nz)
+              (aset (+ idx 3) nx)
+              (aset (+ idx 4) ny)
+              (aset (+ idx 5) nz)
+              (aset (+ idx 6) nx)
+              (aset (+ idx 7) ny)
+              (aset (+ idx 8) nz))
+            (recur (+ idx 9) (next faces)))
+          buf))))
+
+  (defn- vertex-normals
+    [m]
+    (let [vnorms (g/vertex-normals m)
+          faces (:faces m)
+          buf (arrays/float32 (* (count faces) 3 3))]
+      (loop [i 0, faces faces]
+        (if faces
+          (let [f (first faces)]
+            (recur (->> i
+                        (into-buffer (vnorms (f 0)) buf)
+                        (into-buffer (vnorms (f 1)) buf)
+                        (into-buffer (vnorms (f 2)) buf))
+                   (next faces)))
+          buf))))
+
 #+END_SRC
 
 ** WebGL buffer conversions
+
+*** Vec3
+#+BEGIN_SRC clojure :noweb-ref impl
+  (extend-type thi.ng.geom.core.vector.Vec3
+    PWebGLConvert
+    (into-buffer [_ buf idx]
+      (doto buf
+        (aset idx       (.-x ^thi.ng.geom.core.vector.Vec3 _))
+        (aset (+ idx 1) (.-y ^thi.ng.geom.core.vector.Vec3 _))
+        (aset (+ idx 2) (.-z ^thi.ng.geom.core.vector.Vec3 _)))
+      (+ idx 3)))
+#+END_SRC
+
+*** PersistentVector
+#+BEGIN_SRC clojure :noweb-ref impl
+  (extend-type cljs.core.PersistentVector
+    PWebGLConvert
+    (into-buffer [_ buf idx]
+      (loop [idx idx, _ _]
+        (if _
+          (recur (into-buffer (first _) buf idx) (next _))
+          idx))))
+#+END_SRC
 
 *** GMesh
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -47,15 +104,20 @@
     (as-webgl-buffer-spec
       [_ opts]
       (let [m (if (:tessellate opts) (g/tessellate _) _)
-            verts (arrays/float32 (mapcat #(mapcat identity %) (:faces m)))
+            faces (:faces m)
+            num-faces (count faces)
+            verts (arrays/float32 (* num-faces 3 3))
             norms (cond
                    (:vnormals opts) (vertex-normals m)
                    (:fnormals opts) (face-normals m)
                    :default nil)]
+        (loop [i 0, faces faces]
+          (if faces
+            (recur (into-buffer (first faces) verts i) (next faces))))
         {:vertices     verts
          :normals      norms
-         :num-vertices (/ (.-length verts) 3)
-         :num-faces    (count (:faces m))})))
+         :num-vertices (* num-faces 3)
+         :num-faces    num-faces})))
 #+END_SRC
 
 ** WegGL context
@@ -220,19 +282,19 @@
 
 #+BEGIN_SRC clojure :noweb-ref vbo
   (defn make-buffer
-   [gl target draw-type data]
-   (let [buffer (.createBuffer gl)]
-    (.bindBuffer gl target buffer)
-    (.bufferData gl target data draw-type)
-    buffer))
+    [gl target draw-type data]
+    (let [buffer (.createBuffer gl)]
+      (.bindBuffer gl target buffer)
+      (.bufferData gl target data draw-type)
+      buffer))
 
   (defn draw-buffer
     [^WebGLRenderingContext gl {:keys [shader attribs uniforms mode count]}]
     (.useProgram gl (:program shader))
-    (doseq [[id val] uniforms] (set-uniform shader id val))
-    (doseq [[id val] attribs] (set-attribute gl shader id val))
+    (loop-kv #(set-uniform shader % %2) uniforms)
+    (loop-kv #(set-attribute gl shader % %2) attribs)
     (.drawArrays gl mode 0 count)
-    (doseq [id (keys attribs)] (disable-attribute gl shader id))
+    (loop-kv (fn [id _] (disable-attribute gl shader id)) attribs)
     gl)
 #+END_SRC
 
@@ -283,7 +345,7 @@
 ** Demo
 
 #+BEGIN_SRC clojure :noweb-ref demo
-  (defn demo
+  (defn ^:export demo
     []
     (enable-console-print!)
     (let [gl (gl-context "main")
@@ -291,20 +353,26 @@
                   gl "shader-vs" "shader-fs"
                   {:mv [:mat4 false]
                    :proj [:mat4 false]}
-                  [:aPos :aCol])
+                  [:aPos :aNorm :aCol])
           ;;mesh (-> (a/aabb) (g/center) (g/as-mesh))
           mesh (-> (s/sphere 0.5) (g/as-mesh {:res 10}))
-          {:keys [vertices num-vertices num-faces]} (as-webgl-buffer-spec mesh {:tessellate true})
+          {:keys [vertices normals num-vertices num-faces]} (as-webgl-buffer-spec mesh {:tessellate true :fnormals true})
           _ (prn num-vertices num-faces)
           cols (arrays/float32 (take (* num-faces 3 4) (cycle [1 1 0 1, 0 1 1 1, 1 0 1 1])))
           vbuf (make-buffer gl (.-ARRAY_BUFFER gl) (.-STATIC_DRAW gl) vertices)
+          nbuf (make-buffer gl (.-ARRAY_BUFFER gl) (.-STATIC_DRAW gl) normals)
           cbuf (make-buffer gl (.-ARRAY_BUFFER gl) (.-STATIC_DRAW gl) cols)]
       (animate
        (fn [t]
          (let [mv (-> (mat/look-at (vec3 0 1 -1) (vec3) (vec3 0 1 0))
                       (g/rotate-y (* t 0.5)))
-               tx1 (->> (g/translate M44 -0.5 0 0) (g/* mv) (g/transpose))
-               tx2 (->> (g/translate M44 0.5 0 0) (g/* mv) (g/transpose))
+               tx1 (->> (g/translate M44 -0.5 0 0)
+                        (g/* (g/rotate-x M44 (* t 0.75)))
+                        (g/* mv)
+                        (g/transpose))
+               tx2 (->> (g/translate M44 0.5 0 0)
+                        (g/* mv)
+                        (g/transpose))
                proj (g/transpose (mat/perspective 45 (/ 640 480) 0.1 100.0))]
            (clear-depth-buffer gl 1)
            (clear-color-buffer gl 0 0 0 1.0)
@@ -312,14 +380,18 @@
            (draw-buffer
             gl
             {:shader shader
-             :attribs {:aPos {:buffer vbuf :comps 3} :aCol {:buffer cbuf :comps 4}}
+             :attribs {:aPos {:buffer vbuf :comps 3}
+                       :aNorm {:buffer nbuf :comps 3}
+                       :aCol {:buffer cbuf :comps 4}}
              :uniforms {:mv tx1 :proj proj}
              :mode (.-TRIANGLES gl)
              :count num-vertices})
            (draw-buffer
             gl
             {:shader shader
-             :attribs {:aPos {:buffer vbuf :comps 3} :aCol {:buffer cbuf :comps 4}}
+             :attribs {:aPos {:buffer vbuf :comps 3}
+                       :aNorm {:buffer nbuf :comps 3}
+                       :aCol {:buffer cbuf :comps 4}}
              :uniforms {:mv tx2 :proj proj}
              :mode (.-TRIANGLES gl)
              :count num-vertices})
