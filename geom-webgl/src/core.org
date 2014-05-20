@@ -1,0 +1,368 @@
+#+SETUPFILE: ../../src/setup.org
+
+* thi.ng.geom.webgl.core
+
+** Protocols
+
+#+BEGIN_SRC clojure :noweb-ref protos
+  (defprotocol PWebGLConvert
+    (as-webgl-buffer-spec [_ opts]))
+
+  (defprotocol PRelease
+    (release [_]))
+
+  (defprotocol PBuffer
+    (get-buffer [_])
+    (update-buffer [_ opts]))
+#+END_SRC
+
+** Helpers
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn- face-normals
+    [m]
+    (let [fnorms (g/face-normals m)]
+      (mapcat
+       (fn [f] (mapcat identity (repeat (count f) (fnorms f))))
+       (:faces m))))
+
+  (defn- vertex-normals
+    [m]
+    (let [vnorms (g/vertex-normals m)]
+      (mapcat (fn [f] (mapcat vnorms f)) (:faces m))))
+
+  (defn get-script-text
+    [id]
+    (if-let [e (.getElementById js/document id)]
+      (.-text e)
+      (err/illegal-arg! (str "No element: " id))))
+#+END_SRC
+
+** WebGL buffer conversions
+
+*** GMesh
+#+BEGIN_SRC clojure :noweb-ref impl
+  (extend-type thi.ng.geom.types.GMesh
+    PWebGLConvert
+    (as-webgl-buffer-spec
+      [_ opts]
+      (let [m (if (:tessellate opts) (g/tessellate _) _)
+            verts (arrays/float32 (mapcat #(mapcat identity %) (:faces m)))
+            norms (cond
+                   (:vnormals opts) (vertex-normals m)
+                   (:fnormals opts) (face-normals m)
+                   :default nil)]
+        {:vertices     verts
+         :normals      norms
+         :num-vertices (/ (.-length verts) 3)
+         :num-faces    (count (:faces m))})))
+#+END_SRC
+
+** WegGL context
+
+#+BEGIN_SRC clojure :noweb-ref ctx
+  (def context-default-attribs
+    {:alpha true
+     :antialias true
+     :depth true
+     :fail-if-major-performance-caveat false
+     :prefer-low-power-to-high-performance false
+     :premultiplied-alpha true
+     :preserve-drawing-buffer false
+     :stencil false})
+
+  (defn gl-context
+    ([canvas] (gl-context canvas {}))
+    ([canvas attribs]
+       (let [canvas (if (string? canvas) (.getElementById js/document canvas) canvas)
+             attribs (clj->js (merge context-default-attribs attribs))
+             ctx (loop [[id & more] ["webgl" "experimental-webgl" "webkit-3d" "moz-webgl"]]
+                   (when id
+                     (try
+                       (let [ctx (.getContext canvas id attribs)]
+                         (set! (.-onselectstart canvas) (constantly false))
+                         (if ctx ctx (recur more)))
+                       (catch js/Error e (recur more)))))]
+         (or ctx (err/unsupported! "WebGL not available")))))
+#+END_SRC
+
+
+** Shaders
+
+#+BEGIN_SRC clojure :noweb-ref shaders
+  (def uniform-types
+    {:float ["1fv" arrays/float32]
+     :int ["1iv" arrays/int32]
+     :vec2 ["2fv" arrays/float32]
+     :vec3 ["3fv" arrays/float32]
+     :vec4 ["4fv" arrays/float32]
+     :ivec2 ["2iv" arrays/int32]
+     :ivec3 ["3iv" arrays/int32]
+     :ivec4 ["4iv" arrays/int32]
+     :mat2 ["Matrix2fv" arrays/float32]
+     :mat3 ["Matrix3fv" arrays/float32]
+     :mat4 ["Matrix4fv" arrays/float32]
+     :bool ["1iv" arrays/uint8]
+     :bvec2 ["2iv" arrays/uint8]
+     :bvec3 ["3iv" arrays/uint8]
+     :bvec4 ["4iv" arrays/uint8]})
+
+  (defn init-shader-uniforms
+    [^WebGLRenderingContext gl prog uniforms]
+    (reduce
+     (fn [umap [id [type transpose?]]]
+       (let [loc (.getUniformLocation gl prog (name id))
+             transpose? (boolean transpose?)
+             [u-type u-cast] (uniform-types type)
+             setter (aget gl (str "uniform" u-type))]
+         (assoc umap id
+                {:type type
+                 :setter (if (#{:mat2 :mat3 :mat4} type)
+                           (fn [x] (.call setter gl loc transpose?
+                                          (if (arrays/typed-array? x)
+                                            x (u-cast x))))
+                           (fn [x] (.call setter gl loc
+                                          (if (arrays/typed-array? x)
+                                            x (u-cast (if (number? x) [x] x))))))
+                 :loc loc})))
+     {} uniforms))
+
+  (defn init-shader-attribs
+    [^WebGLRenderingContext gl prog attribs]
+    (reduce
+     (fn [amap id]
+       (assoc amap id (.getAttribLocation gl prog (name id))))
+     {} attribs))
+
+  (defn compile-shader
+    [^WebGLRenderingContext gl src type]
+    (if-let [shader (.createShader gl type)]
+      (do
+        (.shaderSource gl shader src)
+        (.compileShader gl shader)
+        (if (.getShaderParameter gl shader (.-COMPILE_STATUS gl))
+          shader
+          (let [error (.getShaderInfoLog gl shader)]
+            (.deleteShader gl shader)
+            (err/throw! (str "Error compiling shader: " error "\n" src)))))
+      (err/throw! "Can't create shader")))
+
+  (defn make-shader
+    [^WebGLRenderingContext gl vs fs uniforms attribs]
+    (let [vs (compile-shader gl vs (.-VERTEX_SHADER gl))
+          fs (compile-shader gl fs (.-FRAGMENT_SHADER gl))
+          prog (.createProgram gl)]
+      (doto gl
+        (.attachShader prog vs)
+        (.attachShader prog fs)
+        (.linkProgram prog))
+      (if (.getProgramParameter gl prog (.-LINK_STATUS gl))
+        (let [uniforms (init-shader-uniforms gl prog uniforms)
+              attribs (init-shader-attribs gl prog attribs)]
+          (doto gl
+            (.deleteShader vs)
+            (.deleteShader fs))
+          {:program prog
+           :uniforms uniforms
+           :attribs attribs})
+        (err/throw! (str "Shader failed to link:" (.getProgramInfoLog gl prog))))))
+
+  (defn make-shader-from-dom
+    [^WebGLRenderingContext gl vs-id fs-id uniforms attribs]
+    (make-shader gl (get-script-text vs-id) (get-script-text fs-id)
+                 uniforms attribs))
+
+  (defn set-uniform
+    [shader id val]
+    (if-let [u-spec (get-in shader [:uniforms id])]
+      ((:setter u-spec) val)
+      (err/illegal-arg! (str "Unknown shader uniform: " id))))
+
+  (defn set-attribute
+    [^WebGLRenderingContext gl shader id {:keys [buffer stride comps type normalized? offset]}]
+    (if-let [loc (get-in shader [:attribs id])]
+      (doto gl
+        (.bindBuffer (.-ARRAY_BUFFER gl) buffer)
+        (.enableVertexAttribArray loc)
+        (.vertexAttribPointer
+         loc
+         comps
+         (or type (.-FLOAT gl))
+         (boolean normalized?)
+         (or stride 0)
+         (or offset 0)))
+      (err/illegal-arg! (str "Unknown shader attribute: " id))))
+
+  (defn disable-attribute
+    [^WebGLRenderingContext gl shader id]
+    (if-let [loc (get-in shader [:attribs id])]
+      (do (.disableVertexAttribArray gl loc) gl)
+      (err/illegal-arg! (str "Unknown shader attribute: " id))))
+
+  (defn clear-color-buffer
+    [^WebGLRenderingContext gl r g b a]
+    (.clearColor gl r g b a)
+    (.clear gl (.-COLOR_BUFFER_BIT gl)))
+
+  (defn clear-depth-buffer
+    [^WebGLRenderingContext gl d]
+    (.clearDepth gl d)
+    (.clear gl (.-DEPTH_BUFFER_BIT gl)))
+
+  (defn set-viewport
+    ([^WebGLRenderingContext gl {[x y] :p [w h] :size}]
+       (.viewPort gl x y w h) gl)
+    ([^WebGLRenderingContext gl x y w h]
+       (.viewPort gl x y w h) gl))
+#+END_SRC
+
+** VBO
+
+#+BEGIN_SRC clojure :noweb-ref vbo
+  (defn make-buffer
+   [gl target draw-type data]
+   (let [buffer (.createBuffer gl)]
+    (.bindBuffer gl target buffer)
+    (.bufferData gl target data draw-type)
+    buffer))
+
+  (defn draw-buffer
+    [^WebGLRenderingContext gl {:keys [shader attribs uniforms mode count]}]
+    (.useProgram gl (:program shader))
+    (doseq [[id val] uniforms] (set-uniform shader id val))
+    (doseq [[id val] attribs] (set-attribute gl shader id val))
+    (.drawArrays gl mode 0 count)
+    (doseq [id (keys attribs)] (disable-attribute gl shader id))
+    gl)
+#+END_SRC
+
+** Animator
+
+#+BEGIN_SRC clojure :noweb-ref animator
+  (defn- native-animframe-provider
+    "If supported, returns a map of the brower's native RequestAnimationFrame
+      and CancelAnimationFrame handlers."
+    []
+    (loop [[prefix & more] ["ms" "moz" "webkit" "o"]]
+      (when prefix
+        (if-let [f (aget js/window (str prefix "RequestAnimationFrame"))]
+          {:request f
+           :cancel (or (aget js/window (str prefix "CancelAnimationFrame"))
+                       (aget js/window (str prefix "CancelRequestAnimationFrame")))}
+          (recur more)))))
+
+  (defn- fallback-provider
+    "Returns a map of setTimeout based RequestAnimationFrame & CancelAnimationFrame
+    frame providers."
+    []
+    (let [lastTime (atom (.getTime (js/Date.)))
+          provider (fn provider
+                     ([callback] (provider callback nil))
+                     ([callback el]
+                        (let [curr (.getTime (js/Date.))
+                              delay (Math/max 0 (- 16.666666 (- curr @lastTime)))]
+                          (reset! lastTime curr)
+                          (js/setTimeout (fn [] (callback (+ curr delay)))))))
+          cancel (fn [id] (js/clearTimeout id))]
+      {:request provider :cancel cancel}))
+
+  (def animframe-provider (or (native-animframe-provider) (fallback-provider)))
+
+  (defn animate
+    [f & [element]]
+    (let [t0 (.getTime (js/Date.))
+          t (atom 0)
+          f' (fn animate* []
+               (if (f (reset! t (* (- (.getTime (js/Date.)) t0) 0.001)))
+                 (if element
+                   ((:request animframe-provider) animate* element)
+                   ((:request animframe-provider) animate*))))]
+      (f')))
+#+END_SRC
+
+** Demo
+
+#+BEGIN_SRC clojure :noweb-ref demo
+  (defn demo
+    []
+    (enable-console-print!)
+    (let [gl (gl-context "main")
+          shader (make-shader-from-dom
+                  gl "shader-vs" "shader-fs"
+                  {:mv [:mat4 false]
+                   :proj [:mat4 false]}
+                  [:aPos :aCol])
+          ;;mesh (-> (a/aabb) (g/center) (g/as-mesh))
+          mesh (-> (s/sphere 0.5) (g/as-mesh {:res 10}))
+          {:keys [vertices num-vertices num-faces]} (as-webgl-buffer-spec mesh {:tessellate true})
+          _ (prn num-vertices num-faces)
+          cols (arrays/float32 (take (* num-faces 3 4) (cycle [1 1 0 1, 0 1 1 1, 1 0 1 1])))
+          vbuf (make-buffer gl (.-ARRAY_BUFFER gl) (.-STATIC_DRAW gl) vertices)
+          cbuf (make-buffer gl (.-ARRAY_BUFFER gl) (.-STATIC_DRAW gl) cols)]
+      (animate
+       (fn [t]
+         (let [mv (-> (mat/look-at (vec3 0 1 -1) (vec3) (vec3 0 1 0))
+                      (g/rotate-y (* t 0.5)))
+               tx1 (->> (g/translate M44 -0.5 0 0) (g/* mv) (g/transpose))
+               tx2 (->> (g/translate M44 0.5 0 0) (g/* mv) (g/transpose))
+               proj (g/transpose (mat/perspective 45 (/ 640 480) 0.1 100.0))]
+           (clear-depth-buffer gl 1)
+           (clear-color-buffer gl 0 0 0 1.0)
+           (.enable gl (.-DEPTH_TEST gl))
+           (draw-buffer
+            gl
+            {:shader shader
+             :attribs {:aPos {:buffer vbuf :comps 3} :aCol {:buffer cbuf :comps 4}}
+             :uniforms {:mv tx1 :proj proj}
+             :mode (.-TRIANGLES gl)
+             :count num-vertices})
+           (draw-buffer
+            gl
+            {:shader shader
+             :attribs {:aPos {:buffer vbuf :comps 3} :aCol {:buffer cbuf :comps 4}}
+             :uniforms {:mv tx2 :proj proj}
+             :mode (.-TRIANGLES gl)
+             :count num-vertices})
+           true)))
+      {:ctx gl
+       :shader shader
+       ;;:mv mv
+       ;;:proj proj
+       :verts vertices
+       :cols cols}))
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/core.cljs :noweb yes :mkdirp yes :padline no
+(ns thi.ng.geom.webgl.core
+  (:require
+    [thi.ng.geom.core :as g]
+    [thi.ng.geom.core.utils :as gu]
+    [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+    [thi.ng.geom.core.matrix :as mat :refer [M44]]
+    [thi.ng.geom.types]
+    [thi.ng.geom.aabb :as a]
+    [thi.ng.geom.sphere :as s]
+    [thi.ng.geom.gmesh]
+    [thi.ng.geom.webgl.arrays :as arrays]
+    [thi.ng.common.error :as err])
+  (:require-macros
+    [thi.ng.macromath.core :as mm]))
+
+  <<protos>>
+
+  <<animator>>
+
+  <<helpers>>
+
+  <<impl>>
+
+  <<ctx>>
+
+  <<shaders>>
+
+  <<vbo>>
+
+  <<demo>>
+#+END_SRC
