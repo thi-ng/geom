@@ -443,33 +443,27 @@ of the code.
 #+BEGIN_SRC clojure :noweb-ref quat
   g/PMatrixConvert
   (as-matrix
-   [_]
-   (let [x2 (+ x x)
+   [_] (g/as-matrix _ nil))
+  (as-matrix
+   [_ opts]
+   (let [[tx ty tz] (:translate opts)
+         x2 (+ x x)
          y2 (+ y y)
          z2 (+ z z)
          xx (* x x2)
-         yx (* y x2)
+         xy (* x y2)
+         xz (* x z2)
          yy (* y y2)
-         zx (* z x2)
-         zy (* z y2)
+         yz (* y z2)
          zz (* z z2)
          wx (* w x2)
          wy (* w y2)
          wz (* w z2)]
      (thi.ng.geom.core.matrix.Matrix44.
-      (mm/sub 1.0 yy zz) ;m00
-      (- yx wz)     ;m10
-      (+ zx wy)     ;m20
-      0.0
-      (+ yx wz)     ;m01
-      (mm/sub 1.0 xx zz) ;m11
-      (- zy wx)     ;m21
-      0.0
-      (- zx wy)     ;m02
-      (+ zy wx)     ;m12
-      (mm/sub 1.0 xx yy) ;m22
-      0.0
-      0.0 0.0 0.0 1.0)))
+      (- 1.0 (+ yy zz)) (+ xy wz) (- xz wy) 0.0
+      (- xy wz) (- 1.0 (+ xx zz)) (+ yz wx) 0.0
+      (+ xz wy) (- yz wx) (- 1.0 (+ xx yy)) 0.0
+      (or tx 0.0) (or ty 0.0) (or tz 0.0) 1.0)))
 #+END_SRC
 *** PVectorTransform
 #+BEGIN_SRC clojure :noweb-ref quat
@@ -518,41 +512,47 @@ of the code.
                     :zyx [V3Z V3Y V3X]
                     (err/illegal-arg! order))]
       (g/* (quat-from-axis-angle a alpha)
-             (quat-from-axis-angle b beta)
-             (quat-from-axis-angle c gamma))))
+           (quat-from-axis-angle b beta)
+           (quat-from-axis-angle c gamma))))
 
   ;; Allan and Mark Watt's "Advanced Animation and Rendering Techniques"
   ;; (ACM Press 1992)
+  ;; http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+
   (defn quat-from-matrix
     [^Matrix44 m]
     (let [trace (mm/add (.-m00 m) (.-m11 m) (.-m22 m))]
       (if (pos? trace)
-        (let [s (Math/sqrt (inc trace))
-              w (/ s 2.0)
-              s (/ 0.5 s)]
+        (let [s (/ 0.5 (Math/sqrt (inc trace)))]
           (Quat4.
-           (mm/subm (.-m21 m) (.-m12 m) s)
-           (mm/subm (.-m02 m) (.-m20 m) s)
-           (mm/subm (.-m10 m) (.-m01 m) s) w))
-        (let [[i ii] (if (> (.-m11 m) (.-m00 m))
-                       [1 (.-m11 m)] [0 (.-m00 m)])
-              [i ii] (if (> (.-m22 m) ii)
-                       [2 (.-m22 m)] [i ii])
-              [jj kk jk kj ij ji ik ki]
-              (case (int i)
-                0 [(.-m11 m) (.-m22 m) (.-m12 m) (.-m21 m) (.-m01 m) (.-m10 m) (.-m02 m) (.-m20 m)]
-                1 [(.-m22 m) (.-m00 m) (.-m20 m) (.-m02 m) (.-m12 m) (.-m21 m) (.-m10 m) (.-m01 m)]
-                2 [(.-m00 m) (.-m11 m) (.-m01 m) (.-m10 m) (.-m20 m) (.-m02 m) (.-m21 m) (.-m12 m)])
-              s (Math/sqrt (inc (- ii (+ jj kk))))
-              x (/ s 2.0)
-              s (/ 0.5 s)
-              qj (mm/addm ij ji s)
-              qk (mm/addm ik ki s)
-              qw (mm/subm kj jk s)]
-          (case (int i)
-            0 (Quat4. x qj qk qw)
-            1 (Quat4. qk x qj qw)
-            2 (Quat4. qj qk x qw))))))
+           (mm/subm (.-m12 m) (.-m21 m) s)
+           (mm/subm (.-m20 m) (.-m02 m) s)
+           (mm/subm (.-m01 m) (.-m10 m) s)
+           (/ 0.25 s)))
+        (g/normalize
+         (if (and (> (.-m00 m) (.-m11 m)) (> (.-m00 m) (.-m22 m)))
+           (let [s (* 2.0 (Math/sqrt (inc (mm/sub (.-m00 m) (.-m11 m) (.-m22 m)))))
+                 s' (/ s)]
+             (Quat4.
+              (* 0.25 s)
+              (mm/addm (.-m10 m) (.-m01 m) s')
+              (mm/addm (.-m20 m) (.-m02 m) s')
+              (mm/subm (.-m12 m) (.-m21 m) s')))
+           (if (> (.-m11 m) (.-m22 m))
+             (let [s (* 2.0 (Math/sqrt (inc (mm/sub (.-m11 m) (.-m00 m) (.-m22 m)))))
+                   s' (/ s)]
+               (Quat4.
+                (mm/addm (.-m10 m) (.-m01 m) s')
+                (* 0.25 s)
+                (mm/addm (.-m21 m) (.-m12 m) s')
+                (mm/subm (.-m20 m) (.-m02 m) s')))
+             (let [s (* 2.0 (Math/sqrt (inc (mm/sub (.-m22 m) (.-m00 m) (.-m11 m)))))
+                   s' (/ s)]
+               (Quat4.
+                (mm/addm (.-m20 m) (.-m02 m) s')
+                (mm/addm (.-m21 m) (.-m12 m) s')
+                (* 0.25 s)
+                (mm/subm (.-m10 m) (.-m01 m) s')))))))))
 
   (defn alignment-quat
     [a b]

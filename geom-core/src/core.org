@@ -79,7 +79,7 @@
 **** PMatrixConvert
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PMatrixConvert
-    (as-matrix [_]))
+    (as-matrix [_] [_ opts]))
 #+END_SRC
 **** PMinMax
 #+BEGIN_SRC clojure :noweb-ref protos-math
