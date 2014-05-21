@@ -19,9 +19,6 @@
   (defn fold-into-map
     [coll] (r/fold (r/monoid into hash-map) conj coll))
   
-  (defn fold-into-vec
-    [coll] (r/fold (r/monoid into vector) conj coll))
-  
   (defn face-loop-triples
     "Takes a mesh face (vector of points) and returns lazyseq of
     successive point triples: [prev curr next]"
@@ -39,15 +36,16 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
     centroids as values."
     [faces]
     (->> faces
+         ,#+cljs (seq)
          (r/map (fn [f] [f (gu/centroid f)]))
          (fold-into-map)))
-  
+
   (defn cc-subdiv-face
     [face fp e-points]
     (->> (face-loop-triples face)
          (r/map (fn [[p c n]] [(e-points #{p c}) c (e-points #{c n}) fp]))
          (r/foldcat)))
-  
+
   (defn cc-edge-points
     [edges f-points]
     (->> edges
@@ -58,13 +56,13 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
                    (conj (second e))
                    (gu/centroid))]))
            (fold-into-map)))
-  
+
   (defn cc-subdiv-faces
     [f-points e-points]
     (->> f-points
          (r/mapcat (fn [f fp] (cc-subdiv-face f fp e-points)))
          (r/foldcat)))
-  
+
   (defn cc-replace-vertices
     [mesh f-points e-points sd-faces]
     (let [new-verts (->> mesh
@@ -78,10 +76,8 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
                                   r (gu/centroid (mapv #(g/mix v %) vn))]
                               [v (g/addm (g/madd r 2.0 f) (g/* v (- n 3)) (/ 1.0 n))])))
                          (fold-into-map))]
-      (->> sd-faces
-           (r/map (fn [f] (replace new-verts f)))
-           (r/foldcat))))
-  
+      (map (fn [f] (replace new-verts f)) sd-faces)))
+
   (defn catmull-clark
     [{:keys [faces edges] :as mesh}]
     (let [f-points (cc-face-points faces)
@@ -98,7 +94,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
     (->> edges
          (r/map (fn [e] [e (g/mix (first e) (second e))]))
          (fold-into-map)))
-  
+
   (defn ds-face-points*
     [f e-points]
     (let [fp (gu/centroid f)]
@@ -108,19 +104,20 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
                            (g/+ (e-points #{p c}) (e-points #{c n}))
                            (g/addm c 0.25))]))
            (fold-into-map))))
-  
+
   (defn ds-face-points
     [{:keys [faces edges] :as m}]
     (let [e-points (ds-edge-midpoints (keys edges))]
       (->> faces
+           ,#+cljs (seq)
            (r/map (fn [f] [f (ds-face-points* f e-points)]))
            (fold-into-map))))
-  
+
   (defn ds-fp-faces
     "Construct new faces from face points"
     [f-points]
     (map (fn [[f fps]] (mapv fps f)) f-points))
-  
+
   (defn ds-make-edge-loop
     [edges]
     (loop [acc (transient [(ffirst edges)]), p (peek (first edges)), edges (set (rest edges))]
@@ -130,7 +127,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
             (recur (conj! acc (first e)) (second e) (disj edges e))
             (err/throw! "Mesh not manifold")))
         (persistent! acc))))
-  
+
   (defn ds-dual-faces
     [{:keys [vertices] :as mesh} f-points]
     (->> vertices
@@ -139,16 +136,17 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
             (let [vn (gm/vertex-neighbors* mesh v)]
               (if (< 2 (count vn))
                 (->> vn
+                     ,#+cljs (seq)
                      (r/map
                       (fn [n]
                         (let [f1 (f-points (some #(if (= n (:prev %)) (:f %)) v-faces))
                               f2 (f-points (some #(if (= n (:next %)) (:f %)) v-faces))]
                           [(get f1 v v) (get f2 v v)])))
-                     (into [])
+                     (r/foldcat)
                      (ds-make-edge-loop))))))
          (r/filter identity)
          (r/foldcat)))
-  
+
   (defn ds-edge-faces
     [{:keys [vertices edges] :as mesh} f-points]
     (->> edges
@@ -162,7 +160,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
                 [(f1 a) (f1 b) (f2 b) (f2 a)]))))
          (r/filter identity)
          (r/foldcat)))
-  
+
   (defn custom-doo-sabin
     [& {f* :faces, e* :edges, v* :vertices, :or {f* true, e* true, v* true}}]
     (fn [mesh]
@@ -171,7 +169,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
             e-faces (if e* (ds-edge-faces mesh f-points))
             v-faces (if v* (ds-dual-faces mesh f-points))]
         (gm/into-mesh (concat (if f* f-faces) e-faces v-faces)))))
-  
+
   (def doo-sabin (custom-doo-sabin))
 #+END_SRC
 
@@ -219,6 +217,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
     ([mesh omega]
        (let [e-points (bf-edge-points (:edges mesh) omega)]
          (->> (:faces mesh)
+              #+cljs (seq)
               (r/mapcat
                (fn [f] (bf-faces-from-edge-points e-points f)))
               (gm/into-mesh)))))
