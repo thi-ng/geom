@@ -1,0 +1,149 @@
+#+SETUPFILE: ../../src/setup.org
+
+* thi.ng.geom.webgl.shaders
+
+** Shaders
+
+*** Shader uniforms
+
+**** Supported types
+
+#+BEGIN_SRC clojure :noweb-ref uniforms
+  (def uniform-types
+    {:float ["1fv" arrays/float32]
+     :int ["1iv" arrays/int32]
+     :vec2 ["2fv" arrays/float32]
+     :vec3 ["3fv" arrays/float32]
+     :vec4 ["4fv" arrays/float32]
+     :ivec2 ["2iv" arrays/int32]
+     :ivec3 ["3iv" arrays/int32]
+     :ivec4 ["4iv" arrays/int32]
+     :mat2 ["Matrix2fv" arrays/float32]
+     :mat3 ["Matrix3fv" arrays/float32]
+     :mat4 ["Matrix4fv" arrays/float32]
+     :bool ["1iv" arrays/uint8]
+     :bvec2 ["2iv" arrays/uint8]
+     :bvec3 ["3iv" arrays/uint8]
+     :bvec4 ["4iv" arrays/uint8]})
+#+END_SRC
+
+**** Uniform setup & handling
+
+#+BEGIN_SRC clojure :noweb-ref uniforms
+  (defn init-shader-uniforms
+    [^WebGLRenderingContext gl prog uniforms]
+    (reduce
+     (fn [umap [id [type transpose?]]]
+       (let [loc (.getUniformLocation gl prog (name id))
+             transpose? (boolean transpose?)
+             [u-type u-cast] (uniform-types type)
+             setter (aget gl (str "uniform" u-type))]
+         (assoc umap id
+                {:type type
+                 :setter (if (#{:mat2 :mat3 :mat4} type)
+                           (fn [x] (.call setter gl loc transpose?
+                                          (if (arrays/typed-array? x)
+                                            x (u-cast x))))
+                           (fn [x] (.call setter gl loc
+                                          (if (arrays/typed-array? x)
+                                            x (u-cast (if (number? x) [x] x))))))
+                 :loc loc})))
+     {} uniforms))
+
+  (defn set-uniform
+    [shader id val]
+    (if-let [u-spec (get-in shader [:uniforms id])]
+      ((:setter u-spec) val)
+      (err/illegal-arg! (str "Unknown shader uniform: " id))))
+#+END_SRC
+
+*** Shader attributes
+
+#+BEGIN_SRC clojure :noweb-ref attribs
+  (defn init-shader-attribs
+    [^WebGLRenderingContext gl prog attribs]
+    (reduce
+     (fn [amap id]
+       (assoc amap id (.getAttribLocation gl prog (name id))))
+     {} attribs))
+
+  (defn set-attribute
+    [^WebGLRenderingContext gl shader id {:keys [buffer stride comps type normalized? offset]}]
+    (if-let [loc (get-in shader [:attribs id])]
+      (doto gl
+        (.bindBuffer gl/array-buffer buffer)
+        (.enableVertexAttribArray loc)
+        (.vertexAttribPointer
+         loc
+         comps
+         (or type gl/float)
+         (boolean normalized?)
+         (or stride 0)
+         (or offset 0)))
+      (err/illegal-arg! (str "Unknown shader attribute: " id))))
+
+  (defn disable-attribute
+    [^WebGLRenderingContext gl shader id]
+    (if-let [loc (get-in shader [:attribs id])]
+      (do (.disableVertexAttribArray gl loc) gl)
+      (err/illegal-arg! (str "Unknown shader attribute: " id))))
+#+END_SRC
+
+*** Shader creation
+
+#+BEGIN_SRC clojure :noweb-ref ctors
+  (defn compile-shader
+    [^WebGLRenderingContext gl src type]
+    (if-let [shader (.createShader gl type)]
+      (do
+        (.shaderSource gl shader src)
+        (.compileShader gl shader)
+        (if (.getShaderParameter gl shader gl/compile-status)
+          shader
+          (let [error (.getShaderInfoLog gl shader)]
+            (.deleteShader gl shader)
+            (err/throw! (str "Error compiling shader: " error "\n" src)))))
+      (err/throw! "Can't create shader")))
+
+  (defn make-shader
+    [^WebGLRenderingContext gl vs fs uniforms attribs]
+    (let [vs (compile-shader gl vs gl/vertex-shader)
+          fs (compile-shader gl fs gl/fragment-shader)
+          prog (.createProgram gl)]
+      (doto gl
+        (.attachShader prog vs)
+        (.attachShader prog fs)
+        (.linkProgram prog))
+      (if (.getProgramParameter gl prog gl/link-status)
+        (let [uniforms (init-shader-uniforms gl prog uniforms)
+              attribs (init-shader-attribs gl prog attribs)]
+          (doto gl
+            (.deleteShader vs)
+            (.deleteShader fs))
+          {:program prog
+           :uniforms uniforms
+           :attribs attribs})
+        (err/throw! (str "Shader failed to link:" (.getProgramInfoLog gl prog))))))
+
+  (defn make-shader-from-dom
+    [^WebGLRenderingContext gl vs-id fs-id uniforms attribs]
+    (make-shader gl (glu/get-script-text vs-id) (glu/get-script-text fs-id)
+                 uniforms attribs))
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders.cljs :noweb yes :mkdirp yes :padline no
+(ns thi.ng.geom.webgl.shaders
+  (:require
+    [thi.ng.geom.webgl.core :as gl]
+    [thi.ng.geom.webgl.arrays :as arrays]
+    [thi.ng.geom.webgl.utils :as glu]
+    [thi.ng.common.error :as err]))
+
+  <<uniforms>>
+
+  <<attribs>>
+
+  <<ctors>>
+#+END_SRC

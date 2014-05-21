@@ -60,7 +60,8 @@ target/geom-webgl-<<conf-version>>.js
               :url "http://www.apache.org/licenses/LICENSE-2.0"}
     :dependencies [<<dep-clj>>
                    <<dep-geom-core>>
-                   <<dep-geom-types>>]
+                   <<dep-geom-types>>
+                   <<dep-geom-meshops>>]
   
     :profiles {:dev {:dependencies [<<dep-cljs>>
                                     <<dep-criterium>>]

@@ -1,0 +1,40 @@
+#+SETUPFILE: ../../src/setup.org
+
+* thi.ng.geom.webgl.utils
+
+** DOM element content retrieval
+
+#+BEGIN_SRC clojure :noweb-ref utils
+  (defn get-script-text
+    [id]
+    (if-let [e (.getElementById js/document id)]
+      (.-text e)
+      (err/illegal-arg! (str "Unknown DOM element: " id))))
+#+END_SRC
+
+** Sequence looping
+
+#+BEGIN_SRC clojure :noweb-ref utils
+  (defn loop-kv
+    "A combination of map & doseq specialized for maps. Takes a function `f` and
+    a map, calls `f` with each key & value, discards results."
+    [f xs]
+    (loop [xs xs]
+      (if xs
+        (let [x (first xs)]
+          (f (nth x 0) (nth x 1))
+          (recur (next xs))))))
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/utils.cljs :noweb yes :mkdirp yes :padline no
+(ns thi.ng.geom.webgl.utils
+  (:require
+    [thi.ng.geom.webgl.arrays :as arrays]
+    [thi.ng.common.error :as err])
+  (:require-macros
+    [thi.ng.macromath.core :as mm]))
+
+  <<utils>>
+#+END_SRC

@@ -1,0 +1,55 @@
+#+SETUPFILE: ../../src/setup.org
+
+* thi.ng.geom.webgl.animator
+
+** Animator
+
+#+BEGIN_SRC clojure :noweb-ref animator
+  (defn- native-animframe-provider
+    "If supported, returns a map of the brower's native RequestAnimationFrame
+      and CancelAnimationFrame handlers."
+    []
+    (loop [[prefix & more] ["ms" "moz" "webkit" "o"]]
+      (when prefix
+        (if-let [f (aget js/window (str prefix "RequestAnimationFrame"))]
+          {:request f
+           :cancel (or (aget js/window (str prefix "CancelAnimationFrame"))
+                       (aget js/window (str prefix "CancelRequestAnimationFrame")))}
+          (recur more)))))
+
+  (defn- fallback-provider
+    "Returns a map of setTimeout based RequestAnimationFrame & CancelAnimationFrame
+    frame providers."
+    []
+    (let [lastTime (atom (.getTime (js/Date.)))
+          provider (fn provider
+                     ([callback] (provider callback nil))
+                     ([callback el]
+                        (let [curr (.getTime (js/Date.))
+                              delay (Math/max 0 (- 16.666666 (- curr @lastTime)))]
+                          (reset! lastTime curr)
+                          (js/setTimeout (fn [] (callback (+ curr delay)))))))
+          cancel (fn [id] (js/clearTimeout id))]
+      {:request provider :cancel cancel}))
+
+  (def animframe-provider (or (native-animframe-provider) (fallback-provider)))
+
+  (defn animate
+    [f & [element]]
+    (let [t0 (.getTime (js/Date.))
+          t (atom 0)
+          f' (fn animate* []
+               (if (f (reset! t (* (- (.getTime (js/Date.)) t0) 0.001)))
+                 (if element
+                   ((:request animframe-provider) animate* element)
+                   ((:request animframe-provider) animate*))))]
+      (f')))
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/animator.cljs :noweb yes :mkdirp yes :padline no
+(ns thi.ng.geom.webgl.animator)
+
+  <<animator>>
+#+END_SRC

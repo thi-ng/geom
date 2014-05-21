@@ -1,0 +1,192 @@
+** Phong
+
+#+BEGIN_SRC c :noweb-ref phong-vs
+  attribute vec3 aPos;
+  attribute vec3 aNorm;
+
+  uniform mat4 proj, mv, normalMat;
+
+  varying vec3 vNormalMix;
+  varying vec3 vPos;
+  varying vec3 vCol;
+
+  void main(){
+      gl_Position = proj * mv * vec4(aPos, 1.0);
+      vec4 vp4 = mv * vec4(aPos, 1.0);
+      vPos = vp4.xyz / vp4.w;
+      vCol = aNorm * 0.5 + 0.5;
+      vNormalMix = (normalMat * vec4(aNorm, 0.0)).xyz;
+  }
+#+END_SRC
+
+#+BEGIN_SRC c :noweb-ref phong-fs
+  precision mediump float; 
+
+  varying vec3 vNormalMix;
+  varying vec3 vPos;
+  varying vec3 vCol;
+
+  uniform float specExp;
+  uniform vec3 lightPos;
+
+  vec3 colAmbient = vec3(0.05, 0.05, 0.1);
+  vec3 colDiffuse = vCol;
+  vec3 colSpec = vec3(1.0, 1.0, 0.9);
+
+  void main() {
+
+    vec3 normal = normalize(vNormalMix);
+    vec3 lightDir = normalize(lightPos - vPos);
+
+    float lambertian = max(dot(lightDir,normal), 0.0);
+    float specular = 0.0;
+
+    if(lambertian > 0.0) {
+
+      vec3 viewDir = normalize(-vPos);
+
+      // this is blinn phong
+      vec3 halfDir = normalize(lightDir + viewDir);
+      float specAngle = max(dot(halfDir, normal), 0.0);
+      specular = pow(specAngle, specExp);         
+    }
+
+    gl_FragColor = vec4(colAmbient +
+                        lambertian * colDiffuse +
+                        specular * colSpec, 1.0);
+  }
+
+#+END_SRC
+
+** Demo
+
+#+BEGIN_SRC clojure :noweb-ref demo :noweb yes
+  (def vs "
+   <<phong-vs>>")
+
+  (def fs "
+   <<phong-fs>>")
+#+END_SRC
+
+#+BEGIN_SRC clojure :noweb-ref demo
+  (defn ^:export demo
+    []
+    (enable-console-print!)
+    (let [gl (gl/gl-context "main")
+          shader (sh/make-shader
+                  gl vs fs {:mv [:mat4]
+                            :proj [:mat4]
+                            :normalMat [:mat4]
+                            :specExp [:float]
+                            :lightPos [:vec3]}
+                  [:aPos :aNorm])
+          ;; mesh (-> (a/aabb) (g/center) (g/as-mesh))
+          ;; mesh (-> (s/sphere 0.5) (g/as-mesh {:res 20}))
+          ma (-> (a/aabb 1) (g/as-mesh))
+          mb (-> (s/sphere [1 1 1] 1) (g/as-mesh {:res 10}))
+          mc (-> (s/sphere [1 1 1] 0.9) (g/as-mesh {:res 10}))
+          mesh (-> ma
+                   (csg/mesh->csg)
+                   (csg/intersect (csg/mesh->csg mb))
+                   (csg/subtract (csg/mesh->csg mc))
+                   (csg/csg->mesh)
+                   (g/center)
+                   ;;(g/transform (g/scale M44 0.75))
+                   ;;(sd/catmull-clark)
+                   )
+          {:keys [vertices normals num-vertices num-faces]} (gl/as-webgl-buffer-spec
+                                                             mesh {:tessellate true :fnormals true})
+          _ (prn num-vertices num-faces)
+          vbuf (buf/make-buffer gl gl/array-buffer gl/static-draw vertices)
+          nbuf (buf/make-buffer gl gl/array-buffer gl/static-draw normals)
+          ]
+      (anim/animate
+       (fn [t]
+         (let [mv (-> (mat/look-at (vec3 0 0 2) (vec3) (vec3 0 1 0))
+                      (g/rotate-y (* 0 0.5)))
+               tx1 (->> (g/translate M44 -0.5 0 0)
+                        (g/* (g/rotate-x M44 (* t 0.15)))
+                        (g/* mv))
+               tx1inv (-> tx1 (g/invert))
+               tx2 (->> (g/translate M44 0.5 0 0)
+                        (g/* (g/rotate-x M44 (* t -0.15)))
+                        (g/* mv))
+               tx2inv (-> tx2 (g/invert))
+               proj (g/transpose (mat/perspective 45 (/ 640 480) 0.1 100.0))
+               light-pos (vec3 (* 2 (Math/sin t)) 0.0 1)
+               tx3 (->> (g/scale (g/translate M44 light-pos) 0.2)
+                        (g/* mv))
+               tx3inv (-> tx3 (g/invert))]
+           (gl/clear-depth-buffer gl 1)
+           (gl/clear-color-buffer gl 0 0 0 1.0)
+           (.enable gl gl/depth-test)
+           (buf/draw-arrays
+            gl
+            {:shader shader
+             :attribs {:aPos {:buffer vbuf :comps 3}
+                       :aNorm {:buffer nbuf :comps 3}
+                       ;;:aCol {:buffer cbuf :comps 4}
+                       }
+             :uniforms {:mv (g/transpose tx1) :proj proj :normalMat tx1inv
+                        :specExp 16
+                        :lightPos light-pos}
+             :mode gl/triangles
+             :count num-vertices})
+           (buf/draw-arrays
+            gl
+            {:shader shader
+             :attribs {:aPos {:buffer vbuf :comps 3}
+                       :aNorm {:buffer nbuf :comps 3}
+                       ;;:aCol {:buffer cbuf :comps 4}
+                       }
+             :uniforms {:mv (g/transpose tx2) :proj proj :normalMat tx2inv
+                        :specExp 16
+                        :lightPos light-pos}
+             :mode gl/triangles
+             :count num-vertices})
+           (buf/draw-arrays
+            gl
+            {:shader shader
+             :attribs {:aPos {:buffer vbuf :comps 3}
+                       :aNorm {:buffer nbuf :comps 3}
+                       ;;:aCol {:buffer cbuf :comps 4}
+                       }
+             :uniforms {:mv (g/transpose tx3) :proj proj :normalMat tx3inv
+                        :specExp 100
+                        :lightPos light-pos}
+             :mode gl/triangles
+             :count num-vertices})
+           true)))
+      {:ctx gl
+       :shader shader}))
+
+  (demo)
+#+END_SRC
+
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example01.cljs :noweb yes :mkdirp yes :padline no
+(ns thi.ng.geom.webgl.example01
+  (:require
+    [thi.ng.geom.webgl.core :as gl]
+    [thi.ng.geom.webgl.arrays :as arrays]
+    [thi.ng.geom.webgl.animator :as anim]
+    [thi.ng.geom.webgl.buffers :as buf]
+    [thi.ng.geom.webgl.shaders :as sh]
+    [thi.ng.geom.webgl.utils :as u]
+    [thi.ng.geom.core :as g]
+    [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+    [thi.ng.geom.core.matrix :as mat :refer [M44]]
+    [thi.ng.geom.types]
+    [thi.ng.geom.aabb :as a]
+    [thi.ng.geom.sphere :as s]
+    [thi.ng.geom.gmesh]
+    [thi.ng.geom.mesh.csg :as csg]
+    [thi.ng.geom.mesh.subdivision :as sd]
+    [thi.ng.common.error :as err])
+  (:require-macros
+    [thi.ng.macromath.core :as mm]))
+
+  <<demo>>
+#+END_SRC

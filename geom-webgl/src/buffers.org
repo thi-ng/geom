@@ -1,0 +1,38 @@
+#+SETUPFILE: ../../src/setup.org
+
+* thi.ng.geom.webgl.buffers
+
+** Attribute buffers
+
+#+BEGIN_SRC clojure :noweb-ref buffer
+  (defn make-buffer
+    [gl target draw-type data]
+    (let [buffer (.createBuffer gl)]
+      (.bindBuffer gl target buffer)
+      (.bufferData gl target data draw-type)
+      buffer))
+
+  (defn draw-arrays
+    [^WebGLRenderingContext gl {:keys [shader attribs uniforms mode count]}]
+    (.useProgram gl (:program shader))
+    (loop-kv #(sh/set-uniform shader % %2) uniforms)
+    (loop-kv #(sh/set-attribute gl shader % %2) attribs)
+    (.drawArrays gl mode 0 count)
+    (loop-kv (fn [id _] (sh/disable-attribute gl shader id)) attribs)
+    gl)
+#+END_SRC
+
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/buffers.cljs :noweb yes :mkdirp yes :padline no
+(ns thi.ng.geom.webgl.buffers
+  (:require
+    [thi.ng.geom.webgl.core :as gl]
+    [thi.ng.geom.webgl.arrays :as arrays]
+    [thi.ng.geom.webgl.shaders :as sh]
+    [thi.ng.geom.webgl.utils :refer [loop-kv]]
+    [thi.ng.common.error :as err]))
+
+  <<buffer>>
+#+END_SRC
