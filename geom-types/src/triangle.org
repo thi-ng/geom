@@ -226,7 +226,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl2
   g/PBoundary
   (contains-point?
-   [_ p] (gu/point-in-triangle2? p (:points _)))
+   [_ p] (apply gu/point-in-triangle2? p (:points _)))
 #+END_SRC
 **** PBounds                                                    :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
@@ -317,7 +317,7 @@
 **** PBoundary
 #+BEGIN_SRC clojure :noweb-ref impl3
   g/PBoundary
-  (contains-point? [_ p] (gu/point-in-triangle3? p (:points _)))
+  (contains-point? [_ p] (apply gu/point-in-triangle3? p (:points _)))
 #+END_SRC
 **** PBounds                                                    :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
