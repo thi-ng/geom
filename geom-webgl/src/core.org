@@ -460,9 +460,14 @@
     ([^WebGLRenderingContext gl x y w h]
        (.viewPort gl x y w h) gl))
 
-  (defn get-viewport
+  (defn get-viewport-rect
     [^WebGLRenderingContext gl]
-    (.getParameter viewport))
+    (let [b (.getParameter gl viewport)]
+      (r/rect (aget b 0) (aget b 1) (aget b 2) (aget b 3))))
+
+  (defn perspective
+    [{[w h] :size} fovy near far]
+    (mat/perspective fovy (/ w h) near far))
 #+END_SRC
 
 ** Complete namespace definition
@@ -476,8 +481,10 @@
     [thi.ng.geom.core :as g]
     [thi.ng.geom.core.utils :as gu]
     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+    [thi.ng.geom.core.matrix :as mat]
     [thi.ng.geom.types]
-    [thi.ng.geom.gmesh]
+    [thi.ng.geom.gmesh :as gm]
+    [thi.ng.geom.rect :as r]
     [thi.ng.common.error :as err]))
 
   <<const>>
