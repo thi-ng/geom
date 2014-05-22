@@ -4,8 +4,8 @@
 
 ** Attribute buffers
 
-#+BEGIN_SRC clojure :noweb-ref buffer
-  (defn make-buffer
+#+BEGIN_SRC clojure :noweb-ref a-buffer
+  (defn make-attribute-buffer
     [gl target draw-type data]
     (let [buffer (.createBuffer gl)]
       (.bindBuffer gl target buffer)
@@ -18,7 +18,7 @@
      (fn [spec id {:keys [data target]}]
        (assoc-in
         spec [id :buffer]
-        (make-buffer gl (or target gl/array-buffer) mode data)))
+        (make-attribute-buffer gl (or target gl/array-buffer) mode data)))
      spec spec))
 
   (defn draw-arrays
@@ -29,6 +29,79 @@
     (.drawArrays gl mode 0 count)
     (loop-kv (fn [id _] (sh/disable-attribute gl shader id)) attribs)
     gl)
+#+END_SRC
+
+** Frame buffer
+
+#+BEGIN_SRC clojure :noweb-ref fbo
+  (defn check-fbo
+    [^WebGLRenderingContext gl]
+    (condp = (.checkFramebufferStatus gl gl/framebuffer)
+      gl/framebuffer-unsupported
+      (err/throw! "FBO unsupported")
+      gl/framebuffer-incomplete-attachment
+      (err/throw! "FBO incomplete attachment")
+      gl/framebuffer-incomplete-dimensions
+      (err/throw! "FBO incomplete dimensions")
+      gl/framebuffer-incomplete-missing-attachment
+      (err/throw! "FBO incomplete missing attachment")
+      gl))
+
+  (defn bind-fbo
+   [^WebGLRenderingContext gl fbo]
+   (.bindFramebuffer gl gl/framebuffer fbo)
+   gl)
+
+  (defn unbind-fbo
+   [^WebGLRenderingContext gl]
+   (.bindFramebuffer gl gl/framebuffer nil)
+   gl)
+
+  (defn release-fbo
+   [^WebGLRenderingContext gl fbo]
+   (.deleteFramebuffer gl fbo)
+   gl)
+
+  (defn set-fbo-color-texture
+   [^WebGLRenderingContext gl fbo {:keys [target handle]}]
+   (.framebufferTexture2D gl gl/framebuffer gl/color-attachment0 target handle 0)
+   (check-fbo gl))
+
+  (defn set-fbo-depth-buffer
+   [^WebGLRenderingContext gl fbo {:keys [id]}]
+   (.framebufferRenderbuffer gl gl/framebuffer gl/depth-attachment gl/renderbuffer id)
+   (check-fbo gl))
+
+  (defn make-fbo
+   [^WebGLRenderingContext gl]
+   (.createFramebuffer gl))
+#+END_SRC
+
+** Render buffer
+
+#+BEGIN_SRC clojure :noweb-ref r-buffer
+  (defn bind-render-buffer
+    [^WebGLRenderingContext gl buf]
+    (.bindRenderbuffer gl buf)
+    gl)
+
+  (defn unbind-render-buffer
+    [^WebGLRenderingContext gl]
+    (.unbindRenderbuffer gl nil)
+    gl)
+
+  (defn set-render-buffer-size
+    [^WebGLRenderingContext gl buf format width height]
+    (bind-render-buffer gl buf)
+    (.renderbufferStorage gl gl/renderbuffer format width height)
+    (unbind-render-buffer gl))
+
+  (defn make-render-buffer
+    [^WebGLRenderingContext gl & [format width height]]
+    (let [buf (.createRenderbuffer gl)]
+      (when format
+        (set-render-buffer-size gl buf format width height))
+      buf))
 #+END_SRC
 
 ** Complete namespace definition
@@ -42,5 +115,9 @@
     [thi.ng.geom.webgl.utils :refer [loop-kv]]
     [thi.ng.common.error :as err]))
 
-  <<buffer>>
+  <<a-buffer>>
+
+  <<fbo>>
+
+  <<r-buffer>>
 #+END_SRC
