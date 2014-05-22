@@ -2,11 +2,9 @@
 
 * thi.ng.geom.webgl.shaders
 
-** Shaders
+** Shader uniforms
 
-*** Shader uniforms
-
-**** Supported types
+*** Supported types
 
 #+BEGIN_SRC clojure :noweb-ref uniforms
   (def uniform-types
@@ -27,14 +25,15 @@
      :bvec4 ["4iv" arrays/uint8]})
 #+END_SRC
 
-**** Uniform setup & handling
+*** Uniform setup & handling
 
 #+BEGIN_SRC clojure :noweb-ref uniforms
   (defn init-shader-uniforms
     [^WebGLRenderingContext gl prog uniforms]
     (reduce
-     (fn [umap [id [type transpose?]]]
+     (fn [umap [id type]]
        (let [loc (.getUniformLocation gl prog (name id))
+             [type transpose?] (if (sequential? type) type [type])
              transpose? (boolean transpose?)
              [u-type u-cast] (uniform-types type)
              setter (aget gl (str "uniform" u-type))]
@@ -57,7 +56,7 @@
       (err/illegal-arg! (str "Unknown shader uniform: " id))))
 #+END_SRC
 
-*** Shader attributes
+** Shader attributes
 
 #+BEGIN_SRC clojure :noweb-ref attribs
   (defn init-shader-attribs
@@ -89,9 +88,42 @@
       (err/illegal-arg! (str "Unknown shader attribute: " id))))
 #+END_SRC
 
-*** Shader creation
+** Shader creation
+
+*** Header injection
+
+These boilerplate =#define='s are prefixed by default to any given
+shader source before compilation with =compile-shader= below.
+
+#+BEGIN_SRC c :noweb-ref header
+  #ifdef GL_FRAGMENT_PRECISION_HIGH
+  precision highp int;
+  precision highp float;
+  #else
+  precision mediump int;
+  precision mediump float;
+  #endif
+  #define PI      3.141592653589793
+  #define TWO_PI  6.283185307179586
+  #define HALF_PI 1.570796326794896
+#+END_SRC
+
+#+BEGIN_SRC clojure :noweb-ref ctors :noweb yes
+  (def header-prefix "
+    <<header>>
+    ")
+#+END_SRC
+
+*** Creation, compilation & linking
 
 #+BEGIN_SRC clojure :noweb-ref ctors
+  (defn compile-glsl-vars
+    [qualifier coll]
+    (->> coll
+         (map
+          (fn [[id type]] (str qualifier " " (name type) " " (name id) ";\n")))
+         (apply str)))
+
   (defn compile-shader
     [^WebGLRenderingContext gl src type]
     (if-let [shader (.createShader gl type)]
@@ -105,10 +137,16 @@
             (err/throw! (str "Error compiling shader: " error "\n" src)))))
       (err/throw! "Can't create shader")))
 
-  (defn make-shader
-    [^WebGLRenderingContext gl vs fs uniforms attribs]
-    (let [vs (compile-shader gl vs gl/vertex-shader)
-          fs (compile-shader gl fs gl/fragment-shader)
+  (defn make-shader-from-spec
+    [^WebGLRenderingContext gl {:keys [vs fs uniforms attribs varying prefix]}]
+    (let [u-src (compile-glsl-vars "uniform" uniforms)
+          a-src (compile-glsl-vars "attribute" attribs)
+          v-src (compile-glsl-vars "varying" varying)
+          prefix (str (or prefix header-prefix) u-src v-src)
+          _ (prn :vs (str prefix a-src vs))
+          _ (prn :fs (str prefix fs))
+          vs (compile-shader gl (str prefix a-src vs) gl/vertex-shader)
+          fs (compile-shader gl (str prefix fs) gl/fragment-shader)
           prog (.createProgram gl)]
       (doto gl
         (.attachShader prog vs)
@@ -116,19 +154,28 @@
         (.linkProgram prog))
       (if (.getProgramParameter gl prog gl/link-status)
         (let [uniforms (init-shader-uniforms gl prog uniforms)
-              attribs (init-shader-attribs gl prog attribs)]
+              attribs (init-shader-attribs gl prog (keys attribs))]
           (doto gl
             (.deleteShader vs)
             (.deleteShader fs))
           {:program prog
            :uniforms uniforms
-           :attribs attribs})
+           :attribs attribs
+           :varying varying})
         (err/throw! (str "Shader failed to link:" (.getProgramInfoLog gl prog))))))
 
   (defn make-shader-from-dom
-    [^WebGLRenderingContext gl vs-id fs-id uniforms attribs]
-    (make-shader gl (glu/get-script-text vs-id) (glu/get-script-text fs-id)
-                 uniforms attribs))
+    [^WebGLRenderingContext gl {:keys [vs fs] :as spec}]
+    (make-shader-from-spec
+     gl (assoc spec
+          :vs (glu/get-script-text vs)
+          :fs (glu/get-script-text fs))))
+#+END_SRC
+
+** Shader pipeline
+
+#+BEGIN_SRC clojure :noweb-ref pipeline
+
 #+END_SRC
 
 ** Complete namespace definition
@@ -146,4 +193,6 @@
   <<attribs>>
 
   <<ctors>>
+
+  <<pipeline>>
 #+END_SRC
