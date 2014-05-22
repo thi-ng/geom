@@ -12,6 +12,15 @@
       (.bufferData gl target data draw-type)
       buffer))
 
+  (defn make-attribute-buffers
+    [^WebGLRenderingContext gl mode spec]
+    (reduce-kv
+     (fn [spec id {:keys [data target]}]
+       (assoc-in
+        spec [id :buffer]
+        (make-buffer gl (or target gl/array-buffer) mode data)))
+     spec spec))
+
   (defn draw-arrays
     [^WebGLRenderingContext gl {:keys [shader attribs uniforms mode count]}]
     (.useProgram gl (:program shader))
@@ -21,7 +30,6 @@
     (loop-kv (fn [id _] (sh/disable-attribute gl shader id)) attribs)
     gl)
 #+END_SRC
-
 
 ** Complete namespace definition
 
