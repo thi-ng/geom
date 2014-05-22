@@ -1,84 +1,12 @@
-** Phong
-
-#+BEGIN_SRC c :noweb-ref phong-vs
-  void main(){
-      vec4 worldPos = model * vec4(position, 1.0);
-      vec4 eyePos = view * worldPos;
-      vEyePos = eyePos.xyz;
-      vNormal = (normalMat * vec4(normal, 0.0)).xyz;
-      vLightPos = (view * vec4(lightPos, 1.0)).xyz;
-      vCol = normal * 0.5 + 0.5;
-      gl_Position = proj * eyePos;
-  }
-#+END_SRC
-
-#+BEGIN_SRC c :noweb-ref phong-fs
-  vec3 ambientColor = vec3(0.1, 0.1, 0.1);
-  vec3 diffuseColor = vCol;
-  vec3 specularColor = vec3(1.0, 1.0, 1.0);
-
-  float phong(vec3 L, vec3 E, vec3 N) {
-    vec3 R = reflect(-L, N);
-    return dot(R, E);
-  }
-
-  float blinnPhong(vec3 L, vec3 E, vec3 N) {
-    vec3 halfVec = normalize(L + E);
-    return dot(halfVec, N);
-  }
-
-  void main() {
-    vec3 L = normalize(vLightPos - vEyePos);
-    vec3 E = normalize(-vEyePos);
-    vec3 N = normalize(vNormal);
-
-    float NdotL = max(0.0, (dot(N, L) + wrap) / (1.0 + wrap));
-    vec3 color = ambientColor + NdotL * diffuseColor;
-
-    float specular = 0.0;
-    if (useBlinnPhong)
-      specular = blinnPhong(L, E, N);
-    else
-      specular = phong(L, E, N);
-
-    color += max(pow(specular, shininess), 0.0) * specularColor;
-
-    gl_FragColor = vec4(color, 1.0);
-  }
-#+END_SRC
 
 ** Demo
-
-#+BEGIN_SRC clojure :noweb-ref demo :noweb yes
-  (def vs "
-   <<phong-vs>>")
-
-  (def fs "
-   <<phong-fs>>")
-#+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref demo
   (defn ^:export demo
     []
     (enable-console-print!)
     (let [gl (gl/gl-context "main")
-          shader (sh/make-shader-from-spec
-                  gl {:vs vs
-                      :fs fs
-                      :uniforms {:view :mat4
-                                 :proj :mat4
-                                 :model :mat4
-                                 :normalMat :mat4
-                                 :shininess :float
-                                 :lightPos :vec3
-                                 :useBlinnPhong :bool
-                                 :wrap :float}
-                      :attribs {:position :vec3
-                                :normal :vec3}
-                      :varying {:vNormal :vec3
-                                :vEyePos :vec3
-                                :vLightPos :vec3
-                                :vCol :vec3}})
+          shader (sh/make-shader-from-spec gl phong/shader-spec)
           ;; mesh (-> (s/sphere 0.5) (g/as-mesh {:res 20}))
           ma (-> (a/aabb 1) (g/as-mesh))
           mb (-> (s/sphere 1) (g/as-mesh {:res 10}))
@@ -109,14 +37,15 @@
           timer (atom 0)]
       (anim/animate
        (fn [t]
-         (let [view (-> (mat/look-at (vec3 0 0 2) (vec3) (vec3 0 1 0))
-                        (g/rotate-y (* t 0.5)))
+         (let [y (m/map-interval (Math/sin (* t 0.5)) -1 1 0 2)
+               view (-> (mat/look-at (vec3 0 y 2) (vec3) (vec3 0 1 0))
+                        (g/rotate-y (* t 0.5))) 
                proj (gl/perspective (gl/get-viewport-rect gl) 45 0.1 100.0)
                tx1 (-> M44 (g/translate 0 0 0) (g/rotate-x (* 0 0.15)))
                tx1inv (-> tx1 (g/invert) (g/transpose))
                light-pos (vec3 (* 0.2 (Math/sin t)) 1 0)]
            (gl/clear-depth-buffer gl 1)
-           (gl/clear-color-buffer gl 0 0 0 1.0)
+           (gl/clear-color-buffer gl 0.95 0.97 1.0 1.0)
            (.enable gl gl/depth-test)
            (.enable gl gl/cull-face)
            (.cullFace gl gl/back)
@@ -128,7 +57,7 @@
                                   :proj proj
                                   :lightPos light-pos
                                   :shininess 4
-                                  :useBlinnPhong 1}}))
+                                  :useBlinnPhong true}}))
            (set! (.-textContent (.getElementById js/document "fps")) (str (/ 1 (- t @timer)) "fps"))
            (reset! timer t)
            true)))
@@ -149,6 +78,7 @@
     [thi.ng.geom.webgl.animator :as anim]
     [thi.ng.geom.webgl.buffers :as buf]
     [thi.ng.geom.webgl.shaders :as sh]
+    [thi.ng.geom.webgl.shaders.phong :as phong]
     [thi.ng.geom.webgl.utils :as u]
     [thi.ng.geom.core :as g]
     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
@@ -159,6 +89,7 @@
     [thi.ng.geom.gmesh]
     [thi.ng.geom.mesh.csg :as csg]
     [thi.ng.geom.mesh.subdivision :as sd]
+    [thi.ng.common.math.core :as m]
     [thi.ng.common.error :as err])
   (:require-macros
     [thi.ng.macromath.core :as mm]))
