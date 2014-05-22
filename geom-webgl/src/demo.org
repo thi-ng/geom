@@ -2,40 +2,48 @@
 
 #+BEGIN_SRC c :noweb-ref phong-vs
   void main(){
-      gl_Position = proj * mv * vec4(aPos, 1.0);
-      vec4 vp4 = mv * vec4(aPos, 1.0);
-      vPos = vp4.xyz / vp4.w;
-      vCol = aNorm * 0.5 + 0.5;
-      vNormalMix = (normalMat * vec4(aNorm, 0.0)).xyz;
+      vec4 worldPos = model * vec4(position, 1.0);
+      vec4 eyePos = view * worldPos;
+      vEyePos = eyePos.xyz;
+      vNormal = (normalMat * vec4(normal, 0.0)).xyz;
+      vLightPos = (view * vec4(lightPos, 1.0)).xyz;
+      vCol = normal * 0.5 + 0.5;
+      gl_Position = proj * eyePos;
   }
 #+END_SRC
 
 #+BEGIN_SRC c :noweb-ref phong-fs
-  vec3 colAmbient = vec3(0.05, 0.05, 0.1);
-  vec3 colDiffuse = vCol;
-  vec3 colSpec = vec3(1.0, 1.0, 0.9);
+  vec3 ambientColor = vec3(0.1, 0.1, 0.1);
+  vec3 diffuseColor = vCol;
+  vec3 specularColor = vec3(1.0, 1.0, 1.0);
+
+  float phong(vec3 L, vec3 E, vec3 N) {
+    vec3 R = reflect(-L, N);
+    return dot(R, E);
+  }
+
+  float blinnPhong(vec3 L, vec3 E, vec3 N) {
+    vec3 halfVec = normalize(L + E);
+    return dot(halfVec, N);
+  }
 
   void main() {
+    vec3 L = normalize(vLightPos - vEyePos);
+    vec3 E = normalize(-vEyePos);
+    vec3 N = normalize(vNormal);
 
-    vec3 normal = normalize(vNormalMix);
-    vec3 lightDir = normalize(lightPos - vPos);
+    float NdotL = max(0.0, (dot(N, L) + wrap) / (1.0 + wrap));
+    vec3 color = ambientColor + NdotL * diffuseColor;
 
-    float lambertian = max(dot(lightDir,normal), 0.0);
     float specular = 0.0;
+    if (useBlinnPhong)
+      specular = blinnPhong(L, E, N);
+    else
+      specular = phong(L, E, N);
 
-    if(lambertian > 0.0) {
+    color += max(pow(specular, shininess), 0.0) * specularColor;
 
-      vec3 viewDir = normalize(-vPos);
-
-      // this is blinn phong
-      vec3 halfDir = normalize(lightDir + viewDir);
-      float specAngle = max(dot(halfDir, normal), 0.0);
-      specular = pow(specAngle, specExp);         
-    }
-
-    gl_FragColor = vec4(colAmbient +
-                        lambertian * colDiffuse +
-                        specular * colSpec, 1.0);
+    gl_FragColor = vec4(color, 1.0);
   }
 #+END_SRC
 
@@ -57,73 +65,70 @@
           shader (sh/make-shader-from-spec
                   gl {:vs vs
                       :fs fs
-                      :uniforms {:mv :mat4
+                      :uniforms {:view :mat4
                                  :proj :mat4
+                                 :model :mat4
                                  :normalMat :mat4
-                                 :specExp :float
-                                 :lightPos :vec3}
-                      :attribs {:aPos :vec3
-                                :aNorm :vec3}
-                      :varying {:vNormalMix :vec3
-                                :vPos :vec3
+                                 :shininess :float
+                                 :lightPos :vec3
+                                 :useBlinnPhong :bool
+                                 :wrap :float}
+                      :attribs {:position :vec3
+                                :normal :vec3}
+                      :varying {:vNormal :vec3
+                                :vEyePos :vec3
+                                :vLightPos :vec3
                                 :vCol :vec3}})
-          ;; mesh (-> (a/aabb) (g/center) (g/as-mesh))
           ;; mesh (-> (s/sphere 0.5) (g/as-mesh {:res 20}))
           ma (-> (a/aabb 1) (g/as-mesh))
-          mb (-> (s/sphere [1 1 1] 1) (g/as-mesh {:res 10}))
-          mc (-> (s/sphere [1 1 1] 0.9) (g/as-mesh {:res 10}))
+          mb (-> (s/sphere 1) (g/as-mesh {:res 10}))
+          mc (-> (s/sphere 0.9) (g/as-mesh {:res 10}))
           mesh (-> ma
                    (csg/mesh->csg)
                    (csg/intersect (csg/mesh->csg mb))
                    (csg/subtract (csg/mesh->csg mc))
                    (csg/csg->mesh)
                    (g/center)
-                   ;;(g/transform (g/scale M44 0.75))
+                   ;;(g/transform (g/scale M44 0.5))
                    ;;(sd/catmull-clark)
                    )
+          floor (-> (a/aabb [2 0.1 2])
+                    (g/center (vec3 0 -0.5 0))
+                    (g/as-mesh {:flags :n}))
+          mesh (g/into mesh floor)
           spec (gl/as-webgl-buffer-spec mesh {:tessellate true :fnormals true})
           _ (prn (:num-vertices spec))
           model {:shader shader
                  :attribs (buf/make-attribute-buffers
                            gl gl/static-draw
-                           {:aPos {:data (:vertices spec) :comps 3}
-                            :aNorm {:data (:normals spec) :comps 3}})
+                           {:position {:data (:vertices spec) :size 3}
+                            :normal {:data (:normals spec) :size 3}})
                  :uniforms {}
                  :mode gl/triangles
                  :count (:num-vertices spec)}
           timer (atom 0)]
       (anim/animate
        (fn [t]
-         (let [mv (-> (mat/look-at (vec3 0 0 2) (vec3) (vec3 0 1 0))
-                      (g/rotate-y (* 0 0.5)))
-               tx1 (->> (g/translate M44 -0.5 0 0)
-                        (g/* (g/rotate-x M44 (* t 0.15)))
-                        (g/* mv))
-               tx1inv (-> tx1 (g/invert) (g/transpose))
-               tx2 (->> (g/translate M44 0.5 0 0)
-                        (g/* (g/rotate-x M44 (* t -0.15)))
-                        (g/* mv))
-               tx2inv (-> tx2 (g/invert) (g/transpose))
+         (let [view (-> (mat/look-at (vec3 0 0 2) (vec3) (vec3 0 1 0))
+                        (g/rotate-y (* t 0.5)))
                proj (gl/perspective (gl/get-viewport-rect gl) 45 0.1 100.0)
-               light-pos (vec3 (* 2 (Math/sin t)) 0.0 1)
-               tx3 (->> (g/scale (g/translate M44 light-pos) 0.2)
-                        (g/* mv))
-               tx3inv (-> tx3 (g/invert) (g/transpose))]
+               tx1 (-> M44 (g/translate 0 0 0) (g/rotate-x (* 0 0.15)))
+               tx1inv (-> tx1 (g/invert) (g/transpose))
+               light-pos (vec3 (* 0.2 (Math/sin t)) 1 0)]
            (gl/clear-depth-buffer gl 1)
            (gl/clear-color-buffer gl 0 0 0 1.0)
            (.enable gl gl/depth-test)
+           (.enable gl gl/cull-face)
+           (.cullFace gl gl/back)
            (buf/draw-arrays
-            gl (merge model {:uniforms {:mv tx1 :proj proj :normalMat tx1inv
-                                        :specExp 16
-                                        :lightPos light-pos}}))
-           (buf/draw-arrays
-            gl (merge model {:uniforms {:mv tx2 :proj proj :normalMat tx2inv
-                                        :specExp 16
-                                        :lightPos light-pos}}))
-           (buf/draw-arrays
-            gl (merge model {:uniforms {:mv tx3 :proj proj :normalMat tx3inv
-                                        :specExp 100
-                                        :lightPos light-pos}}))
+            gl (merge model
+                      {:uniforms {:model tx1
+                                  :normalMat tx1inv
+                                  :view view
+                                  :proj proj
+                                  :lightPos light-pos
+                                  :shininess 4
+                                  :useBlinnPhong 1}}))
            (set! (.-textContent (.getElementById js/document "fps")) (str (/ 1 (- t @timer)) "fps"))
            (reset! timer t)
            true)))
