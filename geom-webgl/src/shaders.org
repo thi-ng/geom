@@ -19,10 +19,10 @@
      :mat2 ["Matrix2fv" arrays/float32]
      :mat3 ["Matrix3fv" arrays/float32]
      :mat4 ["Matrix4fv" arrays/float32]
-     :bool ["1iv" arrays/uint8]
-     :bvec2 ["2iv" arrays/uint8]
-     :bvec3 ["3iv" arrays/uint8]
-     :bvec4 ["4iv" arrays/uint8]})
+     :bool ["1iv" arrays/int32]
+     :bvec2 ["2iv" arrays/int32]
+     :bvec3 ["3iv" arrays/int32]
+     :bvec4 ["4iv" arrays/int32]})
 #+END_SRC
 
 *** Uniform setup & handling
@@ -67,14 +67,14 @@
      {} attribs))
 
   (defn set-attribute
-    [^WebGLRenderingContext gl shader id {:keys [buffer stride comps type normalized? offset]}]
+    [^WebGLRenderingContext gl shader id {:keys [buffer stride size type normalized? offset]}]
     (if-let [loc (get-in shader [:attribs id])]
       (doto gl
         (.bindBuffer gl/array-buffer buffer)
         (.enableVertexAttribArray loc)
         (.vertexAttribPointer
          loc
-         comps
+         size
          (or type gl/float)
          (boolean normalized?)
          (or stride 0)
@@ -124,6 +124,23 @@ shader source before compilation with =compile-shader= below.
           (fn [[id type]] (str qualifier " " (name type) " " (name id) ";\n")))
          (apply str)))
 
+  (defn parse-and-throw-error
+    [^WebGLRenderingContext gl shader src]
+    (let [src-lines (vec (str/split-lines src))
+          errors (->> shader
+                      (.getShaderInfoLog gl)
+                      (str/split-lines)
+                      (map
+                       (fn [line]
+                         (let [[_ ln msg] (re-find #"ERROR: \d+:(\d+): (.*)" line)]
+                           (when ln
+                             (str "line " ln ": " msg "\n"
+                                  (src-lines (dec (js/parseInt ln 10))))))))
+                      (filter identity)
+                      (str/join "\n"))]
+      (.deleteShader gl shader)
+      (err/throw! (str "Error compiling shader:\n" errors))))
+
   (defn compile-shader
     [^WebGLRenderingContext gl src type]
     (if-let [shader (.createShader gl type)]
@@ -132,9 +149,7 @@ shader source before compilation with =compile-shader= below.
         (.compileShader gl shader)
         (if (.getShaderParameter gl shader gl/compile-status)
           shader
-          (let [error (.getShaderInfoLog gl shader)]
-            (.deleteShader gl shader)
-            (err/throw! (str "Error compiling shader: " error "\n" src)))))
+          (parse-and-throw-error gl shader src)))
       (err/throw! "Can't create shader")))
 
   (defn make-shader-from-spec
@@ -143,8 +158,6 @@ shader source before compilation with =compile-shader= below.
           a-src (compile-glsl-vars "attribute" attribs)
           v-src (compile-glsl-vars "varying" varying)
           prefix (str (or prefix header-prefix) u-src v-src)
-          _ (prn :vs (str prefix a-src vs))
-          _ (prn :fs (str prefix fs))
           vs (compile-shader gl (str prefix a-src vs) gl/vertex-shader)
           fs (compile-shader gl (str prefix fs) gl/fragment-shader)
           prog (.createProgram gl)]
@@ -186,7 +199,8 @@ shader source before compilation with =compile-shader= below.
     [thi.ng.geom.webgl.core :as gl]
     [thi.ng.geom.webgl.arrays :as arrays]
     [thi.ng.geom.webgl.utils :as glu]
-    [thi.ng.common.error :as err]))
+    [thi.ng.common.error :as err]
+    [clojure.string :as str]))
 
   <<uniforms>>
 
