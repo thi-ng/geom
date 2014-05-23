@@ -14,8 +14,15 @@
   "(defn {{fn}}
     \"Creates a native {{type}} of the given size or from `coll`.\"
      [size-or-coll]
-     (js/{{type}}.
-       (if (number? size-or-coll) size-or-coll (clj->js size-or-coll))))"))
+     (if (number? size-or-coll)
+       (js/{{type}}. size-or-coll)
+       (let [len (count size-or-coll)
+             buf (js/{{type}}. len)]
+         (loop [i 0, coll size-or-coll]
+           (when (< i len)
+             (aset buf i (first coll))
+             (recur (inc i) (next coll))))
+         buf)))"))
 #+END_SRC
 
 ** Typed array constructors
