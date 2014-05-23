@@ -2,6 +2,12 @@
 
 * Namespace: thi.ng.geom.csg.core
 
+Parts of the functionality in this namespace is originally based on an
+early implementation of csg.js and has been ported to Clojure and the
+geometry types of this library. Meanwhile several additions & changes
+have been made to address both performance & resulting quality of
+meshes.
+
 ** Helper functions
 #+BEGIN_SRC clojure :noweb-ref helpers
   (deftype CSGPolygon [plane vertices shared ^:unsynchronized-mutable bsphere]

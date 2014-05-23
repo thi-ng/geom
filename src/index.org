@@ -117,8 +117,14 @@ where only vectors/matrix ops are needed.
 *** [[file:../geom-meshops/src/index.org][geom-meshops]]
 
 This module provides several tools & operations related to working
-with meshes, incl. I/O, subdivisions, triangulation, cleaning,
-CSG/Boolean mesh merge etc.
+with meshes, incl. I/O, subdivisions, Delaunay triangulation,
+cleaning, CSG/Boolean mesh merge etc.
+
+*** [[../geom-webgl/src/index.org][geom-webgl]]
+
+This is a pure CLJS module and provides a number of conversion &
+rendering functions to simplify the use of types defined in the
+=geom-types= module under CLJS with WebGL.
 
 ** Status
 

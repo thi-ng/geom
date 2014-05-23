@@ -119,7 +119,7 @@ symbol =version= holding the version string defined above:
 
 *** Version namespace                                              :noexport:
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/version.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/version.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.version)
   (def ^:const version "<<conf-version>>")
 #+END_SRC
@@ -134,7 +134,11 @@ source files via the normal [[https://github.com/thi-ng/geom/tree/master/geom-we
 
 ** Module namespaces
 
-#+INCLUDE: "core.org"             :minlevel 2
+#+INCLUDE: "core.org"              :minlevel 2
+#+INCLUDE: "animator.org"          :minlevel 2
+#+INCLUDE: "buffers.org"           :minlevel 2
+#+INCLUDE: "shaders.org"           :minlevel 2
+#+INCLUDE: "utils.org"             :minlevel 2
 
 * Tests
 
