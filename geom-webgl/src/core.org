@@ -314,9 +314,20 @@
   (defprotocol PRelease
     (release [_]))
 
-  (defprotocol PBuffer
-    (get-buffer [_])
-    (update-buffer [_ opts]))
+  (defprotocol PBind
+    (bind [_] [_ opts])
+    (unbind [_]))
+
+  (defprotocol PConfigure
+    (configure [_ opts]))
+
+  (defprotocol PTexture
+    (set-texture-filter [_ type])
+    (set-texture-wrap [_ type]))
+
+  (defprotocol PFramebuffer
+    (set-fbo-color-texture [_ tex])
+    (set-fbo-depth-buffer [_ depth-buffer]))
 #+END_SRC
 
 ** Helpers
@@ -454,11 +465,25 @@
     (.clearDepth gl d)
     (.clear gl depth-buffer-bit))
 
+  (defn disable
+    [^WebGLRenderingContext gl flag]
+    (.disable gl flag) gl)
+
+  (defn enable
+    [^WebGLRenderingContext gl flag]
+    (.enable gl flag) gl)
+
+  (defn cull-faces
+    [^WebGLRenderingContext gl side]
+    (.enable gl cull-face)
+    (.cullFace gl side)
+    gl)
+
   (defn set-viewport
     ([^WebGLRenderingContext gl {[x y] :p [w h] :size}]
-       (.viewPort gl x y w h) gl)
+       (.viewport gl x y w h) gl)
     ([^WebGLRenderingContext gl x y w h]
-       (.viewPort gl x y w h) gl))
+       (.viewport gl x y w h) gl))
 
   (defn get-viewport-rect
     [^WebGLRenderingContext gl]
@@ -466,8 +491,54 @@
       (r/rect (aget b 0) (aget b 1) (aget b 2) (aget b 3))))
 
   (defn perspective
-    [{[w h] :size} fovy near far]
-    (mat/perspective fovy (/ w h) near far))
+    [fovy aspect near far]
+    (let [aspect (cond
+                  (number? aspect) aspect
+                  (map? aspect) (let [{[w h] :size} aspect] (/ w h))
+                  :default (/ (nth aspect 0) (nth aspect 1)))]
+      (mat/perspective fovy aspect near far)))
+#+END_SRC
+
+*** WebGL extensions
+
+#+BEGIN_SRC clojure :noweb-ref ctx-ext
+  (def ^:private float-ext-ids
+    ["OES_texture_float"
+     "OES_texture_half_float"
+     "OES_texture_float_linear"
+     "OES_texture_half_float_linear"
+     "WEBGL_color_buffer_float"
+     "EXT_color_buffer_half_float"])
+
+  (defn get-extension
+    [^WEBGL_color_buffer_float gl ext]
+    (.getExtension gl ext))
+
+  (defn get-float-extension
+    [^WebGLRenderingContext gl spec]
+    (let [[s-tex h-tex s-lin h-lin s-fbo h-fbo :as ext] (map #(.getExtension gl %) float-ext-ids)]
+      (->> [{:texture s-tex :filterable s-lin :renderable s-fbo
+             :type float
+             :precision :single :single true}
+            {:texture h-tex :filterable h-lin :renderable h-fbo
+             :type (when h-tex (.-HALF_FLOAT_OES h-tex))
+             :precision :half :half true}]
+           (reduce
+            (fn [acc c]
+              (if (and (:texture c) (every? c (:require spec)))
+                (conj acc c) acc))
+            [])
+           (map
+            (fn [c]
+              (assoc c :score
+                     (apply + (map (fn [pref score] (if (c pref) score 0))
+                                   (:prefer spec) [0x80 0x40 0x20 0x10 0x8 0x4 0x2 0x1])))))
+           (sort-by :score)
+           (last))))
+
+  (defn get-supported-extensions
+   [^WebGLRenderingContext gl]
+   (.getSupportedExtensions gl))
 #+END_SRC
 
 ** Complete namespace definition
@@ -496,4 +567,6 @@
   <<impl>>
 
   <<ctx>>
+
+  <<ctx-ext>>
 #+END_SRC
