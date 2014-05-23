@@ -214,7 +214,6 @@ shader source before compilation with =compile-shader= below.
 #+END_SRC
 
 ** Presets
-
 *** Phong
 
 #+BEGIN_SRC c :noweb-ref phong-vs
@@ -468,24 +467,28 @@ shader source before compilation with =compile-shader= below.
 #+END_SRC
 
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/shadow.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.shaders.shadow)
-
+  (ns thi.ng.geom.webgl.shaders.shadow
+    (:require
+     [thi.ng.geom.webgl.core :as gl]
+     [thi.ng.geom.webgl.buffers :as buf]
+     [thi.ng.geom.webgl.shaders :as sh]))
+  
   (def light-pass-spec
     {:vs "
-  <<shadow-vs-pass1>>"
+    <<shadow-vs-pass1>>"
      :fs "
-  <<shadow-fs-pass1>>"
+    <<shadow-fs-pass1>>"
      :uniforms {:view :mat4
                 :proj :mat4
                 :model :mat4}
      :attribs {:position :vec3}
      :varying {:vWorldPos :vec4}})
-
+  
   (def cam-pass-spec
     {:vs "
-  <<spot-vs>>"
+    <<spot-vs>>"
      :fs "
-  <<shadow-fs-pass2>>"
+    <<shadow-fs-pass2>>"
      :uniforms {:view :mat4
                 :proj :mat4
                 :model :mat4
@@ -495,8 +498,47 @@ shader source before compilation with =compile-shader= below.
                 :lightDepthTex :sampler2D
                 :lightDepthSize :vec2
                 :coneAngle :float}
-     :attribs {:position :vec3
-               :normal :vec3}
-     :varying {:vNormal :vec3
-               :vWorldPos :vec4}})
+     :attribs  {:position :vec3
+                :normal :vec3}
+     :varying  {:vNormal :vec3
+                :vWorldPos :vec4}})
+  
+  (defn init-light-fbo
+    [^WebGLRenderingContext gl size]
+    (let [float-ext (.call (aget gl "getFloatExtension") gl
+                           (clj->js {:require ["renderable"]
+                                     :prefer ["filterable" "half"]}))
+          tex (buf/make-texture2d
+               gl {:type   (.-type float-ext)
+                   :width  size
+                   :height size
+                   :filter gl/linear
+                   :wrap   gl/clamp-to-edge})]
+      {:tex tex
+       :fbo (-> (buf/make-fbo gl)
+                (gl/bind)
+                (gl/set-fbo-color-texture tex)
+                (gl/set-fbo-depth-buffer (buf/make-depth-buffer gl size size))
+                (gl/unbind))}))
+  
+  (defn draw-light-pass
+    [^WebGLRenderingContext gl {:keys [fbo tex]} draw]
+    (gl/bind fbo)
+    (doto gl
+      (gl/set-viewport 0 0 (:width tex) (:height tex))
+      (gl/clear-color-buffer 1 1 1 1)
+      (gl/clear-depth-buffer 1)
+      (gl/enable gl/depth-test)
+      (gl/cull-faces gl/front))
+    (draw)
+    (gl/unbind fbo))
+  
+  (defn draw-cam-pass
+    [^WebGLRenderingContext gl tex draw]
+    (doto gl
+      (gl/clear-depth-buffer 1)
+      (gl/enable gl/depth-test)
+      (gl/cull-faces gl/back))
+    (gl/bind tex 0)
+    (draw {:lightDepthTex 0 :lightDepthSize [(:width tex) (:height tex)]}))
 #+END_SRC
