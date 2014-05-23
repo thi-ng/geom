@@ -453,7 +453,7 @@ shader source before compilation with =compile-shader= below.
     <<shadow-lerp2>>
 
     vec3 excident = (
-                     skyLight(worldNormal) +
+                     0.4 + skyLight(worldNormal) +
                      lambert(lightSurfaceNormal, -lightPosNormal) *
                      influence(lightPosNormal, coneAngle) *
                      attenuation(lightPos) *

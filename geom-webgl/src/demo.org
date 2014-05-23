@@ -1,33 +1,19 @@
 ** Demo
 
 #+BEGIN_SRC clojure :noweb-ref demo
-  (defn ilios
+  (defn mg-hex-sphere
     []
-    (let [p   (-> (a/aabb [0.6 0.6 1.2]) (g/center (vec3 0 0 0.6)) (g/as-mesh))
-          p1  (-> (a/aabb [0.5 0.5 1.2]) (g/center (vec3 0 0 0.55)) (g/as-mesh))
-          p2  (-> (a/aabb [0.5 0.7 0.5]) (g/center (vec3 0 0 0.3)) (g/as-mesh))
-          p2* (g/transform p2 (g/rotate-z M44 m/HALF_PI))
-          p3  (-> (a/aabb [0.7 0.5 0.7]) (g/center (vec3 0 0.3 0.95)) (g/as-mesh))
-          p3* (g/transform p3 (g/translate M44 0 -0.6 0))]
-      (-> (->> [p p1 p2 p2* p3 p3*]
-               (map csg/mesh->csg)
-               (reduce csg/subtract)
-               (csg/csg->mesh))
-          (g/transform (g/rotate-x M44 (- m/HALF_PI))))))
-  
-  (defn csg-mesh1
-    []
-    (let [ma (-> (a/aabb 1) (g/as-mesh))
-          mb (-> (s/sphere 1) (g/as-mesh {:res 10}))
-          mc (-> (s/sphere 0.9) (g/as-mesh {:res 10}))
-          mesh (-> ma
-                   (csg/mesh->csg)
-                   (csg/intersect (csg/mesh->csg mb))
-                   (csg/subtract (csg/mesh->csg mc))
-                   (csg/csg->mesh)
-                   (g/center)
-                   (g/transform (g/scale M44 0.75)))]
-      ))
+    (let [hex (mg/apply-recursively (mg/reflect :dir :e) 5 [1] 1)
+          reflected-hex (mg/reflect :dir :n :out [{} hex])
+          inject #(-> hex
+                      (assoc-in (mg/child-path [1 1 0]) %)
+                      (assoc-in (mg/child-path [1 1 1 1 0]) %))
+          seed-clone (mg/reflect :dir :s :out [{} (inject reflected-hex)])
+          tree (mg/reflect :dir :s :out [(inject seed-clone) (inject reflected-hex)])]
+      (-> (mg/seed (mg/sphere-lattice-seg 6 0.25 0.0955 0.2))
+          (mg/walk tree)
+          (mg/union-mesh)
+          (g/transform (-> M44 (g/rotate-x (- m/HALF_PI)) (g/scale 0.5))))))
   
   (defn ^:export demo
     []
@@ -35,7 +21,8 @@
     (let [gl           (gl/gl-context "main")
           light-shader (sh/make-shader-from-spec gl shadow/light-pass-spec)
           cam-shader   (sh/make-shader-from-spec gl shadow/cam-pass-spec)
-          mesh         (ilios)
+          ;;mesh         (ilios)
+          mesh         (mg-hex-sphere)
           room         (-> (a/aabb 5)
                            (g/center (vec3 0 2.4 0))
                            (g/as-mesh)
@@ -61,12 +48,12 @@
                cam-view   (-> (vec3 0 y 2)
                               (g/rotate-y (* t 0.4))
                               (mat/look-at (vec3 0 0.6 0) (vec3 0 1 0)))
-               model-tx        (-> M44 (g/translate 0 0 0) (g/rotate-x (* 0 0.15)))
+               model-tx   (-> M44 (g/translate 0 0 0) (g/rotate-x (* 0 0.15)))
                ;; model-tx-inv (-> tx1 (g/invert) (g/transpose))
                ;; light-pos (vec3 (* 0.2 (Math/sin t)) 1 0)
                cone-angle (m/map-interval (Math/cos (* t 0.3)) -1 1 20 150)
-               l-rotx     (* (m/map-interval (Math/cos (* t 0.7)) -1 1 0.15 0.85) m/PI)
-               light-view (-> M44 (g/translate 0 0 -2.5) (g/rotate-x l-rotx) (g/rotate-y -0.6))
+               lr         (* (m/map-interval (Math/cos (* t 0.7)) -1 1 -0.85 0.85) m/PI)
+               light-view (mat/look-at (g/rotate-y (vec3 0 2 2.4) lr) (vec3 0 0.6 0) (vec3 0 1 0))
                light-rot  (mat/matrix44->matrix33-rot light-view)]
   
            (shadow/draw-light-pass
@@ -130,6 +117,7 @@
     [thi.ng.geom.gmesh]
     [thi.ng.geom.mesh.csg :as csg]
     ;;[thi.ng.geom.mesh.subdivision :as sd]
+    [thi.ng.morphogen.core :as mg]
     [thi.ng.common.math.core :as m]
     [thi.ng.common.error :as err])
   (:require-macros
