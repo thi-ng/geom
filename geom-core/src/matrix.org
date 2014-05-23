@@ -230,6 +230,14 @@ define some macros to simplify them.
 #+END_SRC
 
 *** 4x4 Matrix
+
+This matrix implementation is using the same ordering as OpenGL/WebGl,
+which expects matrices passed to it in column-major order. In other
+words, each successive 4 values of this matrix refer to a single
+column. Please bear this in mind, since the visual layout of values in
+some parts of the source code below seems to indicate the opposite
+ordering (row major).
+
 #+BEGIN_SRC clojure :noweb-ref mat44
   (deftype Matrix44
     #+clj  [^double m00 ^double m01 ^double m02 ^double m03
@@ -581,6 +589,27 @@ define some macros to simplify them.
        (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33))
     ([m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]
        (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33)))
+
+  ;; FIXME create proper deftype for M33
+  (defn matrix44->matrix33
+   [[m00 m01 m02 _ m10 m11 m12 _ m20 m21 m22]]
+   [m00 m01 m02 m10 m11 m12 m20 m21 m22])
+
+  (defn matrix44->matrix33-rot
+   [[m00 m01 m02 _ m10 m11 m12 _ m20 m21 m22]]
+   (let [b01 (mm/msub m22 m11 m12 m21)
+         b11 (mm/msub m12 m20 m22 m10)
+         b21 (mm/msub m21 m10 m11 m20)
+         invd (/ (mm/madd m00 b01 m01 b11 m02 b21))]
+     [(* b01 invd)
+      (* b11 invd)
+      (* b21 invd)
+      (* (mm/msub m02 m21 m22 m01) invd)
+      (* (mm/msub m22 m00 m02 m20) invd)
+      (* (mm/msub m01 m20 m21 m00) invd)
+      (* (mm/msub m12 m01 m02 m11) invd)
+      (* (mm/msub m02 m10 m12 m00) invd)
+      (* (mm/msub m11 m00 m01 m10) invd)]))
 #+END_SRC
 
 ** Matrix functions
