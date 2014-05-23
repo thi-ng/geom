@@ -6,7 +6,7 @@
 
 #+BEGIN_SRC clojure :noweb-ref a-buffer
   (defn make-attribute-buffer
-    [gl target draw-type data]
+    [^WebGLRenderingContext gl target draw-type data]
     (let [buffer (.createBuffer gl)]
       (.bindBuffer gl target buffer)
       (.bufferData gl target data draw-type)
@@ -103,7 +103,7 @@
 ** Textures
 
 #+BEGIN_SRC clojure :noweb-ref tex
-  (defrecord Texture [^WebGLRenderingContext gl id channels type target]
+  (defrecord Texture2D [^WebGLRenderingContext gl id channels type target width height]
     gl/PBind
     (bind
       [_ unit]
@@ -125,7 +125,7 @@
       (.texImage2D gl target 0 channels width height 0 channels type nil)
       (when filter (gl/set-texture-filter _ filter))
       (when wrap (gl/set-texture-wrap _ wrap))
-      _)
+      (Texture2D. gl id channels type target width height))
 
     gl/PTexture
     (set-texture-filter
@@ -139,18 +139,17 @@
       (.texParameteri gl target gl/texture-wrap-t type)
       _))
 
-  (defn make-texture
+  (defn make-texture2d
     [gl {:keys [channels type target width height] :as opts}]
-    (let [tex (Texture.
+    (let [tex (Texture2D.
                gl (.createTexture gl)
                (or channels gl/rgb)
                (or type gl/unsigned-byte)
-               (or target gl/texture-2d))]
-      (when (and width height)
-        (gl/bind tex 0)
-        (gl/configure tex opts))
-      tex))
-
+               (or target gl/texture-2d)
+               nil nil)]
+      (if (and width height)
+        (do (gl/bind tex 0) (gl/configure tex opts))
+        tex)))
 #+END_SRC
 
 ** Complete namespace definition
