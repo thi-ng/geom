@@ -340,7 +340,10 @@
           buf (arrays/float32 (* (count faces) 3 3))]
       (loop [idx 0, faces faces]
         (if faces
-          (let [[nx ny nz] (fnorms (first faces))]
+          (let [n (fnorms (first faces))
+                nx (.-x ^thi.ng.geom.core.vector.Vec3 n)
+                ny (.-y ^thi.ng.geom.core.vector.Vec3 n)
+                nz (.-z ^thi.ng.geom.core.vector.Vec3 n)]
             (doto buf
               (aset idx       nx)
               (aset (+ idx 1) ny)
@@ -353,7 +356,7 @@
               (aset (+ idx 8) nz))
             (recur (+ idx 9) (next faces)))
           buf))))
-
+  
   (defn- vertex-normals
     [m]
     (let [vnorms (g/vertex-normals m)
@@ -363,9 +366,9 @@
         (if faces
           (let [f (first faces)]
             (recur (->> i
-                        (into-buffer (vnorms (f 0)) buf)
-                        (into-buffer (vnorms (f 1)) buf)
-                        (into-buffer (vnorms (f 2)) buf))
+                        (into-buffer-vec3 (vnorms (f 0)) buf)
+                        (into-buffer-vec3 (vnorms (f 1)) buf)
+                        (into-buffer-vec3 (vnorms (f 2)) buf))
                    (next faces)))
           buf))))
 #+END_SRC
@@ -373,14 +376,26 @@
 ** WebGL buffer conversions
 
 *** Vec3
+
+In addition to the protocol implementation we also provide the same
+functionality as standalone function. This is meant for special cases
+where we know an item is a =Vec3= and want to avoid the overhead of
+using the protocol.
+
 #+BEGIN_SRC clojure :noweb-ref impl
+  (defn into-buffer-vec3
+    [^thi.ng.geom.core.vector.Vec3 v buf idx]
+    (aset buf idx       (.-x v))
+    (aset buf (+ idx 1) (.-y v))
+    (aset buf (+ idx 2) (.-z v))
+    (+ idx 3))
+  
   (extend-type thi.ng.geom.core.vector.Vec3
     PWebGLConvert
     (into-buffer [_ buf idx]
-      (doto buf
-        (aset idx       (.-x ^thi.ng.geom.core.vector.Vec3 _))
-        (aset (+ idx 1) (.-y ^thi.ng.geom.core.vector.Vec3 _))
-        (aset (+ idx 2) (.-z ^thi.ng.geom.core.vector.Vec3 _)))
+      (aset buf idx       (.-x ^thi.ng.geom.core.vector.Vec3 _))
+      (aset buf (+ idx 1) (.-y ^thi.ng.geom.core.vector.Vec3 _))
+      (aset buf (+ idx 2) (.-z ^thi.ng.geom.core.vector.Vec3 _))
       (+ idx 3)))
 #+END_SRC
 
@@ -389,10 +404,12 @@
   (extend-type cljs.core.PersistentVector
     PWebGLConvert
     (into-buffer [_ buf idx]
-      (loop [idx idx, _ _]
-        (if _
-          (recur (into-buffer (first _) buf idx) (next _))
-          idx))))
+      (let [into* (if (instance? thi.ng.geom.core.vector.Vec3 (first _))
+                   into-buffer-vec3 into-buffer)]
+        (loop [idx idx, xs _]
+          (if xs
+            (recur (into* (first xs) buf idx) (next xs))
+            idx)))))
 #+END_SRC
 
 *** GMesh
@@ -558,6 +575,7 @@
     [thi.ng.geom.rect :as r]
     [thi.ng.common.error :as err]))
 
+  (declare into-buffer-vec3)
   <<const>>
 
   <<protos>>
