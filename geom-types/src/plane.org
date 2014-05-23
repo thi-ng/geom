@@ -90,13 +90,15 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PIntersect
   (intersect-line
-   ([_ {[p q] :points}]
-      (isec/intersect-ray-plane? p (g/- q p) (:n _) (:w _)))
+   ([_ l]
+      (let [[p q] (if (map? l) (:points l) l)]
+        (isec/intersect-ray-plane? p (g/- q p) (:n _) (:w _))))
    ([_ p q]
       (isec/intersect-ray-plane? p (g/- q p) (:n _) (:w _))))
   (intersect-ray
    ([_ ray]
-      (isec/intersect-ray-plane? (:p ray) (:dir ray) (:n _) (:w _)))
+      (let [[p dir] (if (map? ray) [(:p ray) (:dir ray)] ray)]
+        (isec/intersect-ray-plane? p dir (:n _) (:w _))))
    ([_ p dir]
       (isec/intersect-ray-plane? p dir (:n _) (:w _))))
   (intersect-shape
