@@ -84,11 +84,13 @@
           qc (classifier e q)
           splits (if add-p? (conj splits [p pc]) splits)]
       (if (neg? (* pc qc))
-        (let [{ip :p} (g/intersect-line e p q)]
+        (let [ip (:p (g/intersect-line e p q))]
           (if add-q?
-            (conj (conj splits [ip 0]) [q qc])
+            (-> splits (conj [ip 0]) (conj [q qc]))
             (conj splits [ip 0])))
-        (if add-q? (conj splits [q qc]) splits))))
+        (if add-q?
+          (conj splits [q qc])
+          splits))))
   
   (defn slice-with*
     ([t e] (slice-with* t e g/classify-point))
@@ -99,18 +101,18 @@
                        (check-edge classifier e b c false true)
                        (check-edge classifier e c a false false))
              cmap (fn [ids]
-                    (reduce
-                     (fn [m [[a cl] b c]]
-                       (update-in m [cl] conj [a (b 0) (c 0)]))
-                     {-1 [] 1 []}
-                     (map (fn [[a b c]] [(verts a) (verts b) (verts c)]) ids)))
-             corner-index (fn []
-                            (let [triverts #{a b c}]
-                              (loop [i (dec (count verts))]
-                                (when-let [[v c] (verts i)]
-                                  (if (and (zero? c) (triverts v)) i (recur (dec i)))))))]
+                    (->> ids
+                         (map (fn [[a b c]] [(verts a) (verts b) (verts c)]))
+                         (reduce
+                          (fn [m [a b c]]
+                            (update-in m [(a 1)] conj [(a 0) (b 0) (c 0)]))
+                          {-1 [] 1 []})))]
          (condp = (count verts)
-           4 (let [d (corner-index)]
+           4 (let [triverts #{a b c}
+                   d (loop [i 3]
+                       (if-let [vc (verts i)]
+                         (if (and (zero? (vc 1)) (triverts (vc 0)))
+                           i (recur (dec i)))))]
                (cmap [[(m/wrap-range (inc d) 4) (m/wrap-range (+ d 2) 4) d]
                       [(m/wrap-range (dec d) 4) d (m/wrap-range (+ d 2) 4)]]))
            5 (if (zero? (get-in verts [1 1]))
