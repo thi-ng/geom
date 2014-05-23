@@ -19,15 +19,15 @@
         (.webkitNow js/performance)
         (.mozNow js/performance)
         (.msNow js/performance)
-        (.oNow js/performance)))
-  
-  (defn animate
-    [f & [element]]
-    (let [t0 (now)
-          t (atom 0)
-          f' (fn animate* []
-               (if (f (reset! t (* (- (now) t0) 0.001)))
-                 (if element
+        (.oNow js/performance)))  
+
+   (defn animate
+     [f & [element]]
+    (let [t0 (.getTime (js/Date.))
+           t (atom [0 0])
+           f' (fn animate* []
+               (if (f (reset! t [(* (- (.getTime (js/Date.)) t0) 0.001) (inc (@t 1))]))
+                  (if element
                    (animframe-provider animate* element)
                    (animframe-provider animate*))))]
       (f')))
