@@ -375,7 +375,7 @@
 
 ** WebGL buffer conversions
 
-*** Vec3
+*** Vec2 & Vec3
 
 In addition to the protocol implementation we also provide the same
 functionality as standalone function. This is meant for special cases
@@ -383,12 +383,25 @@ where we know an item is a =Vec3= and want to avoid the overhead of
 using the protocol.
 
 #+BEGIN_SRC clojure :noweb-ref impl
+  (defn into-buffer-vec2
+    [^thi.ng.geom.core.vector.Vec2 v buf idx]
+    (aset buf idx       (.-x v))
+    (aset buf (+ idx 1) (.-y v))
+    (+ idx 2))
+  
   (defn into-buffer-vec3
     [^thi.ng.geom.core.vector.Vec3 v buf idx]
     (aset buf idx       (.-x v))
     (aset buf (+ idx 1) (.-y v))
     (aset buf (+ idx 2) (.-z v))
     (+ idx 3))
+  
+  (extend-type thi.ng.geom.core.vector.Vec2
+    PWebGLConvert
+    (into-buffer [_ buf idx]
+      (aset buf idx       (.-x ^thi.ng.geom.core.vector.Vec2 _))
+      (aset buf (+ idx 1) (.-y ^thi.ng.geom.core.vector.Vec2 _))
+      (+ idx 2)))
   
   (extend-type thi.ng.geom.core.vector.Vec3
     PWebGLConvert
@@ -404,8 +417,11 @@ using the protocol.
   (extend-type cljs.core.PersistentVector
     PWebGLConvert
     (into-buffer [_ buf idx]
-      (let [into* (if (instance? thi.ng.geom.core.vector.Vec3 (first _))
-                   into-buffer-vec3 into-buffer)]
+      (let [t (type (nth _ 0))
+            into* (case t
+                   thi.ng.geom.core.vector.Vec2 into-buffer-vec2
+                   thi.ng.geom.core.vector.Vec3 into-buffer-vec3
+                   into-buffer)]
         (loop [idx idx, xs _]
           (if xs
             (recur (into* (first xs) buf idx) (next xs))
@@ -514,6 +530,9 @@ using the protocol.
                   (map? aspect) (let [{[w h] :size} aspect] (/ w h))
                   :default (/ (nth aspect 0) (nth aspect 1)))]
       (mat/perspective fovy aspect near far)))
+
+  (defn ortho
+    ([] (mat/ortho -1 -1 1 1 -1 1)))
 #+END_SRC
 
 *** WebGL extensions

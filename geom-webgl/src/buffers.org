@@ -13,13 +13,13 @@
       buffer))
 
   (defn make-attribute-buffers
-    [^WebGLRenderingContext gl mode spec]
+    [^WebGLRenderingContext gl mode specs]
     (reduce-kv
-     (fn [spec id {:keys [data target]}]
+     (fn [specs id {:keys [data target]}]
        (assoc-in
-        spec [id :buffer]
+        specs [id :buffer]
         (make-attribute-buffer gl (or target gl/array-buffer) mode data)))
-     spec spec))
+     specs specs))
 
   (defn draw-arrays
     [^WebGLRenderingContext gl {:keys [shader attribs uniforms mode count]}]
