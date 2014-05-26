@@ -35,6 +35,7 @@
                                    :normal   {:data (:normals spec) :size 3}})
                         :mode gl/triangles
                         :count (:num-vertices spec)}
+          ov-quad      (overlay/overlay-spec-from-rect gl)
           view-rect    (gl/get-viewport-rect gl)
           cam-proj     (gl/perspective 45 view-rect 0.1 100.0)
           light-proj   (gl/perspective 45 1 0.01 100)
@@ -83,6 +84,15 @@
                                 :lightRot  light-rot
                                 :coneAngle cone-angle)))))
   
+           (gl/disable gl gl/depth-test)
+           (gl/disable gl gl/cull-face)
+           (overlay/draw-overlay2d
+            gl (assoc ov-quad
+                 :viewport view-rect
+                 :pos [(m/map-interval (Math/sin t) -1 1 0 512) 352]
+                 :width 128
+                 :height 128))
+  
            (.call (aget stats "update") stats)
            ;; keep animating...
            true)))
@@ -102,9 +112,10 @@
     [thi.ng.geom.webgl.animator :as anim]
     [thi.ng.geom.webgl.buffers :as buf]
     [thi.ng.geom.webgl.shaders :as sh]
-    [thi.ng.geom.webgl.shaders.phong :as phong]
-    [thi.ng.geom.webgl.shaders.spotlight :as spotlight]
+    ;;[thi.ng.geom.webgl.shaders.phong :as phong]
+    ;;[thi.ng.geom.webgl.shaders.spotlight :as spotlight]
     [thi.ng.geom.webgl.shaders.shadow :as shadow]
+    [thi.ng.geom.webgl.shaders.overlay :as overlay]
     [thi.ng.geom.webgl.utils :as u]
     [thi.ng.geom.core :as g]
     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
