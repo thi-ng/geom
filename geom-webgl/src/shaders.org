@@ -589,7 +589,7 @@ shader source before compilation with =compile-shader= below.
     ([^WebGLRenderingContext gl r init-shader?]
        (let [vbuf (arrays/float32 8)
              [a b c d] (g/vertices r)
-             _ (gl/into-buffer [a b d c] vbuf 0)
+             _ (gl/into-buffer [a b d c] vbuf 0 2)
              spec {:attribs  (buf/make-attribute-buffers
                               gl gl/static-draw
                               {:position {:data vbuf :size 2}

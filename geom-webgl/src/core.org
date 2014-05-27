@@ -308,8 +308,10 @@
 
 #+BEGIN_SRC clojure :noweb-ref protos
   (defprotocol PWebGLConvert
-    (as-webgl-buffer-spec [_ opts])
-    (into-buffer [_ buf idx]))
+    (as-webgl-buffer-spec [_ opts]))
+
+  (defprotocol PIntoBuffer
+    (into-buffer [_ buf idx stride]))
 
   (defprotocol PRelease
     (release [_]))
@@ -333,6 +335,17 @@
 ** Helpers
 
 #+BEGIN_SRC clojure :noweb-ref helpers
+  (defn- fill-buffer-vec3
+    [buf idx [x y z] num stride]
+    (loop [idx 0, num num]
+      (when (pos? num)
+        (doto buf
+          (aset idx       x)
+          (aset (+ idx 1) y)
+          (aset (+ idx 2) z))
+        (recur (+ idx stride) (dec num))))
+    buf)
+  
   (defn- face-normals
     [m]
     (let [fnorms (g/face-normals m)
@@ -366,9 +379,9 @@
         (if faces
           (let [f (first faces)]
             (recur (->> i
-                        (into-buffer-vec3 (vnorms (f 0)) buf)
-                        (into-buffer-vec3 (vnorms (f 1)) buf)
-                        (into-buffer-vec3 (vnorms (f 2)) buf))
+                        (into-buffer-vec3 (vnorms (f 0)) buf 3)
+                        (into-buffer-vec3 (vnorms (f 1)) buf 3)
+                        (into-buffer-vec3 (vnorms (f 2)) buf 3))
                    (next faces)))
           buf))))
 #+END_SRC
@@ -384,39 +397,39 @@ using the protocol.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   (defn into-buffer-vec2
-    [^thi.ng.geom.core.vector.Vec2 v buf idx]
+    [^thi.ng.geom.core.vector.Vec2 v buf idx stride]
     (aset buf idx       (.-x v))
     (aset buf (+ idx 1) (.-y v))
-    (+ idx 2))
+    (+ idx stride))
   
   (defn into-buffer-vec3
-    [^thi.ng.geom.core.vector.Vec3 v buf idx]
+    [^thi.ng.geom.core.vector.Vec3 v buf idx stride]
     (aset buf idx       (.-x v))
     (aset buf (+ idx 1) (.-y v))
     (aset buf (+ idx 2) (.-z v))
-    (+ idx 3))
+    (+ idx stride))
   
   (extend-type thi.ng.geom.core.vector.Vec2
-    PWebGLConvert
-    (into-buffer [_ buf idx]
+    PIntoBuffer
+    (into-buffer [_ buf idx stride]
       (aset buf idx       (.-x ^thi.ng.geom.core.vector.Vec2 _))
       (aset buf (+ idx 1) (.-y ^thi.ng.geom.core.vector.Vec2 _))
-      (+ idx 2)))
+      (+ idx stride)))
   
   (extend-type thi.ng.geom.core.vector.Vec3
-    PWebGLConvert
-    (into-buffer [_ buf idx]
+    PIntoBuffer
+    (into-buffer [_ buf idx stride]
       (aset buf idx       (.-x ^thi.ng.geom.core.vector.Vec3 _))
       (aset buf (+ idx 1) (.-y ^thi.ng.geom.core.vector.Vec3 _))
       (aset buf (+ idx 2) (.-z ^thi.ng.geom.core.vector.Vec3 _))
-      (+ idx 3)))
+      (+ idx stride)))
 #+END_SRC
 
 *** PersistentVector
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type cljs.core.PersistentVector
-    PWebGLConvert
-    (into-buffer [_ buf idx]
+    PIntoBuffer
+    (into-buffer [_ buf idx stride]
       (let [t (type (nth _ 0))
             into* (case t
                    thi.ng.geom.core.vector.Vec2 into-buffer-vec2
@@ -424,8 +437,32 @@ using the protocol.
                    into-buffer)]
         (loop [idx idx, xs _]
           (if xs
-            (recur (into* (first xs) buf idx) (next xs))
+            (recur (into* (first xs) buf idx stride) (next xs))
             idx)))))
+#+END_SRC
+
+*** Polygon
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  (extend-type thi.ng.geom.types.Polygon2
+    PWebGLConvert
+    (as-webgl-buffer-spec
+      [_ {:keys [normals stride] :or {stride 3, normals true}}]
+      (let [faces (g/tessellate _)
+            num-faces (count faces)
+            num-verts (* num-faces 3)
+            verts (arrays/float32 (* num-verts stride))
+            norms (if normals
+                    (fill-buffer-vec3 (arrays/float32 (* num-verts 3)) 0 V3Z num-verts 3))]
+        (loop [i 0, faces faces]
+          (if faces
+            (recur (into-buffer (first faces) verts i stride) (next faces))))
+        {:vertices     verts
+         :normals      norms
+         :v-size       stride
+         :n-size       3
+         :num-vertices (* num-faces 3)
+         :num-faces    num-faces})))
 #+END_SRC
 
 *** GMesh
@@ -434,18 +471,18 @@ using the protocol.
   (extend-type thi.ng.geom.types.GMesh
     PWebGLConvert
     (as-webgl-buffer-spec
-      [_ opts]
-      (let [m (if (:tessellate opts) (g/tessellate _) _)
+      [_ {:keys [vnormals fnormals tessellate stride] :or {stride 3, fnormals true}}]
+      (let [m (if tessellate (g/tessellate _) _)
             faces (:faces m)
             num-faces (count faces)
             verts (arrays/float32 (* num-faces 3 3))
             norms (cond
-                   (:vnormals opts) (vertex-normals m)
-                   (:fnormals opts) (face-normals m)
+                   vnormals (vertex-normals m)
+                   fnormals (face-normals m)
                    :default nil)]
         (loop [i 0, faces faces]
           (if faces
-            (recur (into-buffer (first faces) verts i) (next faces))))
+            (recur (into-buffer (first faces) verts i stride) (next faces))))
         {:vertices     verts
          :normals      norms
          :num-vertices (* num-faces 3)
@@ -587,7 +624,7 @@ using the protocol.
     [thi.ng.geom.webgl.utils :as glu]
     [thi.ng.geom.core :as g]
     [thi.ng.geom.core.utils :as gu]
-    [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+    [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3Z]]
     [thi.ng.geom.core.matrix :as mat]
     [thi.ng.geom.types]
     [thi.ng.geom.gmesh :as gm]
