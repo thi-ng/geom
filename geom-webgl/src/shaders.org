@@ -46,7 +46,7 @@
                                             x (u-cast x))))
                            (fn [x] (.call setter gl loc
                                           (if (arrays/typed-array? x)
-                                            x (u-cast (if (number? x) [x] x))))))
+                                            x (u-cast (if (not (sequential? x)) [x] x))))))
                  :loc loc})))
      {} uniforms))
 
@@ -214,6 +214,38 @@ shader source before compilation with =compile-shader= below.
 #+END_SRC
 
 ** Presets
+*** Basic
+
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/basic.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.webgl.shaders.basic)
+  
+  (defn make-color-shader-spec
+    [& {attr? :attrib is3d? :3d :or {attr? false, is3d? true}}]
+    (let [spec {:vs (str "void main() { "
+                         (if attr?
+                           "vCol = color; " "")
+                         "gl_Position = proj * "
+                         (if is3d?
+                           "view * model * vec4(position, 1.0)"
+                           "model * vec4(position, 0.0, 1.0)")
+                         "; }")
+                :fs (str "void main() { gl_FragColor = "
+                         (if attr? "vCol" "color")
+                         "; }")
+                :uniforms {:proj  :mat4
+                           :model :mat4}
+                :attribs  {:position (if is3d? :vec3 :vec2)}}
+          spec (if attr?
+                 (-> spec
+                     (assoc-in [:attribs :color] :vec4)
+                     (assoc :varying {:vCol :vec4}))
+                 (assoc-in spec [:uniforms :color] :vec4))
+          spec (if is3d?
+                 (assoc-in spec [:uniforms :view] :mat4)
+                 spec)]
+      spec))
+#+END_SRC
+
 *** Phong
 
 #+BEGIN_SRC c :noweb-ref phong-vs
@@ -264,27 +296,38 @@ shader source before compilation with =compile-shader= below.
 #+END_SRC
 
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/phong.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.shaders.phong)
-
+  (ns thi.ng.geom.webgl.shaders.phong
+    (:require
+      [thi.ng.geom.core :as g]
+      [thi.ng.geom.webgl.core :as gl]
+      [thi.ng.geom.webgl.buffers :as buf]))
+  
   (def shader-spec
     {:vs "
-  <<phong-vs>>"
+    <<phong-vs>>"
      :fs "
-  <<phong-fs>>"
-     :uniforms {:view :mat4
-                :proj :mat4
-                :model :mat4
-                :normalMat :mat4
-                :shininess :float
-                :lightPos :vec3
+    <<phong-fs>>"
+     :uniforms {:view          :mat4
+                :proj          :mat4
+                :model         :mat4
+                :normalMat     :mat4
+                :shininess     :float
+                :lightPos      :vec3
                 :useBlinnPhong :bool
-                :wrap :float}
-     :attribs {:position :vec3
-               :normal :vec3}
-     :varying {:vNormal :vec3
-               :vEyePos :vec3
-               :vLightPos :vec3
-               :vCol :vec3}})
+                :wrap          :float}
+     :attribs {:position       :vec3
+               :normal         :vec3}
+     :varying {:vNormal        :vec3
+               :vEyePos        :vec3
+               :vLightPos      :vec3
+               :vCol           :vec3}})
+  
+  (defn draw-phong
+    [^WebGLRenderingContext gl spec]
+    (buf/draw-arrays
+     gl (update-in
+         spec [:uniforms]
+         #(assoc % :normalMat (-> (:model %) (g/invert) (g/transpose))))))
 #+END_SRC
 
 *** Spotlight
