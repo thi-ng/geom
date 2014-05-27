@@ -407,7 +407,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PTessellate
   (tessellate
-   [_] (map #(thi.ng.geom.types.Triangle2. %) (tessellate* _)))
+   [_] (tessellate* _))
 #+END_SRC
 
 *** PTransform                                                  :usetemplate:
