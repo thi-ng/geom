@@ -30,7 +30,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PArea
   (area
-   [{[a b c d] :points}]
+   [_]
    (->> (g/faces _)
         (map #(m/abs (apply gu/tri-area3 %)))
         (reduce +)))
@@ -111,7 +111,7 @@
     (isec/intersect-tetrahedra?
      (orient-tetra (g/vertices _)) (orient-tetra (g/vertices s)))
     (and (sequential? s) (= 4 (count s)))
-    (intersect-tetrahedra? (g/vertices _) s)
+    (isec/intersect-tetrahedra? (g/vertices _) (orient-tetra s))
     :default (err/type-error! "Tetrahedron" s)))
   (intersect-line
    [_ l] nil)
@@ -211,6 +211,7 @@
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec3]]
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.gmesh :as gm]
