@@ -21,12 +21,18 @@
         (make-attribute-buffer gl (or target gl/array-buffer) mode data)))
      specs specs))
 
+  (defn make-attribute-buffers-in-spec
+   [model-spec ^WebGLRenderingContext gl mode]
+   (update-in
+     model-spec [:attribs]
+     #(make-attribute-buffers gl mode %)))
+
   (defn draw-arrays
-    [^WebGLRenderingContext gl {:keys [shader attribs uniforms mode count]}]
+    [^WebGLRenderingContext gl {:keys [shader attribs uniforms mode num-vertices]}]
     (.useProgram gl (:program shader))
     (loop-kv #(sh/set-uniform shader % %2) uniforms)
     (loop-kv #(sh/set-attribute gl shader % %2) attribs)
-    (.drawArrays gl mode 0 count)
+    (.drawArrays gl mode 0 num-vertices)
     (loop-kv (fn [id _] (sh/disable-attribute gl shader id)) attribs)
     gl)
 #+END_SRC
