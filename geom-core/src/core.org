@@ -403,7 +403,8 @@ protocol consisting of just _ one function: =as-mesh=.
 **** PGeomContainer
 #+BEGIN_SRC clojure :noweb-ref protos-types
   (defprotocol PGeomContainer
-    (into [_ m]))
+    (into [_ m])
+    (empty [_]))
 #+END_SRC
 
 ** Constants
@@ -415,7 +416,7 @@ protocol consisting of just _ one function: =as-mesh=.
 ** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core
-    (:refer-clojure :exclude [+ - * min max into]))
+    (:refer-clojure :exclude [+ - * min max into empty]))
 
   <<constants>>
 

@@ -84,7 +84,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
           e-points (cc-edge-points edges f-points)]
       (->> (cc-subdiv-faces f-points e-points)
            (cc-replace-vertices mesh f-points e-points)
-           (gm/into-mesh))))
+           (g/into (g/empty mesh)))))
 #+END_SRC
 
 ** Doo-Sabin
@@ -168,7 +168,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
             f-faces (ds-fp-faces f-points)
             e-faces (if e* (ds-edge-faces mesh f-points))
             v-faces (if v* (ds-dual-faces mesh f-points))]
-        (gm/into-mesh (concat (if f* f-faces) e-faces v-faces)))))
+        (g/into (g/empty mesh) (concat (if f* f-faces) e-faces v-faces)))))
 
   (def doo-sabin (custom-doo-sabin))
 #+END_SRC
@@ -220,5 +220,5 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
               #+cljs (seq)
               (r/mapcat
                (fn [f] (bf-faces-from-edge-points e-points f)))
-              (gm/into-mesh)))))
+              (g/into (g/empty mesh))))))
 #+END_SRC

@@ -30,17 +30,44 @@
          (thi.ng.geom.types.Sphere. c r))))
 #+END_SRC
 
+** Meshes
+
+#+BEGIN_SRC clojure :noweb-ref meshes
+  (defn into-mesh
+    [mesh add-face mesh-or-faces]
+    (reduce
+     add-face mesh
+     (if (satisfies? g/PFaceAccess mesh-or-faces)
+       (g/faces mesh-or-faces)
+       mesh-or-faces)))
+  
+  (defn map-mesh
+    "Applies f to all faces of given mesh and adds resulting faces to
+      new mesh. Thus f should return a seq of faces. Returns new mesh."
+    [f mesh] (g/into (g/empty mesh) (mapcat f (g/faces mesh))))
+  
+  (defn transform-mesh
+    [mesh add-face tx]
+    (let [verts' (->> (g/vertices mesh)
+                      (r/map (fn [v] [v (g/transform-vector tx v)]))
+                      (into {}))]
+      (reduce
+       (fn [mesh f] (add-face mesh (replace verts' f)))
+       (g/empty mesh) (g/faces mesh))))
+#+END_SRC
+
 ** Complete namespace definition
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/types/utils.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.types.utils
     (:require
+     [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     [thi.ng.geom.types])
-    ,#+clj
-    (:import
-     [thi.ng.geom.types Circle2 Rect2 AABB Sphere]))
+     [thi.ng.geom.types]
+     [clojure.core.reducers :as r]))
 
   <<bounds>>
+
+  <<meshes>>
 #+END_SRC

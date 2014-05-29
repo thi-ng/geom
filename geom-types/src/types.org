@@ -83,7 +83,11 @@ grouping a set of 8 vertices in a specific order (see
   (defrecord Bezier3 [points])
 #+END_SRC
 
-*** GMesh
+*** Meshes
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord BasicMesh [vertices faces fnormals attribs])
+#+END_SRC
+
 #+BEGIN_SRC clojure :noweb-ref types3d
   (defrecord GMesh [vertices normals fnormals vnormals edges faces attribs])
 #+END_SRC

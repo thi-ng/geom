@@ -100,6 +100,27 @@
     ([c s coll] (mapv #(-> % (g/- c) (g/madd s c)) coll)))
 #+END_SRC
 
+*** Area & volume
+
+Volume calculation is using [[file:triangle.org::*Triangle3][signed volume implementation of Triangle3]].
+
+#+BEGIN_SRC clojure :noweb-ref area-volume
+  (defn total-area-3d
+    [faces]
+    (->> faces
+         (r/mapcat tessellate-with-first)
+         (r/map #(->> % (apply tri-area3) m/abs))
+         (r/fold +)))
+  
+  (defn total-volume
+    [faces]
+    (->> faces
+         (r/mapcat tessellate-with-first)
+         (r/map #(g/dot (% 0) (g/cross (% 1) (% 2))))
+         (r/fold +)
+         (* (/ 6.0))))
+#+END_SRC
+
 *** Bounds
 
 #+BEGIN_SRC clojure :noweb-ref bounds
@@ -112,31 +133,31 @@
                  [p (g/- q p)])
        (= c 1) [x zero]
        :default nil)))
-
+  
   (defn bounding-rect
     [points]
     (bounds* v/vec2-op-seq V2 points))
-
+  
   (defn bounding-box
     [points]
     (bounds* v/vec3-op-seq V3 points))
-
+  
   (defn radial-bounds
     [ctor c r-or-points]
     [(ctor c)
      (if (coll? r-or-points)
        (max-dist c r-or-points)
        r-or-points)])
-
+  
   (defn axis-bounds
     [axis coll]
     (let [xs (map #(nth % axis) coll)]
       [(reduce min xs) (reduce max xs)]))
-
+  
   (defn axis-range
     [axis coll]
     (- (apply - (axis-bounds axis coll))))
-
+  
   (defn delta-contains
     [points p eps]
     (some #(m/delta= p % eps) points))
@@ -312,18 +333,16 @@
 ** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/utils.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.utils
+    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V2 V3]]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [*eps*]]
-     ,#+clj [thi.ng.macromath.core :as mm])
-    ,#+cljs
-    (:require-macros
-     [thi.ng.macromath.core :as mm])
-    ,#+clj
-    (:import
-     [thi.ng.geom.core.vector Vec2 Vec3]))
+     ,#+clj [thi.ng.macromath.core :as mm]
+     [clojure.core.reducers :as r]))
+
+  (declare tri-area3)
 
   <<dist>>
 
@@ -338,4 +357,6 @@
   <<normals>>
 
   <<triangles>>
+
+  <<area-volume>>
 #+END_SRC
