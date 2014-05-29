@@ -1,3 +1,7 @@
+#+SETUPFILE: ../../src/setup.org
+
+* WebGL examples & test scenes
+
 ** Templates for namespace setup
 #+BEGIN_SRC clojure :noweb-ref require-macros
   (:require-macros
@@ -32,7 +36,7 @@
    (.call (aget stats "update") stats))
 #+END_SRC
 
-** 2D polygons
+** Example 1: 2D polygons
 
 This demo utilizes the [[file:shaders.org::Basic][basic color shader]] to draw two filled, rotating
 2d polygons. The shader itself is generated based on given parameters
@@ -102,7 +106,7 @@ link for more discussion about these options.
          true))))
 #+END_SRC
 
-** Extruded 2D polygons with Blinn-Phong shading
+** Example 2: Extruded 2D polygons with Blinn-Phong shading
 
 Using the same model setup as in the previous example, this time we
 extrude the polygon and render the resulting 3D mesh. To better
@@ -119,7 +123,8 @@ rotation / transformation).
      <<default-requires>>
      [thi.ng.geom.webgl.shaders.phong :as phong]
      [thi.ng.geom.circle :as c]
-     [thi.ng.geom.polygon :as poly]))
+     [thi.ng.geom.polygon :as poly]
+     [thi.ng.geom.basicmesh :refer [basic-mesh]]))
   
   <<stats>>
   
@@ -130,7 +135,7 @@ rotation / transformation).
           view-rect  (gl/get-viewport-rect gl)
           teeth      20
           model      (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
-                         (g/extrude {:depth 0.1 :scale 0.9})
+                         (g/extrude {:mesh (basic-mesh) :depth 0.1 :scale 0.9})
                          (gl/as-webgl-buffer-spec {:tessellate true :fnormals true})
                          (buf/make-attribute-buffers-in-spec gl gl/static-draw)
                          (assoc :shader (sh/make-shader-from-spec gl phong/shader-spec))
@@ -167,7 +172,7 @@ rotation / transformation).
            true)))))
 #+END_SRC
 
-** Shadow mapping
+** Example 3: Morphogen & shadow mapping
 
 #+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example03.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.example03
@@ -177,6 +182,7 @@ rotation / transformation).
      [thi.ng.geom.webgl.shaders.shadow :as shadow]
      [thi.ng.geom.webgl.shaders.overlay :as overlay]
      [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.basicmesh :refer [basic-mesh]]
      [thi.ng.morphogen.core :as mg]))
 
   <<stats>>
@@ -194,7 +200,7 @@ rotation / transformation).
                          :dir :s :out [(inject seed-clone) (inject reflected-hex)])]
       (-> (mg/seed (mg/sphere-lattice-seg 6 0.25 0.0955 0.2))
           (mg/walk tree)
-          (mg/union-mesh)
+          (mg/union-mesh (basic-mesh))
           (g/transform (-> M44 (g/rotate-x (- HALF_PI)) (g/scale 0.5))))))
 
   (defn ^:export demo
@@ -268,6 +274,5 @@ rotation / transformation).
 
            (update-stats stats)
            ;; keep animating...
-           true)))
-      {:ctx gl}))
+           true)))))
 #+END_SRC

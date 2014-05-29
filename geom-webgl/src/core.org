@@ -497,6 +497,39 @@ using the protocol.
         spec)))
 #+END_SRC
 
+*** BasicMesh
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  (extend-type thi.ng.geom.types.BasicMesh
+    PWebGLConvert
+    (as-webgl-buffer-spec
+      [_ {:keys [fnormals tessellate stride color] :or {stride 3, fnormals true}}]
+      (let [m         (if tessellate (g/tessellate _) _)
+            faces     (g/faces m)
+            num-faces (count faces)
+            num-verts (* num-faces 3)
+            spec      {:attribs {:position {:data (fill-vertex-buffer
+                                                   (arrays/float32 (* num-verts stride))
+                                                   faces stride)
+                                            :size stride}}
+                       :mode         triangles
+                       :num-vertices num-verts
+                       :num-faces    num-faces}
+            spec      (if fnormals
+                        (assoc-in spec [:attribs :normal] {:data (face-normals m) :size 3})
+                        spec)
+            spec      (if color
+                        (let [c-stride (count color)]
+                          (assoc-in
+                           spec [:attribs :color]
+                           {:data (fill-buffer
+                                   (arrays/float32 (* num-verts c-stride))
+                                   0 color num-verts c-stride)
+                            :size c-stride}))
+                        spec)]
+        spec)))
+#+END_SRC
+
 *** GMesh
 
 #+BEGIN_SRC clojure :noweb-ref impl
