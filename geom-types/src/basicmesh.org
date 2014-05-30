@@ -101,9 +101,9 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PNormalAccess
   (face-normals
-   [_] (if (seq (:fnormals _)) (:fnormals _) (:fnormals (g/compute-face-normals _))))
+   [_ force?] (if (seq (:fnormals _)) (:fnormals _) (if force? (:fnormals (g/compute-face-normals _)))))
   (vertex-normals
-   [_] (err/unsupported!))
+   [_ force?] (if force? (err/unsupported!)))
   (compute-face-normals
    [_]
    (loop [fnorms (transient {}), faces (:faces _)]

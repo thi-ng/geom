@@ -294,9 +294,9 @@ located on the rotation axis.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PNormalAccess
   (face-normals
-   [_] (if (seq (:fnormals _)) (:fnormals _) (:fnormals (g/compute-face-normals _))))
+   [_ force?] (if (seq (:fnormals _)) (:fnormals _) (if force? (:fnormals (g/compute-face-normals _)))))
   (vertex-normals
-   [_] (if (seq (:vnormals _)) (:vnormals _) (:vnormals (g/compute-vertex-normals _))))
+   [_ force?] (if (seq (:vnormals _)) (:vnormals _) (if force? (:vnormals (g/compute-vertex-normals _)))))
   (compute-face-normals
    [_]
    (loop [norms (transient #{}), fnorms (transient {}), faces (:faces _)]

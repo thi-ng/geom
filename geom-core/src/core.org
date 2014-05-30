@@ -224,9 +224,9 @@ access to entities in this context.
   (defprotocol PNormalAccess
     (compute-face-normals [_])
     (compute-vertex-normals [_])
-    (face-normals [_])
+    (face-normals [_ force?])
     (face-normal [_ f])
-    (vertex-normals [_])
+    (vertex-normals [_ force?])
     (vertex-normal [_ v]))
 #+END_SRC
 *** Shape based & structural operations

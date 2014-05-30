@@ -367,7 +367,7 @@
   
   (defn- face-normals
     [m]
-    (let [fnorms (g/face-normals m)
+    (let [fnorms (g/face-normals m true)
           faces (g/faces m)
           buf (arrays/float32 (* (count faces) 3 3))]
       (loop [idx 0, faces faces]
@@ -391,7 +391,7 @@
   
   (defn- vertex-normals
     [m]
-    (let [vnorms (g/vertex-normals m)
+    (let [vnorms (g/vertex-normals m true)
           faces (g/faces m)
           buf (arrays/float32 (* (count faces) 3 3))]
       (loop [i 0, faces faces]

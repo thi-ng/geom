@@ -171,8 +171,6 @@ meshes.
 ** Constructors
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn mesh->csg
-    "Converts a regular Mesh3 into a seq of CSG polygons.
-    First calls `compute-face-normals` on mesh if not already present."
     [m]
     (map (fn [f] (csg-polygon f nil)) (g/faces m)))
 
