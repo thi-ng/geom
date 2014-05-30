@@ -49,6 +49,7 @@
     (let [vertices (g/vertices mesh)
           vindex (zipmap vertices (range))
           vnormals (g/vertex-normals mesh false)
+          faces (g/faces mesh)
           fhead #+clj (byte-array 1) #+cljs (make-array 1)
           write-props (fn [props]
                         (doseq [p props]
