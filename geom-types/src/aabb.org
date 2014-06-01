@@ -9,21 +9,55 @@
     ([size] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 size)))
     ([o size] (thi.ng.geom.types.AABB. (vec3 o) (vec3 size)))
     ([sx sy sz] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 sx sy sz))))
-
+  
   (defn aabb-from-minmax
     [p q]
     (let [p (vec3 p)
           q (vec3 q)
           p (g/min p q)]
       (thi.ng.geom.types.AABB. p (g/- (g/max p q) p))))
+  
+  (defn union-aabb
+    "Takes 2 AABB's and returns the AABB of their union, enclosing both."
+    [{pa :p sa :size} {pb :p sb :size}]
+    (let [p (g/min pa pb)]
+      (thi.ng.geom.types.AABB. p (g/- (g/max (g/+ pa sa) (g/+ pb sb)) p))))
+  
+  (defn coll-bounds
+    [[x & more]]
+    (reduce union-aabb (g/bounds x) (map g/bounds more)))
 #+END_SRC
 
 ** Type specific functions
 #+BEGIN_SRC clojure :noweb-ref helpers
-  (defn union-box
-    [{pa :p sa :size} {pb :p sb :size}]
-    (let [p (g/min pa pb)]
-      (thi.ng.geom.types.AABB. p (g/- (g/max (g/+ pa sa) (g/+ pb sb)) p))))
+  (defn map-point
+    "Takes an AABB and point, returns point in normalized UVW coords in
+    local box space, where [0,0,0] is equivalent to the AABB's min point
+    and [1,1,1] the point diagonally opposite. If any of the resulting
+    coordinates is outside the 0.0 .. 1.0 interval, the orginal point
+    was outside the box."
+    [box p]
+    (g/div (g/- p (:p box)) (:size box)))
+  
+  (defn unmap-point
+    "Inverse operation of map-point. Maps point in local UWV coordinates
+    to its world position."
+    [box p]
+    (g/madd p (:size box) (:p box)))
+  
+  (defn fit-all-into-aabb
+    "Takes an AABB and seq of entities, proportionally scales and
+    repositions all items to fit into given box. Returns lazyseq of
+    transformed entities."
+    [box coll]
+    (let [b (coll-bounds coll)
+          s (reduce min (g/div (:size box) (:size b)))
+          b' (g/center (g/scale b s) (g/centroid box))]
+      (map
+       #(-> %
+           (g/center (unmap-point b' (map-point b (g/centroid %))))
+           (g/scale-size s))
+       coll)))
 #+END_SRC
 
 ** Protocol implementations
@@ -42,9 +76,9 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBounds
   (bounds [_] _)
-  (width [_] ((:size _) 0))
-  (height [_] ((:size _) 1))
-  (depth [_] ((:size _) 2))
+  (width  [_] (nth (:size _) 0))
+  (height [_] (nth (:size _) 1))
+  (depth  [_] (nth (:size _) 2))
 #+END_SRC
 
 *** PBoundingSphere
@@ -305,6 +339,7 @@ of the original with inner sorting over XYZ.
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec3]]
+     [thi.ng.geom.core.matrix :refer [M44]]
      [thi.ng.geom.cuboid :as cu]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.types]
@@ -400,4 +435,13 @@ of the original with inner sorting over XYZ.
       (is (= (cu/cuboid (vec3) s) (g/transform a (g/translate M44 (g/- p)))) "translate via mat")
       (is (= (cu/cuboid (g/* p 2) (g/* s 2)) (g/transform a (g/scale M44 2))) "scale via mat")
       ))
+  
+  (deftest test-helpers
+    (is (= (a/aabb [-1 -2 -3] [3 5 7]) (a/union-aabb (a/aabb [-1 -2 -3] 1) (a/aabb [1 2 3] 1))) "union")
+    (is (= (a/aabb) (a/union-aabb (a/aabb) (a/aabb))) "union self")
+    (is (= (a/aabb) (a/coll-bounds (a/fit-all-into-aabb (a/aabb) [(s/sphere -1 1) (a/aabb 2 1)])))
+      "fit-all-into-aabb1")
+    (is (= (a/aabb [0.5 1.5 0] [1 1 5])
+           (a/coll-bounds (a/fit-all-into-aabb (a/aabb 2 4 5) [(s/sphere 1 1) (a/aabb [0 1 9] 1)])))
+      "fit-all-into-aabb2"))
 #+END_SRC
