@@ -35,7 +35,7 @@ constructor function defined in this namespace.
 
 ** Type specific functions
 #+BEGIN_SRC clojure :noweb-ref helpers
-  (defn unmap-uvw
+  (defn unmap-point
     "Takes a seq of 8 points defining a cuboid and vector of normalized
     u,v,w coordinates. Applies trilinear interpolation to compute point
     within the cuboid:
@@ -207,7 +207,7 @@ from the first vertex of the original with inner sorting over XYZ.
             rv (d/successive-nth 2 (m/norm-range (or rows num)))
             rw (d/successive-nth 2 (m/norm-range (or slices num)))
             map-p (fn [p]
-                    (->> (unmap-uvw points p)
+                    (->> (unmap-point points p)
                          (map #(m/roundto % *eps*))
                          (vec3)))]
         (for [[w1 w2] rw, [v1 v2] rv, [u1 u2] ru]

@@ -33,11 +33,11 @@
           h (- y2 y1)]
       (thi.ng.geom.types.Rect2. p* (vec2 w h))))
 
-  (defn map-uv
+  (defn map-point
     [{:keys [p size]} [qx qy]]
     (vec2 (mm/subdiv qx (p 0) (size 0)) (mm/subdiv qy (p 1) (size 1))))
 
-  (defn unmap-uv
+  (defn unmap-point
     [{:keys[p size]} [qx qy]]
     (vec2 (mm/madd qx (size 0) (p 0)) (mm/madd qy (size 1) (p 1))))
 
@@ -246,7 +246,7 @@ top-left to bottom-right ordering and inner sorting along X.
             ry (range 0.0 1.0 dy)
             s (g/* (:size _) dx dy)]
         (for [y ry x rx
-              :let [[px py] (unmap-uv _ [x y])
+              :let [[px py] (unmap-point _ [x y])
                     px (m/roundto px *eps*)
                     py (m/roundto py *eps*)]]
           (thi.ng.geom.types.Rect2. (vec2 px py) s)))))

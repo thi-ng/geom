@@ -18,7 +18,7 @@
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   ;; FIXME
-  (defn map-uv
+  (defn map-point
     [{[a b c d] :points} p]
     (let [u1 (gu/closest-point-coeff p a b)
           u2 (gu/closest-point-coeff p d c)
@@ -34,7 +34,7 @@
                 (* v2 (/ dbc (+ dad dbc))))]
       (vec2 u* v*)))
 
-  (defn unmap-uv
+  (defn unmap-point
     "Takes a vector of four points defining a convex & planar quad and a
     2d vector of normalized UV coordinates. Returns mapped point in quad."
     [[a b c d] [u v]] (g/mix a b d c u v))
@@ -211,7 +211,7 @@ A quad's mesh representation is simply a quad mesh with a single face.
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-sample(n="4")>>
   ;;(random-point-inside
-  ;; [_] (unmap-uv _ (vec2 (m/random) (m/random))))
+  ;; [_] (unmap-point _ (vec2 (m/random) (m/random))))
 #+END_SRC
 *** PSubdivide
 
@@ -238,7 +238,7 @@ default for missing args.
    ([{:keys [points]} {:keys [num cols rows] :or {num 2}}]
       (let [ru (d/successive-nth 2 (m/norm-range (or cols num)))
             rv (d/successive-nth 2 (m/norm-range (or rows num)))
-            map-p (fn [p] (->> p (unmap-uv points) (map #(m/roundto % *eps*)) vec3))]
+            map-p (fn [p] (->> p (unmap-point points) (map #(m/roundto % *eps*)) vec3))]
         (for [[v1 v2] rv, [u1 u2] ru]
           (thi.ng.geom.types.Quad3.
            [(map-p [u1 v1]) (map-p [u2 v1]) (map-p [u2 v2]) (map-p [u1 v2])])))))
