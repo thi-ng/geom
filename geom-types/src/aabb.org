@@ -12,13 +12,18 @@
 
   (defn aabb-from-minmax
     [p q]
-    (let [a (g/min p q)]
-      (thi.ng.geom.types.AABB. a (g/- (g/max p q) a))))
+    (let [p (vec3 p)
+          q (vec3 q)
+          p (g/min p q)]
+      (thi.ng.geom.types.AABB. p (g/- (g/max p q) p))))
 #+END_SRC
 
 ** Type specific functions
 #+BEGIN_SRC clojure :noweb-ref helpers
-
+  (defn union-box
+    [{pa :p sa :size} {pb :p sb :size}]
+    (let [p (g/min pa pb)]
+      (thi.ng.geom.types.AABB. p (g/- (g/max (g/+ pa sa) (g/+ pb sb)) p))))
 #+END_SRC
 
 ** Protocol implementations
@@ -68,9 +73,9 @@
   g/PCenter
   (center
    ([{p :p size :size}]
-      (thi.ng.geom.types.AABB. (g/- p (g/* size 0.5)) size))
+      (thi.ng.geom.types.AABB. (g/* size -0.5) size))
    ([{size :size} q]
-      (thi.ng.geom.types.AABB. (g/- q (g/* size 0.5)) size)))
+      (thi.ng.geom.types.AABB. (g/madd size -0.5 q) size)))
   (centroid
    [_] (g/madd (:size _) 0.5 (:p _)))
 #+END_SRC
@@ -251,7 +256,7 @@ of the original with inner sorting over XYZ.
   g/PRotate
   (rotate
    [_ theta] (g/rotate-z (cu/cuboid (:p _) (:size _)) theta))
-
+  
   g/PRotate3D
   (rotate-x
    [_ theta] (g/rotate-x (cu/cuboid (:p _) (:size _)) theta))
@@ -261,23 +266,21 @@ of the original with inner sorting over XYZ.
    [_ theta] (g/rotate-z (cu/cuboid (:p _) (:size _)) theta))
   (rotate-around-axis
    [_ axis theta] (g/rotate-around-axis (cu/cuboid (:p _) (:size _)) axis theta))
-
+  
   g/PScale
   (scale
-   [_ s] (thi.ng.geom.types.AABB. (g/* (:p _) s) (g/* (:size _) s)))
-  (scale
-   [_ sx sy] (thi.ng.geom.types.AABB. (g/* (:p _) sx sy) (g/* (:size _) sx sy)))
-  (scale
-   [_ sx sy sz] (thi.ng.geom.types.AABB. (g/* (:p _) sx sy sz) (g/* (:size _) sx sy sz)))
+   ([_ s] (thi.ng.geom.types.AABB. (g/* (:p _) s) (g/* (:size _) s)))
+   ([_ sx sy] (thi.ng.geom.types.AABB. (g/* (:p _) sx sy) (g/* (:size _) sx sy)))
+   ([_ sx sy sz] (thi.ng.geom.types.AABB. (g/* (:p _) sx sy sz) (g/* (:size _) sx sy sz))))
   (scale-size
    [_ s]
    (let [s' (g/* (:size _) s)]
      (thi.ng.geom.types.AABB. (g/madd (g/- s' (:size _)) -0.5 (:p _)) s')))
-
+  
   g/PTranslate
   (translate
    [_ t] (thi.ng.geom.types.AABB. (g/+ (:p _) t) (:size _)))
-
+  
   g/PTransform
   (transform
    [_ m] (g/transform (cu/cuboid (:p _) (:size _)) m))
@@ -320,4 +323,81 @@ of the original with inner sorting over XYZ.
   <<helpers>>
 
   <<impl>>
+#+END_SRC
+** Tests                                                           :noexport:
+*** TODO add rotate tests
+*** TODO add isec tests
+#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/types/test/aabb.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.types.test.aabb
+    ,#+cljs
+    (:require-macros
+     [cemerick.cljs.test :refer (is deftest with-test run-tests testing)])
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :refer [vec3]]
+     [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.types]
+     [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.cuboid :as cu]
+     [thi.ng.geom.sphere :as s]
+     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.basicmesh :as bm]
+     [thi.ng.geom.triangle]
+     ,#+clj [clojure.test :refer :all]
+     ,#+cljs [cemerick.cljs.test :as t]))
+  
+  (deftest test-ctors
+    (is (= (a/aabb [100 200 300] [10 20 30])
+           (a/aabb-from-minmax [100 200 300] [110 220 330]))
+        "aabb-from-minmax")
+    (is (= (a/aabb [0 0 0] [10 10 10]) (a/aabb 10))
+        "aabb n")
+    (is (= (a/aabb [0 0 0] [10 20 30]) (a/aabb 10 20 30))
+        "aabb sz sy sz"))
+  
+  (deftest test-impls
+    (let [p (vec3 100 200 300)
+          [w h d :as s] (vec3 10 20 30)
+          c (g/madd s 0.5 p)
+          a (a/aabb p s)]
+      (is (== (* 2 (+ (* w h) (* w d) (* h d))) (g/area a)) "area")
+      (is (== (* w h d) (g/volume a)) "volume")
+      (is (= a (g/bounds a)) "bounds")
+      (is (= w (g/width a)) "width")
+      (is (= h (g/height a)) "height")
+      (is (= d (g/depth a)) "depth")
+      (is (= (s/sphere c (g/dist c (g/+ p s))) (g/bounding-sphere a)) "bounding sphere")
+      (is (= c (g/centroid a)) "centroid")
+      (is (= (vec3) (g/centroid (g/center a))) "center + centroid")
+      (is (= (vec3 -1 -2 -3) (g/centroid (g/center a (vec3 -1 -2 -3)))) "center p + centroid")
+      (is (= 8 (count (g/vertices a))) "vert count")
+      (is (= 6 (count (g/faces a))) "face count")
+      (is (= 12 (count (g/edges a))) "edge count")
+      (is (instance? thi.ng.geom.types.GMesh (g/as-mesh a)) "as gmesh")
+      (is (instance? thi.ng.geom.types.BasicMesh (g/as-mesh a {:mesh (bm/basic-mesh)})) "as bmesh")
+      (is (= 1 (count (g/faces (g/as-mesh a {:flags :n})))))
+      (is (= 1 (count (g/faces (g/as-mesh a {:flags :s})))))
+      (is (= 1 (count (g/faces (g/as-mesh a {:flags :e})))))
+      (is (= 1 (count (g/faces (g/as-mesh a {:flags :w})))))
+      (is (= 1 (count (g/faces (g/as-mesh a {:flags :f})))))
+      (is (= 1 (count (g/faces (g/as-mesh a {:flags :b})))))
+      (is (every? #(g/contains-point? a %)
+                  (take 1000 (repeatedly #(g/random-point-inside a))))
+          "random-p-inside contains")
+      (is (every? pos?
+                  (take 1000 (repeatedly #(g/classify-point a (g/random-point-inside a)))))
+          "random-p-inside classify")
+      (is (every? zero?
+                  (take 1000 (repeatedly #(g/classify-point a (g/random-point a)))))
+          "random-p classify on surface")
+      (is (= 27 (count (g/subdivide a {:num 3}))) "subdiv :num")
+      (is (= 6 (count (g/subdivide a {:cols 3 :rows 2}))) "subdiv :cols :rows")
+      (is (= 12 (count (g/subdivide a {:cols 3 :rows 2 :slices 2}))) "subdiv :cols :rows :slices")
+      (is (= 12 (count (g/tessellate a))) "tessellate")
+      (is (= (a/aabb s) (g/translate a (g/- p))) "translate")
+      (is (= (a/aabb (g/* p 2) (g/* s 2)) (g/scale a 2)) "scale")
+      (is (= (a/aabb (g/madd s -0.5 p) (g/* s 2)) (g/scale-size a 2)) "scale-size")
+      (is (= (cu/cuboid (vec3) s) (g/transform a (g/translate M44 (g/- p)))) "translate via mat")
+      (is (= (cu/cuboid (g/* p 2) (g/* s 2)) (g/transform a (g/scale M44 2))) "scale via mat")
+      ))
 #+END_SRC
