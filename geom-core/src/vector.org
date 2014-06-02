@@ -1124,21 +1124,24 @@ injected in the appropriate places of the code.
   (slope-yz [_] (/ z y))
 #+END_SRC
 *** PPolar
+
+- http://mathworld.wolfram.com/SphericalCoordinates.html
+- http://rbrundritt.wordpress.com/2008/10/14/conversion-between-spherical-and-cartesian-coordinates-systems/
+
 #+BEGIN_SRC clojure :noweb-ref vec3
-  ;; http://mathworld.wolfram.com/SphericalCoordinates.html
   g/PPolar
   (as-polar
    [_]
     (let [r (g/mag _)
-          theta (Math/atan2 y x)
-          phi (Math/acos (/ z r))]
-      (Vec3. r (if (neg? theta) (+ TWO_PI theta) theta) phi)))
+          theta (Math/asin (/ z r))
+          phi (Math/atan2 y x)]
+      (Vec3. r theta phi)))
   (as-cartesian [_]
-    (let [rsphi (* (Math/sin z) x)]
+    (let [rcos (* x (Math/cos y))]
       (Vec3.
-       (* (Math/cos y) rsphi)
-       (* (Math/sin y) rsphi)
-       (* (Math/cos z) x))))
+       (* rcos (Math/cos z))
+       (* rcos (Math/sin z))
+       (* x    (Math/sin y)))))
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :noweb-ref vec3
