@@ -93,7 +93,7 @@
     ([c' coll]
        (center (centroid coll) c' coll))
     ([c c' coll]
-       (let [d (- c' c)] (mapv #(g/+ % d) coll))))
+       (let [d (g/- c' c)] (mapv #(g/+ % d) coll))))
 
   (defn scale-size
     ([s coll] (scale-size (centroid coll) s coll))
