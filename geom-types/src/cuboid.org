@@ -35,13 +35,7 @@ constructor function defined in this namespace.
 
 ** Type specific functions
 #+BEGIN_SRC clojure :noweb-ref helpers
-  (defn unmap-point
-    "Takes a seq of 8 points defining a cuboid and vector of normalized
-    u,v,w coordinates. Applies trilinear interpolation to compute point
-    within the cuboid:
-    u is coord along AD/BC edge, v along AE/BF, w along AB/DC."
-    [[a b c d e f g h] [u v w]]
-    (g/mix (g/mix a d e h u v) (g/mix b c f g u v) w))
+
 #+END_SRC
 
 ** Protocol implementations
@@ -154,6 +148,27 @@ front, back - assuming the vertex order given in the diagram.
              (g/into (or mesh (gm/gmesh)))))))
 #+END_SRC
 
+*** TODO PPointMap
+
+- =map-point= still missing
+- =unmap-point= takes a seq of 8 points defining a cuboid and vector
+  of normalized UVW coordinates. Applies trilinear interpolation to
+  compute point within the cuboid:
+  - U is coord along AD/BC edge
+  - V along AE/BF
+  - W along AB/DC
+
+Also see: [[file:~/work/clj/thing/geom/geom-core/src/utils.org::Interpolation][map-trilinear]]
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PPointMap
+  (map-point
+   [_ p])
+  (unmap-point
+    [_ p]
+    (gu/map-trilinear (:points _) p))
+#+END_SRC
+
 *** TODO PProximity                                                     :fix:
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PProximity
@@ -207,7 +222,7 @@ from the first vertex of the original with inner sorting over XYZ.
             rv (d/successive-nth 2 (m/norm-range (or rows num)))
             rw (d/successive-nth 2 (m/norm-range (or slices num)))
             map-p (fn [p]
-                    (->> (unmap-point points p)
+                    (->> (gu/map-trilinear points p)
                          (map #(m/roundto % *eps*))
                          (vec3)))]
         (for [[w1 w2] rw, [v1 v2] rv, [u1 u2] ru]
