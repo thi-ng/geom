@@ -307,7 +307,6 @@ access to entities in this context.
     (extrude [_ opts])
     (extrude-shell [_ opts]))
 #+END_SRC
-
 **** PFlip
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PFlip
@@ -327,21 +326,33 @@ access to entities in this context.
 #+END_SRC
 **** PMeshConvert
 
-Anything which can be turned into a 2D or 3D mesh will implement _
-protocol consisting of just _ one function: =as-mesh=.
+Anything which can be turned into a 2D or 3D mesh will implement this
+protocol consisting of just this one function:
 
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PMeshConvert
     (as-mesh [_] [_ opts]
-      "Transforms the current enitity into a Mesh instance"))
+      "Transforms the current enitity into a mesh instance"))
  #+END_SRC
+**** PPointMap
+
+This protocol is intended to provide domain transfers of points from
+one shape into another.
+
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol PPointMap
+    (map-point [_ p])
+    (unmap-point [_ p]))
+#+END_SRC
 **** PPolygonConvert
-       Anything which can be turned into a polygon will implement _
-       protocol consisting of just _ one function: =as-polygon=.
+
+Anything which can be turned into a 2D polygon will implement this
+protocol consisting of just this one function:
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PPolygonConvert
     (as-polygon [_] [_ res]
-      "Transforms current entity into a Polygon instance"))
+      "Transforms current entity into a Polygon2 instance"))
 #+END_SRC
 **** PProximity
 #+BEGIN_SRC clojure :noweb-ref protos-shape
