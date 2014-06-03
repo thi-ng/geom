@@ -16,48 +16,11 @@
           q (vec3 q)
           p (g/min p q)]
       (thi.ng.geom.types.AABB. p (g/- (g/max p q) p))))
-  
-  (defn union-aabb
-    "Takes 2 AABB's and returns the AABB of their union, enclosing both."
-    [{pa :p sa :size} {pb :p sb :size}]
-    (let [p (g/min pa pb)]
-      (thi.ng.geom.types.AABB. p (g/- (g/max (g/+ pa sa) (g/+ pb sb)) p))))
-  
-  (defn coll-bounds
-    [[x & more]]
-    (reduce union-aabb (g/bounds x) (map g/bounds more)))
 #+END_SRC
 
 ** Type specific functions
 #+BEGIN_SRC clojure :noweb-ref helpers
-  (defn map-point
-    "Takes an AABB and point, returns point in normalized UVW coords in
-    local box space, where [0,0,0] is equivalent to the AABB's min point
-    and [1,1,1] the point diagonally opposite. If any of the resulting
-    coordinates is outside the 0.0 .. 1.0 interval, the orginal point
-    was outside the box."
-    [box p]
-    (g/div (g/- p (:p box)) (:size box)))
-  
-  (defn unmap-point
-    "Inverse operation of map-point. Maps point in local UWV coordinates
-    to its world position."
-    [box p]
-    (g/madd p (:size box) (:p box)))
-  
-  (defn fit-all-into-aabb
-    "Takes an AABB and seq of entities, proportionally scales and
-    repositions all items to fit into given box. Returns lazyseq of
-    transformed entities."
-    [box coll]
-    (let [b (coll-bounds coll)
-          s (reduce min (g/div (:size box) (:size b)))
-          b' (g/center (g/scale b s) (g/centroid box))]
-      (map
-       #(-> %
-           (g/center (unmap-point b' (map-point b (g/centroid %))))
-           (g/scale-size s))
-       coll)))
+
 #+END_SRC
 
 ** Protocol implementations
@@ -94,12 +57,10 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBoundary
   (contains-point?
-   [{p :p size :size} [qx qy qz]]
-   (let [[x1 y1 z1] p
-         [x2 y2 z2] (g/+ p size)]
-     (and (m/in-range? x1 x2 qx)
-          (m/in-range? y1 y2 qy)
-          (m/in-range? z1 z2 qz))))
+   [{p :p s :size} q]
+   (and (m/in-range? (p 0) (+ (p 0) (s 0)) (q 0))
+        (m/in-range? (p 1) (+ (p 1) (s 1)) (q 1))
+        (m/in-range? (p 2) (+ (p 2) (s 2)) (q 2))))
 #+END_SRC
 
 *** PCenter
@@ -212,6 +173,28 @@ front, back (see diagram below).
              (g/into (or mesh (gm/gmesh)))))))
 #+END_SRC
 
+*** PPointMap
+
+- =map-point= takes an AABB and 3D point, returns the point in
+  normalized UVW coords in local box space, where [0,0,0] is
+  equivalent to the AABB's min point and [1,1,1] the point diagonally
+  opposite. If any of the resulting coordinates is outside the 0.0 ..
+  1.0 interval, the orginal point was outside the box.
+
+- =unmap-point= is the inverse operation of =map-point=. It maps a
+  point in local UVW coordinates to its world position.
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PPointMap
+  (map-point
+   [{:keys [p size]} q]
+   (vec3
+    (mm/subdiv (q 0) (p 0) (size 0))
+    (mm/subdiv (q 1) (p 1) (size 1))
+    (mm/subdiv (q 2) (p 2) (size 2))))
+  (unmap-point
+   [_ q] (g/madd q (:size _) (:p _)))
+#+END_SRC
 *** TODO PProximity
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PProximity
@@ -236,8 +219,38 @@ front, back (see diagram below).
       (< id 4) (vec3 (m/random x1 x2) (if (= 2 id) y1 y2) (m/random z1 z2))
       :default (vec3 (m/random x1 x2) (m/random y1 y2) (if (= 4 id) z1 z2)))))
 #+END_SRC
+*** TODO PSetOps
 
-*** TODO PSubdivide
+The implementations for this protocol are only intended to work with
+other AABBs and no type checking is done.
+
+- =union= returns the union box of both args
+- =intersection= returns the AABB of the intersection volume of both
+  args or =nil= if there's no overlap. Intersection is defined also
+  for touching boxes or if overlap is only a single point (in which
+  case the size of the resulting AABB will be zero)
+- =difference= (still missing) will return a mesh of the remaining
+  volume after the 2nd box has been subtracted from the first (or
+  =nil= in case of no overlap)
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PSetOps
+  (union
+   [{pa :p sa :size} {pb :p sb :size}]
+   (let [p (g/min pa pb)]
+     (thi.ng.geom.types.AABB. p (g/- (g/max (g/+ pa sa) (g/+ pb sb)) p))))
+  (intersection
+   [_ b]
+   (let [pa (:p _) qa (g/+ pa (:size _))
+         pb (:p b) qb (g/+ pb (:size b))
+         p' (g/max pa pb)
+         q' (g/min qa qb)
+         s' (g/- q' p')]
+     (if (every? #(>= % 0) s')
+       (thi.ng.geom.types.AABB. p' s'))))
+#+END_SRC
+  
+*** PSubdivide
 
 An AABB can be subdivided into smaller ones, i.e. to create a seq of
 uniform grid cells. The following options can be given as a 2nd
@@ -334,6 +347,7 @@ of the original with inner sorting over XYZ.
 ** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/aabb.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.aabb
+    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
@@ -347,11 +361,7 @@ of the original with inner sorting over XYZ.
      [thi.ng.common.data.core :as d]
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps*]]
-     ,#+clj [thi.ng.macromath.core :as mm])
-    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
-    ,#+clj
-    (:import
-     [thi.ng.geom.types AABB Cuboid Sphere]))
+     ,#+clj [thi.ng.macromath.core :as mm]))
 
   <<ctors>>
 
@@ -372,14 +382,15 @@ of the original with inner sorting over XYZ.
      [thi.ng.geom.core.vector :refer [vec3]]
      [thi.ng.geom.core.matrix :refer [M44]]
      [thi.ng.geom.types]
+     [thi.ng.geom.types.utils :as tu]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.cuboid :as cu]
      [thi.ng.geom.sphere :as s]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.basicmesh :as bm]
-     [thi.ng.geom.triangle]
+     [thi.ng.geom.triangle :as t]
      ,#+clj [clojure.test :refer :all]
-     ,#+cljs [cemerick.cljs.test :as t]))
+     ,#+cljs [cemerick.cljs.test]))
   
   (deftest test-ctors
     (is (= (a/aabb [100 200 300] [10 20 30])
@@ -391,8 +402,9 @@ of the original with inner sorting over XYZ.
         "aabb sz sy sz"))
   
   (deftest test-impls
-    (let [p (vec3 100 200 300)
-          [w h d :as s] (vec3 10 20 30)
+    (let [[px py pz :as p] (vec3 100 200 300)
+          [w h d :as s]    (vec3 10 20 30)
+          [qx qy qz :as q] (g/+ p s)
           c (g/madd s 0.5 p)
           a (a/aabb p s)]
       (is (== (* 2 (+ (* w h) (* w d) (* h d))) (g/area a)) "area")
@@ -434,14 +446,18 @@ of the original with inner sorting over XYZ.
       (is (= (a/aabb (g/madd s -0.5 p) (g/* s 2)) (g/scale-size a 2)) "scale-size")
       (is (= (cu/cuboid (vec3) s) (g/transform a (g/translate M44 (g/- p)))) "translate via mat")
       (is (= (cu/cuboid (g/* p 2) (g/* s 2)) (g/transform a (g/scale M44 2))) "scale via mat")
+      (is (= (a/aabb [-1 -2 -3] [3 5 7]) (g/union (a/aabb [-1 -2 -3] 1) (a/aabb [1 2 3] 1))) "union")
+      (is (= (a/aabb) (g/union (a/aabb) (a/aabb))) "union self")
+      (is (= (a/aabb 0.5 0.5) (g/intersection (a/aabb) (a/aabb 0.5 1))) "intersection aabb 1")
+      (is (= (a/aabb 1 0) (g/intersection (a/aabb) (a/aabb 1 1))) "intersection aabb 2")
+      (is (= (vec3) (g/map-point a p)) "map-point 1")
+      (is (= (vec3 1) (g/map-point a q)) "map-point 2")
+      (is (= (vec3 0 1 1) (g/map-point a (vec3 px qy qz))) "map-point 3")
+      (is (= (vec3 1 0 1) (g/map-point a (vec3 qx py qz))) "map-point 4")
+      (is (= (vec3 1 1 0) (g/map-point a (vec3 qx qy pz))) "map-point 5")
+      (is (= (vec3 0.5) (g/map-point a (g/centroid a))) "map-point centroid")
+      (is (= p (g/unmap-point a (vec3))) "unmap-point 1")
+      (is (= q (g/unmap-point a (vec3 1))) "unmap-point 2")
+      (is (= c (g/unmap-point a (vec3 0.5))) "unmap-point 3")
       ))
-  
-  (deftest test-helpers
-    (is (= (a/aabb [-1 -2 -3] [3 5 7]) (a/union-aabb (a/aabb [-1 -2 -3] 1) (a/aabb [1 2 3] 1))) "union")
-    (is (= (a/aabb) (a/union-aabb (a/aabb) (a/aabb))) "union self")
-    (is (= (a/aabb) (a/coll-bounds (a/fit-all-into-aabb (a/aabb) [(s/sphere -1 1) (a/aabb 2 1)])))
-      "fit-all-into-aabb1")
-    (is (= (a/aabb [0.5 1.5 0] [1 1 5])
-           (a/coll-bounds (a/fit-all-into-aabb (a/aabb 2 4 5) [(s/sphere 1 1) (a/aabb [0 1 9] 1)])))
-      "fit-all-into-aabb2"))
 #+END_SRC
