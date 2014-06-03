@@ -222,6 +222,40 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
       (if include-b? ls (butlast ls))))
 #+END_SRC
 
+*** Interpolation
+
+  : d +----+ c
+  :   |    |
+  :   |    |
+  : a +----+ b
+
+#+BEGIN_SRC clojure :noweb-ref interpolate
+  (defn map-bilinear
+    "Takes a seq of 4 points in ccw order and 2D vector of normalized UV
+    coordinates. Applies bilinear interpolation to compute point within
+    the rect: U is coord along AB/DC edge, V along BC/AD"
+    [[a b c d] [u v]]
+    (g/mix a b d c u v))
+#+END_SRC
+
+  : e +----+ h
+  :   |\   :\
+  :   |f+----+ g
+  :   | |  : |
+  : a +-|--+d|
+  :    \|   \|
+  :   b +----+ c
+
+#+BEGIN_SRC clojure :noweb-ref interpolate
+  (defn map-trilinear
+    "Takes a seq of 8 points defining a cuboid and vector of normalized
+    UVW coordinates. Applies trilinear interpolation to compute point
+    within the cuboid: U is coord along AD/BC edge, V along AE/BF, W
+    along AB/DC (see above diagram)"
+    [[a b c d e f g h] [u v w]]
+    (g/mix (g/mix a d e h u v) (g/mix b c f g u v) w))
+#+END_SRC
+
 *** Tessellation
 
 #+BEGIN_SRC clojure :noweb-ref tessellate
@@ -351,6 +385,8 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
   <<bounds>>
 
   <<sample>>
+
+  <<interpolate>>
 
   <<tessellate>>
 
