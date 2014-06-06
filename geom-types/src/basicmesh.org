@@ -65,7 +65,7 @@
    ([_]   (g/center _ (vec3)))
    ([_ o] (g/transform _ (g/translate M44 (g/- o (g/centroid _))))))
   (centroid
-   [_]    (gu/centroid (:vertices _)))
+   [_]    (gu/centroid (seq (:vertices _))))
 #+END_SRC
 
 *** PFlip
