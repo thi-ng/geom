@@ -82,13 +82,13 @@ of the code.
 #+END_SRC
 
 ** Implementation
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   (deftype Quat4
     ,#+clj  [^double x ^double y ^double z ^double w]
     ,#+cljs [x y z w]
 #+END_SRC
 *** Clojure protocols
-#+BEGIN_SRC clojure :noweb-ref quat :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   ,#+clj clojure.lang.ILookup
   ,#+clj (valAt
          [_ k] (swizzle4 _ k nil))
@@ -208,7 +208,7 @@ of the code.
   #+clj (clone [_] (Quat4. x y z w))
 #+END_SRC
 *** ClojureScript protocols
-#+BEGIN_SRC clojure :noweb-ref quat :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   ,#+cljs ICloneable
   ,#+cljs (-clone
           [_] (Quat4. x y z w))
@@ -298,14 +298,14 @@ of the code.
 #+END_SRC
 
 *** PScale
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PScale
   (scale
    [_ s]
    (Quat4. (* x s) (* y s) (* z s) (* w s)))
 #+END_SRC
 *** PRotate3D
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PRotate3D
   (rotate-x
    [_ theta]
@@ -336,7 +336,7 @@ of the code.
       (mm/msub w c z s))))
 #+END_SRC
 *** PMathOps
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PMathOps
   (+
    [_ q]
@@ -378,8 +378,22 @@ of the code.
       (mm/maddsub z' rw w' rz x' ry y' rx)
       (mm/msub w' rw x' rx y' ry z' rz))))
 #+END_SRC
+*** PDeltaEquals
+#+BEGIN_SRC clojure :noweb-ref impl
+  m/PDeltaEquals
+  (delta=
+   [_ q] (m/delta= _ q *eps*))
+  (delta=
+   [_ q eps]
+   (and (sequential? q)
+        (== 4 (count q))
+        (m/delta= x (nth q 0) eps)
+        (m/delta= y (nth q 1) eps)
+        (m/delta= z (nth q 2) eps)
+        (m/delta= w (nth q 3) eps)))
+#+END_SRC
 *** PDotProduct
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PDotProduct
   (dot
    [_ q]
@@ -387,7 +401,7 @@ of the code.
      (mm/madd x (.-x q) y (.-y q) z (.-z q) w (.-w q))))
 #+END_SRC
 *** PMagnitude
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PMagnitude
   (mag
    [_] (Math/sqrt (mm/madd x x y y z z w w)))
@@ -395,7 +409,7 @@ of the code.
    [_] (mm/madd x x y y z z w w))
 #+END_SRC
 *** PNormalize
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PNormalize
   (normalize [_]
     (let [m (Math/sqrt (mm/madd x x y y z z w w))]
@@ -404,13 +418,13 @@ of the code.
         _)))
 #+END_SRC
 *** PConjugate
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PConjugate
   (conjugate [_]
     (Quat4. (- x) (- y) (- z) w))
 #+END_SRC
 *** PInvert
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PInvert
   (invert [_]
     (let [d (g/mag-squared _)
@@ -419,7 +433,7 @@ of the code.
       (Quat4. (* x id) (* y id) (* z id) (* w d))))
 #+END_SRC
 *** PInterpolate
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PInterpolate
   (mix [_ q] (g/mix _ q 0.5))
   (mix [_ q t]
@@ -440,7 +454,7 @@ of the code.
         _)))
 #+END_SRC
 *** PMatrixConvert
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PMatrixConvert
   (as-matrix
    [_] (g/as-matrix _ nil))
@@ -466,7 +480,7 @@ of the code.
       (or tx 0.0) (or ty 0.0) (or tz 0.0) 1.0)))
 #+END_SRC
 *** PVectorTransform
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PVectorTransform
   (transform-vector
    [_ [vx vy vz :as v]]
@@ -481,17 +495,21 @@ of the code.
       (mm/maddsub iz w iw nz ix ny iy nx))))
 #+END_SRC
 *** End of implementation
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
     )
 #+END_SRC
 *** Override print methods
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   #+clj (defmethod print-method Quat4 [o ^java.io.Writer w] (.write w (.toString o)))
+#+END_SRC
+** Constants
+#+BEGIN_SRC clojure :noweb-ref const
+  (def ^:const Q (Quat4. 0.0 0.0 0.0 1.0))
 #+END_SRC
 ** Constructors
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn quat
-    ([] (Quat4. 0.0 0.0 0.0 1.0))
+    ([] Q)
     ([[x y z] w] (Quat4. x y z w))
     ([[x y z w]] (Quat4. x y z w))
     ([x y z w] (Quat4. x y z w)))
@@ -642,7 +660,9 @@ of the code.
 
   (declare swizzle4 swizzle4-assoc)
 
-  <<quat>>
+  <<impl>>
+
+  <<const>>
 
   <<ctors>>
 

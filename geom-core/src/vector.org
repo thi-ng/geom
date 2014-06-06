@@ -498,6 +498,18 @@ injected in the appropriate places of the code.
   (msub [_ a b] (vec2-op-2* * - _ a b 1.0 0.0))
   (subm [_ a b] (vec2-op-2* - * _ a b 0.0 1.0))
 #+END_SRC
+*** PDeltaEquals
+#+BEGIN_SRC clojure :noweb-ref vec2
+  m/PDeltaEquals
+  (delta=
+   [_ v] (m/delta= _ v *eps*))
+  (delta=
+   [_ v eps]
+   (and (sequential? v)
+        (== 2 (count v))
+        (m/delta= x (nth v 0) eps)
+        (m/delta= y (nth v 1) eps)))
+#+END_SRC
 *** PDotProduct
 #+BEGIN_SRC clojure :noweb-ref vec2
   g/PDotProduct
@@ -1017,6 +1029,19 @@ injected in the appropriate places of the code.
     (max (max x ax) bx)
     (max (max y ay) by)
     (max (max z az) bz)))
+#+END_SRC
+*** PDeltaEquals
+#+BEGIN_SRC clojure :noweb-ref vec3
+  m/PDeltaEquals
+  (delta=
+   [_ v] (m/delta= _ v *eps*))
+  (delta=
+   [_ v eps]
+   (and (sequential? v)
+        (== 3 (count v))
+        (m/delta= x (nth v 0) eps)
+        (m/delta= y (nth v 1) eps)
+        (m/delta= z (nth v 2) eps)))
 #+END_SRC
 *** PMagnitude
 #+BEGIN_SRC clojure :noweb-ref vec3

@@ -236,7 +236,17 @@
     (is (= -1 (reduce (fn [acc _] (reduced acc)) -1 a3)) "reduce a3 w/ reduced + init")
     (is (= #+clj "[1.0 2.0]" #+cljs "[1 2]" (str a2)) "toString a2")
     (is (= #+clj "[1.0 2.0 3.0]" #+cljs "[1 2 3]" (str a3)) "toString a3")
-    )
+    (is (delta= a2 av2) "delta= a2 av2")
+    (is (delta= a2 av2 1e-5) "delta= a2 av2 eps")
+    (is (delta= a3 av3) "delta= a3 av3")
+    (is (delta= a3 av3 1e-5) "delta= a3 av3 eps")
+    (is (delta= [a2 b2] [av2 bv2]) "delta= [a2 b2]")
+    (is (delta= [a3 b3] [av3 bv3]) "delta= [a3 b3]")
+    (is (not (delta= [a2 b2] [a3 b3])) "not delta= [a2 b2]")
+    (is (not (delta= a2 nil)) "not delta= a2 nil")
+    (is (not (delta= a3 nil)) "not delta= a3 nil")
+    (is (not (delta= a2 ax)) "not delta= a2 ax")
+    (is (not (delta= a3 ax)) "not delta= a3 ax"))
 #+END_SRC
 
 ** Vector operations
@@ -337,7 +347,7 @@
 #+END_SRC
 
 *** Transformations
-#+BEGIN_SRC clojure :noweb-ref tests  
+#+BEGIN_SRC clojure :noweb-ref tests2
   (deftest vec-transforms
     (is (delta= V2Y (g/rotate V2X HALF_PI)) "rot2d(+x) = +y")
     (is (delta= V3Z (g/rotate-x V2Y HALF_PI)) "rot2d-x(+y) = +z 3d")
@@ -357,7 +367,7 @@
 #+END_SRC
 
 ** Matrix operations
-#+BEGIN_SRC clojure :noweb-ref tests
+#+BEGIN_SRC clojure :noweb-ref tests2
   (deftest matrix-ops
     (is (delta= V2Y (-> M32 (g/rotate HALF_PI) (g/transform-vector V2X))))
     (is (delta= V3Z (-> M44 (g/rotate-x HALF_PI) (g/transform-vector V3Y))) "rotx(+y) = +z")
@@ -378,11 +388,11 @@
     (is (delta= (g/+ a3 s) (-> M44 (g/translate s) (g/transform-vector a3))) " a3 trans s")
     (is (delta= (g/+ a3 b3) (-> M44 (g/translate bx by bz) (g/transform-vector a3))) " a3 trans bx by bz")
     (is (delta= (g/+ a3 b3) (-> M44 (g/translate b3) (g/transform-vector a3))) " a3 trans b3")
-    (is (delta= (-> V2X (g/scale s) (g/rotate m/QUARTER_PI) (g/translate b2))
-                (-> M32 (g/translate b2) (g/rotate m/QUARTER_PI) (g/scale s) (g/transform-vector V2X)))
+    (is (delta= (-> V2X (g/scale s) (g/rotate QUARTER_PI) (g/translate b2))
+                (-> M32 (g/translate b2) (g/rotate QUARTER_PI) (g/scale s) (g/transform-vector V2X)))
         "concat 2d")
-    (is (delta= (-> V3X (g/scale s) (g/rotate-z m/QUARTER_PI) (g/translate b3))
-                (-> M44 (g/translate b3) (g/rotate m/QUARTER_PI) (g/scale s) (g/transform-vector V3X)))
+    (is (delta= (-> V3X (g/scale s) (g/rotate-z QUARTER_PI) (g/translate b3))
+                (-> M44 (g/translate b3) (g/rotate QUARTER_PI) (g/scale s) (g/transform-vector V3X)))
         "concat 3d")
     (is (delta= 1 (g/determinant M32)) "det M32 = 1")
     (is (delta= 1 (g/determinant (g/rotate M32 HALF_PI))) "det M32 rot = 1")
@@ -390,12 +400,22 @@
     (is (delta= 1 (g/determinant M44)) "det M44 = 1")
     (is (delta= 1 (g/determinant (g/rotate-around-axis M44 (g/normalize (vec3 1)) HALF_PI))) "det M44 rot = 1")
     (is (delta= 6000 (g/determinant (g/scale M44 10 20 30))) "det M44 scaled")
-    (is (delta= a2 (let [mat (-> M32 (g/translate b2) (g/rotate m/QUARTER_PI) (g/scale s))]
+    (is (delta= a2 (let [mat (-> M32 (g/translate b2) (g/rotate QUARTER_PI) (g/scale s))]
                      (-> mat (g/transform-vector a2) (g/transform (g/invert mat)))))
         "invert 2d")
-    (is (delta= a3 (let [mat (-> M44 (g/translate b3) (g/rotate-z m/QUARTER_PI) (g/scale s))]
+    (is (delta= a3 (let [mat (-> M44 (g/translate b3) (g/rotate-z QUARTER_PI) (g/scale s))]
                      (-> mat (g/transform-vector a3) (g/transform (g/invert mat)))))
-        "invert 3d"))
+        "invert 3d")
+    (is (delta= M32 [1 0 0 0 1 0]) "delta= M32")
+    (is (delta= M32 [1 0 0 0 1 0] 1e-3) "delta= M32 eps")
+    (is (delta= M32 M32) "delta= M32 M32")
+    (is (not (delta= M32 nil)) "not delta= M32 nil")
+    (is (not (delta= M32 1)) "not delta= M32 1")
+    (is (delta= M44 [1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1]) "delta= M44")
+    (is (delta= M44 [1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1] 1e-3) "delta= M44 eps")
+    (is (delta= M44 M44) "delta= M44 M44")
+    (is (not (delta= M44 nil)) "not delta= M44 nil")
+    (is (not (delta= M44 1)) "not delta= M44 1"))
 #+END_SRC
 
 ** Quaternion operations
@@ -423,7 +443,12 @@
                 (-> M44
                     (g/rotate-around-axis (g/normalize (vec3 1)) HALF_PI)
                     (q/quat-from-matrix)
-                    (g/transform-vector a3)))))
+                    (g/transform-vector a3))))
+    (is (delta= Q [0 0 0 1]) "delta= Q")
+    (is (delta= Q [0 0 0 1] 1e-3) "delta= Q eps")
+    (is (delta= Q Q) "delta= Q")
+    (is (not (delta= Q nil)) "not delta= Q nil")
+    (is (not (delta= Q 1)) "not delta= Q 1"))
 #+END_SRC
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/core/test/core.cljx :noweb yes :mkdirp yes :padline no
@@ -432,11 +457,11 @@
     (:require-macros
      [cemerick.cljs.test :refer (is deftest with-test run-tests testing)])
     (:require
-     [thi.ng.common.math.core :as m :refer [*eps* HALF_PI delta=]]
+     [thi.ng.common.math.core :as m :refer [*eps* HALF_PI QUARTER_PI delta=]]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V2X V2Y V3X V3Y V3Z]]
      [thi.ng.geom.core.matrix :as mat :refer [M32 M44]]
-     [thi.ng.geom.core.quaternion :as q]
+     [thi.ng.geom.core.quaternion :as q :refer [Q]]
      ,#+clj [clojure.test :refer :all]
      ,#+cljs [cemerick.cljs.test :as t]))
 

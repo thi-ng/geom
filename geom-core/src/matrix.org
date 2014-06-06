@@ -140,6 +140,22 @@ define some macros to simplify them.
       (mm/madd m10 (.-m02 m) m11 (.-m12 m) m12))))
 #+END_SRC
 
+**** PDeltaEquals
+#+BEGIN_SRC clojure :noweb-ref mat32
+  m/PDeltaEquals
+  (delta=
+   [_ m] (m/delta= _ m *eps*))
+  (delta=
+   [_ m eps]
+   (and (sequential? m)
+        (== 6 (count m))
+        (m/delta= m00 (nth m 0) eps)
+        (m/delta= m01 (nth m 1) eps)
+        (m/delta= m02 (nth m 2) eps)
+        (m/delta= m10 (nth m 3) eps)
+        (m/delta= m11 (nth m 4) eps)
+        (m/delta= m12 (nth m 5) eps)))
+#+END_SRC
 **** PDeterminant
 #+BEGIN_SRC clojure :noweb-ref mat32
   g/PDeterminant
@@ -367,6 +383,15 @@ ordering (row major).
       (mm/madd m03 (.-m30 m) m13 (.-m31 m) m23 (.-m32 m) m33 (.-m33 m)))))
 #+END_SRC
 
+**** PDeltaEquals
+#+BEGIN_SRC clojure :noweb-ref mat44
+  m/PDeltaEquals
+  (delta=
+   [_ m] (m/delta= _ m *eps*))
+  (delta=
+   [_ m eps]
+   (and (sequential? m) (== 16 (count m)) (m/delta= (into [] _) m eps)))
+#+END_SRC
 **** PDeterminant
 #+BEGIN_SRC clojure :noweb-ref mat44
   g/PDeterminant
