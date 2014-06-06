@@ -70,6 +70,7 @@
   (defn transform-mesh
     [mesh add-face tx]
     (let [verts' (->> (g/vertices mesh)
+                      ,#+cljs (seq)
                       (r/map (fn [v] [v (g/transform-vector tx v)]))
                       (into {}))]
       (reduce
