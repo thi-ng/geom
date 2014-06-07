@@ -10,10 +10,10 @@ main() {
 
     for m in $modules
     do
-        echo "deploying module $PREFIX$m..."
+        echo "installing module $PREFIX$m..."
         echo "----------------------------------------"
         cd $PROGDIR/$PREFIX$m/babel
-        lein deploy clojars
+        lein install
     done
 }
 
