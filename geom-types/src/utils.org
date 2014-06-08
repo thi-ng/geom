@@ -69,12 +69,15 @@
   
   (defn transform-mesh
     [mesh add-face tx]
-    (let [verts' (->> (g/vertices mesh)
+    (let [transform (if (satisfies? g/PVectorTransform tx)
+                      (fn [v] [v (g/transform-vector tx v)])
+                      (fn [v] [v (tx v)]))
+          verts' (->> (g/vertices mesh)
                       ,#+cljs (seq)
-                      (r/map (fn [v] [v (g/transform-vector tx v)]))
+                      (r/map transform)
                       (into {}))]
       (reduce
-       (fn [mesh f] (add-face mesh (replace verts' f)))
+       (fn [mesh f] (add-face mesh (mapv verts' f)))
        (g/empty mesh) (g/faces mesh))))
 #+END_SRC
 
