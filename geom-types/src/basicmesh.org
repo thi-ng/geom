@@ -45,7 +45,7 @@
 *** PBounds
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBounds
-  (bounds [_] (tu/bounding-box (:vertices _)))
+  (bounds [_] (tu/bounding-box (seq (:vertices _))))
   (width [_]  (gu/axis-range 0 (:vertices _)))
   (height [_] (gu/axis-range 1 (:vertices _)))
   (depth [_]  (gu/axis-range 2 (:vertices _)))
@@ -142,6 +142,19 @@
 
 *** PTransform
 #+BEGIN_SRC clojure :noweb-ref impl
+  g/PScale
+  (scale
+   ([_ s]
+      (tu/transform-mesh _ add-face #(g/* % s)))
+   ([_ sx sy sz]
+      (tu/transform-mesh _ add-face #(g/* % sx sy sz))))
+  (scale-size
+   [_ s]
+   (let [c (g/centroid _)]
+     (tu/transform-mesh _ add-face #(g/madd (g/- % c) s c))))
+  g/PTranslate
+  (translate
+   [_ t] (tu/transform-mesh _ add-face #(g/+ % t)))
   g/PTransform
   (transform
    [_ m]

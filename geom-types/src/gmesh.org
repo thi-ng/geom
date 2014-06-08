@@ -353,10 +353,23 @@ located on the rotation axis.
 
 *** PTransform
 #+BEGIN_SRC clojure :noweb-ref impl
+  g/PScale
+  (scale
+   ([_ s]
+      (tu/transform-mesh _ add-face #(g/* % s)))
+   ([_ sx sy sz]
+      (tu/transform-mesh _ add-face #(g/* % sx sy sz))))
+  (scale-size
+   [_ s]
+   (let [c (g/centroid _)]
+     (tu/transform-mesh _ add-face #(g/madd (g/- % c) s c))))
+  g/PTranslate
+  (translate
+   [_ t] (tu/transform-mesh _ add-face #(g/+ % t)))
   g/PTransform
   (transform
-   [_ m]
-   (tu/transform-mesh _ add-face m))
+   [_ tx]
+   (tu/transform-mesh _ add-face tx))
 #+END_SRC
 
 *** PVolume
