@@ -23,7 +23,7 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/ops.cljx
   (defn find-in-tree
     "Queries an octree with a spherical region around `p` and with radius `eps`.
-    Returns the first point found (if any)."
+      Returns the first point found (if any)."
     [tree p eps]
     (let [eps2 (* eps eps)]
       (->> tree
@@ -32,7 +32,7 @@
             #(<= (g/dist-squared p %) eps2))
            (persistent!)
            (first))))
-
+  
   (defn unique-point-tree
     [points eps]
     (let [eps2 (/ eps 2.0)
@@ -45,7 +45,7 @@
            [(st/octree (tu/bounding-box points)) (transient [])]
            points)]
       [tree (persistent! dupes)]))
-
+  
   (defn collapse-edges
     [m eps]
     (let [eps* (* eps eps)]
@@ -55,7 +55,7 @@
        (filter
         (fn [e] (let [[a b] (seq e)] (< (g/dist-squared a b) eps)))
         (keys (:edges m))))))
-
+  
   (defn canonicalize-vertices
     [{:keys [vertices faces]} eps]
     (let [[octree dupes] (unique-point-tree (keys vertices) eps)
@@ -63,7 +63,46 @@
           lookup #(find-in-tree octree % eps2)]
       [(reduce (fn [m f] (g/add-face m (mapv lookup f))) (gm/gmesh) faces)
        dupes]))
-
+  
+  (defn face-permutations
+    [f]
+    (take (count f) (iterate #(d/rotate-left 1 %) f)))
+  
+  (defn remove-internal
+    "Takes a mesh and removes all faces which have coincident vertices,
+      but opposite orientation. Returns updated mesh."
+    [mesh]
+    (->> (g/faces mesh)
+         (reduce
+          (fn [acc f]
+            (let [dupes (filter acc (face-permutations (reverse f)))]
+              (if (seq dupes)
+                (reduce disj acc (cons f dupes))
+                acc)))
+          (set (g/faces box)))
+         (assoc mesh :faces)))
+  
+  (defn remove-internal-with-edges
+    [mesh]
+    (let [mesh (g/compute-face-normals mesh)]
+      (->> (g/edges mesh)
+           (reduce
+            (fn [acc e]
+              (let [ef (get-in mesh [:edges e])]
+                (if (> (count ef) 1)
+                  (let [efn (select-keys (:fnormals mesh) ef)
+                        ef (set ef)
+                        acc (reduce
+                             (fn [acc [f n]]
+                               (let [ni (g/- n)
+                                     dup (filter #(m/delta= ni (efn %)) (disj ef f))]
+                                 (if (seq dup) (apply disj acc dup) acc)))
+                             acc efn)]
+                    acc)
+                  acc)))
+            (set (g/faces mesh)))
+           (assoc mesh :faces))))
+  
   (defn make-watertight
     [{:keys [vertices edges] :as m} eps]
     (let [split-face (fn [v e [fa fb fc :as f]]
