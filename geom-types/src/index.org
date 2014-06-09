@@ -114,6 +114,7 @@ target/geom-types-<<conf-version>>.js
                                <<dep-cljsbuild>>
                                <<dep-cljs-test>>
                                <<dep-austin>>]
+                     :jvm-opts ^:replace []
                      :hooks [cljx.hooks]
                      :aliases {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]}}}
   

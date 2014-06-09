@@ -68,6 +68,7 @@ target/geom-webgl-<<conf-version>>.js
                      :plugins [<<dep-cljsbuild>>
                                <<dep-cljs-test>>
                                <<dep-austin>>]
+                     :jvm-opts ^:replace []
                      :aliases {"cleantest" ["do" "clean," "cljsbuild" "test"]}}}
 
     :cljsbuild {:builds [{:source-paths ["src" "test"]
