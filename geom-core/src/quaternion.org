@@ -212,80 +212,88 @@ of the code.
   ,#+cljs ICloneable
   ,#+cljs (-clone
           [_] (Quat4. x y z w))
-
+  
   ,#+cljs ILookup
   ,#+cljs (-lookup
           [_ k] (swizzle4 _ k nil))
   ,#+cljs (-lookup
           [_ k nf] (swizzle4 _ k nf))
-
+  
   ,#+cljs IFn
   ,#+cljs (-invoke
           [_ k] (swizzle4 _ k nil))
   ,#+cljs (-invoke
           [_ k nf] (swizzle4 _ k nf))
-
+  
   ,#+cljs ICounted
   ,#+cljs (-count
           [_] 4)
-
+  
   ,#+cljs IAssociative
   ,#+cljs (-contains-key?
           [_ k] <<tpl-contains-key>>)
   ,#+cljs (-assoc
           [_ k v] (swizzle4-assoc _ k v))
-
+  
   ,#+cljs IVector
   ,#+cljs (-assoc-n
           [_ k v]
           <<tpl-assoc-n>>)
-
+  
   ,#+cljs ISequential
   ,#+cljs ISeq
   ,#+cljs (-first
           [_] x)
   ,#+cljs (-rest
           [_] <<tpl-rest>>)
-
+  
   ,#+cljs INext
   ,#+cljs (-next
           [_] <<tpl-rest>>)
-
+  
   ,#+cljs ISeqable
   ,#+cljs (-seq
           [_] _)
-
+  
   ,#+cljs IReversible
   ,#+cljs (-rseq
           [_] <<tpl-rseq>>)
-
+  
   ,#+cljs IIndexed
   ,#+cljs (-nth
           [_ k] <<tpl-nth-err>>)
   ,#+cljs (-nth
           [_ k nf] <<tpl-nth-nf>>)
-
+  
   ,#+cljs ICollection
   ,#+cljs (-conj
           [_ v] <<tpl-conj>>)
-
+  
   ,#+cljs IStack
   ,#+cljs (-peek
           [_] w)
   ,#+cljs (-pop
           [_] <<tpl-pop>>)
-
+  
   ,#+cljs IComparable
   ,#+cljs (-compare
           [_ o]
           <<tpl-compare>>)
-
+  
   ,#+cljs IHash
   ,#+cljs (-hash
-          [_] (-> (hash x)
-                  (hash-combine (hash y))
-                  (hash-combine (hash z))))
-
+          [_]
+          (mix-collection-hash
+           (-> (+ 31 (hash x))
+               (bit-or 0)
+               (imul 31) (+ (hash y))
+               (bit-or 0)
+               (imul 31) (+ (hash z))
+               (bit-or 0)
+               (imul 31) (+ (hash w))
+               (bit-or 0))
+           4))
+  
   ,#+cljs IEquiv
   ,#+cljs (-equiv
           [_ o]

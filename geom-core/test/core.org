@@ -194,8 +194,10 @@
     (is (let [[x y z w] a3] (and (= a3 [x y z]) (nil? w))) "destructure a3")
     (is (every? #(contains? a2 %) [:x :y 0 1]) "contains keys a2")
     (is (every? #(contains? a3 %) [:x :y :z 0 1 2]) "contains keys a3")
-    (is (= (hash [ax ay]) (hash a2)) "hash vec = a2")
-    (is (= (hash [ax ay az]) (hash a3)) "hash vec = a3")
+    (is (== (hash [ax ay]) (hash a2)) "hash vec = a2")
+    (is (== (hash [ax ay az]) (hash a3)) "hash vec = a3")
+    (is (== (hash [1.0 2.0]) (hash (vec2 1 2))) "hash v2")
+    (is (== (hash [1.0 2.0 3.0]) (hash (vec3 1 2 3))) "hash v3")
     ,#+clj (is (= (.hashCode [ax ay]) (.hashCode a2)) "hashCode vec = a2")
     ,#+clj (is (= (.hashCode [ax ay az]) (.hashCode a3)) "hashCode vec = a3")
     (is (= [ax ay] a2) "vec = a2")
@@ -369,6 +371,8 @@
 ** Matrix operations
 #+BEGIN_SRC clojure :noweb-ref tests2
   (deftest matrix-ops
+    (is (== (hash (mapv double (range 1 7))) (hash (Matrix32. 1 2 3 4 5 6))) "hash M32")
+    (is (== (hash (mapv double (range 1 17))) (hash (Matrix44. 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16))) "hash M44")
     (is (delta= V2Y (-> M32 (g/rotate HALF_PI) (g/transform-vector V2X))))
     (is (delta= V3Z (-> M44 (g/rotate-x HALF_PI) (g/transform-vector V3Y))) "rotx(+y) = +z")
     (is (delta= V3Z (-> M44 (g/rotate-around-axis V3X HALF_PI) (g/transform-vector V3Y))) "rot-axis-x(+y) = +z")
@@ -421,6 +425,7 @@
 ** Quaternion operations
 #+BEGIN_SRC clojure :noweb-ref tests
   (deftest quat-ops
+    (is (== (hash [1.0 2.0 3.0 4.0]) (hash (q/quat 1 2 3 4))) "hash Quat4")
     (is (delta= a3 (-> (q/quat-from-axis-angle V3X 0.0) (g/transform-vector a3))))
     (is (delta= a3 (-> (q/quat-from-axis-angle V3Y 0.0) (g/transform-vector a3))))
     (is (delta= a3 (-> (q/quat-from-axis-angle V3Z 0.0) (g/transform-vector a3))))

@@ -102,7 +102,7 @@ define some macros to simplify them.
            false))
 
   ,#+cljs IHash
-  (#+clj hasheq #+cljs -hash  [_] (hash-matrix _))
+  (#+clj hasheq #+cljs -hash  [_] (hash-ordered-coll _))
 
   ,#+clj (hashCode [_] (hash-coll* _))
   ,#+clj (equals
@@ -327,7 +327,7 @@ ordering (row major).
            false))
 
   ,#+cljs IHash
-  (#+clj hasheq #+cljs -hash  [_] (hash-matrix _))
+  (#+clj hasheq #+cljs -hash  [_] (hash-ordered-coll _))
 
   ,#+clj (hashCode [_] (hash-coll* _))
   ,#+clj (equals

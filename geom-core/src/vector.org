@@ -340,78 +340,84 @@ injected in the appropriate places of the code.
   ,#+cljs ICloneable
   ,#+cljs (-clone
           [_] (Vec2. x y))
-
+  
   ,#+cljs ILookup
   ,#+cljs (-lookup
           [_ k] (swizzle2 _ k nil))
   ,#+cljs (-lookup
           [_ k nf] (swizzle2 _ k nf))
-
+  
   ,#+cljs IFn
   ,#+cljs (-invoke
           [_ k] (swizzle2 _ k nil))
   ,#+cljs (-invoke
           [_ k nf] (swizzle2 _ k nf))
-
+  
   ,#+cljs ICounted
   ,#+cljs (-count
           [_] 2)
-
+  
   ,#+cljs IAssociative
   ,#+cljs (-contains-key?
           [_ k] <<tpl-contains-key2>>)
   ,#+cljs (-assoc
           [_ k v] (swizzle2-assoc _ k v))
-
+  
   ,#+cljs IVector
   ,#+cljs (-assoc-n
           [_ k v]
           <<tpl-assoc-n2>>)
-
+  
   ,#+cljs ISequential
   ,#+cljs ISeq
   ,#+cljs (-first
           [_] x)
   ,#+cljs (-rest
           [_] <<tpl-rest2>>)
-
+  
   ,#+cljs INext
   ,#+cljs (-next
           [_] <<tpl-rest2>>)
-
+  
   ,#+cljs ISeqable
   ,#+cljs (-seq
           [_] _)
-
+  
   ,#+cljs IReversible
   ,#+cljs (-rseq
           [_] <<tpl-rseq2>>)
-
+  
   ,#+cljs IIndexed
   ,#+cljs (-nth
           [_ k] <<tpl-nth-err2>>)
   ,#+cljs (-nth
           [_ k nf] <<tpl-nth-nf2>>)
-
+  
   ,#+cljs ICollection
   ,#+cljs (-conj
           [_ z] (vec3 x y z))
-
+  
   ,#+cljs IStack
   ,#+cljs (-peek
           [_] y)
   ,#+cljs (-pop
           [_] [x])
-
+  
   ,#+cljs IComparable
   ,#+cljs (-compare
           [_ o]
           <<tpl-compare2>>)
-
+  
   ,#+cljs IHash
   ,#+cljs (-hash
-          [_] (hash-combine (hash x) (hash y)))
-
+          [_]
+          (mix-collection-hash
+           (-> 31 (+ (hash x))
+               (bit-or 0)
+               (imul 31) (+ (hash y))
+               (bit-or 0))
+           2))
+  
   ,#+cljs IEquiv
   ,#+cljs (-equiv
           [_ o]
@@ -419,7 +425,7 @@ injected in the appropriate places of the code.
             (and (== x (.-x ^Vec2 o)) (== y (.-y ^Vec2 o)))
             (and (sequential? o) (= 2 (count o))
                  (= x (nth o 0)) (= y (nth o 1)))))
-
+  
   ,#+cljs IReduce
   ,#+cljs (-reduce
           [coll f]
@@ -427,7 +433,7 @@ injected in the appropriate places of the code.
   ,#+cljs (-reduce
           [coll f start]
           <<tpl-reduce2-start>>)
-
+  
   ,#+cljs Object
   ,#+cljs (toString
           [_] (str "[" x " " y "]"))
@@ -808,80 +814,86 @@ injected in the appropriate places of the code.
   ,#+cljs ICloneable
   ,#+cljs (-clone
           [_] (Vec3. x y z))
-
+  
   ,#+cljs ILookup
   ,#+cljs (-lookup
           [_ k] (swizzle3 _ k nil))
   ,#+cljs (-lookup
           [_ k nf] (swizzle3 _ k nf))
-
+  
   ,#+cljs IFn
   ,#+cljs (-invoke
           [_ k] (swizzle3 _ k nil))
   ,#+cljs (-invoke
           [_ k nf] (swizzle3 _ k nf))
-
+  
   ,#+cljs ICounted
   ,#+cljs (-count
           [_] 3)
-
+  
   ,#+cljs IAssociative
   ,#+cljs (-contains-key?
           [_ k] <<tpl-contains-key3>>)
   ,#+cljs (-assoc
           [_ k v] (swizzle3-assoc _ k v))
-
+  
   ,#+cljs IVector
   ,#+cljs (-assoc-n
           [_ k v]
           <<tpl-assoc-n3>>)
-
+  
   ,#+cljs ISequential
   ,#+cljs ISeq
   ,#+cljs (-first
           [_] x)
   ,#+cljs (-rest
           [_] <<tpl-rest3>>)
-
+  
   ,#+cljs INext
   ,#+cljs (-next
           [_] <<tpl-rest3>>)
-
+  
   ,#+cljs ISeqable
   ,#+cljs (-seq
           [_] _)
-
+  
   ,#+cljs IReversible
   ,#+cljs (-rseq
           [_] <<tpl-rseq3>>)
-
+  
   ,#+cljs IIndexed
   ,#+cljs (-nth
           [_ k] <<tpl-nth-err3>>)
   ,#+cljs (-nth
           [_ k nf] <<tpl-nth-nf3>>)
-
+  
   ,#+cljs ICollection
   ,#+cljs (-conj
           [_ w] [x y z w])
-
+  
   ,#+cljs IStack
   ,#+cljs (-peek
           [_] z)
   ,#+cljs (-pop
           [_] (Vec2. x y))
-
+  
   ,#+cljs IComparable
   ,#+cljs (-compare
           [_ o]
           <<tpl-compare3>>)
-
+  
   ,#+cljs IHash
   ,#+cljs (-hash
-          [_] (-> (hash x)
-                  (hash-combine (hash y))
-                  (hash-combine (hash z))))
-
+          [_]
+          (mix-collection-hash
+           (-> 31 (+ (hash x))
+               (bit-or 0)
+               (imul 31) (+ (hash y))
+               (bit-or 0)
+               (imul 31) (+ (hash z))
+               (bit-or 0))
+           3))
+  
   ,#+cljs IEquiv
   ,#+cljs (-equiv
           [_ o]
@@ -889,7 +901,7 @@ injected in the appropriate places of the code.
             (and (== x (.-x ^Vec3 o)) (== y (.-y ^Vec3 o)) (== z (.-z ^Vec3 o)))
             (and (sequential? o) (= 3 (count o))
                  (= x (nth o 0)) (= y (nth o 1)) (= z (nth o 2)))))
-
+  
   ,#+cljs IReduce
   ,#+cljs (-reduce
           [coll f]
@@ -897,7 +909,7 @@ injected in the appropriate places of the code.
   ,#+cljs (-reduce
           [coll f start]
           <<tpl-reduce3-start>>)
-
+  
   ,#+cljs Object
   ,#+cljs (toString
           [_] (str "[" x " " y " " z "]"))
