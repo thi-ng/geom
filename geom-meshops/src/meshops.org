@@ -16,34 +16,37 @@
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.spatialtree :as st]
      [thi.ng.geom.types.utils :as tu]
+     [thi.ng.common.data.core :as d]
      [clojure.set :as set]))
 #+END_SRC
 
 ** Utilities
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/ops.cljx
   (defn find-in-tree
-    "Queries an octree with a spherical region around `p` and with radius `eps`.
-      Returns the first point found (if any)."
-    [tree p eps]
+    "Takes a query radius `eps`, returns a fn which queries an octree
+    with a spherical region around `p` using the pre-configured radius.
+    Returns the closest point found (if any)."
+    [eps]
     (let [eps2 (* eps eps)]
-      (->> tree
-           (st/select-with
-            #(isec/intersect-aabb-sphere? (:p %) (g/+ (:p %) (:size %)) p eps)
-            #(<= (g/dist-squared p %) eps2))
-           (persistent!)
-           (first))))
+      (fn [tree p]
+        (->> tree
+             (st/select-with
+              #(isec/intersect-aabb-sphere? (:p %) (g/+ (:p %) (:size %)) p eps)
+              #(<= (g/dist-squared p %) eps2))
+             (persistent!)
+             (sort-by #(g/dist-squared p %))
+             (first)))))
   
   (defn unique-point-tree
     [points eps]
-    (let [eps2 (/ eps 2.0)
-          [tree dupes]
-          (reduce
-           (fn [[t dupes :as state] p]
-             (if (find-in-tree t p eps2)
-               [t (conj! dupes p)]
-               [(g/add-point t p) dupes]))
-           [(st/octree (tu/bounding-box points)) (transient [])]
-           points)]
+    (let [finder (find-in-tree (/ eps 2.0))
+          [tree dupes] (reduce
+                        (fn [[t dupes :as state] p]
+                          (if (finder t p)
+                            [t (conj! dupes p)]
+                            [(g/add-point t p) dupes]))
+                        [(st/octree (tu/bounding-box (seq points))) (transient [])]
+                        points)]
       [tree (persistent! dupes)]))
   
   (defn collapse-edges
@@ -57,11 +60,10 @@
         (keys (:edges m))))))
   
   (defn canonicalize-vertices
-    [{:keys [vertices faces]} eps]
-    (let [[octree dupes] (unique-point-tree (keys vertices) eps)
-          eps2 (/ eps 2.0)
-          lookup #(find-in-tree octree % eps2)]
-      [(reduce (fn [m f] (g/add-face m (mapv lookup f))) (gm/gmesh) faces)
+    [mesh eps]
+    (let [[tree dupes] (unique-point-tree (g/vertices mesh) eps)
+          finder (find-in-tree (/ eps 2.0))]
+      [(reduce (fn [m f] (g/add-face m (mapv #(finder tree %) f))) (g/empty mesh) (g/faces mesh))
        dupes]))
   
   (defn face-permutations
@@ -70,7 +72,7 @@
   
   (defn remove-internal
     "Takes a mesh and removes all faces which have coincident vertices,
-      but opposite orientation. Returns updated mesh."
+    but opposite orientation. Returns updated mesh."
     [mesh]
     (->> (g/faces mesh)
          (reduce
@@ -79,7 +81,7 @@
               (if (seq dupes)
                 (reduce disj acc (cons f dupes))
                 acc)))
-          (set (g/faces box)))
+          (set (g/faces mesh)))
          (assoc mesh :faces)))
   
   (defn remove-internal-with-edges
