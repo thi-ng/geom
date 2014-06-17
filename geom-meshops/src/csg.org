@@ -21,17 +21,17 @@ meshes.
     g/PFlip
     (flip [_]
       (CSGPolygon. (g/flip plane) (reverse vertices) shared bsphere)))
-
+  
   (defn compute-split-types
     [n w vertices]
     (let [ieps (- *eps*)]
       (loop [ptype 0, types [], vertices vertices]
         (if vertices
-          (let [t (- (g/dot n (first vertices)) w)
+          (let [t (+ (g/dot n (first vertices)) w)
                 pt (if (< t ieps) 2 (if (> t *eps*) 1 0))]
             (recur (bit-or ptype pt) (conj types pt) (next vertices)))
           [ptype types]))))
-
+  
   (defn split-poly*
     [n w vertices types]
     (let [nv (count vertices)]
@@ -44,37 +44,39 @@ meshes.
                 b (if (== ti 1) b (conj b vi))]
             (if (== 3 (bit-or ti (types j)))
               (let [vj (nth vertices j)
-                    v (g/mix vi vj (/ (- w (g/dot n vi)) (g/dot n (g/- vj vi))))]
+                    v (g/mix vi vj (/ (- (- w) (g/dot n vi)) (g/dot n (g/- vj vi))))]
                 (recur (conj f v) (conj b v) (inc i)))
               (recur f b (inc i))))
           [f b]))))
-
+  
   (defn split-poly
     "Takes a plane and splits the given polygon with it. Returns a 4-element vector
       of classified sub-shapes: [coplanar-front coplanar-back front back]."
     [{:keys [n w]} ^CSGPolygon poly state]
-    (let [s (g/bounding-sphere poly)
-          r (+ (:r s) *eps*)
-          d (- (g/dot n (:p s)) w)]
-      (cond
-       (> d r) (assoc state 2 (conj (state 2) poly))
-       (< d (- r)) (assoc state 3 (conj (state 3) poly))
-       :default
-       (let [[ptype types] (compute-split-types n w (.-vertices poly))]
-         (case ptype
-           ;; co-planar
-           0 (if (pos? (g/dot n (:n (.-plane poly))))
-               (assoc state 0 (conj (state 0) poly))
-               (assoc state 1 (conj (state 1) poly)))
-           ;; front
-           1 (assoc state 2 (conj (state 2) poly))
-           ;; back
-           2 (assoc state 3 (conj (state 3) poly))
-           ;; both sides -> split
-           3 (let [[f b] (split-poly* n w (.-vertices poly) types)]
-               [(state 0) (state 1)
-                (if (>= (count f) 3) (conj (state 2) (csg-polygon f (.-shared poly))) f)
-                (if (>= (count b) 3) (conj (state 3) (csg-polygon b (.-shared poly))) b)]))))))
+    ;;(let [s (g/bounding-sphere poly)
+    ;;      r (+ (:r s) *eps*)
+    ;;      d (- (g/dot n (:p s)) w)]
+    ;;  (cond
+    ;;   (> d r) (assoc state 2 (conj (state 2) poly))
+    ;;   (< d (- r)) (assoc state 3 (conj (state 3) poly))
+    ;;   :default
+    (let [[ptype types] (compute-split-types n w (.-vertices poly))]
+      (case ptype
+        ;; co-planar
+        0 (if (pos? (g/dot n (:n (.-plane poly))))
+            (assoc state 0 (conj (state 0) poly))
+            (assoc state 1 (conj (state 1) poly)))
+        ;; front
+        1 (assoc state 2 (conj (state 2) poly))
+        ;; back
+        2 (assoc state 3 (conj (state 3) poly))
+        ;; both sides -> split
+        3 (let [[f b] (split-poly* n w (.-vertices poly) types)]
+            [(state 0) (state 1)
+             (if (>= (count f) 3) (conj (state 2) (csg-polygon f (.-shared poly))) f)
+             (if (>= (count b) 3) (conj (state 3) (csg-polygon b (.-shared poly))) b)])))
+    ;; ))
+    )
 #+END_SRC
 
 ** Public API
