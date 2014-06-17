@@ -154,8 +154,8 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
     (when-not (or (m/delta= aw bw *eps*) (m/delta= an bn *eps*))
       (let [od (g/dot an bn)
             det (/ (mm/madd od od -1))
-            u (* (mm/madd bw od (- aw)) det)
-            v (* (mm/madd aw od (- bw)) det)]
+            u (* (mm/madd bw od aw) det)
+            v (* (mm/madd aw od bw) det)]
         {:p (g/madd an u (g/* bn v)) :dir (gu/ortho-normal an bn)})))
 #+END_SRC
 
@@ -163,7 +163,7 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
   (defn intersect-ray-plane?
     [rp dir n w]
     (let [dp (g/dot n dir)
-          dn (- (g/dot n rp) w)]
+          dn (+ (g/dot n rp) w)]
       (if (m/delta= 0.0 dp *eps*)
         {:type (if (zero? dn) :on-plane :parallel)}
         (let [du (- (/ dn dp))

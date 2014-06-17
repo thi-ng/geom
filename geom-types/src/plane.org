@@ -10,13 +10,13 @@
   (defn plane-with-point
     [p n]
     (let [n (g/normalize (vec3 n))]
-      (thi.ng.geom.types.Plane. n (g/dot n p))))
+      (thi.ng.geom.types.Plane. n (- (g/dot n p)))))
 
   (defn plane-from-points
     ([[a b c]] (plane-from-points a b c))
     ([a b c]
        (let [n (gu/ortho-normal a b c)]
-         (thi.ng.geom.types.Plane. n (g/dot n a)))))
+         (thi.ng.geom.types.Plane. n (- (g/dot n a))))))
 #+END_SRC
 ** Helper functions
 #+BEGIN_SRC clojure :noweb-ref helpers
@@ -58,20 +58,20 @@
     ([_] (thi.ng.geom.types.Plane. (:n _) 0))
     ([_ o] (plane-with-point o (:n _))))
   (centroid
-    ([_] (g/* (:n _) (:w _))))
+    ([_] (g/* (:n _) (- (:w _)))))
 #+END_SRC
 *** PClassify
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PClassify
   (classify-point
     [_ p]
-    (-> (:n _) (g/dot p) (- (:w _)) (m/signum *eps*)))
+    (-> (:n _) (g/dot p) (+ (:w _)) (m/signum *eps*)))
 #+END_SRC
 *** PDistance
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PDistance
   (dist
-   [_ p] (->> p (g/dot (:n _)) (+ (- (:w _)))))
+   [_ p] (->> p (g/dot (:n _)) (+ (:w _))))
   (dist-squared
    [_ p] (let [d (g/dist _ p)] (* d d)))
 #+END_SRC
@@ -135,7 +135,7 @@
     [_ p]
     (->> p
          (g/dot (:n _))
-         (+ (- (:w _)))
+         (+ (:w _))
          (g/normalize (:n _))
          (g/- p)))
 #+END_SRC
