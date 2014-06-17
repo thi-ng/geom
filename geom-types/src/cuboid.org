@@ -78,11 +78,30 @@ constructor function defined in this namespace.
    [_] (gu/centroid (:points _)))
 #+END_SRC
 
-*** TODO PClassify                                                      :fix:
+*** PClassify                                                           :fix:
+
+In order to determine if a given point lies within or outside the
+cuboid, we compute the classifier for each of the 6 sides/facets/plane
+and use their maximum as compound result. Since the faces are all
+pointing outwards (away from the center), =classify-point= for each
+face will return a positive value if the point is in the positive half
+space of that plane. This means, in order for a point to be inside
+the cuboid, all plane classifiers need to be negative (or zero if the
+point is on the surface. The search is terminated early as soon as
+one facet produces a positive classifier.
+
+*Note:* Because on its reliance on plane normals, this implementation
+only works for fully planar cuboids.
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PClassify
   (classify-point
-   [_ p])
+   [_ p]
+   (- (reduce
+       (fn [c f]
+         (let [c' (g/classify-point (p/plane-from-points f) p)]
+           (if (pos? c') (reduced c') (max c c'))))
+       -1.0 (g/faces _))))
 #+END_SRC
 
 *** PEdgeAccess, PFaceAccess & PVertexAccess                         :verify:
@@ -130,7 +149,7 @@ front, back - assuming the vertex order given in the diagram.
    [_ s])
 #+END_SRC
 
-*** TODO PMeshConvert                                                :verify:
+*** PMeshConvert                                                     :verify:
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PMeshConvert
   (as-mesh
@@ -170,9 +189,22 @@ Also see: [[file:~/work/clj/thing/geom/geom-core/src/utils.org::Interpolation][m
 #+END_SRC
 
 *** TODO PProximity                                                     :fix:
+
+Do not use, work in progress...
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PProximity
-  (closest-point [_ p] nil)
+  (closest-point
+   [_ p]
+   (->> (g/faces _)
+        (reduce
+         (fn [acc f]
+           (let [p' (g/closest-point (p/plane-from-points f) p)
+                 d (g/dist-squared p p')]
+             (prn p' d)
+             (if (< d (acc 1)) [p' d] acc)))
+         [nil 1e+100])
+        (first)))
 #+END_SRC
 
 *** TODO PSample                                                        :fix:
@@ -275,6 +307,7 @@ from the first vertex of the original with inner sorting over XYZ.
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec3]]
      [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.plane :as p]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.data.core :as d]
