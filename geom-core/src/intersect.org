@@ -86,7 +86,7 @@ Also works for rect/circle...
              (if (and (> a 0) (> b 0))
                (if (> a b) [b a] [a b])
                (if (> b 0) [b a] [a b]))
-             [a b]))))))
+             [a b]))))))  
 #+END_SRC
 
 ** Triangle3
@@ -171,6 +171,14 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
           (if (m/in-range? 0.0 1.0 du)
             {:type :intersect :p i}
             {:type :intersect-outside :p i})))))
+#+END_SRC
+
+#+BEGIN_SRC clojure :noweb-ref isec
+  (defn intersect-plane-sphere?
+    ([p s]
+       (m/in-range? (+ (g/dot (:n p) (:p s)) (:w p)) (- (:r s)) (:r s)))
+    ([n w p r]
+       (m/in-range? (+ (g/dot n p) w) (- r) r)))
 #+END_SRC
 
 ** Tetrahedron
