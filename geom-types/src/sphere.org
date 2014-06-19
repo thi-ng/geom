@@ -109,6 +109,8 @@ If there's no intersection, the function returns =nil=.
     (isec/intersect-aabb-sphere? s _)
     (instance? thi.ng.geom.types.Sphere s)
     (isec/intersect-sphere-sphere? _ s)
+    (instance? thi.ng.geom.types.Plane s)
+    (isec/intersect-plane-sphere? (:n s) (:w s) (:p _) (:r _))
     :default (err/type-error! "Sphere" s)))
 #+END_SRC
 *** TODO PMeshConvert

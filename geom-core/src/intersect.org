@@ -175,10 +175,7 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
 
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-plane-sphere?
-    ([p s]
-       (m/in-range? (+ (g/dot (:n p) (:p s)) (:w p)) (- (:r s)) (:r s)))
-    ([n w p r]
-       (m/in-range? (+ (g/dot n p) w) (- r) r)))
+    [n w p r] (let [r (+ r *eps*)] (m/in-range? (- r) r (+ (g/dot n p) w))))
 #+END_SRC
 
 ** Tetrahedron

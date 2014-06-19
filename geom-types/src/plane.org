@@ -71,7 +71,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PDistance
   (dist
-   [_ p] (->> p (g/dot (:n _)) (+ (:w _))))
+   [_ p] (+ (g/dot (:n _) p) (:w _)))
   (dist-squared
    [_ p] (let [d (g/dist _ p)] (* d d)))
 #+END_SRC
@@ -106,6 +106,8 @@
    (cond
     (instance? thi.ng.geom.types.Plane s)
     (isec/intersect-plane-plane? (:n _) (:w _) (:n s) (:w s))
+    (instance? thi.ng.geom.types.Sphere s)
+    (isec/intersect-plane-sphere? (:n _) (:w _) (:p s) (:r s))
     :default (err/illegal-arg! s)))
 #+END_SRC
 *** PMeshConvert
