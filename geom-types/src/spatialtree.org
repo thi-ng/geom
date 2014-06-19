@@ -29,22 +29,18 @@
         (if c (recur c (conj path c)) path))))
   
   (defn add-point*
-    "Adds point to tree, recursively creates all required intermediate nodes.
-    Returns root."
+    "Adds point to tree, recursively creates all required intermediate nodes."
     [root p]
-    (loop [node root]
+    (loop [node root, p p]
       (if (g/get-children node)
-        (recur (g/make-child-for-point node p false))
+        (recur (g/make-child-for-point node p false) p)
         (let [point (g/get-point node)]
           (if point
-            (if-not (delta= point p *eps*)
-              (do
+            (when-not (delta= point p *eps*)
                 (g/split-node node)
                 (g/make-child-for-point node p true)
-                (add-point* node point)
-                root)
-              root)
-            (do (g/set-point node p) root))))))
+                (recur node point))
+            (g/set-point node p))))))
   
   (defn delete-point*
     "Removes point from tree (if found) and prunes any resulting empty nodes.
@@ -186,7 +182,7 @@
               ^:mutable bounds]
 
       g/PSpatialTree
-      (add-point [_ p] (add-point* _ p))
+      (add-point [_ p] (add-point* _ p) _)
       (child-index-for-point [_ [px py pz]]
         (+ (if (< pz (+ z d)) 0 4)
            (if (< px (+ x w))
