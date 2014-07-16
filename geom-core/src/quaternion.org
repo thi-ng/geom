@@ -448,7 +448,7 @@ of the code.
     (let [d (g/dot _ q)]
       (if (< (m/abs d) 1.0)
         (let [theta (Math/acos d)
-              stheta (Math/sqrt (mm/madd d d -1.0))
+              stheta (Math/sqrt (mm/madd d (- d) 1.0))
               [a b] (if (< (m/abs stheta) 0.001)
                       [0.5 0.5]
                       [(/ (Math/sin (mm/subm 1.0 t theta)) stheta)
@@ -521,12 +521,12 @@ of the code.
     ([[x y z] w] (Quat4. x y z w))
     ([[x y z w]] (Quat4. x y z w))
     ([x y z w] (Quat4. x y z w)))
-
+  
   (defn quat-from-axis-angle
     [axis theta]
     (let [theta (/ theta 2.0)]
-      (quat (g/normalize (v/vec3 axis) (Math/sin theta)) (Math/cos theta))))
-
+      (quat (g/* (v/vec3 axis) (Math/sin theta)) (Math/cos theta))))
+  
   (defn quat-from-euler
     [order & [alpha beta gamma]]
     (let [[a b c] (case order
@@ -540,11 +540,11 @@ of the code.
       (g/* (quat-from-axis-angle a alpha)
            (quat-from-axis-angle b beta)
            (quat-from-axis-angle c gamma))))
-
+  
   ;; Allan and Mark Watt's "Advanced Animation and Rendering Techniques"
   ;; (ACM Press 1992)
   ;; http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
-
+  
   (defn quat-from-matrix
     [^Matrix44 m]
     (let [trace (mm/add (.-m00 m) (.-m11 m) (.-m22 m))]
@@ -579,7 +579,7 @@ of the code.
                 (mm/addm (.-m21 m) (.-m12 m) s')
                 (* 0.25 s)
                 (mm/subm (.-m10 m) (.-m01 m) s')))))))))
-
+  
   (defn alignment-quat
     [a b]
     (let [d (g/dot a b)]
