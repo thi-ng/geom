@@ -24,20 +24,22 @@
         (b/write-vec3-le stream c)
         (b/write-int16-le stream 0))
       stream))
-
+  
   (defn read-stl
-    "Returns binary STL inputstream as mesh."
-    [^InputStream stream]
-    (.read stream #+clj (byte-array 80) #+cljs (make-array 80))
-    (loop [mesh (gm/gmesh), i (b/read-int32-le stream)]
-      (if (pos? i)
-        (let [_ (b/read-vec3-le stream)
-              a (vec3 (b/read-vec3-le stream))
-              b (vec3 (b/read-vec3-le stream))
-              c (vec3 (b/read-vec3-le stream))
-              _ (b/read-int16-le stream)]
-          (recur (gm/add-face mesh [a b c]) (dec i)))
-        mesh)))
+    "Reads faces from binary STL inputstream and adds them to given (or new) mesh."
+    ([stream]
+       (read-stl stream (bm/basic-mesh)))
+    ([^InputStream stream mesh]
+       (.read stream #+clj (byte-array 80) #+cljs (make-array 80))
+       (loop [mesh mesh, i (b/read-int32-le stream)]
+         (if (pos? i)
+           (let [_ (b/read-vec3-le stream)
+                 a (vec3 (b/read-vec3-le stream))
+                 b (vec3 (b/read-vec3-le stream))
+                 c (vec3 (b/read-vec3-le stream))
+                 _ (b/read-int16-le stream)]
+             (recur (g/add-face mesh [a b c]) (dec i)))
+           mesh))))
 #+END_SRC
 ** PLY
 #+BEGIN_SRC clojure :noweb-ref ply
