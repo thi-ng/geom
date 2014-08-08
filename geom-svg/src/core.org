@@ -1,0 +1,81 @@
+#+SETUPFILE: ../../src/setup.org
+
+* Namespace: thi.ng.geom.svg.core
+
+** Protocols
+*** PSVGConvert
+#+BEGIN_SRC clojure :noweb-ref protos
+  (defprotocol PSVGConvert
+    (as-svg [_ opts]))
+#+END_SRC
+
+** SVG serialization
+
+#+BEGIN_SRC clojure :noweb-ref constants
+  (def ^:const xml-preamble "<?xml version=\"1.0\"?>\n")
+
+  (def ^:dynamic *ff* (nf/float 4))
+  (def ^:dynamic *fp* (fn [p] (str (*ff* (nth p 0)) "," (*ff* (nth p 1)))))
+#+END_SRC
+
+#+BEGIN_SRC clojure :noweb-ref svg
+  (defn svg
+    [attrs & body]
+    [:svg
+     (merge
+      {:xmlns "http://www.w3.org/2000/svg"
+       :version "1.1"}
+      attrs)
+     body])
+  
+  (defn serialize
+    [svg]
+    (str xml-preamble
+         ,#+clj  (html {:mode :xml} svg)
+         ,#+cljs (render-html svg)))
+  
+  ,#+clj
+  (defn serialize-as-byte-array
+    [svg] (.getBytes (serialize svg) "UTF-8"))
+#+END_SRC
+
+#+BEGIN_SRC clojure :noweb-ref prims
+  (defn triangle
+    [a b c]
+    [:path
+     {:d (nf/format ["M" *fp* " L" *fp* " L" *fp* " Z"] a b c)}])
+  
+  (defn quad
+    [a b c d]
+    [:path
+     {:d (nf/format ["M" *fp* " L" *fp* " L" *fp* " L" *fp* " Z"] a b c d)}])
+  
+  (defn polygon
+    [points]
+    [:path
+     {:d (apply
+          nf/format
+          (concat
+           ["M" *fp*]
+           (mapcat identity (repeat (dec (count points)) [" L" *fp*]))
+           [" Z"])
+          points)}])
+#+END_SRC
+
+** Complete namespace definition                                   :noexport:
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/core.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.svg.core
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.common.numberformat :as nf]
+     #+clj [hiccup.core :refer [html]]
+     #+cljs [hiccups.runtime :refer [render-html]]))
+
+  <<constants>>
+
+  <<svg>>
+
+  <<prims>>
+
+  <<protos>>
+#+END_SRC
