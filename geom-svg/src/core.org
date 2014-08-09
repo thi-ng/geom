@@ -13,9 +13,16 @@
 
 #+BEGIN_SRC clojure :noweb-ref constants
   (def ^:const xml-preamble "<?xml version=\"1.0\"?>\n")
-
-  (def ^:dynamic *ff* (nf/float 4))
-  (def ^:dynamic *fp* (fn [p] (str (*ff* (nth p 0)) "," (*ff* (nth p 1)))))
+  
+  (def ^:dynamic *ff* (f/float 4))
+  (def ^:dynamic *fmt-vec* (fn [p] (str (*ff* (nth p 0)) "," (*ff* (nth p 1)))))
+  
+  (def point-seq-format
+    (memoize
+     (fn [n]
+       (->> *fmt-vec*
+            (repeat n)
+            (interpose " ")))))
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref svg
@@ -39,27 +46,80 @@
     [svg] (.getBytes (serialize svg) "UTF-8"))
 #+END_SRC
 
+** SVG primitives
+
 #+BEGIN_SRC clojure :noweb-ref prims
-  (defn triangle
-    [a b c]
-    [:path
-     {:d (nf/format ["M" *fp* " L" *fp* " L" *fp* " Z"] a b c)}])
-  
-  (defn quad
-    [a b c d]
-    [:path
-     {:d (nf/format ["M" *fp* " L" *fp* " L" *fp* " L" *fp* " Z"] a b c d)}])
-  
+  (defn group
+    [attribs & body]
+    [:g attribs body])
+
+  (defn line
+    [[ax ay] [bx by] attribs]
+    [:line
+     (merge attribs
+            {:x1 (*ff* ax) :y1 (*ff* ay)
+             :x2 (*ff* bx) :y2 (*ff* by)})])
+
   (defn polygon
-    [points]
-    [:path
-     {:d (apply
-          nf/format
-          (concat
-           ["M" *fp*]
-           (mapcat identity (repeat (dec (count points)) [" L" *fp*]))
-           [" Z"])
-          points)}])
+    [points attribs]
+    [:polygon
+     (assoc attribs
+       :points (apply f/format (point-seq-format (count points)) points))])
+
+  (defn mesh
+    [mesh mvp vtx attribs]
+    (group
+     attribs
+     (map
+      (fn [f] (polygon (mapv (fn [p] (mat/project-point p mvp vtx)) f) nil))
+      (g/faces mesh))))
+
+  (defn face-visible?
+    [nmat normal]
+    (let [dp (g/dot (g/transform-vector nmat normal) V3Z)]
+      ;;(prn dp)
+      (>= dp 0.0)))
+
+  (defn visible-mesh-faces
+    [model view mesh]
+    (let [fnormals (:fnormals (g/compute-face-normals mesh))
+          nmat (g/* (g/transpose (g/invert view)) model)]
+      (filter #(face-visible? nmat (fnormals %)) (g/faces mesh))))
+
+  (defn project-face
+    [mvp vtx points]
+    (mapv #(mat/project-point-z % mvp vtx) points))
+
+  (defn normal->rgb
+    [fnormals tx]
+    (fn [f _ _]
+      (let [[r g b] (map int (g/madd (g/transform (fnormals f) tx) 127 128))]
+        (str "rgba(" r "," g "," b ",1.0)"))))
+
+  (defn shader
+    [fill stroke attribs]
+    (fn [f f' z]
+      (assoc attribs
+        :fill   (if (fn? fill) (fill f f' z) fill)
+        :stroke (if (fn? stroke) (stroke f f' z) stroke))))
+
+  (defn mesh-hidden-lines
+    [mesh model view proj vtx attribs]
+    (let [mvp      (->> model (g/* view) (g/* proj))
+          faces    (->> mesh
+                        (visible-mesh-faces model view)
+                        (map
+                         (fn [f]
+                           (let [f' (project-face mvp vtx f)
+                                 z  (:z (gu/centroid f'))]
+                             [z f' f])))
+                        (sort-by first)
+                        (reverse))]
+      (if (fn? attribs)
+        (map (fn [[z f' f]] (polygon f' (attribs f f' z))) faces)
+        (group
+         attribs
+         (map (fn [f] (polygon (f 1) nil)) faces)))))
 #+END_SRC
 
 ** Complete namespace definition                                   :noexport:
@@ -67,7 +127,10 @@
   (ns thi.ng.geom.svg.core
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.common.numberformat :as nf]
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :refer [vec3 V3Z]]
+     [thi.ng.geom.core.matrix :as mat]
+     [thi.ng.common.stringformat :as f]
      #+clj [hiccup.core :refer [html]]
      #+cljs [hiccups.runtime :refer [render-html]]))
 
@@ -78,4 +141,10 @@
   <<prims>>
 
   <<protos>>
+#+END_SRC
+
+** Examples
+
+#+BEGIN_SRC clojure
+  (ns 
 #+END_SRC
