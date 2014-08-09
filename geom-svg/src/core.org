@@ -53,12 +53,31 @@
     [attribs & body]
     [:g attribs body])
 
+  (defn text
+    [[x y] txt attribs]
+    [:text
+     (merge attribs {:x (*ff* x) :y (*ff* y)})
+     txt])
+
+  (defn circle
+    [[x y] radius attribs]
+    [:circle
+     (merge attribs
+            {:cx (*ff* x) :cy (*ff* y) :r radius})])
+
   (defn line
     [[ax ay] [bx by] attribs]
     [:line
      (merge attribs
             {:x1 (*ff* ax) :y1 (*ff* ay)
              :x2 (*ff* bx) :y2 (*ff* by)})])
+
+  (defn line-strip
+    [points attribs]
+    [:polyline
+     (assoc attribs
+       :fill "none"
+       :points (apply f/format (point-seq-format (count points)) points))])
 
   (defn polygon
     [points attribs]
@@ -74,47 +93,55 @@
       (fn [f] (polygon (mapv (fn [p] (mat/project-point p mvp vtx)) f) nil))
       (g/faces mesh))))
 
-  (defn face-visible?
-    [nmat normal]
-    (let [dp (g/dot (g/transform-vector nmat normal) V3Z)]
-      ;;(prn dp)
-      (>= dp 0.0)))
-
-  (defn visible-mesh-faces
-    [model view mesh]
-    (let [fnormals (:fnormals (g/compute-face-normals mesh))
-          nmat (g/* (g/transpose (g/invert view)) model)]
-      (filter #(face-visible? nmat (fnormals %)) (g/faces mesh))))
-
   (defn project-face
     [mvp vtx points]
     (mapv #(mat/project-point-z % mvp vtx) points))
 
+  (defn project-faces
+    [mvp vtx faces]
+    (map
+     (fn [f]
+       (let [f' (project-face mvp vtx f)
+             z  (:z (gu/centroid f'))
+             n  (gu/ortho-normal f')]
+         [z f' f n]))
+     faces))
+
+  (defn cull-backfaces
+    [norm-fn faces]
+    (filter (fn [f] (neg? (g/dot (norm-fn f) V3Z))) faces))
+
+  (defn z-sort-faces
+    [key-fn faces]
+    (reverse (sort-by key-fn faces)))
+
+  (defn rgba
+    [r g b a]
+    (if (< a 1.0)
+      (str "rgba(" (int r) "," (int g) "," (int b) "," a ")")
+      (str "rgb(" (int r) "," (int g) "," (int b) ")")))
+
   (defn normal->rgb
-    [fnormals tx]
+    [tx alpha]
     (fn [f _ _]
-      (let [[r g b] (map int (g/madd (g/transform (fnormals f) tx) 127 128))]
-        (str "rgba(" r "," g "," b ",1.0)"))))
+      (let [[r g b] (-> (gu/ortho-normal f)
+                        (g/transform tx)
+                        (g/madd 127 128))]
+        (rgba r g b alpha))))
 
   (defn shader
     [fill stroke attribs]
     (fn [f f' z]
       (assoc attribs
-        :fill   (if (fn? fill) (fill f f' z) fill)
+        :fill   (if (fn? fill)   (fill f f' z)   fill)
         :stroke (if (fn? stroke) (stroke f f' z) stroke))))
 
   (defn mesh-hidden-lines
-    [mesh model view proj vtx attribs]
-    (let [mvp      (->> model (g/* view) (g/* proj))
-          faces    (->> mesh
-                        (visible-mesh-faces model view)
-                        (map
-                         (fn [f]
-                           (let [f' (project-face mvp vtx f)
-                                 z  (:z (gu/centroid f'))]
-                             [z f' f])))
-                        (sort-by first)
-                        (reverse))]
+    [mesh mvp vtx attribs]
+    (let [faces (->> (g/faces mesh)
+                     (project-faces mvp vtx)
+                     (cull-backfaces peek)
+                     (z-sort-faces first))]
       (if (fn? attribs)
         (map (fn [[z f' f]] (polygon f' (attribs f f' z))) faces)
         (group
@@ -146,5 +173,55 @@
 ** Examples
 
 #+BEGIN_SRC clojure
-  (ns 
+  (ns svgdemo01
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :refer [vec3]]
+     [thi.ng.geom.core.matrix :as mat :refer [M44]]
+     [thi.ng.geom.circle :as c]
+     [thi.ng.geom.polygon :as p]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.common.math.core :as m]))
+
+  (def width  640)
+  (def height 480)
+  (def model  (g/rotate-y M44 m/SIXTH_PI))
+  (def view   (apply mat/look-at (mat/look-at-vectors 0 -1.5 2 0 0 0)))
+  (def proj   (mat/perspective 60 (/ width height) 0.1 10))
+  (def screen (mat/viewport-transform width height))
+  (def mvp    (->> model (g/* view) (g/* proj)))
+
+  (defn ring
+    [radius res depth wall]
+    (-> (c/circle radius)
+        (g/as-polygon res)
+        (g/extrude-shell {:depth depth :wall wall})
+        (g/transform (g/translate M44 0 0 (- (/ depth 2))))))
+
+  (def mesh
+    (->> [[1    60 0.25 0.2]
+          [0.75 60 0.5  0.1]
+          [0.5  60 1    0.05]
+          [0.25 60 2    0.025]]
+         (map (fn [args] (apply ring args)))
+         (reduce g/into)))
+
+  (def shader (svg/shader
+               (svg/normal->rgb M44 1.0)
+               "white"
+               {:stroke-width 0.5}))
+
+  (spit "rings.svg"
+        (svg/serialize
+         (svg/svg {:width width :height height}
+                  (svg/mesh-hidden-lines mesh mvp screen shader)
+                  (let [p  (mat/project-point (vec3 0 0 1) mvp screen)
+                        p2 (mat/project-point (vec3 0 0 1.2) mvp screen)
+                        tp (g/+ p2 5 -5)]
+                    (svg/group {:fill "black"}
+                     (svg/circle p 3 nil)
+                     (svg/line-strip [p p2 (g/+ p2 150 0)] {:stroke "black"})
+                     (svg/text tp "thi.ng/geom-svg"
+                               {:font-family "Arial"
+                                :font-size 12}))))))
 #+END_SRC
