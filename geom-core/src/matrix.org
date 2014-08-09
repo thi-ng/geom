@@ -697,6 +697,13 @@ ordering (row major).
     (let [{:keys [left right top bottom]} (frustum-bounds fov aspect near)]
       (frustum left top right bottom near far)))
 
+  (defn look-at-vectors
+    [ex ey ez tx ty tz]
+    (let [eye    (vec3 ex ey ez)
+          target (vec3 tx ty tz)
+          up     (gu/ortho-normal (g/- eye target) V3X)]
+      [eye target up]))
+
   (defn look-at
     "Returns a matrix that puts the camera at the eye position looking
     toward the target point with the given up direction."
@@ -713,10 +720,30 @@ ordering (row major).
            xz yz zz 0.0
            (- (g/dot x eye)) (- (g/dot y eye)) (- (g/dot z eye)) 1.0)))))
 
+  (defn viewport-transform
+    ([width height]
+       (viewport-transform width height false))
+    ([width height invert-y?]
+       (let [w2 (/ width 2.0)
+             h2 (/ height 2.0)]
+         (-> M32
+             (g/translate w2 h2)
+             (g/* (g/scale M32 w2 (if invert-y? h2 (- h2))))))))
+
+  (defn project-point
+    [p mvp vtx]
+    (let [[x y _ w] (g/transform-vector mvp (conj (vec p) 1))]
+      (g/transform-vector vtx (g/div (vec2 x y) w))))
+
+  (defn project-point-z
+    [p mvp vtx]
+    (let [[x y z w] (g/transform-vector mvp (conj (vec p) 1))]
+      (conj (g/transform-vector vtx (g/div (vec2 x y) w)) (/ z w))))
+
   ;; FIXME add arity for pre-computed vpm matrix
-  (defn unproject
+  (defn unproject-point
     "Takes a vec3 in screenspace, view matrix, projection matrix and
-    view rect. Returns vector in model space or nil."
+      view rect. Returns vector in model space or nil."
     [v vmat pmat {:keys [p width height]}]
     (let [x (mm/msub (- (v 0) (p 0)) (/ 2.0 width) 1.0)
           y (mm/msub (- (v 1) (p 1)) (/ 2.0 height) 1.0)
@@ -725,7 +752,7 @@ ordering (row major).
       (if (g/invert vpm)
         (let [v' (g/transform-vector vpm [x y z 1.0])]
           (if-not (zero? (v' 3))
-            (g/div (v/vec3 v') (v' 3)))))))
+            (g/div (vec3 v') (v' 3)))))))
 #+END_SRC
 
 ** Namespace declaration                                           :noexport:
@@ -734,7 +761,7 @@ ordering (row major).
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [V3]]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3 V3X]]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
      [thi.ng.common.error :as err]
      ,#+clj [thi.ng.macromath.core :as mm]
