@@ -78,3 +78,48 @@ is defined in its own namespace and can be loaded from the REPL via:
 
   (render-svg "svgdemo01.svg" mesh (make-mvp model view proj) 640 480)
 #+END_SRC
+
+** Blender's Suzanne
+
+[[http://media.thi.ng/geom/svgdemo02.svg]]
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo02.clj :mkdirp yes :padline no
+  (ns svgdemo02
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.matrix :as mat]
+     [thi.ng.geom.mesh.io :as mio]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.common.math.core :as m]
+     [clojure.java.io :as io]))
+
+  (def width  640)
+  (def height 480)
+  (def model  (-> (mat/matrix44) (g/rotate-x m/HALF_PI) (g/rotate-z m/SIXTH_PI)))
+  (def view   (apply mat/look-at (mat/look-at-vectors 0 0 -2 0 0 0)))
+  (def proj   (mat/perspective 60 (/ width height) 0.1 2))
+
+  (defn make-mvp
+    [model view proj] (->> model (g/* view) (g/* proj)))
+
+  (def shader
+    (svg/shader
+     (svg/normal->rgb
+      (g/rotate-x (mat/matrix44) (- m/HALF_PI)) 1.0)
+     "black" {:stroke-width 0.25}))
+
+  (def mesh
+    (with-open [in (io/input-stream "suzanne.stl")]
+      (-> (mio/read-stl in) (g/center) (g/scale 0.85))))
+
+  (defn render-svg
+    [path mesh mvp width height]
+    (let [screen (mat/viewport-transform width height)]
+      (->> (svg/svg
+            {:width width :height height}
+            (svg/mesh-hidden-lines mesh mvp screen shader))
+           (svg/serialize)
+           (spit path))))
+
+  (render-svg "svgdemo02.svg" mesh (make-mvp model view proj) 640 480)
+#+END_SRC
