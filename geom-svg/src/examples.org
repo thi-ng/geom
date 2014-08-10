@@ -18,7 +18,7 @@ is defined in its own namespace and can be loaded from the REPL via:
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :refer [vec3]]
-     [thi.ng.geom.core.matrix :as mat :refer [M44]]
+     [thi.ng.geom.core.matrix :as mat]
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.polygon :as p]
      [thi.ng.geom.svg.core :as svg]
@@ -29,26 +29,23 @@ is defined in its own namespace and can be loaded from the REPL via:
     (-> (c/circle radius)
         (g/as-polygon res)
         (g/extrude-shell {:depth depth :wall wall :inset -0.1})
-        (g/transform (g/translate M44 0 0 (- (/ depth 2))))))
+        (g/center)))
 
   (defn make-mvp
     [model view proj] (->> model (g/* view) (g/* proj)))
 
   (def shader
     (svg/shader
-     (svg/normal->rgb M44 1.0) "white" {:stroke-width 0.5}))
+     (svg/normal->rgb (mat/matrix44) 1.0) "white" {:stroke-width 0.5}))
 
   (def width  640)
   (def height 480)
-  (def model  (g/rotate-y M44 m/SIXTH_PI))
+  (def model  (g/rotate-y (mat/matrix44) m/SIXTH_PI))
   (def view   (apply mat/look-at (mat/look-at-vectors 0 1.75 0.75 0 0 0)))
   (def proj   (mat/perspective 60 (/ width height) 0.1 10))
 
   (def mesh
-    (->> [[1    0.25 0.15]
-          [0.75 0.35 0.1]
-          [0.5  0.5  0.05]
-          [0.25 0.75 0.025]]
+    (->> [[1 0.25 0.15] [0.75 0.35 0.1] [0.5 0.5 0.05] [0.25 0.75 0.025]]
          (map (partial apply ring 40))
          (reduce g/into)))
 
