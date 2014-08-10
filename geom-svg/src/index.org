@@ -76,7 +76,8 @@ target/geom-svg-<<conf-version>>.js
     :test-paths   ["<<conf-gen-test-path>>"]
 
     :profiles {:dev {:dependencies [<<dep-cljs>>
-                                    <<dep-criterium>>]
+                                    <<dep-criterium>>
+                                    <<dep-geom-meshops>>]
                      :plugins      [<<dep-cljx>>
                                     <<dep-cljsbuild>>
                                     <<dep-cljs-test>>
