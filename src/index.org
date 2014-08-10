@@ -120,6 +120,12 @@ This module provides several tools & operations related to working
 with meshes, incl. I/O, subdivisions, Delaunay triangulation,
 cleaning, CSG/Boolean mesh merge etc.
 
+*** [[file:../geom-svg/src/index.org][geom-svg]]
+
+A module to help with building SVG based visualizations of geom
+entities (incl. a customizable 3D mesh renderer). CLJS support for
+this module is planned, but currently untested.
+
 *** [[../geom-webgl/src/index.org][geom-webgl]]
 
 This is a pure CLJS module and provides a number of conversion &
@@ -290,7 +296,7 @@ This project is open source and licensed under the [[http://www.apache.org/licen
     :license      {:name "Apache Software License"
                    :url  "http://www.apache.org/licenses/LICENSE-2.0"}
     :scm          {:name "git"
-                   :url  "https://github.com/thi-ng/geom"}
+                   :url  "<<conf-project-url>>"}
     :dependencies [<<dep-clj>>
                    <<dep-geom-core>>
                    <<dep-geom-types>>

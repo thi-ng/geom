@@ -23,7 +23,7 @@ ALPHA quality, in active development.
 
 ** Building & testing this project
 
-Please see the [[file:../src/index.org][parent project]] for further information.
+Please see the [[file:../../src/index.org][parent project]] for further information.
 
 ** Injected properties                                             :noexport:
 
@@ -65,7 +65,7 @@ target/geom-core-<<conf-version>>.js
     :license      {:name "Apache Software License"
                    :url  "http://www.apache.org/licenses/LICENSE-2.0"}
     :scm          {:name "git"
-                   :url  "https://github.com/thi-ng/geom"}
+                   :url  "<<conf-project-url>>"}
     :dependencies [<<dep-clj>>
                    <<dep-common>>
                    <<dep-mmath>>]
