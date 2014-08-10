@@ -36,7 +36,7 @@ target/test-classes
 **** [[https://github.com/clojure/clojurescript][ClojureScript]]
 #+NAME: dep-cljs
 #+BEGIN_SRC clojure
-[org.clojure/clojurescript "0.0-2202"]
+[org.clojure/clojurescript "0.0-2280"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/geom/][thi.ng/geom-core]]
@@ -73,7 +73,7 @@ target/test-classes
 **** [[https://github.com/lynaghk/cljx][Cljx]]
 #+NAME: dep-cljx
 #+BEGIN_SRC clojure
-[com.keminglabs/cljx "0.3.2"]
+[com.keminglabs/cljx "0.4.0"]
 #+END_SRC
 
 **** [[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]
@@ -97,5 +97,5 @@ target/test-classes
 **** [[https://github.com/cemerick/clojurescript.test][clojurescript.test]]
 #+NAME: dep-cljs-test
 #+BEGIN_SRC clojure
-[com.cemerick/clojurescript.test "0.2.2"]
+[com.cemerick/clojurescript.test "0.3.1"]
 #+END_SRC

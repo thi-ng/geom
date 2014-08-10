@@ -19,15 +19,18 @@
   (defn fold-into-map
     [coll] (r/fold (r/monoid into hash-map) conj coll))
   
-  (defn fold-into-vec
-    [coll] (r/fold (r/monoid into vector) conj coll))
-  
   (defn face-loop-triples
     "Takes a mesh face (vector of points) and returns lazyseq of
     successive point triples: [prev curr next]"
     [f]
     (->> f (first) (conj f) (cons (peek f)) (d/successive-nth 3)))
 #+END_SRC
+
+
+All subdivision methods as implemented here will currently only
+function with the default mesh type (GMesh). Support for other mesh
+types is planned, pending some further refactoring of existing mesh
+graph functions.
 
 ** Catmull-Clark
 
@@ -39,6 +42,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
     centroids as values."
     [faces]
     (->> faces
+         ,#+cljs (seq)
          (r/map (fn [f] [f (gu/centroid f)]))
          (fold-into-map)))
   
@@ -57,7 +61,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
                    (conj (first e))
                    (conj (second e))
                    (gu/centroid))]))
-           (fold-into-map)))
+         (fold-into-map)))
   
   (defn cc-subdiv-faces
     [f-points e-points]
@@ -78,9 +82,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
                                   r (gu/centroid (mapv #(g/mix v %) vn))]
                               [v (g/addm (g/madd r 2.0 f) (g/* v (- n 3)) (/ 1.0 n))])))
                          (fold-into-map))]
-      (->> sd-faces
-           (r/map (fn [f] (replace new-verts f)))
-           (r/foldcat))))
+      (map (fn [f] (replace new-verts f)) sd-faces)))
   
   (defn catmull-clark
     [{:keys [faces edges] :as mesh}]
@@ -88,7 +90,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
           e-points (cc-edge-points edges f-points)]
       (->> (cc-subdiv-faces f-points e-points)
            (cc-replace-vertices mesh f-points e-points)
-           (gm/into-mesh))))
+           (g/into (g/empty mesh)))))
 #+END_SRC
 
 ** Doo-Sabin
@@ -113,6 +115,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
     [{:keys [faces edges] :as m}]
     (let [e-points (ds-edge-midpoints (keys edges))]
       (->> faces
+           ,#+cljs (seq)
            (r/map (fn [f] [f (ds-face-points* f e-points)]))
            (fold-into-map))))
   
@@ -131,6 +134,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
             (err/throw! "Mesh not manifold")))
         (persistent! acc))))
   
+  ;; TODO currently only works for GMesh
   (defn ds-dual-faces
     [{:keys [vertices] :as mesh} f-points]
     (->> vertices
@@ -139,16 +143,18 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
             (let [vn (gm/vertex-neighbors* mesh v)]
               (if (< 2 (count vn))
                 (->> vn
+                     ,#+cljs (seq)
                      (r/map
                       (fn [n]
                         (let [f1 (f-points (some #(if (= n (:prev %)) (:f %)) v-faces))
                               f2 (f-points (some #(if (= n (:next %)) (:f %)) v-faces))]
                           [(get f1 v v) (get f2 v v)])))
-                     (into [])
+                     (r/foldcat)
                      (ds-make-edge-loop))))))
          (r/filter identity)
          (r/foldcat)))
   
+  ;; TODO currently only works for GMesh
   (defn ds-edge-faces
     [{:keys [vertices edges] :as mesh} f-points]
     (->> edges
@@ -170,12 +176,17 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
             f-faces (ds-fp-faces f-points)
             e-faces (if e* (ds-edge-faces mesh f-points))
             v-faces (if v* (ds-dual-faces mesh f-points))]
-        (gm/into-mesh (concat (if f* f-faces) e-faces v-faces)))))
+        (g/into (g/empty mesh) (concat (if f* f-faces) e-faces v-faces)))))
   
   (def doo-sabin (custom-doo-sabin))
 #+END_SRC
 
 ** Butterfly
+
+This subdivision scheme will only work with pre-triangulated meshes.
+The implementation does not check for this for speed reasons. If
+you're not sure your mesh contains only triangles, pass it through
+=(g/tessellate)= first...
 
 - http://graphics.stanford.edu/courses/cs468-10-fall/LectureSlides/10_Subdivision.pdf
 
@@ -218,8 +229,9 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
     ([mesh] (butterfly mesh (/ 8.0)))
     ([mesh omega]
        (let [e-points (bf-edge-points (:edges mesh) omega)]
-         (->> (:faces mesh)
+         (->> (g/faces mesh)
+              ,#+cljs (seq)
               (r/mapcat
                (fn [f] (bf-faces-from-edge-points e-points f)))
-              (gm/into-mesh)))))
+              (g/into (g/empty mesh))))))
 #+END_SRC

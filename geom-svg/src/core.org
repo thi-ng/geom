@@ -1,0 +1,171 @@
+#+SETUPFILE: ../../src/setup.org
+
+* Namespace: thi.ng.geom.svg.core
+
+** Protocols
+*** PSVGConvert
+#+BEGIN_SRC clojure :noweb-ref protos
+  (defprotocol PSVGConvert
+    (as-svg [_ opts]))
+#+END_SRC
+
+** SVG serialization
+
+#+BEGIN_SRC clojure :noweb-ref constants
+  (def ^:const xml-preamble "<?xml version=\"1.0\"?>\n")
+  
+  (def ^:dynamic *ff* (f/float 4))
+  (def ^:dynamic *fmt-vec* (fn [p] (str (*ff* (nth p 0)) "," (*ff* (nth p 1)))))
+  
+  (def point-seq-format
+    (memoize
+     (fn [n]
+       (->> *fmt-vec*
+            (repeat n)
+            (interpose " ")))))
+#+END_SRC
+
+#+BEGIN_SRC clojure :noweb-ref svg
+  (defn svg
+    [attrs & body]
+    [:svg
+     (merge
+      {:xmlns "http://www.w3.org/2000/svg"
+       :version "1.1"}
+      attrs)
+     body])
+  
+  (defn serialize
+    [svg]
+    (str xml-preamble
+         ,#+clj  (html {:mode :xml} svg)
+         ,#+cljs (render-html svg)))
+  
+  ,#+clj
+  (defn serialize-as-byte-array
+    [svg] (.getBytes (serialize svg) "UTF-8"))
+#+END_SRC
+
+** SVG primitives
+
+#+BEGIN_SRC clojure :noweb-ref prims
+  (defn group
+    [attribs & body]
+    [:g attribs body])
+
+  (defn text
+    [[x y] txt attribs]
+    [:text
+     (merge attribs {:x (*ff* x) :y (*ff* y)})
+     txt])
+
+  (defn circle
+    [[x y] radius attribs]
+    [:circle
+     (merge attribs
+            {:cx (*ff* x) :cy (*ff* y) :r radius})])
+
+  (defn line
+    [[ax ay] [bx by] attribs]
+    [:line
+     (merge attribs
+            {:x1 (*ff* ax) :y1 (*ff* ay)
+             :x2 (*ff* bx) :y2 (*ff* by)})])
+
+  (defn line-strip
+    [points attribs]
+    [:polyline
+     (assoc attribs
+       :fill "none"
+       :points (apply f/format (point-seq-format (count points)) points))])
+
+  (defn polygon
+    [points attribs]
+    [:polygon
+     (assoc attribs
+       :points (apply f/format (point-seq-format (count points)) points))])
+
+  (defn mesh
+    [mesh mvp vtx attribs]
+    (group
+     attribs
+     (map
+      (fn [f] (polygon (mapv (fn [p] (mat/project-point p mvp vtx)) f) nil))
+      (g/faces mesh))))
+
+  (defn project-face
+    [mvp vtx points]
+    (mapv #(mat/project-point-z % mvp vtx) points))
+
+  (defn project-faces
+    [mvp vtx faces]
+    (map
+     (fn [f]
+       (let [f' (project-face mvp vtx f)
+             z  (:z (gu/centroid f'))
+             n  (gu/ortho-normal f')]
+         [z f' f n]))
+     faces))
+
+  (defn cull-backfaces
+    [norm-fn faces]
+    (filter (fn [f] (neg? (g/dot (norm-fn f) V3Z))) faces))
+
+  (defn z-sort-faces
+    [key-fn faces]
+    (reverse (sort-by key-fn faces)))
+
+  (defn rgba
+    [r g b a]
+    (if (< a 1.0)
+      (str "rgba(" (int r) "," (int g) "," (int b) "," a ")")
+      (str "rgb(" (int r) "," (int g) "," (int b) ")")))
+
+  (defn normal->rgb
+    [tx alpha]
+    (fn [f _ _]
+      (let [[r g b] (-> (gu/ortho-normal f)
+                        (g/transform tx)
+                        (g/madd 127 128))]
+        (rgba r g b alpha))))
+
+  (defn shader
+    [fill stroke attribs]
+    (fn [f f' z]
+      (assoc attribs
+        :fill   (if (fn? fill)   (fill f f' z)   fill)
+        :stroke (if (fn? stroke) (stroke f f' z) stroke))))
+
+  (defn mesh-hidden-lines
+    [mesh mvp vtx attribs]
+    (let [faces (->> (g/faces mesh)
+                     (project-faces mvp vtx)
+                     (cull-backfaces peek)
+                     (z-sort-faces first))]
+      (if (fn? attribs)
+        (map (fn [[z f' f]] (polygon f' (attribs f f' z))) faces)
+        (group
+         attribs
+         (map (fn [f] (polygon (f 1) nil)) faces)))))
+#+END_SRC
+
+** Complete namespace definition                                   :noexport:
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/core.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.svg.core
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :refer [vec3 V3Z]]
+     [thi.ng.geom.core.matrix :as mat]
+     [thi.ng.common.stringformat :as f]
+     #+clj [hiccup.core :refer [html]]
+     #+cljs [hiccups.runtime :refer [render-html]]))
+
+  <<constants>>
+
+  <<svg>>
+
+  <<prims>>
+
+  <<protos>>
+#+END_SRC

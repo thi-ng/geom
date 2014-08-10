@@ -10,24 +10,17 @@
   (defn plane-with-point
     [p n]
     (let [n (g/normalize (vec3 n))]
-      (thi.ng.geom.types.Plane. n (g/dot n p))))
+      (thi.ng.geom.types.Plane. n (- (g/dot n p)))))
 
   (defn plane-from-points
     ([[a b c]] (plane-from-points a b c))
     ([a b c]
        (let [n (gu/ortho-normal a b c)]
-         (thi.ng.geom.types.Plane. n (g/dot n a)))))
+         (thi.ng.geom.types.Plane. n (- (g/dot n a))))))
 #+END_SRC
 ** Helper functions
 #+BEGIN_SRC clojure :noweb-ref helpers
-  (defn intersect-plane
-    [an aw bn bw]
-    (when-not (or (m/delta= aw bw *eps*) (m/delta= an bn *eps*))
-      (let [od (g/dot an bn)
-            det (/ (mm/madd od od -1))
-            u (* (mm/madd bw od (- aw)) det)
-            v (* (mm/madd aw od (- bw)) det)]
-        {:p (g/madd an u (g/* bn v)) :dir (g/normalize (g/cross an bn))})))
+
 #+END_SRC
 ** TODO Protocol implementation
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -65,20 +58,20 @@
     ([_] (thi.ng.geom.types.Plane. (:n _) 0))
     ([_ o] (plane-with-point o (:n _))))
   (centroid
-    ([_] (g/* (:n _) (:w _))))
+    ([_] (g/* (:n _) (- (:w _)))))
 #+END_SRC
 *** PClassify
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PClassify
   (classify-point
     [_ p]
-    (-> (:n _) (g/dot p) (- (:w _)) (m/signum *eps*)))
+    (-> (:n _) (g/dot p) (+ (:w _)) (m/signum *eps*)))
 #+END_SRC
 *** PDistance
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PDistance
   (dist
-   [_ p] (->> p (g/dot (:n _)) (+ (- (:w _)))))
+   [_ p] (+ (g/dot (:n _) p) (:w _)))
   (dist-squared
    [_ p] (let [d (g/dist _ p)] (* d d)))
 #+END_SRC
@@ -97,24 +90,24 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PIntersect
   (intersect-line
-   ([_ {[p q] :points}] (g/intersect-ray _ p (g/- q p)))
-   ([_ p q] (g/intersect-ray _ p (g/- q p))))
+   ([_ l]
+      (let [[p q] (if (map? l) (:points l) l)]
+        (isec/intersect-ray-plane? p (g/- q p) (:n _) (:w _))))
+   ([_ p q]
+      (isec/intersect-ray-plane? p (g/- q p) (:n _) (:w _))))
   (intersect-ray
-   ([_ ray] (g/intersect-ray _ (:p ray) (:dir ray)))
+   ([_ ray]
+      (let [[p dir] (if (map? ray) [(:p ray) (:dir ray)] ray)]
+        (isec/intersect-ray-plane? p dir (:n _) (:w _))))
    ([_ p dir]
-      (let [dp (g/dot (:n _) dir)
-            dn (- (g/dot (:n _) p) (:w _))]
-        (if (m/delta= 0.0 dp *eps*)
-          {:type (if (zero? dn) :on-plane :parallel)}
-          (let [du (- (/ dn dp))
-                i (g/madd dir du p)]
-            (if (m/in-range? 0.0 1.0 du)
-              {:type :intersect :p i}
-              {:type :intersect-outside :p i}))))))
+      (isec/intersect-ray-plane? p dir (:n _) (:w _))))
   (intersect-shape
    [_ s]
    (cond
-    (instance? thi.ng.geom.types.Plane s) (intersect-plane (:n _) (:w _) (:n s) (:w s))
+    (instance? thi.ng.geom.types.Plane s)
+    (isec/intersect-plane-plane? (:n _) (:w _) (:n s) (:w s))
+    (instance? thi.ng.geom.types.Sphere s)
+    (isec/intersect-plane-sphere? (:n _) (:w _) (:p s) (:r s))
     :default (err/illegal-arg! s)))
 #+END_SRC
 *** PMeshConvert
@@ -144,7 +137,7 @@
     [_ p]
     (->> p
          (g/dot (:n _))
-         (+ (- (:w _)))
+         (+ (:w _))
          (g/normalize (:n _))
          (g/- p)))
 #+END_SRC
@@ -182,6 +175,7 @@
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec3]]
      [thi.ng.geom.core.quaternion :as q]
      [thi.ng.geom.gmesh :as gm]
@@ -189,10 +183,7 @@
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps* INF+]]
-     ,#+clj [thi.ng.macromath.core :as mm])
-    ,#+clj
-    (:import
-     [thi.ng.geom.types Plane]))
+     ,#+clj [thi.ng.macromath.core :as mm]))
 
   <<ctors>>
 

@@ -88,19 +88,7 @@
     "Builds a new 3d mesh data structure and (optionally) populates it with
     the given items (a seq of existing meshes and/or faces). Faces are defined
     as vectors of their vertices."
-    ([] (types/map->GMesh
-         {:vertices {} :edges {} :fnormals {} :vnormals {}
-          :normals #{} :faces #{} :attribs {}})))
-  
-  (defn into-mesh
-    ([mesh-or-faces]
-       (into-mesh (gmesh) mesh-or-faces))
-    ([mesh mesh-or-faces]
-       (reduce
-        add-face mesh
-        (if (satisfies? g/PFaceAccess mesh-or-faces)
-          (g/faces mesh-or-faces)
-          mesh-or-faces))))
+    [] (thi.ng.geom.types.GMesh. {} #{} {} {} {} #{} {}))
 #+END_SRC
 
 *** Creating a mesh from a lathe
@@ -171,30 +159,23 @@ located on the rotation axis.
               (mapcat make-face
                    (d/successive-nth 2 sa)
                    (d/successive-nth 2 sb))))
-           (into-mesh (gmesh)))))
+           (tu/into-mesh (gmesh) add-face))))
 #+END_SRC
 
 *** Predefined forms
+
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn saddle
     [s]
     (let [sv (vec3 s)]
       (reduce
        (fn [m [p flags]]
-         (into-mesh m (g/as-mesh (thi.ng.geom.types.AABB p s) {:flags flags})))
+         (tu/into-mesh m add-face (g/as-mesh (thi.ng.geom.types.AABB p s) {:flags flags})))
        (gmesh)
        [[(vec3) :ewsfb]
         [(vec3 0 s 0) :wfb]
         [(vec3 s s 0) :ensfb]
         [(vec3 0 (* s 2) 0) :ewnfb]])))
-#+END_SRC
-
-** TODO Tessellation
-#+BEGIN_SRC clojure :noweb-ref tessellate
-  (defn map-faces
-    "Applies f to all faces of given mesh and adds resulting faces to
-    new mesh. Thus f should return a seq of faces. Returns new mesh."
-    [f mesh] (into-mesh (gmesh) (mapcat f (:faces mesh))))
 #+END_SRC
 
 ** Protocol implementations
@@ -247,7 +228,7 @@ located on the rotation axis.
 *** PFlip
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PFlip
-  (flip [_] (map-faces (fn [f] [(vec (rseq f))]) _))
+  (flip [_] (tu/map-mesh (fn [f] [(vec (rseq f))]) _))
 #+END_SRC
 
 *** TODO PGraph
@@ -313,9 +294,9 @@ located on the rotation axis.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PNormalAccess
   (face-normals
-   [_] (or (:fnormals _) (:fnormals (g/compute-face-normals _))))
+   [_ force?] (if (seq (:fnormals _)) (:fnormals _) (if force? (:fnormals (g/compute-face-normals _)))))
   (vertex-normals
-   [_] (or (:vnormals _) (:vnormals (g/compute-vertex-normals _))))
+   [_ force?] (if (seq (:vnormals _)) (:vnormals _) (if force? (:vnormals (g/compute-vertex-normals _)))))
   (compute-face-normals
    [_]
    (loop [norms (transient #{}), fnorms (transient {}), faces (:faces _)]
@@ -327,27 +308,31 @@ located on the rotation axis.
          :normals (persistent! norms)
          :fnormals (persistent! fnorms)))))
   (compute-vertex-normals
-   [{:keys [vertices normals fnormals] :as _}]
-   (loop [norms (transient normals), vnorms (transient {}), verts (keys vertices)]
-     (if verts
-       (let [v (first verts)
-             n (->> v
-                    (g/vertex-faces _)
-                    (map #(get fnormals %))
-                    (reduce g/+)
-                    (g/normalize))
-             [norms n] (d/index! norms n)]
-         (recur norms (assoc! vnorms v n) (next verts)))
-       (assoc _
-         :normals (persistent! norms)
-         :vnormals (persistent! vnorms)))))
+   [_]
+   (let [_ (if (seq (:fnormals _)) _ (g/compute-face-normals _))
+         {:keys [vertices normals fnormals]} _]
+     (loop [norms (transient normals), vnorms (transient {}), verts (keys vertices)]
+       (if verts
+         (let [v (first verts)
+               n (->> v
+                      (g/vertex-faces _)
+                      (map #(get fnormals %))
+                      (reduce g/+)
+                      (g/normalize))
+               [norms n] (d/index! norms n)]
+           (recur norms (assoc! vnorms v n) (next verts)))
+         (assoc _
+           :normals (persistent! norms)
+           :vnormals (persistent! vnorms))))))
 #+END_SRC
 
 *** PGeomContainer
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PGeomContainer
   (into
-   [_ faces] (into-mesh _ faces))
+   [_ faces] (tu/into-mesh _ add-face faces))
+  (empty
+   [_] (gmesh))
 #+END_SRC
 
 *** PMeshConvert
@@ -362,51 +347,37 @@ located on the rotation axis.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PTessellate
   (tessellate
-   ([_] (g/tessellate _ {}))
-   ([_ {:keys [fn] :or {fn gu/tessellate-with-first}}]
-      (map-faces fn _)))
-#+END_SRC
-
-*** TODO PTransform
-#+BEGIN_SRC clojure
- ;;:noweb-ref impl
-  g/PTransform
-  (transform
-   ([_ m]
-      (let [new-verts (->> (:vertices _)
-                          (keys)
-                          (r/map (fn [v] [v (g/transform-vector m v)]))
-                          (into {}))]
-        (reduce
-         (fn [mesh f] (add-face mesh (replace new-verts f)))
-         (gmesh)
-         (:faces _)))))
+   ([_]      (g/tessellate _ {}))
+   ([_ opts] (tu/map-mesh (or (:fn opts) gu/tessellate-with-first) _)))
 #+END_SRC
 
 *** PTransform
 #+BEGIN_SRC clojure :noweb-ref impl
+  g/PScale
+  (scale
+   ([_ s]
+      (tu/transform-mesh _ add-face #(g/* % s)))
+   ([_ sx sy sz]
+      (tu/transform-mesh _ add-face #(g/* % sx sy sz))))
+  (scale-size
+   [_ s]
+   (let [c (g/centroid _)]
+     (tu/transform-mesh _ add-face #(g/madd (g/- % c) s c))))
+  g/PTranslate
+  (translate
+   [_ t] (tu/transform-mesh _ add-face #(g/+ % t)))
   g/PTransform
   (transform
-   ([_ m]
-      (reduce
-       (fn [mesh f] (add-face mesh (mapv #(g/transform-vector m %) f)))
-       (gmesh)
-       (:faces _))))
+   [_ tx]
+   (tu/transform-mesh _ add-face tx))
 #+END_SRC
 
-*** TODO PVolume
-
-See [[file:triangle.org::*Triangle3][signed volume implementation of Triangle3]]
+*** PVolume
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PVolume
   (volume
-   [_]
-   (->> (:faces _)
-        (r/mapcat gu/tessellate-with-first)
-        (r/map (fn [[a b c]] (g/dot a (g/cross b c))))
-        (r/fold +)
-        (* (/ 6.0))))
+   [_] (gu/total-volume (:faces _)))
 #+END_SRC
 
 *** End of implementation                                          :noexport:
@@ -422,15 +393,12 @@ See [[file:triangle.org::*Triangle3][signed volume implementation of Triangle3]]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.core.matrix :refer [M44]]
-     [thi.ng.geom.types :as types]
+     [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [*eps*]]
      [clojure.core.reducers :as r]
-     [clojure.set :as set])
-    ,#+clj
-    (:import
-     [thi.ng.geom.types AABB Sphere GMesh]))
+     [clojure.set :as set]))
 
   <<helpers>>
 

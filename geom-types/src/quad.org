@@ -14,30 +14,8 @@
 #+END_SRC
 ** TODO Type specific functions
 
-- https://www.garagegames.com/community/forums/viewthread/76960/1#comment-543505
-
 #+BEGIN_SRC clojure :noweb-ref helpers
-  ;; FIXME
-  (defn map-uv
-    [{[a b c d] :points} p]
-    (let [u1 (gu/closest-point-coeff p a b)
-          u2 (gu/closest-point-coeff p d c)
-          v1 (gu/closest-point-coeff p a d)
-          v2 (gu/closest-point-coeff p b c)
-          dab (g/dist p (g/mix a b u1))
-          ddc (g/dist p (g/mix d c u2))
-          dad (g/dist p (g/mix a d v1))
-          dbc (g/dist p (g/mix b c v2))
-          u* (+ (* u1 (/ dab (+ dab ddc)))
-                (* u2 (/ ddc (+ dab ddc))))
-          v* (+ (* v1 (/ dad (+ dad dbc)))
-                (* v2 (/ dbc (+ dad dbc))))]
-      (vec2 u* v*)))
 
-  (defn unmap-uv
-    "Takes a vector of four points defining a convex & planar quad and a
-    2d vector of normalized UV coordinates. Returns mapped point in quad."
-    [[a b c d] [u v]] (g/mix a b d c u v))
 #+END_SRC
 
 *** Insetting
@@ -78,7 +56,7 @@ quad.
   g/PArea
   (area
    [{[a b c d] :points}]
-   (+ (t/area3 a b c) (t/area3 a c d)))
+   (+ (gu/tri-area3 a b c) (gu/tri-area3 a c d)))
 #+END_SRC
 *** TODO PBoundary
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -203,6 +181,31 @@ A quad's mesh representation is simply a quad mesh with a single face.
    ([_] (g/as-mesh _ {}))
    ([_ opts] (g/add-face (or (:mesh opts) (gm/gmesh)) (:points _))))
 #+END_SRC
+*** TODO PPointMap
+
+=map-point= currently broken, based on:
+https://www.garagegames.com/community/forums/viewthread/76960/1#comment-543505
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PPointMap
+  (map-point
+    [{[a b c d] :points} p]
+    (let [u1 (gu/closest-point-coeff p a b)
+          u2 (gu/closest-point-coeff p d c)
+          v1 (gu/closest-point-coeff p a d)
+          v2 (gu/closest-point-coeff p b c)
+          dab (g/dist p (g/mix a b u1))
+          ddc (g/dist p (g/mix d c u2))
+          dad (g/dist p (g/mix a d v1))
+          dbc (g/dist p (g/mix b c v2))
+          u* (+ (* u1 (/ dab (+ dab ddc)))
+                (* u2 (/ ddc (+ dab ddc))))
+          v* (+ (* v1 (/ dad (+ dad dbc)))
+                (* v2 (/ dbc (+ dad dbc))))]
+      (vec2 u* v*)))
+  (unmap-point
+    [_ p] (gu/map-bilinear (:points _) p))
+#+END_SRC
 *** TODO PProximity
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-proxi>>
@@ -210,8 +213,8 @@ A quad's mesh representation is simply a quad mesh with a single face.
 *** TODO PSample
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-sample(n="4")>>
-  ;;(random-point-inside
-  ;; [_] (unmap-uv _ (vec2 (m/random) (m/random))))
+  (random-point-inside
+   [_] (gu/map-bilinear (:points _) (vec2 (m/random) (m/random))))
 #+END_SRC
 *** PSubdivide
 
@@ -238,7 +241,7 @@ default for missing args.
    ([{:keys [points]} {:keys [num cols rows] :or {num 2}}]
       (let [ru (d/successive-nth 2 (m/norm-range (or cols num)))
             rv (d/successive-nth 2 (m/norm-range (or rows num)))
-            map-p (fn [p] (->> p (unmap-uv points) (map #(m/roundto % *eps*)) vec3))]
+            map-p (fn [p] (->> p (gu/map-bilinear points) (map #(m/roundto % *eps*)) vec3))]
         (for [[v1 v2] rv, [u1 u2] ru]
           (thi.ng.geom.types.Quad3.
            [(map-p [u1 v1]) (map-p [u2 v1]) (map-p [u2 v2]) (map-p [u1 v2])])))))

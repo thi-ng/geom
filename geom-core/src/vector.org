@@ -328,6 +328,7 @@ injected in the appropriate places of the code.
   ,#+clj (toString
          [_]
          (.toString
+          ^StringBuilder
           (doto (StringBuilder. "[")
             (.append (pr-str x))
             (.append " ")
@@ -339,78 +340,84 @@ injected in the appropriate places of the code.
   ,#+cljs ICloneable
   ,#+cljs (-clone
           [_] (Vec2. x y))
-
+  
   ,#+cljs ILookup
   ,#+cljs (-lookup
           [_ k] (swizzle2 _ k nil))
   ,#+cljs (-lookup
           [_ k nf] (swizzle2 _ k nf))
-
+  
   ,#+cljs IFn
   ,#+cljs (-invoke
           [_ k] (swizzle2 _ k nil))
   ,#+cljs (-invoke
           [_ k nf] (swizzle2 _ k nf))
-
+  
   ,#+cljs ICounted
   ,#+cljs (-count
           [_] 2)
-
+  
   ,#+cljs IAssociative
   ,#+cljs (-contains-key?
           [_ k] <<tpl-contains-key2>>)
   ,#+cljs (-assoc
           [_ k v] (swizzle2-assoc _ k v))
-
+  
   ,#+cljs IVector
   ,#+cljs (-assoc-n
           [_ k v]
           <<tpl-assoc-n2>>)
-
+  
   ,#+cljs ISequential
   ,#+cljs ISeq
   ,#+cljs (-first
           [_] x)
   ,#+cljs (-rest
           [_] <<tpl-rest2>>)
-
+  
   ,#+cljs INext
   ,#+cljs (-next
           [_] <<tpl-rest2>>)
-
+  
   ,#+cljs ISeqable
   ,#+cljs (-seq
           [_] _)
-
+  
   ,#+cljs IReversible
   ,#+cljs (-rseq
           [_] <<tpl-rseq2>>)
-
+  
   ,#+cljs IIndexed
   ,#+cljs (-nth
           [_ k] <<tpl-nth-err2>>)
   ,#+cljs (-nth
           [_ k nf] <<tpl-nth-nf2>>)
-
+  
   ,#+cljs ICollection
   ,#+cljs (-conj
           [_ z] (vec3 x y z))
-
+  
   ,#+cljs IStack
   ,#+cljs (-peek
           [_] y)
   ,#+cljs (-pop
           [_] [x])
-
+  
   ,#+cljs IComparable
   ,#+cljs (-compare
           [_ o]
           <<tpl-compare2>>)
-
+  
   ,#+cljs IHash
   ,#+cljs (-hash
-          [_] (hash-combine (hash x) (hash y)))
-
+          [_]
+          (mix-collection-hash
+           (-> 31 (+ (hash x))
+               (bit-or 0)
+               (imul 31) (+ (hash y))
+               (bit-or 0))
+           2))
+  
   ,#+cljs IEquiv
   ,#+cljs (-equiv
           [_ o]
@@ -418,7 +425,7 @@ injected in the appropriate places of the code.
             (and (== x (.-x ^Vec2 o)) (== y (.-y ^Vec2 o)))
             (and (sequential? o) (= 2 (count o))
                  (= x (nth o 0)) (= y (nth o 1)))))
-
+  
   ,#+cljs IReduce
   ,#+cljs (-reduce
           [coll f]
@@ -426,7 +433,7 @@ injected in the appropriate places of the code.
   ,#+cljs (-reduce
           [coll f start]
           <<tpl-reduce2-start>>)
-
+  
   ,#+cljs Object
   ,#+cljs (toString
           [_] (str "[" x " " y "]"))
@@ -496,6 +503,18 @@ injected in the appropriate places of the code.
   (addm [_ a b] (vec2-op-2* + * _ a b 0.0 1.0))
   (msub [_ a b] (vec2-op-2* * - _ a b 1.0 0.0))
   (subm [_ a b] (vec2-op-2* - * _ a b 0.0 1.0))
+#+END_SRC
+*** PDeltaEquals
+#+BEGIN_SRC clojure :noweb-ref vec2
+  m/PDeltaEquals
+  (delta=
+   [_ v] (m/delta= _ v *eps*))
+  (delta=
+   [_ v eps]
+   (and (sequential? v)
+        (== 2 (count v))
+        (m/delta= x (nth v 0) eps)
+        (m/delta= y (nth v 1) eps)))
 #+END_SRC
 *** PDotProduct
 #+BEGIN_SRC clojure :noweb-ref vec2
@@ -781,6 +800,7 @@ injected in the appropriate places of the code.
   ,#+clj (toString
          [_]
          (.toString
+          ^StringBuilder
           (doto (StringBuilder. "[")
             (.append (pr-str x))
             (.append " ")
@@ -794,80 +814,86 @@ injected in the appropriate places of the code.
   ,#+cljs ICloneable
   ,#+cljs (-clone
           [_] (Vec3. x y z))
-
+  
   ,#+cljs ILookup
   ,#+cljs (-lookup
           [_ k] (swizzle3 _ k nil))
   ,#+cljs (-lookup
           [_ k nf] (swizzle3 _ k nf))
-
+  
   ,#+cljs IFn
   ,#+cljs (-invoke
           [_ k] (swizzle3 _ k nil))
   ,#+cljs (-invoke
           [_ k nf] (swizzle3 _ k nf))
-
+  
   ,#+cljs ICounted
   ,#+cljs (-count
           [_] 3)
-
+  
   ,#+cljs IAssociative
   ,#+cljs (-contains-key?
           [_ k] <<tpl-contains-key3>>)
   ,#+cljs (-assoc
           [_ k v] (swizzle3-assoc _ k v))
-
+  
   ,#+cljs IVector
   ,#+cljs (-assoc-n
           [_ k v]
           <<tpl-assoc-n3>>)
-
+  
   ,#+cljs ISequential
   ,#+cljs ISeq
   ,#+cljs (-first
           [_] x)
   ,#+cljs (-rest
           [_] <<tpl-rest3>>)
-
+  
   ,#+cljs INext
   ,#+cljs (-next
           [_] <<tpl-rest3>>)
-
+  
   ,#+cljs ISeqable
   ,#+cljs (-seq
           [_] _)
-
+  
   ,#+cljs IReversible
   ,#+cljs (-rseq
           [_] <<tpl-rseq3>>)
-
+  
   ,#+cljs IIndexed
   ,#+cljs (-nth
           [_ k] <<tpl-nth-err3>>)
   ,#+cljs (-nth
           [_ k nf] <<tpl-nth-nf3>>)
-
+  
   ,#+cljs ICollection
   ,#+cljs (-conj
           [_ w] [x y z w])
-
+  
   ,#+cljs IStack
   ,#+cljs (-peek
           [_] z)
   ,#+cljs (-pop
           [_] (Vec2. x y))
-
+  
   ,#+cljs IComparable
   ,#+cljs (-compare
           [_ o]
           <<tpl-compare3>>)
-
+  
   ,#+cljs IHash
   ,#+cljs (-hash
-          [_] (-> (hash x)
-                  (hash-combine (hash y))
-                  (hash-combine (hash z))))
-
+          [_]
+          (mix-collection-hash
+           (-> 31 (+ (hash x))
+               (bit-or 0)
+               (imul 31) (+ (hash y))
+               (bit-or 0)
+               (imul 31) (+ (hash z))
+               (bit-or 0))
+           3))
+  
   ,#+cljs IEquiv
   ,#+cljs (-equiv
           [_ o]
@@ -875,7 +901,7 @@ injected in the appropriate places of the code.
             (and (== x (.-x ^Vec3 o)) (== y (.-y ^Vec3 o)) (== z (.-z ^Vec3 o)))
             (and (sequential? o) (= 3 (count o))
                  (= x (nth o 0)) (= y (nth o 1)) (= z (nth o 2)))))
-
+  
   ,#+cljs IReduce
   ,#+cljs (-reduce
           [coll f]
@@ -883,7 +909,7 @@ injected in the appropriate places of the code.
   ,#+cljs (-reduce
           [coll f start]
           <<tpl-reduce3-start>>)
-
+  
   ,#+cljs Object
   ,#+cljs (toString
           [_] (str "[" x " " y " " z "]"))
@@ -1016,6 +1042,19 @@ injected in the appropriate places of the code.
     (max (max y ay) by)
     (max (max z az) bz)))
 #+END_SRC
+*** PDeltaEquals
+#+BEGIN_SRC clojure :noweb-ref vec3
+  m/PDeltaEquals
+  (delta=
+   [_ v] (m/delta= _ v *eps*))
+  (delta=
+   [_ v eps]
+   (and (sequential? v)
+        (== 3 (count v))
+        (m/delta= x (nth v 0) eps)
+        (m/delta= y (nth v 1) eps)
+        (m/delta= z (nth v 2) eps)))
+#+END_SRC
 *** PMagnitude
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PMagnitude
@@ -1122,21 +1161,24 @@ injected in the appropriate places of the code.
   (slope-yz [_] (/ z y))
 #+END_SRC
 *** PPolar
+
+- http://mathworld.wolfram.com/SphericalCoordinates.html
+- http://rbrundritt.wordpress.com/2008/10/14/conversion-between-spherical-and-cartesian-coordinates-systems/
+
 #+BEGIN_SRC clojure :noweb-ref vec3
-  ;; http://mathworld.wolfram.com/SphericalCoordinates.html
   g/PPolar
   (as-polar
    [_]
     (let [r (g/mag _)
-          theta (Math/atan2 y x)
-          phi (Math/acos (/ z r))]
-      (Vec3. r (if (neg? theta) (+ TWO_PI theta) theta) phi)))
+          theta (Math/asin (/ z r))
+          phi (Math/atan2 y x)]
+      (Vec3. r theta phi)))
   (as-cartesian [_]
-    (let [rsphi (* (Math/sin z) x)]
+    (let [rcos (* x (Math/cos y))]
       (Vec3.
-       (* (Math/cos y) rsphi)
-       (* (Math/sin y) rsphi)
-       (* (Math/cos z) x))))
+       (* rcos (Math/cos z))
+       (* rcos (Math/sin z))
+       (* x    (Math/sin y)))))
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :noweb-ref vec3
@@ -1144,7 +1186,7 @@ injected in the appropriate places of the code.
 #+END_SRC
 *** Override print methods
 #+BEGIN_SRC clojure :noweb-ref vec3
-  #+clj (defmethod print-method Vec3 [o ^java.io.Writer w] (.write w (.toString o)))
+  #+clj (defmethod print-method Vec3 [^Vec3 o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 ** Vector operations
 *** 2D
@@ -1154,7 +1196,7 @@ injected in the appropriate places of the code.
     (loop [ax (.-x acc), ay (.-y acc), xs xs]
       (if xs
         (let [v ^Vec2 (first xs)]
-          (recur (op ax (.-x v)) (op ay (.-y v)) (next xs)))
+          (recur (double (op ax (.-x v))) (double (op ay (.-y v))) (next xs)))
         (Vec2. ax ay))))
 
   (defn vec2-op-seq2
@@ -1162,7 +1204,7 @@ injected in the appropriate places of the code.
     (loop [ax (.-x acc), ay (.-y acc), as as]
       (if as
         (let [v ^Vec2 (first as)]
-          (recur (op ax (.-x v)) (op ay (.-y v)) (next as)))
+          (recur (double (op ax (.-x v))) (double (op ay (.-y v))) (next as)))
         (let [[bx by] (if (number? b) [b b] b)]
           (Vec2. (op2 ax bx) (op2 ay by))))))
 
@@ -1268,7 +1310,7 @@ injected in the appropriate places of the code.
     (loop [ax (.-x acc), ay (.-y acc), az (.-z acc), xs xs]
       (if xs
         (let [v ^Vec3 (first xs)]
-          (recur (op ax (.-x v)) (op ay (.-y v)) (op az (.-z v)) (next xs)))
+          (recur (double (op ax (.-x v))) (double (op ay (.-y v))) (double (op az (.-z v))) (next xs)))
         (Vec3. ax ay az))))
 
   (defn vec3-op-seq2
@@ -1276,7 +1318,7 @@ injected in the appropriate places of the code.
     (loop [ax (.-x acc), ay (.-y acc), az (.-z acc), as as]
       (if as
         (let [v ^Vec3 (first as)]
-          (recur (op ax (.-x v)) (op ay (.-y v)) (op az (.-z v)) (next as)))
+          (recur (double (op ax (.-x v))) (double (op ay (.-y v))) (double (op az (.-z v))) (next as)))
         (let [[bx by bz] (if (number? b) [b b b] b)]
           (Vec3. (op2 ax bx) (op2 ay by) (op2 az bz))))))
 

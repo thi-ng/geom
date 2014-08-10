@@ -79,7 +79,7 @@
 **** PMatrixConvert
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PMatrixConvert
-    (as-matrix [_]))
+    (as-matrix [_] [_ opts]))
 #+END_SRC
 **** PMinMax
 #+BEGIN_SRC clojure :noweb-ref protos-math
@@ -224,9 +224,9 @@ access to entities in this context.
   (defprotocol PNormalAccess
     (compute-face-normals [_])
     (compute-vertex-normals [_])
-    (face-normals [_])
+    (face-normals [_ force?])
     (face-normal [_ f])
-    (vertex-normals [_])
+    (vertex-normals [_ force?])
     (vertex-normal [_ v]))
 #+END_SRC
 *** Shape based & structural operations
@@ -307,7 +307,6 @@ access to entities in this context.
     (extrude [_ opts])
     (extrude-shell [_ opts]))
 #+END_SRC
-
 **** PFlip
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PFlip
@@ -327,21 +326,33 @@ access to entities in this context.
 #+END_SRC
 **** PMeshConvert
 
-Anything which can be turned into a 2D or 3D mesh will implement _
-protocol consisting of just _ one function: =as-mesh=.
+Anything which can be turned into a 2D or 3D mesh will implement this
+protocol consisting of just this one function:
 
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PMeshConvert
     (as-mesh [_] [_ opts]
-      "Transforms the current enitity into a Mesh instance"))
+      "Transforms the current enitity into a mesh instance"))
  #+END_SRC
+**** PPointMap
+
+This protocol is intended to provide domain transfers of points from
+one shape into another.
+
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol PPointMap
+    (map-point [_ p])
+    (unmap-point [_ p]))
+#+END_SRC
 **** PPolygonConvert
-       Anything which can be turned into a polygon will implement _
-       protocol consisting of just _ one function: =as-polygon=.
+
+Anything which can be turned into a 2D polygon will implement this
+protocol consisting of just this one function:
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PPolygonConvert
     (as-polygon [_] [_ res]
-      "Transforms current entity into a Polygon instance"))
+      "Transforms current entity into a Polygon2 instance"))
 #+END_SRC
 **** PProximity
 #+BEGIN_SRC clojure :noweb-ref protos-shape
@@ -403,7 +414,8 @@ protocol consisting of just _ one function: =as-mesh=.
 **** PGeomContainer
 #+BEGIN_SRC clojure :noweb-ref protos-types
   (defprotocol PGeomContainer
-    (into [_ m]))
+    (into [_ m])
+    (empty [_]))
 #+END_SRC
 
 ** Constants
@@ -415,7 +427,7 @@ protocol consisting of just _ one function: =as-mesh=.
 ** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core
-    (:refer-clojure :exclude [+ - * min max into]))
+    (:refer-clojure :exclude [+ - * min max into empty]))
 
   <<constants>>
 

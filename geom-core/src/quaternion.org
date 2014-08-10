@@ -82,13 +82,13 @@ of the code.
 #+END_SRC
 
 ** Implementation
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   (deftype Quat4
     ,#+clj  [^double x ^double y ^double z ^double w]
     ,#+cljs [x y z w]
 #+END_SRC
 *** Clojure protocols
-#+BEGIN_SRC clojure :noweb-ref quat :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   ,#+clj clojure.lang.ILookup
   ,#+clj (valAt
          [_ k] (swizzle4 _ k nil))
@@ -208,84 +208,92 @@ of the code.
   #+clj (clone [_] (Quat4. x y z w))
 #+END_SRC
 *** ClojureScript protocols
-#+BEGIN_SRC clojure :noweb-ref quat :noweb yes
+#+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   ,#+cljs ICloneable
   ,#+cljs (-clone
           [_] (Quat4. x y z w))
-
+  
   ,#+cljs ILookup
   ,#+cljs (-lookup
           [_ k] (swizzle4 _ k nil))
   ,#+cljs (-lookup
           [_ k nf] (swizzle4 _ k nf))
-
+  
   ,#+cljs IFn
   ,#+cljs (-invoke
           [_ k] (swizzle4 _ k nil))
   ,#+cljs (-invoke
           [_ k nf] (swizzle4 _ k nf))
-
+  
   ,#+cljs ICounted
   ,#+cljs (-count
           [_] 4)
-
+  
   ,#+cljs IAssociative
   ,#+cljs (-contains-key?
           [_ k] <<tpl-contains-key>>)
   ,#+cljs (-assoc
           [_ k v] (swizzle4-assoc _ k v))
-
+  
   ,#+cljs IVector
   ,#+cljs (-assoc-n
           [_ k v]
           <<tpl-assoc-n>>)
-
+  
   ,#+cljs ISequential
   ,#+cljs ISeq
   ,#+cljs (-first
           [_] x)
   ,#+cljs (-rest
           [_] <<tpl-rest>>)
-
+  
   ,#+cljs INext
   ,#+cljs (-next
           [_] <<tpl-rest>>)
-
+  
   ,#+cljs ISeqable
   ,#+cljs (-seq
           [_] _)
-
+  
   ,#+cljs IReversible
   ,#+cljs (-rseq
           [_] <<tpl-rseq>>)
-
+  
   ,#+cljs IIndexed
   ,#+cljs (-nth
           [_ k] <<tpl-nth-err>>)
   ,#+cljs (-nth
           [_ k nf] <<tpl-nth-nf>>)
-
+  
   ,#+cljs ICollection
   ,#+cljs (-conj
           [_ v] <<tpl-conj>>)
-
+  
   ,#+cljs IStack
   ,#+cljs (-peek
           [_] w)
   ,#+cljs (-pop
           [_] <<tpl-pop>>)
-
+  
   ,#+cljs IComparable
   ,#+cljs (-compare
           [_ o]
           <<tpl-compare>>)
-
+  
   ,#+cljs IHash
   ,#+cljs (-hash
-          [_] (-> (hash x)
-                  (hash-combine (hash y))
-                  (hash-combine (hash z))))
-
+          [_]
+          (mix-collection-hash
+           (-> (+ 31 (hash x))
+               (bit-or 0)
+               (imul 31) (+ (hash y))
+               (bit-or 0)
+               (imul 31) (+ (hash z))
+               (bit-or 0)
+               (imul 31) (+ (hash w))
+               (bit-or 0))
+           4))
+  
   ,#+cljs IEquiv
   ,#+cljs (-equiv
           [_ o]
@@ -298,14 +306,14 @@ of the code.
 #+END_SRC
 
 *** PScale
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PScale
   (scale
    [_ s]
    (Quat4. (* x s) (* y s) (* z s) (* w s)))
 #+END_SRC
 *** PRotate3D
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PRotate3D
   (rotate-x
    [_ theta]
@@ -336,7 +344,7 @@ of the code.
       (mm/msub w c z s))))
 #+END_SRC
 *** PMathOps
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PMathOps
   (+
    [_ q]
@@ -378,8 +386,22 @@ of the code.
       (mm/maddsub z' rw w' rz x' ry y' rx)
       (mm/msub w' rw x' rx y' ry z' rz))))
 #+END_SRC
+*** PDeltaEquals
+#+BEGIN_SRC clojure :noweb-ref impl
+  m/PDeltaEquals
+  (delta=
+   [_ q] (m/delta= _ q *eps*))
+  (delta=
+   [_ q eps]
+   (and (sequential? q)
+        (== 4 (count q))
+        (m/delta= x (nth q 0) eps)
+        (m/delta= y (nth q 1) eps)
+        (m/delta= z (nth q 2) eps)
+        (m/delta= w (nth q 3) eps)))
+#+END_SRC
 *** PDotProduct
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PDotProduct
   (dot
    [_ q]
@@ -387,7 +409,7 @@ of the code.
      (mm/madd x (.-x q) y (.-y q) z (.-z q) w (.-w q))))
 #+END_SRC
 *** PMagnitude
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PMagnitude
   (mag
    [_] (Math/sqrt (mm/madd x x y y z z w w)))
@@ -395,7 +417,7 @@ of the code.
    [_] (mm/madd x x y y z z w w))
 #+END_SRC
 *** PNormalize
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PNormalize
   (normalize [_]
     (let [m (Math/sqrt (mm/madd x x y y z z w w))]
@@ -404,13 +426,13 @@ of the code.
         _)))
 #+END_SRC
 *** PConjugate
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PConjugate
   (conjugate [_]
     (Quat4. (- x) (- y) (- z) w))
 #+END_SRC
 *** PInvert
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PInvert
   (invert [_]
     (let [d (g/mag-squared _)
@@ -419,14 +441,14 @@ of the code.
       (Quat4. (* x id) (* y id) (* z id) (* w d))))
 #+END_SRC
 *** PInterpolate
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PInterpolate
   (mix [_ q] (g/mix _ q 0.5))
   (mix [_ q t]
     (let [d (g/dot _ q)]
       (if (< (m/abs d) 1.0)
         (let [theta (Math/acos d)
-              stheta (Math/sqrt (mm/madd d d -1.0))
+              stheta (Math/sqrt (mm/madd d (- d) 1.0))
               [a b] (if (< (m/abs stheta) 0.001)
                       [0.5 0.5]
                       [(/ (Math/sin (mm/subm 1.0 t theta)) stheta)
@@ -440,39 +462,33 @@ of the code.
         _)))
 #+END_SRC
 *** PMatrixConvert
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PMatrixConvert
   (as-matrix
-   [_]
-   (let [x2 (+ x x)
+   [_] (g/as-matrix _ nil))
+  (as-matrix
+   [_ opts]
+   (let [[tx ty tz] (:translate opts)
+         x2 (+ x x)
          y2 (+ y y)
          z2 (+ z z)
          xx (* x x2)
-         yx (* y x2)
+         xy (* x y2)
+         xz (* x z2)
          yy (* y y2)
-         zx (* z x2)
-         zy (* z y2)
+         yz (* y z2)
          zz (* z z2)
          wx (* w x2)
          wy (* w y2)
          wz (* w z2)]
      (thi.ng.geom.core.matrix.Matrix44.
-      (mm/sub 1.0 yy zz) ;m00
-      (- yx wz)     ;m10
-      (+ zx wy)     ;m20
-      0.0
-      (+ yx wz)     ;m01
-      (mm/sub 1.0 xx zz) ;m11
-      (- zy wx)     ;m21
-      0.0
-      (- zx wy)     ;m02
-      (+ zy wx)     ;m12
-      (mm/sub 1.0 xx yy) ;m22
-      0.0
-      0.0 0.0 0.0 1.0)))
+      (- 1.0 (+ yy zz)) (+ xy wz) (- xz wy) 0.0
+      (- xy wz) (- 1.0 (+ xx zz)) (+ yz wx) 0.0
+      (+ xz wy) (- yz wx) (- 1.0 (+ xx yy)) 0.0
+      (or tx 0.0) (or ty 0.0) (or tz 0.0) 1.0)))
 #+END_SRC
 *** PVectorTransform
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PVectorTransform
   (transform-vector
    [_ [vx vy vz :as v]]
@@ -487,26 +503,30 @@ of the code.
       (mm/maddsub iz w iw nz ix ny iy nx))))
 #+END_SRC
 *** End of implementation
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
     )
 #+END_SRC
 *** Override print methods
-#+BEGIN_SRC clojure :noweb-ref quat
+#+BEGIN_SRC clojure :noweb-ref impl
   #+clj (defmethod print-method Quat4 [o ^java.io.Writer w] (.write w (.toString o)))
+#+END_SRC
+** Constants
+#+BEGIN_SRC clojure :noweb-ref const
+  (def ^:const Q (Quat4. 0.0 0.0 0.0 1.0))
 #+END_SRC
 ** Constructors
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn quat
-    ([] (Quat4. 0.0 0.0 0.0 1.0))
+    ([] Q)
     ([[x y z] w] (Quat4. x y z w))
     ([[x y z w]] (Quat4. x y z w))
     ([x y z w] (Quat4. x y z w)))
-
+  
   (defn quat-from-axis-angle
     [axis theta]
     (let [theta (/ theta 2.0)]
-      (quat (g/normalize (v/vec3 axis) (Math/sin theta)) (Math/cos theta))))
-
+      (quat (g/* (v/vec3 axis) (Math/sin theta)) (Math/cos theta))))
+  
   (defn quat-from-euler
     [order & [alpha beta gamma]]
     (let [[a b c] (case order
@@ -518,42 +538,48 @@ of the code.
                     :zyx [V3Z V3Y V3X]
                     (err/illegal-arg! order))]
       (g/* (quat-from-axis-angle a alpha)
-             (quat-from-axis-angle b beta)
-             (quat-from-axis-angle c gamma))))
-
+           (quat-from-axis-angle b beta)
+           (quat-from-axis-angle c gamma))))
+  
   ;; Allan and Mark Watt's "Advanced Animation and Rendering Techniques"
   ;; (ACM Press 1992)
+  ;; http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+  
   (defn quat-from-matrix
     [^Matrix44 m]
     (let [trace (mm/add (.-m00 m) (.-m11 m) (.-m22 m))]
       (if (pos? trace)
-        (let [s (Math/sqrt (inc trace))
-              w (/ s 2.0)
-              s (/ 0.5 s)]
+        (let [s (/ 0.5 (Math/sqrt (inc trace)))]
           (Quat4.
-           (mm/subm (.-m21 m) (.-m12 m) s)
-           (mm/subm (.-m02 m) (.-m20 m) s)
-           (mm/subm (.-m10 m) (.-m01 m) s) w))
-        (let [[i ii] (if (> (.-m11 m) (.-m00 m))
-                       [1 (.-m11 m)] [0 (.-m00 m)])
-              [i ii] (if (> (.-m22 m) ii)
-                       [2 (.-m22 m)] [i ii])
-              [jj kk jk kj ij ji ik ki]
-              (case i
-                0 [(.-m11 m) (.-m22 m) (.-m12 m) (.-m21 m) (.-m01 m) (.-m10 m) (.-m02 m) (.-m20 m)]
-                1 [(.-m22 m) (.-m00 m) (.-m20 m) (.-m02 m) (.-m12 m) (.-m21 m) (.-m10 m) (.-m01 m)]
-                2 [(.-m00 m) (.-m11 m) (.-m01 m) (.-m10 m) (.-m20 m) (.-m02 m) (.-m21 m) (.-m12 m)])
-              s (Math/sqrt (inc (- ii (+ jj kk))))
-              x (/ s 2.0)
-              s (/ 0.5 s)
-              qj (mm/addm ij ji s)
-              qk (mm/addm ik ki s)
-              qw (mm/subm kj jk s)]
-          (case i
-            0 (Quat4. x qj qk qw)
-            1 (Quat4. qk x qj qw)
-            2 (Quat4. qj qk x qw))))))
-
+           (mm/subm (.-m12 m) (.-m21 m) s)
+           (mm/subm (.-m20 m) (.-m02 m) s)
+           (mm/subm (.-m01 m) (.-m10 m) s)
+           (/ 0.25 s)))
+        (g/normalize
+         (if (and (> (.-m00 m) (.-m11 m)) (> (.-m00 m) (.-m22 m)))
+           (let [s (* 2.0 (Math/sqrt (inc (mm/sub (.-m00 m) (.-m11 m) (.-m22 m)))))
+                 s' (/ s)]
+             (Quat4.
+              (* 0.25 s)
+              (mm/addm (.-m10 m) (.-m01 m) s')
+              (mm/addm (.-m20 m) (.-m02 m) s')
+              (mm/subm (.-m12 m) (.-m21 m) s')))
+           (if (> (.-m11 m) (.-m22 m))
+             (let [s (* 2.0 (Math/sqrt (inc (mm/sub (.-m11 m) (.-m00 m) (.-m22 m)))))
+                   s' (/ s)]
+               (Quat4.
+                (mm/addm (.-m10 m) (.-m01 m) s')
+                (* 0.25 s)
+                (mm/addm (.-m21 m) (.-m12 m) s')
+                (mm/subm (.-m20 m) (.-m02 m) s')))
+             (let [s (* 2.0 (Math/sqrt (inc (mm/sub (.-m22 m) (.-m00 m) (.-m11 m)))))
+                   s' (/ s)]
+               (Quat4.
+                (mm/addm (.-m20 m) (.-m02 m) s')
+                (mm/addm (.-m21 m) (.-m12 m) s')
+                (* 0.25 s)
+                (mm/subm (.-m10 m) (.-m01 m) s')))))))))
+  
   (defn alignment-quat
     [a b]
     (let [d (g/dot a b)]
@@ -642,7 +668,9 @@ of the code.
 
   (declare swizzle4 swizzle4-assoc)
 
-  <<quat>>
+  <<impl>>
+
+  <<const>>
 
   <<ctors>>
 

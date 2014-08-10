@@ -1,59 +1,17 @@
 #+SETUPFILE: ../../src/setup.org
-#+TITLE: thi.ng/geom-types
+#+TITLE: thi.ng/geom-svg
 
 * About the project
 
 ** Overview
 
-This is a sub-project of [[file:../../src/index.org][thi.ng/geom]]. It contains a large collection
-of 2D/3D geometric entities, each implementing a large number of
-[[file:../../geom-core/src/core.org][core protocols]].
+This is a sub-module of [[file:../../src/index.org][thi.ng/geom]] and is in early stage development.
+This module aims to provide drawing and rendering capabilities
+to create SVG assets & visualizations utilizing the types and
+functionality provided by the [[file:../../geom-core/src/index.org][core]] & [[file:~/dev/thing/geom/geom-types/src/index.org][types]] modules. This library also
+uses [[http://github.com/weavejester/hiccup][hiccup]] to serialize assets as SVG format.
 
-*** Geometric entities
-
-| *2D*           | *3D*                      |
-|----------------+---------------------------|
-| Line2          | Line3                     |
-| LineStrip2     | LineStrip3 (TBD)          |
-| Bezier2        | Bezier3 (TBD)             |
-| Circle2        | Circle3 (TBD)             |
-|                | Sphere                    |
-| Ellipse2 (TBD) | Ellipsoid (TBD)           |
-| Rect2          | AABB                      |
-| Quad2 (TBD)    | Quad3                     |
-|                | Tetrahedron               |
-| Triangle2      | Triangle3                 |
-| Polygon2       | Polygon3 (TBD)            |
-| Path2          | Path3 (TBD)               |
-|                | Plane                     |
-|                | GMesh                     |
-
-Once the protocol API is finalized an overview table/graph will show
-which types implement which protocols. For now please consult the
-source code to see which operations are supported.
-
-*** Geometry operations
-
-In addition to these types, this module also implements these common
-operations:
-
-- Automatic spline generation from set of points
-- Basic SVG path parsing
-- 2D Delaunay triangulation
-- 2D convex hull
-- Shape extrusion as solid or walled mesh
-- Tesselation of simple 2D polygons
-- Insetting of simple 2D polygons & 3D convex/planar quads
-- Sutherland-Hodgeman clipping of 2D polygons
-- Entity area, circumference & volume calculations
-- Entity intersection checks (vs. line, ray, shape)
-- Entity to mesh conversion (w/ many options)
-- Access entities as graph-like structures (vertices/edges)
-- Entity sampling (at fixed resolution or uniform distance)
-- Entity subdivision (only lines, rects, quads, tetrahedrons)
-- Subdivision meshes (Catmull-Clark, Doo-Sabin, Butterfly)
-- 3D Boolean/CSG operations on meshes (union, difference, intersection)
-- 3D geometry export (PLY, STL, OBJ, OFF formats)
+[[http://media.thi.ng/geom/svgdemo01.svg]]
 
 ** Status
 
@@ -69,18 +27,23 @@ This template uses shared project configuration defined in [[file:../../src/conf
 Module specific settings are defined below:
 
 #+BEGIN_SRC clojure :exports none :noweb-ref project-name
-thi.ng/geom-types
+thi.ng/geom-svg
 #+END_SRC
 
 #+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref cljs-artefact-path
-target/geom-types-<<conf-version>>.js
+target/geom-svg-<<conf-version>>.js
+#+END_SRC
+
+#+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref dep-hiccup
+[hiccup "1.0.5"]
+[hiccups "0.3.0"]
 #+END_SRC
 
 ** Release history
 
 | *Version* | *Released* | *Description*      | *Lein coordinates*      | *Tagged Github URL*                       |
 |-----------+------------+--------------------+-------------------------+-------------------------------------------|
-|     0.2.0 | 2014-03-10 | 1st public release | =[thi.ng/geom "0.2.0"]= | https://github.com/thi-ng/geom/tree/0.2.0 |
+
 
 ** Contributors
 
@@ -98,20 +61,23 @@ target/geom-types-<<conf-version>>.js
 
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
   (defproject <<project-name>> "<<conf-version>>"
-    :description  "thi.ng geometry kit - types module"
+    :description  "thi.ng geometry kit - SVG module"
     :url          "<<conf-project-url>>"
     :license      {:name "Apache Software License"
                    :url "http://www.apache.org/licenses/LICENSE-2.0"}
     :scm          {:name "git"
                    :url  "<<conf-project-url>>"}
     :dependencies [<<dep-clj>>
-                   <<dep-geom-core>>]
+                   <<dep-geom-core>>
+                   <<dep-geom-types>>
+                   <<dep-hiccup>>]
 
     :source-paths ["src/cljx"]
     :test-paths   ["<<conf-gen-test-path>>"]
 
     :profiles {:dev {:dependencies [<<dep-cljs>>
-                                    <<dep-criterium>>]
+                                    <<dep-criterium>>
+                                    <<dep-geom-meshops>>]
                      :plugins      [<<dep-cljx>>
                                     <<dep-cljsbuild>>
                                     <<dep-cljs-test>>
@@ -162,11 +128,11 @@ target/geom-types-<<conf-version>>.js
 
 ** Accessing library version during runtime
 
-The autogenerated namespace =thi.ng.geom.types.version= contains a single
+The autogenerated namespace =thi.ng.geom.svg.version= contains a single
 symbol =version= holding the version string defined above:
 
 #+BEGIN_SRC clojure :noweb yes
-  (use 'thi.ng.geom.types.version)
+  (use 'thi.ng.geom.svg.version)
   
   (prn version)
   ; "<<conf-version>>"
@@ -174,8 +140,8 @@ symbol =version= holding the version string defined above:
 
 *** Version namespace                                              :noexport:
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/types/version.cljx :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.types.version)
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/version.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.svg.version)
   (def ^:const version "<<conf-version>>")
 #+END_SRC
 
@@ -185,12 +151,12 @@ symbol =version= holding the version string defined above:
 
 The following sections contain links to project modules, but are not
 visibile when reading this file on Github. Please navigate to the
-source files via the normal [[https://github.com/thi-ng/geom/tree/master/geom-types/][GH repo browser]].
+source files via the normal [[https://github.com/thi-ng/geom/tree/master/geom-svg/][GH repo browser]].
 
-** Type definitions
+** Module namespaces
 
-#+INCLUDE: "types.org"             :minlevel 2
+#+INCLUDE: "core.org" :minlevel 2
 
 * Tests
 
-#+INCLUDE: "../test/protocols.org" :minlevel 2
+#+INCLUDE: "../test/core.org"    :minlevel 2

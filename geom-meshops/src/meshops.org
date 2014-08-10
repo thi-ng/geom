@@ -8,83 +8,128 @@
      [thi.ng.common.math.core :as m]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.sphere :as s]
      [thi.ng.geom.line :as l]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.spatialtree :as st]
      [thi.ng.geom.types.utils :as tu]
+     [thi.ng.common.data.core :as d]
      [clojure.set :as set]))
 #+END_SRC
 
 ** Utilities
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/ops.cljx
   (defn find-in-tree
-    "Returns the first item in the bounding box with size `eps` surrounding `p` in the given octree."
-    [t eps half-eps p]
-    (let [b (a/aabb (g/- p half-eps) eps)]
-      (first (st/select-with-shape b t))))
+    "Takes a query radius `eps`, returns a fn which queries an octree
+    with a spherical region around `p` using the pre-configured radius.
+    Returns the closest point found (if any)."
+    [eps]
+    (let [eps2 (* eps eps)]
+      (fn [tree p]
+        (->> tree
+             (st/select-with
+              #(isec/intersect-aabb-sphere? (:p %) (g/+ (:p %) (:size %)) p eps)
+              #(<= (g/dist-squared p %) eps2))
+             (persistent!)
+             (sort-by #(g/dist-squared p %))
+             (first)))))
   
   (defn unique-point-tree
     [points eps]
-    (let [{[bx by bz] :p [sx sy sz] :size} (tu/bounding-box points)
-          eps (vec3 eps)
-          eps2 (g/* eps 0.5)
-          [tree dupes]
-          (reduce
-            (fn [[t dupes :as state] p]
-              (if (find-in-tree t eps eps2 p)
-                [t (conj! dupes p)]
-                [(st/add-point t p) dupes]))
-            [(st/octree bx by bz sx sy sz) (transient [])]
-            points)]
+    (let [finder (find-in-tree (/ eps 2.0))
+          [tree dupes] (reduce
+                        (fn [[t dupes :as state] p]
+                          (if (finder t p)
+                            [t (conj! dupes p)]
+                            [(g/add-point t p) dupes]))
+                        [(st/octree (tu/bounding-box (seq points))) (transient [])]
+                        points)]
       [tree (persistent! dupes)]))
   
   (defn collapse-edges
     [m eps]
-    (reduce
-      (fn [m e] (if (get-in m [:edges e]) (gm/merge-vertices* m (first e) (second e)) m))
-      m
-      (filter
+    (let [eps* (* eps eps)]
+      (reduce
+       (fn [m e] (if (get-in m [:edges e]) (gm/merge-vertices* m (first e) (second e)) m))
+       m
+       (filter
         (fn [e] (let [[a b] (seq e)] (< (g/dist-squared a b) eps)))
-        (keys (:edges m)))))
+        (keys (:edges m))))))
   
-  (defn unify-vertices
-    [{:keys [vertices faces]} eps]
-    (let [[octree dupes] (unique-point-tree (keys vertices) eps)
-          eps (vec3 eps)
-          eps2 (g/* eps 0.5)
-          lookup #(find-in-tree octree eps eps2 %)]
-      [(reduce
-         (fn [m [a b c]] (g/add-face m [(lookup a) (lookup b) (lookup c)]))
-         (gm/gmesh) faces)
+  (defn canonicalize-vertices
+    [mesh eps]
+    (let [[tree dupes] (unique-point-tree (g/vertices mesh) eps)
+          finder (find-in-tree (/ eps 2.0))]
+      [(reduce (fn [m f] (g/add-face m (mapv #(finder tree %) f))) (g/empty mesh) (g/faces mesh))
        dupes]))
+  
+  (defn face-permutations
+    [f]
+    (take (count f) (iterate #(d/rotate-left 1 %) f)))
+  
+  (defn remove-internal
+    "Takes a mesh and removes all faces which have coincident vertices,
+    but opposite orientation. Returns updated mesh."
+    [mesh]
+    (->> (g/faces mesh)
+         (reduce
+          (fn [acc f]
+            (let [dupes (filter acc (face-permutations (reverse f)))]
+              (if (seq dupes)
+                (reduce disj acc (cons f dupes))
+                acc)))
+          (set (g/faces mesh)))
+         (assoc mesh :faces)))
+  
+  (defn remove-internal-with-edges
+    [mesh]
+    (let [mesh (g/compute-face-normals mesh)]
+      (->> (g/edges mesh)
+           (reduce
+            (fn [acc e]
+              (let [ef (get-in mesh [:edges e])]
+                (if (> (count ef) 1)
+                  (let [efn (select-keys (:fnormals mesh) ef)
+                        ef (set ef)
+                        acc (reduce
+                             (fn [acc [f n]]
+                               (let [ni (g/- n)
+                                     dup (filter #(m/delta= ni (efn %)) (disj ef f))]
+                                 (if (seq dup) (apply disj acc dup) acc)))
+                             acc efn)]
+                    acc)
+                  acc)))
+            (set (g/faces mesh)))
+           (assoc mesh :faces))))
   
   (defn make-watertight
     [{:keys [vertices edges] :as m} eps]
     (let [split-face (fn [v e [fa fb fc :as f]]
                        (cond
-                         (= e #{fa fb}) [f [fa v fc] [v fb fc]]
-                         (= e #{fb fc}) [f [fa fb v] [v fc fa]]
-                         :default [f [fc v fb] [v fa fb]]))
+                        (= e #{fa fb}) [f [fa v fc] [v fb fc]]
+                        (= e #{fb fc}) [f [fa fb v] [v fc fa]]
+                        :default [f [fc v fb] [v fa fb]]))
           update-face (fn [m [f f1 f2]]
-                       (-> (g/remove-face m f)
-                           (g/add-face f1)
-                           (g/add-face f2)))]
+                        (-> (g/remove-face m f)
+                            (g/add-face f1)
+                            (g/add-face f2)))]
       (reduce
-        (fn [m v]
-          (let [vedges (into #{} (map (fn [n] #{v n}) (g/vertex-neighbors m v)))
-                coeff #(gu/closest-point-coeff v % %2)
-                v-on-edge? (fn [a b]
-                             (let [t (coeff a b)
-                                   p (if (m/in-range? 0.01 0.99 t) (g/mix a b t))]
-                               (if (and p (< (g/dist-squared v p) eps)) p)))]
-            (loop [edges (set/difference (into #{} (keys (:edges m))) vedges)]
-              (if-let [e (first edges)]
-                (let [[a b] (seq e) p (v-on-edge? a b)]
-                  (if p
-                    (reduce update-face m (map #(split-face v e %) (get-in m [:edges e])))
-                    (recur (rest edges))))
-                m))))
-        m (keys vertices))))
+       (fn [m v]
+         (let [vedges (into #{} (map (fn [n] #{v n}) (g/vertex-neighbors m v)))
+               coeff #(gu/closest-point-coeff v % %2)
+               v-on-edge? (fn [a b]
+                            (let [t (coeff a b)
+                                  p (if (m/in-range? 0.01 0.99 t) (g/mix a b t))]
+                              (if (and p (< (g/dist-squared v p) eps)) p)))]
+           (loop [edges (set/difference (into #{} (keys (:edges m))) vedges)]
+             (if-let [e (first edges)]
+               (let [[a b] (seq e) p (v-on-edge? a b)]
+                 (if p
+                   (reduce update-face m (map #(split-face v e %) (get-in m [:edges e])))
+                   (recur (rest edges))))
+               m))))
+       m (keys vertices))))
 #+END_SRC

@@ -93,11 +93,32 @@
     ([c' coll]
        (center (centroid coll) c' coll))
     ([c c' coll]
-       (let [d (- c' c)] (mapv #(g/+ % d) coll))))
+       (let [d (g/- c' c)] (mapv #(g/+ % d) coll))))
 
   (defn scale-size
     ([s coll] (scale-size (centroid coll) s coll))
     ([c s coll] (mapv #(-> % (g/- c) (g/madd s c)) coll)))
+#+END_SRC
+
+*** Area & volume
+
+Volume calculation is using [[file:triangle.org::*Triangle3][signed volume implementation of Triangle3]].
+
+#+BEGIN_SRC clojure :noweb-ref area-volume
+  (defn total-area-3d
+    [faces]
+    (->> faces
+         (r/mapcat tessellate-with-first)
+         (r/map #(->> % (apply tri-area3) m/abs))
+         (r/fold +)))
+  
+  (defn total-volume
+    [faces]
+    (->> faces
+         (r/mapcat tessellate-with-first)
+         (r/map #(g/dot (% 0) (g/cross (% 1) (% 2))))
+         (r/fold +)
+         (* (/ 6.0))))
 #+END_SRC
 
 *** Bounds
@@ -112,31 +133,31 @@
                  [p (g/- q p)])
        (= c 1) [x zero]
        :default nil)))
-
+  
   (defn bounding-rect
     [points]
     (bounds* v/vec2-op-seq V2 points))
-
+  
   (defn bounding-box
     [points]
     (bounds* v/vec3-op-seq V3 points))
-
+  
   (defn radial-bounds
     [ctor c r-or-points]
     [(ctor c)
      (if (coll? r-or-points)
        (max-dist c r-or-points)
        r-or-points)])
-
+  
   (defn axis-bounds
     [axis coll]
     (let [xs (map #(nth % axis) coll)]
       [(reduce min xs) (reduce max xs)]))
-
+  
   (defn axis-range
     [axis coll]
     (- (apply - (axis-bounds axis coll))))
-
+  
   (defn delta-contains
     [points p eps]
     (some #(m/delta= p % eps) points))
@@ -181,7 +202,7 @@
           samples (loop [t 0.0, i 1, acc []]
                     (if (< t 1.0)
                       (let [[p i] (point-at* points idx total t i)]
-                        (recur (+ t delta) i (conj acc p)))
+                        (recur (+ t delta) (int i) (conj acc p)))
                       acc))]
       (if include-last?
         (conj samples (last points))
@@ -201,6 +222,40 @@
       (if include-b? ls (butlast ls))))
 #+END_SRC
 
+*** Interpolation
+
+  : d +----+ c
+  :   |    |
+  :   |    |
+  : a +----+ b
+
+#+BEGIN_SRC clojure :noweb-ref interpolate
+  (defn map-bilinear
+    "Takes a seq of 4 points in ccw order and 2D vector of normalized UV
+    coordinates. Applies bilinear interpolation to compute point within
+    the rect: U is coord along AB/DC edge, V along BC/AD"
+    [[a b c d] [u v]]
+    (g/mix a b d c u v))
+#+END_SRC
+
+  : e +----+ h
+  :   |\   :\
+  :   |f+----+ g
+  :   | |  : |
+  : a +-|--+d|
+  :    \|   \|
+  :   b +----+ c
+
+#+BEGIN_SRC clojure :noweb-ref interpolate
+  (defn map-trilinear
+    "Takes a seq of 8 points defining a cuboid and vector of normalized
+    UVW coordinates. Applies trilinear interpolation to compute point
+    within the cuboid: U is coord along AD/BC edge, V along AE/BF, W
+    along AB/DC (see above diagram)"
+    [[a b c d e f g h] [u v w]]
+    (g/mix (g/mix a d e h u v) (g/mix b c f g u v) w))
+#+END_SRC
+
 *** Tessellation
 
 #+BEGIN_SRC clojure :noweb-ref tessellate
@@ -218,6 +273,13 @@
       (let [[v0 & more] points]
         (map (fn [[a b]] [v0 a b]) (d/successive-nth 2 more)))
       [points]))
+
+  (defn tessellate-tri-with-midpoints
+    [[a b c]]
+    (let [ab (g/mix a b)
+          bc (g/mix b c)
+          ca (g/mix c a)]
+      [[a ab ca] [ab b bc] [bc c ca] [ab bc ca]]))
 
   (defn tessellate-3
     [points]
@@ -262,25 +324,59 @@
     [a b c] (neg? (norm-sign2 a b c)))
 
   (defn clockwise3?
-    [a b c] (neg? (norm-sign3 a b c)))
-#+END_SRC
+    [a b c n] (pos? (g/dot (g/cross (g/- b a) (g/- c a)) n)))
 
+  (defn triangle-barycentric-coords
+    ([[a b c] p]
+       (triangle-barycentric-coords a b c p (g/- b a) (g/- c a)))
+    ([a b c p]
+       (triangle-barycentric-coords a b c p (g/- b a) (g/- c a)))
+    ([a b c p u v]
+       (let [w (g/- p a)
+             uu (g/mag-squared u)
+             vv (g/mag-squared v)
+             uv (g/dot u v)
+             wu (g/dot w u)
+             wv (g/dot w v)
+             denom (/ 1.0 (mm/msub uv uv uu vv))
+             s (* denom (mm/msub uv wv vv wu))
+             t (* denom (mm/msub uv wu uu wv))]
+         [(- 1.0 (+ s t)) s t])))
+
+  (defn point-in-triangle2?
+    [p a b c]
+    (if (clockwise2? a b c)
+      (and (>= (norm-sign2 a c p) 0.0)
+           (>= (norm-sign2 b a p) 0.0)
+           (>= (norm-sign2 c b p) 0.0))
+      (and (>= (norm-sign2 b c p) 0.0)
+           (>= (norm-sign2 a b p) 0.0)
+           (>= (norm-sign2 c a p) 0.0))))
+
+  (defn point-in-triangle3?
+    [p a b c]
+    (let [u (g/- b a)
+          v (g/- c a)
+          n (ortho-normal u v)
+          cl (- (g/dot n p) (g/dot n a))]
+      (if (m/delta= 0.0 cl)
+        (let [[u v w] (triangle-barycentric-coords a b c p u v)]
+          (and (>= u 0.0) (>= w 0.0) (m/in-range? 0.0 1.0 v))))))
+#+END_SRC
 
 ** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/utils.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.utils
+    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V2 V3]]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m :refer [*eps*]]
-     ,#+clj [thi.ng.macromath.core :as mm])
-    ,#+cljs
-    (:require-macros
-     [thi.ng.macromath.core :as mm])
-    ,#+clj
-    (:import
-     [thi.ng.geom.core.vector Vec2 Vec3]))
+     ,#+clj [thi.ng.macromath.core :as mm]
+     [clojure.core.reducers :as r]))
+
+  (declare tri-area3)
 
   <<dist>>
 
@@ -290,9 +386,13 @@
 
   <<sample>>
 
+  <<interpolate>>
+
   <<tessellate>>
 
   <<normals>>
 
   <<triangles>>
+
+  <<area-volume>>
 #+END_SRC

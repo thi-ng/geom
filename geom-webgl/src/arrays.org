@@ -1,0 +1,71 @@
+#+SETUPFILE: ../../src/setup.org
+
+* thi.ng.geom.webgl.arrays
+
+** TODO migrate into thi.ng.common.data
+** TODO add ArrayBufferView fns
+
+** Templates
+
+#+NAME: tpl-ctor
+#+BEGIN_SRC emacs-lisp :var fn="" :var type=""
+  (replace-regexp-in-string "{{fn}}" fn
+   (replace-regexp-in-string "{{type}}" type
+  "(defn {{fn}}
+    \"Creates a native {{type}} of the given size or from `coll`.\"
+     [size-or-coll]
+     (if (number? size-or-coll)
+       (js/{{type}}. size-or-coll)
+       (let [len (count size-or-coll)
+             buf (js/{{type}}. len)]
+         (loop [i 0, coll size-or-coll]
+           (when (< i len)
+             (aset buf i (first coll))
+             (recur (inc i) (next coll))))
+         buf)))"))
+#+END_SRC
+
+** Typed array constructors
+
+#+BEGIN_SRC clojure :noweb-ref ctors :noweb yes
+  <<tpl-ctor(fn="int8", type="Int8Array")>>
+
+  <<tpl-ctor(fn="uint8", type="Uint8Array")>>
+
+  <<tpl-ctor(fn="uint8-clamped", type="Uint8ClampedArray")>>
+
+  <<tpl-ctor(fn="int16", type="Int16Array")>>
+
+  <<tpl-ctor(fn="uint16", type="Uint16Array")>>
+
+  <<tpl-ctor(fn="int32", type="Int32Array")>>
+
+  <<tpl-ctor(fn="uint32", type="Uint32Array")>>
+
+  <<tpl-ctor(fn="float32", type="Float32Array")>>
+
+  <<tpl-ctor(fn="float64", type="Float64Array")>>
+#+END_SRC
+
+** Helpers
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn typed-array?
+    [x]
+    (let [t (type x)]
+      (or
+       (= t js/Int8Array)    (= t js/Uint8Array)  (= t js/Uint8ClampedArray)
+       (= t js/Int16Array)   (= t js/Uint16Array)
+       (= t js/Int32Array)   (= t js/Uint32Array)
+       (= t js/Float32Array) (= t js/Float64Array))))
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/arrays.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.webgl.arrays)
+
+  <<ctors>>
+
+  <<helpers>>
+#+END_SRC

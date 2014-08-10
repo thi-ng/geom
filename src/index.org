@@ -117,8 +117,20 @@ where only vectors/matrix ops are needed.
 *** [[file:../geom-meshops/src/index.org][geom-meshops]]
 
 This module provides several tools & operations related to working
-with meshes, incl. I/O, subdivisions, triangulation, cleaning,
-CSG/Boolean mesh merge etc.
+with meshes, incl. I/O, subdivisions, Delaunay triangulation,
+cleaning, CSG/Boolean mesh merge etc.
+
+*** [[file:../geom-svg/src/index.org][geom-svg]]
+
+A module to help with building SVG based visualizations of geom
+entities (incl. a customizable 3D mesh renderer). CLJS support for
+this module is planned, but currently untested.
+
+*** [[../geom-webgl/src/index.org][geom-webgl]]
+
+This is a pure CLJS module and provides a number of conversion &
+rendering functions to simplify the use of types defined in the
+=geom-types= module under CLJS with WebGL.
 
 ** Status
 
@@ -140,6 +152,7 @@ A preliminary list of other projects using this library:
 - [[http://github.com/learn-postspectacular/resonate-2014-workshop][Resonate 2014 workshop]]
 - [[http://github.com/thi-ng/luxor][Luxor]]
 - [[http://github.com/thi-ng/morphogen][Morphogen]]
+- [[http://dev.thi.ng/20140523/][WebGL demo]]
 
 The basic examples below show some common usage patterns how entities
 can be created, dissected & transformed in a very functional/pipelined
@@ -278,40 +291,44 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 ** Leiningen project file                                          :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
   (defproject <<project-name>> "<<conf-version>>"
-    :description "thi.ng geometry kit - meta project spec including all modules"
-    :url "<<conf-project-url>>"
-    :license {:name "Apache Software License"
-              :url "http://www.apache.org/licenses/LICENSE-2.0"}
+    :description  "thi.ng geometry kit - meta project spec including all modules"
+    :url          "<<conf-project-url>>"
+    :license      {:name "Apache Software License"
+                   :url  "http://www.apache.org/licenses/LICENSE-2.0"}
+    :scm          {:name "git"
+                   :url  "<<conf-project-url>>"}
     :dependencies [<<dep-clj>>
                    <<dep-geom-core>>
                    <<dep-geom-types>>
-                   <<dep-geom-meshops>>]
+                   <<dep-geom-meshops>>
+                   <<dep-geom-webgl>>
+                   <<dep-geom-svg>>]
 
     :source-paths ["src/cljx"]
-    :test-paths ["<<conf-gen-test-path>>"]
-  
+    :test-paths   ["<<conf-gen-test-path>>"]
+
     :profiles {:dev {:dependencies [<<dep-cljs>>
                                     <<dep-criterium>>]
-                     :plugins [<<dep-cljx>>
-                               <<dep-cljsbuild>>
-                               <<dep-cljs-test>>
-                               <<dep-austin>>]
+                     :plugins      [<<dep-cljx>>
+                                    <<dep-cljsbuild>>
+                                    <<dep-cljs-test>>
+                                    <<dep-austin>>]
                      :hooks [cljx.hooks]
                      :aliases {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]}}}
-  
+
     :cljx {:builds [{:source-paths ["src/cljx"]
-                     :output-path "<<conf-gen-source-path>>"
+                     :output-path  "<<conf-gen-source-path>>"
                      :rules :clj}
                     {:source-paths ["src/cljx"]
-                     :output-path "<<conf-gen-source-path>>"
+                     :output-path  "<<conf-gen-source-path>>"
                      :rules :cljs}
                     {:source-paths ["test/cljx"]
-                     :output-path "<<conf-gen-test-path>>"
+                     :output-path  "<<conf-gen-test-path>>"
                      :rules :clj}
                     {:source-paths ["test/cljx"]
-                     :output-path "<<conf-gen-test-path>>"
+                     :output-path  "<<conf-gen-test-path>>"
                      :rules :cljs}]}
-  
+
     :cljsbuild {:builds [{:source-paths ["<<conf-gen-source-path>>" "<<conf-gen-test-path>>"]
                           :id "simple"
                           :compiler {:output-to "<<cljs-artefact-path>>"

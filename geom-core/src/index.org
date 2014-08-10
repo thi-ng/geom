@@ -23,7 +23,7 @@ ALPHA quality, in active development.
 
 ** Building & testing this project
 
-Please see the [[file:../src/index.org][parent project]] for further information.
+Please see the [[file:../../src/index.org][parent project]] for further information.
 
 ** Injected properties                                             :noexport:
 
@@ -60,26 +60,29 @@ target/geom-core-<<conf-version>>.js
 
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
   (defproject <<project-name>> "<<conf-version>>"
-    :description "thi.ng geometry kit - core module"
-    :url "<<conf-project-url>>"
-    :license {:name "Apache Software License"
-              :url "http://www.apache.org/licenses/LICENSE-2.0"}
+    :description  "thi.ng geometry kit - core module"
+    :url          "<<conf-project-url>>"
+    :license      {:name "Apache Software License"
+                   :url  "http://www.apache.org/licenses/LICENSE-2.0"}
+    :scm          {:name "git"
+                   :url  "<<conf-project-url>>"}
     :dependencies [<<dep-clj>>
                    <<dep-common>>
                    <<dep-mmath>>]
-  
+
     :source-paths ["src/cljx"]
-    :test-paths ["<<conf-gen-test-path>>"]
-  
+    :test-paths   ["<<conf-gen-test-path>>"]
+
     :profiles {:dev {:dependencies [<<dep-cljs>>
                                     <<dep-criterium>>]
-                     :plugins [<<dep-cljx>>
-                               <<dep-cljsbuild>>
-                               <<dep-cljs-test>>
-                               <<dep-austin>>]
+                     :plugins      [<<dep-cljx>>
+                                    <<dep-cljsbuild>>
+                                    <<dep-cljs-test>>
+                                    <<dep-austin>>]
+                     :jvm-opts ^:replace []
                      :hooks [cljx.hooks]
                      :aliases {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]}}}
-  
+
     :cljx {:builds [{:source-paths ["src/cljx"]
                      :output-path "<<conf-gen-source-path>>"
                      :rules :clj}
@@ -92,7 +95,7 @@ target/geom-core-<<conf-version>>.js
                     {:source-paths ["test/cljx"]
                      :output-path "<<conf-gen-test-path>>"
                      :rules :cljs}]}
-  
+
     :cljsbuild {:builds [{:source-paths ["<<conf-gen-source-path>>" "<<conf-gen-test-path>>"]
                           :id "simple"
                           :compiler {:output-to "<<cljs-artefact-path>>"

@@ -33,37 +33,14 @@
           h (- y2 y1)]
       (thi.ng.geom.types.Rect2. p* (vec2 w h))))
 
-  (defn map-uv
-    [{:keys [p size]} [qx qy]]
-    (vec2 (mm/subdiv qx (p 0) (size 0)) (mm/subdiv qy (p 1) (size 1))))
-
-  (defn unmap-uv
-    [{:keys[p size]} [qx qy]]
-    (vec2 (mm/madd qx (size 0) (p 0)) (mm/madd qy (size 1) (p 1))))
-
   (defn left [r] ((:p r) 0))
   (defn right [r] (+ ((:p r) 0) ((:size r) 0)))
   (defn bottom [r] ((:p r) 1))
   (defn bottom-left [r] (:p r))
   (defn top [r] (+ ((:p r) 1) ((:size r) 1)))
   (defn top-right [r] (g/+ (:p r) (:size r)))
-
-  (defn intersect-rect?
-    [{[px py] :p [w h] :size} {[qx qy] :p [qw qh] :size}]
-    (not (or (> px (+ qx qw)) (> qx (+ px w)) (> py (+ qy qh)) (> qy (+ py h)))))
-
-  (defn intersect-circle?
-    [{[w h :as s] :size :as r} {c :p radius :r}]
-    (let [p (g/centroid r)
-          [dx dy :as d] (g/abs (g/- c p))
-          w (* w 0.5) h (* h 0.5)]
-      (if (and (<= dx (+ w radius))
-               (<= dy (+ h radius)))
-        (if (or (<= dx w) (<= dy h))
-          true
-          (<= (g/mag-squared (g/- d s)) (* radius radius)))
-        false)))
 #+END_SRC
+
 ** Protocol implementations
 
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -188,8 +165,8 @@ than 1.0.
   (intersect-shape
    [_ s]
    (cond
-    (instance? thi.ng.geom.types.Rect2 s) (intersect-rect? _ s)
-    (instance? thi.ng.geom.types.Circle2 s) (intersect-circle? _ s)
+    (instance? thi.ng.geom.types.Rect2 s) (isec/intersect-rect-rect? _ s)
+    (instance? thi.ng.geom.types.Circle2 s) (isec/intersect-aabb-sphere? _ s)
     :default (err/type-error! "Rect2" s)))
 #+END_SRC
 
@@ -204,6 +181,27 @@ than 1.0.
        (mapv vec3 (g/vertices _)))))
 #+END_SRC
 
+*** PPointMap
+
+- =map-point= takes a rect and 2D point, returns the point in
+  normalized UV coords in local rect space, where [0,0] is equivalent
+  to the rect's min point and [1,1] the point diagonally opposite. If
+  any of the resulting coordinates is outside the 0.0 .. 1.0 interval,
+  the orginal point was outside the rectangle.
+
+- =unmap-point= is the inverse operation of =map-point=. It maps a
+  point in local UV coordinates to its world position.
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PPointMap
+  (map-point
+   [{:keys [p size]} q]
+   (vec2
+    (mm/subdiv (q 0) (p 0) (size 0))
+    (mm/subdiv (q 1) (p 1) (size 1))))
+  (unmap-point
+   [_ q] (g/madd q (:size _) (:p _)))
+#+END_SRC
 *** PPolygonConvert
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PPolygonConvert
@@ -232,6 +230,37 @@ than 1.0.
    (gu/sample-uniform udist include-last? (conj (g/vertices _) (:p _))))
 #+END_SRC
 
+*** TODO PSetOps
+
+The implementations for this protocol are only intended to work with
+other rects and no type checking is done.
+
+- =union= returns the union rect of both args
+- =intersection= (still missing) returns the rect of the intersection
+  area of both args or =nil= if there's no overlap. Intersection is
+  defined also for touching rects or if overlap is only a single point
+  (in which case the size of the resulting rect will be zero)
+- =difference= (still missing) will return a polygon of the remaining
+  area after the 2nd rect has been subtracted from the first (or
+  =nil= in case of no overlap)
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PSetOps
+  (union
+   [{pa :p sa :size} {pb :p sb :size}]
+    (let [p (g/min pa pb)]
+      (thi.ng.geom.types.Rect2. p (g/- (g/max (g/+ pa sa) (g/+ pb sb)) p))))
+  (intersection
+   [_ r]
+   (let [pa (:p _) qa (g/+ pa (:size _))
+         pb (:p r) qb (g/+ pb (:size r))
+         p' (g/max pa pb)
+         q' (g/min qa qb)
+         s  (g/- q' p')]
+     (if (every? #(>= % 0) s)
+       (thi.ng.geom.types.Rect2. p' s))))
+#+END_SRC
+  
 *** PSubdivide
 
 A rectangle can be subdivided into smaller ones, i.e. to create a
@@ -261,7 +290,7 @@ top-left to bottom-right ordering and inner sorting along X.
             ry (range 0.0 1.0 dy)
             s (g/* (:size _) dx dy)]
         (for [y ry x rx
-              :let [[px py] (unmap-uv _ [x y])
+              :let [[px py] (g/unmap-point _ [x y])
                     px (m/roundto px *eps*)
                     py (m/roundto py *eps*)]]
           (thi.ng.geom.types.Rect2. (vec2 px py) s)))))
@@ -328,6 +357,7 @@ of triangles of the subdivided rects.
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.gmesh :as gm]

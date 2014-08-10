@@ -12,8 +12,9 @@
   (defn write-stl
     "Writes the given mesh as binary STL to output stream. Mesh is
     automatically tessellated into triangles."
-    [^OutputStream stream {:keys [fnormals faces]}]
-    (let [faces (mapcat gu/tessellate-with-first faces)]
+    [^OutputStream stream mesh]
+    (let [faces (g/faces mesh)
+          fnormals (g/face-normals mesh true)]
       (.write stream #+clj (byte-array 80) #+cljs (into-array (repeat 80 0)))
       (b/write-int32-le stream (count faces))
       (doseq [[a b c :as f] faces]
@@ -23,20 +24,22 @@
         (b/write-vec3-le stream c)
         (b/write-int16-le stream 0))
       stream))
-
+  
   (defn read-stl
-    "Returns binary STL inputstream as mesh."
-    [^InputStream stream]
-    (.read stream #+clj (byte-array 80) #+cljs (make-array 80))
-    (loop [mesh (gm/gmesh), i (b/read-int32-le stream)]
-      (if (pos? i)
-        (let [_ (b/read-vec3-le stream)
-              a (b/read-vec3-le stream)
-              b (b/read-vec3-le stream)
-              c (b/read-vec3-le stream)
-              _ (b/read-int16-le stream)]
-          (recur (gm/add-face mesh [a b c]) (dec i)))
-        mesh)))
+    "Reads faces from binary STL inputstream and adds them to given (or new) mesh."
+    ([stream]
+       (read-stl stream (bm/basic-mesh)))
+    ([^InputStream stream mesh]
+       (.read stream #+clj (byte-array 80) #+cljs (make-array 80))
+       (loop [mesh mesh, i (b/read-int32-le stream)]
+         (if (pos? i)
+           (let [_ (b/read-vec3-le stream)
+                 a (vec3 (b/read-vec3-le stream))
+                 b (vec3 (b/read-vec3-le stream))
+                 c (vec3 (b/read-vec3-le stream))
+                 _ (b/read-int16-le stream)]
+             (recur (g/add-face mesh [a b c]) (dec i)))
+           mesh))))
 #+END_SRC
 ** PLY
 #+BEGIN_SRC clojure :noweb-ref ply
@@ -44,9 +47,11 @@
     "Writes the given mesh as binary PLY to output stream. For
     compatibility with external tools mesh should already have been
     tessellated before calling this fn."
-    [^OutputStream stream {:keys [vertices vnormals faces]}]
-    (let [vertices (keys vertices)
+    [^OutputStream stream mesh]
+    (let [vertices (g/vertices mesh)
           vindex (zipmap vertices (range))
+          vnormals (g/vertex-normals mesh false)
+          faces (g/faces mesh)
           fhead #+clj (byte-array 1) #+cljs (make-array 1)
           write-props (fn [props]
                         (doseq [p props]
@@ -69,13 +74,14 @@
         (b/write-vec3-le stream v)
         (when (seq vnormals)
           (b/write-vec3-le stream (get vnormals v))))
-      (doseq [f faces]
+      (doseq [f (g/faces mesh)]
         (#+clj aset-byte #+cljs aset fhead 0 (byte (count f)))
         (.write stream fhead)
         (write-vindex f))
       stream))
 #+END_SRC
-** OBJ
+** TODO OBJ
+*** TODO update to use protocols
 #+BEGIN_SRC clojure :noweb-ref obj
   (defn write-obj
     [^OutputStream stream {:keys [vertices vnormals faces]}]
@@ -119,8 +125,9 @@
 ** OFF
 #+BEGIN_SRC clojure :noweb-ref off
   (defn write-off
-    [^OutputStream stream {:keys [vertices faces]}]
-    (let [vertices (keys vertices)
+    [^OutputStream stream mesh]
+    (let [vertices (g/vertices mesh)
+          faces (g/faces mesh)
           fmt-vertex
           ,#+clj (let [ff (str "%1." *precision* "f ")
                       ff (str ff ff ff "\n")]
@@ -149,7 +156,8 @@
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.core.vector :as v :refer [vec3]]
+     [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.triangle :as t]
      [thi.ng.common.data.byteutils :as b])
     ,#+clj

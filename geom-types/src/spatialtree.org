@@ -29,22 +29,18 @@
         (if c (recur c (conj path c)) path))))
   
   (defn add-point*
-    "Adds point to tree, recursively creates all required intermediate nodes.
-    Returns root."
+    "Adds point to tree, recursively creates all required intermediate nodes."
     [root p]
-    (loop [node root]
+    (loop [node root, p p]
       (if (g/get-children node)
-        (recur (g/make-child-for-point node p false))
+        (recur (g/make-child-for-point node p false) p)
         (let [point (g/get-point node)]
           (if point
-            (if-not (delta= point p *eps*)
-              (do
+            (when-not (delta= point p *eps*)
                 (g/split-node node)
                 (g/make-child-for-point node p true)
-                (add-point* node point)
-                root)
-              root)
-            (do (g/set-point node p) root))))))
+                (recur node point))
+            (g/set-point node p))))))
   
   (defn delete-point*
     "Removes point from tree (if found) and prunes any resulting empty nodes.
@@ -70,9 +66,9 @@
     "Produces a vector of points in the tree within a given region.
     Uses two predicate fns to logically define the query region:
   
-    `isec?`:   single-arg fn to check if the bounds of a tree node
-               intersect the region
-    `filter?`: single-arg fn to check if a point lies within the region."
+    `isec?`  : single-arg fn to check if the bounds of a tree node
+               intersect the query region
+    `inside?`: single-arg fn to check if a point lies within the region."
     ([isec? inside? q]
        (select-with isec? inside? q (transient [])))
     ([isec? inside? q acc]
@@ -156,15 +152,15 @@
       (set-child [_ i c] (set! children (assoc children i c)) _)
       (set-children [_ c] (set! children c) _)
       (set-point [_ p] (set! point p) _)
-  
+
       g/PBounds
       (bounds [_]
         (if bounds
           bounds
-          (do (set! bounds
-                    (thi.ng.geom.types.Rect.
-                     (vec2 x y) (* w 2.0) (* h 2.0))) bounds)))
-  
+          (set! bounds
+                (thi.ng.geom.types.Rect2.
+                 (vec2 x y) (vec2 (* w 2.0) (* h 2.0))))))
+
       Object
       (toString [_] (str "#thi.ng.geom.spatialtree.MutableQuadtreeNode"
                          "{:bounds " (pr-str (g/bounds _))
@@ -186,7 +182,7 @@
               ^:mutable bounds]
 
       g/PSpatialTree
-      (add-point [_ p] (add-point* _ p))
+      (add-point [_ p] (add-point* _ p) _)
       (child-index-for-point [_ [px py pz]]
         (+ (if (< pz (+ z d)) 0 4)
            (if (< px (+ x w))
@@ -215,17 +211,15 @@
       (set-child [_ i c] (set! children (assoc children i c)) _)
       (set-children [_ c] (set! children c) _)
       (set-point [_ p] (set! point p) _)
-  
+
       g/PBounds
       (bounds [_]
         (if bounds
           bounds
-          (do
-            (set! bounds
-                  (thi.ng.geom.types.AABB.
-                   (vec3 x y z) (vec3 (* w 2.0) (* h 2.0) (* d 2.0))))
-            bounds)))
-  
+          (set! bounds
+                (thi.ng.geom.types.AABB.
+                 (vec3 x y z) (vec3 (* w 2.0) (* h 2.0) (* d 2.0))))))
+
       Object
       (toString [_] (str "#thi.ng.geom.spatialtree.MutableOctreeNode"
                          "{:bounds " (pr-str (g/bounds _))
@@ -248,7 +242,7 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
   (defn quadtree
     "Create a new quadtree root node with the given XY position & dimensions."
-    ([{[x y] :p w :width h :height}]
+    ([{[x y] :p [w h] :size}]
        (quadtree x y w h))
     ([[x y] size]
        (let [[w h] (if (number? size) [size size] size)]
