@@ -285,40 +285,44 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 ** Leiningen project file                                          :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
   (defproject <<project-name>> "<<conf-version>>"
-    :description "thi.ng geometry kit - meta project spec including all modules"
-    :url "<<conf-project-url>>"
-    :license {:name "Apache Software License"
-              :url "http://www.apache.org/licenses/LICENSE-2.0"}
+    :description  "thi.ng geometry kit - meta project spec including all modules"
+    :url          "<<conf-project-url>>"
+    :license      {:name "Apache Software License"
+                   :url  "http://www.apache.org/licenses/LICENSE-2.0"}
+    :scm          {:name "git"
+                   :url  "https://github.com/thi-ng/geom"}
     :dependencies [<<dep-clj>>
                    <<dep-geom-core>>
                    <<dep-geom-types>>
-                   <<dep-geom-meshops>>]
+                   <<dep-geom-meshops>>
+                   <<dep-geom-webgl>>
+                   <<dep-geom-svg>>]
 
     :source-paths ["src/cljx"]
-    :test-paths ["<<conf-gen-test-path>>"]
-  
+    :test-paths   ["<<conf-gen-test-path>>"]
+
     :profiles {:dev {:dependencies [<<dep-cljs>>
                                     <<dep-criterium>>]
-                     :plugins [<<dep-cljx>>
-                               <<dep-cljsbuild>>
-                               <<dep-cljs-test>>
-                               <<dep-austin>>]
+                     :plugins      [<<dep-cljx>>
+                                    <<dep-cljsbuild>>
+                                    <<dep-cljs-test>>
+                                    <<dep-austin>>]
                      :hooks [cljx.hooks]
                      :aliases {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]}}}
-  
+
     :cljx {:builds [{:source-paths ["src/cljx"]
-                     :output-path "<<conf-gen-source-path>>"
+                     :output-path  "<<conf-gen-source-path>>"
                      :rules :clj}
                     {:source-paths ["src/cljx"]
-                     :output-path "<<conf-gen-source-path>>"
+                     :output-path  "<<conf-gen-source-path>>"
                      :rules :cljs}
                     {:source-paths ["test/cljx"]
-                     :output-path "<<conf-gen-test-path>>"
+                     :output-path  "<<conf-gen-test-path>>"
                      :rules :clj}
                     {:source-paths ["test/cljx"]
-                     :output-path "<<conf-gen-test-path>>"
+                     :output-path  "<<conf-gen-test-path>>"
                      :rules :cljs}]}
-  
+
     :cljsbuild {:builds [{:source-paths ["<<conf-gen-source-path>>" "<<conf-gen-test-path>>"]
                           :id "simple"
                           :compiler {:output-to "<<cljs-artefact-path>>"

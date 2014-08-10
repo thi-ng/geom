@@ -54,10 +54,12 @@ target/geom-webgl-<<conf-version>>.js
 
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
   (defproject <<project-name>> "<<conf-version>>"
-    :description "thi.ng geometry kit - WebGL module"
-    :url "<<conf-project-url>>"
-    :license {:name "Apache Software License"
-              :url "http://www.apache.org/licenses/LICENSE-2.0"}
+    :description  "thi.ng geometry kit - WebGL module"
+    :url          "<<conf-project-url>>"
+    :license      {:name "Apache Software License"
+                   :url "http://www.apache.org/licenses/LICENSE-2.0"}
+    :scm          {:name "git"
+                   :url  "https://github.com/thi-ng/geom"}
     :dependencies [<<dep-clj>>
                    <<dep-geom-core>>
                    <<dep-geom-types>>
@@ -65,9 +67,9 @@ target/geom-webgl-<<conf-version>>.js
 
     :profiles {:dev {:dependencies [<<dep-cljs>>
                                     <<dep-criterium>>]
-                     :plugins [<<dep-cljsbuild>>
-                               <<dep-cljs-test>>
-                               <<dep-austin>>]
+                     :plugins      [<<dep-cljsbuild>>
+                                    <<dep-cljs-test>>
+                                    <<dep-austin>>]
                      :jvm-opts ^:replace []
                      :aliases {"cleantest" ["do" "clean," "cljsbuild" "test"]}}}
 
