@@ -9,12 +9,20 @@
     (as-svg [_ opts]))
 #+END_SRC
 
+*** PShader
+#+BEGIN_SRC clojure :noweb-ref protos
+  (defprotocol PShader
+    (uniforms [_])
+    (solid? [_])
+    (shade-facet [_ f f' z]))
+#+END_SRC
+
 ** SVG serialization
 
 #+BEGIN_SRC clojure :noweb-ref constants
   (def ^:const xml-preamble "<?xml version=\"1.0\"?>\n")
   
-  (def ^:dynamic *ff* (f/float 4))
+  (def ^:dynamic *ff* (f/float 2))
   (def ^:dynamic *fmt-vec* (fn [p] (str (*ff* (nth p 0)) "," (*ff* (nth p 1)))))
   
   (def point-seq-format
@@ -85,14 +93,6 @@
      (assoc attribs
        :points (apply f/format (point-seq-format (count points)) points))])
 
-  (defn mesh
-    [mesh mvp vtx attribs]
-    (group
-     attribs
-     (map
-      (fn [f] (polygon (mapv (fn [p] (mat/project-point p mvp vtx)) f) nil))
-      (g/faces mesh))))
-
   (defn project-face
     [mvp vtx points]
     (mapv #(mat/project-point-z % mvp vtx) points))
@@ -102,51 +102,105 @@
     (map
      (fn [f]
        (let [f' (project-face mvp vtx f)
-             z  (:z (gu/centroid f'))
-             n  (gu/ortho-normal f')]
-         [z f' f n]))
+             n' (gu/ortho-normal f')]
+         [f f' n']))
      faces))
 
   (defn cull-backfaces
     [norm-fn faces]
     (filter (fn [f] (neg? (g/dot (norm-fn f) V3Z))) faces))
 
+  (defn z-map-faces
+    [faces]
+    (mapv
+     (fn [[f f' n']] [(:z (gu/centroid f')) f f' n'])
+     faces))
+
   (defn z-sort-faces
-    [key-fn faces]
-    (reverse (sort-by key-fn faces)))
+    [z-fn faces]
+    (reverse (sort-by z-fn faces)))
 
   (defn rgba
-    [r g b a]
-    (if (< a 1.0)
-      (str "rgba(" (int r) "," (int g) "," (int b) "," a ")")
-      (str "rgb(" (int r) "," (int g) "," (int b) ")")))
+    [[r g b a]]
+    (let [r (* 255 r) g (* 255 g) b (* 255 b)]
+      (if (and a (< a 1.0))
+        (str "rgba(" (int r) "," (int g) "," (int b) "," a ")")
+        (str "rgb(" (int r) "," (int g) "," (int b) ")"))))
 
-  (defn normal->rgb
-    [tx alpha]
-    (fn [f _ _]
-      (let [[r g b] (-> (gu/ortho-normal f)
-                        (g/transform tx)
-                        (g/madd 127 128))]
-        (rgba r g b alpha))))
+  (defn lambert
+    [{:keys [view light-dir light-col diffuse ambient]}]
+    (let [light-col (vec3 light-col)
+          light-dir (g/normalize (vec3 light-dir))
+          diffuse   (if (fn? diffuse) diffuse (vec3 diffuse))
+          ambient   (if (fn? ambient) ambient (vec3 ambient))
+          nmat      (g/transpose (g/invert view))]
+      (fn [f f' z]
+        (let [n       (g/transform-vector nmat (gu/ortho-normal f))
+              lambert (max 0.0 (g/dot n light-dir))
+              diffuse (if (fn? diffuse) (diffuse f f' z) diffuse)
+              ambient (if (fn? ambient) (ambient f f' z) ambient)]
+          (-> (g/* diffuse light-col)
+              (g/madd lambert (g/* ambient light-col)))))))
+
+  (defn phong
+    [{:keys [model view light-pos light-col
+             diffuse specular ambient shininess]}]
+    (let [light-col (vec3 light-col)
+          light-pos (g/transform-vector view (vec3 light-pos))
+          diffuse   (if (fn? diffuse) diffuse (vec3 diffuse))
+          ambient   (if (fn? ambient) ambient (vec3 ambient))
+          specular  (vec3 specular)
+          mv        (g/* view model)
+          nmat      (g/transpose (g/invert view))]
+      (fn [f f' z]
+        (let [eye-pos (g/transform-vector mv (gu/centroid f))
+              n       (g/normalize (g/transform-vector nmat (gu/ortho-normal f)))
+              l       (g/normalize (g/- light-pos eye-pos))
+              e       (g/normalize (g/- eye-pos))
+              lambert (max 0.0 (g/dot n l))
+              diffuse (if (fn? diffuse) (diffuse f f' z) diffuse)
+              ambient (if (fn? ambient) (ambient f f' z) ambient)
+              spec    (max (Math/pow (g/dot (g/normalize (g/+ l e)) n) shininess) 0.0)]
+          (-> (g/* diffuse light-col)
+              (g/madd lambert (g/+ (g/* ambient light-col) (g/* specular spec)))
+              (g/min [1.0 1.0 1.0]))))))
+
+  (defn normal-rgb
+    ([] (normal-rgb M44))
+    ([tx]
+       (fn [f _ _]
+         (-> (gu/ortho-normal f)
+             (g/transform tx)
+             (g/madd 0.5 0.5)))))
+
+  (defn translucent
+   [shader alpha]
+   (fn [f f' z] (conj (vec (shader f f' z)) alpha)))
 
   (defn shader
-    [fill stroke attribs]
-    (fn [f f' z]
-      (assoc attribs
-        :fill   (if (fn? fill)   (fill f f' z)   fill)
-        :stroke (if (fn? stroke) (stroke f f' z) stroke))))
+    [{:keys [fill stroke uniforms flags]}]
+    (reify
+      PShader
+      (shade-facet [_ f f' z]
+        (cond-> {}
+                fill   (assoc :fill   (if (fn? fill) (rgba (fill f f' z)) fill))
+                stroke (assoc :stroke (if (fn? stroke) (rgba (stroke f f' z)) stroke))))
+      (uniforms [_] uniforms)
+      (solid? [_] (:solid flags true))))
 
-  (defn mesh-hidden-lines
-    [mesh mvp vtx attribs]
-    (let [faces (->> (g/faces mesh)
-                     (project-faces mvp vtx)
-                     (cull-backfaces peek)
+  (defn mesh
+    [mesh mvp screen shader]
+    (let [faces (project-faces mvp screen (g/faces mesh))
+          faces (->> (if (solid? shader)
+                       (cull-backfaces peek faces)
+                       faces)
+                     (z-map-faces)
                      (z-sort-faces first))]
-      (if (fn? attribs)
-        (map (fn [[z f' f]] (polygon f' (attribs f f' z))) faces)
-        (group
-         attribs
-         (map (fn [f] (polygon (f 1) nil)) faces)))))
+      (group
+       (uniforms shader)
+       (if shader
+         (map (fn [[z f f']] (polygon f' (shade-facet shader f f' z))) faces)
+         (map (fn [f] (polygon (f 2) nil)) faces)))))
 #+END_SRC
 
 ** Complete namespace definition                                   :noexport:
@@ -156,16 +210,16 @@
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :refer [vec3 V3Z]]
-     [thi.ng.geom.core.matrix :as mat]
+     [thi.ng.geom.core.matrix :as mat :refer [M44]]
      [thi.ng.common.stringformat :as f]
      #+clj [hiccup.core :refer [html]]
      #+cljs [hiccups.runtime :refer [render-html]]))
 
   <<constants>>
 
+  <<protos>>
+
   <<svg>>
 
   <<prims>>
-
-  <<protos>>
 #+END_SRC

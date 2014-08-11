@@ -9,82 +9,12 @@ is defined in its own namespace and can be loaded from the REPL via:
   (load-file "examples/svgdemo01.clj") ;; etc...
 #+END_SRC
 
-** Concentric rings & 3d anchored text label
+** STL mesh import (Blender's Suzanne)
 
 [[http://media.thi.ng/geom/svgdemo01.svg]]
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo01.clj :mkdirp yes :padline no
   (ns svgdemo01
-    (:require
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :refer [vec3]]
-     [thi.ng.geom.core.matrix :as mat]
-     [thi.ng.geom.circle :as c]
-     [thi.ng.geom.polygon :as p]
-     [thi.ng.geom.svg.core :as svg]
-     [thi.ng.common.math.core :as m]))
-
-  (defn ring
-    [res radius depth wall]
-    (-> (c/circle radius)
-        (g/as-polygon res)
-        (g/extrude-shell {:depth depth :wall wall :inset -0.1})
-        (g/center)))
-
-  (defn make-mvp
-    [model view proj] (->> model (g/* view) (g/* proj)))
-
-  (def shader
-    (svg/shader
-     (svg/normal->rgb (mat/matrix44) 1.0) "white" {:stroke-width 0.5}))
-
-  (def width  640)
-  (def height 480)
-  (def model  (g/rotate-y (mat/matrix44) m/SIXTH_PI))
-  (def view   (apply mat/look-at (mat/look-at-vectors 0 1.75 0.75 0 0 0)))
-  (def proj   (mat/perspective 60 (/ width height) 0.1 10))
-
-  (def mesh
-    (->> [[1 0.25 0.15] [0.75 0.35 0.1] [0.5 0.5 0.05] [0.25 0.75 0.025]]
-         (map (partial apply ring 40))
-         (reduce g/into)))
-
-  ;; 2d text label w/ projected anchor point
-  (defn svg-credits
-    [p mvp screen]
-    (let [p'  (mat/project-point p mvp screen)
-          p2' (mat/project-point (g/+ p 0 0 0.2) mvp screen)
-          p3' (g/+ p2' 150 0)]
-      (svg/group
-       {:fill "black"
-        :font-family "Arial"
-        :font-size 12
-        :text-anchor "end"}
-       (svg/circle p' 3 nil)
-       (svg/line-strip [p' p2' p3'] {:stroke "black"})
-       (svg/text (g/+ p3' 0 -5) "Rendered with" {})
-       (svg/text (g/+ p3' 0 12) "thi.ng/geom-svg" {:font-weight "bold"}))))
-
-  (defn render-svg
-    [path mesh mvp width height]
-    (let [screen (mat/viewport-transform width height)
-          max-z  (/ 0.75 2)]
-      (->> (svg/svg
-            {:width width :height height}
-            (svg/mesh-hidden-lines mesh mvp screen shader)
-            (svg-credits (vec3 0 0 max-z) mvp screen))
-           (svg/serialize)
-           (spit path))))
-
-  (render-svg "svgdemo01.svg" mesh (make-mvp model view proj) 640 480)
-#+END_SRC
-
-** STL mesh import (Blender's Suzanne)
-
-[[http://media.thi.ng/geom/svgdemo02.svg]]
-
-#+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo02.clj :mkdirp yes :padline no
-  (ns svgdemo02
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.matrix :as mat]
@@ -98,15 +28,22 @@ is defined in its own namespace and can be loaded from the REPL via:
   (def model  (-> (mat/matrix44) (g/rotate-x m/HALF_PI) (g/rotate-z m/SIXTH_PI)))
   (def view   (apply mat/look-at (mat/look-at-vectors 0 0 -2 0 0 0)))
   (def proj   (mat/perspective 60 (/ width height) 0.1 2))
-
-  (defn make-mvp
-    [model view proj] (->> model (g/* view) (g/* proj)))
+  (def mvp    (->> model (g/* view) (g/* proj)))
+  (def col-tx (g/rotate-x (mat/matrix44) (- m/HALF_PI)))
 
   (def shader
     (svg/shader
-     (svg/normal->rgb
-      (g/rotate-x (mat/matrix44) (- m/HALF_PI)) 1.0)
-     "black" {:stroke-width 0.25}))
+     {:fill     (svg/phong
+                 {:model     model
+                  :view      view
+                  :light-pos [0 -2 1]
+                  :light-col [1 1 1]
+                  :diffuse   (svg/normal-rgb col-tx)
+                  :ambient   [0.1 0.1 0.2]
+                  :specular  1.0
+                  :shininess 6.0})
+      :uniforms {:stroke "black" :stroke-width 0.25}
+      :flags    {:solid true}}))
 
   (def mesh
     (with-open [in (io/input-stream "suzanne.stl")]
@@ -117,9 +54,125 @@ is defined in its own namespace and can be loaded from the REPL via:
     (let [screen (mat/viewport-transform width height)]
       (->> (svg/svg
             {:width width :height height}
-            (svg/mesh-hidden-lines mesh mvp screen shader))
+            (svg/mesh mesh mvp screen shader))
            (svg/serialize)
            (spit path))))
 
-  (render-svg "svgdemo02.svg" mesh (make-mvp model view proj) 640 480)
+  (render-svg "svgdemo01.svg" mesh mvp width height)
 #+END_SRC
+
+** Dynamic mesh & shader comparison
+
+| [[http://media.thi.ng/geom/svgdemo02-diffuse.svg]] | [[http://media.thi.ng/geom/svgdemo02-lambert.svg]] | [[http://media.thi.ng/geom/svgdemo02-phong.svg]] |
+| *Diffuse:* Normal XYZ > RGB                    | *Diffuse:* Normal XYZ > RGB                    | *Diffuse:* Normal XYZ > RGB                  |
+|                                                | *Ambient:* [0.1 0.1 0.1]                       | *Ambient:* [0.05 0.05 0.1]                   |
+|                                                |                                                | *Specular:* [1.0 1.0 1.0]                    |
+| *Lighting:* N/A                                | *Lighting:* Lambert                            | *Lighting:* Blinn-Phong                      |
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo02.clj :mkdirp yes :padline no
+  (ns svgdemo02
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :refer [vec3]]
+     [thi.ng.geom.core.matrix :as mat]
+     [thi.ng.geom.circle :as c]
+     [thi.ng.geom.polygon :as p]
+     [thi.ng.geom.mesh.subdivision :as sd]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.common.math.core :as m]))
+
+  (defn ring
+    [res radius depth wall]
+    (-> (c/circle radius)
+        (g/as-polygon res)
+        (g/extrude-shell {:depth depth :wall wall :inset -0.1})
+        (g/center)))
+
+  (defn make-mvp
+    [model view proj] (->> model (g/* view) (g/* proj)))
+
+  (def width  320)
+  (def height 240)
+  (def model  (g/rotate-y (mat/matrix44) m/SIXTH_PI))
+  (def view   (apply mat/look-at (mat/look-at-vectors 0 1.75 0.75 0 0 0)))
+  (def proj   (mat/perspective 60 (/ width height) 0.1 10))
+  (def mvp    (make-mvp model view proj))
+
+  (def shader-diffuse
+    (svg/shader
+     {:fill     (svg/normal-rgb (g/rotate-y (mat/matrix44) 3.1415))
+      :uniforms {:stroke "white" :stroke-width 0.25}
+      :flags    {:solid true}}))
+
+  (def shader-lambert
+    (svg/shader
+     {:fill     (svg/lambert
+                 {:view      view
+                  :light-dir [-1 0 1]
+                  :light-col [1 1 1]
+                  :diffuse   (svg/normal-rgb (g/rotate-y (mat/matrix44) 3.1415))
+                  :ambient   0.1})
+      :uniforms {:stroke "white" :stroke-width 0.25}
+      :flags    {:solid true}}))
+
+  (def shader-phong
+    (svg/shader
+     {:fill     (svg/phong
+                 {:model     model
+                  :view      view
+                  :light-pos [-1 2 1]
+                  :light-col [1 1 1]
+                  :diffuse   (svg/normal-rgb (g/rotate-y (mat/matrix44) 3.1415))
+                  :ambient   [0.05 0.05 0.1]
+                  :specular  0.8
+                  :shininess 8.0})
+      :uniforms {:stroke "white" :stroke-width 0.25}
+      :flags    {:solid true}}))
+
+  (def mesh
+    (->> [[1 0.25 0.15] [0.75 0.35 0.1] [0.5 0.5 0.05] [0.25 0.75 0.05]]
+         (map (partial apply ring 40))
+         (reduce g/into)
+         (sd/catmull-clark)
+         ;;(sd/catmull-clark)
+         ))
+
+  ;; 2d text label w/ projected anchor point
+  (defn label-3d
+    [p mvp screen [l1 l2]]
+    (let [p'  (mat/project-point p mvp screen)
+          p2' (mat/project-point (g/+ p 0 0 0.2) mvp screen)
+          p3' (g/+ p2' 100 0)]
+      (svg/group
+       {:fill "black"
+        :font-family "Arial"
+        :font-size 12
+        :text-anchor "end"}
+       (svg/circle p' 2 nil)
+       (svg/line-strip [p' p2' p3'] {:stroke "black"})
+       (svg/text (g/+ p3' 0 -5) l1 {})
+       (svg/text (g/+ p3' 0 12) l2 {:font-weight "bold"}))))
+
+  (defn render-svg
+    [path mesh mvp shader width height labels]
+    (let [screen (mat/viewport-transform width height)
+          max-z  (/ 0.75 2)]
+      (->> (svg/svg
+            {:width width :height height}
+            (svg/mesh mesh mvp screen shader)
+            (label-3d (vec3 0 0 max-z) mvp screen labels))
+           (svg/serialize)
+           (spit path))))
+
+  (render-svg "svgdemo02-diffuse.svg"
+              mesh mvp shader-diffuse width height
+              ["Shader" "Normal/RGB"])
+  (render-svg "svgdemo02-lambert.svg"
+              mesh mvp shader-lambert width height
+              ["Shader" "Lambert"])
+  (render-svg "svgdemo02-phong.svg"
+              mesh mvp shader-phong width height
+              ["Shader" "Blinn-Phong"])
+#+END_SRC
+
+
