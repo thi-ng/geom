@@ -63,10 +63,10 @@ is defined in its own namespace and can be loaded from the REPL via:
 
 ** Dynamic mesh & shader comparison
 
-| [[http://media.thi.ng/geom/svgdemo02-diffuse.svg]] | [[http://media.thi.ng/geom/svgdemo02-lambert.svg]] | [[http://media.thi.ng/geom/svgdemo02-phong.svg]] |
+| [[http://media.thi.ng/geom/svgdemo02-diffuse.svg]] | [[http://media.thi.ng/geom/svgdemo02-lambert.svg]] | [[http://media.thi.ng/geom/svgdemo02-phong.svg]]?1407779686873 |
 | *Diffuse:* Normal XYZ > RGB                    | *Diffuse:* Normal XYZ > RGB                    | *Diffuse:* Normal XYZ > RGB                  |
-|                                                | *Ambient:* [0.1 0.1 0.1]                       | *Ambient:* [0.05 0.05 0.1]                   |
-|                                                |                                                | *Specular:* [1.0 1.0 1.0]                    |
+|                                                | *Ambient:* [0.1 0.1 0.1]                       | *Ambient:* [0.05 0.05 0.2]                   |
+|                                                |                                                | *Specular:* [0.8 0.8 0.8]                    |
 | *Lighting:* N/A                                | *Lighting:* Lambert                            | *Lighting:* Blinn-Phong                      |
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo02.clj :mkdirp yes :padline no
@@ -81,27 +81,20 @@ is defined in its own namespace and can be loaded from the REPL via:
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.common.math.core :as m]))
 
-  (defn ring
-    [res radius depth wall]
-    (-> (c/circle radius)
-        (g/as-polygon res)
-        (g/extrude-shell {:depth depth :wall wall :inset -0.1})
-        (g/center)))
+  (def width    320)
+  (def height   240)
+  (def model    (g/rotate-y (mat/matrix44) m/SIXTH_PI))
+  (def view     (apply mat/look-at (mat/look-at-vectors 0 1.75 0.75 0 0 0)))
+  (def proj     (mat/perspective 60 (/ width height) 0.1 10))
+  (def mvp      (->> model (g/* view) (g/* proj)))
 
-  (defn make-mvp
-    [model view proj] (->> model (g/* view) (g/* proj)))
-
-  (def width  320)
-  (def height 240)
-  (def model  (g/rotate-y (mat/matrix44) m/SIXTH_PI))
-  (def view   (apply mat/look-at (mat/look-at-vectors 0 1.75 0.75 0 0 0)))
-  (def proj   (mat/perspective 60 (/ width height) 0.1 10))
-  (def mvp    (make-mvp model view proj))
+  (def diffuse  (svg/normal-rgb (g/rotate-y (mat/matrix44) m/PI)))
+  (def uniforms {:stroke "white" :stroke-width 0.25})
 
   (def shader-diffuse
     (svg/shader
-     {:fill     (svg/normal-rgb (g/rotate-y (mat/matrix44) 3.1415))
-      :uniforms {:stroke "white" :stroke-width 0.25}
+     {:fill     diffuse
+      :uniforms uniforms
       :flags    {:solid true}}))
 
   (def shader-lambert
@@ -110,9 +103,9 @@ is defined in its own namespace and can be loaded from the REPL via:
                  {:view      view
                   :light-dir [-1 0 1]
                   :light-col [1 1 1]
-                  :diffuse   (svg/normal-rgb (g/rotate-y (mat/matrix44) 3.1415))
+                  :diffuse   diffuse
                   :ambient   0.1})
-      :uniforms {:stroke "white" :stroke-width 0.25}
+      :uniforms uniforms
       :flags    {:solid true}}))
 
   (def shader-phong
@@ -122,20 +115,25 @@ is defined in its own namespace and can be loaded from the REPL via:
                   :view      view
                   :light-pos [-1 2 1]
                   :light-col [1 1 1]
-                  :diffuse   (svg/normal-rgb (g/rotate-y (mat/matrix44) 3.1415))
-                  :ambient   [0.05 0.05 0.1]
+                  :diffuse   diffuse
+                  :ambient   [0.05 0.05 0.2]
                   :specular  0.8
                   :shininess 8.0})
-      :uniforms {:stroke "white" :stroke-width 0.25}
+      :uniforms uniforms
       :flags    {:solid true}}))
+
+  (defn ring
+    [res radius depth wall]
+    (-> (c/circle radius)
+        (g/as-polygon res)
+        (g/extrude-shell {:depth depth :wall wall :inset -0.1})
+        (g/center)))
 
   (def mesh
     (->> [[1 0.25 0.15] [0.75 0.35 0.1] [0.5 0.5 0.05] [0.25 0.75 0.05]]
          (map (partial apply ring 40))
          (reduce g/into)
-         (sd/catmull-clark)
-         ;;(sd/catmull-clark)
-         ))
+         (sd/catmull-clark)))
 
   ;; 2d text label w/ projected anchor point
   (defn label-3d
