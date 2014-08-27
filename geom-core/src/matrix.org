@@ -234,10 +234,10 @@ define some macros to simplify them.
 #+BEGIN_SRC clojure :noweb-ref mat32
   g/PVectorTransform
   (transform-vector
-   [_ [x y :as v]]
+   [_ [x y]]
    (thi.ng.geom.core.vector.Vec2.
     (mm/madd x m00 y m01 m02)
-    (mm/madd x m10 y m11 m12)))
+    (mm/madd x m10 y m11 m12) -1 -1))
 #+END_SRC
 
 **** End of implementations
@@ -569,7 +569,7 @@ ordering (row major).
      (thi.ng.geom.core.vector.Vec3.
       (mm/madd x m00 y m10 z m20 m30)
       (mm/madd x m01 y m11 z m21 m31)
-      (mm/madd x m02 y m12 z m22 m32))))
+      (mm/madd x m02 y m12 z m22 m32) -1 -1)))
 #+END_SRC
 
 **** End of implementation
