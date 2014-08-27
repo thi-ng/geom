@@ -197,14 +197,14 @@ injected in the appropriate places of the code.
          [_ k] (swizzle2 _ k nil))
   ,#+clj (valAt
          [_ k nf] (swizzle2 _ k nf))
-
+  
   ,#+clj java.util.concurrent.Callable
   ,#+clj (call
          [_] (.invoke ^clojure.lang.IFn _))
   ,#+clj java.lang.Runnable
   ,#+clj (run
           [_] (.invoke ^clojure.lang.IFn _))
-
+  
   ,#+clj clojure.lang.IFn
   ,#+clj (invoke
          [_ k] (swizzle2 _ k nil))
@@ -213,7 +213,7 @@ injected in the appropriate places of the code.
   ,#+clj (applyTo
          [_ args]
          <<tpl-apply(fn="swizzle2")>>)
-
+  
   ,#+clj clojure.lang.IMapEntry
   ,#+clj java.util.Map$Entry
   ,#+clj (key
@@ -224,7 +224,7 @@ injected in the appropriate places of the code.
          [_] y)
   ,#+clj (getValue
          [_] y)
-
+  
   ,#+clj clojure.lang.Associative
   ,#+clj clojure.lang.IPersistentVector
   ,#+clj (count
@@ -240,7 +240,7 @@ injected in the appropriate places of the code.
   ,#+clj (assocN
          [_ k v]
          <<tpl-assoc-n2>>)
-
+  
   ,#+clj java.util.Collection
   ,#+clj (isEmpty
          [_] false)
@@ -249,7 +249,12 @@ injected in the appropriate places of the code.
   ,#+clj (toArray
          [_] (object-array _))
   ,#+clj (size [_] 2)
-
+  
+  ,#+clj clojure.lang.IEditableCollection
+  ,#+clj (asTransient
+         [_] (-> (transient clojure.lang.PersistentVector/EMPTY)
+                 (conj! x) (conj! y)))
+  
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.Indexed
   ,#+clj clojure.lang.Sequential
@@ -294,28 +299,28 @@ injected in the appropriate places of the code.
                 (= 2 (count o))
                 (clojure.lang.Util/equals x (nth o 0))
                 (clojure.lang.Util/equals y (nth o 1)))))
-
+  
   ;; http://docs.oracle.com/javase/7/docs/g/java/util/List.html#hashCode()
   ,#+clj (hashCode
          [_]
          <<tpl-hashcode2>>)
-
+  
   ;; http://clojure.org/data_structures#hash
   ,#+clj clojure.lang.IHashEq
   ,#+clj (hasheq
          [_]
          <<tpl-hasheq2>>)
-
+  
   ,#+clj Comparable
   ,#+clj (compareTo
          [_ o]
          <<tpl-compare2>>)
-
+  
   ,#+clj cp/InternalReduce
   ,#+clj (internal-reduce
          [_ f start]
          <<tpl-reduce2-start>>)
-
+  
   ,#+clj cp/CollReduce
   ,#+clj (coll-reduce
          [_ f]
@@ -323,7 +328,7 @@ injected in the appropriate places of the code.
   ,#+clj (coll-reduce
          [_ f start]
          <<tpl-reduce2-start>>)
-
+  
   ,#+clj Object
   ,#+clj (toString
          [_]
@@ -678,14 +683,14 @@ injected in the appropriate places of the code.
          [_ k] (swizzle3 _ k nil))
   ,#+clj (valAt
          [_ k nf] (swizzle3 _ k nf))
-
+  
   ,#+clj java.util.concurrent.Callable
   ,#+clj (call
          [_] (.invoke ^clojure.lang.IFn _))
   ,#+clj java.lang.Runnable
   ,#+clj (run
           [_] (.invoke ^clojure.lang.IFn _))
-
+  
   ,#+clj clojure.lang.IFn
   ,#+clj (invoke
          [_ k] (swizzle3 _ k nil))
@@ -694,7 +699,7 @@ injected in the appropriate places of the code.
   ,#+clj (applyTo
          [_ args]
          <<tpl-apply(fn="swizzle3")>>)
-
+  
   ,#+clj clojure.lang.Associative
   ,#+clj clojure.lang.IPersistentVector
   ,#+clj (count
@@ -710,7 +715,7 @@ injected in the appropriate places of the code.
   ,#+clj (assocN
          [_ k v]
          <<tpl-assoc-n3>>)
-
+  
   ,#+clj java.util.Collection
   ,#+clj (isEmpty
          [_] false)
@@ -720,7 +725,12 @@ injected in the appropriate places of the code.
          [_] (object-array _))
   ,#+clj (size
          [_] 3)
-
+  
+  ,#+clj clojure.lang.IEditableCollection
+  ,#+clj (asTransient
+         [_] (-> (transient clojure.lang.PersistentVector/EMPTY)
+                 (conj! x) (conj! y) (conj! z)))
+  
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.Indexed
   ,#+clj clojure.lang.Sequential
@@ -734,7 +744,7 @@ injected in the appropriate places of the code.
   ,#+clj (more
          [_] <<tpl-rest3>>)
   ,#+clj (cons
-         [_ w] [x y z w])
+         [_ w] (persistent! (conj! (transient _) w)))
   ,#+clj (peek
          [_] z)
   ,#+clj (pop
@@ -772,22 +782,22 @@ injected in the appropriate places of the code.
   ,#+clj (hashCode
          [_]
          <<tpl-hashcode3>>)
-
+  
   ,#+clj clojure.lang.IHashEq
   ,#+clj (hasheq
          [_]
          <<tpl-hasheq3>>)
-
+  
   ,#+clj Comparable
   ,#+clj (compareTo
          [_ o]
          <<tpl-compare3>>)
-
+  
   ,#+clj cp/InternalReduce
   ,#+clj (internal-reduce
          [_ f start]
          <<tpl-reduce3-start>>)
-
+  
   ,#+clj cp/CollReduce
   ,#+clj (coll-reduce
          [_ f]
@@ -795,7 +805,7 @@ injected in the appropriate places of the code.
   ,#+clj (coll-reduce
          [_ f start]
          <<tpl-reduce3-start>>)
-
+  
   ,#+clj Object
   ,#+clj (toString
          [_]
