@@ -373,10 +373,12 @@
 #+END_SRC
 
 ** Matrix operations
-#+BEGIN_SRC clojure :noweb-ref tests2
+#+BEGIN_SRC clojure :noweb-ref tests
   (deftest matrix-ops
     (is (== (hash (mapv double (range 1 7))) (hash (mat/matrix32 1 2 3 4 5 6))) "hash M32")
     (is (== (hash (mapv double (range 1 17))) (hash (mat/matrix44 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16))) "hash M44")
+    #+clj (is (== (.hashCode (mapv double (range 1 7))) (.hashCode (mat/matrix32 1 2 3 4 5 6))) "hashCode M32")
+    #+clj (is (== (.hashCode (mapv double (range 1 17))) (.hashCode (mat/matrix44 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16))) "hashCode M44")
     (is (delta= V2Y (-> M32 (g/rotate HALF_PI) (g/transform-vector V2X))))
     (is (delta= V3Z (-> M44 (g/rotate-x HALF_PI) (g/transform-vector V3Y))) "rotx(+y) = +z")
     (is (delta= V3Z (-> M44 (g/rotate-around-axis V3X HALF_PI) (g/transform-vector V3Y))) "rot-axis-x(+y) = +z")
@@ -423,7 +425,9 @@
     (is (delta= M44 [1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1] 1e-3) "delta= M44 eps")
     (is (delta= M44 M44) "delta= M44 M44")
     (is (not (delta= M44 nil)) "not delta= M44 nil")
-    (is (not (delta= M44 1)) "not delta= M44 1"))
+    (is (not (delta= M44 1)) "not delta= M44 1")
+    (is (delta= [1 0 0 0 1 0 2] (conj M32 2)) "conj M32")
+    (is (delta= [1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1 2] (conj M44 2)) "conj M44"))
 #+END_SRC
 
 ** Quaternion operations
