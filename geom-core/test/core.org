@@ -375,8 +375,8 @@
 ** Matrix operations
 #+BEGIN_SRC clojure :noweb-ref tests2
   (deftest matrix-ops
-    (is (== (hash (mapv double (range 1 7))) (hash (Matrix32. 1 2 3 4 5 6))) "hash M32")
-    (is (== (hash (mapv double (range 1 17))) (hash (Matrix44. 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16))) "hash M44")
+    (is (== (hash (mapv double (range 1 7))) (hash (mat/matrix32 1 2 3 4 5 6))) "hash M32")
+    (is (== (hash (mapv double (range 1 17))) (hash (mat/matrix44 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16))) "hash M44")
     (is (delta= V2Y (-> M32 (g/rotate HALF_PI) (g/transform-vector V2X))))
     (is (delta= V3Z (-> M44 (g/rotate-x HALF_PI) (g/transform-vector V3Y))) "rotx(+y) = +z")
     (is (delta= V3Z (-> M44 (g/rotate-around-axis V3X HALF_PI) (g/transform-vector V3Y))) "rot-axis-x(+y) = +z")
