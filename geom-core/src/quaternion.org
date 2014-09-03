@@ -19,10 +19,10 @@ of the code.
 *** assocN
 #+BEGIN_SRC clojure :noweb-ref tpl-assoc-n
   (case (int k)
-    0 (Quat4. v y z w -1 #+clj 1)
-    1 (Quat4. x v z w -1 #+clj 1)
-    2 (Quat4. x y v w -1 #+clj 1)
-    3 (Quat4. x y z v -1 #+clj 1)
+    0 (Quat4. v y z w -1 #+clj -1)
+    1 (Quat4. x v z w -1 #+clj -1)
+    2 (Quat4. x y v w -1 #+clj -1)
+    3 (Quat4. x y z v -1 #+clj -1)
     (err/key-error! k))
 #+END_SRC
 *** containsKey
@@ -77,7 +77,7 @@ of the code.
 #+END_SRC
 *** rseq
 #+BEGIN_SRC clojure :noweb-ref tpl-rseq
-  (Quat4. w z y x -1 #+clj 1)
+  (Quat4. w z y x -1 #+clj -1)
 #+END_SRC
 *** conj
 #+BEGIN_SRC clojure :noweb-ref tpl-conj
@@ -218,7 +218,7 @@ of the code.
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   ,#+cljs ICloneable
   ,#+cljs (-clone
-          [_] (Quat4. x y z w -1 #+clj 1))
+          [_] (Quat4. x y z w -1 #+clj -1))
 
   ,#+cljs ILookup
   ,#+cljs (-lookup
@@ -320,7 +320,7 @@ of the code.
   g/PScale
   (scale
    [_ s]
-   (Quat4. (* x s) (* y s) (* z s) (* w s) -1 #+clj 1))
+   (Quat4. (* x s) (* y s) (* z s) (* w s) -1 #+clj -1))
 #+END_SRC
 *** PRotate3D
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -334,7 +334,7 @@ of the code.
       (mm/madd y c z s)
       (mm/msub z c y s)
       (mm/msub w c x s)
-      -1 #+clj 1)))
+      -1 #+clj -1)))
   (rotate-y
    [_ theta]
    (let [t (/ theta 2.0)
@@ -344,7 +344,7 @@ of the code.
       (mm/madd y c w s)
       (mm/madd z c x s)
       (mm/msub w c y s)
-      -1 #+clj 1)))
+      -1 #+clj -1)))
   (rotate-z
    [_ theta]
    (let [t (/ theta 2.0)
@@ -354,7 +354,7 @@ of the code.
       (mm/msub y c x s)
       (mm/madd z c w s)
       (mm/msub w c z s)
-      -1 #+clj 1)))
+      -1 #+clj -1)))
 #+END_SRC
 *** PMathOps
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -367,7 +367,7 @@ of the code.
       (+ y (.-y q))
       (+ z (.-z q))
       (+ w (.-w q))
-      -1 #+clj 1)))
+      -1 #+clj -1)))
   (-
    [_ q]
    (let [q ^Quat4 q]
@@ -376,7 +376,7 @@ of the code.
       (- y (.-y q))
       (- z (.-z q))
       (- w (.-w q))
-      -1 #+clj 1)))
+      -1 #+clj -1)))
   (*
    [_ q]
    (let [q ^Quat4 q
@@ -386,7 +386,7 @@ of the code.
       (mm/maddsub y qw w qy z qx x qz)
       (mm/maddsub z qw w qz x qy y qx)
       (mm/msub w qw x qx y qy z qz)
-      -1 #+clj 1)))
+      -1 #+clj -1)))
   (*
    [_ q r]
    (let [q ^Quat4 q r ^Quat4 r
@@ -401,7 +401,7 @@ of the code.
       (mm/maddsub y' rw w' ry z' rx x' rz)
       (mm/maddsub z' rw w' rz x' ry y' rx)
       (mm/msub w' rw x' rx y' ry z' rz)
-      -1 #+clj 1)))
+      -1 #+clj -1)))
 #+END_SRC
 *** PDeltaEquals
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -439,14 +439,14 @@ of the code.
   (normalize [_]
     (let [m (Math/sqrt (mm/madd x x y y z z w w))]
       (if (> m *eps*)
-        (Quat4. (/ x m) (/ y m) (/ z m) (/ w m) -1 #+clj 1)
+        (Quat4. (/ x m) (/ y m) (/ z m) (/ w m) -1 #+clj -1)
         _)))
 #+END_SRC
 *** PConjugate
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PConjugate
   (conjugate [_]
-    (Quat4. (- x) (- y) (- z) w -1 #+clj 1))
+    (Quat4. (- x) (- y) (- z) w -1 #+clj -1))
 #+END_SRC
 *** PInvert
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -455,7 +455,7 @@ of the code.
     (let [d (g/mag-squared _)
           d (if (zero? d) 0.0 (/ d))
           id (- d)]
-      (Quat4. (* x id) (* y id) (* z id) (* w d) -1 #+clj 1)))
+      (Quat4. (* x id) (* y id) (* z id) (* w d) -1 #+clj -1)))
 #+END_SRC
 *** PInterpolate
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -476,7 +476,7 @@ of the code.
            (mm/madd y a (.-y q) b)
            (mm/madd z a (.-z q) b)
            (mm/madd w a (.-w q) b)
-           -1 #+clj 1))
+           -1 #+clj -1))
         _)))
 #+END_SRC
 *** PMatrixConvert
@@ -531,15 +531,15 @@ of the code.
 #+END_SRC
 ** Constants
 #+BEGIN_SRC clojure :noweb-ref const
-  (def Q (Quat4. 0.0 0.0 0.0 1.0 -1 #+clj 1))
+  (def Q (Quat4. 0.0 0.0 0.0 1.0 -1 #+clj -1))
 #+END_SRC
 ** Constructors
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn quat
     ([] Q)
-    ([[x y z] w] (Quat4. x y z w -1 #+clj 1))
-    ([[x y z w]] (Quat4. x y z w -1 #+clj 1))
-    ([x y z w] (Quat4. x y z w -1 #+clj 1)))
+    ([[x y z] w] (Quat4. x y z w -1 #+clj -1))
+    ([[x y z w]] (Quat4. x y z w -1 #+clj -1))
+    ([x y z w] (Quat4. x y z w -1 #+clj -1)))
   
   (defn quat-from-axis-angle
     [axis theta]
@@ -574,7 +574,7 @@ of the code.
            (mm/subm (.-m20 m) (.-m02 m) s)
            (mm/subm (.-m01 m) (.-m10 m) s)
            (/ 0.25 s)
-           -1 #+clj 1))
+           -1 #+clj -1))
         (g/normalize
          (if (and (> (.-m00 m) (.-m11 m)) (> (.-m00 m) (.-m22 m)))
            (let [s (* 2.0 (Math/sqrt (inc (mm/sub (.-m00 m) (.-m11 m) (.-m22 m)))))
@@ -584,7 +584,7 @@ of the code.
               (mm/addm (.-m10 m) (.-m01 m) s')
               (mm/addm (.-m20 m) (.-m02 m) s')
               (mm/subm (.-m12 m) (.-m21 m) s')
-              -1 #+clj 1))
+              -1 #+clj -1))
            (if (> (.-m11 m) (.-m22 m))
              (let [s (* 2.0 (Math/sqrt (inc (mm/sub (.-m11 m) (.-m00 m) (.-m22 m)))))
                    s' (/ s)]
@@ -593,7 +593,7 @@ of the code.
                 (* 0.25 s)
                 (mm/addm (.-m21 m) (.-m12 m) s')
                 (mm/subm (.-m20 m) (.-m02 m) s')
-                -1 #+clj 1))
+                -1 #+clj -1))
              (let [s (* 2.0 (Math/sqrt (inc (mm/sub (.-m22 m) (.-m00 m) (.-m11 m)))))
                    s' (/ s)]
                (Quat4.
@@ -601,7 +601,7 @@ of the code.
                 (mm/addm (.-m21 m) (.-m12 m) s')
                 (* 0.25 s)
                 (mm/subm (.-m10 m) (.-m01 m) s')
-                -1 #+clj 1))))))))
+                -1 #+clj -1))))))))
   
   (defn alignment-quat
     [a b]
@@ -655,23 +655,23 @@ of the code.
                (lookup4 _ (nth n 1) default)
                (lookup4 _ (nth n 2) default)
                (lookup4 _ (nth n 3) default)
-               -1 #+clj 1)
+               -1 #+clj -1)
             (or default (err/key-error! k)))))))
 
   (defn swizzle4-assoc
     [^Quat4 _ k v]
     (if (number? k)
       (case (int k)
-        0 (Quat4. v (.-y _) (.-z _) (.-w _) -1 #+clj 1)
-        1 (Quat4. (.-x _) v (.-z _) (.-w _) -1 #+clj 1)
-        2 (Quat4. (.-x _) (.-y _) v (.-w _) -1 #+clj 1)
-        3 (Quat4. (.-x _) (.-y _) (.-z _) v -1 #+clj 1)
+        0 (Quat4. v (.-y _) (.-z _) (.-w _) -1 #+clj -1)
+        1 (Quat4. (.-x _) v (.-z _) (.-w _) -1 #+clj -1)
+        2 (Quat4. (.-x _) (.-y _) v (.-w _) -1 #+clj -1)
+        3 (Quat4. (.-x _) (.-y _) (.-z _) v -1 #+clj -1)
         (err/key-error! k))
       (case k
-        :x (Quat4. v (.-y _) (.-z _) (.-w _) -1 #+clj 1)
-        :y (Quat4. (.-x _) v (.-z _) (.-w _)-1 #+clj 1)
-        :z (Quat4. (.-x _) (.-y _) v (.-w _) -1 #+clj 1)
-        :w (Quat4. (.-x _) (.-y _) (.-z _) v -1 #+clj 1)
+        :x (Quat4. v (.-y _) (.-z _) (.-w _) -1 #+clj -1)
+        :y (Quat4. (.-x _) v (.-z _) (.-w _) -1 #+clj -1)
+        :z (Quat4. (.-x _) (.-y _) v (.-w _) -1 #+clj -1)
+        :w (Quat4. (.-x _) (.-y _) (.-z _) v -1 #+clj -1)
         (v/swizzle-assoc* _ quat {\x 0 \y 1 \z 2 \w 3} k v))))
 #+END_SRC
 ** Complete namespace definition                                         :noexport:
