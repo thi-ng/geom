@@ -2,13 +2,17 @@
 
 * Namespace: thi.ng.geom.core.vectorseq
 
+** Implementation
 #+BEGIN_SRC clojure :noweb-ref impl
   (deftype VectorSeq
       ,#+clj  [^long start ^long end
               ^clojure.lang.PersistentVector v
               _meta]
       ,#+cljs [start end v _meta]
+#+END_SRC
 
+*** Clojure/ClojureScript protocols
+#+BEGIN_SRC clojure :noweb-ref impl
       ,#+clj  clojure.lang.IObj
       ,#+cljs IMeta
       ,#+cljs IWithMeta
@@ -197,10 +201,36 @@
                      (inc idx)
                      (bit-or (+ (imul 31 h) (hash (-nth v idx))) 0))))
                 (- end start)))
-      )
 #+END_SRC
-
-*** Element lookup
+*** PDeltaEquals
+#+BEGIN_SRC clojure :noweb-ref impl
+  m/PDeltaEquals
+  (delta=
+   [_ o]
+   (and (sequential? o)
+        (== (count _) (count o))
+        (loop [_ _, o o]
+          (if _
+            (if (m/delta= (first _) (first o))
+              (recur (next _) (next o))
+              false)
+            true))))
+  (delta=
+   [_ o eps]
+   (and (sequential? o)
+        (== (count _) (count o))
+        (loop [_ _, o o]
+          (if _
+            (if (m/delta= (first _) (first o) eps)
+              (recur (next _) (next o))
+              false)
+            true))))
+#+END_SRC
+*** End of implementation
+#+BEGIN_SRC clojure :noweb-ref impl
+  )
+#+END_SRC
+** Element lookup
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn lookup
     ([v idx start end]
@@ -215,7 +245,7 @@
          default)))
 #+END_SRC
 
-*** Print methods
+** Print methods
 #+BEGIN_SRC clojure :noweb-ref print
   ,#+clj
   (defmethod clojure.pprint/simple-dispatch VectorSeq
@@ -226,16 +256,26 @@
     (.write w (pr-str (vec o))))
 #+END_SRC
 
+** Constructors
+#+BEGIN_SRC clojure :noweb-ref ctor
+  (defn vecseq
+    ([x] (VectorSeq. 0 (count x) (vec x) nil))
+    ([x start end] (VectorSeq. start end (vec x) nil)))
+#+END_SRC
+
 ** Complete namespace definition
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vectorseq.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.vectorseq
     (:require
-     [thi.ng.common.error :as err]))
+     [thi.ng.common.error :as err]
+     [thi.ng.common.math.core :as m]))
 
   <<helpers>>
 
   <<impl>>
 
   <<print>>
+
+  <<ctor>>
 #+END_SRC
