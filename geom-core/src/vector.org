@@ -684,8 +684,10 @@ injected in the appropriate places of the code.
 *** Override print methods
 #+BEGIN_SRC clojure :noweb-ref vec2
   ,#+clj (require 'clojure.pprint)
-  ,#+clj (prefer-method clojure.pprint/simple-dispatch clojure.lang.IPersistentVector clojure.lang.ISeq)
-  ,#+clj (defmethod print-method Vec2 [^Vec2 o ^java.io.Writer w] (.write w (.toString o)))
+  ,#+clj (defmethod clojure.pprint/simple-dispatch Vec2
+          [^Vec2 o] ((get-method clojure.pprint/simple-dispatch clojure.lang.IPersistentVector) o))
+  ,#+clj (defmethod print-method Vec2
+          [^Vec2 o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 ** 3D
 #+BEGIN_SRC clojure :noweb-ref vec3
@@ -1219,7 +1221,10 @@ injected in the appropriate places of the code.
 #+END_SRC
 *** Override print methods
 #+BEGIN_SRC clojure :noweb-ref vec3
-  #+clj (defmethod print-method Vec3 [^Vec3 o ^java.io.Writer w] (.write w (.toString o)))
+  ,#+clj (defmethod clojure.pprint/simple-dispatch Vec3
+          [^Vec3 o] ((get-method clojure.pprint/simple-dispatch clojure.lang.IPersistentVector) o))
+  ,#+clj (defmethod print-method Vec3
+          [^Vec3 o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 ** Vector operations
 *** 2D
