@@ -33,19 +33,6 @@ define some macros to simplify them.
     (reduce
      #(-> % (unchecked-multiply-int 31) (unchecked-add-int (hash %2)))
      1 coll))
-
-  ,#+clj
-  (defn- hash-matrix
-    [coll]
-    (mix-collection-hash (hash-coll* coll) (count coll)))
-
-  ,#+cljs
-  (defn- hash-matrix
-    [coll]
-    (loop [res (hash (first coll)) s (next coll)]
-      (if (nil? s)
-        res
-        (recur (hash-combine res (hash (first s))) (next s)))))
 #+END_SRC
 ** Matrix implementations
 *** 3x2 Matrix (Affine 2D transform)
@@ -59,7 +46,7 @@ define some macros to simplify them.
             ^:mutable _hasheq]
 #+END_SRC
 
-**** TODO Clojure protocols
+**** Clojure protocols
 #+BEGIN_SRC clojure :noweb-ref mat32
   ,#+clj java.util.Collection
   ,#+clj clojure.lang.IPersistentCollection
@@ -84,8 +71,8 @@ define some macros to simplify them.
   (#+clj next #+cljs -next [_] (seq [m01 m02 m10 m11 m12]))
 
   ,#+cljs ICollection
-  (#+clj cons #+cljs -conj [_ x]
-         (thi.ng.geom.core.vectorseq.VectorSeq. 0 7 [m00 m01 m02 m10 m11 m12 x] nil))
+  ,#+clj  (cons [_ x] (VectorSeq. 0 7 [m00 m01 m02 m10 m11 m12 x] nil))
+  ,#+cljs (-conj[_ x] [m00 m01 m02 m10 m11 m12 x])
 
   ,#+cljs IIndexed
   (#+clj nth #+cljs -nth [_ k]
@@ -279,7 +266,7 @@ ordering (row major).
             ^:mutable _hasheq]
 #+END_SRC
 
-**** TODO Clojure protocols
+**** Clojure protocols
 #+BEGIN_SRC clojure :noweb-ref mat44
   ,#+clj java.util.Collection
   ,#+clj clojure.lang.IPersistentCollection
@@ -295,10 +282,10 @@ ordering (row major).
   (#+clj count #+cljs -count [_] 16)
 
   ,#+cljs ISeqable
-  (#+clj seq #+cljs -seq   [_] _)
+  (#+clj seq #+cljs -seq [_] _)
 
   ,#+cljs ISeq
-  (#+clj more #+cljs -rest  [_] (next _))
+  (#+clj more #+cljs -rest [_] (next _))
   (#+clj first #+cljs -first [_] m00)
   ,#+cljs INext
   (#+clj next #+cljs -next
@@ -308,15 +295,21 @@ ordering (row major).
                    m30 m31 m32 m33]))
 
   ,#+cljs ICollection
-  (#+clj cons #+cljs -conj
+  ,#+clj (cons
          [_ x]
-         (thi.ng.geom.core.vectorseq.VectorSeq.
+         (VectorSeq.
           0 17
           [m00 m01 m02 m03
            m10 m11 m12 m13
            m20 m21 m22 m23
            m30 m31 m32 m33 x]
           nil))
+  ,#+cljs (-conj
+          [_ x]
+          [m00 m01 m02 m03
+           m10 m11 m12 m13
+           m20 m21 m22 m23
+           m30 m31 m32 m33 x])
 
   ,#+cljs IIndexed
   (#+clj nth #+cljs -nth [_ k]
@@ -337,7 +330,7 @@ ordering (row major).
   ,#+cljs IEquiv
   (#+clj equiv #+cljs -equiv [_ o]
          (and
-          (sequential? o) (= 16 (count o))
+          (sequential? o) (== 16 (count o))
           (every? #(= (% 0) (% 1)) (map vector _ o))))
 
   ,#+cljs IHash
@@ -360,10 +353,11 @@ ordering (row major).
   ,#+clj (iterator
          [_] (.iterator
               ^java.util.Collection
-              (list m00 m01 m02 m03
-                    m10 m11 m12 m13
-                    m20 m21 m22 m23
-                    m30 m31 m32 m33)))
+              (list
+               m00 m01 m02 m03
+               m10 m11 m12 m13
+               m20 m21 m22 m23
+               m30 m31 m32 m33)))
   ,#+clj (toArray [_] (object-array _))
   ,#+clj (size [_] 16)
   ,#+clj (length [_] 16)
@@ -787,7 +781,7 @@ ordering (row major).
             (g/div (vec3 v') (v' 3)))))))
 #+END_SRC
 
-** Namespace declaration                                           :noexport:
+** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.matrix
     ,#+cljs
@@ -796,11 +790,11 @@ ordering (row major).
      [thi.ng.geom.core.macros :as gmc])
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vectorseq :as vseq]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3 V3X]]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
      [thi.ng.common.error :as err]
+     ,#+clj [thi.ng.geom.core.vectorseq]
      ,#+clj [thi.ng.macromath.core :as mm]
      ,#+clj [thi.ng.geom.core.macros :as gmc])
     ,#+clj

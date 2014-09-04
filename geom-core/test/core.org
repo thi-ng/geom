@@ -192,7 +192,8 @@
     (is (v/vec2? (pop a3)) "pop a3 vec2?")
     (is (v/vec3? (conj a2 3)) "conj a2")
     (is (= a3 (conj a2 3)) "conj a2 = a3")
-    (is (instance? thi.ng.geom.core.vectorseq.VectorSeq (conj a3 4)) "conj a3 VectorSeq?")
+    ,#+clj  (is (instance? thi.ng.geom.core.vectorseq.VectorSeq (conj a3 4)) "conj a3 VectorSeq?")
+    ,#+cljs (is (instance? cljs.core.PersistentVector (conj a3 4)) "conj a3 PersistentVector?")
     (is (= [ax ay az 4] (conj a3 4)) "conj a3 = [1 2 3 4]")
     (is (let [[x y z] a2] (and (= a2 [x y]) (nil? z))) "destructure a2")
     (is (let [[x y z w] a3] (and (= a3 [x y z]) (nil? w))) "destructure a3")
@@ -428,8 +429,10 @@
     (is (not (delta= M44 1)) "not delta= M44 1")
     (is (delta= [1 0 0 0 1 0 2] (conj M32 2)) "conj M32")
     (is (delta= [1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1 2] (conj M44 2)) "conj M44")
-    (is (instance? thi.ng.geom.core.vectorseq.VectorSeq (conj M32 2)) "conj M32 VectorSeq?")
-    (is (instance? thi.ng.geom.core.vectorseq.VectorSeq (conj M44 2)) "conj M44 VectorSeq?"))
+    ,#+clj  (is (instance? thi.ng.geom.core.vectorseq.VectorSeq (conj M32 2)) "conj M32 VectorSeq?")
+    ,#+clj  (is (instance? thi.ng.geom.core.vectorseq.VectorSeq (conj M44 2)) "conj M44 VectorSeq?")
+    ,#+cljs (is (instance? cljs.core.PersistentVector (conj M32 2)) "conj M32 PersistentVector?")
+    ,#+cljs (is (instance? cljs.core.PersistentVector (conj M44 2)) "conj M44 PersistentVector?"))
 #+END_SRC
 
 ** Quaternion operations
@@ -465,7 +468,8 @@
     (is (delta= Q Q) "delta= Q")
     (is (not (delta= Q nil)) "not delta= Q nil")
     (is (not (delta= Q 1)) "not delta= Q 1")
-    (is (instance? thi.ng.geom.core.vectorseq.VectorSeq (conj Q 2)) "conj Q VectorSeq?"))
+    ,#+clj  (is (instance? thi.ng.geom.core.vectorseq.VectorSeq (conj Q 2)) "conj Q VectorSeq?")
+    ,#+cljs (is (instance? cljs.core.PersistentVector (conj Q 2)) "conj Q PersistentVector?"))
 #+END_SRC
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/core/test/core.cljx :noweb yes :mkdirp yes :padline no

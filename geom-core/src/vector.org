@@ -657,7 +657,6 @@ injected in the appropriate places of the code.
 #+END_SRC
 *** Override print methods
 #+BEGIN_SRC clojure :noweb-ref vec2
-  ,#+clj (require 'clojure.pprint)
   ,#+clj (defmethod clojure.pprint/simple-dispatch Vec2
           [^Vec2 o] ((get-method clojure.pprint/simple-dispatch clojure.lang.IPersistentVector) o))
   ,#+clj (defmethod print-method Vec2
@@ -739,7 +738,7 @@ injected in the appropriate places of the code.
   ,#+clj (more
          [_] <<tpl-rest3>>)
   ,#+clj (cons
-         [_ w] (thi.ng.geom.core.vectorseq.VectorSeq. 0 4 [x y z w] nil))
+         [_ w] (VectorSeq. 0 4 [x y z w] nil))
   ,#+clj (peek
          [_] z)
   ,#+clj (pop
@@ -1581,15 +1580,18 @@ rules:
 ** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.vector
-    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
+    ,#+cljs
+    (:require-macros
+     [thi.ng.macromath.core :as mm])
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vectorseq :as vseq]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI INF- INF+]]
+     ,#+clj [thi.ng.geom.core.vectorseq]
      ,#+clj [thi.ng.macromath.core :as mm]
-     ,#+clj [clojure.core.protocols :as cp])
+     ,#+clj [clojure.core.protocols :as cp]
+     ,#+clj [clojure.pprint])
     ,#+clj
     (:import
      [thi.ng.geom.core.vectorseq VectorSeq]))
