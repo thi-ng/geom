@@ -75,31 +75,32 @@ define some macros to simplify them.
   (#+clj count #+cljs -count [_] 6)
 
   ,#+cljs ISeqable
-  (#+clj seq   #+cljs -seq   [_] _)
+  (#+clj seq #+cljs -seq [_] _)
 
   ,#+cljs ISeq
-  (#+clj more  #+cljs -rest  [_] (next _))
+  (#+clj more #+cljs -rest [_] (next _))
   (#+clj first #+cljs -first [_] m00)
   ,#+cljs INext
-  (#+clj next  #+cljs -next  [_] (seq [m01 m02 m10 m11 m12]))
+  (#+clj next #+cljs -next [_] (seq [m01 m02 m10 m11 m12]))
 
   ,#+cljs ICollection
-  (#+clj cons  #+cljs -conj  [_ x] [m00 m01 m02 m10 m11 m12 x])
+  (#+clj cons #+cljs -conj [_ x]
+         (thi.ng.geom.core.vectorseq.VectorSeq. 0 7 [m00 m01 m02 m10 m11 m12 x] nil))
 
   ,#+cljs IIndexed
-  (#+clj nth   #+cljs -nth [_ k]
+  (#+clj nth #+cljs -nth [_ k]
          (case (int k)
            0 m00 1 m01 2 m02 3 m10 4 m11 5 m12
            (err/illegal-arg! k)))
-  (#+clj nth   #+cljs -nth [_ k nf]
-         (case (int k)
-           0 m00 1 m01 2 m02 3 m10 4 m11 5 m12 nf))
+  (#+clj nth #+cljs -nth [_ k nf]
+         (case (int k) 0 m00 1 m01 2 m02 3 m10 4 m11 5 m12 nf))
 
   ,#+cljs IEquiv
-  (#+clj equiv  #+cljs -equiv [_ o]
-         (if (and (sequential? o) (= 6 (count o)))
-           (every? #(= (% 0) (% 1)) (map vector _ o))
-           false))
+  (#+clj equiv #+cljs -equiv [_ o]
+         (and
+          (sequential? o)
+          (== 6 (count o))
+          (every? #(= (% 0) (% 1)) (map vector _ o))))
 
   ,#+cljs IHash
   (#+clj hasheq #+cljs -hash  [_]
@@ -111,14 +112,14 @@ define some macros to simplify them.
 
   ,#+clj (equals
          [_ o]
-         (if (and (sequential? o) (= 6 (count o)))
-           (every? #(clojure.lang.Util/equals (% 0) (% 1)) (map vector _ o))
-           false))
+         (and
+          (sequential? o)
+          (== 6 (count o))
+          (every? #(clojure.lang.Util/equals (% 0) (% 1)) (map vector _ o))))
   ,#+clj (isEmpty
          [_] false)
   ,#+clj (iterator
-         [_] (.iterator ^java.util.Collection
-                        (list m00 m01 m02 m10 m11 m12)))
+         [_] (.iterator ^java.util.Collection (list m00 m01 m02 m10 m11 m12)))
   ,#+clj (toArray
          [_] (object-array _))
   ,#+clj (size [_] 6)
@@ -294,35 +295,38 @@ ordering (row major).
   (#+clj count #+cljs -count [_] 16)
 
   ,#+cljs ISeqable
-  (#+clj seq   #+cljs -seq   [_] _)
+  (#+clj seq #+cljs -seq   [_] _)
 
   ,#+cljs ISeq
-  (#+clj more  #+cljs -rest  [_] (next _))
+  (#+clj more #+cljs -rest  [_] (next _))
   (#+clj first #+cljs -first [_] m00)
   ,#+cljs INext
-  (#+clj next  #+cljs -next
+  (#+clj next #+cljs -next
          [_] (seq [m01 m02 m03
                    m10 m11 m12 m13
                    m20 m21 m22 m23
                    m30 m31 m32 m33]))
 
   ,#+cljs ICollection
-  (#+clj cons  #+cljs -conj
+  (#+clj cons #+cljs -conj
          [_ x]
-         [m00 m01 m02 m03
-          m10 m11 m12 m13
-          m20 m21 m22 m23
-          m30 m31 m32 m33 x])
+         (thi.ng.geom.core.vectorseq.VectorSeq.
+          0 17
+          [m00 m01 m02 m03
+           m10 m11 m12 m13
+           m20 m21 m22 m23
+           m30 m31 m32 m33 x]
+          nil))
 
   ,#+cljs IIndexed
-  (#+clj nth   #+cljs -nth [_ k]
+  (#+clj nth #+cljs -nth [_ k]
          (case (int k)
            0 m00  1 m01  2 m02  3 m03
            4 m10  5 m11  6 m12  7 m13
            8 m20  9 m21  10 m22 11 m23
            12 m30 13 m31 14 m32 15 m33
            (err/illegal-arg! k)))
-  (#+clj nth   #+cljs -nth [_ k nf]
+  (#+clj nth #+cljs -nth [_ k nf]
          (case (int k)
            0 m00  1 m01  2 m02  3 m03
            4 m10  5 m11  6 m12  7 m13
@@ -331,10 +335,10 @@ ordering (row major).
            nf))
 
   ,#+cljs IEquiv
-  (#+clj equiv  #+cljs -equiv [_ o]
-         (if (and (sequential? o) (= 16 (count o)))
-           (every? #(= (% 0) (% 1)) (map vector _ o))
-           false))
+  (#+clj equiv #+cljs -equiv [_ o]
+         (and
+          (sequential? o) (= 16 (count o))
+          (every? #(= (% 0) (% 1)) (map vector _ o))))
 
   ,#+cljs IHash
   (#+clj hasheq #+cljs -hash  [_]
@@ -346,27 +350,26 @@ ordering (row major).
 
   ,#+clj (equals
          [_ o]
-         (if (and (sequential? o) (== 16 (count o)))
-           (every? #(clojure.lang.Util/equals (% 0) (% 1)) (map vector _ o))
-           false))
+         (and
+          (sequential? o)
+          (== 16 (count o))
+          (every? #(clojure.lang.Util/equals (% 0) (% 1)) (map vector _ o))))
 
   ,#+clj (isEmpty
          [_] false)
   ,#+clj (iterator
-         [_] (.iterator ^java.util.Collection
-                        (list m00 m01 m02 m03
-                              m10 m11 m12 m13
-                              m20 m21 m22 m23
-                              m30 m31 m32 m33)))
-  ,#+clj (toArray
-         [_] (object-array _))
+         [_] (.iterator
+              ^java.util.Collection
+              (list m00 m01 m02 m03
+                    m10 m11 m12 m13
+                    m20 m21 m22 m23
+                    m30 m31 m32 m33)))
+  ,#+clj (toArray [_] (object-array _))
   ,#+clj (size [_] 16)
   ,#+clj (length [_] 16)
 
   Object
-  (toString
-   [_]
-   (apply str (concat "[" (interpose \space _) "]")))
+  (toString [_] (apply str (concat "[" (interpose \space _) "]")))
 #+END_SRC
 
 **** PMathOps
@@ -787,21 +790,23 @@ ordering (row major).
 ** Namespace declaration                                           :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.matrix
+    ,#+cljs
+    (:require-macros
+     [thi.ng.macromath.core :as mm]
+     [thi.ng.geom.core.macros :as gmc])
     (:require
      [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vectorseq :as vseq]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3 V3X]]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
      [thi.ng.common.error :as err]
      ,#+clj [thi.ng.macromath.core :as mm]
      ,#+clj [thi.ng.geom.core.macros :as gmc])
-    ,#+cljs
-    (:require-macros
-     [thi.ng.macromath.core :as mm]
-     [thi.ng.geom.core.macros :as gmc])
     ,#+clj
     (:import
-     [thi.ng.geom.core.vector Vec2 Vec3]))
+     [thi.ng.geom.core.vector Vec2 Vec3]
+     [thi.ng.geom.core.vectorseq VectorSeq]))
 
   <<proto-helpers>>
 

@@ -55,7 +55,7 @@ of the code.
             c))
         c))
     (let [c (count o)]
-      (if (= 4 c) (compare o _) (- 4 c))))
+      (if (== 4 c) (compare o _) (- 4 c))))
 #+END_SRC
 *** hashCode
 #+BEGIN_SRC clojure :noweb-ref tpl-hashcode
@@ -81,7 +81,7 @@ of the code.
 #+END_SRC
 *** conj
 #+BEGIN_SRC clojure :noweb-ref tpl-conj
-  [x y z w v]
+  (thi.ng.geom.core.vectorseq.VectorSeq. 0 5 [x y z w v] nil)
 #+END_SRC
 
 ** Implementation
@@ -101,70 +101,46 @@ of the code.
          [_ k nf] (swizzle4 _ k nf))
 
   ,#+clj java.util.concurrent.Callable
-  ,#+clj (call
-         [_] (.invoke ^clojure.lang.IFn _))
+  ,#+clj (call [_] (.invoke ^clojure.lang.IFn _))
   ,#+clj java.lang.Runnable
-  ,#+clj (run
-          [_] (.invoke ^clojure.lang.IFn _))
+  ,#+clj (run [_] (.invoke ^clojure.lang.IFn _))
 
   ,#+clj clojure.lang.IFn
-  ,#+clj (invoke
-         [_ k] (swizzle4 _ k nil))
-  ,#+clj (invoke
-         [_ k nf] (swizzle4 _ k nf))
-  ,#+clj (applyTo
-         [_ args]
+  ,#+clj (invoke [_ k] (swizzle4 _ k nil))
+  ,#+clj (invoke [_ k nf] (swizzle4 _ k nf))
+  ,#+clj (applyTo [_ args]
          <<tpl-apply>>)
 
   ,#+clj clojure.lang.Associative
   ,#+clj clojure.lang.IPersistentVector
-  ,#+clj (count
-         [_] 4)
-  ,#+clj (length
-         [_] 4)
-  ,#+clj (containsKey
-         [_ k] <<tpl-contains-key>>)
-  ,#+clj (assoc
-            [_ k v] (swizzle4-assoc _ k v))
-  ,#+clj (assocN
-         [_ k v]
+  ,#+clj (count [_] 4)
+  ,#+clj (length [_] 4)
+  ,#+clj (containsKey [_ k] <<tpl-contains-key>>)
+  ,#+clj (assoc [_ k v] (swizzle4-assoc _ k v))
+  ,#+clj (assocN [_ k v]
          <<tpl-assoc-n>>)
 
   ,#+clj java.util.Collection
-  ,#+clj (isEmpty
-         [_] false)
-  ,#+clj (iterator
-         [_] (.iterator ^java.util.Collection (list x y z w)))
-  ,#+clj (toArray
-         [_] (double-array 4 [x y z w]))
-  ,#+clj (size
-         [_] 4)
+  ,#+clj (isEmpty [_] false)
+  ,#+clj (iterator [_] (.iterator ^java.util.Collection (list x y z w)))
+  ,#+clj (toArray [_] (double-array 4 [x y z w]))
+  ,#+clj (size [_] 4)
 
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.Indexed
   ,#+clj clojure.lang.Sequential
   ,#+clj clojure.lang.ISeq
   ,#+clj clojure.lang.Seqable
-  ,#+clj (first
-         [_] x)
-  ,#+clj (next
-         [_] <<tpl-rest>>)
-  ,#+clj (more
-         [_] <<tpl-rest>>)
-  ,#+clj (cons
-         [_ v] <<tpl-conj>>)
-  ,#+clj (peek
-         [_] w)
-  ,#+clj (pop
-         [_] <<tpl-pop>>)
-  ,#+clj (rseq
-         [_] <<tpl-rseq>>)
-  ,#+clj (seq
-         [_] _)
-  ,#+clj (nth
-         [_ k] <<tpl-nth-err>>)
-  ,#+clj (nth
-         [_ k nf] <<tpl-nth-nf>>)
+  ,#+clj (first [_] x)
+  ,#+clj (next [_] <<tpl-rest>>)
+  ,#+clj (more [_] <<tpl-rest>>)
+  ,#+clj (cons [_ v] <<tpl-conj>>)
+  ,#+clj (peek [_] w)
+  ,#+clj (pop [_] <<tpl-pop>>)
+  ,#+clj (rseq [_] <<tpl-rseq>>)
+  ,#+clj (seq [_] _)
+  ,#+clj (nth [_ k] <<tpl-nth-err>>)
+  ,#+clj (nth [_ k nf] <<tpl-nth-nf>>)
   ,#+clj (equiv
          [_ o]
          (if (instance? Quat4 o)
@@ -173,7 +149,7 @@ of the code.
                 (clojure.lang.Numbers/equiv z (.-z ^Quat4 o))
                 (clojure.lang.Numbers/equiv w (.-w ^Quat4 o)))
            (and (instance? java.util.Collection o)
-                (= 4 (count o))
+                (== 4 (count o))
                 (clojure.lang.Util/equiv x (nth o 0))
                 (clojure.lang.Util/equiv y (nth o 1))
                 (clojure.lang.Util/equiv z (nth o 2))
@@ -186,7 +162,7 @@ of the code.
                 (clojure.lang.Util/equals z (.-z ^Quat4 o))
                 (clojure.lang.Util/equals w (.-w ^Quat4 o)))
            (and (instance? java.util.Collection o)
-                (= 4 (count o))
+                (== 4 (count o))
                 (clojure.lang.Util/equals x (nth o 0))
                 (clojure.lang.Util/equals y (nth o 1))
                 (clojure.lang.Util/equals z (nth o 2))
@@ -221,26 +197,19 @@ of the code.
           [_] (Quat4. x y z w -1 #+clj -1))
 
   ,#+cljs ILookup
-  ,#+cljs (-lookup
-          [_ k] (swizzle4 _ k nil))
-  ,#+cljs (-lookup
-          [_ k nf] (swizzle4 _ k nf))
+  ,#+cljs (-lookup [_ k] (swizzle4 _ k nil))
+  ,#+cljs (-lookup [_ k nf] (swizzle4 _ k nf))
 
   ,#+cljs IFn
-  ,#+cljs (-invoke
-          [_ k] (swizzle4 _ k nil))
-  ,#+cljs (-invoke
-          [_ k nf] (swizzle4 _ k nf))
+  ,#+cljs (-invoke [_ k] (swizzle4 _ k nil))
+  ,#+cljs (-invoke [_ k nf] (swizzle4 _ k nf))
 
   ,#+cljs ICounted
-  ,#+cljs (-count
-          [_] 4)
+  ,#+cljs (-count [_] 4)
 
   ,#+cljs IAssociative
-  ,#+cljs (-contains-key?
-          [_ k] <<tpl-contains-key>>)
-  ,#+cljs (-assoc
-          [_ k v] (swizzle4-assoc _ k v))
+  ,#+cljs (-contains-key? [_ k] <<tpl-contains-key>>)
+  ,#+cljs (-assoc [_ k v] (swizzle4-assoc _ k v))
 
   ,#+cljs IVector
   ,#+cljs (-assoc-n
@@ -249,38 +218,28 @@ of the code.
 
   ,#+cljs ISequential
   ,#+cljs ISeq
-  ,#+cljs (-first
-          [_] x)
-  ,#+cljs (-rest
-          [_] <<tpl-rest>>)
+  ,#+cljs (-first [_] x)
+  ,#+cljs (-rest [_] <<tpl-rest>>)
 
   ,#+cljs INext
-  ,#+cljs (-next
-          [_] <<tpl-rest>>)
+  ,#+cljs (-next [_] <<tpl-rest>>)
 
   ,#+cljs ISeqable
-  ,#+cljs (-seq
-          [_] _)
+  ,#+cljs (-seq [_] _)
 
   ,#+cljs IReversible
-  ,#+cljs (-rseq
-          [_] <<tpl-rseq>>)
+  ,#+cljs (-rseq [_] <<tpl-rseq>>)
 
   ,#+cljs IIndexed
-  ,#+cljs (-nth
-          [_ k] <<tpl-nth-err>>)
-  ,#+cljs (-nth
-          [_ k nf] <<tpl-nth-nf>>)
+  ,#+cljs (-nth [_ k] <<tpl-nth-err>>)
+  ,#+cljs (-nth [_ k nf] <<tpl-nth-nf>>)
 
   ,#+cljs ICollection
-  ,#+cljs (-conj
-          [_ v] <<tpl-conj>>)
+  ,#+cljs (-conj [_ v] <<tpl-conj>>)
 
   ,#+cljs IStack
-  ,#+cljs (-peek
-          [_] w)
-  ,#+cljs (-pop
-          [_] <<tpl-pop>>)
+  ,#+cljs (-peek [_] w)
+  ,#+cljs (-pop [_] <<tpl-pop>>)
 
   ,#+cljs IComparable
   ,#+cljs (-compare
@@ -310,7 +269,7 @@ of the code.
           (if (instance? Quat4 o)
             (and (== x (.-x ^Quat4 o)) (== y (.-y ^Quat4 o))
                  (== z (.-z ^Quat4 o)) (== w (.-w ^Quat4 o)))
-            (and (sequential? o) (= 4 (count o))
+            (and (sequential? o) (== 4 (count o))
                  (= x (nth o 0)) (= y (nth o 1))
                  (= z (nth o 2)) (= w (nth o 3)))))
 #+END_SRC
@@ -679,6 +638,7 @@ of the code.
   (ns thi.ng.geom.core.quaternion
     (:require
      [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vectorseq]
      [thi.ng.geom.core.vector :as v :refer [V3X V3Y V3Z]]
      [thi.ng.geom.core.matrix :as mat]
      [thi.ng.common.error :as err]
@@ -690,6 +650,7 @@ of the code.
     ,#+clj
     (:import
      [thi.ng.geom.core.vector Vec3]
+     [thi.ng.geom.core.vectorseq VectorSeq]
      [thi.ng.geom.core.matrix Matrix44]))
 
   (declare swizzle4 swizzle4-assoc)

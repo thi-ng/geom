@@ -170,32 +170,6 @@ injected in the appropriate places of the code.
               acc))))))
 #+END_SRC
 
-** Protocol helpers
-
-#+BEGIN_SRC clojure :noweb-ref helpers
-  ,#+clj
-  (defn map-entry
-    [k ^double v]
-    (reify
-      clojure.lang.IMapEntry
-      java.util.Map$Entry
-      (key [_] k)
-      (getKey [_] k)
-      (val [_] v)
-      (getValue [_] v)
-      (hashCode [_]
-        (-> 31
-            (unchecked-add-int (hash k))
-            (unchecked-multiply-int 31)
-            (unchecked-add-int (hash v))))
-      (equals [_ x]
-        (and (instance? java.util.Map$Entry x)
-             (clojure.lang.Util/equals
-              k (.getKey ^java.util.Map$Entry x))
-             (clojure.lang.Util/equals
-              v (.getValue ^java.util.Map$Entry x))))))
-#+END_SRC
-
 ** 2D
 #+BEGIN_SRC clojure :noweb-ref vec2
   (deftype Vec2
@@ -211,14 +185,14 @@ injected in the appropriate places of the code.
          [_ k] (swizzle2 _ k nil))
   ,#+clj (valAt
          [_ k nf] (swizzle2 _ k nf))
-  
+
   ,#+clj java.util.concurrent.Callable
   ,#+clj (call
          [_] (.invoke ^clojure.lang.IFn _))
   ,#+clj java.lang.Runnable
   ,#+clj (run
           [_] (.invoke ^clojure.lang.IFn _))
-  
+
   ,#+clj clojure.lang.IFn
   ,#+clj (invoke
          [_ k] (swizzle2 _ k nil))
@@ -227,7 +201,7 @@ injected in the appropriate places of the code.
   ,#+clj (applyTo
          [_ args]
          <<tpl-apply(fn="swizzle2")>>)
-  
+
   ,#+clj clojure.lang.IMapEntry
   ,#+clj java.util.Map$Entry
   ,#+clj (key
@@ -238,7 +212,7 @@ injected in the appropriate places of the code.
          [_] y)
   ,#+clj (getValue
          [_] y)
-  
+
   ,#+clj clojure.lang.Associative
   ,#+clj clojure.lang.IPersistentVector
   ,#+clj (count
@@ -248,13 +222,13 @@ injected in the appropriate places of the code.
   ,#+clj (containsKey
          [_ k] <<tpl-contains-key2>>)
   ,#+clj (entryAt
-         [_ k] (map-entry k <<tpl-nth-err2>>))
+         [_ k] (clojure.lang.MapEntry. k <<tpl-nth-err2>>))
   ,#+clj (assoc
             [_ k v] (swizzle2-assoc _ k v))
   ,#+clj (assocN
          [_ k v]
          <<tpl-assoc-n2>>)
-  
+
   ,#+clj java.util.Collection
   ,#+clj (isEmpty
          [_] false)
@@ -263,12 +237,12 @@ injected in the appropriate places of the code.
   ,#+clj (toArray
          [_] (object-array _))
   ,#+clj (size [_] 2)
-  
+
   ,#+clj clojure.lang.IEditableCollection
   ,#+clj (asTransient
          [_] (-> (transient clojure.lang.PersistentVector/EMPTY)
                  (conj! x) (conj! y)))
-  
+
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.Indexed
   ,#+clj clojure.lang.Sequential
@@ -313,28 +287,28 @@ injected in the appropriate places of the code.
                 (= 2 (count o))
                 (clojure.lang.Util/equals x (nth o 0))
                 (clojure.lang.Util/equals y (nth o 1)))))
-  
+
   ;; http://docs.oracle.com/javase/7/docs/g/java/util/List.html#hashCode()
   ,#+clj (hashCode
          [_]
          <<tpl-hashcode2>>)
-  
+
   ;; http://clojure.org/data_structures#hash
   ,#+clj clojure.lang.IHashEq
   ,#+clj (hasheq
          [_]
          <<tpl-hasheq2>>)
-  
+
   ,#+clj Comparable
   ,#+clj (compareTo
          [_ o]
          <<tpl-compare2>>)
-  
+
   ,#+clj cp/InternalReduce
   ,#+clj (internal-reduce
          [_ f start]
          <<tpl-reduce2-start>>)
-  
+
   ,#+clj cp/CollReduce
   ,#+clj (coll-reduce
          [_ f]
@@ -342,16 +316,16 @@ injected in the appropriate places of the code.
   ,#+clj (coll-reduce
          [_ f start]
          <<tpl-reduce2-start>>)
-  
+
   ,#+clj Object
   ,#+clj (toString
          [_]
          (.toString
           ^StringBuilder
           (doto (StringBuilder. "[")
-            (.append (pr-str x))
+            (.append x)
             (.append " ")
-            (.append (pr-str y))
+            (.append y)
             (.append "]"))))
 #+END_SRC
 *** ClojureScript protocols
@@ -704,14 +678,14 @@ injected in the appropriate places of the code.
          [_ k] (swizzle3 _ k nil))
   ,#+clj (valAt
          [_ k nf] (swizzle3 _ k nf))
-  
+
   ,#+clj java.util.concurrent.Callable
   ,#+clj (call
          [_] (.invoke ^clojure.lang.IFn _))
   ,#+clj java.lang.Runnable
   ,#+clj (run
           [_] (.invoke ^clojure.lang.IFn _))
-  
+
   ,#+clj clojure.lang.IFn
   ,#+clj (invoke
          [_ k] (swizzle3 _ k nil))
@@ -720,7 +694,7 @@ injected in the appropriate places of the code.
   ,#+clj (applyTo
          [_ args]
          <<tpl-apply(fn="swizzle3")>>)
-  
+
   ,#+clj clojure.lang.Associative
   ,#+clj clojure.lang.IPersistentVector
   ,#+clj (count
@@ -730,13 +704,13 @@ injected in the appropriate places of the code.
   ,#+clj (containsKey
          [_ k] <<tpl-contains-key3>>)
   ,#+clj (entryAt
-         [_ k] (map-entry k <<tpl-nth-err3>>))
+         [_ k] (clojure.lang.MapEntry. k <<tpl-nth-err3>>))
   ,#+clj (assoc
             [_ k v] (swizzle3-assoc _ k v))
   ,#+clj (assocN
          [_ k v]
          <<tpl-assoc-n3>>)
-  
+
   ,#+clj java.util.Collection
   ,#+clj (isEmpty
          [_] false)
@@ -746,12 +720,12 @@ injected in the appropriate places of the code.
          [_] (object-array _))
   ,#+clj (size
          [_] 3)
-  
+
   ,#+clj clojure.lang.IEditableCollection
   ,#+clj (asTransient
          [_] (-> (transient clojure.lang.PersistentVector/EMPTY)
                  (conj! x) (conj! y) (conj! z)))
-  
+
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.Indexed
   ,#+clj clojure.lang.Sequential
@@ -765,7 +739,7 @@ injected in the appropriate places of the code.
   ,#+clj (more
          [_] <<tpl-rest3>>)
   ,#+clj (cons
-         [_ w] (persistent! (conj! (transient _) w)))
+         [_ w] (thi.ng.geom.core.vectorseq.VectorSeq. 0 4 [x y z w] nil))
   ,#+clj (peek
          [_] z)
   ,#+clj (pop
@@ -803,22 +777,22 @@ injected in the appropriate places of the code.
   ,#+clj (hashCode
          [_]
          <<tpl-hashcode3>>)
-  
+
   ,#+clj clojure.lang.IHashEq
   ,#+clj (hasheq
          [_]
          <<tpl-hasheq3>>)
-  
+
   ,#+clj Comparable
   ,#+clj (compareTo
          [_ o]
          <<tpl-compare3>>)
-  
+
   ,#+clj cp/InternalReduce
   ,#+clj (internal-reduce
          [_ f start]
          <<tpl-reduce3-start>>)
-  
+
   ,#+clj cp/CollReduce
   ,#+clj (coll-reduce
          [_ f]
@@ -826,7 +800,7 @@ injected in the appropriate places of the code.
   ,#+clj (coll-reduce
          [_ f start]
          <<tpl-reduce3-start>>)
-  
+
   ,#+clj Object
   ,#+clj (toString
          [_]
@@ -1607,16 +1581,18 @@ rules:
 ** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.vector
+    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
     (:require
      [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vectorseq :as vseq]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI INF- INF+]]
      ,#+clj [thi.ng.macromath.core :as mm]
      ,#+clj [clojure.core.protocols :as cp])
-    ,#+cljs
-    (:require-macros
-     [thi.ng.macromath.core :as mm]))
+    ,#+clj
+    (:import
+     [thi.ng.geom.core.vectorseq VectorSeq]))
 
   (declare vec2 swizzle2 swizzle2-assoc)
   (declare vec3 swizzle3 swizzle3-assoc)
