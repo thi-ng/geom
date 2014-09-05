@@ -615,18 +615,23 @@ injected in the appropriate places of the code.
 #+BEGIN_SRC clojure :noweb-ref vec2
   g/PInterpolate
   (mix
-   [_ [ax ay]]
-   (Vec2. (mm/submadd ax x 0.5 x) (mm/submadd ay y 0.5 y) -1 #+clj -1))
+   [_ a]
+   (Vec2.
+    (mm/mix x (nth a 0) 0.5)
+    (mm/mix y (nth a 1) 0.5)
+    -1 #+clj -1))
   (mix
-   [_ [ax ay] t]
-   (Vec2. (mm/submadd ax x t x) (mm/submadd ay y t y) -1 #+clj -1))
+   [_ a t]
+   (Vec2.
+    (mm/mix x (nth a 0) t)
+    (mm/mix y (nth a 1) t)
+    -1 #+clj -1))
   (mix
-   [_ [ax ay] [bx by] [cx cy] u v]
-   (let [ux (mm/submadd ax x u x)
-         uy (mm/submadd ay y u y)]
-     (Vec2.
-      (mm/submadd (mm/submadd cx bx u bx) ux v ux)
-      (mm/submadd (mm/submadd cy by u by) uy v uy) -1 #+clj -1)))
+   [_ a b c u v]
+   (Vec2.
+    (mm/mix x (nth a 0) (nth b 0) (nth c 0) u v)
+    (mm/mix y (nth a 1) (nth b 1) (nth c 1) u v)
+    -1 #+clj -1))
 #+END_SRC
 *** PHeading
 #+BEGIN_SRC clojure :noweb-ref vec2
@@ -1125,26 +1130,26 @@ injected in the appropriate places of the code.
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PInterpolate
   (mix
-   [_ [ax ay az]]
+   [_ a]
    (Vec3.
-    (mm/submadd ax x 0.5 x)
-    (mm/submadd ay y 0.5 y)
-    (mm/submadd az z 0.5 z) -1 #+clj -1))
+    (mm/mix x (nth a 0) 0.5)
+    (mm/mix y (nth a 1) 0.5)
+    (mm/mix z (nth a 2) 0.5)
+    -1 #+clj -1))
   (mix
-   [_ [ax ay az] t]
+   [_ a t]
    (Vec3.
-    (mm/submadd ax x t x)
-    (mm/submadd ay y t y)
-    (mm/submadd az z t z) -1 #+clj -1))
+    (mm/mix x (nth a 0) t)
+    (mm/mix y (nth a 1) t)
+    (mm/mix z (nth a 2) t)
+    -1 #+clj -1))
   (mix
-   [_ [ax ay az] [bx by bz] [cx cy cz] u v]
-   (let [ux (mm/submadd ax x u x)
-         uy (mm/submadd ay y u y)
-         uz (mm/submadd az z u z)]
-     (Vec3.
-      (mm/submadd (mm/submadd cx bx u bx) ux v ux)
-      (mm/submadd (mm/submadd cy by u by) uy v uy)
-      (mm/submadd (mm/submadd cz bz u bz) uz v uz) -1 #+clj -1)))
+   [_ a b c u v]
+   (Vec3.
+    (mm/mix x (nth a 0) (nth b 0) (nth c 0) u v)
+    (mm/mix y (nth a 1) (nth b 1) (nth c 1) u v)
+    (mm/mix z (nth a 2) (nth b 2) (nth c 2) u v)
+    -1 #+clj -1))
 #+END_SRC
 *** PHeading
 #+BEGIN_SRC clojure :noweb-ref vec3
