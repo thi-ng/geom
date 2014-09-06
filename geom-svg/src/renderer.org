@@ -41,23 +41,26 @@
   (defn mesh
     [mesh mvp screen shader]
     (let [faces (project-faces mvp screen (g/faces mesh))
-          faces (->> (if (solid? shader)
+          faces (->> (if (shader/solid? shader)
                        (cull-backfaces peek faces)
                        faces)
                      (z-map-faces)
                      (z-sort-faces first))]
       (group
-       (uniforms shader)
+       (shader/uniforms shader)
        (if shader
-         (map (fn [[z f f']] (polygon f' (shade-facet shader f f' z))) faces)
-         (map (fn [f] (polygon (f 2) nil)) faces)))))
+         (map (fn [[z f f']] (svg/polygon f' (shader/shade-facet shader f f' z))) faces)
+         (map (fn [f] (svg/polygon (f 2) nil)) faces)))))
 #+END_SRC
 
 ** Complete namespace definition                                   :noexport:
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/renderer.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.renderer
     (:require
      [thi.ng.geom.core :as g]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.geom.svg.shader :as shader]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :refer [vec3 V3Z]]
      [thi.ng.geom.core.matrix :as mat :refer [M44]]))
