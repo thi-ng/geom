@@ -14,28 +14,34 @@
 
 #+BEGIN_SRC clojure :noweb-ref constants
   (def xml-preamble "<?xml version=\"1.0\"?>\n")
-  
+
   (def ^:dynamic *ff* (f/float 2))
   (def ^:dynamic *fmt-vec* (fn [p] (str (*ff* (nth p 0)) "," (*ff* (nth p 1)))))
-  
-  (def point-seq-format
-    (memoize
-     (fn [n]
-       (->> *fmt-vec*
-            (repeat n)
-            (interpose " ")))))
+
+  (def point-seq-format2 [*fmt-vec* " " *fmt-vec*])
+  (def point-seq-format3 [*fmt-vec* " " *fmt-vec* " " *fmt-vec*])
+  (def point-seq-format4 [*fmt-vec* " " *fmt-vec* " " *fmt-vec* " " *fmt-vec*])
+
+  (defn point-seq-format
+    [n]
+    (case (int n)
+      1 [*fmt-vec*]
+      2 point-seq-format2
+      3 point-seq-format3
+      4 point-seq-format4
+      (->> *fmt-vec*
+           (repeat n)
+           (interpose " "))))
 #+END_SRC
 
-#+BEGIN_SRC clojure :noweb-ref svg
-  (defn svg
-    [attrs & body]
-    [:svg
-     (merge
-      {:xmlns "http://www.w3.org/2000/svg"
-       :version "1.1"}
-      attrs)
-     body])
+Actual conversion to SVG XML strings is only directly supported for
+the Clojure version using James Reeve's [[https://github.com/weavejester/hiccup][hiccup]] library. For
+ClojureScript it is more likely (and efficient) to directly translate
+a SVG data structure into a DOM tree for which there're many different
+libraries available and we don't want to be prescriptive here and
+introduce uneccessary dependencies.
 
+#+BEGIN_SRC clojure :noweb-ref svg
   ,#+clj
   (defn serialize
     [svg] (str xml-preamble (html {:mode :xml} svg)))
@@ -45,9 +51,19 @@
     [svg] (.getBytes (serialize svg) "UTF-8"))
 #+END_SRC
 
-** Attribute map processing
+** Color attribute conversion
 
-#+BEGIN_SRC clojure
+Colors in SVG need to be defined as CSS color strings and hence are
+completely opaque to other parts of the code base and which might deal
+with the dynamic generation of color values. Therefore we allow the
+=:stroke= and =:fill= attributes to be defined as RGB(A) or HSB(A)
+vectors (e.g. in conjuction with the color utilities defined in the
+=thi.ng.common.color= namespace. If these attributes are present and
+*not* already a string value, they will be converted into a CSS color
+automatically (using the =rgba->css= or =hsba->css= fns). In order to
+specify HSB colors, use the =:stoke-hsb= or =:fill-hsb= attributes.
+
+#+BEGIN_SRC clojure :noweb-ref helpers
   (defn color-attrib
     [attribs id id2 f]
     (if-let [att (attribs id)]
@@ -58,7 +74,7 @@
 
   (defn svg-attribs
     [attribs base]
-    (if attribs
+    (if (seq attribs)
       (-> attribs
           (color-attrib :stroke :stroke col/rgba->css)
           (color-attrib :stroke-hsb :stroke col/hsba->css)
@@ -71,6 +87,15 @@
 ** SVG primitives
 
 #+BEGIN_SRC clojure :noweb-ref prims
+  (defn svg
+    [attribs & body]
+    [:svg
+     (svg-attribs
+      attribs
+      {:xmlns "http://www.w3.org/2000/svg"
+       :version "1.1"})
+     body])
+
   (defn group
     [attribs & body]
     [:g (svg-attribs attribs nil) body])
@@ -123,13 +148,66 @@
 
 ** SVG conversions for geom.types
 
+The =thi.ng.geom.svg.adapater= namespace provides some simple wrappers
+to allow direct use of geometric entities defined in the [[file:~/work/clj/thing/geom/geom-types/src/index.org][geom-types]]
+module without having to manually construct their SVG representation.
+
+The adapaters work by providing implementations of the [[PSVGConvert]]
+protocol for all built-in 2D types and a simple helper function to
+recursively transform any such types used within an SVG scene.
+
+*** Examples
+
+A typical use case might look like this:
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/circles.clj :noweb yes :mkdirp yes :padline no
+  (require '[thi.ng.geom.core :as g])
+  (require '[thi.ng.geom.circle :as c])
+  (require '[thi.ng.geom.svg.core :as svg])
+  (require '[thi.ng.geom.svg.adapter :as adapt])
+
+  ;; This scene defines 2 circles and their intersection points
+  (def scene
+    (let [c1    (c/circle 250 150 50)
+          c2    (c/circle 150 150 100)
+          [p q] (g/intersect-shape c1 c2)]
+      (svg/svg
+       {:width 300 :height 300}
+       (svg/group
+        {:fill "yellow"}
+        ;; 1st circle inherits all attributes from parent group
+        c1
+        ;; we can use metadata to override specific attribs per shape
+        ;; here we also demonstrate automatic color attrib conversion
+        (with-meta c2 {:fill [0 1 1 0.25] :stroke-hsb [0 1 1]}))
+       (svg/group
+        {:fill "#000"}
+        (c/circle p 3) (svg/text (g/+ p 10 0) "P")
+        (c/circle q 3) (svg/text (g/+ q 10 0) "Q")))))
+
+  (->> scene
+       (adapt/all-as-svg)    ;; transform all scene elements
+       (svg/serialize)       ;; serialize as SVG XML string
+       (spit "circles.svg")) ;; write to disk
+#+END_SRC
+
+[[http://media.thi.ng/geom/svg-circles.svg]]
+
+Btw. This example can be run from the REPL via this command:
+
+#+BEGIN_SRC clojure
+  (load-file "examples/circles.clj")
+#+END_SRC
+
+*** Adapter implementation
+
 #+BEGIN_SRC clojure :noweb-ref adapter
   (extend-protocol svg/PSVGConvert
 
     thi.ng.geom.types.Line2
     (as-svg [{p :points} opts] (svg/line (p 0) (p 1) opts))
 
-    thi.ng.geom.types.Circle
+    thi.ng.geom.types.Circle2
     (as-svg [_ opts] (svg/circle (:p _) (:r _) opts))
 
     thi.ng.geom.types.LineStrip2
@@ -141,7 +219,16 @@
     thi.ng.geom.types.Rect2
     (as-svg [{:keys [p size]} opts] (svg/rect p (size 0) (size 1) opts))
 
+    thi.ng.geom.types.Triangle2
+    (as-svg [_ opts] (svg/polygon (:points _) opts))
+
     )
+
+  (defn all-as-svg
+    [form]
+    (postwalk
+     (fn [x] (if (satisfies? svg/PSVGConvert x) (svg/as-svg x (meta x)) x))
+     form))
 #+END_SRC
 
 ** Complete namespace: svg.core                                    :noexport:
@@ -162,6 +249,8 @@
 
   <<svg>>
 
+  <<helpers>>
+
   <<prims>>
 #+END_SRC
 
@@ -171,9 +260,11 @@
     (:require
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :refer [vec3 V3Z]]
-     [thi.ng.geom.core.matrix :as mat :refer [M44]]))
+     [thi.ng.geom.types]
+     [clojure.walk :refer [postwalk]])
+    ,#+clj
+    (:import
+     [thi.ng.geom.types Circle2 Line2 LineStrip2 Polygon2 Rect2 Triangle2]))
 
   <<adapter>>
 #+END_SRC
