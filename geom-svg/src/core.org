@@ -3,24 +3,17 @@
 * Namespace: thi.ng.geom.svg.core
 
 ** Protocols
+
 *** PSVGConvert
 #+BEGIN_SRC clojure :noweb-ref protos
   (defprotocol PSVGConvert
     (as-svg [_ opts]))
 #+END_SRC
 
-*** PShader
-#+BEGIN_SRC clojure :noweb-ref protos
-  (defprotocol PShader
-    (uniforms [_])
-    (solid? [_])
-    (shade-facet [_ f f' z]))
-#+END_SRC
-
 ** SVG serialization
 
 #+BEGIN_SRC clojure :noweb-ref constants
-  (def ^:const xml-preamble "<?xml version=\"1.0\"?>\n")
+  (def xml-preamble "<?xml version=\"1.0\"?>\n")
   
   (def ^:dynamic *ff* (f/float 2))
   (def ^:dynamic *fmt-vec* (fn [p] (str (*ff* (nth p 0)) "," (*ff* (nth p 1)))))
@@ -42,16 +35,37 @@
        :version "1.1"}
       attrs)
      body])
-  
+
+  ,#+clj
   (defn serialize
-    [svg]
-    (str xml-preamble
-         ,#+clj  (html {:mode :xml} svg)
-         ,#+cljs (render-html svg)))
-  
+    [svg] (str xml-preamble (html {:mode :xml} svg)))
+
   ,#+clj
   (defn serialize-as-byte-array
     [svg] (.getBytes (serialize svg) "UTF-8"))
+#+END_SRC
+
+** Attribute map processing
+
+#+BEGIN_SRC clojure
+  (defn color-attrib
+    [attribs id id2 f]
+    (if-let [att (attribs id)]
+      (if (string? att)
+        attribs
+        (-> attribs (dissoc id) (assoc id2 (apply f att))))
+      attribs))
+
+  (defn svg-attribs
+    [attribs base]
+    (if attribs
+      (-> attribs
+          (color-attrib :stroke :stroke col/rgba->css)
+          (color-attrib :stroke-hsb :stroke col/hsba->css)
+          (color-attrib :fill :fill col/rgba->css)
+          (color-attrib :fill-hsb :fill col/hsba->css)
+          (into base))
+      base))
 #+END_SRC
 
 ** SVG primitives
@@ -59,151 +73,78 @@
 #+BEGIN_SRC clojure :noweb-ref prims
   (defn group
     [attribs & body]
-    [:g attribs body])
+    [:g (svg-attribs attribs nil) body])
 
   (defn text
-    [[x y] txt attribs]
+    [[x y] txt & [attribs]]
     [:text
-     (merge attribs {:x (*ff* x) :y (*ff* y)})
+     (svg-attribs attribs {:x (*ff* x) :y (*ff* y)})
      txt])
 
   (defn circle
-    [[x y] radius attribs]
+    [[x y] radius & [attribs]]
     [:circle
-     (merge attribs
-            {:cx (*ff* x) :cy (*ff* y) :r radius})])
+     (svg-attribs
+      attribs
+      {:cx (*ff* x) :cy (*ff* y)
+       :r radius})])
+
+  (defn rect
+    [[x y] w h & [attribs]]
+    [:rect
+     (svg-attribs
+      attribs
+      {:x (*ff* x) :y (*ff* y)
+       :width w :height h})])
 
   (defn line
-    [[ax ay] [bx by] attribs]
+    [[ax ay] [bx by] & [attribs]]
     [:line
-     (merge attribs
-            {:x1 (*ff* ax) :y1 (*ff* ay)
-             :x2 (*ff* bx) :y2 (*ff* by)})])
+     (svg-attribs
+      attribs
+      {:x1 (*ff* ax) :y1 (*ff* ay)
+       :x2 (*ff* bx) :y2 (*ff* by)})])
 
   (defn line-strip
-    [points attribs]
+    [points & [attribs]]
     [:polyline
-     (assoc attribs
-       :fill "none"
-       :points (apply f/format (point-seq-format (count points)) points))])
+     (svg-attribs
+      attribs
+      {:fill "none"
+       :points (apply f/format (point-seq-format (count points)) points)})])
 
   (defn polygon
-    [points attribs]
+    [points & [attribs]]
     [:polygon
-     (assoc attribs
-       :points (apply f/format (point-seq-format (count points)) points))])
-
-  (defn project-face
-    [mvp vtx points]
-    (mapv #(mat/project-point-z % mvp vtx) points))
-
-  (defn project-faces
-    [mvp vtx faces]
-    (map
-     (fn [f]
-       (let [f' (project-face mvp vtx f)
-             n' (gu/ortho-normal f')]
-         [f f' n']))
-     faces))
-
-  (defn cull-backfaces
-    [norm-fn faces]
-    (filter (fn [f] (neg? (g/dot (norm-fn f) V3Z))) faces))
-
-  (defn z-map-faces
-    [faces]
-    (mapv
-     (fn [[f f' n']] [(:z (gu/centroid f')) f f' n'])
-     faces))
-
-  (defn z-sort-faces
-    [z-fn faces]
-    (reverse (sort-by z-fn faces)))
-
-  (defn rgba
-    [[r g b a]]
-    (let [r (* 255 r) g (* 255 g) b (* 255 b)]
-      (if (and a (< a 1.0))
-        (str "rgba(" (int r) "," (int g) "," (int b) "," a ")")
-        (str "rgb(" (int r) "," (int g) "," (int b) ")"))))
-
-  (defn lambert
-    [{:keys [view light-dir light-col diffuse ambient]}]
-    (let [light-col (vec3 light-col)
-          light-dir (g/normalize (vec3 light-dir))
-          diffuse   (if (fn? diffuse) diffuse (vec3 diffuse))
-          ambient   (if (fn? ambient) ambient (vec3 ambient))
-          nmat      (g/transpose (g/invert view))]
-      (fn [f f' z]
-        (let [n       (g/transform-vector nmat (gu/ortho-normal f))
-              lambert (max 0.0 (g/dot n light-dir))
-              diffuse (if (fn? diffuse) (diffuse f f' z) diffuse)
-              ambient (if (fn? ambient) (ambient f f' z) ambient)]
-          (-> (g/* diffuse light-col)
-              (g/madd lambert (g/* ambient light-col)))))))
-
-  (defn phong
-    [{:keys [model view light-pos light-col
-             diffuse specular ambient shininess]}]
-    (let [light-col (vec3 light-col)
-          light-pos (g/transform-vector view (vec3 light-pos))
-          diffuse   (if (fn? diffuse) diffuse (vec3 diffuse))
-          ambient   (if (fn? ambient) ambient (vec3 ambient))
-          specular  (vec3 specular)
-          mv        (g/* view model)
-          nmat      (g/transpose (g/invert view))]
-      (fn [f f' z]
-        (let [eye-pos (g/transform-vector mv (gu/centroid f))
-              n       (g/normalize (g/transform-vector nmat (gu/ortho-normal f)))
-              l       (g/normalize (g/- light-pos eye-pos))
-              e       (g/normalize (g/- eye-pos))
-              lambert (max 0.0 (g/dot n l))
-              diffuse (if (fn? diffuse) (diffuse f f' z) diffuse)
-              ambient (if (fn? ambient) (ambient f f' z) ambient)
-              spec    (max (Math/pow (g/dot (g/normalize (g/+ l e)) n) shininess) 0.0)]
-          (-> (g/* diffuse light-col)
-              (g/madd lambert (g/+ (g/* ambient light-col) (g/* specular spec)))
-              (g/min [1.0 1.0 1.0]))))))
-
-  (defn normal-rgb
-    ([] (normal-rgb M44))
-    ([tx]
-       (fn [f _ _]
-         (-> (gu/ortho-normal f)
-             (g/transform tx)
-             (g/madd 0.5 0.5)))))
-
-  (defn translucent
-   [shader alpha]
-   (fn [f f' z] (conj (vec (shader f f' z)) alpha)))
-
-  (defn shader
-    [{:keys [fill stroke uniforms flags]}]
-    (reify
-      PShader
-      (shade-facet [_ f f' z]
-        (cond-> {}
-                fill   (assoc :fill   (if (fn? fill) (rgba (fill f f' z)) fill))
-                stroke (assoc :stroke (if (fn? stroke) (rgba (stroke f f' z)) stroke))))
-      (uniforms [_] uniforms)
-      (solid? [_] (:solid flags true))))
-
-  (defn mesh
-    [mesh mvp screen shader]
-    (let [faces (project-faces mvp screen (g/faces mesh))
-          faces (->> (if (solid? shader)
-                       (cull-backfaces peek faces)
-                       faces)
-                     (z-map-faces)
-                     (z-sort-faces first))]
-      (group
-       (uniforms shader)
-       (if shader
-         (map (fn [[z f f']] (polygon f' (shade-facet shader f f' z))) faces)
-         (map (fn [f] (polygon (f 2) nil)) faces)))))
+     (svg-attribs
+      attribs
+      {:points (apply f/format (point-seq-format (count points)) points)})])
 #+END_SRC
 
-** Complete namespace definition                                   :noexport:
+** SVG conversions for geom.types
+
+#+BEGIN_SRC clojure :noweb-ref adapter
+  (extend-protocol svg/PSVGConvert
+
+    thi.ng.geom.types.Line2
+    (as-svg [{p :points} opts] (svg/line (p 0) (p 1) opts))
+
+    thi.ng.geom.types.Circle
+    (as-svg [_ opts] (svg/circle (:p _) (:r _) opts))
+
+    thi.ng.geom.types.LineStrip2
+    (as-svg [_ opts] (svg/line-strip (:points _) opts))
+
+    thi.ng.geom.types.Polygon2
+    (as-svg [_ opts] (svg/polygon (:points _) opts))
+
+    thi.ng.geom.types.Rect2
+    (as-svg [{:keys [p size]} opts] (svg/rect p (size 0) (size 1) opts))
+
+    )
+#+END_SRC
+
+** Complete namespace: svg.core                                    :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/core.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.core
     (:require
@@ -212,8 +153,8 @@
      [thi.ng.geom.core.vector :refer [vec3 V3Z]]
      [thi.ng.geom.core.matrix :as mat :refer [M44]]
      [thi.ng.common.stringformat :as f]
-     #+clj [hiccup.core :refer [html]]
-     #+cljs [hiccups.runtime :refer [render-html]]))
+     [thi.ng.common.color :as col]
+     #+clj [hiccup.core :refer [html]]))
 
   <<constants>>
 
@@ -222,4 +163,17 @@
   <<svg>>
 
   <<prims>>
+#+END_SRC
+
+** Complete namespace: svg.adapter                                 :noexport:
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/adapter.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.svg.adapter
+    (:require
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :refer [vec3 V3Z]]
+     [thi.ng.geom.core.matrix :as mat :refer [M44]]))
+
+  <<adapter>>
 #+END_SRC
