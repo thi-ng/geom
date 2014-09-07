@@ -13,13 +13,15 @@ is defined in its own namespace and can be loaded from the REPL via:
 
 [[http://media.thi.ng/geom/svgdemo01-suzanne.svg]]
 
-#+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo01.clj :mkdirp yes :padline no
-  (ns svgdemo01
+#+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo02.clj :mkdirp yes :padline no
+  (ns svgdemo02
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.matrix :as mat]
      [thi.ng.geom.mesh.io :as mio]
      [thi.ng.geom.svg.core :as svg]
+     [thi.ng.geom.svg.shader :as shader]
+     [thi.ng.geom.svg.renderer :as render]
      [thi.ng.common.math.core :as m]
      [clojure.java.io :as io]))
 
@@ -32,13 +34,13 @@ is defined in its own namespace and can be loaded from the REPL via:
   (def col-tx (g/rotate-x (mat/matrix44) (- m/HALF_PI)))
 
   (def shader
-    (svg/shader
-     {:fill     (svg/phong
+    (shader/shader
+     {:fill     (shader/phong
                  {:model     model
                   :view      view
                   :light-pos [0 -2 1]
                   :light-col [1 1 1]
-                  :diffuse   (svg/normal-rgb col-tx)
+                  :diffuse   (shader/normal-rgb col-tx)
                   :ambient   [0.1 0.1 0.2]
                   :specular  1.0
                   :shininess 6.0})
@@ -54,7 +56,7 @@ is defined in its own namespace and can be loaded from the REPL via:
     (let [screen (mat/viewport-transform width height)]
       (->> (svg/svg
             {:width width :height height}
-            (svg/mesh mesh mvp screen shader))
+            (render/mesh mesh mvp screen shader))
            (svg/serialize)
            (spit path))))
 
@@ -69,8 +71,8 @@ is defined in its own namespace and can be loaded from the REPL via:
 |                                                |                                                | *Specular:* [0.8 0.8 0.8]                    |
 | *Lighting:* N/A                                | *Lighting:* Lambert                            | *Lighting:* Blinn-Phong                      |
 
-#+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo02.clj :mkdirp yes :padline no
-  (ns svgdemo02
+#+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo03.clj :mkdirp yes :padline no
+  (ns svgdemo03
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :refer [vec3]]
@@ -79,27 +81,29 @@ is defined in its own namespace and can be loaded from the REPL via:
      [thi.ng.geom.polygon :as p]
      [thi.ng.geom.mesh.subdivision :as sd]
      [thi.ng.geom.svg.core :as svg]
+     [thi.ng.geom.svg.shader :as shader]
+     [thi.ng.geom.svg.renderer :as render]
      [thi.ng.common.math.core :as m]))
 
-  (def width    320)
-  (def height   240)
+  (def width    640)
+  (def height   480)
   (def model    (g/rotate-y (mat/matrix44) m/SIXTH_PI))
   (def view     (apply mat/look-at (mat/look-at-vectors 0 1.75 0.75 0 0 0)))
   (def proj     (mat/perspective 60 (/ width height) 0.1 10))
   (def mvp      (->> model (g/* view) (g/* proj)))
 
-  (def diffuse  (svg/normal-rgb (g/rotate-y (mat/matrix44) m/PI)))
+  (def diffuse  (shader/normal-rgb (g/rotate-y (mat/matrix44) m/PI)))
   (def uniforms {:stroke "white" :stroke-width 0.25})
 
   (def shader-diffuse
-    (svg/shader
+    (shader/shader
      {:fill     diffuse
       :uniforms uniforms
       :flags    {:solid true}}))
 
   (def shader-lambert
-    (svg/shader
-     {:fill     (svg/lambert
+    (shader/shader
+     {:fill     (shader/lambert
                  {:view      view
                   :light-dir [-1 0 1]
                   :light-col [1 1 1]
@@ -109,8 +113,8 @@ is defined in its own namespace and can be loaded from the REPL via:
       :flags    {:solid true}}))
 
   (def shader-phong
-    (svg/shader
-     {:fill     (svg/phong
+    (shader/shader
+     {:fill     (shader/phong
                  {:model     model
                   :view      view
                   :light-pos [-1 2 1]
@@ -133,6 +137,7 @@ is defined in its own namespace and can be loaded from the REPL via:
     (->> [[1 0.25 0.15] [0.75 0.35 0.1] [0.5 0.5 0.05] [0.25 0.75 0.05]]
          (map (partial apply ring 40))
          (reduce g/into)
+         (sd/catmull-clark)
          (sd/catmull-clark)))
 
   ;; 2d text label w/ projected anchor point
@@ -157,7 +162,7 @@ is defined in its own namespace and can be loaded from the REPL via:
           max-z  (/ 0.75 2)]
       (->> (svg/svg
             {:width width :height height}
-            (svg/mesh mesh mvp screen shader)
+            (render/mesh mesh mvp screen shader)
             (label-3d (vec3 0 0 max-z) mvp screen labels))
            (svg/serialize)
            (spit path))))
@@ -173,4 +178,39 @@ is defined in its own namespace and can be loaded from the REPL via:
               ["Shader" "Blinn-Phong"])
 #+END_SRC
 
+** Gradient spiral example
 
+[[http://media.thi.ng/geom/svgdemo04-spiral.svg]]
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo04.clj :mkdirp yes :padline no
+  (ns svgdemo04
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :refer [vec2]]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.common.color :as col]
+     [thi.ng.common.math.core :as m]
+     [thi.ng.macromath.core :as mm]))
+
+  (defn spiral
+    [center start end r1 r2 steps]
+    (map
+     (fn [r theta] (g/+ (g/as-cartesian (vec2 r theta)) center))
+     (range r1 r2 (mm/subdiv r2 r1 steps))
+     (range start end (mm/subdiv end start steps))))
+
+  (defn rainbow-gradient
+    [] (map (fn [h] [h (col/hsb->rgb h 1 1)]) (m/norm-range 12)))
+
+  (->> (svg/svg
+        {:width 300 :height 300}
+        (svg/defs
+          (apply svg/radial-gradient "grad" (rainbow-gradient)))
+        (svg/line-strip
+         (spiral [150 150] 0 (* 6 m/TWO_PI) 0 140 300)
+         (assoc svg/stroke-round
+           :stroke "url(#grad)"
+           :stroke-width 10)))
+        (svg/serialize)
+        (spit "spiral.svg"))
+#+END_SRC

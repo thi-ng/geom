@@ -46,7 +46,7 @@
                        faces)
                      (z-map-faces)
                      (z-sort-faces first))]
-      (group
+      (svg/group
        (shader/uniforms shader)
        (if shader
          (map (fn [[z f f']] (svg/polygon f' (shader/shade-facet shader f f' z))) faces)
