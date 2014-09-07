@@ -162,9 +162,10 @@ specify HSB colors, use the =:stoke-hsb= or =:fill-hsb= attributes.
 
   (defn line-decorated
     [p q start end & [attribs]]
-    (cond-> (list (line p q attribs))
-            start (conj (start q p attribs))
-            end   (conj (start p q attribs))))
+    (list
+     (line p q attribs)
+     (if start (start q p attribs))
+     (if end   (end p q attribs))))
 
   (defn line-strip
     [points & [attribs]]
@@ -175,10 +176,12 @@ specify HSB colors, use the =:stoke-hsb= or =:fill-hsb= attributes.
        :points (apply f/format (point-seq-format (count points)) points)})])
 
   (defn line-strip-decorated
-    [points start end & [attribs]]
-    (cond-> (list (line-strip points attribs))
-            start (conj (start (points 1) (points 0) attribs))
-            end   (conj (end (points (- (count points) 2)) (peek points) attribs))))
+    [points start seg end & [attribs]]
+    (list
+     (line-strip points attribs)
+     (if start (start (points 1) (points 0) attribs))
+     (if seg   (map (fn [[p q]] (seg p q attribs)) (d/successive-nth 2 (pop points))))
+     (if end   (end (points (- (count points) 2)) (peek points) attribs))))
 
   (defn polygon
     [points & [attribs]]
@@ -192,13 +195,13 @@ specify HSB colors, use the =:stoke-hsb= or =:fill-hsb= attributes.
 
 #+BEGIN_SRC clojure :noweb-ref decorators
   (defn arrow-head
-    [len theta solid?]
+    [len theta solid? & [opts]]
     (fn [p q & [attribs]]
       (let [q (vec2 q)
             d (g/normalize (g/- q p) len)]
         ((if solid? polygon line-strip)
          [(g/- q (g/rotate d (- theta))) q (g/- q (g/rotate d theta))]
-           attribs))))
+           (merge attribs opts)))))
 #+END_SRC
 
 ** SVG conversions for geom.types
@@ -289,19 +292,11 @@ Btw. This example can be run from the REPL via this command:
     thi.ng.geom.types.LineStrip2
     (as-svg
       [{:keys [points]} {:keys [start segment end] :as opts}]
-      (cond
-       (and (or start end) (not segment))
-       (svg/line-strip-decorated points start end (dissoc opts :start :end))
-
-       segment
-       (let [opts (dissoc opts :start :end :segment)]
-         (cond-> (list
-                  (svg/line-strip points opts)
-                  (map (fn [[p q]] (segment p q opts)) (d/successive-nth 2 (pop points))))
-                 start (conj (start (points 1) (points 0) opts))))
-
-       :else
-       (svg/line-strip points opts)))
+      (if (or start segment end)
+        (svg/line-strip-decorated
+         points start segment end
+         (dissoc opts :start :segment :end))
+        (svg/line-strip points opts)))
 
     thi.ng.geom.types.Polygon2
     (as-svg
@@ -332,6 +327,7 @@ Btw. This example can be run from the REPL via this command:
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :refer [vec2 vec3 V3Z]]
      [thi.ng.geom.core.matrix :as mat :refer [M44]]
+     [thi.ng.common.data.core :as d]
      [thi.ng.common.stringformat :as f]
      [thi.ng.common.color :as col]
      #+clj [hiccup.core :refer [html]]))
@@ -356,7 +352,6 @@ Btw. This example can be run from the REPL via this command:
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.types]
-     [thi.ng.common.data.core :as d]
      [clojure.walk :refer [postwalk]])
     ,#+clj
     (:import
