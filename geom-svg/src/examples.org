@@ -48,7 +48,7 @@ is defined in its own namespace and can be loaded from the REPL via:
       :flags    {:solid true}}))
 
   (def mesh
-    (with-open [in (io/input-stream "suzanne.stl")]
+    (with-open [in (io/input-stream "../../assets/suzanne.stl")]
       (-> (mio/read-stl in) (g/center) (g/scale 0.85))))
 
   (defn render-svg
@@ -60,7 +60,7 @@ is defined in its own namespace and can be loaded from the REPL via:
            (svg/serialize)
            (spit path))))
 
-  (render-svg "svgdemo01.svg" mesh mvp width height)
+  (render-svg "svgdemo02-suzanne.svg" mesh mvp width height)
 #+END_SRC
 
 ** Dynamic mesh & shader comparison
@@ -167,13 +167,13 @@ is defined in its own namespace and can be loaded from the REPL via:
            (svg/serialize)
            (spit path))))
 
-  (render-svg "svgdemo02-diffuse.svg"
+  (render-svg "svgdemo03-diffuse.svg"
               mesh mvp shader-diffuse width height
               ["Shader" "Normal/RGB"])
-  (render-svg "svgdemo02-lambert.svg"
+  (render-svg "svgdemo03-lambert.svg"
               mesh mvp shader-lambert width height
               ["Shader" "Lambert"])
-  (render-svg "svgdemo02-phong.svg"
+  (render-svg "svgdemo03-phong.svg"
               mesh mvp shader-phong width height
               ["Shader" "Blinn-Phong"])
 #+END_SRC
@@ -199,18 +199,103 @@ is defined in its own namespace and can be loaded from the REPL via:
      (range r1 r2 (mm/subdiv r2 r1 steps))
      (range start end (mm/subdiv end start steps))))
 
-  (defn rainbow-gradient
-    [] (map (fn [h] [h (col/hsb->rgb h 1 1)]) (m/norm-range 12)))
+  (def rainbow-gradient (map (fn [h] [h [h 1 1]]) (m/norm-range 12)))
 
   (->> (svg/svg
         {:width 300 :height 300}
         (svg/defs
-          (apply svg/radial-gradient "grad" (rainbow-gradient)))
+          (apply svg/radial-gradient-hsb "rainbow" rainbow-gradient))
         (svg/line-strip
          (spiral [150 150] 0 (* 6 m/TWO_PI) 0 140 300)
          (assoc svg/stroke-round
-           :stroke "url(#grad)"
+           :stroke "url(#rainbow)"
            :stroke-width 10)))
         (svg/serialize)
-        (spit "spiral.svg"))
+        (spit "svgdemo04-spiral.svg"))
+#+END_SRC
+
+** Gradient spirals with instancing
+
+[[http://media.thi.ng/geom/svg/instancing.svg]]
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo05.clj :mkdirp yes :padline no
+  (ns svgdemo05
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :refer [vec2]]
+     [thi.ng.geom.core.matrix :refer [M32]]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.common.color :as col]
+     [thi.ng.common.math.core :as m]
+     [thi.ng.macromath.core :as mm]))
+
+  (defn spiral
+    [center start end r1 r2 steps]
+    (map
+     (fn [r theta] (g/+ (g/as-cartesian (vec2 r theta)) center))
+     (range r1 r2 (mm/subdiv r2 r1 steps))
+     (range start end (mm/subdiv end start steps))))
+
+  (def rainbow-gradient (map (fn [h] [h [h 1 1]]) (m/norm-range 12)))
+
+  (->> (svg/svg
+        {:width 600 :height 300}
+        (svg/defs
+          (apply svg/radial-gradient-hsb "rainbow-rad" rainbow-gradient)
+          (apply svg/linear-gradient-hsb "rainbow-lin" rainbow-gradient)
+          (svg/line-strip
+           (spiral [0 0] 0 (* 6 m/TWO_PI) 0 140 300)
+           (assoc svg/stroke-round :id "spiral")))
+        (svg/instance
+         "spiral"
+         {:transform (-> M32 (g/translate 150 150))
+          :stroke "url(#rainbow-rad)"
+          :stroke-width 10})
+        (svg/instance
+         "spiral"
+         {:transform (-> M32 (g/translate 450 150) (g/rotate m/PI))
+          :stroke "url(#rainbow-lin)"
+          :stroke-width 5}))
+       (svg/serialize)
+       (spit "svgdemo05-instancing.svg"))
+#+END_SRC
+
+** Line decorators
+
+[[http://media.thi.ng/geom/svg/decorators.svg]]
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo06.clj :mkdirp yes :padline no
+  (ns svgdemo06
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.matrix :refer [M32]]
+     [thi.ng.geom.line :as l]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.geom.svg.adapter :as adapt]))
+
+  (def arrow (svg/arrow-head 15 0.2 false))
+
+  ;; compose decorators
+  (def labeler
+    (svg/comp-decorators
+     (svg/arrow-head 10 0.25 true {:fill "red"})
+     (svg/line-label {:fill "black" :stroke "none"})))
+
+  (->> (svg/svg
+        {:width 300 :height 300 :font-family "Arial" :font-size 12}
+        ;; option 1: use line-strip-decorated
+        (svg/line-strip-decorated
+         [[5 0] [5 295] [300 295]]
+         arrow nil arrow
+         {:stroke "blue"})
+        ;; option 2: attach decorators as metadata
+        (with-meta
+          (l/linestrip2 [[10 290] [100 150] [200 200] [290 10]])
+          {:stroke "red"
+           :stroke-dasharray "5 5"
+           :__segment labeler
+           :__label ["Jan 2014" "Feb 2014" "Mar 2014"]}))
+       (adapt/all-as-svg)
+       (svg/serialize)
+       (spit "svgdemo06-decorators.svg"))
 #+END_SRC
