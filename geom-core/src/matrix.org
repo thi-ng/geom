@@ -169,6 +169,14 @@ define some macros to simplify them.
         -1 #+clj -1))))
 #+END_SRC
 
+**** PTranspose
+#+BEGIN_SRC clojure :noweb-ref mat32
+  g/PTranspose
+  (transpose
+   [_]
+   (Matrix32. m00 m10 m01 m11 m02 m12 -1 #+clj -1))
+#+END_SRC
+
 **** PRotate, PScale, PTranslate, PTransform
 #+BEGIN_SRC clojure :noweb-ref mat32
   g/PRotate
