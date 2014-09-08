@@ -27,6 +27,8 @@
   (def ^:dynamic *fmt-vec* (fn [p] (str (*ff* (nth p 0)) "," (*ff* (nth p 1)))))
   (def ^:dynamic *fmt-percent* (fn [x] (str (int (* x 100)) "%")))
 
+  (def ^:dynamic *fmt-matrix* ["matrix(" *ff* "," *ff* "," *ff* "," *ff* "," *ff* "," *ff* ")"])
+
   (def point-seq-format2 [*fmt-vec* " " *fmt-vec*])
   (def point-seq-format3 [*fmt-vec* " " *fmt-vec* " " *fmt-vec*])
   (def point-seq-format4 [*fmt-vec* " " *fmt-vec* " " *fmt-vec* " " *fmt-vec*])
@@ -60,7 +62,9 @@ introduce uneccessary dependencies.
     [svg] (.getBytes (serialize svg) "UTF-8"))
 #+END_SRC
 
-** Color attribute conversion
+** Attribute conversion
+
+*** Colors
 
 Colors in SVG need to be defined as CSS color strings and hence are
 completely opaque to other parts of the code base and which might deal
@@ -80,15 +84,40 @@ specify HSB colors, use the =:stoke-hsb= or =:fill-hsb= attributes.
         attribs
         (-> attribs (dissoc id) (assoc id2 (apply f att))))
       attribs))
+#+END_SRC
+
+*** Transforms
+
+Many SVG elements support the attachment of local coordinate
+transformations. If a =:transform= attribute has a non-string value, it
+will be interpreted as a =Matrix32= or equivalent vector and will be
+automatically converted.
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn matrix-attrib
+    [attribs id]
+    (if-let [mat (attribs id)]
+      (if (string? mat)
+        attribs
+        (assoc attribs id (apply f/format *fmt-matrix* (g/transpose mat))))
+      attribs))
+#+END_SRC
+
+*** Attribute processing
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn filter-attribs
+    [attribs] (into {} (remove (fn [[k]] (= "__" (subs (name k) 0 2))) attribs)))
 
   (defn svg-attribs
     [attribs base]
     (if (seq attribs)
-      (-> attribs
+      (-> (filter-attribs attribs)
           (color-attrib :stroke :stroke col/rgba->css)
           (color-attrib :stroke-hsb :stroke col/hsba->css)
           (color-attrib :fill :fill col/rgba->css)
           (color-attrib :fill-hsb :fill col/hsba->css)
+          (matrix-attrib :transform)
           (into base))
       base))
 #+END_SRC
@@ -101,8 +130,9 @@ specify HSB colors, use the =:stoke-hsb= or =:fill-hsb= attributes.
     [:svg
      (svg-attribs
       attribs
-      {:xmlns "http://www.w3.org/2000/svg"
-       :version "1.1"})
+      {"xmlns" "http://www.w3.org/2000/svg"
+       "xmlns:xlink" "http://www.w3.org/1999/xlink"
+       "version" "1.1"})
      body])
 
   (defn defs
@@ -110,21 +140,33 @@ specify HSB colors, use the =:stoke-hsb= or =:fill-hsb= attributes.
     [:defs defs])
 
   (defn gradient-stop
-    [[pos col]]
-    (let [col (if (string? col) col (apply col/rgba->css col))]
+    [f [pos col]]
+    (let [col (if (string? col) col (apply f col))]
       [:stop {:offset (*fmt-percent* pos) :stop-color col}]))
 
-  (defn linear-gradient
+  (defn linear-gradient-rgb
     [id & stops]
     [:linearGradient
      {:id id}
-     (map gradient-stop stops)])
+     (map #(gradient-stop col/rgba->css %) stops)])
 
-  (defn radial-gradient
+  (defn radial-gradient-rgb
     [id & stops]
     [:radialGradient
      {:id id}
-     (map gradient-stop stops)])
+     (map #(gradient-stop col/rgba->css %) stops)])
+
+  (defn linear-gradient-hsb
+    [id & stops]
+    [:linearGradient
+     {:id id}
+     (map #(gradient-stop col/hsba->css %) stops)])
+
+  (defn radial-gradient-hsb
+    [id & stops]
+    [:radialGradient
+     {:id id}
+     (map #(gradient-stop col/hsba->css %) stops)])
 
   (defn group
     [attribs & body]
@@ -164,8 +206,8 @@ specify HSB colors, use the =:stoke-hsb= or =:fill-hsb= attributes.
     [p q start end & [attribs]]
     (list
      (line p q attribs)
-     (if start (start q p attribs))
-     (if end   (end p q attribs))))
+     (if start (start q p 0 attribs))
+     (if end   (end p q 0 attribs))))
 
   (defn line-strip
     [points & [attribs]]
@@ -177,11 +219,12 @@ specify HSB colors, use the =:stoke-hsb= or =:fill-hsb= attributes.
 
   (defn line-strip-decorated
     [points start seg end & [attribs]]
-    (list
-     (line-strip points attribs)
-     (if start (start (points 1) (points 0) attribs))
-     (if seg   (map (fn [[p q]] (seg p q attribs)) (d/successive-nth 2 (pop points))))
-     (if end   (end (points (- (count points) 2)) (peek points) attribs))))
+    (let [n (dec (count points))]
+      (list
+       (line-strip points attribs)
+       (if start (start (points 1) (points 0) 0 attribs))
+       (if seg   (map-indexed (fn [i [p q]] (seg p q i attribs)) (d/successive-nth 2 points)))
+       (if end   (end (points (dec n)) (peek points) n attribs)))))
 
   (defn polygon
     [points & [attribs]]
@@ -189,6 +232,10 @@ specify HSB colors, use the =:stoke-hsb= or =:fill-hsb= attributes.
      (svg-attribs
       attribs
       {:points (apply f/format (point-seq-format (count points)) points)})])
+
+  (defn instance
+    [id & [attribs]]
+    [:use (svg-attribs attribs {"xlink:href" (str "#" id)})])
 #+END_SRC
 
 ** Decorators
@@ -196,12 +243,36 @@ specify HSB colors, use the =:stoke-hsb= or =:fill-hsb= attributes.
 #+BEGIN_SRC clojure :noweb-ref decorators
   (defn arrow-head
     [len theta solid? & [opts]]
-    (fn [p q & [attribs]]
+    (fn [p q idx & [attribs]]
       (let [q (vec2 q)
             d (g/normalize (g/- q p) len)]
-        ((if solid? polygon line-strip)
-         [(g/- q (g/rotate d (- theta))) q (g/- q (g/rotate d theta))]
-           (merge attribs opts)))))
+        (list
+         ((if solid? polygon line-strip)
+          [(g/- q (g/rotate d (- theta))) q (g/- q (g/rotate d theta))]
+            (merge attribs opts))))))
+
+  (defn line-label
+    [& [{:keys [__rotate? __offset] :as opts}]]
+    (let [opts (-> opts
+                   (dissoc :__rotate? :__offset)
+                   (update-in [:text-anchor] #(or % "middle")))]
+      (fn [p q idx & [attribs]]
+        (if-let [label (get-in attribs [:__label idx])]
+          (let [p (vec2 p)
+                m (g/+ (g/mix p q) __offset)
+                opts (if __rotate?
+                       (assoc opts
+                         :transform (str "rotate("
+                                         (m/degrees (g/heading (g/normal (g/- p q))))
+                                         " " (m 0) " " (m 1) ")"))
+                       opts)]
+            (list (text m label (merge (dissoc attribs :__label) opts))))))))
+
+  (defn comp-decorators
+    [& fns]
+    (fn [p q idx & [attribs]]
+      (reduce
+       (fn [acc f] (concat acc (f p q idx attribs))) () fns)))
 #+END_SRC
 
 ** SVG conversions for geom.types
@@ -262,7 +333,7 @@ visualize the result in SVG:
   (->> scene
        (adapt/all-as-svg)    ;; transform all scene elements
        (svg/serialize)       ;; serialize as SVG XML string
-       (spit "circles.svg")) ;; write to disk
+       (spit "svgdemo01-circles.svg")) ;; write to disk
 #+END_SRC
 
 [[http://media.thi.ng/geom/svgdemo01-circles.svg]]
@@ -280,9 +351,9 @@ Btw. This example can be run from the REPL via this command:
 
     thi.ng.geom.types.Line2
     (as-svg
-      [{p :points} {:keys [start end] :as opts}]
-      (if (or start end)
-        (svg/line-decorated (p 0) (p 1) start end (dissoc opts :start :end))
+      [{p :points} {:keys [__start __end] :as opts}]
+      (if (or __start __end)
+        (svg/line-decorated (p 0) (p 1) __start __end opts)
         (svg/line (p 0) (p 1) opts)))
 
     thi.ng.geom.types.Circle2
@@ -291,11 +362,9 @@ Btw. This example can be run from the REPL via this command:
 
     thi.ng.geom.types.LineStrip2
     (as-svg
-      [{:keys [points]} {:keys [start segment end] :as opts}]
-      (if (or start segment end)
-        (svg/line-strip-decorated
-         points start segment end
-         (dissoc opts :start :segment :end))
+      [{:keys [points]} {:keys [__start __segment __end] :as opts}]
+      (if (or __start __segment __end)
+        (svg/line-strip-decorated points __start __segment __end opts)
         (svg/line-strip points opts)))
 
     thi.ng.geom.types.Polygon2
@@ -325,9 +394,10 @@ Btw. This example can be run from the REPL via this command:
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :refer [vec2 vec3 V3Z]]
-     [thi.ng.geom.core.matrix :as mat :refer [M44]]
+     [thi.ng.geom.core.vector :refer [vec2]]
+     [thi.ng.geom.core.matrix :as mat :refer [M32]]
      [thi.ng.common.data.core :as d]
+     [thi.ng.common.math.core :as m]
      [thi.ng.common.stringformat :as f]
      [thi.ng.common.color :as col]
      #+clj [hiccup.core :refer [html]]))
