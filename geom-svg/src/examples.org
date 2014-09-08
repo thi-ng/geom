@@ -11,7 +11,7 @@ is defined in its own namespace and can be loaded from the REPL via:
 
 ** STL mesh import (Blender's Suzanne)
 
-[[http://media.thi.ng/geom/svg/suzanne-phong.svg]]
+[[http://media.thi.ng/geom/svg/svgdemo02-suzanne.svg]]
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo02.clj :mkdirp yes :padline no
   (ns svgdemo02
@@ -65,11 +65,11 @@ is defined in its own namespace and can be loaded from the REPL via:
 
 ** Dynamic mesh & shader comparison
 
-| [[http://media.thi.ng/geom/svg/rings-diffuse.svg]] | [[http://media.thi.ng/geom/svg/rings-lambert.svg]] | [[http://media.thi.ng/geom/svg/rings-phong.svg]] |
-| *Diffuse:* Normal XYZ > RGB                    | *Diffuse:* Normal XYZ > RGB                    | *Diffuse:* Normal XYZ > RGB                  |
-|                                                | *Ambient:* [0.1 0.1 0.1]                       | *Ambient:* [0.05 0.05 0.2]                   |
-|                                                |                                                | *Specular:* [0.8 0.8 0.8]                    |
-| *Lighting:* N/A                                | *Lighting:* Lambert                            | *Lighting:* Blinn-Phong                      |
+| [[http://media.thi.ng/geom/svg/svgdemo03-diffuse.svg]] | [[http://media.thi.ng/geom/svg/svgdemo03-lambert.svg]] | [[http://media.thi.ng/geom/svg/svgdemo03-phong.svg]] |
+| *Diffuse:* Normal XYZ > RGB                        | *Diffuse:* Normal XYZ > RGB                        | *Diffuse:* Normal XYZ > RGB                      |
+|                                                    | *Ambient:* [0.1 0.1 0.1]                           | *Ambient:* [0.05 0.05 0.2]                       |
+|                                                    |                                                    | *Specular:* [0.8 0.8 0.8]                        |
+| *Lighting:* N/A                                    | *Lighting:* Lambert                                | *Lighting:* Blinn-Phong                          |
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo03.clj :mkdirp yes :padline no
   (ns svgdemo03
@@ -180,7 +180,7 @@ is defined in its own namespace and can be loaded from the REPL via:
 
 ** Gradient spiral example
 
-[[http://media.thi.ng/geom/svg/spiral.svg]]
+[[http://media.thi.ng/geom/svg/svgdemo04-spiral.svg]]
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo04.clj :mkdirp yes :padline no
   (ns svgdemo04
@@ -216,7 +216,7 @@ is defined in its own namespace and can be loaded from the REPL via:
 
 ** Gradient spirals with instancing
 
-[[http://media.thi.ng/geom/svg/instancing.svg]]
+[[http://media.thi.ng/geom/svg/svgdemo05-instancing.svg]]
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo05.clj :mkdirp yes :padline no
   (ns svgdemo05
@@ -262,7 +262,7 @@ is defined in its own namespace and can be loaded from the REPL via:
 
 ** Line decorators
 
-[[http://media.thi.ng/geom/svg/decorators.svg]]
+[[http://media.thi.ng/geom/svg/svgdemo06-decorators.svg]]
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo06.clj :mkdirp yes :padline no
   (ns svgdemo06
