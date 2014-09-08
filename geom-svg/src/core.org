@@ -107,7 +107,13 @@ automatically converted.
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn filter-attribs
-    [attribs] (into {} (remove (fn [[k]] (= "__" (subs (name k) 0 2))) attribs)))
+    [attribs]
+    (loop [acc (transient attribs), ks (keys attribs)]
+      (if ks
+        (recur
+         (if (= "__" (subs (name (first ks)) 0 2)) (dissoc! acc (first ks)) acc)
+         (next ks))
+        (persistent! acc))))
 
   (defn svg-attribs
     [attribs base]
