@@ -643,7 +643,7 @@ using the protocol.
     (let [aspect (cond
                   (number? aspect) aspect
                   (map? aspect) (let [{[w h] :size} aspect] (/ w h))
-                  :default (/ (nth aspect 0) (nth aspect 1)))]
+                  :default (/ (first aspect) (nth aspect 1)))]
       (mat/perspective fovy aspect near far)))
 
   (defn ortho

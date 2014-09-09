@@ -142,7 +142,7 @@ define some macros to simplify them.
    [_ m eps]
    (and (sequential? m)
         (== 6 (count m))
-        (m/delta= m00 (nth m 0) eps)
+        (m/delta= m00 (first m) eps)
         (m/delta= m01 (nth m 1) eps)
         (m/delta= m02 (nth m 2) eps)
         (m/delta= m10 (nth m 3) eps)

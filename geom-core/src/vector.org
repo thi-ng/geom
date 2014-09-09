@@ -276,7 +276,7 @@ injected in the appropriate places of the code.
                 (clojure.lang.Numbers/equiv y (.-y ^Vec2 o)))
            (and (instance? java.util.Collection o)
                 (= 2 (count o))
-                (clojure.lang.Util/equiv x (nth o 0))
+                (clojure.lang.Util/equiv x (first o))
                 (clojure.lang.Util/equiv y (nth o 1)))))
   ,#+clj (equals
          [_ o]
@@ -285,7 +285,7 @@ injected in the appropriate places of the code.
                 (clojure.lang.Util/equals y (.-y ^Vec2 o)))
            (and (instance? java.util.Collection o)
                 (= 2 (count o))
-                (clojure.lang.Util/equals x (nth o 0))
+                (clojure.lang.Util/equals x (first o))
                 (clojure.lang.Util/equals y (nth o 1)))))
 
   ;; http://docs.oracle.com/javase/7/docs/g/java/util/List.html#hashCode()
@@ -420,7 +420,7 @@ injected in the appropriate places of the code.
           (if (instance? Vec2 o)
             (and (== x (.-x ^Vec2 o)) (== y (.-y ^Vec2 o)))
             (and (sequential? o) (= 2 (count o))
-                 (= x (nth o 0)) (= y (nth o 1)))))
+                 (= x (first o)) (= y (nth o 1)))))
   
   ,#+cljs IReduce
   ,#+cljs (-reduce
@@ -509,7 +509,7 @@ injected in the appropriate places of the code.
    [_ v eps]
    (and (sequential? v)
         (== 2 (count v))
-        (m/delta= x (nth v 0) eps)
+        (m/delta= x (first v) eps)
         (m/delta= y (nth v 1) eps)))
 #+END_SRC
 *** PDotProduct
@@ -588,13 +588,13 @@ injected in the appropriate places of the code.
    [_ a]
    (let [[dx dy] (if (instance? Vec2 a)
                    [(- x (.-x ^Vec2 a)) (- y (.-y ^Vec2 a))]
-                   [(- x (nth a 0)) (- y (nth a 1))])]
+                   [(- x (first a)) (- y (nth a 1))])]
      (Math/sqrt (mm/madd dx dx dy dy))))
   (dist-squared
    [_ a]
    (let [[dx dy] (if (instance? Vec2 a)
                    [(- x (.-x ^Vec2 a)) (- y (.-y ^Vec2 a))]
-                   [(- x (nth a 0)) (- y (nth a 1))])]
+                   [(- x (first a)) (- y (nth a 1))])]
      (mm/madd dx dx dy dy)))
 #+END_SRC
 *** PReflect
@@ -617,19 +617,19 @@ injected in the appropriate places of the code.
   (mix
    [_ a]
    (Vec2.
-    (mm/mix x (nth a 0) 0.5)
+    (mm/mix x (first a) 0.5)
     (mm/mix y (nth a 1) 0.5)
     -1 #+clj -1))
   (mix
    [_ a t]
    (Vec2.
-    (mm/mix x (nth a 0) t)
+    (mm/mix x (first a) t)
     (mm/mix y (nth a 1) t)
     -1 #+clj -1))
   (mix
    [_ a b c u v]
    (Vec2.
-    (mm/mix x (nth a 0) (nth b 0) (nth c 0) u v)
+    (mm/mix x (first a) (first b) (first c) u v)
     (mm/mix y (nth a 1) (nth b 1) (nth c 1) u v)
     -1 #+clj -1))
 #+END_SRC
@@ -764,7 +764,7 @@ injected in the appropriate places of the code.
                 (clojure.lang.Numbers/equiv z (.-z ^Vec3 o)))
            (and (instance? java.util.Collection o)
                 (= 3 (count o))
-                (clojure.lang.Util/equiv x (nth o 0))
+                (clojure.lang.Util/equiv x (first o))
                 (clojure.lang.Util/equiv y (nth o 1))
                 (clojure.lang.Util/equiv z (nth o 2)))))
   ,#+clj (equals
@@ -775,7 +775,7 @@ injected in the appropriate places of the code.
                 (clojure.lang.Util/equals z (.-z ^Vec3 o)))
            (and (instance? java.util.Collection o)
                 (= 3 (count o))
-                (clojure.lang.Util/equals x (nth o 0))
+                (clojure.lang.Util/equals x (first o))
                 (clojure.lang.Util/equals y (nth o 1))
                 (clojure.lang.Util/equals z (nth o 2)))))
   ,#+clj (hashCode
@@ -912,7 +912,7 @@ injected in the appropriate places of the code.
           (if (instance? Vec3 o)
             (and (== x (.-x ^Vec3 o)) (== y (.-y ^Vec3 o)) (== z (.-z ^Vec3 o)))
             (and (sequential? o) (= 3 (count o))
-                 (= x (nth o 0)) (= y (nth o 1)) (= z (nth o 2)))))
+                 (= x (first o)) (= y (nth o 1)) (= z (nth o 2)))))
   
   ,#+cljs IReduce
   ,#+cljs (-reduce
@@ -1064,7 +1064,7 @@ injected in the appropriate places of the code.
    [_ v eps]
    (and (sequential? v)
         (== 3 (count v))
-        (m/delta= x (nth v 0) eps)
+        (m/delta= x (first v) eps)
         (m/delta= y (nth v 1) eps)
         (m/delta= z (nth v 2) eps)))
 #+END_SRC
@@ -1107,7 +1107,7 @@ injected in the appropriate places of the code.
                       [(- x (.-x ^Vec3 a))
                        (- y (.-y ^Vec3 a))
                        (- z (.-z ^Vec3 a))]
-                      [(- x (nth a 0))
+                      [(- x (first a))
                        (- y (nth a 1))
                        (- z (nth a 2 0.0))])]
      (mm/madd dx dx dy dy dz dz)))
@@ -1132,21 +1132,21 @@ injected in the appropriate places of the code.
   (mix
    [_ a]
    (Vec3.
-    (mm/mix x (nth a 0) 0.5)
+    (mm/mix x (first a) 0.5)
     (mm/mix y (nth a 1) 0.5)
     (mm/mix z (nth a 2) 0.5)
     -1 #+clj -1))
   (mix
    [_ a t]
    (Vec3.
-    (mm/mix x (nth a 0) t)
+    (mm/mix x (first a) t)
     (mm/mix y (nth a 1) t)
     (mm/mix z (nth a 2) t)
     -1 #+clj -1))
   (mix
    [_ a b c u v]
    (Vec3.
-    (mm/mix x (nth a 0) (nth b 0) (nth c 0) u v)
+    (mm/mix x (first a) (first b) (first c) u v)
     (mm/mix y (nth a 1) (nth b 1) (nth c 1) u v)
     (mm/mix z (nth a 2) (nth b 2) (nth c 2) u v)
     -1 #+clj -1))
@@ -1528,10 +1528,10 @@ rules:
         (let [n (name k) c (count n)]
           (case c
             2 (Vec2.
-               (lookup2 _ (nth n 0) default)
+               (lookup2 _ (first n) default)
                (lookup2 _ (nth n 1) default) -1 #+clj -1)
             3 (Vec3.
-               (lookup2 _ (nth n 0) default)
+               (lookup2 _ (first n) default)
                (lookup2 _ (nth n 1) default)
                (lookup2 _ (nth n 2) default) -1 #+clj -1)
             (or default (err/key-error! k)))))))
@@ -1562,10 +1562,10 @@ rules:
         (let [n (name k) c (count n)]
           (case c
             2 (Vec2.
-               (lookup3 _ (nth n 0) default)
+               (lookup3 _ (first n) default)
                (lookup3 _ (nth n 1) default) -1 #+clj -1)
             3 (Vec3.
-               (lookup3 _ (nth n 0) default)
+               (lookup3 _ (first n) default)
                (lookup3 _ (nth n 1) default)
                (lookup3 _ (nth n 2) default) -1 #+clj -1)
             (or default (err/key-error! k)))))))

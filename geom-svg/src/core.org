@@ -24,7 +24,7 @@
   (def xml-preamble "<?xml version=\"1.0\"?>\n")
 
   (def ^:dynamic *ff* (f/float 2))
-  (def ^:dynamic *fmt-vec* (fn [p] (str (*ff* (nth p 0)) "," (*ff* (nth p 1)))))
+  (def ^:dynamic *fmt-vec* (fn [p] (str (*ff* (first p)) "," (*ff* (nth p 1)))))
   (def ^:dynamic *fmt-percent* (fn [x] (str (int (* x 100)) "%")))
 
   (def ^:dynamic *fmt-matrix* ["matrix(" *ff* "," *ff* "," *ff* "," *ff* "," *ff* "," *ff* ")"])

@@ -22,7 +22,7 @@
     (loop [xs xs]
       (if xs
         (let [x (first xs)]
-          (f (nth x 0) (nth x 1))
+          (f (first x) (nth x 1))
           (recur (next xs))))))
 #+END_SRC
 
