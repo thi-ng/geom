@@ -36,7 +36,6 @@ target/geom-svg-<<conf-version>>.js
 
 #+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref dep-hiccup
 [hiccup "1.0.5"]
-[hiccups "0.3.0"]
 #+END_SRC
 
 ** Release history
@@ -70,6 +69,7 @@ target/geom-svg-<<conf-version>>.js
     :dependencies [<<dep-clj>>
                    <<dep-geom-core>>
                    <<dep-geom-types>>
+                   <<dep-color>>
                    <<dep-hiccup>>]
 
     :source-paths ["src/cljx"]

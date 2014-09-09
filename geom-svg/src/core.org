@@ -71,7 +71,7 @@ completely opaque to other parts of the code base and which might deal
 with the dynamic generation of color values. Therefore we allow the
 =:stroke= and =:fill= attributes to be defined as RGB(A) or HSB(A)
 vectors (e.g. in conjuction with the color utilities defined in the
-=thi.ng.common.color= namespace. If these attributes are present and
+=thi.ng/color= library. If these attributes are present and
 *not* already a string value, they will be converted into a CSS color
 automatically (using the =rgba->css= or =hsba->css= fns). In order to
 specify HSB colors, use the =:stoke-hsb= or =:fill-hsb= attributes.
@@ -405,7 +405,7 @@ Btw. This example can be run from the REPL via this command:
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m]
      [thi.ng.common.stringformat :as f]
-     [thi.ng.common.color :as col]
+     [thi.ng.color.core :as col]
      #+clj [hiccup.core :refer [html]]))
 
   <<const>>
