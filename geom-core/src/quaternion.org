@@ -498,10 +498,19 @@ of the code.
   (defn quat-from-axis-angle
     [axis theta]
     (let [theta (/ theta 2.0)]
-      (quat (g/* (v/vec3 axis) (Math/sin theta)) (Math/cos theta))))
+      (quat (g/* (vec3 axis) (Math/sin theta)) (Math/cos theta))))
   
+  (defn as-axis-angle
+    [q]
+    (let [[x y z w] (g/normalize q)
+          theta (* 2.0 (Math/acos w))
+          mag (Math/sqrt (- 1.0 (* w w)))]
+      (if (< mag 0.0005)
+        [(vec3 x y z) theta]
+        [(vec3 (/ x mag) (/ y mag) (/ z mag)) theta])))
+    
   (defn quat-from-euler
-    [order & [alpha beta gamma]]
+    [order alpha beta gamma]
     (let [[a b c] (case order
                     :xyz [V3X V3Y V3Z]
                     :yxz [V3Y V3X V3Z]
@@ -636,7 +645,7 @@ of the code.
      [thi.ng.macromath.core :as mm])
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [V3X V3Y V3Z]]
+     [thi.ng.geom.core.vector :as v :refer [vec3 V3X V3Y V3Z]]
      [thi.ng.geom.core.matrix :as mat]
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
