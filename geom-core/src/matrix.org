@@ -120,6 +120,20 @@ define some macros to simplify them.
 **** PMathOps
 #+BEGIN_SRC clojure :noweb-ref mat32
   g/PMathOps
+  (+
+   [_ m]
+   (let [m ^Matrix32 m]
+     (Matrix32.
+      (+ m00 (.-m00 m)) (+ m01 (.-m01 m)) (+ m02 (.-m02 m))
+      (+ m10 (.-m10 m)) (+ m11 (.-m11 m)) (+ m12 (.-m12 m))
+      -1 #+clj -1)))
+  (-
+   [_ m]
+   (let [m ^Matrix32 m]
+     (Matrix32.
+      (- m00 (.-m00 m)) (- m01 (.-m01 m)) (- m02 (.-m02 m))
+      (- m10 (.-m10 m)) (- m11 (.-m11 m)) (- m12 (.-m12 m))
+      -1 #+clj -1)))
   (*
    [_ m]
    (let [m ^Matrix32 m]
@@ -377,6 +391,24 @@ ordering (row major).
 **** PMathOps
 #+BEGIN_SRC clojure :noweb-ref mat44
   g/PMathOps
+  (+
+   [_ m]
+   (let [m ^Matrix44 m]
+     (Matrix44.
+      (+ m00 (.-m00 m)) (+ m01 (.-m01 m)) (+ m02 (.-m02 m)) (+ m03 (.-m03 m))
+      (+ m10 (.-m10 m)) (+ m11 (.-m11 m)) (+ m12 (.-m12 m)) (+ m13 (.-m13 m))
+      (+ m20 (.-m20 m)) (+ m21 (.-m21 m)) (+ m22 (.-m22 m)) (+ m23 (.-m23 m))
+      (+ m30 (.-m30 m)) (+ m31 (.-m31 m)) (+ m32 (.-m32 m)) (+ m33 (.-m33 m))
+      -1 #+clj -1)))
+  (-
+   [_ m]
+   (let [m ^Matrix44 m]
+     (Matrix44.
+      (- m00 (.-m00 m)) (- m01 (.-m01 m)) (- m02 (.-m02 m)) (- m03 (.-m03 m))
+      (- m10 (.-m10 m)) (- m11 (.-m11 m)) (- m12 (.-m12 m)) (- m13 (.-m13 m))
+      (- m20 (.-m20 m)) (- m21 (.-m21 m)) (- m22 (.-m22 m)) (- m23 (.-m23 m))
+      (- m30 (.-m30 m)) (- m31 (.-m31 m)) (- m32 (.-m32 m)) (- m33 (.-m33 m))
+      -1 #+clj -1)))
   (*
    [_ m]
    (let [^Matrix44 m m]
