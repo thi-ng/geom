@@ -441,9 +441,18 @@
 
 ** Quaternion operations
 #+BEGIN_SRC clojure :noweb-ref tests
+  (defn quat-matrix-roundtrip
+    [n]
+    (testing
+        (dotimes [i n]
+          (let [q (q/quat-from-axis-angle (v/randvec3) (rand 6.28))
+                q' (q/quat-from-matrix (g/as-matrix q))
+                v (v/randvec3)]
+            (is (m/delta= (g/transform-vector q v) (g/transform-vector q' v) 1e-4))))))
+
   (deftest quat-ops
     (is (== (hash [1.0 2.0 3.0 4.0]) (hash (q/quat 1 2 3 4))) "hash Quat4")
-    #+clj (is (== (.hashCode [1.0 2.0 3.0 4.0]) (.hashCode (q/quat 1 2 3 4))) "hashCode Quat4")
+    ,#+clj (is (== (.hashCode [1.0 2.0 3.0 4.0]) (.hashCode (q/quat 1 2 3 4))) "hashCode Quat4")
     (is (delta= a3 (-> (q/quat-from-axis-angle V3X 0.0) (g/transform-vector a3))))
     (is (delta= a3 (-> (q/quat-from-axis-angle V3Y 0.0) (g/transform-vector a3))))
     (is (delta= a3 (-> (q/quat-from-axis-angle V3Z 0.0) (g/transform-vector a3))))
@@ -467,6 +476,7 @@
                     (g/rotate-around-axis (g/normalize (vec3 1)) HALF_PI)
                     (q/quat-from-matrix)
                     (g/transform-vector a3))))
+    (quat-matrix-roundtrip 1000)
     (is (delta= [V3X HALF_PI] (q/as-axis-angle (q/quat-from-axis-angle V3X HALF_PI))))
     (is (delta= [V3Y HALF_PI] (q/as-axis-angle (q/quat-from-axis-angle V3Y HALF_PI))))
     (is (delta= [V3Z HALF_PI] (q/as-axis-angle (q/quat-from-axis-angle V3Z HALF_PI))))
