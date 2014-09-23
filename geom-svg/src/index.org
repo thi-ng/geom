@@ -11,7 +11,7 @@ to create SVG assets & visualizations utilizing the types and
 functionality provided by the [[file:../../geom-core/src/index.org][core]] & [[file:~/dev/thing/geom/geom-types/src/index.org][types]] modules. This library also
 uses [[http://github.com/weavejester/hiccup][hiccup]] to serialize assets as SVG format.
 
-[[http://media.thi.ng/geom/svgdemo01.svg]]
+[[http://media.thi.ng/geom/svg/hero.svg]]
 
 ** Status
 
@@ -36,7 +36,6 @@ target/geom-svg-<<conf-version>>.js
 
 #+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref dep-hiccup
 [hiccup "1.0.5"]
-[hiccups "0.3.0"]
 #+END_SRC
 
 ** Release history
@@ -70,6 +69,7 @@ target/geom-svg-<<conf-version>>.js
     :dependencies [<<dep-clj>>
                    <<dep-geom-core>>
                    <<dep-geom-types>>
+                   <<dep-color>>
                    <<dep-hiccup>>]
 
     :source-paths ["src/cljx"]

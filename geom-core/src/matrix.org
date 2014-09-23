@@ -33,30 +33,20 @@ define some macros to simplify them.
     (reduce
      #(-> % (unchecked-multiply-int 31) (unchecked-add-int (hash %2)))
      1 coll))
-
-  ,#+clj
-  (defn- hash-matrix
-    [coll]
-    (mix-collection-hash (hash-coll* coll) (count coll)))
-
-  ,#+cljs
-  (defn- hash-matrix
-    [coll]
-    (loop [res (hash (first coll)) s (next coll)]
-      (if (nil? s)
-        res
-        (recur (hash-combine res (hash (first s))) (next s)))))
 #+END_SRC
 ** Matrix implementations
 *** 3x2 Matrix (Affine 2D transform)
 #+BEGIN_SRC clojure :noweb-ref mat32
   (deftype Matrix32
     #+clj  [^double m00 ^double m01 ^double m02
-            ^double m10 ^double m11 ^double m12]
-    #+cljs [m00 m01 m02 m10 m11 m12]
+            ^double m10 ^double m11 ^double m12
+            ^:unsynchronized-mutable _hasheq
+            ^:unsynchronized-mutable _hashc]
+    #+cljs [m00 m01 m02 m10 m11 m12
+            ^:mutable _hasheq]
 #+END_SRC
 
-**** TODO Clojure protocols
+**** Clojure protocols
 #+BEGIN_SRC clojure :noweb-ref mat32
   ,#+clj java.util.Collection
   ,#+clj clojure.lang.IPersistentCollection
@@ -72,49 +62,51 @@ define some macros to simplify them.
   (#+clj count #+cljs -count [_] 6)
 
   ,#+cljs ISeqable
-  (#+clj seq   #+cljs -seq   [_] _)
+  (#+clj seq #+cljs -seq [_] _)
 
   ,#+cljs ISeq
-  (#+clj more  #+cljs -rest  [_] (next _))
+  (#+clj more #+cljs -rest [_] (next _))
   (#+clj first #+cljs -first [_] m00)
   ,#+cljs INext
-  (#+clj next  #+cljs -next  [_] (seq [m01 m02 m10 m11 m12]))
+  (#+clj next #+cljs -next [_] (seq [m01 m02 m10 m11 m12]))
 
   ,#+cljs ICollection
-  (#+clj cons  #+cljs -conj  [_ x] [m00 m01 m02 m10 m11 m12 x])
+  ,#+clj  (cons [_ x] (VectorSeq. 0 7 [m00 m01 m02 m10 m11 m12 x] nil))
+  ,#+cljs (-conj[_ x] [m00 m01 m02 m10 m11 m12 x])
 
   ,#+cljs IIndexed
-  (#+clj nth   #+cljs -nth [_ k]
-         (if (m/in-range? 0 5 k)
-           (case (int k)
-             0 m00 1 m01 2 m02 3 m10 4 m11 5 m12)
+  (#+clj nth #+cljs -nth [_ k]
+         (case (int k)
+           0 m00 1 m01 2 m02 3 m10 4 m11 5 m12
            (err/illegal-arg! k)))
-  (#+clj nth   #+cljs -nth [_ k nf]
-         (if (m/in-range? 0 15 k)
-           (case (int k)
-             0 m00 1 m01 2 m02 3 m10 4 m11 5 m12)
-           nf))
+  (#+clj nth #+cljs -nth [_ k nf]
+         (case (int k) 0 m00 1 m01 2 m02 3 m10 4 m11 5 m12 nf))
 
   ,#+cljs IEquiv
-  (#+clj equiv  #+cljs -equiv [_ o]
-         (if (and (sequential? o) (= 6 (count o)))
-           (every? #(= (% 0) (% 1)) (map vector _ o))
-           false))
+  (#+clj equiv #+cljs -equiv [_ o]
+         (and
+          (sequential? o)
+          (== 6 (count o))
+          (every? #(= (% 0) (% 1)) (map vector _ o))))
 
   ,#+cljs IHash
-  (#+clj hasheq #+cljs -hash  [_] (hash-ordered-coll _))
+  (#+clj hasheq #+cljs -hash  [_]
+         (if (== -1 _hasheq)
+           (set! _hasheq (hash-ordered-coll _))
+           _hasheq))
 
-  ,#+clj (hashCode [_] (hash-coll* _))
+  ,#+clj (hashCode [_] (if (== -1 _hashc) (set! _hashc (hash-coll* _)) _hashc))
+
   ,#+clj (equals
          [_ o]
-         (if (and (sequential? o) (= 6 (count o)))
-           (every? #(clojure.lang.Util/equals (% 0) (% 1)) (map vector _ o))
-           false))
+         (and
+          (sequential? o)
+          (== 6 (count o))
+          (every? #(clojure.lang.Util/equals (% 0) (% 1)) (map vector _ o))))
   ,#+clj (isEmpty
          [_] false)
   ,#+clj (iterator
-         [_] (.iterator ^java.util.Collection
-                        (list m00 m01 m02 m10 m11 m12)))
+         [_] (.iterator ^java.util.Collection (list m00 m01 m02 m10 m11 m12)))
   ,#+clj (toArray
          [_] (object-array _))
   ,#+clj (size [_] 6)
@@ -128,6 +120,20 @@ define some macros to simplify them.
 **** PMathOps
 #+BEGIN_SRC clojure :noweb-ref mat32
   g/PMathOps
+  (+
+   [_ m]
+   (let [m ^Matrix32 m]
+     (Matrix32.
+      (+ m00 (.-m00 m)) (+ m01 (.-m01 m)) (+ m02 (.-m02 m))
+      (+ m10 (.-m10 m)) (+ m11 (.-m11 m)) (+ m12 (.-m12 m))
+      -1 #+clj -1)))
+  (-
+   [_ m]
+   (let [m ^Matrix32 m]
+     (Matrix32.
+      (- m00 (.-m00 m)) (- m01 (.-m01 m)) (- m02 (.-m02 m))
+      (- m10 (.-m10 m)) (- m11 (.-m11 m)) (- m12 (.-m12 m))
+      -1 #+clj -1)))
   (*
    [_ m]
    (let [m ^Matrix32 m]
@@ -137,7 +143,8 @@ define some macros to simplify them.
       (mm/madd m00 (.-m02 m) m01 (.-m12 m) m02)
       (mm/madd m10 (.-m00 m) m11 (.-m10 m))
       (mm/madd m10 (.-m01 m) m11 (.-m11 m))
-      (mm/madd m10 (.-m02 m) m11 (.-m12 m) m12))))
+      (mm/madd m10 (.-m02 m) m11 (.-m12 m) m12)
+      -1 #+clj -1)))
 #+END_SRC
 
 **** PDeltaEquals
@@ -149,7 +156,7 @@ define some macros to simplify them.
    [_ m eps]
    (and (sequential? m)
         (== 6 (count m))
-        (m/delta= m00 (nth m 0) eps)
+        (m/delta= m00 (first m) eps)
         (m/delta= m01 (nth m 1) eps)
         (m/delta= m02 (nth m 2) eps)
         (m/delta= m10 (nth m 3) eps)
@@ -172,7 +179,16 @@ define some macros to simplify them.
      (when-not (zero? d)
        (Matrix32.
         (/ m11 d) (- (/ m01 d)) (/ (mm/msub m01 m12 m11 m02) d)
-        (- (/ m10 d)) (/ m00 d) (/ (mm/msub m10 m02 m00 m12) d)))))
+        (- (/ m10 d)) (/ m00 d) (/ (mm/msub m10 m02 m00 m12) d)
+        -1 #+clj -1))))
+#+END_SRC
+
+**** PTranspose
+#+BEGIN_SRC clojure :noweb-ref mat32
+  g/PTranspose
+  (transpose
+   [_]
+   (Matrix32. m00 m10 m01 m11 m02 m12 -1 #+clj -1))
 #+END_SRC
 
 **** PRotate, PScale, PTranslate, PTransform
@@ -181,49 +197,52 @@ define some macros to simplify them.
   (rotate
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (g/* _ (Matrix32. c (- s) 0.0, s c 0.0))))
+     (g/* _ (Matrix32. c (- s) 0.0, s c 0.0 -1 #+clj -1))))
 
   g/PScale
   (scale
    [_ s]
    (g/* _ (Matrix32.
              (if (number? s) s (s 0)) 0.0 0.0
-             0.0 (if (number? s) s (s 1)) 0.0)))
+             0.0 (if (number? s) s (s 1)) 0.0
+             -1 #+clj -1)))
   (scale
    [_ sx sy]
    (if (number? sx)
      (if (number? sy)
-       (g/* _ (Matrix32. sx 0.0 0.0, 0.0 sy 0.0))
-       (g/* _ (Matrix32. (* sx (sy 0)) 0.0 0.0, 0.0 (* sx (sy 1)) 0.0)))
+       (g/* _ (Matrix32. sx 0.0 0.0, 0.0 sy 0.0 -1 #+clj -1))
+       (g/* _ (Matrix32. (* sx (sy 0)) 0.0 0.0, 0.0 (* sx (sy 1)) 0.0 -1 #+clj -1)))
      (if (number? sy)
-       (g/* _ (Matrix32. (* sy (sx 0)) 0.0 0.0, 0.0 (* sy (sx 1)) 0.0))
-       (g/* _ (Matrix32. (* (sx 0) (sy 0)) 0.0 0.0, 0.0 (* (sx 1) (sy 1)) 0.0)))))
+       (g/* _ (Matrix32. (* sy (sx 0)) 0.0 0.0, 0.0 (* sy (sx 1)) 0.0 -1 #+clj -1))
+       (g/* _ (Matrix32. (* (sx 0) (sy 0)) 0.0 0.0, 0.0 (* (sx 1) (sy 1)) 0.0 -1 #+clj -1)))))
 
   g/PShear
   (shear
    [_ s]
    (g/* _ (Matrix32.
              1.0 (if (number? s) s (s 0)) 0.0,
-             (if (number? s) s (s 1)) 1.0 0.0)))
+             (if (number? s) s (s 1)) 1.0 0.0
+             -1 #+clj -1)))
   (shear
    [_ sx sy]
-   (g/* _ (Matrix32. 1.0 sx 0.0, sy 1.0 0.0)))
+   (g/* _ (Matrix32. 1.0 sx 0.0, sy 1.0 0.0 -1 #+clj -1)))
 
   g/PTranslate
   (translate
    [_ t]
    (g/* _ (Matrix32.
              1.0 0.0 (if (number? t) t (t 0))
-             0.0 1.0 (if (number? t) t (t 1)))))
+             0.0 1.0 (if (number? t) t (t 1))
+             -1 #+clj -1)))
   (translate
    [_ tx ty]
    (if (number? tx)
      (if (number? ty)
-       (g/* _ (Matrix32. 1.0 0.0 tx, 0.0 1.0 ty))
-       (g/* _ (Matrix32. 1.0 0.0 (* tx (ty 0)), 0.0 1.0 (* tx (ty 1)))))
+       (g/* _ (Matrix32. 1.0 0.0 tx, 0.0 1.0 ty -1 #+clj -1))
+       (g/* _ (Matrix32. 1.0 0.0 (* tx (ty 0)), 0.0 1.0 (* tx (ty 1)) -1 #+clj -1)))
      (if (number? ty)
-       (g/* _ (Matrix32. 1.0 0.0 (* ty (tx 0)), 0.0 1.0 (* ty (tx 1))))
-       (g/* _ (Matrix32. 1.0 0.0 (* (tx 0) (ty 0)), 0.0 1.0 (* (tx 1) (ty 1)))))))
+       (g/* _ (Matrix32. 1.0 0.0 (* ty (tx 0)), 0.0 1.0 (* ty (tx 1)) -1 #+clj -1))
+       (g/* _ (Matrix32. 1.0 0.0 (* (tx 0) (ty 0)), 0.0 1.0 (* (tx 1) (ty 1)) -1 #+clj -1)))))
 
   g/PTransform
   (transform
@@ -234,10 +253,10 @@ define some macros to simplify them.
 #+BEGIN_SRC clojure :noweb-ref mat32
   g/PVectorTransform
   (transform-vector
-   [_ [x y :as v]]
+   [_ [x y]]
    (thi.ng.geom.core.vector.Vec2.
     (mm/madd x m00 y m01 m02)
-    (mm/madd x m10 y m11 m12)))
+    (mm/madd x m10 y m11 m12) -1 #+clj -1))
 #+END_SRC
 
 **** End of implementations
@@ -259,14 +278,17 @@ ordering (row major).
     #+clj  [^double m00 ^double m01 ^double m02 ^double m03
             ^double m10 ^double m11 ^double m12 ^double m13
             ^double m20 ^double m21 ^double m22 ^double m23
-            ^double m30 ^double m31 ^double m32 ^double m33]
+            ^double m30 ^double m31 ^double m32 ^double m33
+            ^:unsynchronized-mutable _hasheq
+            ^:unsynchronized-mutable _hashc]
     #+cljs [m00 m01 m02 m03
             m10 m11 m12 m13
             m20 m21 m22 m23
-            m30 m31 m32 m33]
+            m30 m31 m32 m33
+            ^:mutable _hasheq]
 #+END_SRC
 
-**** TODO Clojure protocols
+**** Clojure protocols
 #+BEGIN_SRC clojure :noweb-ref mat44
   ,#+clj java.util.Collection
   ,#+clj clojure.lang.IPersistentCollection
@@ -282,82 +304,111 @@ ordering (row major).
   (#+clj count #+cljs -count [_] 16)
 
   ,#+cljs ISeqable
-  (#+clj seq   #+cljs -seq   [_] _)
+  (#+clj seq #+cljs -seq [_] _)
 
   ,#+cljs ISeq
-  (#+clj more  #+cljs -rest  [_] (next _))
+  (#+clj more #+cljs -rest [_] (next _))
   (#+clj first #+cljs -first [_] m00)
   ,#+cljs INext
-  (#+clj next  #+cljs -next
+  (#+clj next #+cljs -next
          [_] (seq [m01 m02 m03
                    m10 m11 m12 m13
                    m20 m21 m22 m23
                    m30 m31 m32 m33]))
 
   ,#+cljs ICollection
-  (#+clj cons  #+cljs -conj
+  ,#+clj (cons
          [_ x]
-         [m00 m01 m02 m03
-          m10 m11 m12 m13
-          m20 m21 m22 m23
-          m30 m31 m32 m33 x])
+         (VectorSeq.
+          0 17
+          [m00 m01 m02 m03
+           m10 m11 m12 m13
+           m20 m21 m22 m23
+           m30 m31 m32 m33 x]
+          nil))
+  ,#+cljs (-conj
+          [_ x]
+          [m00 m01 m02 m03
+           m10 m11 m12 m13
+           m20 m21 m22 m23
+           m30 m31 m32 m33 x])
 
   ,#+cljs IIndexed
-  (#+clj nth   #+cljs -nth [_ k]
-         (if (m/in-range? 0 15 k)
-           (case (int k)
-             0 m00  1 m01  2 m02  3 m03
-             4 m10  5 m11  6 m12  7 m13
-             8 m20  9 m21  10 m22 11 m23
-             12 m30 13 m31 14 m32 15 m33)
+  (#+clj nth #+cljs -nth [_ k]
+         (case (int k)
+           0 m00  1 m01  2 m02  3 m03
+           4 m10  5 m11  6 m12  7 m13
+           8 m20  9 m21  10 m22 11 m23
+           12 m30 13 m31 14 m32 15 m33
            (err/illegal-arg! k)))
-  (#+clj nth   #+cljs -nth [_ k nf]
-         (if (m/in-range? 0 15 k)
-           (case (int k)
-             0 m00  1 m01  2 m02  3 m03
-             4 m10  5 m11  6 m12  7 m13
-             8 m20  9 m21  10 m22 11 m23
-             12 m30 13 m31 14 m32 15 m33)
+  (#+clj nth #+cljs -nth [_ k nf]
+         (case (int k)
+           0 m00  1 m01  2 m02  3 m03
+           4 m10  5 m11  6 m12  7 m13
+           8 m20  9 m21  10 m22 11 m23
+           12 m30 13 m31 14 m32 15 m33
            nf))
 
   ,#+cljs IEquiv
-  (#+clj equiv  #+cljs -equiv [_ o]
-         (if (and (sequential? o) (= 16 (count o)))
-           (every? #(= (% 0) (% 1)) (map vector _ o))
-           false))
+  (#+clj equiv #+cljs -equiv [_ o]
+         (and
+          (sequential? o) (== 16 (count o))
+          (every? #(= (% 0) (% 1)) (map vector _ o))))
 
   ,#+cljs IHash
-  (#+clj hasheq #+cljs -hash  [_] (hash-ordered-coll _))
+  (#+clj hasheq #+cljs -hash  [_]
+         (if (== -1 _hasheq)
+           (set! _hasheq (hash-ordered-coll _))
+           _hasheq))
 
-  ,#+clj (hashCode [_] (hash-coll* _))
+  ,#+clj (hashCode [_] (if (== -1 _hashc) (set! _hashc (hash-coll* _)) _hashc))
+
   ,#+clj (equals
          [_ o]
-         (if (and (sequential? o) (= 16 (count o)))
-           (every? #(clojure.lang.Util/equals (% 0) (% 1)) (map vector _ o))
-           false))
+         (and
+          (sequential? o)
+          (== 16 (count o))
+          (every? #(clojure.lang.Util/equals (% 0) (% 1)) (map vector _ o))))
 
   ,#+clj (isEmpty
          [_] false)
   ,#+clj (iterator
-         [_] (.iterator ^java.util.Collection
-                        (list m00 m01 m02 m03
-                              m10 m11 m12 m13
-                              m20 m21 m22 m23
-                              m30 m31 m32 m33)))
-  ,#+clj (toArray
-         [_] (object-array _))
+         [_] (.iterator
+              ^java.util.Collection
+              (list
+               m00 m01 m02 m03
+               m10 m11 m12 m13
+               m20 m21 m22 m23
+               m30 m31 m32 m33)))
+  ,#+clj (toArray [_] (object-array _))
   ,#+clj (size [_] 16)
   ,#+clj (length [_] 16)
 
   Object
-  (toString
-   [_]
-   (apply str (concat "[" (interpose \space _) "]")))
+  (toString [_] (apply str (concat "[" (interpose \space _) "]")))
 #+END_SRC
 
 **** PMathOps
 #+BEGIN_SRC clojure :noweb-ref mat44
   g/PMathOps
+  (+
+   [_ m]
+   (let [m ^Matrix44 m]
+     (Matrix44.
+      (+ m00 (.-m00 m)) (+ m01 (.-m01 m)) (+ m02 (.-m02 m)) (+ m03 (.-m03 m))
+      (+ m10 (.-m10 m)) (+ m11 (.-m11 m)) (+ m12 (.-m12 m)) (+ m13 (.-m13 m))
+      (+ m20 (.-m20 m)) (+ m21 (.-m21 m)) (+ m22 (.-m22 m)) (+ m23 (.-m23 m))
+      (+ m30 (.-m30 m)) (+ m31 (.-m31 m)) (+ m32 (.-m32 m)) (+ m33 (.-m33 m))
+      -1 #+clj -1)))
+  (-
+   [_ m]
+   (let [m ^Matrix44 m]
+     (Matrix44.
+      (- m00 (.-m00 m)) (- m01 (.-m01 m)) (- m02 (.-m02 m)) (- m03 (.-m03 m))
+      (- m10 (.-m10 m)) (- m11 (.-m11 m)) (- m12 (.-m12 m)) (- m13 (.-m13 m))
+      (- m20 (.-m20 m)) (- m21 (.-m21 m)) (- m22 (.-m22 m)) (- m23 (.-m23 m))
+      (- m30 (.-m30 m)) (- m31 (.-m31 m)) (- m32 (.-m32 m)) (- m33 (.-m33 m))
+      -1 #+clj -1)))
   (*
    [_ m]
    (let [^Matrix44 m m]
@@ -380,7 +431,8 @@ ordering (row major).
       (mm/madd m00 (.-m30 m) m10 (.-m31 m) m20 (.-m32 m) m30 (.-m33 m))
       (mm/madd m01 (.-m30 m) m11 (.-m31 m) m21 (.-m32 m) m31 (.-m33 m))
       (mm/madd m02 (.-m30 m) m12 (.-m31 m) m22 (.-m32 m) m32 (.-m33 m))
-      (mm/madd m03 (.-m30 m) m13 (.-m31 m) m23 (.-m32 m) m33 (.-m33 m)))))
+      (mm/madd m03 (.-m30 m) m13 (.-m31 m) m23 (.-m32 m) m33 (.-m33 m))
+      -1 #+clj -1)))
 #+END_SRC
 
 **** PDeltaEquals
@@ -450,7 +502,8 @@ ordering (row major).
           (gmc/inv-item m11 n07 m12 n06 (- m10) n09 invd)
           (gmc/inv-item m00 n09 m01 n07 m02 n06 invd)
           (gmc/inv-item m31 n01 m32 n00 (- m30) n03 invd)
-          (gmc/inv-item m20 n03 m21 n01 m22 n00 invd))))))
+          (gmc/inv-item m20 n03 m21 n01 m22 n00 invd)
+          -1 #+clj -1)))))
 #+END_SRC
 
 **** PTranspose
@@ -462,7 +515,8 @@ ordering (row major).
     m00 m10 m20 m30
     m01 m11 m21 m31
     m02 m12 m22 m32
-    m03 m13 m23 m33))
+    m03 m13 m23 m33
+    -1 #+clj -1))
 #+END_SRC
 
 **** Transformations
@@ -478,7 +532,8 @@ ordering (row major).
     (* m00 x) (* m01 x) (* m02 x) (* m03 x)
     (* m10 y) (* m11 y) (* m12 y) (* m13 y)
     (* m20 z) (* m21 z) (* m22 z) (* m23 z)
-    m30 m31 m32 m33))
+    m30 m31 m32 m33
+    -1 #+clj -1))
 
   g/PRotate
   (rotate
@@ -492,7 +547,8 @@ ordering (row major).
       m00 m01 m02 m03
       (mm/madd m10 c m20 s) (mm/madd m11 c m21 s) (mm/madd m12 c m22 s) (mm/madd m13 c m23 s)
       (mm/msub m20 c m10 s) (mm/msub m21 c m11 s) (mm/msub m22 c m12 s) (mm/msub m23 c m13 s)
-      m30 m31 m32 m33)))
+      m30 m31 m32 m33
+      -1 #+clj -1)))
 
   (rotate-y
    [_ theta]
@@ -501,7 +557,8 @@ ordering (row major).
       (mm/msub m00 c m20 s) (mm/msub m01 c m21 s) (mm/msub m02 c m22 s) (mm/msub m03 c m23 s)
       m10 m11 m12 m13
       (mm/madd m00 s m20 c) (mm/madd m01 s m21 c) (mm/madd m02 s m22 c) (mm/madd m03 s m23 c)
-      m30 m31 m32 m33)))
+      m30 m31 m32 m33
+      -1 #+clj -1)))
 
   (rotate-z
    [_ theta]
@@ -510,7 +567,8 @@ ordering (row major).
       (mm/madd m00 c m10 s) (mm/madd m01 c m11 s) (mm/madd m02 c m12 s) (mm/madd m03 c m13 s)
       (mm/msub m10 c m00 s) (mm/msub m11 c m01 s) (mm/msub m12 c m02 s) (mm/msub m13 c m03 s)
       m20 m21 m22 m23
-      m30 m31 m32 m33)))
+      m30 m31 m32 m33
+      -1 #+clj -1)))
 
   (rotate-around-axis
    [_ [x y z] theta]
@@ -533,7 +591,8 @@ ordering (row major).
       (mm/madd m01 b20 m11 b21 m21 b22)
       (mm/madd m02 b20 m12 b21 m22 b22)
       (mm/madd m03 b20 m13 b21 m23 b22)
-      m30 m31 m32 m33)))
+      m30 m31 m32 m33
+      -1 #+clj -1)))
 
   g/PTranslate
   (translate
@@ -549,7 +608,8 @@ ordering (row major).
     (mm/madd m00 x m10 y m20 z m30)
     (mm/madd m01 x m11 y m21 z m31)
     (mm/madd m02 x m12 y m22 z m32)
-    (mm/madd m03 x m13 y m23 z m33)))
+    (mm/madd m03 x m13 y m23 z m33)
+    -1 #+clj -1))
 
   g/PTransform
   (transform
@@ -569,7 +629,7 @@ ordering (row major).
      (thi.ng.geom.core.vector.Vec3.
       (mm/madd x m00 y m10 z m20 m30)
       (mm/madd x m01 y m11 z m21 m31)
-      (mm/madd x m02 y m12 z m22 m32))))
+      (mm/madd x m02 y m12 z m22 m32) -1 #+clj -1)))
 #+END_SRC
 
 **** End of implementation
@@ -585,17 +645,19 @@ ordering (row major).
 
 ** Constants
 #+BEGIN_SRC clojure :noweb-ref constants
-  (def ^:const M32
+  (def M32
     (Matrix32.
      1.0 0.0 0.0
-     0.0 1.0 0.0))
+     0.0 1.0 0.0
+     -1 #+clj -1))
 
-  (def ^:const M44
+  (def M44
     (Matrix44.
      1.0 0.0 0.0 0.0
      0.0 1.0 0.0 0.0
      0.0 0.0 1.0 0.0
-     0.0 0.0 0.0 1.0))
+     0.0 0.0 0.0 1.0
+     -1 #+clj -1))
 #+END_SRC
 
 ** Constructors
@@ -604,16 +666,16 @@ ordering (row major).
   (defn matrix32
     ([] M32)
     ([[m00 m01 m02 m10 m11 m12]]
-       (Matrix32. m00 m01 m02 m10 m11 m12))
+       (Matrix32. m00 m01 m02 m10 m11 m12 -1 #+clj -1))
     ([m00 m01 m02 m10 m11 m12]
-       (Matrix32. m00 m01 m02 m10 m11 m12)))
+       (Matrix32. m00 m01 m02 m10 m11 m12 -1 #+clj -1)))
 
   (defn matrix44
     ([] M44)
     ([[m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]]
-       (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33))
+       (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33 -1 #+clj -1))
     ([m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]
-       (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33)))
+       (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33 -1 #+clj -1)))
 
   ;; FIXME create proper deftype for M33
   (defn matrix44->matrix33
@@ -653,7 +715,8 @@ ordering (row major).
        (* n2 dx) 0.0 0.0 0.0
        0.0 (* n2 dy) 0.0 0.0
        (mm/addm l r dx) (mm/addm t b dy) (mm/addm n f dz) -1.0
-       0.0 0.0 (mm/mul n2 f dz) 0.0)))
+       0.0 0.0 (mm/mul n2 f dz) 0.0
+       -1 #+clj -1)))
 
   (defn frustum-bounds
     [fovy aspect near]
@@ -676,7 +739,8 @@ ordering (row major).
        (* -2.0 dx) 0.0 0.0 0.0
        0.0 (* -2.0 dy) 0.0 0.0
        0.0 0.0 (* 2.0 dz) 0.0
-       (mm/addm l r dx) (mm/addm t b dy) (mm/addm n f dz) 1.0)))
+       (mm/addm l r dx) (mm/addm t b dy) (mm/addm n f dz) 1.0
+       -1 #+clj -1)))
 
   (defn perspective
     "Returns a perspective transform matrix, which makes far away objects appear
@@ -690,7 +754,8 @@ ordering (row major).
        (/ f aspect) 0.0 0.0 0.0
        0.0 f 0.0 0.0
        0.0 0.0 (mm/addm near far nf) -1.0
-       0.0 0.0 (mm/mul 2.0 near far nf) 0.0)))
+       0.0 0.0 (mm/mul 2.0 near far nf) 0.0
+       -1 #+clj -1)))
 
   (defn perspective-frustum
     [fov aspect near far]
@@ -718,7 +783,8 @@ ordering (row major).
            xx yx zx 0.0
            xy yy zy 0.0
            xz yz zz 0.0
-           (- (g/dot x eye)) (- (g/dot y eye)) (- (g/dot z eye)) 1.0)))))
+           (- (g/dot x eye)) (- (g/dot y eye)) (- (g/dot z eye)) 1.0
+           -1 #+clj -1)))))
 
   (defn viewport-transform
     ([width height]
@@ -755,24 +821,26 @@ ordering (row major).
             (g/div (vec3 v') (v' 3)))))))
 #+END_SRC
 
-** Namespace declaration                                           :noexport:
+** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.matrix
+    ,#+cljs
+    (:require-macros
+     [thi.ng.macromath.core :as mm]
+     [thi.ng.geom.core.macros :as gmc])
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3 V3X]]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
      [thi.ng.common.error :as err]
+     ,#+clj [thi.ng.geom.core.vectorseq]
      ,#+clj [thi.ng.macromath.core :as mm]
      ,#+clj [thi.ng.geom.core.macros :as gmc])
-    ,#+cljs
-    (:require-macros
-     [thi.ng.macromath.core :as mm]
-     [thi.ng.geom.core.macros :as gmc])
     ,#+clj
     (:import
-     [thi.ng.geom.core.vector Vec2 Vec3]))
+     [thi.ng.geom.core.vector Vec2 Vec3]
+     [thi.ng.geom.core.vectorseq VectorSeq]))
 
   <<proto-helpers>>
 

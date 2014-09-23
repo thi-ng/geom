@@ -187,9 +187,14 @@
     (is (= ay (peek a2)) "peek a2")
     (is (= az (peek a3)) "peek a3")
     (is (= (pop a2) [ax]) "pop a2")
+    (is (= (pop a3) a2) "pop a3")
     (is (= (type (pop a2)) #+clj clojure.lang.PersistentVector #+cljs cljs.core.PersistentVector) "pop a2 type")
-    (is (= (pop a3) [ax ay]) "pop a3")
     (is (v/vec2? (pop a3)) "pop a3 vec2?")
+    (is (v/vec3? (conj a2 3)) "conj a2")
+    (is (= a3 (conj a2 3)) "conj a2 = a3")
+    ,#+clj  (is (instance? thi.ng.geom.core.vectorseq.VectorSeq (conj a3 4)) "conj a3 VectorSeq?")
+    ,#+cljs (is (instance? cljs.core.PersistentVector (conj a3 4)) "conj a3 PersistentVector?")
+    (is (= [ax ay az 4] (conj a3 4)) "conj a3 = [1 2 3 4]")
     (is (let [[x y z] a2] (and (= a2 [x y]) (nil? z))) "destructure a2")
     (is (let [[x y z w] a3] (and (= a3 [x y z]) (nil? w))) "destructure a3")
     (is (every? #(contains? a2 %) [:x :y 0 1]) "contains keys a2")
@@ -369,63 +374,85 @@
 #+END_SRC
 
 ** Matrix operations
-#+BEGIN_SRC clojure :noweb-ref tests2
+#+BEGIN_SRC clojure :noweb-ref tests
   (deftest matrix-ops
-    (is (== (hash (mapv double (range 1 7))) (hash (Matrix32. 1 2 3 4 5 6))) "hash M32")
-    (is (== (hash (mapv double (range 1 17))) (hash (Matrix44. 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16))) "hash M44")
-    (is (delta= V2Y (-> M32 (g/rotate HALF_PI) (g/transform-vector V2X))))
-    (is (delta= V3Z (-> M44 (g/rotate-x HALF_PI) (g/transform-vector V3Y))) "rotx(+y) = +z")
-    (is (delta= V3Z (-> M44 (g/rotate-around-axis V3X HALF_PI) (g/transform-vector V3Y))) "rot-axis-x(+y) = +z")
-    (is (delta= V3X (-> M44 (g/rotate-y HALF_PI) (g/transform-vector V3Z))) "roty(+z) = +x")
-    (is (delta= V3X (-> M44 (g/rotate-around-axis V3Y HALF_PI) (g/transform-vector V3Z))) "rot-axis-y(+z) = +x")
-    (is (delta= V3Y (-> M44 (g/rotate-z HALF_PI) (g/transform-vector V3X))) "rotz(+x) = +y")
-    (is (delta= V3Y (-> M44 (g/rotate-around-axis V3Z HALF_PI) (g/transform-vector V3X))) "rot-axis-z(+x) = +y")
-    (is (delta= b2 (-> M32 (g/scale s) (g/transform-vector a2))) " a2 scale s")
-    (is (delta= (g/* a2 b2) (-> M32 (g/scale bx by) (g/transform-vector a2))) " a2 scale bx by")
-    (is (delta= (g/* a2 b2) (-> M32 (g/scale b2) (g/transform-vector a2))) " a2 scale b2")
-    (is (delta= b3 (-> M44 (g/scale s) (g/transform-vector a3))) " a3 scale s")
-    (is (delta= (g/* a3 b3) (-> M44 (g/scale bx by bz) (g/transform-vector a3))) " a3 scale bx by bz")
-    (is (delta= (g/* a3 b3) (-> M44 (g/scale b3) (g/transform-vector a3))) " a3 scale b3")
-    (is (delta= (g/+ a2 s) (-> M32 (g/translate s) (g/transform-vector a2))) " a2 trans s")
-    (is (delta= (g/+ a2 b2) (-> M32 (g/translate bx by) (g/transform-vector a2))) " a2 trans bx by")
-    (is (delta= (g/+ a2 b2) (-> M32 (g/translate b2) (g/transform-vector a2))) " a2 trans b2")
-    (is (delta= (g/+ a3 s) (-> M44 (g/translate s) (g/transform-vector a3))) " a3 trans s")
-    (is (delta= (g/+ a3 b3) (-> M44 (g/translate bx by bz) (g/transform-vector a3))) " a3 trans bx by bz")
-    (is (delta= (g/+ a3 b3) (-> M44 (g/translate b3) (g/transform-vector a3))) " a3 trans b3")
-    (is (delta= (-> V2X (g/scale s) (g/rotate QUARTER_PI) (g/translate b2))
-                (-> M32 (g/translate b2) (g/rotate QUARTER_PI) (g/scale s) (g/transform-vector V2X)))
-        "concat 2d")
-    (is (delta= (-> V3X (g/scale s) (g/rotate-z QUARTER_PI) (g/translate b3))
-                (-> M44 (g/translate b3) (g/rotate QUARTER_PI) (g/scale s) (g/transform-vector V3X)))
-        "concat 3d")
-    (is (delta= 1 (g/determinant M32)) "det M32 = 1")
-    (is (delta= 1 (g/determinant (g/rotate M32 HALF_PI))) "det M32 rot = 1")
-    (is (delta= 200 (g/determinant (g/scale M32 10 20))) "det M32 scaled")
-    (is (delta= 1 (g/determinant M44)) "det M44 = 1")
-    (is (delta= 1 (g/determinant (g/rotate-around-axis M44 (g/normalize (vec3 1)) HALF_PI))) "det M44 rot = 1")
-    (is (delta= 6000 (g/determinant (g/scale M44 10 20 30))) "det M44 scaled")
-    (is (delta= a2 (let [mat (-> M32 (g/translate b2) (g/rotate QUARTER_PI) (g/scale s))]
-                     (-> mat (g/transform-vector a2) (g/transform (g/invert mat)))))
-        "invert 2d")
-    (is (delta= a3 (let [mat (-> M44 (g/translate b3) (g/rotate-z QUARTER_PI) (g/scale s))]
-                     (-> mat (g/transform-vector a3) (g/transform (g/invert mat)))))
-        "invert 3d")
-    (is (delta= M32 [1 0 0 0 1 0]) "delta= M32")
-    (is (delta= M32 [1 0 0 0 1 0] 1e-3) "delta= M32 eps")
-    (is (delta= M32 M32) "delta= M32 M32")
-    (is (not (delta= M32 nil)) "not delta= M32 nil")
-    (is (not (delta= M32 1)) "not delta= M32 1")
-    (is (delta= M44 [1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1]) "delta= M44")
-    (is (delta= M44 [1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1] 1e-3) "delta= M44 eps")
-    (is (delta= M44 M44) "delta= M44 M44")
-    (is (not (delta= M44 nil)) "not delta= M44 nil")
-    (is (not (delta= M44 1)) "not delta= M44 1"))
+    (let [m32a (matrix32 (range 1 7))  m32b (matrix32 (range 10 70 10))
+          m44a (matrix44 (range 1 17)) m44b (matrix44 (range 10 170 10))]
+      (is (== (hash (mapv double (range 1 7))) (hash m32a)) "hash M32")
+      (is (== (hash (mapv double (range 1 17))) (hash m44a)) "hash M44")
+      ,#+clj (is (== (.hashCode (mapv double (range 1 7))) (.hashCode m32a)) "hashCode M32")
+      ,#+clj (is (== (.hashCode (mapv double (range 1 17))) (.hashCode m44a)) "hashCode M44")
+      (is (delta= V2Y (-> M32 (g/rotate HALF_PI) (g/transform-vector V2X))))
+      (is (delta= V3Z (-> M44 (g/rotate-x HALF_PI) (g/transform-vector V3Y))) "rotx(+y) = +z")
+      (is (delta= V3Z (-> M44 (g/rotate-around-axis V3X HALF_PI) (g/transform-vector V3Y))) "rot-axis-x(+y) = +z")
+      (is (delta= V3X (-> M44 (g/rotate-y HALF_PI) (g/transform-vector V3Z))) "roty(+z) = +x")
+      (is (delta= V3X (-> M44 (g/rotate-around-axis V3Y HALF_PI) (g/transform-vector V3Z))) "rot-axis-y(+z) = +x")
+      (is (delta= V3Y (-> M44 (g/rotate-z HALF_PI) (g/transform-vector V3X))) "rotz(+x) = +y")
+      (is (delta= V3Y (-> M44 (g/rotate-around-axis V3Z HALF_PI) (g/transform-vector V3X))) "rot-axis-z(+x) = +y")
+      (is (delta= b2 (-> M32 (g/scale s) (g/transform-vector a2))) " a2 scale s")
+      (is (delta= (g/* a2 b2) (-> M32 (g/scale bx by) (g/transform-vector a2))) " a2 scale bx by")
+      (is (delta= (g/* a2 b2) (-> M32 (g/scale b2) (g/transform-vector a2))) " a2 scale b2")
+      (is (delta= b3 (-> M44 (g/scale s) (g/transform-vector a3))) " a3 scale s")
+      (is (delta= (g/* a3 b3) (-> M44 (g/scale bx by bz) (g/transform-vector a3))) " a3 scale bx by bz")
+      (is (delta= (g/* a3 b3) (-> M44 (g/scale b3) (g/transform-vector a3))) " a3 scale b3")
+      (is (delta= (g/+ a2 s) (-> M32 (g/translate s) (g/transform-vector a2))) " a2 trans s")
+      (is (delta= (g/+ a2 b2) (-> M32 (g/translate bx by) (g/transform-vector a2))) " a2 trans bx by")
+      (is (delta= (g/+ a2 b2) (-> M32 (g/translate b2) (g/transform-vector a2))) " a2 trans b2")
+      (is (delta= (g/+ a3 s) (-> M44 (g/translate s) (g/transform-vector a3))) " a3 trans s")
+      (is (delta= (g/+ a3 b3) (-> M44 (g/translate bx by bz) (g/transform-vector a3))) " a3 trans bx by bz")
+      (is (delta= (g/+ a3 b3) (-> M44 (g/translate b3) (g/transform-vector a3))) " a3 trans b3")
+      (is (delta= (-> V2X (g/scale s) (g/rotate QUARTER_PI) (g/translate b2))
+                  (-> M32 (g/translate b2) (g/rotate QUARTER_PI) (g/scale s) (g/transform-vector V2X)))
+          "concat 2d")
+      (is (delta= (-> V3X (g/scale s) (g/rotate-z QUARTER_PI) (g/translate b3))
+                  (-> M44 (g/translate b3) (g/rotate QUARTER_PI) (g/scale s) (g/transform-vector V3X)))
+          "concat 3d")
+      (is (delta= 1 (g/determinant M32)) "det M32 = 1")
+      (is (delta= 1 (g/determinant (g/rotate M32 HALF_PI))) "det M32 rot = 1")
+      (is (delta= 200 (g/determinant (g/scale M32 10 20))) "det M32 scaled")
+      (is (delta= 1 (g/determinant M44)) "det M44 = 1")
+      (is (delta= 1 (g/determinant (g/rotate-around-axis M44 (g/normalize (vec3 1)) HALF_PI))) "det M44 rot = 1")
+      (is (delta= 6000 (g/determinant (g/scale M44 10 20 30))) "det M44 scaled")
+      (is (delta= a2 (let [mat (-> M32 (g/translate b2) (g/rotate QUARTER_PI) (g/scale s))]
+                       (-> mat (g/transform-vector a2) (g/transform (g/invert mat))))) "invert 2d")
+      (is (delta= a3 (let [mat (-> M44 (g/translate b3) (g/rotate-z QUARTER_PI) (g/scale s))]
+                       (-> mat (g/transform-vector a3) (g/transform (g/invert mat))))) "invert 3d")
+      (is (delta= (g/+ m32a m32b) (range 11 77 11)) "+ M32")
+      (is (delta= (g/- m32b m32a) (range 9 60 9)) "- M32")
+      (is (delta= (g/+ m44a m44b) (range 11 180 11)) "+ M44")
+      (is (delta= (g/- m44b m44a) (range 9 150 9)) "- M44")
+      (is (delta= M32 [1 0 0 0 1 0]) "delta= M32")
+      (is (delta= M32 [1 0 0 0 1 0] 1e-3) "delta= M32 eps")
+      (is (delta= M32 M32) "delta= M32 M32")
+      (is (not (delta= M32 nil)) "not delta= M32 nil")
+      (is (not (delta= M32 1)) "not delta= M32 1")
+      (is (delta= M44 [1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1]) "delta= M44")
+      (is (delta= M44 [1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1] 1e-3) "delta= M44 eps")
+      (is (delta= M44 M44) "delta= M44 M44")
+      (is (not (delta= M44 nil)) "not delta= M44 nil")
+      (is (not (delta= M44 1)) "not delta= M44 1")
+      (is (delta= [1 0 0 0 1 0 2] (conj M32 2)) "conj M32")
+      (is (delta= [1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1 2] (conj M44 2)) "conj M44")
+      ,#+clj  (is (instance? thi.ng.geom.core.vectorseq.VectorSeq (conj M32 2)) "conj M32 VectorSeq?")
+      ,#+clj  (is (instance? thi.ng.geom.core.vectorseq.VectorSeq (conj M44 2)) "conj M44 VectorSeq?")
+      ,#+cljs (is (instance? cljs.core.PersistentVector (conj M32 2)) "conj M32 PersistentVector?")
+      ,#+cljs (is (instance? cljs.core.PersistentVector (conj M44 2)) "conj M44 PersistentVector?")))
 #+END_SRC
 
 ** Quaternion operations
 #+BEGIN_SRC clojure :noweb-ref tests
+  (defn quat-matrix-roundtrip
+    [n]
+    (testing
+        (dotimes [i n]
+          (let [q (q/quat-from-axis-angle (v/randvec3) (rand 6.28))
+                q' (q/quat-from-matrix (g/as-matrix q))
+                v (v/randvec3)]
+            (is (m/delta= (g/transform-vector q v) (g/transform-vector q' v) 1e-4))))))
+
   (deftest quat-ops
     (is (== (hash [1.0 2.0 3.0 4.0]) (hash (q/quat 1 2 3 4))) "hash Quat4")
+    ,#+clj (is (== (.hashCode [1.0 2.0 3.0 4.0]) (.hashCode (q/quat 1 2 3 4))) "hashCode Quat4")
     (is (delta= a3 (-> (q/quat-from-axis-angle V3X 0.0) (g/transform-vector a3))))
     (is (delta= a3 (-> (q/quat-from-axis-angle V3Y 0.0) (g/transform-vector a3))))
     (is (delta= a3 (-> (q/quat-from-axis-angle V3Z 0.0) (g/transform-vector a3))))
@@ -449,11 +476,17 @@
                     (g/rotate-around-axis (g/normalize (vec3 1)) HALF_PI)
                     (q/quat-from-matrix)
                     (g/transform-vector a3))))
+    (quat-matrix-roundtrip 1000)
+    (is (delta= [V3X HALF_PI] (q/as-axis-angle (q/quat-from-axis-angle V3X HALF_PI))))
+    (is (delta= [V3Y HALF_PI] (q/as-axis-angle (q/quat-from-axis-angle V3Y HALF_PI))))
+    (is (delta= [V3Z HALF_PI] (q/as-axis-angle (q/quat-from-axis-angle V3Z HALF_PI))))
     (is (delta= Q [0 0 0 1]) "delta= Q")
     (is (delta= Q [0 0 0 1] 1e-3) "delta= Q eps")
     (is (delta= Q Q) "delta= Q")
     (is (not (delta= Q nil)) "not delta= Q nil")
-    (is (not (delta= Q 1)) "not delta= Q 1"))
+    (is (not (delta= Q 1)) "not delta= Q 1")
+    ,#+clj  (is (instance? thi.ng.geom.core.vectorseq.VectorSeq (conj Q 2)) "conj Q VectorSeq?")
+    ,#+cljs (is (instance? cljs.core.PersistentVector (conj Q 2)) "conj Q PersistentVector?"))
 #+END_SRC
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/core/test/core.cljx :noweb yes :mkdirp yes :padline no
@@ -465,7 +498,7 @@
      [thi.ng.common.math.core :as m :refer [*eps* HALF_PI QUARTER_PI delta=]]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V2X V2Y V3X V3Y V3Z]]
-     [thi.ng.geom.core.matrix :as mat :refer [M32 M44]]
+     [thi.ng.geom.core.matrix :as mat :refer [M32 M44 matrix32 matrix44]]
      [thi.ng.geom.core.quaternion :as q :refer [Q]]
      ,#+clj [clojure.test :refer :all]
      ,#+cljs [cemerick.cljs.test :as t]))

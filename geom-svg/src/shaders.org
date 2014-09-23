@@ -1,0 +1,90 @@
+#+SETUPFILE: ../../src/setup.org
+
+* Namespace: thi.ng.geom.svg.shader
+
+** Protocols
+*** PShader
+#+BEGIN_SRC clojure :noweb-ref protos
+  (defprotocol PShader
+    (uniforms [_])
+    (solid? [_])
+    (shade-facet [_ f f' z]))
+#+END_SRC
+
+** Shaders
+#+BEGIN_SRC clojure :noweb-ref shader
+  (defn normal-rgb
+    ([] (normal-rgb M44))
+    ([tx]
+       (fn [f _ _]
+         (-> (gu/ortho-normal f)
+             (g/transform tx)
+             (g/madd 0.5 0.5)))))
+
+  (defn translucent
+    [shader alpha]
+    (fn [f f' z] (conj (vec (shader f f' z)) alpha)))
+
+  (defn shader
+    [{:keys [fill stroke uniforms flags]}]
+    (reify
+      PShader
+      (shade-facet [_ f f' z]
+        (cond-> {}
+                fill   (assoc :fill   (if (fn? fill) (fill f f' z) fill))
+                stroke (assoc :stroke (if (fn? stroke) (stroke f f' z) stroke))))
+      (uniforms [_] uniforms)
+      (solid? [_] (:solid flags true))))
+
+  (defn lambert
+    [{:keys [view light-dir light-col diffuse ambient]}]
+    (let [light-col (vec3 light-col)
+          light-dir (g/normalize (vec3 light-dir))
+          diffuse   (if (fn? diffuse) diffuse (vec3 diffuse))
+          ambient   (if (fn? ambient) ambient (vec3 ambient))
+          nmat      (g/transpose (g/invert view))]
+      (fn [f f' z]
+        (let [n       (g/transform-vector nmat (gu/ortho-normal f))
+              lambert (max 0.0 (g/dot n light-dir))
+              diffuse (if (fn? diffuse) (diffuse f f' z) diffuse)
+              ambient (if (fn? ambient) (ambient f f' z) ambient)]
+          (-> (g/* diffuse light-col)
+              (g/madd lambert (g/* ambient light-col)))))))
+
+  (defn phong
+    [{:keys [model view light-pos light-col
+             diffuse specular ambient shininess]}]
+    (let [light-col (vec3 light-col)
+          light-pos (g/transform-vector view (vec3 light-pos))
+          diffuse   (if (fn? diffuse) diffuse (vec3 diffuse))
+          ambient   (if (fn? ambient) ambient (vec3 ambient))
+          specular  (vec3 specular)
+          mv        (g/* view model)
+          nmat      (g/transpose (g/invert view))]
+      (fn [f f' z]
+        (let [eye-pos (g/transform-vector mv (gu/centroid f))
+              n       (g/normalize (g/transform-vector nmat (gu/ortho-normal f)))
+              l       (g/normalize (g/- light-pos eye-pos))
+              e       (g/normalize (g/- eye-pos))
+              lambert (max 0.0 (g/dot n l))
+              diffuse (if (fn? diffuse) (diffuse f f' z) diffuse)
+              ambient (if (fn? ambient) (ambient f f' z) ambient)
+              spec    (max (Math/pow (g/dot (g/normalize (g/+ l e)) n) shininess) 0.0)]
+          (-> (g/* diffuse light-col)
+              (g/madd lambert (g/+ (g/* ambient light-col) (g/* specular spec)))
+              (g/min [1.0 1.0 1.0]))))))
+#+END_SRC
+
+** Complete namespace definition                                   :noexport:
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/shader.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.svg.shader
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :refer [vec3 V3Z]]
+     [thi.ng.geom.core.matrix :as mat :refer [M44]]))
+
+  <<protos>>
+
+  <<shader>>
+#+END_SRC

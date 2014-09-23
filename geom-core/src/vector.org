@@ -27,15 +27,15 @@ injected in the appropriate places of the code.
 *** assocN
 #+BEGIN_SRC clojure :noweb-ref tpl-assoc-n2
   (case (int k)
-    0 (Vec2. v y)
-    1 (Vec2. x v)
+    0 (Vec2. v y -1 #+clj -1)
+    1 (Vec2. x v -1 #+clj -1)
     (err/key-error! k))
 #+END_SRC
 #+BEGIN_SRC clojure :noweb-ref tpl-assoc-n3
   (case (int k)
-    0 (Vec3. v y z)
-    1 (Vec3. x v z)
-    2 (Vec3. x y v)
+    0 (Vec3. v y z -1 #+clj -1)
+    1 (Vec3. x v z -1 #+clj -1)
+    2 (Vec3. x y v -1 #+clj -1)
     (err/key-error! k))
 #+END_SRC
 *** containsKey
@@ -83,29 +83,41 @@ injected in the appropriate places of the code.
 #+END_SRC
 *** hashCode
 #+BEGIN_SRC clojure :noweb-ref tpl-hashcode2
-  (-> 31
-      (unchecked-add-int (hash x))
-      (unchecked-multiply-int 31)
-      (unchecked-add-int (hash y)))
+  (if (== -1 _hashc)
+    (set! _hashc
+          (-> 31
+              (unchecked-add-int (hash x))
+              (unchecked-multiply-int 31)
+              (unchecked-add-int (hash y))))
+    _hashc)
 #+END_SRC
 #+BEGIN_SRC clojure :noweb-ref tpl-hashcode3
-  (-> 31
-      (unchecked-add-int (hash x))
-      (unchecked-multiply-int 31)
-      (unchecked-add-int (hash y))
-      (unchecked-multiply-int 31)
-      (unchecked-add-int (hash z)))
+  (if (== -1 _hashc)
+    (set! _hashc
+          (-> 31
+              (unchecked-add-int (hash x))
+              (unchecked-multiply-int 31)
+              (unchecked-add-int (hash y))
+              (unchecked-multiply-int 31)
+              (unchecked-add-int (hash z))))
+    _hashc)
 #+END_SRC
 *** hashEq
 #+BEGIN_SRC clojure :noweb-ref tpl-hasheq2 :noweb yes
-  (mix-collection-hash
-    <<tpl-hashcode2>>
-    2)
+  (if (== -1 _hasheq)
+    (set! _hasheq
+          (mix-collection-hash
+           <<tpl-hashcode2>>
+           2))
+    _hasheq)
 #+END_SRC
 #+BEGIN_SRC clojure :noweb-ref tpl-hasheq3 :noweb yes
-  (mix-collection-hash
-    <<tpl-hashcode3>>
-    3)
+  (if (== -1 _hasheq)
+    (set! _hasheq
+          (mix-collection-hash
+           <<tpl-hashcode3>>
+           3))
+    _hasheq)
 #+END_SRC
 *** rest
 #+BEGIN_SRC clojure :noweb-ref tpl-rest2
@@ -116,10 +128,10 @@ injected in the appropriate places of the code.
 #+END_SRC
 *** rseq
 #+BEGIN_SRC clojure :noweb-ref tpl-rseq2
-  (Vec2. y x)
+  (Vec2. y x -1 #+clj -1)
 #+END_SRC
 #+BEGIN_SRC clojure :noweb-ref tpl-rseq3
-  (Vec3. z y x)
+  (Vec3. z y x -1 #+clj -1)
 #+END_SRC
 
 *** reduce
@@ -158,37 +170,13 @@ injected in the appropriate places of the code.
               acc))))))
 #+END_SRC
 
-** Protocol helpers
-
-#+BEGIN_SRC clojure :noweb-ref helpers
-  ,#+clj
-  (defn map-entry
-    [k ^double v]
-    (reify
-      clojure.lang.IMapEntry
-      java.util.Map$Entry
-      (key [_] k)
-      (getKey [_] k)
-      (val [_] v)
-      (getValue [_] v)
-      (hashCode [_]
-        (-> 31
-            (unchecked-add-int (hash k))
-            (unchecked-multiply-int 31)
-            (unchecked-add-int (hash v))))
-      (equals [_ x]
-        (and (instance? java.util.Map$Entry x)
-             (clojure.lang.Util/equals
-              k (.getKey ^java.util.Map$Entry x))
-             (clojure.lang.Util/equals
-              v (.getValue ^java.util.Map$Entry x))))))
-#+END_SRC
-
 ** 2D
 #+BEGIN_SRC clojure :noweb-ref vec2
   (deftype Vec2
-    ,#+clj [^double x ^double y]
-    ,#+cljs [x y]
+    ,#+clj [^double x ^double y
+            ^:unsynchronized-mutable _hasheq
+            ^:unsynchronized-mutable _hashc]
+    ,#+cljs [x y ^:mutable _hasheq]
 #+END_SRC
 *** Clojure protocols
 #+BEGIN_SRC clojure :noweb-ref vec2
@@ -234,7 +222,7 @@ injected in the appropriate places of the code.
   ,#+clj (containsKey
          [_ k] <<tpl-contains-key2>>)
   ,#+clj (entryAt
-         [_ k] (map-entry k <<tpl-nth-err2>>))
+         [_ k] (clojure.lang.MapEntry. k <<tpl-nth-err2>>))
   ,#+clj (assoc
             [_ k v] (swizzle2-assoc _ k v))
   ,#+clj (assocN
@@ -249,6 +237,11 @@ injected in the appropriate places of the code.
   ,#+clj (toArray
          [_] (object-array _))
   ,#+clj (size [_] 2)
+
+  ,#+clj clojure.lang.IEditableCollection
+  ,#+clj (asTransient
+         [_] (-> (transient clojure.lang.PersistentVector/EMPTY)
+                 (conj! x) (conj! y)))
 
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.Indexed
@@ -269,7 +262,7 @@ injected in the appropriate places of the code.
   ,#+clj (pop
          [_] [x])
   ,#+clj (rseq
-         [_] (Vec2. y x))
+         [_] (Vec2. y x -1 #+clj -1))
   ,#+clj (seq
          [_] _)
   ,#+clj (nth
@@ -283,7 +276,7 @@ injected in the appropriate places of the code.
                 (clojure.lang.Numbers/equiv y (.-y ^Vec2 o)))
            (and (instance? java.util.Collection o)
                 (= 2 (count o))
-                (clojure.lang.Util/equiv x (nth o 0))
+                (clojure.lang.Util/equiv x (first o))
                 (clojure.lang.Util/equiv y (nth o 1)))))
   ,#+clj (equals
          [_ o]
@@ -292,7 +285,7 @@ injected in the appropriate places of the code.
                 (clojure.lang.Util/equals y (.-y ^Vec2 o)))
            (and (instance? java.util.Collection o)
                 (= 2 (count o))
-                (clojure.lang.Util/equals x (nth o 0))
+                (clojure.lang.Util/equals x (first o))
                 (clojure.lang.Util/equals y (nth o 1)))))
 
   ;; http://docs.oracle.com/javase/7/docs/g/java/util/List.html#hashCode()
@@ -330,16 +323,16 @@ injected in the appropriate places of the code.
          (.toString
           ^StringBuilder
           (doto (StringBuilder. "[")
-            (.append (pr-str x))
+            (.append x)
             (.append " ")
-            (.append (pr-str y))
+            (.append y)
             (.append "]"))))
 #+END_SRC
 *** ClojureScript protocols
 #+BEGIN_SRC clojure :noweb-ref vec2
   ,#+cljs ICloneable
   ,#+cljs (-clone
-          [_] (Vec2. x y))
+          [_] (Vec2. x y -1 #+clj -1))
   
   ,#+cljs ILookup
   ,#+cljs (-lookup
@@ -411,12 +404,15 @@ injected in the appropriate places of the code.
   ,#+cljs IHash
   ,#+cljs (-hash
           [_]
-          (mix-collection-hash
-           (-> 31 (+ (hash x))
-               (bit-or 0)
-               (imul 31) (+ (hash y))
-               (bit-or 0))
-           2))
+          (if (== -1 _hasheq)
+            (set! _hasheq
+                  (mix-collection-hash
+                   (-> 31 (+ (hash x))
+                       (bit-or 0)
+                       (imul 31) (+ (hash y))
+                       (bit-or 0))
+                   2))
+            _hasheq))
   
   ,#+cljs IEquiv
   ,#+cljs (-equiv
@@ -424,7 +420,7 @@ injected in the appropriate places of the code.
           (if (instance? Vec2 o)
             (and (== x (.-x ^Vec2 o)) (== y (.-y ^Vec2 o)))
             (and (sequential? o) (= 2 (count o))
-                 (= x (nth o 0)) (= y (nth o 1)))))
+                 (= x (first o)) (= y (nth o 1)))))
   
   ,#+cljs IReduce
   ,#+cljs (-reduce
@@ -460,7 +456,7 @@ injected in the appropriate places of the code.
   (rotate
    [_ theta]
    (let [s (Math/sin theta) c (Math/cos theta)]
-     (Vec2. (mm/msub x c y s) (mm/madd x s y c))))
+     (Vec2. (mm/msub x c y s) (mm/madd x s y c) -1 #+clj -1)))
   g/PRotate3D
   (rotate-x
    [_ theta] (g/rotate-x (vec3 _) theta))
@@ -478,13 +474,13 @@ injected in the appropriate places of the code.
 *** PMathOps
 #+BEGIN_SRC clojure :noweb-ref vec2
   g/PMathOps
-  (abs [_] (Vec2. (m/abs x) (m/abs y)))
+  (abs [_] (Vec2. (m/abs x) (m/abs y) -1 #+clj -1))
   (+ [_] _)
   (+ [_ a] (vec2-op-1 + _ a 0.0))
   (+ [_ a b] (vec2-op-2 + _ a b 0.0 0.0))
   (+ [_ a b c] (vec2-op-3 + _ a b c 0.0))
   
-  (- [_] (Vec2. (- x) (- y)))
+  (- [_] (Vec2. (- x) (- y) -1 #+clj -1))
   (- [_ a] (vec2-op-1 - _ a 0.0))
   (- [_ a b] (vec2-op-2 - _ a b 0.0 0.0))
   (- [_ a b c] (vec2-op-3 - _ a b c 0.0))
@@ -494,7 +490,7 @@ injected in the appropriate places of the code.
   (* [_ a b] (vec2-op-2 * _ a b 1.0 1.0))
   (* [_ a b c] (vec2-op-3 * _ a b c 1.0))
   
-  (div [_] (Vec2. (/ x) (/ y)))
+  (div [_] (Vec2. (/ x) (/ y) -1 #+clj -1))
   (div [_ a] (vec2-op-1 / _ a 0.0))
   (div [_ a b] (vec2-op-2 / _ a b 0.0 0.0))
   (div [_ a b c] (vec2-op-3 / _ a b c 0.0))
@@ -513,7 +509,7 @@ injected in the appropriate places of the code.
    [_ v eps]
    (and (sequential? v)
         (== 2 (count v))
-        (m/delta= x (nth v 0) eps)
+        (m/delta= x (first v) eps)
         (m/delta= y (nth v 1) eps)))
 #+END_SRC
 *** PDotProduct
@@ -542,16 +538,16 @@ injected in the appropriate places of the code.
   g/PMinMax
   (min
    [_ [ax ay]]
-   (Vec2. (min x ax) (min y ay)))
+   (Vec2. (min x ax) (min y ay) -1 #+clj -1))
   (min
    [_ [ax ay] [bx by]]
-   (Vec2. (min (min x ax) bx) (min (min y ay) by)))
+   (Vec2. (min (min x ax) bx) (min (min y ay) by) -1 #+clj -1))
   (max
    [_ [ax ay]]
-   (Vec2. (max x ax) (max y ay)))
+   (Vec2. (max x ax) (max y ay) -1 #+clj -1))
   (max
    [_ [ax ay] [bx by]]
-   (Vec2. (max (max x ax) bx) (max (max y ay) by)))
+   (Vec2. (max (max x ax) bx) (max (max y ay) by) -1 #+clj -1))
 #+END_SRC
 *** PMagnitude
 #+BEGIN_SRC clojure :noweb-ref vec2
@@ -569,13 +565,13 @@ injected in the appropriate places of the code.
    [_]
    (let [l (Math/sqrt (mm/madd x x y y))]
      (if (pos? l)
-       (Vec2. (/ x l) (/ y l))
+       (Vec2. (/ x l) (/ y l) -1 #+clj -1)
        _)))
   (normalize
    [_ len]
    (let [l (Math/sqrt (mm/madd x x y y))]
      (if (pos? l)
-       (let [l (/ len l)] (Vec2. (* x l) (* y l)))
+       (let [l (/ len l)] (Vec2. (* x l) (* y l) -1 #+clj -1))
        _)))
   (normalized?
    [_] (m/delta= 1.0 (g/mag-squared _)))
@@ -583,7 +579,7 @@ injected in the appropriate places of the code.
 *** PNormal
 #+BEGIN_SRC clojure :noweb-ref vec2
   g/PNormal
-  (normal [_] (Vec2. (- y) x))
+  (normal [_] (Vec2. (- y) x -1 #+clj -1))
 #+END_SRC
 *** PDistance
 #+BEGIN_SRC clojure :noweb-ref vec2
@@ -592,13 +588,13 @@ injected in the appropriate places of the code.
    [_ a]
    (let [[dx dy] (if (instance? Vec2 a)
                    [(- x (.-x ^Vec2 a)) (- y (.-y ^Vec2 a))]
-                   [(- x (nth a 0)) (- y (nth a 1))])]
+                   [(- x (first a)) (- y (nth a 1))])]
      (Math/sqrt (mm/madd dx dx dy dy))))
   (dist-squared
    [_ a]
    (let [[dx dy] (if (instance? Vec2 a)
                    [(- x (.-x ^Vec2 a)) (- y (.-y ^Vec2 a))]
-                   [(- x (nth a 0)) (- y (nth a 1))])]
+                   [(- x (first a)) (- y (nth a 1))])]
      (mm/madd dx dx dy dy)))
 #+END_SRC
 *** PReflect
@@ -607,30 +603,35 @@ injected in the appropriate places of the code.
   (reflect
    [_ [rx ry :as r]]
     (let [d (* (g/dot _ r) 2.0)]
-      (Vec2. (mm/msub rx d x) (mm/msub ry d y))))
+      (Vec2. (mm/msub rx d x) (mm/msub ry d y) -1 #+clj -1)))
 #+END_SRC
 *** PInvert
 #+BEGIN_SRC clojure :noweb-ref vec2
   g/PInvert
   (invert
-   [_] (Vec2. (- x) (- y)))
+   [_] (Vec2. (- x) (- y) -1 #+clj -1))
 #+END_SRC
 *** PInterpolate
 #+BEGIN_SRC clojure :noweb-ref vec2
   g/PInterpolate
   (mix
-   [_ [ax ay]]
-   (Vec2. (mm/submadd ax x 0.5 x) (mm/submadd ay y 0.5 y)))
+   [_ a]
+   (Vec2.
+    (mm/mix x (first a) 0.5)
+    (mm/mix y (nth a 1) 0.5)
+    -1 #+clj -1))
   (mix
-   [_ [ax ay] t]
-   (Vec2. (mm/submadd ax x t x) (mm/submadd ay y t y)))
+   [_ a t]
+   (Vec2.
+    (mm/mix x (first a) t)
+    (mm/mix y (nth a 1) t)
+    -1 #+clj -1))
   (mix
-   [_ [ax ay] [bx by] [cx cy] u v]
-   (let [ux (mm/submadd ax x u x)
-         uy (mm/submadd ay y u y)]
-     (Vec2.
-      (mm/submadd (mm/submadd cx bx u bx) ux v ux)
-      (mm/submadd (mm/submadd cy by u by) uy v uy))))
+   [_ a b c u v]
+   (Vec2.
+    (mm/mix x (first a) (first b) (first c) u v)
+    (mm/mix y (nth a 1) (nth b 1) (nth c 1) u v)
+    -1 #+clj -1))
 #+END_SRC
 *** PHeading
 #+BEGIN_SRC clojure :noweb-ref vec2
@@ -651,9 +652,9 @@ injected in the appropriate places of the code.
 #+BEGIN_SRC clojure :noweb-ref vec2
   g/PPolar
   (as-polar
-   [_] (Vec2. (g/mag _) (g/heading-xy _)))
+   [_] (Vec2. (g/mag _) (g/heading-xy _) -1 #+clj -1))
   (as-cartesian
-   [_] (Vec2. (* x (Math/cos y)) (* x (Math/sin y))))
+   [_] (Vec2. (* x (Math/cos y)) (* x (Math/sin y)) -1 #+clj -1))
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :noweb-ref vec2
@@ -661,15 +662,18 @@ injected in the appropriate places of the code.
 #+END_SRC
 *** Override print methods
 #+BEGIN_SRC clojure :noweb-ref vec2
-  ,#+clj (require 'clojure.pprint)
-  ,#+clj (prefer-method clojure.pprint/simple-dispatch clojure.lang.IPersistentVector clojure.lang.ISeq)
-  ,#+clj (defmethod print-method Vec2 [^Vec2 o ^java.io.Writer w] (.write w (.toString o)))
+  ,#+clj (defmethod clojure.pprint/simple-dispatch Vec2
+          [^Vec2 o] ((get-method clojure.pprint/simple-dispatch clojure.lang.IPersistentVector) o))
+  ,#+clj (defmethod print-method Vec2
+          [^Vec2 o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 ** 3D
 #+BEGIN_SRC clojure :noweb-ref vec3
   (deftype Vec3
-    #+clj [^double x ^double y ^double z]
-    #+cljs [x y z]
+    #+clj [^double x ^double y ^double z
+           ^:unsynchronized-mutable _hasheq
+           ^:unsynchronized-mutable _hashc]
+    #+cljs [x y z ^:mutable _hasheq]
 #+END_SRC
 *** Clojure protocols
 #+BEGIN_SRC clojure :noweb-ref vec3
@@ -704,7 +708,7 @@ injected in the appropriate places of the code.
   ,#+clj (containsKey
          [_ k] <<tpl-contains-key3>>)
   ,#+clj (entryAt
-         [_ k] (map-entry k <<tpl-nth-err3>>))
+         [_ k] (clojure.lang.MapEntry. k <<tpl-nth-err3>>))
   ,#+clj (assoc
             [_ k v] (swizzle3-assoc _ k v))
   ,#+clj (assocN
@@ -721,6 +725,11 @@ injected in the appropriate places of the code.
   ,#+clj (size
          [_] 3)
 
+  ,#+clj clojure.lang.IEditableCollection
+  ,#+clj (asTransient
+         [_] (-> (transient clojure.lang.PersistentVector/EMPTY)
+                 (conj! x) (conj! y) (conj! z)))
+
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.Indexed
   ,#+clj clojure.lang.Sequential
@@ -734,11 +743,11 @@ injected in the appropriate places of the code.
   ,#+clj (more
          [_] <<tpl-rest3>>)
   ,#+clj (cons
-         [_ w] [x y z w])
+         [_ w] (VectorSeq. 0 4 [x y z w] nil))
   ,#+clj (peek
          [_] z)
   ,#+clj (pop
-         [_] (Vec2. x y))
+         [_] (Vec2. x y -1 #+clj -1))
   ,#+clj (rseq
          [_] <<tpl-rseq3>>)
   ,#+clj (seq
@@ -755,7 +764,7 @@ injected in the appropriate places of the code.
                 (clojure.lang.Numbers/equiv z (.-z ^Vec3 o)))
            (and (instance? java.util.Collection o)
                 (= 3 (count o))
-                (clojure.lang.Util/equiv x (nth o 0))
+                (clojure.lang.Util/equiv x (first o))
                 (clojure.lang.Util/equiv y (nth o 1))
                 (clojure.lang.Util/equiv z (nth o 2)))))
   ,#+clj (equals
@@ -766,7 +775,7 @@ injected in the appropriate places of the code.
                 (clojure.lang.Util/equals z (.-z ^Vec3 o)))
            (and (instance? java.util.Collection o)
                 (= 3 (count o))
-                (clojure.lang.Util/equals x (nth o 0))
+                (clojure.lang.Util/equals x (first o))
                 (clojure.lang.Util/equals y (nth o 1))
                 (clojure.lang.Util/equals z (nth o 2)))))
   ,#+clj (hashCode
@@ -813,7 +822,7 @@ injected in the appropriate places of the code.
 #+BEGIN_SRC clojure :noweb-ref vec3
   ,#+cljs ICloneable
   ,#+cljs (-clone
-          [_] (Vec3. x y z))
+          [_] (Vec3. x y z -1 #+clj -1))
   
   ,#+cljs ILookup
   ,#+cljs (-lookup
@@ -875,7 +884,7 @@ injected in the appropriate places of the code.
   ,#+cljs (-peek
           [_] z)
   ,#+cljs (-pop
-          [_] (Vec2. x y))
+          [_] (Vec2. x y -1 #+clj -1))
   
   ,#+cljs IComparable
   ,#+cljs (-compare
@@ -885,14 +894,17 @@ injected in the appropriate places of the code.
   ,#+cljs IHash
   ,#+cljs (-hash
           [_]
-          (mix-collection-hash
-           (-> 31 (+ (hash x))
-               (bit-or 0)
-               (imul 31) (+ (hash y))
-               (bit-or 0)
-               (imul 31) (+ (hash z))
-               (bit-or 0))
-           3))
+          (if (== -1 _hasheq)
+            (set! _hasheq
+                  (mix-collection-hash
+                   (-> 31 (+ (hash x))
+                       (bit-or 0)
+                       (imul 31) (+ (hash y))
+                       (bit-or 0)
+                       (imul 31) (+ (hash z))
+                       (bit-or 0))
+                   3))
+            _hasheq))
   
   ,#+cljs IEquiv
   ,#+cljs (-equiv
@@ -900,7 +912,7 @@ injected in the appropriate places of the code.
           (if (instance? Vec3 o)
             (and (== x (.-x ^Vec3 o)) (== y (.-y ^Vec3 o)) (== z (.-z ^Vec3 o)))
             (and (sequential? o) (= 3 (count o))
-                 (= x (nth o 0)) (= y (nth o 1)) (= z (nth o 2)))))
+                 (= x (first o)) (= y (nth o 1)) (= z (nth o 2)))))
   
   ,#+cljs IReduce
   ,#+cljs (-reduce
@@ -939,15 +951,15 @@ injected in the appropriate places of the code.
   (rotate-x
    [_ theta]
    (let [s (Math/sin theta) c (Math/cos theta)]
-     (Vec3. x (mm/msub y c z s) (mm/madd y s z c))))
+     (Vec3. x (mm/msub y c z s) (mm/madd y s z c) -1 #+clj -1)))
   (rotate-y
    [_ theta]
    (let [s (Math/sin theta) c (Math/cos theta)]
-     (Vec3. (mm/madd x c z s) y (mm/msub z c x s))))
+     (Vec3. (mm/madd x c z s) y (mm/msub z c x s) -1 #+clj -1)))
   (rotate-z
    [_ theta]
    (let [s (Math/sin theta) c (Math/cos theta)]
-     (Vec3. (mm/msub x c y s) (mm/madd x s y c) z)))
+     (Vec3. (mm/msub x c y s) (mm/madd x s y c) z -1 #+clj -1)))
   (rotate-around-axis
    [_ [ax ay az] theta]
    (let [ux (* ax x), uy (* ax y), uz (* ax z)
@@ -967,7 +979,8 @@ injected in the appropriate places of the code.
   
       (mm/madd uvw az
                (mm/msub (+ ax2 ay2) z (+ ux vy) az) c
-               (mm/subm uy vx s)))))
+               (mm/subm uy vx s))
+ -1 #+clj -1)))
   
   g/PTransform
   (transform
@@ -976,13 +989,13 @@ injected in the appropriate places of the code.
 *** PMathOps
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PMathOps
-  (abs [_] (Vec3. (m/abs x) (m/abs y) (m/abs z)))
+  (abs [_] (Vec3. (m/abs x) (m/abs y) (m/abs z) -1 #+clj -1))
   (+ [_] _)
   (+ [_ a] (vec3-op-1 + _ a 0.0))
   (+ [_ a b] (vec3-op-2 + + _ a b 0.0 0.0))
   (+ [_ a b c] (vec3-op-3 + _ a b c 0.0))
   
-  (- [_] (Vec3. (- x) (- y) (- z)))
+  (- [_] (Vec3. (- x) (- y) (- z) -1 #+clj -1))
   (- [_ a] (vec3-op-1 - _ a 0.0))
   (- [_ a b] (vec3-op-2 - - _ a b 0.0 0.0))
   (- [_ a b c] (vec3-op-3 - _ a b c 0.0))
@@ -992,7 +1005,7 @@ injected in the appropriate places of the code.
   (* [_ a b] (vec3-op-2 * * _ a b 1.0 1.0))
   (* [_ a b c] (vec3-op-3 * _ a b c 1.0))
   
-  (div [_] (Vec3. (/ x) (/ y) (/ z)))
+  (div [_] (Vec3. (/ x) (/ y) (/ z) -1 #+clj -1))
   (div [_ a] (vec3-op-1 / _ a 0.0))
   (div [_ a b] (vec3-op-2 / / _ a b 0.0 0.0))
   (div [_ a b c] (vec3-op-3 / _ a b c 0.0))
@@ -1013,7 +1026,7 @@ injected in the appropriate places of the code.
    (Vec3.
     (mm/msub y az ay z)
     (mm/msub z ax az x)
-    (mm/msub x ay ax y)))
+    (mm/msub x ay ax y) -1 #+clj -1))
   
   g/PLimit
   (limit
@@ -1025,22 +1038,22 @@ injected in the appropriate places of the code.
   g/PMinMax
   (min
    [_ [ax ay az]]
-   (Vec3. (min x ax) (min y ay) (min z az)))
+   (Vec3. (min x ax) (min y ay) (min z az) -1 #+clj -1))
   (min
    [_ [ax ay az] [bx by bz]]
    (Vec3.
     (min (min x ax) bx)
     (min (min y ay) by)
-    (min (min z az) bz)))
+    (min (min z az) bz) -1 #+clj -1))
   (max
    [_ [ax ay az]]
-   (Vec3. (max x ax) (max y ay) (max z az)))
+   (Vec3. (max x ax) (max y ay) (max z az) -1 #+clj -1))
   (max
    [_ [ax ay az] [bx by bz]]
    (Vec3.
     (max (max x ax) bx)
     (max (max y ay) by)
-    (max (max z az) bz)))
+    (max (max z az) bz) -1 #+clj -1))
 #+END_SRC
 *** PDeltaEquals
 #+BEGIN_SRC clojure :noweb-ref vec3
@@ -1051,7 +1064,7 @@ injected in the appropriate places of the code.
    [_ v eps]
    (and (sequential? v)
         (== 3 (count v))
-        (m/delta= x (nth v 0) eps)
+        (m/delta= x (first v) eps)
         (m/delta= y (nth v 1) eps)
         (m/delta= z (nth v 2) eps)))
 #+END_SRC
@@ -1071,14 +1084,14 @@ injected in the appropriate places of the code.
    [_]
    (let [l (Math/sqrt (mm/madd x x y y z z))]
      (if (pos? l)
-       (Vec3. (/ x l) (/ y l) (/ z l))
+       (Vec3. (/ x l) (/ y l) (/ z l) -1 #+clj -1)
        _)))
   (normalize
    [_ len]
    (let [l (Math/sqrt (mm/madd x x y y z z))]
      (if (pos? l)
        (let [l (/ len l)]
-         (Vec3. (* x l) (* y l) (* z l)))
+         (Vec3. (* x l) (* y l) (* z l) -1 #+clj -1))
        _)))
   (normalized?
    [_] (m/delta= 1.0 (g/mag-squared _)))
@@ -1094,7 +1107,7 @@ injected in the appropriate places of the code.
                       [(- x (.-x ^Vec3 a))
                        (- y (.-y ^Vec3 a))
                        (- z (.-z ^Vec3 a))]
-                      [(- x (nth a 0))
+                      [(- x (first a))
                        (- y (nth a 1))
                        (- z (nth a 2 0.0))])]
      (mm/madd dx dx dy dy dz dz)))
@@ -1105,38 +1118,38 @@ injected in the appropriate places of the code.
   (reflect
    [_ [rx ry rz :as r]]
     (let [d (* (g/dot _ r) 2.0)]
-      (Vec3. (mm/msub rx d x) (mm/msub ry d y) (mm/msub rz d z))))
+      (Vec3. (mm/msub rx d x) (mm/msub ry d y) (mm/msub rz d z) -1 #+clj -1)))
 #+END_SRC
 *** PInvert
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PInvert
   (invert
-   [_] (Vec3. (- x) (- y) (- z)))
+   [_] (Vec3. (- x) (- y) (- z) -1 #+clj -1))
 #+END_SRC
 *** PInterpolate
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PInterpolate
   (mix
-   [_ [ax ay az]]
+   [_ a]
    (Vec3.
-    (mm/submadd ax x 0.5 x)
-    (mm/submadd ay y 0.5 y)
-    (mm/submadd az z 0.5 z)))
+    (mm/mix x (first a) 0.5)
+    (mm/mix y (nth a 1) 0.5)
+    (mm/mix z (nth a 2) 0.5)
+    -1 #+clj -1))
   (mix
-   [_ [ax ay az] t]
+   [_ a t]
    (Vec3.
-    (mm/submadd ax x t x)
-    (mm/submadd ay y t y)
-    (mm/submadd az z t z)))
+    (mm/mix x (first a) t)
+    (mm/mix y (nth a 1) t)
+    (mm/mix z (nth a 2) t)
+    -1 #+clj -1))
   (mix
-   [_ [ax ay az] [bx by bz] [cx cy cz] u v]
-   (let [ux (mm/submadd ax x u x)
-         uy (mm/submadd ay y u y)
-         uz (mm/submadd az z u z)]
-     (Vec3.
-      (mm/submadd (mm/submadd cx bx u bx) ux v ux)
-      (mm/submadd (mm/submadd cy by u by) uy v uy)
-      (mm/submadd (mm/submadd cz bz u bz) uz v uz))))
+   [_ a b c u v]
+   (Vec3.
+    (mm/mix x (first a) (first b) (first c) u v)
+    (mm/mix y (nth a 1) (nth b 1) (nth c 1) u v)
+    (mm/mix z (nth a 2) (nth b 2) (nth c 2) u v)
+    -1 #+clj -1))
 #+END_SRC
 *** PHeading
 #+BEGIN_SRC clojure :noweb-ref vec3
@@ -1172,13 +1185,13 @@ injected in the appropriate places of the code.
     (let [r (g/mag _)
           theta (Math/asin (/ z r))
           phi (Math/atan2 y x)]
-      (Vec3. r theta phi)))
+      (Vec3. r theta phi -1 #+clj -1)))
   (as-cartesian [_]
     (let [rcos (* x (Math/cos y))]
       (Vec3.
        (* rcos (Math/cos z))
        (* rcos (Math/sin z))
-       (* x    (Math/sin y)))))
+       (* x    (Math/sin y)) -1 #+clj -1)))
 #+END_SRC
 *** End of implementations
 #+BEGIN_SRC clojure :noweb-ref vec3
@@ -1186,7 +1199,10 @@ injected in the appropriate places of the code.
 #+END_SRC
 *** Override print methods
 #+BEGIN_SRC clojure :noweb-ref vec3
-  #+clj (defmethod print-method Vec3 [^Vec3 o ^java.io.Writer w] (.write w (.toString o)))
+  ,#+clj (defmethod clojure.pprint/simple-dispatch Vec3
+          [^Vec3 o] ((get-method clojure.pprint/simple-dispatch clojure.lang.IPersistentVector) o))
+  ,#+clj (defmethod print-method Vec3
+          [^Vec3 o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 ** Vector operations
 *** 2D
@@ -1197,7 +1213,7 @@ injected in the appropriate places of the code.
       (if xs
         (let [v ^Vec2 (first xs)]
           (recur (double (op ax (.-x v))) (double (op ay (.-y v))) (next xs)))
-        (Vec2. ax ay))))
+        (Vec2. ax ay -1 #+clj -1))))
 
   (defn vec2-op-seq2
     [op op2 ^Vec2 acc as b]
@@ -1206,21 +1222,21 @@ injected in the appropriate places of the code.
         (let [v ^Vec2 (first as)]
           (recur (double (op ax (.-x v))) (double (op ay (.-y v))) (next as)))
         (let [[bx by] (if (number? b) [b b] b)]
-          (Vec2. (op2 ax bx) (op2 ay by))))))
+          (Vec2. (op2 ax bx) (op2 ay by) -1 #+clj -1)))))
 
   (defn vec2-op-1
     [op ^Vec2 _ a d]
     (if (instance? Vec2 a)
       (Vec2.
        (op (.-x _) (.-x ^Vec2 a))
-       (op (.-y _) (.-y ^Vec2 a)))
+       (op (.-y _) (.-y ^Vec2 a)) -1 #+clj -1)
       (if (number? a)
-        (Vec2. (op (.-x _) a) (op (.-y _) a))
+        (Vec2. (op (.-x _) a) (op (.-y _) a) -1 #+clj -1)
         (if (instance? Vec2 (first a))
           (vec2-op-seq op _ a)
           (Vec2.
            (op (.-x _) (nth a 0 d))
-           (op (.-y _) (nth a 1 d)))))))
+           (op (.-y _) (nth a 1 d)) -1 #+clj -1)))))
 
   (defn vec2-op-2
     [op ^Vec2 _ a b d1 d2]
@@ -1228,24 +1244,24 @@ injected in the appropriate places of the code.
       (if (instance? Vec2 b)
         (Vec2. ;; v v
          (op (op (.-x _) (.-x ^Vec2 a)) (.-x ^Vec2 b))
-         (op (op (.-y _) (.-y ^Vec2 a)) (.-y ^Vec2 b)))
+         (op (op (.-y _) (.-y ^Vec2 a)) (.-y ^Vec2 b)) -1 #+clj -1)
         (if (number? b)
           (Vec2. ;; v n
            (op (op (.-x _) (.-x ^Vec2 a)) b)
-           (op (op (.-y _) (.-y ^Vec2 a)) b))
+           (op (op (.-y _) (.-y ^Vec2 a)) b) -1 #+clj -1)
           (Vec2. ;; v ?
            (op (op (.-x _) (.-x ^Vec2 a)) (nth b 0 d2))
-           (op (op (.-y _) (.-y ^Vec2 a)) (nth b 1 d2)))))
+           (op (op (.-y _) (.-y ^Vec2 a)) (nth b 1 d2)) -1 #+clj -1)))
       (let [an? (number? a) bn? (number? b)]
         (if (and an? bn?)
           (Vec2. ;; n n
            (op (.-x _) a)
-           (op (.-y _) b))
+           (op (.-y _) b) -1 #+clj -1)
           (let [[ax ay] (if an? [a a] a)
                 [bx by] (if bn? [b b] b)]
             (Vec2. ;; ? ?
              (op (op (.-x _) (or ax d1)) (or bx d2))
-             (op (op (.-y _) (or ay d1)) (or by d2))))))))
+             (op (op (.-y _) (or ay d1)) (or by d2)) -1 #+clj -1))))))
 
   (defn vec2-op-2*
     "Similar to vec2-op-2 but takes 2 fn args and handles case with
@@ -1255,26 +1271,26 @@ injected in the appropriate places of the code.
       (if (instance? Vec2 b)
         (Vec2. ;; v v
          (op2 (op (.-x _) (.-x ^Vec2 a)) (.-x ^Vec2 b))
-         (op2 (op (.-y _) (.-y ^Vec2 a)) (.-y ^Vec2 b)))
+         (op2 (op (.-y _) (.-y ^Vec2 a)) (.-y ^Vec2 b)) -1 #+clj -1)
         (if (number? b)
           (Vec2. ;; v n
            (op2 (op (.-x _) (.-x ^Vec2 a)) b)
-           (op2 (op (.-y _) (.-y ^Vec2 a)) b))
+           (op2 (op (.-y _) (.-y ^Vec2 a)) b) -1 #+clj -1)
           (Vec2. ;; v ?
            (op2 (op (.-x _) (.-x ^Vec2 a)) (nth b 0 d2))
-           (op2 (op (.-y _) (.-y ^Vec2 a)) (nth b 1 d2)))))
+           (op2 (op (.-y _) (.-y ^Vec2 a)) (nth b 1 d2)) -1 #+clj -1)))
       (if (and (sequential? a) (instance? Vec2 (first a)))
         (vec2-op-seq2 op op2 _ a b)
         (let [an? (number? a) bn? (number? b)]
           (if (and an? bn?)
             (Vec2.               ;; n n
              (op2 (op (.-x _) a) b) ;; difference to vec2-op-2
-             (op2 (op (.-y _) a) b))
+             (op2 (op (.-y _) a) b) -1 #+clj -1)
             (let [[ax ay] (if an? [a a] a)
                   [bx by] (if bn? [b b] b)]
               (Vec2. ;; ? ?
                (op2 (op (.-x _) (or ax d1)) (or bx d2))
-               (op2 (op (.-y _) (or ay d1)) (or by d2)))))))))
+               (op2 (op (.-y _) (or ay d1)) (or by d2)) -1 #+clj -1)))))))
 
   (defn vec2-op-3
     [op ^Vec2 _ a b c d]
@@ -1283,25 +1299,25 @@ injected in the appropriate places of the code.
         (if (instance? Vec2 c)
           (Vec2. ;; v v v
            (op (op (op (.-x _) (.-x ^Vec2 a)) (.-x ^Vec2 b)) (.-x ^Vec2 c))
-           (op (op (op (.-y _) (.-y ^Vec2 a)) (.-y ^Vec2 b)) (.-y ^Vec2 c)))
+           (op (op (op (.-y _) (.-y ^Vec2 a)) (.-y ^Vec2 b)) (.-y ^Vec2 c)) -1 #+clj -1)
           (if (number? c)
             (Vec2. ;; v v n
              (op (op (op (.-x _) (.-x ^Vec2 a)) (.-x ^Vec2 b)) c)
-             (op (op (op (.-y _) (.-y ^Vec2 a)) (.-y ^Vec2 b)) c))
+             (op (op (op (.-y _) (.-y ^Vec2 a)) (.-y ^Vec2 b)) c) -1 #+clj -1)
             (Vec2. ;; v v ?
              (op (op (op (.-x _) (.-x ^Vec2 a)) (.-x ^Vec2 b)) (nth c 0 d))
-             (op (op (op (.-y _) (.-y ^Vec2 a)) (.-y ^Vec2 b)) (nth c 1 d)))))
+             (op (op (op (.-y _) (.-y ^Vec2 a)) (.-y ^Vec2 b)) (nth c 1 d)) -1 #+clj -1)))
         (let [[bx by] (if (number? b) [b b] b)
               [cx cy] (if (number? c) [c c] c)]
           (Vec2. ;; v ? ?
            (op (op (op (.-x _) (.-x ^Vec2 a)) (or bx d)) (or cx d))
-           (op (op (op (.-y _) (.-y ^Vec2 a)) (or by d)) (or cy d)))))
+           (op (op (op (.-y _) (.-y ^Vec2 a)) (or by d)) (or cy d)) -1 #+clj -1)))
       (let [[ax ay] (if (number? a) [a a] a)
             [bx by] (if (number? b) [b b] b)
             [cx cy] (if (number? c) [c c] c)]
         (Vec2. ;; ? ? ?
          (op (op (op (.-x _) (or ax d)) (or bx d)) (or cx d))
-         (op (op (op (.-y _) (or ay d)) (or by d)) (or cy d))))))
+         (op (op (op (.-y _) (or ay d)) (or by d)) (or cy d)) -1 #+clj -1))))
 #+END_SRC
 *** 3D
 #+BEGIN_SRC clojure :noweb-ref vec-ops
@@ -1311,7 +1327,7 @@ injected in the appropriate places of the code.
       (if xs
         (let [v ^Vec3 (first xs)]
           (recur (double (op ax (.-x v))) (double (op ay (.-y v))) (double (op az (.-z v))) (next xs)))
-        (Vec3. ax ay az))))
+        (Vec3. ax ay az -1 #+clj -1))))
 
   (defn vec3-op-seq2
     [op op2 ^Vec3 acc as b]
@@ -1320,7 +1336,7 @@ injected in the appropriate places of the code.
         (let [v ^Vec3 (first as)]
           (recur (double (op ax (.-x v))) (double (op ay (.-y v))) (double (op az (.-z v))) (next as)))
         (let [[bx by bz] (if (number? b) [b b b] b)]
-          (Vec3. (op2 ax bx) (op2 ay by) (op2 az bz))))))
+          (Vec3. (op2 ax bx) (op2 ay by) (op2 az bz) -1 #+clj -1)))))
 
   (defn vec3-op-1
     [op ^Vec3 _ a d]
@@ -1328,15 +1344,15 @@ injected in the appropriate places of the code.
       (Vec3.
        (op (.-x _) (.-x ^Vec3 a))
        (op (.-y _) (.-y ^Vec3 a))
-       (op (.-z _) (.-z ^Vec3 a)))
+       (op (.-z _) (.-z ^Vec3 a)) -1 #+clj -1)
       (if (number? a)
-        (Vec3. (op (.-x _) a) (op (.-y _) a) (op (.-z _) a))
+        (Vec3. (op (.-x _) a) (op (.-y _) a) (op (.-z _) a) -1 #+clj -1)
         (if (instance? Vec3 (first a))
           (vec3-op-seq op _ a)
           (Vec3.
            (op (.-x _) (nth a 0 d))
            (op (.-y _) (nth a 1 d))
-           (op (.-z _) (nth a 2 d)))))))
+           (op (.-z _) (nth a 2 d)) -1 #+clj -1)))))
 
   (defn vec3-op-2
     [op op2 ^Vec3 _ a b d1 d2]
@@ -1345,16 +1361,16 @@ injected in the appropriate places of the code.
         (Vec3. ;; v v
          (op2 (op (.-x _) (.-x ^Vec3 a)) (.-x ^Vec3 b))
          (op2 (op (.-y _) (.-y ^Vec3 a)) (.-y ^Vec3 b))
-         (op2 (op (.-z _) (.-z ^Vec3 a)) (.-z ^Vec3 b)))
+         (op2 (op (.-z _) (.-z ^Vec3 a)) (.-z ^Vec3 b)) -1 #+clj -1)
         (if (number? b)
           (Vec3. ;; v n
            (op2 (op (.-x _) (.-x ^Vec3 a)) b)
            (op2 (op (.-y _) (.-y ^Vec3 a)) b)
-           (op2 (op (.-z _) (.-z ^Vec3 a)) b))
+           (op2 (op (.-z _) (.-z ^Vec3 a)) b) -1 #+clj -1)
           (Vec3. ;; v ?
            (op2 (op (.-x _) (.-x ^Vec3 a)) (nth b 0 d2))
            (op2 (op (.-y _) (.-y ^Vec3 a)) (nth b 1 d2))
-           (op2 (op (.-z _) (.-z ^Vec3 a)) (nth b 2 d2)))))
+           (op2 (op (.-z _) (.-z ^Vec3 a)) (nth b 2 d2)) -1 #+clj -1)))
       (if (and (sequential? a) (instance? Vec3 (first a)))
         (vec3-op-seq2 op op2 _ a b)
         (let [[ax ay az] (if (number? a) [a a a] a)
@@ -1362,7 +1378,7 @@ injected in the appropriate places of the code.
           (Vec3. ;; ? ? ?
            (op2 (op (.-x _) (or ax d1)) (or bx d2))
            (op2 (op (.-y _) (or ay d1)) (or by d2))
-           (op2 (op (.-z _) (or az d1)) (or bz d2)))))))
+           (op2 (op (.-z _) (or az d1)) (or bz d2)) -1 #+clj -1)))))
 
   (defn vec3-op-3
     [op ^Vec3 _ a b c d]
@@ -1372,53 +1388,53 @@ injected in the appropriate places of the code.
           (Vec3. ;; v v v
            (op (op (op (.-x _) (.-x ^Vec3 a)) (.-x ^Vec3 b)) (.-x ^Vec3 c))
            (op (op (op (.-y _) (.-y ^Vec3 a)) (.-y ^Vec3 b)) (.-y ^Vec3 c))
-           (op (op (op (.-z _) (.-z ^Vec3 a)) (.-z ^Vec3 b)) (.-z ^Vec3 c)))
+           (op (op (op (.-z _) (.-z ^Vec3 a)) (.-z ^Vec3 b)) (.-z ^Vec3 c)) -1 #+clj -1)
           (if (number? c)
             (Vec3. ;; v v n
              (op (op (op (.-x _) (.-x ^Vec3 a)) (.-x ^Vec3 b)) c)
              (op (op (op (.-y _) (.-y ^Vec3 a)) (.-y ^Vec3 b)) c)
-             (op (op (op (.-z _) (.-z ^Vec3 a)) (.-z ^Vec3 b)) c))
+             (op (op (op (.-z _) (.-z ^Vec3 a)) (.-z ^Vec3 b)) c) -1 #+clj -1)
             (Vec3. ;; v v ?
              (op (op (op (.-x _) (.-x ^Vec3 a)) (.-x ^Vec3 b)) (nth c 0 d))
              (op (op (op (.-y _) (.-y ^Vec3 a)) (.-y ^Vec3 b)) (nth c 1 d))
-             (op (op (op (.-z _) (.-z ^Vec3 a)) (.-z ^Vec3 b)) (nth c 2 d)))))
+             (op (op (op (.-z _) (.-z ^Vec3 a)) (.-z ^Vec3 b)) (nth c 2 d)) -1 #+clj -1)))
         (let [[bx by bz] (if (number? b) [b b b] b)
               [cx cy cz] (if (number? c) [c c c] c)]
           (Vec3. ;; v ? ?
            (op (op (op (.-x _) (.-x ^Vec3 a)) (or bx d)) (or cx d))
            (op (op (op (.-y _) (.-y ^Vec3 a)) (or by d)) (or cy d))
-           (op (op (op (.-z _) (.-z ^Vec3 a)) (or bz d)) (or cz d)))))
+           (op (op (op (.-z _) (.-z ^Vec3 a)) (or bz d)) (or cz d)) -1 #+clj -1)))
       (let [an? (number? a) bn? (number? b) cn? (number? c)]
         (if (and an? bn? cn?)
           (Vec3. ;; n n n
            (op (.-x _) a)
            (op (.-y _) b)
-           (op (.-z _) c))
+           (op (.-z _) c) -1 #+clj -1)
           (let [[ax ay az] (if (number? a) [a a a] a)
                 [bx by bz] (if (number? b) [b b b] b)
                 [cx cy cz] (if (number? c) [c c c] c)]
             (Vec3. ;; ? ? ?
              (op (op (op (.-x _) (or ax d)) (or bx d)) (or cx d))
              (op (op (op (.-y _) (or ay d)) (or by d)) (or cy d))
-             (op (op (op (.-z _) (or az d)) (or bz d)) (or cz d))))))))
+             (op (op (op (.-z _) (or az d)) (or bz d)) (or cz d)) -1 #+clj -1))))))
 #+END_SRC
 ** Constants
 #+BEGIN_SRC clojure :noweb-ref constants
-  (def ^:const V2 (Vec2. 0.0 0.0))
-  (def ^:const V3 (Vec3. 0.0 0.0 0.0))
-
-  (def ^:const V2X (Vec2. 1.0 0.0))
-  (def ^:const V2Y (Vec2. 0.0 1.0))
-
-  (def ^:const V3X (Vec3. 1.0 0.0 0.0))
-  (def ^:const V3Y (Vec3. 0.0 1.0 0.0))
-  (def ^:const V3Z (Vec3. 0.0 0.0 1.0))
-
-  (def ^:const V2INF- (Vec2. INF- INF-))
-  (def ^:const V2INF+ (Vec2. INF+ INF+))
-
-  (def ^:const V3INF- (Vec3. INF- INF- INF-))
-  (def ^:const V3INF+ (Vec3. INF+ INF+ INF+))
+  (def V2 (Vec2. 0.0 0.0 -1 #+clj -1))
+  (def V3 (Vec3. 0.0 0.0 0.0 -1 #+clj -1))
+  
+  (def V2X (Vec2. 1.0 0.0 -1 #+clj -1))
+  (def V2Y (Vec2. 0.0 1.0 -1 #+clj -1))
+  
+  (def V3X (Vec3. 1.0 0.0 0.0 -1 #+clj -1))
+  (def V3Y (Vec3. 0.0 1.0 0.0 -1 #+clj -1))
+  (def V3Z (Vec3. 0.0 0.0 1.0 -1 #+clj -1))
+  
+  (def V2INF- (Vec2. INF- INF- -1 #+clj -1))
+  (def V2INF+ (Vec2. INF+ INF+ -1 #+clj -1))
+  
+  (def V3INF- (Vec3. INF- INF- INF- -1 #+clj -1))
+  (def V3INF+ (Vec3. INF+ INF+ INF+ -1 #+clj -1))
 #+END_SRC
 ** Constructors
 
@@ -1439,22 +1455,22 @@ rules:
     ([] V2)
     ([x] (cond
           (instance? Vec2 x) x
-          (sequential? x) (Vec2. (nth x 0 0.0) (nth x 1 0.0))
-          (number? x) (Vec2. x x)
-          (map? x) (Vec2. (get x :x 0.0) (get x :y 0.0))
+          (sequential? x) (Vec2. (nth x 0 0.0) (nth x 1 0.0) -1 #+clj -1)
+          (number? x) (Vec2. x x -1 #+clj -1)
+          (map? x) (Vec2. (get x :x 0.0) (get x :y 0.0) -1 #+clj -1)
           :default (err/type-error! "Vec2" x)))
-    ([x y] (Vec2. x y)))
+    ([x y] (Vec2. x y -1 #+clj -1)))
   
   (defn vec3
     ([] V3)
     ([x] (cond
           (instance? Vec3 x) x
-          (sequential? x) (Vec3. (nth x 0 0.0) (nth x 1 0.0) (nth x 2 0.0))
-          (number? x) (Vec3. x x x)
-          (map? x) (Vec3. (get x :x 0.0) (get x :y 0.0) (get x :z 0.0))
+          (sequential? x) (Vec3. (nth x 0 0.0) (nth x 1 0.0) (nth x 2 0.0) -1 #+clj -1)
+          (number? x) (Vec3. x x x -1 #+clj -1)
+          (map? x) (Vec3. (get x :x 0.0) (get x :y 0.0) (get x :z 0.0) -1 #+clj -1)
           :default (err/type-error! "Vec3" x)))
-    ([x y] (Vec3. x y 0.0))
-    ([x y z] (Vec3. x y z)))
+    ([x y] (Vec3. x y 0.0 -1 #+clj -1))
+    ([x y z] (Vec3. x y z -1 #+clj -1)))
   
   (defn vec2? [x] (instance? Vec2 x))
   (defn vec3? [x] (instance? Vec3 x))
@@ -1512,23 +1528,23 @@ rules:
         (let [n (name k) c (count n)]
           (case c
             2 (Vec2.
-               (lookup2 _ (nth n 0) default)
-               (lookup2 _ (nth n 1) default))
+               (lookup2 _ (first n) default)
+               (lookup2 _ (nth n 1) default) -1 #+clj -1)
             3 (Vec3.
-               (lookup2 _ (nth n 0) default)
+               (lookup2 _ (first n) default)
                (lookup2 _ (nth n 1) default)
-               (lookup2 _ (nth n 2) default))
+               (lookup2 _ (nth n 2) default) -1 #+clj -1)
             (or default (err/key-error! k)))))))
 
   (defn swizzle2-assoc
     [^Vec2 _ k v]
     (case k
-      0 (Vec2. v (.-y _))
-      1 (Vec2. (.-x _) v)
-      :x (Vec2. v (.-y _))
-      :y (Vec2. (.-x _) v)
-      :xy (Vec2. (v 0) (v 1))
-      :yx (Vec2. (v 1) (v 0))
+      0 (Vec2. v (.-y _) -1 #+clj -1)
+      1 (Vec2. (.-x _) v -1 #+clj -1)
+      :x (Vec2. v (.-y _) -1 #+clj -1)
+      :y (Vec2. (.-x _) v -1 #+clj -1)
+      :xy (Vec2. (v 0) (v 1) -1 #+clj -1)
+      :yx (Vec2. (v 1) (v 0) -1 #+clj -1)
       (err/key-error! k)))
 
   (defn swizzle3
@@ -1546,39 +1562,44 @@ rules:
         (let [n (name k) c (count n)]
           (case c
             2 (Vec2.
-               (lookup3 _ (nth n 0) default)
-               (lookup3 _ (nth n 1) default))
+               (lookup3 _ (first n) default)
+               (lookup3 _ (nth n 1) default) -1 #+clj -1)
             3 (Vec3.
-               (lookup3 _ (nth n 0) default)
+               (lookup3 _ (first n) default)
                (lookup3 _ (nth n 1) default)
-               (lookup3 _ (nth n 2) default))
+               (lookup3 _ (nth n 2) default) -1 #+clj -1)
             (or default (err/key-error! k)))))))
 
   (defn swizzle3-assoc
     [^Vec3 _ k v]
     (case k
-      :x (Vec3. v (.-y _) (.-z _))
-      :y (Vec3. (.-x _) v (.-z _))
-      :z (Vec3. (.-x _) (.-y _) v)
-      0 (Vec3. v (.-y _) (.-z _))
-      1 (Vec3. (.-x _) v (.-z _))
-      2 (Vec3. (.-x _) (.-y _) v)
+      :x (Vec3. v (.-y _) (.-z _) -1 #+clj -1)
+      :y (Vec3. (.-x _) v (.-z _) -1 #+clj -1)
+      :z (Vec3. (.-x _) (.-y _) v -1 #+clj -1)
+      0 (Vec3. v (.-y _) (.-z _) -1 #+clj -1)
+      1 (Vec3. (.-x _) v (.-z _) -1 #+clj -1)
+      2 (Vec3. (.-x _) (.-y _) v -1 #+clj -1)
       (swizzle-assoc* _ vec3 {\x 0 \y 1 \z 2} k v)))
 #+END_SRC
 
 ** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.vector
+    ,#+cljs
+    (:require-macros
+     [thi.ng.macromath.core :as mm])
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI INF- INF+]]
+     ,#+clj [thi.ng.geom.core.vectorseq]
      ,#+clj [thi.ng.macromath.core :as mm]
-     ,#+clj [clojure.core.protocols :as cp])
-    ,#+cljs
-    (:require-macros
-     [thi.ng.macromath.core :as mm]))
+     ,#+clj [clojure.core.protocols :as cp]
+     ,#+clj [clojure.pprint])
+    ,#+clj
+    (:import
+     [thi.ng.geom.core.vectorseq VectorSeq]))
 
   (declare vec2 swizzle2 swizzle2-assoc)
   (declare vec3 swizzle3 swizzle3-assoc)
