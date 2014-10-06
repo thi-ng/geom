@@ -93,6 +93,47 @@
            (g/into (or mesh (bm/basic-mesh))))))
 #+END_SRC
 
+** Luxor knot example
+
+This brief example demonstrates usage of the =sweep-mesh= function in
+combination with [[http://thi.ng/luxor][thi.ng/luxor's]] test scene setup. It computes a
+[[https://en.wikipedia.org/wiki/Torus_knot][Cinquefoil knot]] (a (5,2)-torus knot) and sweeps a circle along the
+path using PTF. The example is tangled into the =/babel/examples=
+directory, but will only work in a REPL which has both the =geom= and
+=luxor= libs on its classpath.
+
+[[../../assets/ptf-knot.jpg]]
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/ptf-knot.clj :mkdirp yes :padline no
+  (require '[thi.ng.geom.core :as g])
+  (require '[thi.ng.geom.core.vector :refer [vec3]])
+  (require '[thi.ng.geom.aabb :as a])
+  (require '[thi.ng.geom.circle :as c])
+  (require '[thi.ng.geom.types.utils.ptf :as ptf])
+  (require '[thi.ng.common.math.core :as m])
+  (require '[thi.ng.luxor.scenes :as scene])
+  (require '[thi.ng.luxor.io :as lio])
+
+  (defn cinquefoil
+    [t]
+    (let [t  (* t m/TWO_PI)
+          pt (* 2.0 t)
+          qt (* 5.0 t)
+          qc (+ 3.0 (Math/cos qt))]
+      (vec3 (* qc (Math/cos pt)) (* qc (Math/sin pt)) (Math/sin qt))))
+
+  (-> (scene/base-scene {:width 640 :height 360})
+      (scene/scene-add-main-mesh
+       (ptf/sweep-mesh
+        (map cinquefoil (m/norm-range 400))
+        (g/vertices (c/circle 0.5) 20)
+        :align? true)
+       {:bounds (a/aabb 1.5) :target [0 0.5 -2] :rx (* m/PI -0.333)})
+      (lio/serialize-scene "ptf-knot" false)
+      (lio/export-scene)
+      (dorun))
+#+END_SRC
+
 ** Namespace declaration
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/types/utils/ptf.cljx :noweb yes :mkdirp yes :padline no
