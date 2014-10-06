@@ -125,6 +125,18 @@ required control points. This only works for non-closed curves, though.
        0)))
 #+END_SRC
 
+*** PMeshConvert
+
+#+BEGIN_SRC clojure :noweb-ref impl2
+  g/PMeshConvert
+  (as-mesh
+   [_ {:keys [res dist profile] :as opts}]
+   (let [points (if dist
+                  (g/sample-uniform _ dist true)
+                  (g/vertices _ (or res *resolution*)))]
+     (ptf/sweep-mesh (map vec3 points) profile opts)))
+#+END_SRC
+
 *** PProximity
 #+BEGIN_SRC clojure :noweb-ref impl2
   g/PProximity
@@ -162,6 +174,7 @@ required control points. This only works for non-closed curves, though.
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
+     [thi.ng.geom.types.utils.ptf :as ptf]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.math.core :as m]))
 
