@@ -62,15 +62,19 @@
             (recur (assoc norms i n) (assoc bnorms i b) (inc i)))
           [points tangents norms bnorms]))))
 
+  (defn sweep-point
+    "Takes a path point, a PTF normal & binormal and a profile point.
+    Returns profile point projected on path (point)."
+    [p n b [qx qy]]
+    (vec3
+     (mm/madd qx (n 0) qy (b 0) (p 0))
+     (mm/madd qx (n 1) qy (b 1) (p 1))
+     (mm/madd qx (n 2) qy (b 2) (p 2))))
+
   (defn sweep-profile
     [profile [points _ norms bnorms]]
     (let [frames (map vector points norms bnorms)
-          txp (fn [p n b [qx qy]]
-                (vec3
-                 (mm/madd qx (n 0) qy (b 0) (p 0))
-                 (mm/madd qx (n 1) qy (b 1) (p 1))
-                 (mm/madd qx (n 2) qy (b 2) (p 2))))
-          tx  (fn [[p n b]] (mapv #(txp p n b %) profile))]
+          tx     (fn [[p n b]] (mapv #(sweep-point p n b %) profile))]
       (->> (next frames)
            (reduce
             (fn [[faces prev] frame]
@@ -93,14 +97,17 @@
            (g/into (or mesh (bm/basic-mesh))))))
 #+END_SRC
 
-** Luxor knot example
+** Luxor torus knot examples
 
-This brief example demonstrates usage of the =sweep-mesh= function in
-combination with [[http://thi.ng/luxor][thi.ng/luxor's]] test scene setup. It computes a
-[[https://en.wikipedia.org/wiki/Torus_knot][Cinquefoil knot]] (a (5,2)-torus knot) and sweeps a circle along the
-path using PTF. The example is tangled into the =/babel/examples=
-directory, but will only work in a REPL which has both the =geom= and
-=luxor= libs on its classpath.
+These two brief example demonstrate usage of the =sweep-mesh= function
+in combination with [[http://thi.ng/luxor][thi.ng/luxor's]] test scene setup. The first example
+computes a [[https://en.wikipedia.org/wiki/Torus_knot][Cinquefoil knot]] (a (5,2)-torus knot) and sweeps a circle
+along the path using PTF. The second demo also uses the same knot as
+basis, but instead of sweeping it directly, it first computes 10
+intertwining strands weaving around the path and each strand is swept
+as mesh individually. Both examples are tangled into the
+=/babel/examples= directory, but will only work in a REPL which has
+both the =geom= and =luxor= libs on its classpath.
 
 [[../../assets/ptf-knot.jpg]]
 
@@ -128,8 +135,61 @@ directory, but will only work in a REPL which has both the =geom= and
         (map cinquefoil (m/norm-range 400))
         (g/vertices (c/circle 0.5) 20)
         :align? true)
-       {:bounds (a/aabb 1.5) :target [0 0.5 -2] :rx (* m/PI -0.333)})
+       {:bounds (a/aabb 1.5) :target [0 0.5 -2] :rx (- m/THIRD_PI)})
       (lio/serialize-scene "ptf-knot" false)
+      (lio/export-scene)
+      (dorun))
+#+END_SRC
+
+[[../../assets/ptf-knot-weave.jpg]]
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/ptf-knot2.clj :mkdirp yes :padline no
+  (require '[thi.ng.geom.core :as g])
+  (require '[thi.ng.geom.core.vector :refer [vec2 vec3]])
+  (require '[thi.ng.geom.aabb :as a])
+  (require '[thi.ng.geom.circle :as c])
+  (require '[thi.ng.geom.basicmesh :as bm])
+  (require '[thi.ng.geom.types.utils.ptf :as ptf])
+  (require '[thi.ng.common.math.core :as m :refer [TWO_PI]])
+  (require '[thi.ng.luxor.scenes :as scene])
+  (require '[thi.ng.luxor.io :as lio])
+
+  (defn cinquefoil
+    [t]
+    (let [t  (* t TWO_PI)
+          pt (* 2.0 t)
+          qt (* 5.0 t)
+          qc (+ 3.0 (Math/cos qt))]
+      (vec3 (* qc (Math/cos pt)) (* qc (Math/sin pt)) (Math/sin qt))))
+
+  (defn weave-strand
+    [[p _ n b] r theta delta profile]
+    (-> (mapv
+         #(->> (vec2 r (+ (* % delta) theta))
+               (g/as-cartesian)
+               (ptf/sweep-point (p %) (n %) (b %)))
+         (range (count p)))
+        (ptf/sweep-mesh profile :align? true)))
+
+  (defn weave-mesh
+    [base r strands twists profile]
+    (let [delta (/ (* twists TWO_PI) (dec (count (first base))))]
+      (reduce
+       #(g/into %1 (weave-strand base 0.5 %2 delta profile))
+       (bm/basic-mesh)
+       (range 0 TWO_PI (/ TWO_PI strands)))))
+
+  (def knot-mesh
+    (-> (mapv cinquefoil (m/norm-range 400))
+        (ptf/compute-frames)
+        (ptf/align-frames)
+        (weave-mesh 0.5 10 7 (g/vertices (c/circle 0.1) 20))))
+
+  (-> (scene/base-scene {:width 640 :height 360})
+      (scene/scene-add-main-mesh
+       knot-mesh
+       {:bounds (a/aabb 1.5) :target [0 0.5 -2] :rx (- m/THIRD_PI)})
+      (lio/serialize-scene "ptf-knot-weave" false)
       (lio/export-scene)
       (dorun))
 #+END_SRC
