@@ -116,15 +116,16 @@
 
 ** Luxor torus knot examples
 
-These two brief example demonstrate usage of the =sweep-mesh= function
-in combination with [[http://thi.ng/luxor][thi.ng/luxor's]] test scene setup. The first example
-computes a [[https://en.wikipedia.org/wiki/Torus_knot][Cinquefoil knot]] (a (5,2)-torus knot) and sweeps a circle
-along the path using PTF. The second demo also uses the same knot as
-basis, but instead of sweeping it directly, it first computes 10
-intertwining strands weaving around the path and each strand is swept
-as mesh individually. Both examples are tangled into the
-=/babel/examples= directory, but will only work in a REPL which has
-both the =geom= and =luxor= libs on its classpath.
+These two brief examples demonstrate usage of the =sweep-mesh= and
+=weave-mesh= functions in combination with [[http://thi.ng/luxor][thi.ng/luxor's]] test scene
+setup. The first example computes a [[https://en.wikipedia.org/wiki/Torus_knot][Cinquefoil knot]] (a (5,2)-torus
+knot) and sweeps a circle along the path using PTF. The second demo
+also uses the same knot as basis, but instead of sweeping it directly,
+first computes N strands, each rotating/weaving around the path at
+given radius and /each strand swept as mesh individually/ (then
+combined into a single mesh using =g/into=). Both examples are tangled
+into the =/babel/examples= directory, but will only work in a REPL
+which has both the =geom= and =luxor= libs on its classpath.
 
 [[../../assets/ptf-knot.jpg]]
 
@@ -158,6 +159,8 @@ both the =geom= and =luxor= libs on its classpath.
       (dorun))
 #+END_SRC
 
+Two example renders to illustrate the =weave-mesh= approach/function:
+
 [[../../assets/ptf-knot-weave.jpg]]
 
 [[../../assets/ptf-knot-weave2.jpg]]
@@ -180,17 +183,15 @@ both the =geom= and =luxor= libs on its classpath.
           qc (+ 3.0 (Math/cos qt))]
       (vec3 (* qc (Math/cos pt)) (* qc (Math/sin pt)) (Math/sin qt))))
 
-  (def knot-mesh
+  (def knot
     (-> (mapv cinquefoil (m/norm-range 400))
         (ptf/compute-frames)
-        (ptf/align-frames)
-        (ptf/weave-mesh 0.5 10 7 (g/vertices (c/circle 0.1) 20))
-        ;;(ptf/weave-mesh 0.8 6 12 (g/vertices (c/circle 0.1) 20))
-        ))
+        (ptf/align-frames)))
 
   (-> (scene/base-scene {:width 640 :height 360})
       (scene/scene-add-main-mesh
-       knot-mesh
+       (ptf/weave-mesh knot 0.5 10 7 (g/vertices (c/circle 0.1) 20))
+        ;;(ptf/weave-mesh knot 0.8 6 12 (g/vertices (c/circle 0.1) 20))
        {:bounds (a/aabb 1.5) :target [0 0.5 -2] :rx (- THIRD_PI)})
       (lio/serialize-scene "ptf-knot-weave" false)
       (lio/export-scene)
