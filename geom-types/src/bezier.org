@@ -4,6 +4,7 @@
 
 ** Shared 2d/3d helper functions
 *** The Bernstein polynomial
+
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn bernstein
     [t]
@@ -12,6 +13,7 @@
 #+END_SRC
 
 *** Interpolation & curve samplings
+
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn interpolate
     [[a b c d] t]
@@ -77,10 +79,11 @@ required control points. This only works for non-closed curves, though.
 #+END_SRC
 
 ** Constructors
+
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn bezier2
     [points] (thi.ng.geom.types.Bezier2. (mapv vec2 points)))
-  
+
   (defn auto-spline2
     ([points]
        (->> points
@@ -92,6 +95,21 @@ required control points. This only works for non-closed curves, though.
         (if closed?
           (conj (vec points) (first points))
           points))))
+
+  (defn bezier3
+      [points] (thi.ng.geom.types.Bezier3. (mapv vec3 points)))
+    
+    (defn auto-spline3
+      ([points]
+         (->> points
+              (find-cpoints* vec3 0.25)
+              (auto-spline* points)
+              (thi.ng.geom.types.Bezier3.)))
+      ([points closed?]
+         (auto-spline3
+          (if closed?
+            (conj (vec points) (first points))
+            points))))
 #+END_SRC
 
 ** TODO Bezier2
@@ -164,6 +182,76 @@ required control points. This only works for non-closed curves, though.
   )
 #+END_SRC
 
+** TODO Bezier3
+#+BEGIN_SRC clojure :noweb-ref impl3
+  (extend-type thi.ng.geom.types.Bezier3
+#+END_SRC
+
+*** PEdgeAccess, PVertexAccess
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/PVertexAccess
+  (vertices
+   ([_] (g/vertices _ *resolution*))
+   ([_ res] (sample-with-res res true (:points _))))
+  g/PEdgeAccess
+  (edges
+   ([_] (d/successive-nth 2 (g/vertices _ *resolution*)))
+   ([_ res] (d/successive-nth 2 (g/vertices _ res))))
+#+END_SRC
+
+*** PGraph
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/PGraph
+  (vertex-neighbors
+   [_ v] (d/neighbors v (g/vertices _)))
+  (vertex-valence
+   [_ v]
+   (let [points (g/vertices _)]
+     (if-let [p (d/neighbors v points)]
+       (if (or (m/delta= p (first points)) (m/delta= p (peek points)))
+         1 2)
+       0)))
+#+END_SRC
+
+*** PMeshConvert
+
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/PMeshConvert
+  (as-mesh
+   [_ {:keys [res dist profile] :as opts}]
+   (let [points (if dist
+                  (g/sample-uniform _ dist true)
+                  (g/vertices _ (or res *resolution*)))]
+     (ptf/sweep-mesh points profile opts)))
+#+END_SRC
+
+*** PProximity
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/PProximity
+  (closest-point
+   [_ p]
+   (gu/closest-point-on-segments p (g/edges _)))
+#+END_SRC
+
+*** TODO PSample
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  g/PSample
+  (point-at
+   [_ t] (gu/point-at t (:points _) nil))
+  (random-point
+   [_] (gu/point-at (m/random) (:points _) nil))
+  (random-point-inside
+   [_] (g/random-point _))
+  (sample-uniform
+   [_ udist include-last?]
+   (gu/sample-uniform udist include-last? (g/vertices _)))
+#+END_SRC
+
+*** End of implementations                                         :noexport:
+#+BEGIN_SRC clojure :noweb-ref impl3
+  )
+#+END_SRC
+
 ** Complete namespace definition
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/bezier.cljx :noweb yes :mkdirp yes :padline no
@@ -183,4 +271,6 @@ required control points. This only works for non-closed curves, though.
   <<ctors>>
 
   <<impl2>>
+
+  <<impl3>>
 #+END_SRC
