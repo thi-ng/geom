@@ -96,7 +96,7 @@
            (sweep-profile profile)
            (g/into (or mesh (bm/basic-mesh))))))
 
-  (defn weave-strand
+  (defn sweep-strand
     [[p _ n b] r theta delta profile]
     (-> (mapv
          #(->> (vec2 r (+ (* % delta) theta))
@@ -105,27 +105,27 @@
          (range (count p)))
         (sweep-mesh profile {:align? true})))
 
-  (defn weave-strands
+  (defn sweep-strands
     [base r strands twists profile]
     (let [delta (/ (* twists TWO_PI) (dec (count (first base))))]
       (->> (m/norm-range strands)
            (butlast)
-           (#+clj pmap #+cljs map #(weave-strand base r (* % TWO_PI) delta profile)))))
+           (#+clj pmap #+cljs map #(sweep-strand base r (* % TWO_PI) delta profile)))))
 
-  (defn weave-mesh
+  (defn sweep-strand-mesh
     [base r strands twists profile & [{:as opts}]]
-    (->> (weave-strands base r strands twists profile)
+    (->> (sweep-strands base r strands twists profile)
          (reduce g/into (or (:mesh opts) (bm/basic-mesh)))))
 #+END_SRC
 
 ** Luxor torus knot examples
 
 The following brief examples demonstrate usage of the =sweep-mesh= and
-=weave-mesh= functions in combination with [[http://thi.ng/luxor][thi.ng/luxor's]] test scene
+=sweep-strand-mesh= functions in combination with [[http://thi.ng/luxor][thi.ng/luxor's]] test scene
 setup. The first example computes a [[https://en.wikipedia.org/wiki/Torus_knot][Cinquefoil knot]] (a (5,2)-torus
 knot) and sweeps a circle along the path using PTF. The second demo
 also uses the same knot as basis, but instead of sweeping it directly,
-first computes N strands, each rotating/weaving around the path at
+first computes N strands, each rotating around the path at
 given radius and /each strand swept as mesh individually/ (then
 combined into a single mesh using =g/into=). Both examples are tangled
 into the =/babel/examples= directory, but will only work in a REPL
@@ -199,8 +199,8 @@ with different parameters:
 
   (-> (scene/base-scene {:width 640 :height 360})
       (scene/add-main-mesh
-       (ptf/weave-mesh knot 0.5 10 7 (g/vertices (c/circle 0.1) 20))
-        ;;(ptf/weave-mesh knot 0.8 6 12 (g/vertices (c/circle 0.1) 20))
+       (ptf/sweep-strand-mesh knot 0.5 10 7 (g/vertices (c/circle 0.1) 20))
+        ;;(ptf/sweep-strand-mesh knot 0.8 6 12 (g/vertices (c/circle 0.1) 20))
        {:id :knot-weave :bounds (a/aabb 1.5) :target [0 0.5 -2] :rx (- m/THIRD_PI)})
       (lio/serialize-scene "ptf-knot-weave" false)
       (lio/export-scene)
@@ -247,7 +247,7 @@ with different parameters:
 
   (-> (scene/base-scene {:width 640 :height 360})
       (add-meshes
-       (ptf/weave-strands knot 0.5 10 7 (g/vertices (c/circle 0.1) 20))
+       (ptf/sweep-strands knot 0.5 10 7 (g/vertices (c/circle 0.1) 20))
        {:tx {:translate [0 0.5 -2] :scale 0.175 :rx -65}})
       (lio/serialize-scene "ptf-knot-weave-spectrum" false)
       (lio/export-scene)
