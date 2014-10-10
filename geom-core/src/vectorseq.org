@@ -269,7 +269,8 @@
   (ns thi.ng.geom.core.vectorseq
     (:require
      [thi.ng.common.error :as err]
-     [thi.ng.common.math.core :as m]))
+     [thi.ng.common.math.core :as m]
+     ,#+clj [clojure.pprint]))
 
   <<helpers>>
 
