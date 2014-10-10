@@ -57,9 +57,13 @@ target/geom-webgl-<<conf-version>>.js
     :description  "thi.ng geometry kit - WebGL module"
     :url          "<<conf-project-url>>"
     :license      {:name "Apache Software License"
-                   :url "http://www.apache.org/licenses/LICENSE-2.0"}
+                   :url "http://www.apache.org/licenses/LICENSE-2.0"
+                   :distribution :repo}
     :scm          {:name "git"
                    :url  "<<conf-project-url>>"}
+
+    :min-lein-version "2.4.0"
+
     :dependencies [<<dep-clj>>
                    <<dep-geom-core>>
                    <<dep-geom-types>>
@@ -68,10 +72,8 @@ target/geom-webgl-<<conf-version>>.js
     :profiles {:dev {:dependencies [<<dep-cljs>>
                                     <<dep-criterium>>]
                      :plugins      [<<dep-cljsbuild>>
-                                    <<dep-cljs-test>>
-                                    <<dep-austin>>]
-                     :jvm-opts ^:replace []
-                     :aliases {"cleantest" ["do" "clean," "cljsbuild" "test"]}}}
+                                    <<dep-cljs-test>>]
+                     :aliases {"cleantest" ["do" "clean" ["cljsbuild" "test"]]}}}
 
     :cljsbuild {:builds [{:source-paths ["src" "test"]
                           :id "simple"
@@ -85,7 +87,7 @@ target/geom-webgl-<<conf-version>>.js
                                      :pretty-print false}}]
                 :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}}
 
-    :pom-addition [:developers [:developer
+    :pom-addition [:developers [:developer {:id "toxi"}
                                 [:name "Karsten Schmidt"]
                                 [:url "http://postspectacular.com"]
                                 [:timezone "0"]]])
@@ -127,7 +129,7 @@ symbol =version= holding the version string defined above:
 
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/version.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.version)
-  (def ^:const version "<<conf-version>>")
+  (def version "<<conf-version>>")
 #+END_SRC
 
 * Modules

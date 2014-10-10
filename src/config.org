@@ -66,7 +66,7 @@ target/test-classes
 **** [[https://github.com/thi-ng/macromath][thi.ng/macromath]]
 #+NAME: dep-mmath
 #+BEGIN_SRC clojure
-[thi.ng/macromath "0.2.3"]
+[thi.ng/macromath "0.3.0-SNAPSHOT"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/color/][thi.ng/color]]
@@ -79,7 +79,7 @@ target/test-classes
 **** [[https://github.com/lynaghk/cljx][Cljx]]
 #+NAME: dep-cljx
 #+BEGIN_SRC clojure
-[com.keminglabs/cljx "0.4.0"]
+[org.clojars.cemerick/cljx "0.5.0-SNAPSHOT"]
 #+END_SRC
 
 **** [[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]
@@ -105,3 +105,4 @@ target/test-classes
 #+BEGIN_SRC clojure
 [com.cemerick/clojurescript.test "0.3.1"]
 #+END_SRC
+

@@ -101,46 +101,51 @@ target/geom-types-<<conf-version>>.js
     :description  "thi.ng geometry kit - types module"
     :url          "<<conf-project-url>>"
     :license      {:name "Apache Software License"
-                   :url "http://www.apache.org/licenses/LICENSE-2.0"}
+                   :url "http://www.apache.org/licenses/LICENSE-2.0"
+                   :distribution :repo}
     :scm          {:name "git"
                    :url  "<<conf-project-url>>"}
+
+    :min-lein-version "2.4.0"
+
     :dependencies [<<dep-clj>>
                    <<dep-geom-core>>]
 
     :source-paths ["src/cljx"]
     :test-paths   ["<<conf-gen-test-path>>"]
 
-    :profiles {:dev {:dependencies [<<dep-cljs>>
-                                    <<dep-criterium>>]
-                     :plugins      [<<dep-cljx>>
-                                    <<dep-cljsbuild>>
-                                    <<dep-cljs-test>>
-                                    <<dep-austin>>]
-                     :jvm-opts ^:replace []
-                     :hooks [cljx.hooks]
-                     :aliases {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]}}}
+    :profiles     {:dev {:dependencies [<<dep-cljs>>
+                                        <<dep-criterium>>]
+                         :plugins      [<<dep-cljx>>
+                                        <<dep-cljsbuild>>
+                                        <<dep-cljs-test>>]
+                         :global-vars {*warn-on-reflection* true}
+                         :jvm-opts ^:replace []
+                         :auto-clean false
+                         :prep-tasks [["cljx" "once"] "javac" "compile"]
+                         :aliases {"cleantest" ["do" "clean" ["test" ":all"] ["cljsbuild" "test"]]}}}
 
-    :cljx {:builds [{:source-paths ["src/cljx"]
-                     :output-path "<<conf-gen-source-path>>"
-                     :rules :clj}
-                    {:source-paths ["src/cljx"]
-                     :output-path "<<conf-gen-source-path>>"
-                     :rules :cljs}
-                    {:source-paths ["test/cljx"]
-                     :output-path "<<conf-gen-test-path>>"
-                     :rules :clj}
-                    {:source-paths ["test/cljx"]
-                     :output-path "<<conf-gen-test-path>>"
-                     :rules :cljs}]}
+    :cljx         {:builds [{:source-paths ["src/cljx"]
+                             :output-path "<<conf-gen-source-path>>"
+                             :rules :clj}
+                            {:source-paths ["src/cljx"]
+                             :output-path "<<conf-gen-source-path>>"
+                             :rules :cljs}
+                            {:source-paths ["test/cljx"]
+                             :output-path "<<conf-gen-test-path>>"
+                             :rules :clj}
+                            {:source-paths ["test/cljx"]
+                             :output-path "<<conf-gen-test-path>>"
+                             :rules :cljs}]}
 
-    :cljsbuild {:builds [{:source-paths ["<<conf-gen-source-path>>" "<<conf-gen-test-path>>"]
-                          :id "simple"
-                          :compiler {:output-to "<<cljs-artefact-path>>"
-                                     :optimizations :whitespace
-                                     :pretty-print true}}]
-                :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}}
+    :cljsbuild    {:builds [{:source-paths ["<<conf-gen-source-path>>" "<<conf-gen-test-path>>"]
+                             :id "simple"
+                             :compiler {:output-to "<<cljs-artefact-path>>"
+                                        :optimizations :whitespace
+                                        :pretty-print true}}]
+                   :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}}
 
-    :pom-addition [:developers [:developer
+    :pom-addition [:developers [:developer {:id "toxi"}
                                 [:name "Karsten Schmidt"]
                                 [:url "http://postspectacular.com"]
                                 [:timezone "0"]]])
@@ -176,7 +181,7 @@ symbol =version= holding the version string defined above:
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/types/version.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.types.version)
-  (def ^:const version "<<conf-version>>")
+  (def version "<<conf-version>>")
 #+END_SRC
 
 * Modules
