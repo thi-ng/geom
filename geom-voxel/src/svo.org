@@ -10,19 +10,19 @@
 #+END_SRC
 ** Constants
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svo.cljx
-  (def ^:const depth-index
+  (def depth-index
     (vec (reductions #(+ % (long (Math/pow 8 %2))) 0 (range 16))))
 
-  (def ^:const depth-size
+  (def depth-size
     (mapv #(long (Math/pow 8 %)) (range 16)))
 
-  (def ^:const bit-vals [0x01 0x02 0x04 0x08 0x10 0x20 0x40 0x80])
+  (def bit-vals [0x01 0x02 0x04 0x08 0x10 0x20 0x40 0x80])
 
-  (def ^:const used-bits
+  (def used-bits
     "Returns a lazy-seq of bit ids used in `x`.
     Only checks 8bit range (0 - 255)."
     (reduce
-      (fn [acc x] (conj acc (filter #(pos? (bit-and x (bit-vals %))) [0 1 2 3 4 5 6 7])))
+      (fn [acc x] (conj acc (vec (filter #(pos? (bit-and x (bit-vals %))) [0 1 2 3 4 5 6 7]))))
       [] (range 0x100)))
 #+END_SRC
 ** Helper & index functions

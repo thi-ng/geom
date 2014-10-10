@@ -15,14 +15,14 @@
 ** Marching cube lookup tables
 *** Edge offset table
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/isosurface.cljx
-  (def ^:const edge-offsets
+  (def edge-offsets
     [[0 0 0 0] [1 0 0 2] [0 0 1 0] [0 0 0 2]
      [0 1 0 0] [1 1 0 2] [0 1 1 0] [0 1 0 2]
      [0 0 0 1] [1 0 0 1] [1 0 1 1] [0 0 1 1]])
 #+END_SRC
 *** Triangles per cube index
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/isosurface.cljx
-  (def ^:const cell-triangles
+  (def cell-triangles
     [[]
      [[0 8 3]]
      [[0 1 9]]
@@ -282,7 +282,7 @@
 #+END_SRC
 *** Edges per cube index
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/isosurface.cljx
-  (def ^:const compute-edges
+  (def compute-edges
     [0 7 1 6 0 7 1 6 4 3 5 2 4 3 5 2
      2 5 3 4 2 5 3 4 6 1 7 0 6 1 7 0
      0 7 1 6 0 7 1 6 4 3 5 2 4 3 5 2
