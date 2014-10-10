@@ -6,15 +6,18 @@ readonly ARGS="$@"
 readonly PREFIX="geom-"
 
 main() {
-    local modules="core types meshops webgl svg"
+    local modules="core types meshops svg"
 
     for m in $modules
     do
         echo "installing module $PREFIX$m..."
         echo "----------------------------------------"
         cd $PROGDIR/$PREFIX$m/babel
-        lein install
+        lein do cljx once, install
     done
+
+    cd $PROGDIR/geom-webgl/babel
+    lein install
 }
 
 main
