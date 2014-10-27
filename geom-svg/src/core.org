@@ -387,6 +387,22 @@ Btw. This example can be run from the REPL via this command:
 
     )
 
+  ;; CLJS walk differs to clojure's impl and doesn't work for defrecords
+  ;; hence we provide a custom version here...
+
+  ,#+cljs
+  (defn walk
+    [inner outer form]
+    (cond
+     (seq? form) (outer (doall (map inner form)))
+     (vector? form) (outer (mapv inner form))
+     :else (outer form)))
+
+  ,#+cljs
+  (defn postwalk
+    [f form]
+    (walk (partial postwalk f) f form))
+
   (defn all-as-svg
     [form]
     (postwalk
@@ -428,7 +444,7 @@ Btw. This example can be run from the REPL via this command:
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.types]
-     [clojure.walk :refer [postwalk]])
+     ,#+clj [clojure.walk :refer [postwalk]])
     ,#+clj
     (:import
      [thi.ng.geom.types Circle2 Line2 LineStrip2 Polygon2 Rect2 Triangle2]))
