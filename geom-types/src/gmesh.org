@@ -331,7 +331,8 @@ located on the rotation axis.
   g/PGeomContainer
   (into
    [_ faces] (tu/into-mesh _ add-face faces))
-  (empty
+  g/PClear
+  (clear*
    [_] (gmesh))
 #+END_SRC
 

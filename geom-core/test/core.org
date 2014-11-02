@@ -264,6 +264,7 @@
    (is (= [(- ax) (- ay)] (g/- a2)) "- a2")
    (is (= [(* ax) (* ay)] (g/* a2)) "* a2")
    (is (= [(/ ax) (/ ay)] (g/div a2)) "/ a2")
+   (is (identical? V2 (g/clear* a2)) "clear a2")
    (context-vec2-op "+" g/+ + 0.0)
    (context-vec2-op "-" g/- - 0.0)
    (context-vec2-op "*" g/* * 1.0)
@@ -277,6 +278,7 @@
    (is (= [(- ax) (- ay) (- az)] (g/- a3))) "- a3"
    (is (= [(* ax) (* ay) (* az)] (g/* a3))) "* a3"
    (is (= [(/ ax) (/ ay) (/ az)] (g/div a3))) "/ a3"
+   (is (identical? V3 (g/clear* a3)) "clear a3")
    (context-vec3-op "+" g/+ + 0.0)
    (context-vec3-op "-" g/- - 0.0)
    (context-vec3-op "*" g/* * 1.0)
@@ -497,7 +499,7 @@
     (:require
      [thi.ng.common.math.core :as m :refer [*eps* HALF_PI QUARTER_PI delta=]]
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V2X V2Y V3X V3Y V3Z]]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V2 V3 V2X V2Y V3X V3Y V3Z]]
      [thi.ng.geom.core.matrix :as mat :refer [M32 M44 matrix32 matrix44]]
      [thi.ng.geom.core.quaternion :as q :refer [Q]]
      ,#+clj [clojure.test :refer :all]

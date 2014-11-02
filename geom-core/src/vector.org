@@ -518,6 +518,11 @@ injected in the appropriate places of the code.
   (dot
    [_ [ax ay]] (mm/madd x ax y ay))
 #+END_SRC
+*** PClear
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PClear
+  (clear* [_] V2)
+#+END_SRC
 *** PCrossProduct
 #+BEGIN_SRC clojure :noweb-ref vec2
   g/PCrossProduct
@@ -1014,12 +1019,21 @@ injected in the appropriate places of the code.
   (addm [_ a b] (vec3-op-2 + * _ a b 0.0 1.0))
   (msub [_ a b] (vec3-op-2 * - _ a b 1.0 0.0))
   (subm [_ a b] (vec3-op-2 - * _ a b 0.0 1.0))
-  
+#+END_SRC
+*** PDotProduct
+#+BEGIN_SRC clojure :noweb-ref vec3
   g/PDotProduct
   (dot
    [_ [ax ay az]]
    (mm/madd x ax y ay z az))
-  
+#+END_SRC
+*** PClear
+#+BEGIN_SRC clojure :noweb-ref vec3
+  g/PClear
+  (clear* [_] V3)
+#+END_SRC
+*** PCrossProduct
+#+BEGIN_SRC clojure :noweb-ref vec3  
   g/PCrossProduct
   (cross
    [_ [ax ay az]]
@@ -1027,14 +1041,18 @@ injected in the appropriate places of the code.
     (mm/msub y az ay z)
     (mm/msub z ax az x)
     (mm/msub x ay ax y) -1 #+clj -1))
-  
+#+END_SRC
+*** PLimit
+#+BEGIN_SRC clojure :noweb-ref vec3
   g/PLimit
   (limit
    [_ len]
    (if (> (g/mag-squared _) (* len len))
      (g/normalize _ len)
      _))
-  
+#+END_SRC
+*** PMinMax
+#+BEGIN_SRC clojure :noweb-ref vec3
   g/PMinMax
   (min
    [_ [ax ay az]]
@@ -1605,6 +1623,7 @@ rules:
   (declare vec3 swizzle3 swizzle3-assoc)
   (declare vec2-op-1 vec2-op-2 vec2-op-2* vec2-op-3)
   (declare vec3-op-1 vec3-op-2 vec3-op-3)
+  (declare V2 V3)
 
   <<helpers>>
 

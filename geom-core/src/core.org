@@ -289,6 +289,12 @@ access to entities in this context.
   (defprotocol PClassify
     (classify-point [_ p]))
 #+END_SRC
+**** PClear
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol PClear
+    (clear* [_]))
+#+END_SRC
+
 **** TODO PClip
 ***** TODO remove protocol, method is already part of PSetOps
 #+BEGIN_SRC clojure :noweb-ref protos-shape
@@ -312,6 +318,12 @@ access to entities in this context.
   (defprotocol PFlip
     (flip [_]))
 #+END_SRC
+**** PGeomContainer
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol PGeomContainer
+    (into [_ m]))
+#+END_SRC
+
 **** PInset
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PInset
@@ -411,12 +423,6 @@ protocol consisting of just this one function:
     (make-child-for-point [_ p add-point?])
     (split-node [_]))
 #+END_SRC
-**** PGeomContainer
-#+BEGIN_SRC clojure :noweb-ref protos-types
-  (defprotocol PGeomContainer
-    (into [_ m])
-    (empty [_]))
-#+END_SRC
 
 ** Constants
 *** Default circle resolution
@@ -427,7 +433,7 @@ protocol consisting of just this one function:
 ** Complete namespace definition                                   :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core
-    (:refer-clojure :exclude [+ - * min max into empty]))
+    (:refer-clojure :exclude [+ - * min max into]))
 
   <<constants>>
 

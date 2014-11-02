@@ -120,7 +120,8 @@
   g/PGeomContainer
   (into
    [_ faces] (tu/into-mesh _ add-face faces))
-  (empty
+  g/PClear
+  (clear*
    [_] (basic-mesh))
 #+END_SRC
 

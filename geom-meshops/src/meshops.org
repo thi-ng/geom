@@ -63,7 +63,7 @@
     [mesh eps]
     (let [[tree dupes] (unique-point-tree (g/vertices mesh) eps)
           finder (find-in-tree (/ eps 2.0))]
-      [(reduce (fn [m f] (g/add-face m (mapv #(finder tree %) f))) (g/empty mesh) (g/faces mesh))
+      [(reduce (fn [m f] (g/add-face m (mapv #(finder tree %) f))) (g/clear* mesh) (g/faces mesh))
        dupes]))
   
   (defn face-permutations
