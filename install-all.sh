@@ -6,7 +6,7 @@ readonly ARGS="$@"
 readonly PREFIX="geom-"
 
 main() {
-    local modules="core types meshops svg"
+    local modules="core types meshops physics svg"
 
     for m in $modules
     do
