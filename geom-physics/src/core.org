@@ -16,14 +16,14 @@
   (update [_]))
 
 (defprotocol PBehavioral
-  (add-behavior [_ b])
-  (remove-behavior [_ b])
+  (add-behavior [_ id b])
+  (remove-behavior [_ id])
   (clear-behaviors [_])
   (apply-behaviors [_]))
 
 (defprotocol PConstrained
-  (add-constraint [_ c])
-  (remove-constraint [_ c])
+  (add-constraint [_ id c])
+  (remove-constraint [_ id])
   (clear-constraints [_])
   (apply-constraints [_]))
 
@@ -59,28 +59,44 @@
           (recur (next fns) (seq src))))))
 
   (deftype VerletParticle
-      [^:unsynchronized-mutable pos
-       ^:unsynchronized-mutable prev
-       ^:unsynchronized-mutable force
-       ^:unsynchronized-mutable locked?
-       ^:unsynchronized-mutable behaviors
-       ^:unsynchronized-mutable constraints
-       ^double weight
-       ^double inv-weight]
+      ,#+clj
+    [^:unsynchronized-mutable pos
+     ^:unsynchronized-mutable prev
+     ^:unsynchronized-mutable force
+     ^:unsynchronized-mutable locked?
+     ^:unsynchronized-mutable behaviors
+     ^:unsynchronized-mutable constraints
+     ^double weight
+     ^double inv-weight]
+    ,#+cljs
+    [^:mutable pos
+     ^:mutable prev
+     ^:mutable force
+     ^:mutable locked?
+     ^:mutable behaviors
+     ^:mutable constraints
+     weight
+     inv-weight]
     PBehavioral
     (add-behavior
-      [_ b] (set! behaviors (conj (or behaviors #{}) b)) _)
+      [_ id b] (set! behaviors (assoc (or behaviors {}) id b)) _)
     (apply-behaviors
-      [_] (loop [b behaviors] (when b ((first b) _) (recur (next b)))) _)
+      [_]
+      (if-not locked?
+        (loop [b (vals behaviors)] (when b ((first b) _) (recur (next b)))))
+      _)
     (remove-behavior
-      [_ b] (set! behaviors (disj behaviors b)) _)
+      [_ id] (set! behaviors (dissoc behaviors id)) _)
     PConstrained
     (add-constraint
-      [_ c] (set! constraints (conj (or constraints #{}) c)) _)
+      [_ id c] (set! constraints (assoc (or constraints {}) id c)) _)
     (apply-constraints
-      [_] (loop [c constraints] (when c ((first c) _) (recur (next c)))) _)
+      [_]
+      (if-not locked?
+        (loop [c (vals constraints)] (when c ((first c) _) (recur (next c)))))
+      _)
     (remove-constraint
-      [_ c] (set! constraints (disj constraints c)) _)
+      [_ id] (set! constraints (dissoc constraints id)) _)
     PParticle
     (lock
       [_] (set! locked? true) _)
@@ -125,17 +141,21 @@
         :constraints constraints})))
 
   (defrecord VerletPhysics
-      [particles springs behaviors constraints timestep delta delta-sq iter drag]
+      [particles springs behaviors constraints timestep delta iter drag]
     PBehavioral
     (add-behavior
-      [_ b] (update-in _ [:behaviors] conj b))
+      [_ id b] (assoc-in _ [:behaviors id] (b delta)))
     (apply-behaviors
-      [_] (apply-fns! behaviors particles) _)
+      [_] (apply-fns! (vals behaviors) particles) _)
+    (remove-behavior
+      [_ id] (update-in [:behaviors] dissoc id))
     PConstrained
     (add-constraint
-      [_ c] (update-in _ [:constraints] conj c))
+      [_ id c] (assoc-in _ [:constraints id] (c delta)))
     (apply-constraints
-      [_] (apply-fns! constraints particles) _)
+      [_] (apply-fns! (vals constraints) particles) _)
+    (remove-constraint
+      [_ id] (update-in [:constraints] dissoc id))
     PPhysics
     (update-particles
       [_]
@@ -145,20 +165,18 @@
           (recur (next ps))))
       _)
     (update-springs
-      [_]
-      (loop [i iter, s springs]
-        (if (pos? i)
-          (if s
-            (do (update (first s)) (recur i (next s)))
-            (recur (dec i) springs))))
-      _)
+      [_] (loop [s springs] (when s (update (first s)) (recur (next s)))) _)
     PUpdate
     (update
       [_]
-      (-> (apply-behaviors _)
-          (update-particles)
-          (update-springs)
-          (apply-constraints))))
+      (loop [i iter]
+        (when (pos? i)
+          (-> (apply-behaviors _)
+              (update-particles)
+              (update-springs)
+              (apply-constraints))
+          (recur (dec i))))
+      _))
 
   (defrecord VerletSpring
       [^VerletParticle a
@@ -182,21 +200,22 @@
           (set-position b (g/madd delta (* (- nd) bw) pb))))))
 
   (defn gravity
-    [force timestep]
-    (let [f-scaled (g/* force (* timestep timestep))]
-      #(add-force % f-scaled)))
+    [force]
+    (fn [delta]
+      (let [f-scaled (g/* force (* delta delta))]
+        #(add-force % f-scaled))))
 
   (defn attract
     [pos r strength]
     (let [r2 (* r r)]
-      (fn [p]
-        (let [d (g/- pos (position p))
-              l (g/mag-squared d)]
-          (prn :att-l l)
-          (if (< l r2)
-            (let [f (g/* d (/ (* (- 1.0 (/ l r2)) strength) (Math/sqrt l)))]
-              (prn :att-f f)
-              (add-force p f)))))))
+      (fn [delta]
+        (let [strength' (* strength delta)]
+          (prn strength' delta)
+          #(let [d (g/- pos (position %))
+                 l (g/mag-squared d)]
+             (if (< l r2)
+               (add-force % (g/* d (/ (* (- 1.0 (/ l r2)) strength')
+                                      (Math/sqrt l))))))))))
 #+END_SRC
 
 ** Constructors
@@ -210,21 +229,18 @@
 
   (defn physics
     [{:keys [particles springs behaviors constraints timestep iter drag]
-      :or   {particles #{}, springs #{}, behaviors #{} constraints #{}
-             timestep 1.0 iter 40, drag 0.05}}]
+      :or   {particles #{}, springs #{}, behaviors {} constraints {}
+             timestep 1.0 iter 10, drag 0.05}}]
     (let [delta (/ timestep iter)]
       (map->VerletPhysics
-       {:particles (set particles)
-        :springs   (set springs)
-        :behaviors (set behaviors)
-        :constraints (set constraints)
+       {:particles   (set particles)
+        :springs     (set springs)
+        :behaviors   (reduce-kv (fn [acc k v] (assoc acc k (v delta))) behaviors behaviors)
+        :constraints (reduce-kv (fn [acc k v] (assoc acc k (v delta))) constraints constraints)
         :timestep    timestep
         :iter        iter
         :delta       delta
-        :delta-sq    (* delta delta)
-        :drag        drag}))
-    
-  )
+        :drag        (* drag delta)})))
 #+END_SRC
 
 ** Complete namespace definition                                   :noexport:
@@ -250,9 +266,9 @@
   (def a (ph/particle (v/vec2) 1 true))
   (def b (ph/particle (v/vec2 1 0) 1))
   (def s (ph/map->VerletSpring {:a a :b b :rlen 10.0 :strength 0.01}))
-  (def p (ph/physics {:particles [a b] :springs [s] :iter 50 :drag 0.0
-                      :behaviors [(ph/gravity (v/vec2 0 -0.1) 1)
-                                  (ph/attract (v/vec2 10 0) 10 -2)]}))
+  (def p (ph/physics {:particles [a b] :springs [s] :iter 10 :drag 0.0
+                      :behaviors {:g (ph/gravity (v/vec2 0 -0.1))
+                                  :a (ph/attract (v/vec2 10 0) 10 -2)}}))
   (dotimes [i 100] (ph/update p) (let [pa (ph/position a) pb (ph/position b)] (prn i pb (g/dist pa pb))))
 
 #+END_SRC
