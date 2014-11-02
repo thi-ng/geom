@@ -51,12 +51,12 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   (defn apply-fns!
     [fns src]
-    (loop [fns fns, coll src]
+    (loop [fns (seq fns), coll (seq src)]
       (if fns
         (if coll
           (do ((first fns) (first coll))
               (recur fns (next coll)))
-          (recur (next fns) src)))))
+          (recur (next fns) (seq src))))))
 
   (deftype VerletParticle
       [^:unsynchronized-mutable pos
@@ -108,7 +108,7 @@
         (set! force (g/clear* force))
         _))
     (scale-velocity
-      [_ s] (set! prev (g/mix pos prev s)) _)
+      [_ s] (set! prev (g/mix prev pos s)) _)
     PUpdate
     (update
       [_] (if locked? _ (-> _ apply-behaviors apply-force apply-constraints)))
@@ -125,7 +125,7 @@
         :constraints constraints})))
 
   (defrecord VerletPhysics
-      [particles springs behaviors constraints timestep iter drag]
+      [particles springs behaviors constraints timestep delta delta-sq iter drag]
     PBehavioral
     (add-behavior
       [_ b] (update-in _ [:behaviors] conj b))
@@ -155,11 +155,10 @@
     PUpdate
     (update
       [_]
-      (-> _
-          apply-behaviors
-          update-particles
-          update-springs
-          apply-constraints)))
+      (-> (apply-behaviors _)
+          (update-particles)
+          (update-springs)
+          (apply-constraints))))
 
   (defrecord VerletSpring
       [^VerletParticle a
@@ -186,13 +185,46 @@
     [force timestep]
     (let [f-scaled (g/* force (* timestep timestep))]
       #(add-force % f-scaled)))
+
+  (defn attract
+    [pos r strength]
+    (let [r2 (* r r)]
+      (fn [p]
+        (let [d (g/- pos (position p))
+              l (g/mag-squared d)]
+          (prn :att-l l)
+          (if (< l r2)
+            (let [f (g/* d (/ (* (- 1.0 (/ l r2)) strength) (Math/sqrt l)))]
+              (prn :att-f f)
+              (add-force p f)))))))
 #+END_SRC
 
 ** Constructors
 
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn particle
-    [p w] (VerletParticle. p p (g/clear* p) false nil nil w (/ 1.0 w)))
+    ([pos weight]
+       (particle pos weight false))
+    ([pos weight lock?]
+       (VerletParticle. pos pos (g/clear* pos) lock? nil nil weight (/ 1.0 weight))))
+
+  (defn physics
+    [{:keys [particles springs behaviors constraints timestep iter drag]
+      :or   {particles #{}, springs #{}, behaviors #{} constraints #{}
+             timestep 1.0 iter 40, drag 0.05}}]
+    (let [delta (/ timestep iter)]
+      (map->VerletPhysics
+       {:particles (set particles)
+        :springs   (set springs)
+        :behaviors (set behaviors)
+        :constraints (set constraints)
+        :timestep    timestep
+        :iter        iter
+        :delta       delta
+        :delta-sq    (* delta delta)
+        :drag        drag}))
+    
+  )
 #+END_SRC
 
 ** Complete namespace definition                                   :noexport:
@@ -211,4 +243,16 @@
   <<impl>>
 
   <<ctors>>
+#+END_SRC
+
+#+BEGIN_SRC clojure
+  (require '[thi.ng.geom.physics.core :as ph] :reload)
+  (def a (ph/particle (v/vec2) 1 true))
+  (def b (ph/particle (v/vec2 1 0) 1))
+  (def s (ph/map->VerletSpring {:a a :b b :rlen 10.0 :strength 0.01}))
+  (def p (ph/physics {:particles [a b] :springs [s] :iter 50 :drag 0.0
+                      :behaviors [(ph/gravity (v/vec2 0 -0.1) 1)
+                                  (ph/attract (v/vec2 10 0) 10 -2)]}))
+  (dotimes [i 100] (ph/update p) (let [pa (ph/position a) pb (ph/position b)] (prn i pb (g/dist pa pb))))
+
 #+END_SRC
