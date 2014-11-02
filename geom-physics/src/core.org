@@ -69,20 +69,18 @@
        ^double inv-weight]
     PBehavioral
     (add-behavior
-      [_ b] (set! behaviors (conj (or behaviors []) b)) _)
+      [_ b] (set! behaviors (conj (or behaviors #{}) b)) _)
     (apply-behaviors
       [_] (loop [b behaviors] (when b ((first b) _) (recur (next b)))) _)
     (remove-behavior
-      [_ b] ;; TODO
-      )
+      [_ b] (set! behaviors (disj behaviors b)) _)
     PConstrained
     (add-constraint
-      [_ c] (set! constraints (conj (or constraints []) c)) _)
+      [_ c] (set! constraints (conj (or constraints #{}) c)) _)
     (apply-constraints
       [_] (loop [c constraints] (when c ((first c) _) (recur (next c)))) _)
     (remove-constraint
-      [_ c] ;; TODO
-      )
+      [_ c] (set! constraints (disj constraints c)) _)
     PParticle
     (lock
       [_] (set! locked? true) _)
@@ -98,6 +96,8 @@
       [_] (g/- pos prev))
     (add-force
       [_ f] (set! force (g/+ force f)) _)
+    (clear-force
+      [_] (set! force (g/clear* force)))
     (apply-force
       [_]
       (let [p' pos]
