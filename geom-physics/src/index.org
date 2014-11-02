@@ -1,0 +1,149 @@
+#+SETUPFILE: ../../src/setup.org
+#+TITLE: thi.ng/geom-physics
+
+* About the project
+
+** Overview
+
+This is a sub-module of [[file:../../src/index.org][thi.ng/geom]] and is in early stage development.
+This module provides a particle based physics engine with [[https://en.wikipedia.org/wiki/Verlet_integration][Verlet
+integration]] and an extensible behavior system.
+
+** Status
+
+ALPHA quality, in active development.
+
+** Building & testing this project
+
+Please see the [[file:../../src/index.org][parent project]] for further information.
+
+** Injected properties                                             :noexport:
+
+This template uses shared project configuration defined in [[file:../../src/config.org][config.org]].
+Module specific settings are defined below:
+
+#+BEGIN_SRC clojure :exports none :noweb-ref project-name
+thi.ng/geom-physics
+#+END_SRC
+
+#+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref cljs-artefact-path
+target/geom-physics-<<conf-version>>.js
+#+END_SRC
+
+** Release history
+
+| *Version* | *Released* | *Description*      | *Lein coordinates*      | *Tagged Github URL*                       |
+|-----------+------------+--------------------+-------------------------+-------------------------------------------|
+
+
+** Contributors
+
+| *Name*          | *Role*                          | *Website*           |
+| [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://postspectacular.com][postspectacular.com]] |
+|                 |                                 | [[http://thi.ng][thi.ng]]              |
+
+** Leiningen coordinates
+
+#+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
+  [<<project-name>> "<<conf-version>>"]
+#+END_SRC
+
+** Leiningen project file                                          :noexport:
+
+#+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
+  (defproject <<project-name>> "<<conf-version>>"
+    :description  "thi.ng geometry kit - physics module"
+    :url          "<<conf-project-url>>"
+    :license      {:name "Apache Software License"
+                   :url "http://www.apache.org/licenses/LICENSE-2.0"
+                   :distribution :repo}
+    :scm          {:name "git"
+                   :url  "<<conf-project-url>>"}
+
+    :min-lein-version "2.4.0"
+
+    :dependencies [<<dep-clj>>
+                   <<dep-geom-core>>
+                   <<dep-geom-types>>]
+
+    :source-paths ["src/cljx"]
+    :test-paths   ["<<conf-gen-test-path>>"]
+
+    :profiles     {:dev {:dependencies [<<dep-cljs>>
+                                        <<dep-criterium>>
+                                        <<dep-geom-meshops>>]
+                         :plugins      [<<dep-cljx>>
+                                        <<dep-cljsbuild>>
+                                        <<dep-cljs-test>>]
+                         :global-vars {*warn-on-reflection* true}
+                         :jvm-opts ^:replace []
+                         :auto-clean false
+                         :prep-tasks [["cljx" "once"] "javac" "compile"]
+                         :aliases {"cleantest" ["do" "clean" ["test" ":all"] ["cljsbuild" "test"]]}}}
+
+    :cljx         {:builds [{:source-paths ["src/cljx"]
+                             :output-path "<<conf-gen-source-path>>"
+                             :rules :clj}
+                            {:source-paths ["src/cljx"]
+                             :output-path "<<conf-gen-source-path>>"
+                             :rules :cljs}
+                            {:source-paths ["test/cljx"]
+                             :output-path "<<conf-gen-test-path>>"
+                             :rules :clj}
+                            {:source-paths ["test/cljx"]
+                             :output-path "<<conf-gen-test-path>>"
+                             :rules :cljs}]}
+
+    :cljsbuild    {:builds [{:source-paths ["<<conf-gen-source-path>>" "<<conf-gen-test-path>>"]
+                             :id "simple"
+                             :compiler {:output-to "<<cljs-artefact-path>>"
+                                        :optimizations :whitespace
+                                        :pretty-print true}}]
+                   :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}}
+
+    :pom-addition [:developers [:developer {:id "toxi"}
+                                [:name "Karsten Schmidt"]
+                                [:url "http://postspectacular.com"]
+                                [:timezone "0"]]])
+#+END_SRC
+
+** ClojureScript HTML harness                                      :noexport:
+
+#+BEGIN_SRC html :tangle ../babel/index.html :noweb yes :mkdirp yes :padline no
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <title><<lein-coords>> test</title>
+    </head>
+    <body>
+      <script type="text/javascript" src="<<cljs-artefact-path>>"></script>
+    </body>
+  </html>
+#+END_SRC
+
+** Accessing library version during runtime
+
+The autogenerated namespace =thi.ng.geom.physics.version= contains a single
+symbol =version= holding the version string defined above:
+
+#+BEGIN_SRC clojure :noweb yes
+  (use 'thi.ng.geom.physics.version)
+  
+  (prn version)
+  ; "<<conf-version>>"
+#+END_SRC
+
+*** Version namespace                                              :noexport:
+
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/physics/version.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.physics.version)
+  (def version "<<conf-version>>")
+#+END_SRC
+
+* Modules
+
+- [[core.org]]
+
+* Tests
+
+- [[../test/core.org][test/core.org]]
