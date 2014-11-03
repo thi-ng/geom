@@ -25,6 +25,7 @@
      :mat4        ["Matrix4fv" arrays/float32]
      :sampler2D   ["1iv" arrays/int32]
      :samplerCube ["1iv" arrays/int32]})
+
 #+END_SRC
 
 *** Uniform setup & handling
@@ -194,6 +195,21 @@ shader source before compilation with =compile-shader= below.
 
 #+END_SRC
 
+** Shading state preparation
+
+#+BEGIN_SRC clojure :noweb-ref state
+  (defn prepare-render-state
+    [gl state]
+    (if (:depth-test state)
+      (gl/enable gl gl/depth-test)
+      (gl/disable gl gl/depth-test))
+    (if (:blend state)
+      (doto gl
+        (gl/enable gl/blend)
+        (.blendFunc gl/src-alpha gl/one))
+      (gl/disable gl gl/blend)))
+#+END_SRC
+
 ** Complete namespace definition
 
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders.cljs :noweb yes :mkdirp yes :padline no
@@ -210,6 +226,8 @@ shader source before compilation with =compile-shader= below.
   <<attribs>>
 
   <<ctors>>
+
+  <<state>>
 
   <<pipeline>>
 #+END_SRC
@@ -245,6 +263,34 @@ shader source before compilation with =compile-shader= below.
                  (assoc-in spec [:uniforms :view] :mat4)
                  spec)]
       spec))
+#+END_SRC
+
+*** Lambert
+
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/lambert.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.webgl.shaders.lambert)
+
+  (def shader-spec
+    {:vs "void main() {
+    vec3 tNormal = (normalMat * vec4(normal, 0.0)).xyz;
+
+    float lambert = min(max(dot(tNormal, lightDir) + 0.2, 0.0) * 0.8, 1.0);
+    vCol = vec4(ambientCol + lightCol * lambert, alpha);
+    gl_Position = proj * view * model * vec4(position, 1.0);
+  }"
+     :fs "void main() { gl_FragColor = vCol; }"
+     :uniforms {:model      :mat4
+                :view       :mat4
+                :normalMat  :mat4
+                :proj       :mat4
+                :ambientCol :vec3
+                :lightCol   :vec3
+                :lightDir   :vec3
+                :alpha      :float}
+     :attribs  {:position   :vec3
+                :normal     :vec3}
+     :varying  {:vCol       :vec4}
+     :state    {:depth-test true}})
 #+END_SRC
 
 *** Phong
@@ -302,7 +348,7 @@ shader source before compilation with =compile-shader= below.
       [thi.ng.geom.core :as g]
       [thi.ng.geom.webgl.core :as gl]
       [thi.ng.geom.webgl.buffers :as buf]))
-  
+
   (def shader-spec
     {:vs "
     <<phong-vs>>"
@@ -321,14 +367,49 @@ shader source before compilation with =compile-shader= below.
      :varying {:vNormal        :vec3
                :vEyePos        :vec3
                :vLightPos      :vec3
-               :vCol           :vec3}})
-  
+               :vCol           :vec3}
+     :state    {:depth-test true}})
+
   (defn draw-phong
     [^WebGLRenderingContext gl spec]
     (buf/draw-arrays
      gl (update-in
          spec [:uniforms]
          #(assoc % :normalMat (-> (:model %) (g/invert) (g/transpose))))))
+#+END_SRC
+
+*** X-Ray
+
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/xray.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.webgl.shaders.xray
+    (:require
+     [thi.ng.geom.webgl.core :as gl]))
+
+  (def shader-spec
+    {:vs "void main() {
+    vec4 worldPos = view * model * vec4(position, 1.0);
+    vNormal = (normalMat * vec4(normal, 0.0)).xyz;
+    vIncident = worldPos.xyz;
+    gl_Position = proj * worldPos;
+  }"
+     :fs "void main() {
+    float opac = abs(dot(normalize(-vNormal), normalize(-vIncident)));
+    opac = 1.0-pow(opac, alpha);
+    gl_FragColor = vec4(lightCol * opac, opac);
+  }"
+     :uniforms {:model      :mat4
+                :view       :mat4
+                :normalMat  :mat4
+                :proj       :mat4
+                :lightCol   :vec3
+                :alpha      :float}
+     :attribs  {:position   :vec3
+                :normal     :vec3}
+     :varying  {:vIncident  :vec3
+                :vNormal    :vec3}
+     :state    {:depth-test false
+                :blend true
+                :blend-func [gl/src-alpha gl/one]}})
 #+END_SRC
 
 *** Spotlight
