@@ -539,26 +539,23 @@ using the protocol.
             faces     (g/faces m)
             num-faces (count faces)
             num-verts (* num-faces 3)
-            spec      {:attribs {:position {:data (fill-vertex-buffer
-                                                   (arrays/float32 (* num-verts stride))
-                                                   faces stride)
-                                            :size stride}}
-                       :mode         triangles
-                       :num-vertices num-verts
-                       :num-faces    num-faces}
-            spec      (if fnormals
-                        (assoc-in spec [:attribs :normal] {:data (face-normals m) :size 3})
-                        spec)
-            spec      (if color
-                        (let [c-stride (count color)]
-                          (assoc-in
-                           spec [:attribs :color]
-                           {:data (fill-buffer
-                                   (arrays/float32 (* num-verts c-stride))
-                                   0 color num-verts c-stride)
-                            :size c-stride}))
-                        spec)]
-        spec)))
+            c-stride  (if color (count color))]
+        (cond->
+         {:attribs
+          {:position {:data (fill-vertex-buffer
+                             (arrays/float32 (* num-verts stride))
+                             faces stride)
+                      :size stride}}
+          :mode         triangles
+          :num-vertices num-verts
+          :num-faces    num-faces}
+         fnormals (assoc-in [:attribs :normal] {:data (face-normals m) :size 3})
+         color    (assoc-in
+                   [:attribs :color]
+                   {:data (fill-buffer
+                           (arrays/float32 (* num-verts c-stride))
+                           0 color num-verts c-stride)
+                    :size c-stride})))))
 #+END_SRC
 
 *** GMesh
@@ -572,30 +569,27 @@ using the protocol.
             faces     (g/faces m)
             num-faces (count faces)
             num-verts (* num-faces 3)
+            c-stride  (if color (count color))
             normals   (cond
                        vnormals (vertex-normals m)
                        fnormals (face-normals m)
-                       :default nil)
-            spec      {:attribs {:position {:data (fill-vertex-buffer
-                                                   (arrays/float32 (* num-verts stride))
-                                                   faces stride)
-                                            :size stride}}
-                       :mode         triangles
-                       :num-vertices num-verts
-                       :num-faces    num-faces}
-            spec      (if normals
-                        (assoc-in spec [:attribs :normal] {:data normals :size 3})
-                        spec)
-            spec      (if color
-                        (let [c-stride (count color)]
-                          (assoc-in
-                           spec [:attribs :color]
-                           {:data (fill-buffer
-                                   (arrays/float32 (* num-verts c-stride))
-                                   0 color num-verts c-stride)
-                            :size c-stride}))
-                        spec)]
-        spec)))
+                       :default nil)]
+        (cond->
+         {:attribs
+          {:position    {:data (fill-vertex-buffer
+                                (arrays/float32 (* num-verts stride))
+                                faces stride)
+                         :size stride}}
+          :mode         triangles
+          :num-vertices num-verts
+          :num-faces    num-faces}
+         normals (assoc-in [:attribs :normal] {:data normals :size 3})
+         color   (assoc-in
+                  [:attribs :color]
+                  {:data (fill-buffer
+                          (arrays/float32 (* num-verts c-stride))
+                          0 color num-verts c-stride)
+                   :size c-stride})))))
 #+END_SRC
 
 ** WegGL context
@@ -621,13 +615,13 @@ using the protocol.
     ([canvas attribs]
        (let [canvas (if (string? canvas) (.getElementById js/document canvas) canvas)
              attribs (clj->js (merge context-default-attribs attribs))
-             ctx (loop [[id & more] ["webgl" "experimental-webgl" "webkit-3d" "moz-webgl"]]
-                   (when id
+             ctx (loop [ids ["webgl" "experimental-webgl" "webkit-3d" "moz-webgl"]]
+                   (when ids
                      (try
-                       (let [ctx (.getContext canvas id attribs)]
+                       (let [ctx (.getContext canvas (first ids) attribs)]
                          (set! (.-onselectstart canvas) (constantly false))
-                         (if ctx ctx (recur more)))
-                       (catch js/Error e (recur more)))))]
+                         (if ctx ctx (recur (next ids))))
+                       (catch js/Error e (recur (next ids))))))]
          (or ctx (err/unsupported! "WebGL not available")))))
 #+END_SRC
 
