@@ -8,22 +8,23 @@
 
 #+BEGIN_SRC clojure :noweb-ref uniforms
   (def uniform-types
-    {:float ["1fv" arrays/float32]
-     :int ["1iv" arrays/int32]
-     :vec2 ["2fv" arrays/float32]
-     :vec3 ["3fv" arrays/float32]
-     :vec4 ["4fv" arrays/float32]
-     :ivec2 ["2iv" arrays/int32]
-     :ivec3 ["3iv" arrays/int32]
-     :ivec4 ["4iv" arrays/int32]
-     :bool ["1iv" arrays/int32]
-     :bvec2 ["2iv" arrays/int32]
-     :bvec3 ["3iv" arrays/int32]
-     :bvec4 ["4iv" arrays/int32]
-     :mat2 ["Matrix2fv" arrays/float32]
-     :mat3 ["Matrix3fv" arrays/float32]
-     :mat4 ["Matrix4fv" arrays/float32]
-     :sampler2D ["1iv" arrays/int32]})
+    {:float       ["1fv" arrays/float32]
+     :int         ["1iv" arrays/int32]
+     :vec2        ["2fv" arrays/float32]
+     :vec3        ["3fv" arrays/float32]
+     :vec4        ["4fv" arrays/float32]
+     :ivec2       ["2iv" arrays/int32]
+     :ivec3       ["3iv" arrays/int32]
+     :ivec4       ["4iv" arrays/int32]
+     :bool        ["1iv" arrays/int32]
+     :bvec2       ["2iv" arrays/int32]
+     :bvec3       ["3iv" arrays/int32]
+     :bvec4       ["4iv" arrays/int32]
+     :mat2        ["Matrix2fv" arrays/float32]
+     :mat3        ["Matrix3fv" arrays/float32]
+     :mat4        ["Matrix4fv" arrays/float32]
+     :sampler2D   ["1iv" arrays/int32]
+     :samplerCube ["1iv" arrays/int32]})
 #+END_SRC
 
 *** Uniform setup & handling
