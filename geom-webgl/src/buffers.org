@@ -28,7 +28,9 @@
      #(make-attribute-buffers gl mode %)))
 
   (defn draw-arrays
-    [^WebGLRenderingContext gl {:keys [shader attribs uniforms mode num-vertices]}]
+    [^WebGLRenderingContext gl
+     {:keys [shader attribs uniforms mode num-vertices]
+      :or   {mode gl/triangles}}]
     (.useProgram gl (:program shader))
     (loop-kv #(sh/set-uniform shader % %2) uniforms)
     (loop-kv #(sh/set-attribute gl shader % %2) attribs)
