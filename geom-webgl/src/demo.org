@@ -125,9 +125,9 @@ rotation / transformation).
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.polygon :as poly]
      [thi.ng.geom.basicmesh :refer [basic-mesh]]))
-  
+
   <<stats>>
-  
+
   (defn ^:export demo
     []
     (enable-console-print!)
@@ -160,7 +160,7 @@ rotation / transformation).
                                   (g/translate 0.46 0 0)
                                   (g/rotate-y -0.3)
                                   (g/rotate-z (- (+ t (/ HALF_PI teeth))))))]
-  
+
            (gl/set-viewport gl view-rect)
            (gl/clear-color-buffer gl 1 0.98 0.95 1.0)
            (gl/clear-depth-buffer gl 1)
@@ -174,7 +174,8 @@ rotation / transformation).
 
 ** Example 3: Morphogen & shadow mapping
 
-#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example03.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure
+ ;;:tangle ../babel/test/thi/ng/geom/webgl/example03.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.example03
     <<require-macros>>
     (:require
