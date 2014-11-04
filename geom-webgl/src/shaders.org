@@ -157,7 +157,7 @@ shader source before compilation with =compile-shader= below.
       (err/throw! "Can't create shader")))
 
   (defn make-shader-from-spec
-    [^WebGLRenderingContext gl {:keys [vs fs uniforms attribs varying prefix]}]
+    [^WebGLRenderingContext gl {:keys [vs fs uniforms attribs varying prefix state]}]
     (let [u-src (compile-glsl-vars "uniform" uniforms)
           a-src (compile-glsl-vars "attribute" attribs)
           v-src (compile-glsl-vars "varying" varying)
@@ -175,10 +175,11 @@ shader source before compilation with =compile-shader= below.
           (doto gl
             (.deleteShader vs)
             (.deleteShader fs))
-          {:program prog
+          {:program  prog
            :uniforms uniforms
-           :attribs attribs
-           :varying varying})
+           :attribs  attribs
+           :varying  varying
+           :state    state})
         (err/throw! (str "Shader failed to link:" (.getProgramInfoLog gl prog))))))
 
   (defn make-shader-from-dom
@@ -197,16 +198,28 @@ shader source before compilation with =compile-shader= below.
 
 ** Shading state preparation
 
+Shader specs can specify WebGL render state flags which can then be
+automatically setup using the =prepare-render-state= function below.
+Currently the following options are supported:
+
+| *Key*         | *Values*                               | *Description*                  |
+|---------------+----------------------------------------+--------------------------------|
+| =:depth-test= | boolean                                | enabled if true, else disabled |
+| =:blend=      | boolean                                | enabled if true, else disabled |
+| =:blend-fn=   | 2-elem vector =[src-coeff dest-coeff]= | only used if =:blend true=     |
+|               | [[https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendFunc.xml][reference]]                              |                                |
+
 #+BEGIN_SRC clojure :noweb-ref state
   (defn prepare-render-state
-    [gl state]
+    [gl {:keys [state]}]
     (if (:depth-test state)
       (gl/enable gl gl/depth-test)
       (gl/disable gl gl/depth-test))
     (if (:blend state)
-      (doto gl
-        (gl/enable gl/blend)
-        (.blendFunc gl/src-alpha gl/one))
+      (let [[src dest] (or (:blend-fn state) [gl/src-alpha gl/one])]
+        (doto gl
+          (gl/enable gl/blend)
+          (.blendFunc src dest)))
       (gl/disable gl gl/blend)))
 #+END_SRC
 
@@ -237,9 +250,9 @@ shader source before compilation with =compile-shader= below.
 
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/basic.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.basic)
-  
+
   (defn make-color-shader-spec
-    [& {attr? :attrib is3d? :3d :or {attr? false, is3d? true}}]
+    [& [{attr? :use-attrib is3d? :3d :or {is3d? true}}]]
     (let [spec {:vs (str "void main() { "
                          (if attr?
                            "vCol = color; " "")

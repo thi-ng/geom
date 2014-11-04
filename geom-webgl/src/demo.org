@@ -74,9 +74,9 @@ link for more discussion about these options.
     (enable-console-print!)
     (let [gl         (gl/gl-context "main")
           shader1    (sh/make-shader-from-spec
-                      gl (basic/make-color-shader-spec :attrib false :3d false))
+                      gl (basic/make-color-shader-spec {:use-attrib false :3d false}))
           shader2    (sh/make-shader-from-spec
-                      gl (basic/make-color-shader-spec :attrib true :3d false))
+                      gl (basic/make-color-shader-spec {:use-attrib true :3d false}))
           teeth      20
           model      (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
                          (gl/as-webgl-buffer-spec {:normals false :color [1 0 0 1]})
