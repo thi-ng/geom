@@ -15,7 +15,7 @@
 
 #+BEGIN_SRC clojure :noweb-ref protos
   (defprotocol PTimeStep
-    (timestep [_] [_ delta]))
+    (timestep [_ delta]))
 
   (defprotocol PBehavioral
     (add-behavior [_ id b])
@@ -89,6 +89,8 @@
       [_ delta] (when (seq behaviors) (apply-to-particle _ delta (vals behaviors))) _)
     (remove-behavior
       [_ id] (set! behaviors (dissoc behaviors id)) _)
+    (clear-behaviors
+      [_] (set! behaviors {}) _)
     PConstrained
     (add-constraint
       [_ id c] (set! constraints (assoc constraints id c)) _)
@@ -96,6 +98,8 @@
       [_ delta] (when (seq constraints) (apply-to-particle _ delta (vals constraints))) _)
     (remove-constraint
       [_ id] (set! constraints (dissoc constraints id)) _)
+    (clear-constraints
+      [_] (set! constraints {}) _)
     PParticle
     (lock
       [_] (set! locked? true) _)
@@ -164,41 +168,47 @@
           (set-position b (g/madd diff (* (- nd) bw) pb))))))
 
   (defrecord VerletPhysics
-      [particles springs behaviors constraints delta iter drag]
+      [particles springs behaviors constraints drag]
     PBehavioral
     (add-behavior
       [_ id b] (assoc-in _ [:behaviors id] (b delta)))
     (apply-behaviors
       [_ delta] (apply-to-particles particles delta (vals behaviors)) _)
     (remove-behavior
-      [_ id] (update-in [:behaviors] dissoc id))
+      [_ id] (update-in _ [:behaviors] dissoc id))
+    (clear-behaviors
+      [_] (assoc _ behaviors {}))
     PConstrained
     (add-constraint
       [_ id c] (assoc-in _ [:constraints id] (c delta)))
     (apply-constraints
       [_ delta] (apply-to-particles particles delta (vals constraints)) _)
     (remove-constraint
-      [_ id] (update-in [:constraints] dissoc id))
+      [_ id] (update-in _ [:constraints] dissoc id))
+    (clear-constraints
+      [_] (assoc _ constraints {}))
     PPhysics
     (update-particles
-      [_]
-      (loop [ps (seq particles)]
-        (when ps
-          (-> ps first (scale-velocity drag) (timestep delta))
-          (recur (next ps))))
+      [_ delta]
+      (let [drag' (* delta drag)]
+        (loop [ps (seq particles)]
+          (when ps
+            (-> ps first (scale-velocity drag') (timestep delta))
+            (recur (next ps)))))
       _)
     (update-springs
-      [_] (loop [s (seq springs)] (when s (timestep (first s) delta) (recur (next s)))) _)
+      [_ delta] (loop [s (seq springs)] (when s (timestep (first s) delta) (recur (next s)))) _)
     PTimeStep
     (timestep
-      [_]
-      (loop [i iter]
-        (when (pos? i)
-          (-> (apply-behaviors _ delta)
-              (update-particles)
-              (update-springs)
-              (apply-constraints delta))
-          (recur (dec i))))
+      [_ iter]
+      (let [delta (/ 1.0 iter)]
+        (loop [i iter]
+          (when (pos? i)
+            (-> (apply-behaviors _ delta)
+                (update-springs delta)
+                (update-particles delta)
+                (apply-constraints delta))
+            (recur (dec i)))))
       _))
 #+END_SRC
 
@@ -255,26 +265,19 @@
 
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn physics
-    [{:keys [particles springs behaviors constraints iter drag]
-      :or   {particles #{}, springs #{}, behaviors {} constraints {}
-             iter 2, drag 0.0}}]
-    (let [delta (/ 1.0 iter)]
-      (map->VerletPhysics
-       {:particles   (set particles)
-        :springs     (set springs)
-        :behaviors   behaviors
-        :constraints constraints
-        :iter        iter
-        :delta       delta
-        :drag        (* drag delta)})))
+    [{:keys [particles springs behaviors constraints drag]
+      :or   {particles #{}, springs #{}, behaviors {}, constraints {}, drag 0.0}}]
+    (map->VerletPhysics
+     {:particles   (set particles)
+      :springs     (set springs)
+      :behaviors   behaviors
+      :constraints constraints
+      :drag        drag}))
 
   (defn particle
-    ([pos]
-       (particle pos 1.0 false))
-    ([pos weight]
-       (particle pos weight false))
-    ([pos weight lock?]
-       (VerletParticle. pos pos (g/clear* pos) lock? nil nil (double weight) (/ 1.0 weight))))
+    [pos & [weight lock?]]
+    (let [w (double (or weight 1.0))]
+      (VerletParticle. pos pos (g/clear* pos) lock? nil nil w (/ 1.0 w))))
 
   (defn spring
     [a b rlen strength & [locka? lockb?]]
@@ -308,9 +311,9 @@
   (def a (ph/particle (v/vec2) 1 true))
   (def b (ph/particle (v/vec2 1 0) 1))
   (def s (ph/map->VerletSpring {:a a :b b :rlen 10.0 :strength 0.1}))
-  (def p (ph/physics {:particles [a b] :springs [s] :iter 2 :drag 0.0
+  (def p (ph/physics {:particles [a b] :springs [s] :drag 0.0
                       :behaviors {:g (ph/gravity (v/vec2 0 -0.5))
                                   :a (ph/attract (v/vec2 10 0) 10 -2)}}))
-  (dotimes [i 100] (ph/timestep p) (let [pa (ph/position a) pb (ph/position b)] (prn i pb (g/dist pa pb))))
+  (dotimes [i 100] (ph/timestep p 2) (let [pa (ph/position a) pb (ph/position b)] (prn i pb (g/dist pa pb))))
 
 #+END_SRC
