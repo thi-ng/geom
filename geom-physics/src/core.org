@@ -44,8 +44,8 @@
     (locked? [_]))
 
   (defprotocol PPhysics
-    (update-particles [_])
-    (update-springs [_]))
+    (update-particles [_ delta])
+    (update-springs [_ delta]))
 #+END_SRC
 
 ** Type implementations
@@ -57,11 +57,11 @@
       (loop [f (seq fns)] (when f ((first f) p delta) (recur (next f))))))
 
   (defn apply-to-particles
-    [src delta fns]
-    (loop [coll (seq src)]
-      (when coll
-        (apply-to-particle (first coll) delta fns)
-        (recur (next coll)))))
+    [particles delta fns]
+    (loop [ps (seq particles)]
+      (when ps
+        (apply-to-particle (first ps) delta fns)
+        (recur (next ps)))))
 
   (deftype VerletParticle
       ,#+clj
@@ -171,7 +171,7 @@
       [particles springs behaviors constraints drag]
     PBehavioral
     (add-behavior
-      [_ id b] (assoc-in _ [:behaviors id] (b delta)))
+      [_ id b] (assoc-in _ [:behaviors id] b))
     (apply-behaviors
       [_ delta] (apply-to-particles particles delta (vals behaviors)) _)
     (remove-behavior
@@ -180,7 +180,7 @@
       [_] (assoc _ behaviors {}))
     PConstrained
     (add-constraint
-      [_ id c] (assoc-in _ [:constraints id] (c delta)))
+      [_ id c] (assoc-in _ [:constraints id] c))
     (apply-constraints
       [_ delta] (apply-to-particles particles delta (vals constraints)) _)
     (remove-constraint
