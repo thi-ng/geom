@@ -1,5 +1,26 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_3_gh:
+ - [[#thinggeomwebglshaders][thi.ng.geom.webgl.shaders]]
+     - [[#shader-uniforms][Shader uniforms]]
+         - [[#supported-types][Supported types]]
+         - [[#uniform-setup--handling][Uniform setup & handling]]
+     - [[#shader-attributes][Shader attributes]]
+     - [[#shader-creation][Shader creation]]
+         - [[#header-injection][Header injection]]
+         - [[#creation-compilation--linking][Creation, compilation & linking]]
+     - [[#shader-pipeline][Shader pipeline]]
+     - [[#shading-state-preparation][Shading state preparation]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+     - [[#presets][Presets]]
+         - [[#basic][Basic]]
+         - [[#lambert][Lambert]]
+         - [[#phong][Phong]]
+         - [[#x-ray][X-Ray]]
+         - [[#spotlight][Spotlight]]
+         - [[#shadow][Shadow]]
+         - [[#2d-overlay][2D Overlay]]
+
 * thi.ng.geom.webgl.shaders
 
 ** Shader uniforms
@@ -211,6 +232,8 @@ Currently the following options are supported:
 
 #+BEGIN_SRC clojure :noweb-ref state
   (defn prepare-render-state
+    "Takes a Gl context and shader spec, sets GL render flags stored
+    under :state key."
     [gl {:keys [state]}]
     (if (:depth-test state)
       (gl/enable gl gl/depth-test)
@@ -220,7 +243,8 @@ Currently the following options are supported:
         (doto gl
           (gl/enable gl/blend)
           (.blendFunc src dest)))
-      (gl/disable gl gl/blend)))
+      (gl/disable gl gl/blend))
+    gl)
 #+END_SRC
 
 ** Complete namespace definition
@@ -735,7 +759,7 @@ Currently the following options are supported:
                    :uniforms {:tex 0
                               :proj (gl/ortho)}
                    :mode     gl/triangle-strip
-                   :count    4}]
+                   :num-vertices 4}]
          (if init-shader?
            (assoc spec :shader (sh/make-shader-from-spec gl shader-spec))
            spec))))
