@@ -52,12 +52,15 @@
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn typed-array?
     [x]
-    (let [t (type x)]
-      (or
-       (= t js/Int8Array)    (= t js/Uint8Array)  (= t js/Uint8ClampedArray)
-       (= t js/Int16Array)   (= t js/Uint16Array)
-       (= t js/Int32Array)   (= t js/Uint32Array)
-       (= t js/Float32Array) (= t js/Float64Array))))
+    (cond
+     (sequential? x) false
+     (number? x)     false
+     :else (let [t (type x)]
+             (or
+              (= t js/Float32Array) (= t js/Int32Array)
+              (= t js/Float64Array) (= t js/Uint32Array)
+              (= t js/Int8Array)    (= t js/Uint8Array)  (= t js/Uint8ClampedArray)
+              (= t js/Int16Array)   (= t js/Uint16Array)))))
 #+END_SRC
 
 ** Complete namespace definition
