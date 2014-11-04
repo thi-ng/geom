@@ -415,6 +415,59 @@
           buf))))
 #+END_SRC
 
+*** TODO Attribute buffer generation
+
+This needs more work: Colors & UVs might/will be based on vertices,
+but vertex buffer contains copies of each vertex due to unrolling and
+use of non-indexed VBOs.
+
+Therefore, currently only normals & single color options are properly
+supported.
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn common-attrib-buffer-specs
+    [{:keys [num-vertices] :as acc} {:keys [normals fixed-normal uv colors single-color]}]
+    (let [c-stride (if colors
+                     (count (first colors))
+                     (if single-color (count single-color)))]
+      (cond->
+       acc
+
+       normals
+       (assoc-in [:attribs :normal] {:data normals :size 3})
+
+       fixed-normal
+       (assoc-in
+        [:attribs :normal]
+        {:data (fill-buffer-vec3
+                (arrays/float32 (* num-vertices 3))
+                0 fixed-normal num-vertices 3)
+         :size 3})
+
+       uv
+       (assoc-in
+        [:attribs :uv]
+        {:data (fill-vertex-buffer
+                (arrays/float32 (* 2 (count uv))) uv 2)
+         :size 2})
+
+       colors
+       (assoc-in
+        [:attribs :color]
+        {:data (fill-vertex-buffer
+                (arrays/float32 (* c-stride (count colors)))
+                colors c-stride)
+         :size 4})
+
+       single-color
+       (assoc-in
+        [:attribs :color]
+        {:data (fill-buffer
+                (arrays/float32 (* num-vertices c-stride))
+                0 single-color num-vertices c-stride)
+         :size c-stride}))))
+#+END_SRC
+
 ** WebGL buffer conversions
 
 *** Vec2 & Vec3
@@ -476,10 +529,9 @@ using the protocol.
   (extend-type thi.ng.geom.types.LineStrip2
     PWebGLConvert
     (as-webgl-buffer-spec
-      [{:keys [points]} {:keys [stride uv color] :or {stride 2}}]
-      (let [numv     (count points)
-            c-stride (if color (count color))]
-        (cond->
+      [{:keys [points]} {:keys [stride] :or {stride 2} :as spec}]
+      (let [numv     (count points)]
+        (common-attrib-buffer-specs
          {:attribs
           {:position    {:data (fill-vertex-buffer
                                 (arrays/float32 (* numv stride))
@@ -487,12 +539,28 @@ using the protocol.
                          :size stride}}
           :mode         line-strip
           :num-vertices numv}
-         color (assoc-in
-                [:attribs :color]
-                {:data (fill-buffer
-                        (arrays/float32 (* numv (count color)))
-                        0 color numv (count color))
-                 :size c-stride})))))
+         spec))))
+#+END_SRC
+
+*** Rect
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  (extend-type thi.ng.geom.types.Rect2
+    PWebGLConvert
+    (as-webgl-buffer-spec
+      [r {:keys [stride normals] :or {stride 2} :as spec}]
+      (let [[a b c d] (g/vertices r)]
+        (common-attrib-buffer-specs
+         {:attribs
+          {:position    {:data (fill-vertex-buffer
+                                (arrays/float32 (* 4 stride))
+                                [a b d c] stride)
+                         :size stride}}
+          :mode         triangle-strip
+          :num-vertices 4}
+         (if normals
+           (-> spec (assoc :fixed-normal V3Z) (dissoc :normals))
+           spec)))))
 #+END_SRC
 
 *** Polygon
@@ -501,12 +569,11 @@ using the protocol.
   (extend-type thi.ng.geom.types.Polygon2
     PWebGLConvert
     (as-webgl-buffer-spec
-      [_ {:keys [normals stride uv color] :or {stride 3, normals true}}]
+      [_ {:keys [normals stride] :or {stride 2, normals true} :as spec}]
       (let [faces     (g/tessellate _)
             num-faces (count faces)
-            num-verts (* num-faces 3)
-            c-stride  (if color (count color))]
-        (cond->
+            num-verts (* num-faces 3)]
+        (common-attrib-buffer-specs
          {:attribs {:position {:data (fill-vertex-buffer
                                       (arrays/float32 (* num-verts stride))
                                       faces stride)
@@ -514,18 +581,9 @@ using the protocol.
           :mode         triangles
           :num-vertices num-verts
           :num-faces    num-faces}
-         normals (assoc-in
-                  [:attribs :normal]
-                  {:data (fill-buffer-vec3
-                          (arrays/float32 (* num-verts 3))
-                          0 V3Z num-verts 3)
-                   :size 3})
-         color   (assoc-in
-                  [:attribs :color]
-                  {:data (fill-buffer
-                          (arrays/float32 (* num-verts c-stride))
-                          0 color num-verts c-stride)
-                   :size c-stride})))))
+         (if normals
+           (-> spec (assoc :fixed-normal V3Z) (dissoc :normals))
+           spec)))))
 #+END_SRC
 
 *** BasicMesh
@@ -534,47 +592,12 @@ using the protocol.
   (extend-type thi.ng.geom.types.BasicMesh
     PWebGLConvert
     (as-webgl-buffer-spec
-      [_ {:keys [fnormals tessellate stride color] :or {stride 3, fnormals true}}]
+      [_ {:keys [fnormals tessellate stride] :or {stride 3, fnormals true} :as spec}]
       (let [m         (if tessellate (g/tessellate _) _)
             faces     (g/faces m)
             num-faces (count faces)
-            num-verts (* num-faces 3)
-            c-stride  (if color (count color))]
-        (cond->
-         {:attribs
-          {:position {:data (fill-vertex-buffer
-                             (arrays/float32 (* num-verts stride))
-                             faces stride)
-                      :size stride}}
-          :mode         triangles
-          :num-vertices num-verts
-          :num-faces    num-faces}
-         fnormals (assoc-in [:attribs :normal] {:data (face-normals m) :size 3})
-         color    (assoc-in
-                   [:attribs :color]
-                   {:data (fill-buffer
-                           (arrays/float32 (* num-verts c-stride))
-                           0 color num-verts c-stride)
-                    :size c-stride})))))
-#+END_SRC
-
-*** GMesh
-
-#+BEGIN_SRC clojure :noweb-ref impl
-  (extend-type thi.ng.geom.types.GMesh
-    PWebGLConvert
-    (as-webgl-buffer-spec
-      [_ {:keys [vnormals fnormals tessellate stride color] :or {stride 3, fnormals true}}]
-      (let [m         (if tessellate (g/tessellate _) _)
-            faces     (g/faces m)
-            num-faces (count faces)
-            num-verts (* num-faces 3)
-            c-stride  (if color (count color))
-            normals   (cond
-                       vnormals (vertex-normals m)
-                       fnormals (face-normals m)
-                       :default nil)]
-        (cond->
+            num-verts (* num-faces 3)]
+        (common-attrib-buffer-specs
          {:attribs
           {:position    {:data (fill-vertex-buffer
                                 (arrays/float32 (* num-verts stride))
@@ -583,13 +606,34 @@ using the protocol.
           :mode         triangles
           :num-vertices num-verts
           :num-faces    num-faces}
-         normals (assoc-in [:attribs :normal] {:data normals :size 3})
-         color   (assoc-in
-                  [:attribs :color]
-                  {:data (fill-buffer
-                          (arrays/float32 (* num-verts c-stride))
-                          0 color num-verts c-stride)
-                   :size c-stride})))))
+         (assoc spec :normals (if fnormals (face-normals m)))))))
+#+END_SRC
+
+*** GMesh
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  (extend-type thi.ng.geom.types.GMesh
+    PWebGLConvert
+    (as-webgl-buffer-spec
+      [_ {:keys [vnormals fnormals tessellate stride] :or {stride 3, fnormals true} :as spec}]
+      (let [m         (if tessellate (g/tessellate _) _)
+            faces     (g/faces m)
+            num-faces (count faces)
+            num-verts (* num-faces 3)
+            normals   (cond
+                       vnormals (vertex-normals m)
+                       fnormals (face-normals m)
+                       :default nil)]
+        (common-attrib-buffer-specs
+         {:attribs
+          {:position    {:data (fill-vertex-buffer
+                                (arrays/float32 (* num-verts stride))
+                                faces stride)
+                         :size stride}}
+          :mode         triangles
+          :num-vertices num-verts
+          :num-faces    num-faces}
+         (assoc spec :normals normals)))))
 #+END_SRC
 
 ** WegGL context
