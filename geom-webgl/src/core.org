@@ -335,7 +335,7 @@
 ** Helpers
 
 #+BEGIN_SRC clojure :noweb-ref helpers
-  (defn- fill-buffer-vec2
+  (defn fill-buffer-vec2
     [buf idx [x y] num stride]
     (loop [idx 0, num num]
       (when (pos? num)
@@ -345,7 +345,7 @@
         (recur (+ idx stride) (dec num))))
     buf)
 
-  (defn- fill-buffer-vec3
+  (defn fill-buffer-vec3
     [buf idx [x y z] num stride]
     (loop [idx 0, num num]
       (when (pos? num)
@@ -356,7 +356,7 @@
         (recur (+ idx stride) (dec num))))
     buf)
 
-  (defn- fill-buffer
+  (defn fill-buffer
     [buf idx coll n stride]
     (let [nc  (count coll)]
       (loop [i idx, n n]
@@ -368,14 +368,14 @@
           (recur (+ i stride) (dec n))))
       buf))
 
-  (defn- fill-vertex-buffer
+  (defn fill-vertex-buffer
     [buf coll stride]
     (loop [i 0, coll (seq coll)]
       (if coll
         (recur (into-buffer (first coll) buf i stride) (next coll))
         buf)))
 
-  (defn- face-normals
+  (defn face-normals
     [m]
     (let [fnorms (g/face-normals m true)
           faces (g/faces m)
@@ -399,7 +399,7 @@
             (recur (+ idx 9) (next faces)))
           buf))))
 
-  (defn- vertex-normals
+  (defn vertex-normals
     [m]
     (let [vnorms (g/vertex-normals m true)
           faces (g/faces m)
