@@ -79,7 +79,7 @@ link for more discussion about these options.
                       gl (basic/make-color-shader-spec {:use-attrib true :3d false}))
           teeth      20
           model      (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
-                         (gl/as-webgl-buffer-spec {:normals false :color [1 0 0 1]})
+                         (gl/as-webgl-buffer-spec {:normals false :single-color [1 0 0 1]})
                          (buf/make-attribute-buffers-in-spec gl gl/static-draw))
           view-rect  (gl/get-viewport-rect gl)
           proj       (gl/ortho view-rect)
