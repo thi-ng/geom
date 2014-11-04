@@ -73,6 +73,7 @@ link for more discussion about these options.
     []
     (enable-console-print!)
     (let [gl         (gl/gl-context "main")
+          view-rect  (gl/get-viewport-rect gl)
           shader1    (sh/make-shader-from-spec
                       gl (basic/make-color-shader-spec {:use-attrib false :3d false}))
           shader2    (sh/make-shader-from-spec
@@ -80,9 +81,8 @@ link for more discussion about these options.
           teeth      20
           model      (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
                          (gl/as-webgl-buffer-spec {:normals false :single-color [1 0 0 1]})
-                         (buf/make-attribute-buffers-in-spec gl gl/static-draw))
-          view-rect  (gl/get-viewport-rect gl)
-          proj       (gl/ortho view-rect)
+                         (buf/make-attribute-buffers-in-spec gl gl/static-draw)
+                         (assoc-in [:uniforms :proj] (gl/ortho view-rect)))
           stats      (init-stats)]
       (anim/animate
        (fn [[t frame]]
@@ -90,18 +90,18 @@ link for more discussion about these options.
          (gl/clear-color-buffer gl 1 0.98 0.95 1.0)
          ;; draw left polygon using color uniform (that's why we need to remove color attrib)
          (buf/draw-arrays
-          gl (assoc model
-               :shader  shader1
-               :attribs (dissoc (:attribs model) :color)
-               :uniforms {:model (-> M44 (g/translate -0.48 0 0) (g/rotate t))
-                          :proj  proj
-                          :color [0 1 1 1]}))
+          gl (-> model
+                 (assoc :shader  shader1)
+                 (update-in [:attribs] dissoc :color)
+                 (update-in [:uniforms] merge
+                            {:model (-> M44 (g/translate -0.48 0 0) (g/rotate t))
+                             :color [0 1 1 1]})))
          ;; draw right polygon using color attribs
          (buf/draw-arrays
-          gl (assoc model
-               :shader  shader2
-               :uniforms {:model (-> M44 (g/translate 0.48 0 0) (g/rotate (- (+ t (/ HALF_PI teeth)))))
-                          :proj  proj}))
+          gl (-> model
+                 (assoc :shader shader2)
+                 (assoc-in [:uniforms :model]
+                           (-> M44 (g/translate 0.48 0 0) (g/rotate (- (+ t (/ HALF_PI teeth))))))))
          (update-stats stats)
          true))))
 #+END_SRC
