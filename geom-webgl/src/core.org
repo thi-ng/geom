@@ -457,7 +457,7 @@ supported.
         {:data (fill-vertex-buffer
                 (arrays/float32 (* c-stride (count colors)))
                 colors c-stride)
-         :size 4})
+         :size c-stride})
 
        single-color
        (assoc-in
@@ -569,21 +569,33 @@ using the protocol.
   (extend-type thi.ng.geom.types.Polygon2
     PWebGLConvert
     (as-webgl-buffer-spec
-      [_ {:keys [normals stride] :or {stride 2, normals true} :as spec}]
-      (let [faces     (g/tessellate _)
-            num-faces (count faces)
-            num-verts (* num-faces 3)]
-        (common-attrib-buffer-specs
-         {:attribs {:position {:data (fill-vertex-buffer
-                                      (arrays/float32 (* num-verts stride))
-                                      faces stride)
-                               :size stride}}
-          :mode         triangles
-          :num-vertices num-verts
-          :num-faces    num-faces}
-         (if normals
-           (-> spec (assoc :fixed-normal V3Z) (dissoc :normals))
-           spec)))))
+      [_ {:keys [normals stride mode] :or {stride 2, normals true, mode triangles} :as spec}]
+      (if (= triangles mode)
+        (let [faces     (g/tessellate _)
+              num-faces (count faces)
+              num-verts (* num-faces 3)]
+          (common-attrib-buffer-specs
+           {:attribs {:position {:data (fill-vertex-buffer
+                                        (arrays/float32 (* num-verts stride))
+                                        faces stride)
+                                 :size stride}}
+            :mode         mode
+            :num-vertices num-verts
+            :num-faces    num-faces}
+           (if normals
+             (-> spec (assoc :fixed-normal V3Z) (dissoc :normals))
+             spec)))
+        (let [verts     (g/vertices _)
+              verts     (conj verts (first verts))
+              num-verts (count verts)]
+          (common-attrib-buffer-specs
+           {:attribs {:position {:data (fill-vertex-buffer
+                                        (arrays/float32 (* num-verts stride))
+                                        verts stride)
+                                 :size stride}}
+            :mode         mode
+            :num-vertices num-verts}
+           (dissoc spec :normals))))))
 #+END_SRC
 
 *** BasicMesh
