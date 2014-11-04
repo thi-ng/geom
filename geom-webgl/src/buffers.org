@@ -15,17 +15,25 @@
   (defn make-attribute-buffers
     [^WebGLRenderingContext gl mode specs]
     (reduce-kv
-     (fn [specs id {:keys [data target]}]
-       (assoc-in
-        specs [id :buffer]
-        (make-attribute-buffer gl (or target gl/array-buffer) mode data)))
+     (fn [specs id {:keys [data target] :or {target gl/array-buffer}}]
+       (update-in
+        specs [id] merge
+        {:buffer      (make-attribute-buffer gl target mode data)
+         :target      target
+         :buffer-mode mode}))
      specs specs))
 
   (defn make-attribute-buffers-in-spec
-   [model-spec ^WebGLRenderingContext gl mode]
-   (update-in
-     model-spec [:attribs]
-     #(make-attribute-buffers gl mode %)))
+    [model-spec ^WebGLRenderingContext gl mode]
+    (update-in model-spec [:attribs] #(make-attribute-buffers gl mode %)))
+
+  (defn update-buffer-in-spec
+    [^WebGLRenderingContext gl spec id coll]
+    (let [{:keys [target data buffer buffer-mode size]} (-> spec :attribs id)]
+      (gl/fill-vertex-buffer data coll size)
+      (.bindBuffer gl target buffer)
+      (.bufferData gl target data buffer-mode)
+      gl))
 
   (defn draw-arrays
     [^WebGLRenderingContext gl
