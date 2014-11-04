@@ -345,6 +345,12 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<tpl-normalize(type="thi.ng.geom.types.Line3")>>
 #+END_SRC
+**** PProximity
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/PProximity
+  (closest-point
+   [{p :points} q] (gu/closest-point-on-segment (vec3 q) (p 0) (p 1)))
+#+END_SRC
 **** PReflect                                               :verify:template:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<tpl-reflect(type="thi.ng.geom.types.Line3", ctor="line3")>>
