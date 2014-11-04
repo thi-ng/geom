@@ -19,7 +19,7 @@
           p  (tangents ii)
           q  (tangents i)
           a  (g/cross p q)
-          n  (if (not (m/delta= 0.0 (g/mag-squared a)))
+          n  (if-not (m/delta= 0.0 (g/mag-squared a))
                (let [theta (Math/acos (m/clamp-normalized (g/dot p q)))]
                  (g/transform-vector (g/rotate-around-axis M44 (g/normalize a) theta) (norms ii)))
                (norms ii))]
@@ -30,8 +30,7 @@
     (let [t' (g/abs t)
           i  (if (< (t' 0) (t' 1)) 0 1)
           i  (if (< (t' 2) (t' i)) 2 i)
-          v  (g/normalize (g/cross t (assoc V3 i 1.0)))
-          n  (g/cross t v)]
+          n  (g/cross t (g/normalize (g/cross t (assoc V3 i 1.0))))]
       [n (g/cross t n)]))
 
   (defn compute-frames
@@ -78,14 +77,15 @@
       (->> (next frames)
            (reduce
             (fn [[faces prev] frame]
-              (let [curr (tx frame)
+              (let [curr  (tx frame)
+                    curr  (conj curr (first curr))
                     faces (->> (mapcat
-                                (fn [[a b] [c d]] [[a b d c]])
-                                (d/successive-nth 2 (conj prev (first prev)))
-                                (d/successive-nth 2 (conj curr (first curr))))
+                                (fn [a b] [(vector (a 0) (a 1) (b 1) (b 0))])
+                                (d/successive-nth 2 prev)
+                                (d/successive-nth 2 curr))
                                (concat faces))]
                 [faces curr]))
-            [nil (tx (first frames))])
+            [nil (tx (conj (first frames) (ffirst frames)))])
            (first))))
 
   (defn sweep-mesh
@@ -99,7 +99,7 @@
   (defn sweep-strand
     [[p _ n b] r theta delta profile]
     (-> (mapv
-         #(->> (vec2 r (+ (* % delta) theta))
+         #(->> (vec2 r (mm/madd % delta theta))
                (g/as-cartesian)
                (sweep-point (p %) (n %) (b %)))
          (range (count p)))
