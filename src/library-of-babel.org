@@ -21,6 +21,12 @@ them from other templates.
    bindings :initial-value src)
 #+END_SRC
 
+** PArea (zero)
+#+NAME: lob-geom-zeroarea
+#+BEGIN_SRC clojure
+  g/PArea
+  (area [_] 0.0)
+#+END_SRC
 ** PBounds
 #+NAME: lob-geom-bounds
 #+BEGIN_SRC emacs-lisp :var fn="" :var depth="no"
