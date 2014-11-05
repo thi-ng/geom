@@ -1,6 +1,102 @@
 #+SETUPFILE: ../../src/setup.org
 
-* thi.ng.geom.line
+* Contents                                                         :toc_4_gh:
+ - [[#namespace-thinggeomline][Namespace: thi.ng.geom.line]]
+     - [[#constructors][Constructors]]
+     - [[#shared-helper-functions][Shared helper functions]]
+     - [[#reusable-protocol-templates-for-2d3d][Reusable protocol templates for 2d/3d]]
+         - [[#pcenter][PCenter]]
+         - [[#pbounds][PBounds]]
+         - [[#pcircumference][PCircumference]]
+         - [[#pextrude][PExtrude]]
+         - [[#pgraph][PGraph]]
+         - [[#pmagnitude][PMagnitude]]
+         - [[#todo-pnormalize][TODO PNormalize]]
+         - [[#preflect][PReflect]]
+         - [[#protate][PRotate]]
+         - [[#psample][PSample]]
+         - [[#ptransform][PTransform]]
+     - [[#line2][Line2]]
+         - [[#protocol-implementations][Protocol implementations]]
+             - [[#parea][PArea]]
+             - [[#pboundary][PBoundary]]
+             - [[#pbounds][PBounds]]
+             - [[#pboundingcircle][PBoundingCircle]]
+             - [[#pcenter][PCenter]]
+             - [[#pcircumference][PCircumference]]
+             - [[#pclassify][PClassify]]
+             - [[#pextrude][PExtrude]]
+             - [[#pgraph][PGraph]]
+             - [[#pintersect][PIntersect]]
+             - [[#pmagnitude][PMagnitude]]
+             - [[#pnormalize][PNormalize]]
+             - [[#pproximity][PProximity]]
+             - [[#preflect][PReflect]]
+             - [[#psample][PSample]]
+             - [[#ptransform][PTransform]]
+             - [[#pvolume][PVolume]]
+             - [[#end-of-implementations][End of implementations]]
+     - [[#line3][Line3]]
+         - [[#protocol-implementations][Protocol implementations]]
+             - [[#parea][PArea]]
+             - [[#todo-pboundary][TODO PBoundary]]
+             - [[#pbounds][PBounds]]
+             - [[#pboundingsphere][PBoundingSphere]]
+             - [[#pcenter][PCenter]]
+             - [[#pcircumference][PCircumference]]
+             - [[#todo-pclassify][TODO PClassify]]
+             - [[#pextrude][PExtrude]]
+             - [[#pgraph][PGraph]]
+             - [[#todo-pintersect][TODO PIntersect]]
+             - [[#pmagnitude][PMagnitude]]
+             - [[#pnormalize][PNormalize]]
+             - [[#pproximity][PProximity]]
+             - [[#preflect][PReflect]]
+             - [[#psample][PSample]]
+             - [[#ptransform][PTransform]]
+             - [[#pvolume][PVolume]]
+             - [[#end-of-implementations][End of implementations]]
+     - [[#todo-linestrip2][TODO LineStrip2]]
+         - [[#protocol-implementations][Protocol implementations]]
+             - [[#parea][PArea]]
+             - [[#todo-pboundary][TODO PBoundary]]
+             - [[#pbounds][PBounds]]
+             - [[#pboundingcircle][PBoundingCircle]]
+             - [[#pcenter][PCenter]]
+             - [[#pcircumference][PCircumference]]
+             - [[#todo-pboundary][TODO PBoundary]]
+             - [[#pextrude][PExtrude]]
+             - [[#todo-pgraph][TODO PGraph]]
+             - [[#todo-pintersect][TODO PIntersect]]
+             - [[#pmagnitude][PMagnitude]]
+             - [[#pproximity][PProximity]]
+             - [[#todo-preflect][TODO PReflect]]
+             - [[#psample][PSample]]
+             - [[#todo-ptransform][TODO PTransform]]
+             - [[#pvolume][PVolume]]
+             - [[#end-of-implementations][End of implementations]]
+     - [[#todo-linestrip3][TODO LineStrip3]]
+         - [[#protocol-implementations][Protocol implementations]]
+             - [[#parea][PArea]]
+             - [[#todo-pboundary][TODO PBoundary]]
+             - [[#pbounds][PBounds]]
+             - [[#pboundingsphere][PBoundingSphere]]
+             - [[#pcenter][PCenter]]
+             - [[#pcircumference][PCircumference]]
+             - [[#todo-pboundary][TODO PBoundary]]
+             - [[#pextrude][PExtrude]]
+             - [[#todo-pgraph][TODO PGraph]]
+             - [[#todo-pintersect][TODO PIntersect]]
+             - [[#pmagnitude][PMagnitude]]
+             - [[#pproximity][PProximity]]
+             - [[#todo-preflect][TODO PReflect]]
+             - [[#psample][PSample]]
+             - [[#todo-ptransform][TODO PTransform]]
+             - [[#pvolume][PVolume]]
+             - [[#end-of-implementations][End of implementations]]
+     - [[#namespace-declaration][Namespace declaration]]
+
+* Namespace: thi.ng.geom.line
 
 ** Constructors
 #+BEGIN_SRC clojure :noweb-ref ctors
@@ -40,7 +136,8 @@ These functions are used for both 2D/3D implementations:
 These templates are used for protocol implementations which only have
 minor differences between the 2d/3d versions. Templates with variables
 are wrapped in an Emacs Lisp form and will have the variables injected
-during code generation. See call sites in [[Line2]] & [[Line3]] further below.
+during code generation/tangling. See call sites in [[Line2]] & [[Line3]]
+further below.
 
 *** PCenter
 #+NAME: tpl-center
@@ -70,7 +167,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 *** PCircumference
 #+BEGIN_SRC clojure :noweb-ref tpl-circum
   g/PCircumference
-  (circumference [{p :points}] (* 2.0 (g/dist (p 0) (p 1))))
+  (circumference [{p :points}] (g/dist (p 0) (p 1)))
 #+END_SRC
 *** PExtrude
 #+BEGIN_SRC clojure :noweb-ref tpl-extrude
@@ -79,10 +176,12 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
    [{points :points :as _}
     {:keys [mesh depth scale offset] :or {depth 1.0 scale 1.0}}]
    (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
-         off (or offset (vec3 0 0 depth))
-         a (vec3 (points 0)), b (vec3 (points 1))
-         ta (g/+ off (tpoints 0)), tb (g/+ off (tpoints 1))]
-     (g/add-face (or mesh (gm/gmesh)) [a b tb ta])))
+         off     (or offset (vec3 0 0 depth))
+         a       (vec3 (points 0))
+         b       (vec3 (points 1))
+         ta      (g/+ off (tpoints 0))
+         tb      (g/+ off (tpoints 1))]
+     (g/add-face (or mesh (bm/gmesh)) [a b tb ta])))
 #+END_SRC
 *** PGraph
 #+BEGIN_SRC clojure :noweb-ref tpl-graph
@@ -106,7 +205,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   (mag [{p :points}] (g/dist (p 0) (p 1)))
   (mag-squared [{p :points}] (g/dist-squared (p 0) (p 1)))
 #+END_SRC
-*** PNormalize
+*** TODO PNormalize
 #+NAME: tpl-normalize
 #+BEGIN_SRC emacs-lisp :noweb yes :var type="" :results output
   (princ
@@ -284,17 +383,10 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 #+END_SRC
 **** PArea
 #+BEGIN_SRC clojure :noweb-ref impl3
-  g/PArea
-  (area [_] 0)
+  <<lob-geom-zeroarea>>
 #+END_SRC
 **** TODO PBoundary
 #+BEGIN_SRC clojure :noweb-ref impl3
-  g/PClassify
-  (classify-point
-   [{p :points} p] nil) ; TODO needs normal to define plane to classify
-  g/PProximity
-  (closest-point
-   [{p :points} q] (gu/closest-point-on-segment (vec3 q) (p 0) (p 1)))
   g/PBoundary
   (contains-point?
    [{p :points} q] (m/in-range? 0.0 1.0 (gu/closest-point-coeff (vec3 q) (p 0) (p 1))))
@@ -318,6 +410,12 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 **** PCircumference                                                :template:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<tpl-circum>>
+#+END_SRC
+**** TODO PClassify
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/PClassify
+  (classify-point
+   [{p :points} p] nil) ; TODO needs normal to define plane to classify
 #+END_SRC
 **** PExtrude                                                           :template:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
@@ -394,38 +492,24 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 #+END_SRC
 **** PArea
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
-  g/PArea
-  (area [_] 0)
+  <<lob-geom-zeroarea>>
 #+END_SRC
 **** TODO PBoundary
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
-  g/PBoundary
-  (classify-point [_ v])
-  g/PProximity
-  (closest-point [{points :points} p])
   g/PBoundary
   (contains-point? [_ a])
 #+END_SRC
 **** PBounds
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
-  g/PBounds
-  (bounds [_] (tu/bounding-rect (:points _)))
-  (width [_] (gu/axis-range 0 (:points _)))
-  (height [_] (gu/axis-range 1 (:points _)))
-  (depth [_] 0)
+  <<lob-geom-bounds(fn="tu/bounding-rect")>>
 #+END_SRC
 **** PBoundingCircle
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
-  g/PBoundingCircle
-  (bounding-circle
-   [_] (tu/bounding-circle (g/centroid _) (:points _)))
+  <<lob-geom-bcircle>>
 #+END_SRC
 **** PCenter
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
-  g/PCenter
-  (center
-   ([_] (g/translate _ (g/- (g/centroid _))))
-   ([_ o] (g/translate _ (g/- (vec2 o) (g/centroid _)))))
+  <<lob-geom-center(type="thi.ng.geom.types.LineStrip2",vtype="vec2")>>
   (centroid
    [_] (gu/centroid (:points _)))
 #+END_SRC
@@ -433,20 +517,25 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
   g/PCircumference
   (circumference
-   [_] (* 2.0 (g/mag _)))
+   [_] (g/mag _))
+#+END_SRC
+**** TODO PBoundary
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  g/PClassify
+  (classify-point [_ v])
 #+END_SRC
 **** PExtrude                                                        :verify:
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
   g/PExtrude
   (extrude
-   [{points :points :as _}
-    {:keys [mesh depth scale] :or {depth 1.0 scale 1.0}}]
+   [{:keys [points] :as _}
+    {:keys [mesh depth offset scale] :or {depth 1.0 scale 1.0}}]
    (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
-         off (vec3 0 0 depth)
-         bottom (map vec3 points)
-         top (map #(g/+ off %) tpoints)]
+         off     (or offset (vec3 0 0 depth))
+         bottom  (map vec3 points)
+         top     (map #(g/+ off %) tpoints)]
      (g/into
-      (or mesh (gm/gmesh))
+      (or mesh (bm/gmesh))
       (mapcat
        (fn [[a1 a2] [b1 b2]] [[a1 b1 b2 a2]])
        (d/successive-nth 2 bottom)
@@ -469,8 +558,10 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   (vertex-valence
    [{points :points} v]
    (if-let [p (d/neighbors v points)]
-     (if (or (= p (first points)) (= p (peek points)))
-       1 2)
+     (if (= (first points) (peek points))
+       2
+       (if (or (= p (first points)) (= p (peek points)))
+         1 2))
      0))
 #+END_SRC
 **** TODO PIntersect
@@ -485,6 +576,10 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
    [_] (d/reduce-pairs + g/dist (:points _)))
   (mag-squared
    [_] (d/reduce-pairs + g/dist-squared (:points _)))
+#+END_SRC
+**** PProximity                                                 :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl :noweb yes
+  <<lob-geom-proxi>>
 #+END_SRC
 **** TODO PReflect
 ***** TODO add support for reflect-on-line
@@ -541,6 +636,156 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   )
 #+END_SRC
 
+** TODO LineStrip3
+*** Protocol implementations
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  (extend-type thi.ng.geom.types.LineStrip3
+#+END_SRC
+**** PArea
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  <<lob-geom-zeroarea>>
+#+END_SRC
+**** TODO PBoundary
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/PBoundary
+  (contains-point? [_ a])
+#+END_SRC
+**** PBounds
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  <<lob-geom-bounds(fn="tu/bounding-box",depth="yes")>>
+#+END_SRC
+**** PBoundingSphere
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  <<lob-geom-bsphere>>
+#+END_SRC
+**** PCenter
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  <<lob-geom-center(type="thi.ng.geom.types.LineStrip3",vtype="vec3")>>
+  (centroid
+   [_] (gu/centroid (:points _)))
+#+END_SRC
+**** PCircumference
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/PCircumference
+  (circumference
+   [_] (g/mag _))
+#+END_SRC
+**** TODO PBoundary
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/PClassify
+  (classify-point [_ v])
+#+END_SRC
+**** PExtrude                                                        :verify:
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/PExtrude
+  (extrude
+   [{:keys [points] :as _}
+    {:keys [mesh depth offset scale] :or {depth 1.0 scale 1.0}}]
+   (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
+         off     (or offset (vec3 0 0 depth))
+         top     (map #(g/+ off %) tpoints)]
+     (g/into
+      (or mesh (bm/gmesh))
+      (mapcat
+       (fn [[a1 a2] [b1 b2]] [[a1 b1 b2 a2]])
+       (d/successive-nth 2 points)
+       (d/successive-nth 2 top)))))
+#+END_SRC
+**** TODO PGraph                                                     :verify:
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/PVertexAccess
+  (vertices
+   ([_] (:points _))
+   ([{points :points} res]
+      (map #(gu/point-at % points) (m/norm-range res))))
+  g/PEdgeAccess
+  (edges
+   ([_] (d/successive-nth 2 (:points _)))
+   ([_ res] (d/successive-nth 2 (g/vertices _ res))))
+  g/PGraph
+  (vertex-neighbors
+   [_ v] (d/neighbors v (:points _)))
+  (vertex-valence
+   [{points :points} v]
+   (if-let [p (d/neighbors v points)]
+     (if (= (first points) (peek points))
+       2
+       (if (or (= p (first points)) (= p (peek points)))
+         1 2))
+     0))
+#+END_SRC
+**** TODO PIntersect
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/PIntersect
+  (intersect-line [_ l])
+#+END_SRC
+**** PMagnitude
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/PMagnitude
+  (mag
+   [_] (d/reduce-pairs + g/dist (:points _)))
+  (mag-squared
+   [_] (d/reduce-pairs + g/dist-squared (:points _)))
+#+END_SRC
+**** PProximity                                                 :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl :noweb yes
+  <<lob-geom-proxi>>
+#+END_SRC
+**** TODO PReflect
+***** TODO add support for reflect-on-line
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/PReflect
+  (reflect
+   [_ r]
+   (thi.ng.geom.types.LineStrip3. (mapv #(g/reflect % r) (:points _))))
+#+END_SRC
+**** PSample
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/PSample
+  (point-at
+   [_ t] (gu/point-at t (:points _) nil))
+  (random-point
+   [_] (gu/point-at (m/random) (:points _) nil))
+  (random-point-inside
+   [_] (g/random-point _))
+  (sample-uniform
+   [_ udist include-last?]
+   (gu/sample-uniform udist include-last? (:points _)))
+#+END_SRC
+**** TODO PTransform
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/PRotate
+  (rotate
+   [_ theta]
+   (thi.ng.geom.types.LineStrip3. (mapv #(g/rotate % theta) (:points _))))
+  g/PScale
+  (scale
+   ([_ s]
+      (thi.ng.geom.types.LineStrip3. (mapv #(g/* % s) (:points _))))
+   ([_ sx sy]
+      (thi.ng.geom.types.LineStrip3. (mapv #(g/* % sx sy) (:points _)))))
+  (scale-size
+   [_ s]
+   (thi.ng.geom.types.LineStrip3. (gu/scale-size s (:points _))))
+  g/PTranslate
+  (translate
+   [_ t]
+   (thi.ng.geom.types.LineStrip3. (mapv #(g/+ % t) (:points _))))
+  g/PTransform
+  (transform
+   [_ m]
+   (thi.ng.geom.types.LineStrip3. (mapv #(g/transform-vector m %) (:points _))))
+#+END_SRC
+**** PVolume
+#+BEGIN_SRC clojure :noweb-ref impl-ls3 :noweb yes
+  <<lob-geom-zerovol>>
+#+END_SRC
+
+**** End of implementations                                        :noexport:
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  )
+#+END_SRC
+
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/line.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.line
@@ -549,7 +794,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.data.core :as d]
@@ -569,5 +814,7 @@ during code generation. See call sites in [[Line2]] & [[Line3]] further below.
   <<impl3>>
 
   <<impl-ls2>>
+
+  <<impl-ls3>>
 #+END_SRC
 
