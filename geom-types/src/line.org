@@ -181,7 +181,7 @@ further below.
          b       (vec3 (points 1))
          ta      (g/+ off (tpoints 0))
          tb      (g/+ off (tpoints 1))]
-     (g/add-face (or mesh (bm/gmesh)) [a b tb ta])))
+     (g/add-face (or mesh (bm/basic-mesh)) [a b tb ta])))
 #+END_SRC
 *** PGraph
 #+BEGIN_SRC clojure :noweb-ref tpl-graph
@@ -535,7 +535,7 @@ further below.
          bottom  (map vec3 points)
          top     (map #(g/+ off %) tpoints)]
      (g/into
-      (or mesh (bm/gmesh))
+      (or mesh (bm/basic-mesh))
       (mapcat
        (fn [[a1 a2] [b1 b2]] [[a1 b1 b2 a2]])
        (d/successive-nth 2 bottom)
@@ -685,7 +685,7 @@ further below.
          off     (or offset (vec3 0 0 depth))
          top     (map #(g/+ off %) tpoints)]
      (g/into
-      (or mesh (bm/gmesh))
+      (or mesh (bm/basic-mesh))
       (mapcat
        (fn [[a1 a2] [b1 b2]] [[a1 b1 b2 a2]])
        (d/successive-nth 2 points)
