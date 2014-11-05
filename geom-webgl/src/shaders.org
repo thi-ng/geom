@@ -309,10 +309,10 @@ Currently the following options are supported:
 
   (def shader-spec
     {:vs "void main() {
-    vec3 tNormal = (normalMat * vec4(normal, 0.0)).xyz;
+    vec3 tNormal = normalize((normalMat * vec4(normal, 0.0)).xyz);
 
-    float lambert = min(max(dot(tNormal, lightDir) + 0.2, 0.0) * 0.8, 1.0);
-    vCol = vec4(ambientCol + lightCol * lambert, alpha);
+    float lambert = min(max(dot(tNormal, lightDir), 0.0), 1.0);
+    vCol = vec4(ambientCol + diffuseCol * lightCol * lambert, alpha);
     gl_Position = proj * view * model * vec4(position, 1.0);
   }"
      :fs "void main() { gl_FragColor = vCol; }"
@@ -321,6 +321,7 @@ Currently the following options are supported:
                 :normalMat  :mat4
                 :proj       :mat4
                 :ambientCol :vec3
+                :diffuseCol :vec3
                 :lightCol   :vec3
                 :lightDir   :vec3
                 :alpha      :float}
