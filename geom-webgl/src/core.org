@@ -542,6 +542,25 @@ using the protocol.
          spec))))
 #+END_SRC
 
+*** LineStrip3
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  (extend-type thi.ng.geom.types.LineStrip3
+    PWebGLConvert
+    (as-webgl-buffer-spec
+      [{:keys [points]} {:keys [stride] :or {stride 3} :as spec}]
+      (let [numv     (count points)]
+        (common-attrib-buffer-specs
+         {:attribs
+          {:position    {:data (fill-vertex-buffer
+                                (arrays/float32 (* numv stride))
+                                points stride)
+                         :size stride}}
+          :mode         line-strip
+          :num-vertices numv}
+         spec))))
+#+END_SRC
+
 *** Rect
 
 #+BEGIN_SRC clojure :noweb-ref impl
