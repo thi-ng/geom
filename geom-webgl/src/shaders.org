@@ -478,7 +478,7 @@ Currently the following options are supported:
   }
 
   vec3 skyLight(vec3 normal){
-    return vec3(smoothstep(0.0, PI, PI-acos(normal.y)))*0.4;
+    return vec3(smoothstep(0.0, PI, PI-acos(normal.y))) * 0.4;
   }
 
   vec3 gamma(vec3 color){
@@ -493,12 +493,10 @@ Currently the following options are supported:
     vec3 lightPosNormal = normalize(lightPos);
     vec3 lightSurfaceNormal = lightRot * worldNormal;
 
-    vec3 excident = (
-                     skyLight(worldNormal) +
+    vec3 excident = (skyLight(worldNormal) +
                      lambert(lightSurfaceNormal, -lightPosNormal) *
                      influence(lightPosNormal, coneAngle) *
-                     attenuation(lightPos)
-                     );
+                     attenuation(lightPos));
     gl_FragColor = vec4(gamma(excident), 1.0);
   }
 #+END_SRC
@@ -615,15 +613,13 @@ Currently the following options are supported:
 
     <<shadow-lerp2>>
 
-    vec3 excident = (
-                     0.4 + skyLight(worldNormal) +
+    vec3 excident = (0.4 + skyLight(worldNormal) +
                      lambert(lightSurfaceNormal, -lightPosNormal) *
                      influence(lightPosNormal, coneAngle) *
                      attenuation(lightPos) *
-                     illuminated
-                     );
+                     illuminated);
 
-    excident *=  worldNormal * 0.5 + 0.5; // TODO remove, debug only
+    //excident *=  worldNormal * 0.5 + 0.5; // TODO remove, debug only
 
     gl_FragColor = vec4(gamma(excident), 1.0);
   }
