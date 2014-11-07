@@ -5,7 +5,7 @@
      - [[#protocols][Protocols]]
      - [[#type-implementations][Type implementations]]
          - [[#verletparticle][VerletParticle]]
-         - [[#verletspring][VerletSpring]]
+         - [[#springs][Springs]]
          - [[#verletphysics][VerletPhysics]]
      - [[#behaviors][Behaviors]]
      - [[#constraints][Constraints]]
@@ -22,13 +22,13 @@
     (timestep [_ delta]))
 
   (defprotocol PBehavioral
-    (add-behavior [_ id b])
+    (add-behaviors [_ bmap])
     (remove-behavior [_ id])
     (clear-behaviors [_])
     (apply-behaviors [_ delta]))
 
   (defprotocol PConstrained
-    (add-constraint [_ id c])
+    (add-constraints [_ cmap])
     (remove-constraint [_ id])
     (clear-constraints [_])
     (apply-constraints [_ delta]))
@@ -65,8 +65,8 @@
      ^:unsynchronized-mutable locked?
      ^:unsynchronized-mutable behaviors
      ^:unsynchronized-mutable constraints
-     ^double weight
-     ^double inv-weight]
+     ^double inv-weight
+     _meta]
     ,#+cljs
     [^:mutable pos
      ^:mutable prev
@@ -74,11 +74,19 @@
      ^:mutable locked?
      ^:mutable behaviors
      ^:mutable constraints
-     weight
-     inv-weight]
+     inv-weight
+     _meta]
+    ,#+clj clojure.lang.IObj
+    ,#+cljs IMeta
+    (#+clj meta #+cljs -meta
+      [_] _meta)
+    ,#+cljs IWithMeta
+    (#+clj withMeta #+cljs -with-meta
+      [_ meta']
+      (VerletParticle. pos prev force locked? behaviors constraints inv-weight meta'))
     PBehavioral
-    (add-behavior
-      [_ id b] (set! behaviors (assoc behaviors id b)) _)
+    (add-behaviors
+      [_ bmap] (set! behaviors (merge behaviors bmap)) _)
     (apply-behaviors
       [_ delta] (when (seq behaviors) (apply-to-particle _ delta (vals behaviors))) _)
     (remove-behavior
@@ -86,8 +94,8 @@
     (clear-behaviors
       [_] (set! behaviors {}) _)
     PConstrained
-    (add-constraint
-      [_ id c] (set! constraints (assoc constraints id c)) _)
+    (add-constraints
+      [_ cmap] (set! constraints (merge constraints cmap)) _)
     (apply-constraints
       [_ delta] (when (seq constraints) (apply-to-particle _ delta (vals constraints))) _)
     (remove-constraint
@@ -136,20 +144,19 @@
         :prev prev
         :force force
         :locked? locked?
-        :weight weight
+        :inv-weight inv-weight
         :behaviors behaviors
         :constraints constraints})))
 #+END_SRC
 
-*** VerletSpring
+*** Springs
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  (defrecord VerletSpring
+  (defrecord Spring
       [^VerletParticle a
        ^VerletParticle b
-       ^double rlen
-       ^double strength
-       a-locked? b-locked?]
+       ^double rest-len
+       ^double strength]
     PTimeStep
     (timestep
       [_ delta]
@@ -159,11 +166,33 @@
             pb   (position b)
             diff (g/- pb pa)
             dist (+ (g/mag diff) 1e-6)
-            nd   (* (/ (- dist rlen) (* dist (+ aw bw))) (* strength delta))]
-        (when-not (or a-locked? (locked? a))
+            nd   (* (/ (- dist rest-len) (* dist (+ aw bw))) (* strength delta))]
+        (if-not (locked? a)
           (set-position a (g/madd diff (* nd aw) pa)))
-        (when-not (or  b-locked? (locked? b))
+        (if-not (locked? b)
           (set-position b (g/madd diff (* (- nd) bw) pb))))))
+
+  (defrecord PullbackSpring
+      [^VerletParticle a
+       ^VerletParticle b
+       ^double rest-len
+       ^double min-len
+       ^double strength]
+    PTimeStep
+    (timestep
+      [_ delta]
+      (let [pa   (position a)
+            pb   (position b)
+            diff (g/- pb pa)
+            dist (+ (g/mag diff) 1e-6)]
+        (if (> dist min-len)
+          (let [aw (.-inv-weight a)
+                bw (.-inv-weight b)
+                nd (* (/ (- dist rest-len) (* dist (+ aw bw))) (* strength delta))]
+            (if-not (locked? a)
+              (set-position a (g/madd diff (* nd aw) pa)))
+            (if-not (locked? b)
+              (set-position b (g/madd diff (* (- nd) bw) pb))))))))
 #+END_SRC
 
 *** VerletPhysics
@@ -172,8 +201,8 @@
   (defrecord VerletPhysics
       [particles springs behaviors constraints drag]
     PBehavioral
-    (add-behavior
-      [_ id b] (assoc-in _ [:behaviors id] b))
+    (add-behaviors
+      [_ bmap] (update-in _ [:behaviors] merge bmap))
     (apply-behaviors
       [_ delta] (apply-to-particles particles delta (vals behaviors)) _)
     (remove-behavior
@@ -181,8 +210,8 @@
     (clear-behaviors
       [_] (assoc _ behaviors {}))
     PConstrained
-    (add-constraint
-      [_ id c] (assoc-in _ [:constraints id] c))
+    (add-constraints
+      [_ cmap] (update-in _ [:constraints] merge cmap))
     (apply-constraints
       [_ delta] (apply-to-particles particles delta (vals constraints)) _)
     (remove-constraint
@@ -224,24 +253,30 @@
 
   (defn attract
     [pos r strength]
-    (let [r2 (* r r)]
+    (let [rsq (* r r)]
       (fn [p delta]
         (let [d (g/- pos (position p))
               l (g/mag-squared d)]
-          (if (and (> l 0.0) (< l r2))
-            (add-force p (g/* d (/ (* (- 1.0 (/ l r2)) (* strength delta))
+          (if (and (> l 0.0) (< l rsq))
+            (add-force p (g/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
                                    (Math/sqrt l)))))))))
 
   (defn attract-particle
     [p r strength]
-    (let [r2 (* r r)]
+    (let [rsq (* r r)]
       (fn [q delta]
         (if-not (= p q)
           (let [d (g/- (position p) (position q))
                 l (g/mag-squared d)]
-            (if (and (> l 0.0) (< l r2))
-              (add-force q (g/* d (/ (* (- 1.0 (/ l r2)) (* strength delta))
+            (if (and (> l 0.0) (< l rsq))
+              (add-force q (g/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
                                      (Math/sqrt l))))))))))
+
+  (defn align
+    [vel strength]
+    (fn [p delta]
+      (let [d (g/- vel (velocity p))]
+        (add-force p (g/* d (* strength delta))))))
 #+END_SRC
 
 ** Constraints
@@ -269,21 +304,17 @@
   (defn physics
     [{:keys [particles springs behaviors constraints drag]
       :or   {particles #{}, springs #{}, behaviors {}, constraints {}, drag 0.0}}]
-    (map->VerletPhysics
-     {:particles   (set particles)
-      :springs     (set springs)
-      :behaviors   behaviors
-      :constraints constraints
-      :drag        drag}))
+    (VerletPhysics.
+     (set particles) (set springs) behaviors constraints drag))
 
   (defn particle
     [pos & [weight lock?]]
     (let [w (double (or weight 1.0))]
-      (VerletParticle. pos pos (g/clear* pos) lock? nil nil w (/ 1.0 w))))
+      (VerletParticle. pos pos (g/clear* pos) lock? nil nil (/ 1.0 w) nil)))
 
   (defn spring
-    [a b rlen strength & [locka? lockb?]]
-    (VerletSpring. a b (double rlen) (double strength) locka? lockb?))
+    [a b rlen strength]
+    (Spring. a b (double rlen) (double strength)))
 #+END_SRC
 
 ** Helpers
@@ -330,7 +361,7 @@
   (require '[thi.ng.geom.physics.core :as ph] :reload)
   (def a (ph/particle (v/vec2) 1 true))
   (def b (ph/particle (v/vec2 1 0) 1))
-  (def s (ph/map->VerletSpring {:a a :b b :rlen 10.0 :strength 0.1}))
+  (def s (ph/spring {:a a :b b :rlen 10.0 :strength 0.1}))
   (def p (ph/physics {:particles [a b] :springs [s] :drag 0.0
                       :behaviors {:g (ph/gravity (v/vec2 0 -0.5))
                                   :a (ph/attract (v/vec2 10 0) 10 -2)}}))
