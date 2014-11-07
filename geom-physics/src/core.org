@@ -4,9 +4,13 @@
  - [[#namespace-thinggeomphysicscore][Namespace: thi.ng.geom.physics.core]]
      - [[#protocols][Protocols]]
      - [[#type-implementations][Type implementations]]
+         - [[#verletparticle][VerletParticle]]
+         - [[#verletspring][VerletSpring]]
+         - [[#verletphysics][VerletPhysics]]
      - [[#behaviors][Behaviors]]
      - [[#constraints][Constraints]]
      - [[#constructors][Constructors]]
+     - [[#helpers][Helpers]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
 * Namespace: thi.ng.geom.physics.core
@@ -50,19 +54,9 @@
 
 ** Type implementations
 
+*** VerletParticle
+
 #+BEGIN_SRC clojure :noweb-ref impl
-  (defn apply-to-particle
-    [p delta fns]
-    (when-not (locked? p)
-      (loop [f (seq fns)] (when f ((first f) p delta) (recur (next f))))))
-
-  (defn apply-to-particles
-    [particles delta fns]
-    (loop [ps (seq particles)]
-      (when ps
-        (apply-to-particle (first ps) delta fns)
-        (recur (next ps)))))
-
   (deftype VerletParticle
       ,#+clj
     [^:unsynchronized-mutable pos
@@ -145,7 +139,11 @@
         :weight weight
         :behaviors behaviors
         :constraints constraints})))
+#+END_SRC
 
+*** VerletSpring
+
+#+BEGIN_SRC clojure :noweb-ref impl
   (defrecord VerletSpring
       [^VerletParticle a
        ^VerletParticle b
@@ -166,7 +164,11 @@
           (set-position a (g/madd diff (* nd aw) pa)))
         (when-not (or  b-locked? (locked? b))
           (set-position b (g/madd diff (* (- nd) bw) pb))))))
+#+END_SRC
 
+*** VerletPhysics
+
+#+BEGIN_SRC clojure :noweb-ref impl
   (defrecord VerletPhysics
       [particles springs behaviors constraints drag]
     PBehavioral
@@ -284,6 +286,22 @@
     (VerletSpring. a b (double rlen) (double strength) locka? lockb?))
 #+END_SRC
 
+** Helpers
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn apply-to-particle
+    [p delta fns]
+    (when-not (locked? p)
+      (loop [f (seq fns)] (when f ((first f) p delta) (recur (next f))))))
+
+  (defn apply-to-particles
+    [particles delta fns]
+    (loop [ps (seq particles)]
+      (when ps
+        (apply-to-particle (first ps) delta fns)
+        (recur (next ps)))))
+#+END_SRC
+
 ** Complete namespace definition                                   :noexport:
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/physics/core.cljx :noweb yes :mkdirp yes :padline no
@@ -296,6 +314,8 @@
      ,#+clj [thi.ng.macromath.core :as mm]))
 
   <<protos>>
+
+  <<helpers>>
 
   <<impl>>
 
