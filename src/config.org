@@ -57,6 +57,24 @@ target/test-classes
 [thi.ng/geom-types "0.3.0-SNAPSHOT"]
 #+END_SRC
 
+**** [[https://github.com/thi-ng/geom/][thi.ng/geom-physics]]
+#+NAME: dep-geom-physics
+#+BEGIN_SRC clojure :noweb yes
+[thi.ng/geom-physics "0.3.0-SNAPSHOT"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/geom/][thi.ng/geom-svg]]
+#+NAME: dep-geom-svg
+#+BEGIN_SRC clojure :noweb yes
+[thi.ng/geom-svg "0.3.0-SNAPSHOT"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/geom/][thi.ng/geom-webgl]]
+#+NAME: dep-geom-webgl
+#+BEGIN_SRC clojure :noweb yes
+[thi.ng/geom-webgl "0.3.0-SNAPSHOT"]
+#+END_SRC
+
 **** [[https://github.com/thi-ng/common/][thi.ng/common]]
 #+NAME: dep-common
 #+BEGIN_SRC clojure

@@ -97,7 +97,7 @@ and to group namespaces based on functionality. This reduces potential
 code bloat for CLJS applications, but should also make it less
 daunting for newcomers to navigate the project.
 
-*** [[file:~/work/clj/thing/geom/geom-core/src/index.org][geom-core]]
+*** [[../geom-core/src/index.org][geom-core]]
 
 This module forms the library's core and is required by all others. It
 defines approx. 50 protocols and provides implementations of
@@ -106,7 +106,7 @@ matrices, quaternion (and related convenience constructors &
 conversions) and a number of often needed utility functions to deal
 with point collections, normals, sampling, triangles etc.
 
-*** [[file:../geom-types/src/index.org][geom-types]]
+*** [[../geom-types/src/index.org][geom-types]]
 
 This module defines all high-level 2d/3d data types and
 implementations of the various core protocols for each. From a user
@@ -114,13 +114,21 @@ perspective this module should be considered part of the core, however
 it's been split out to dramatically reduce code size for use cases
 where only vectors/matrix ops are needed.
 
-*** [[file:../geom-meshops/src/index.org][geom-meshops]]
+*** [[../geom-meshops/src/index.org][geom-meshops]]
 
 This module provides several tools & operations related to working
 with meshes, incl. I/O, subdivisions, Delaunay triangulation,
 cleaning, CSG/Boolean mesh merge etc.
 
-*** [[file:../geom-svg/src/index.org][geom-svg]]
+*** [[../geom-physics/src/index.org][geom-physics]]
+
+This module consists of a simple particle-based physics engine with
+Verlet integration and support for behaviors and constaints, both for
+individual particles and global. Particles can be connected with
+springs of varying stiffness as well as made interdependent using
+positive or negative force fields (attractors).
+
+*** [[../geom-svg/src/index.org][geom-svg]]
 
 A module to help with building SVG based visualizations of geom
 entities (incl. a customizable 3D mesh renderer). CLJS support for
@@ -243,10 +251,10 @@ complete build & tests for both CLJ & CLJS versions.
   lein cleantest # some tests currently fail due to still missing protocol impls
 #+END_SRC
 
-To build the Clojurescript version simply run =lein cljsbuild test=
-from the same directory. A small HTML harness for the resulting JS
-file is also located in that folder (=babel/index.html=), allowing for
-further experimentation in the browser.
+Afterwards, to build the Clojurescript version simply run =lein
+cljsbuild test= from the same directory. A small HTML harness for the
+resulting JS file is also located in that folder (=babel/index.html=),
+allowing for further experimentation in the browser.
 
 *** Working with the REPL
 
@@ -302,8 +310,9 @@ This project is open source and licensed under the [[http://www.apache.org/licen
     :dependencies [<<dep-geom-core>>
                    <<dep-geom-types>>
                    <<dep-geom-meshops>>
-                   <<dep-geom-webgl>>
-                   <<dep-geom-svg>>]
+                   <<dep-geom-physics>>
+                   <<dep-geom-svg>>
+                   <<dep-geom-webgl>>]
 
     :pom-addition [:developers [:developer {:id "toxi"}
                                 [:name "Karsten Schmidt"]
