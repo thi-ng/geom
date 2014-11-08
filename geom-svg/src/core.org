@@ -55,11 +55,11 @@ introduce uneccessary dependencies.
 #+BEGIN_SRC clojure :noweb-ref svg
   ,#+clj
   (defn serialize
-    [svg] (str xml-preamble (html {:mode :xml} svg)))
+    ^String [svg] (str xml-preamble (html {:mode :xml} svg)))
 
   ,#+clj
   (defn serialize-as-byte-array
-    [svg] (.getBytes (serialize svg) "UTF-8"))
+    ^bytes [svg] (.getBytes (serialize svg) "UTF-8"))
 #+END_SRC
 
 ** Attribute conversion
@@ -71,8 +71,8 @@ completely opaque to other parts of the code base and which might deal
 with the dynamic generation of color values. Therefore we allow the
 =:stroke= and =:fill= attributes to be defined as RGB(A) or HSB(A)
 vectors (e.g. in conjuction with the color utilities defined in the
-=thi.ng/color= library. If these attributes are present and
-*not* already a string value, they will be converted into a CSS color
+[[http://thi.ng/color][thi.ng/color]] library. If these attributes are present and *not*
+already a string value, they will be converted into a CSS color
 automatically (using the =rgba->css= or =hsba->css= fns). In order to
 specify HSB colors, use the =:stoke-hsb= or =:fill-hsb= attributes.
 
@@ -89,9 +89,9 @@ specify HSB colors, use the =:stoke-hsb= or =:fill-hsb= attributes.
 *** Transforms
 
 Many SVG elements support the attachment of local coordinate
-transformations. If a =:transform= attribute has a non-string value, it
-will be interpreted as a =Matrix32= or equivalent vector and will be
-automatically converted.
+transformations. If a =:transform= attribute has a non-string value,
+it will be interpreted as a =Matrix32= or equivalent 6-element vector
+and will be automatically converted.
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn matrix-attrib
