@@ -458,7 +458,7 @@ of the code.
       (- xy wz) (- 1.0 (+ xx zz)) (+ yz wx) 0.0
       (+ xz wy) (- yz wx) (- 1.0 (+ xx yy)) 0.0
       (or tx 0.0) (or ty 0.0) (or tz 0.0) 1.0
-       -1 #+clj -1)))
+      nil nil)))
 #+END_SRC
 *** PVectorTransform
 #+BEGIN_SRC clojure :noweb-ref impl

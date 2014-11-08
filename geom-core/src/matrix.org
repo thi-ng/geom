@@ -38,16 +38,22 @@ define some macros to simplify them.
 *** 3x2 Matrix (Affine 2D transform)
 #+BEGIN_SRC clojure :noweb-ref mat32
   (deftype Matrix32
-    #+clj  [^double m00 ^double m01 ^double m02
+    ,#+clj  [^double m00 ^double m01 ^double m02
             ^double m10 ^double m11 ^double m12
             ^:unsynchronized-mutable _hasheq
-            ^:unsynchronized-mutable _hashc]
-    #+cljs [m00 m01 m02 m10 m11 m12
-            ^:mutable _hasheq]
+            _meta]
+    ,#+cljs [m00 m01 m02 m10 m11 m12
+            ^:mutable _hasheq
+            _meta]
 #+END_SRC
 
 **** Clojure protocols
 #+BEGIN_SRC clojure :noweb-ref mat32
+  ,#+clj clojure.lang.IObj
+  ,#+cljs clojure.lang.IMeta
+  (#+clj meta #+cljs -meta [_] _meta)
+  (#+clj withMeta #+cljs -with-meta
+         [_ m] (Matrix32. m00 m01 m02 m10 m11 m12 _hasheq m))
   ,#+clj java.util.Collection
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.IPersistentVector
@@ -91,11 +97,10 @@ define some macros to simplify them.
 
   ,#+cljs IHash
   (#+clj hasheq #+cljs -hash  [_]
-         (if (== -1 _hasheq)
-           (set! _hasheq (hash-ordered-coll _))
-           _hasheq))
+         (or _hasheq
+             (set! _hasheq (hash-ordered-coll _))))
 
-  ,#+clj (hashCode [_] (if (== -1 _hashc) (set! _hashc (hash-coll* _)) _hashc))
+  ,#+clj (hashCode [_] (hash-coll* _))
 
   ,#+clj (equals
          [_ o]
@@ -126,14 +131,14 @@ define some macros to simplify them.
      (Matrix32.
       (+ m00 (.-m00 m)) (+ m01 (.-m01 m)) (+ m02 (.-m02 m))
       (+ m10 (.-m10 m)) (+ m11 (.-m11 m)) (+ m12 (.-m12 m))
-      -1 #+clj -1)))
+      nil _meta)))
   (-
    [_ m]
    (let [m ^Matrix32 m]
      (Matrix32.
       (- m00 (.-m00 m)) (- m01 (.-m01 m)) (- m02 (.-m02 m))
       (- m10 (.-m10 m)) (- m11 (.-m11 m)) (- m12 (.-m12 m))
-      -1 #+clj -1)))
+      nil _meta)))
   (*
    [_ m]
    (let [m ^Matrix32 m]
@@ -144,7 +149,7 @@ define some macros to simplify them.
       (mm/madd m10 (.-m00 m) m11 (.-m10 m))
       (mm/madd m10 (.-m01 m) m11 (.-m11 m))
       (mm/madd m10 (.-m02 m) m11 (.-m12 m) m12)
-      -1 #+clj -1)))
+      nil _meta)))
 #+END_SRC
 
 **** PDeltaEquals
@@ -180,7 +185,7 @@ define some macros to simplify them.
        (Matrix32.
         (/ m11 d) (- (/ m01 d)) (/ (mm/msub m01 m12 m11 m02) d)
         (- (/ m10 d)) (/ m00 d) (/ (mm/msub m10 m02 m00 m12) d)
-        -1 #+clj -1))))
+        nil _meta))))
 #+END_SRC
 
 **** TODO PTranspose
@@ -191,7 +196,7 @@ Check discrepancy with SVG transforms
   g/PTranspose
   (transpose
    [_]
-   (Matrix32. m00 m10 m01 m11 m02 m12 -1 #+clj -1))
+   (Matrix32. m00 m10 m01 m11 m02 m12 nil _meta))
 #+END_SRC
 
 **** PRotate, PScale, PTranslate, PTransform
@@ -200,7 +205,7 @@ Check discrepancy with SVG transforms
   (rotate
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (g/* _ (Matrix32. c (- s) 0.0, s c 0.0 -1 #+clj -1))))
+     (g/* _ (Matrix32. c (- s) 0.0, s c 0.0 nil _meta))))
 
   g/PScale
   (scale
@@ -208,16 +213,16 @@ Check discrepancy with SVG transforms
    (g/* _ (Matrix32.
              (if (number? s) s (s 0)) 0.0 0.0
              0.0 (if (number? s) s (s 1)) 0.0
-             -1 #+clj -1)))
+             nil _meta)))
   (scale
    [_ sx sy]
    (if (number? sx)
      (if (number? sy)
-       (g/* _ (Matrix32. sx 0.0 0.0, 0.0 sy 0.0 -1 #+clj -1))
-       (g/* _ (Matrix32. (* sx (sy 0)) 0.0 0.0, 0.0 (* sx (sy 1)) 0.0 -1 #+clj -1)))
+       (g/* _ (Matrix32. sx 0.0 0.0, 0.0 sy 0.0 nil _meta))
+       (g/* _ (Matrix32. (* sx (sy 0)) 0.0 0.0, 0.0 (* sx (sy 1)) 0.0 nil _meta)))
      (if (number? sy)
-       (g/* _ (Matrix32. (* sy (sx 0)) 0.0 0.0, 0.0 (* sy (sx 1)) 0.0 -1 #+clj -1))
-       (g/* _ (Matrix32. (* (sx 0) (sy 0)) 0.0 0.0, 0.0 (* (sx 1) (sy 1)) 0.0 -1 #+clj -1)))))
+       (g/* _ (Matrix32. (* sy (sx 0)) 0.0 0.0, 0.0 (* sy (sx 1)) 0.0 nil _meta))
+       (g/* _ (Matrix32. (* (sx 0) (sy 0)) 0.0 0.0, 0.0 (* (sx 1) (sy 1)) 0.0 nil _meta)))))
 
   g/PShear
   (shear
@@ -225,10 +230,10 @@ Check discrepancy with SVG transforms
    (g/* _ (Matrix32.
              1.0 (if (number? s) s (s 0)) 0.0,
              (if (number? s) s (s 1)) 1.0 0.0
-             -1 #+clj -1)))
+             nil _meta)))
   (shear
    [_ sx sy]
-   (g/* _ (Matrix32. 1.0 sx 0.0, sy 1.0 0.0 -1 #+clj -1)))
+   (g/* _ (Matrix32. 1.0 sx 0.0, sy 1.0 0.0 nil _meta)))
 
   g/PTranslate
   (translate
@@ -236,16 +241,16 @@ Check discrepancy with SVG transforms
    (g/* _ (Matrix32.
              1.0 0.0 (if (number? t) t (t 0))
              0.0 1.0 (if (number? t) t (t 1))
-             -1 #+clj -1)))
+             nil _meta)))
   (translate
    [_ tx ty]
    (if (number? tx)
      (if (number? ty)
-       (g/* _ (Matrix32. 1.0 0.0 tx, 0.0 1.0 ty -1 #+clj -1))
-       (g/* _ (Matrix32. 1.0 0.0 (* tx (ty 0)), 0.0 1.0 (* tx (ty 1)) -1 #+clj -1)))
+       (g/* _ (Matrix32. 1.0 0.0 tx, 0.0 1.0 ty nil _meta))
+       (g/* _ (Matrix32. 1.0 0.0 (* tx (ty 0)), 0.0 1.0 (* tx (ty 1)) nil _meta)))
      (if (number? ty)
-       (g/* _ (Matrix32. 1.0 0.0 (* ty (tx 0)), 0.0 1.0 (* ty (tx 1)) -1 #+clj -1))
-       (g/* _ (Matrix32. 1.0 0.0 (* (tx 0) (ty 0)), 0.0 1.0 (* (tx 1) (ty 1)) -1 #+clj -1)))))
+       (g/* _ (Matrix32. 1.0 0.0 (* ty (tx 0)), 0.0 1.0 (* ty (tx 1)) nil _meta))
+       (g/* _ (Matrix32. 1.0 0.0 (* (tx 0) (ty 0)), 0.0 1.0 (* (tx 1) (ty 1)) nil _meta)))))
 
   g/PTransform
   (transform
@@ -283,16 +288,22 @@ ordering (row major).
             ^double m20 ^double m21 ^double m22 ^double m23
             ^double m30 ^double m31 ^double m32 ^double m33
             ^:unsynchronized-mutable _hasheq
-            ^:unsynchronized-mutable _hashc]
+            _meta]
     #+cljs [m00 m01 m02 m03
             m10 m11 m12 m13
             m20 m21 m22 m23
             m30 m31 m32 m33
-            ^:mutable _hasheq]
+            ^:mutable _hasheq
+            _meta]
 #+END_SRC
 
 **** Clojure protocols
 #+BEGIN_SRC clojure :noweb-ref mat44
+  ,#+clj clojure.lang.IObj
+  ,#+cljs clojure.lang.IMeta
+  (#+clj meta #+cljs -meta [_] _meta)
+  (#+clj withMeta #+cljs -with-meta
+          [_ m] (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33 _hasheq m))
   ,#+clj java.util.Collection
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.IPersistentVector
@@ -359,12 +370,10 @@ ordering (row major).
           (every? #(= (% 0) (% 1)) (map vector _ o))))
 
   ,#+cljs IHash
-  (#+clj hasheq #+cljs -hash  [_]
-         (if (== -1 _hasheq)
-           (set! _hasheq (hash-ordered-coll _))
-           _hasheq))
+  (#+clj hasheq #+cljs -hash
+         [_] (or _hasheq (set! _hasheq (hash-ordered-coll _))))
 
-  ,#+clj (hashCode [_] (if (== -1 _hashc) (set! _hashc (hash-coll* _)) _hashc))
+  ,#+clj (hashCode [_] (hash-coll* _))
 
   ,#+clj (equals
          [_ o]
@@ -402,7 +411,7 @@ ordering (row major).
       (+ m10 (.-m10 m)) (+ m11 (.-m11 m)) (+ m12 (.-m12 m)) (+ m13 (.-m13 m))
       (+ m20 (.-m20 m)) (+ m21 (.-m21 m)) (+ m22 (.-m22 m)) (+ m23 (.-m23 m))
       (+ m30 (.-m30 m)) (+ m31 (.-m31 m)) (+ m32 (.-m32 m)) (+ m33 (.-m33 m))
-      -1 #+clj -1)))
+      nil _meta)))
   (-
    [_ m]
    (let [m ^Matrix44 m]
@@ -411,7 +420,7 @@ ordering (row major).
       (- m10 (.-m10 m)) (- m11 (.-m11 m)) (- m12 (.-m12 m)) (- m13 (.-m13 m))
       (- m20 (.-m20 m)) (- m21 (.-m21 m)) (- m22 (.-m22 m)) (- m23 (.-m23 m))
       (- m30 (.-m30 m)) (- m31 (.-m31 m)) (- m32 (.-m32 m)) (- m33 (.-m33 m))
-      -1 #+clj -1)))
+      nil _meta)))
   (*
    [_ m]
    (let [^Matrix44 m m]
@@ -435,7 +444,7 @@ ordering (row major).
       (mm/madd m01 (.-m30 m) m11 (.-m31 m) m21 (.-m32 m) m31 (.-m33 m))
       (mm/madd m02 (.-m30 m) m12 (.-m31 m) m22 (.-m32 m) m32 (.-m33 m))
       (mm/madd m03 (.-m30 m) m13 (.-m31 m) m23 (.-m32 m) m33 (.-m33 m))
-      -1 #+clj -1)))
+      nil _meta)))
 #+END_SRC
 
 **** PDeltaEquals
@@ -506,7 +515,7 @@ ordering (row major).
           (gmc/inv-item m00 n09 m01 n07 m02 n06 invd)
           (gmc/inv-item m31 n01 m32 n00 (- m30) n03 invd)
           (gmc/inv-item m20 n03 m21 n01 m22 n00 invd)
-          -1 #+clj -1)))))
+          nil _meta)))))
 #+END_SRC
 
 **** PTranspose
@@ -519,7 +528,7 @@ ordering (row major).
     m01 m11 m21 m31
     m02 m12 m22 m32
     m03 m13 m23 m33
-    -1 #+clj -1))
+    nil _meta))
 #+END_SRC
 
 **** Transformations
@@ -536,7 +545,7 @@ ordering (row major).
     (* m10 y) (* m11 y) (* m12 y) (* m13 y)
     (* m20 z) (* m21 z) (* m22 z) (* m23 z)
     m30 m31 m32 m33
-    -1 #+clj -1))
+    nil _meta))
 
   g/PRotate
   (rotate
@@ -551,7 +560,7 @@ ordering (row major).
       (mm/madd m10 c m20 s) (mm/madd m11 c m21 s) (mm/madd m12 c m22 s) (mm/madd m13 c m23 s)
       (mm/msub m20 c m10 s) (mm/msub m21 c m11 s) (mm/msub m22 c m12 s) (mm/msub m23 c m13 s)
       m30 m31 m32 m33
-      -1 #+clj -1)))
+      nil _meta)))
 
   (rotate-y
    [_ theta]
@@ -561,7 +570,7 @@ ordering (row major).
       m10 m11 m12 m13
       (mm/madd m00 s m20 c) (mm/madd m01 s m21 c) (mm/madd m02 s m22 c) (mm/madd m03 s m23 c)
       m30 m31 m32 m33
-      -1 #+clj -1)))
+      nil _meta)))
 
   (rotate-z
    [_ theta]
@@ -571,7 +580,7 @@ ordering (row major).
       (mm/msub m10 c m00 s) (mm/msub m11 c m01 s) (mm/msub m12 c m02 s) (mm/msub m13 c m03 s)
       m20 m21 m22 m23
       m30 m31 m32 m33
-      -1 #+clj -1)))
+      nil _meta)))
 
   (rotate-around-axis
    [_ [x y z] theta]
@@ -595,7 +604,7 @@ ordering (row major).
       (mm/madd m02 b20 m12 b21 m22 b22)
       (mm/madd m03 b20 m13 b21 m23 b22)
       m30 m31 m32 m33
-      -1 #+clj -1)))
+      nil _meta)))
 
   g/PTranslate
   (translate
@@ -612,7 +621,7 @@ ordering (row major).
     (mm/madd m01 x m11 y m21 z m31)
     (mm/madd m02 x m12 y m22 z m32)
     (mm/madd m03 x m13 y m23 z m33)
-    -1 #+clj -1))
+    nil _meta))
 
   g/PTransform
   (transform
@@ -652,7 +661,7 @@ ordering (row major).
     (Matrix32.
      1.0 0.0 0.0
      0.0 1.0 0.0
-     -1 #+clj -1))
+     nil nil))
 
   (def M44
     (Matrix44.
@@ -660,7 +669,7 @@ ordering (row major).
      0.0 1.0 0.0 0.0
      0.0 0.0 1.0 0.0
      0.0 0.0 0.0 1.0
-     -1 #+clj -1))
+     nil nil))
 #+END_SRC
 
 ** Constructors
@@ -669,16 +678,16 @@ ordering (row major).
   (defn matrix32
     ([] M32)
     ([[m00 m01 m02 m10 m11 m12]]
-       (Matrix32. m00 m01 m02 m10 m11 m12 -1 #+clj -1))
+       (Matrix32. m00 m01 m02 m10 m11 m12 nil nil))
     ([m00 m01 m02 m10 m11 m12]
-       (Matrix32. m00 m01 m02 m10 m11 m12 -1 #+clj -1)))
+       (Matrix32. m00 m01 m02 m10 m11 m12 nil nil)))
 
   (defn matrix44
     ([] M44)
     ([[m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]]
-       (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33 -1 #+clj -1))
+       (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33 nil nil))
     ([m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33]
-       (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33 -1 #+clj -1)))
+       (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33 nil nil)))
 
   ;; FIXME create proper deftype for M33
   (defn matrix44->matrix33
@@ -719,7 +728,7 @@ ordering (row major).
        0.0 (* n2 dy) 0.0 0.0
        (mm/addm l r dx) (mm/addm t b dy) (mm/addm n f dz) -1.0
        0.0 0.0 (mm/mul n2 f dz) 0.0
-       -1 #+clj -1)))
+       nil nil)))
 
   (defn frustum-bounds
     [fovy aspect near]
@@ -743,7 +752,7 @@ ordering (row major).
        0.0 (* -2.0 dy) 0.0 0.0
        0.0 0.0 (* 2.0 dz) 0.0
        (mm/addm l r dx) (mm/addm t b dy) (mm/addm n f dz) 1.0
-       -1 #+clj -1)))
+       nil nil)))
 
   (defn perspective
     "Returns a perspective transform matrix, which makes far away objects appear
@@ -758,7 +767,7 @@ ordering (row major).
        0.0 f 0.0 0.0
        0.0 0.0 (mm/addm near far nf) -1.0
        0.0 0.0 (mm/mul 2.0 near far nf) 0.0
-       -1 #+clj -1)))
+       nil nil)))
 
   (defn perspective-frustum
     [fov aspect near far]
@@ -787,7 +796,7 @@ ordering (row major).
            xy yy zy 0.0
            xz yz zz 0.0
            (- (g/dot x eye)) (- (g/dot y eye)) (- (g/dot z eye)) 1.0
-           -1 #+clj -1)))))
+           nil nil)))))
 
   (defn viewport-transform
     ([width height]
