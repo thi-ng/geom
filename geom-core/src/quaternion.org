@@ -11,7 +11,7 @@ of the code.
 
 *** apply
 #+BEGIN_SRC clojure :noweb-ref tpl-apply
-  (condp = (count args)
+  (condp == (count args)
     1 (swizzle4 _ (first args) nil)
     2 (swizzle4 _ (first args) (second args))
     (err/arity-error! (count args)))
@@ -39,7 +39,7 @@ of the code.
 #+END_SRC
 *** pop
 #+BEGIN_SRC clojure :noweb-ref tpl-pop
-  (thi.ng.geom.core.vector.Vec3. x y z -1 #+clj -1)
+  (thi.ng.geom.core.vector.Vec3. x y z nil nil)
 #+END_SRC
 *** compare
 #+BEGIN_SRC clojure :noweb-ref tpl-compare
@@ -473,7 +473,7 @@ of the code.
      (thi.ng.geom.core.vector.Vec3.
       (mm/maddsub ix w iw nx iy nz iz ny)
       (mm/maddsub iy w iw ny iz nx ix nz)
-      (mm/maddsub iz w iw nz ix ny iy nx) -1 #+clj -1)))
+      (mm/maddsub iz w iw nz ix ny iy nx) nil (meta v))))
 #+END_SRC
 *** End of implementation
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -606,12 +606,12 @@ of the code.
             2 (thi.ng.geom.core.vector.Vec2.
                (lookup4 _ (first n) default)
                (lookup4 _ (nth n 1) default)
-               -1 #+clj -1)
+               nil nil)
             3 (thi.ng.geom.core.vector.Vec3.
                (lookup4 _ (first n) default)
                (lookup4 _ (nth n 1) default)
                (lookup4 _ (nth n 2) default)
-               -1 #+clj -1)
+               nil nil)
             4 (Quat4.
                (lookup4 _ (first n) default)
                (lookup4 _ (nth n 1) default)
@@ -652,7 +652,6 @@ of the code.
      ,#+clj [thi.ng.geom.core.vectorseq])  
     ,#+clj
     (:import
-     [thi.ng.geom.core.vector Vec3]
      [thi.ng.geom.core.vectorseq VectorSeq]
      [thi.ng.geom.core.matrix Matrix44]))
 
