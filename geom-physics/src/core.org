@@ -361,10 +361,9 @@
   (require '[thi.ng.geom.physics.core :as ph] :reload)
   (def a (ph/particle (v/vec2) 1 true))
   (def b (ph/particle (v/vec2 1 0) 1))
-  (def s (ph/spring {:a a :b b :rlen 10.0 :strength 0.1}))
+  (def s (ph/spring a b 10.0 0.1))
   (def p (ph/physics {:particles [a b] :springs [s] :drag 0.0
                       :behaviors {:g (ph/gravity (v/vec2 0 -0.5))
                                   :a (ph/attract (v/vec2 10 0) 10 -2)}}))
   (dotimes [i 100] (ph/timestep p 2) (let [pa (ph/position a) pb (ph/position b)] (prn i pb (g/dist pa pb))))
-
 #+END_SRC
