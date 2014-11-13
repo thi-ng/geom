@@ -87,7 +87,7 @@ target/geom-webgl-<<conf-version>>.js
                                      :pretty-print false}}]
                 :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}}
 
-    :pom-addition [:developers [:developer {:id "toxi"}
+    :pom-addition [:developers [:developer
                                 [:name "Karsten Schmidt"]
                                 [:url "http://postspectacular.com"]
                                 [:timezone "0"]]])
