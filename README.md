@@ -16,12 +16,6 @@ See [index.org](src/index.org) for details. Also please note, the [dev branch](h
 [thi.ng/geom "0.3.0-SNAPSHOT"]
 ```
 
-Until [Clojars deploys are fixed again](https://github.com/ato/clojars-web/issues/270), current versions are only available from our own repo. Therefore, please add the following to your own `project.clj`:
-
-```clj
-:repositories [["thing" "http://dev.thi.ng/repo/"]]
-```
-
 ## License
 
 Copyright © 2013-2014 Karsten Schmidt
