@@ -78,8 +78,8 @@ target/geom-meshops-<<conf-version>>.js
                          :global-vars {*warn-on-reflection* true}
                          :jvm-opts ^:replace []
                          :auto-clean false
-                         :prep-tasks [["cljx" "once"] "javac" "compile"]
-                         :aliases {"cleantest" ["do" "clean" ["test" ":all"] ["cljsbuild" "test"]]}}}
+                         :prep-tasks [["cljx" "once"]]
+                         :aliases {"cleantest" ["do" "clean," "cljx" "once," "test," "cljsbuild" "test"]}}}
 
     :cljx         {:builds [{:source-paths ["src/cljx"]
                              :output-path "<<conf-gen-source-path>>"

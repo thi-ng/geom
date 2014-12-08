@@ -73,7 +73,7 @@ target/geom-webgl-<<conf-version>>.js
                                     <<dep-criterium>>]
                      :plugins      [<<dep-cljsbuild>>
                                     <<dep-cljs-test>>]
-                     :aliases {"cleantest" ["do" "clean" ["cljsbuild" "test"]]}}}
+                     :aliases {"cleantest" ["do" "clean," "cljsbuild" "test"]}}}
 
     :cljsbuild {:builds [{:source-paths ["src" "test"]
                           :id "simple"
