@@ -1,5 +1,34 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeomaabb][thi.ng.geom.aabb]]
+     - [[#constructors][Constructors]]
+     - [[#type-specific-functions][Type specific functions]]
+     - [[#protocol-implementations][Protocol implementations]]
+         - [[#parea][PArea]]
+         - [[#pbounds][PBounds]]
+         - [[#pboundingsphere][PBoundingSphere]]
+         - [[#pboundary][PBoundary]]
+         - [[#pcenter][PCenter]]
+         - [[#pclassify][PClassify]]
+         - [[#pedgeaccess-pfaceaccess--pvertexaccess][PEdgeAccess, PFaceAccess & PVertexAccess]]
+         - [[#pintersect][PIntersect]]
+         - [[#todo-pmeshconvert][TODO PMeshConvert]]
+         - [[#ppointmap][PPointMap]]
+         - [[#todo-pproximity][TODO PProximity]]
+         - [[#todo-psample][TODO PSample]]
+         - [[#todo-psetops][TODO PSetOps]]
+         - [[#psubdivide][PSubdivide]]
+         - [[#todo-ptessellate][TODO PTessellate]]
+             - [[#todo-only-keep-faces-on-the-surface-of-the-original-box-no-inside-walls][TODO Only keep faces on the surface of the original box (no inside walls)]]
+         - [[#transformations][Transformations]]
+         - [[#pvolume][PVolume]]
+         - [[#end-of-implementation][End of implementation]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+     - [[#tests][Tests]]
+         - [[#todo-add-rotate-tests][TODO add rotate tests]]
+         - [[#todo-add-isec-tests][TODO add isec tests]]
+
 * thi.ng.geom.aabb
 
 ** Constructors

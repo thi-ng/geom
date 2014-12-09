@@ -1,5 +1,28 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeomsphere][thi.ng.geom.sphere]]
+     - [[#namespace-declaration][Namespace declaration]]
+     - [[#constructor][Constructor]]
+     - [[#type-specific-functions][Type specific functions]]
+     - [[#protocol-implementations][Protocol implementations]]
+         - [[#parea][PArea]]
+         - [[#pboundary][PBoundary]]
+         - [[#pbounds][PBounds]]
+         - [[#pboundingsphere][PBoundingSphere]]
+         - [[#pcenter][PCenter]]
+         - [[#pclassify][PClassify]]
+         - [[#todo-pgraph][TODO PGraph]]
+         - [[#pintersect][PIntersect]]
+         - [[#todo-pmeshconvert][TODO PMeshConvert]]
+         - [[#pproximity][PProximity]]
+         - [[#psample][PSample]]
+         - [[#ptessellate][PTessellate]]
+         - [[#todo-transformations][TODO Transformations]]
+             - [[#todo-scale-with-non-uniform-values-should-return-ellipsoid][TODO scale with non-uniform values should return Ellipsoid]]
+         - [[#pvolume][PVolume]]
+         - [[#end-of-implementation][End of implementation]]
+
 * thi.ng.geom.sphere
 ** Namespace declaration
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx :mkdirp yes :padline no

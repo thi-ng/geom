@@ -1,5 +1,39 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeompolygon][thi.ng.geom.polygon]]
+     - [[#constructors][Constructors]]
+     - [[#type-specific-functions][Type specific functions]]
+         - [[#sutherland-hodgeman-convex-clipping][Sutherland-Hodgeman convex clipping]]
+         - [[#convex-hull][Convex hull]]
+         - [[#tessellation][Tessellation]]
+             - [[#todo-move-delta-contains-into-core][TODO move delta-contains into core]]
+         - [[#insetting][Insetting]]
+     - [[#protocol-implementations][Protocol implementations]]
+         - [[#parea][PArea]]
+         - [[#pbounds][PBounds]]
+         - [[#pboundingcircle][PBoundingCircle]]
+         - [[#pboundary][PBoundary]]
+         - [[#pcenter][PCenter]]
+         - [[#pcircumference][PCircumference]]
+         - [[#todo-pclassify][TODO PClassify]]
+         - [[#pclip][PClip]]
+         - [[#pconvexhull][PConvexHull]]
+         - [[#pextrude][PExtrude]]
+         - [[#pflip][PFlip]]
+         - [[#pgraph][PGraph]]
+         - [[#pinset][PInset]]
+         - [[#todo-pintersect][TODO PIntersect]]
+         - [[#pmeshconvert][PMeshConvert]]
+         - [[#ppolygonconvert][PPolygonConvert]]
+         - [[#pproximity][PProximity]]
+         - [[#todo-psample][TODO PSample]]
+         - [[#ptessellate][PTessellate]]
+         - [[#ptransform][PTransform]]
+         - [[#pvolume][PVolume]]
+         - [[#end-of-implementations][End of implementations]]
+     - [[#namespace-declaration][Namespace declaration]]
+
 * thi.ng.geom.polygon
 
 ** Constructors

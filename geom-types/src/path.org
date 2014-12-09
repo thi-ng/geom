@@ -1,5 +1,27 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#namespace-thinggeompath][Namespace: thi.ng.geom.path]]
+     - [[#todo-add-path-builder][TODO add path builder]]
+     - [[#constructor][Constructor]]
+     - [[#path-segment-processing][Path segment processing]]
+         - [[#todo-refactor-to-use-protocols][TODO refactor to use protocols]]
+         - [[#todo-move-sample-with-res-into-filegeomorgpsample][TODO move sample-with-res into [[file:geom.org]]::PSample]]
+     - [[#svg-path-parser][SVG path parser]]
+     - [[#svg-path-parser-clojure-only][SVG path parser (Clojure only)]]
+     - [[#protocol-implementations][Protocol implementations]]
+         - [[#todo-parea][TODO PArea]]
+         - [[#todo-pboundary][TODO PBoundary]]
+         - [[#todo-pbounds][TODO PBounds]]
+         - [[#todo-pboundingcircle][TODO PBoundingCircle]]
+         - [[#todo-pcenter][TODO PCenter]]
+         - [[#todo-pcircumference][TODO PCircumference]]
+         - [[#todo-pgraph][TODO PGraph]]
+         - [[#todo-ppolygonconvert][TODO PPolygonConvert]]
+         - [[#todo-psample][TODO PSample]]
+         - [[#end-of-implementation][End of implementation]]
+     - [[#namespace-declaration][Namespace declaration]]
+
 * Namespace: thi.ng.geom.path
 
 ** TODO add path builder

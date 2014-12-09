@@ -1,5 +1,28 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeombezier][thi.ng.geom.bezier]]
+     - [[#shared-2d3d-helper-functions][Shared 2d/3d helper functions]]
+         - [[#the-bernstein-polynomial][The Bernstein polynomial]]
+         - [[#interpolation--curve-samplings][Interpolation & curve samplings]]
+         - [[#automatic-curve-generation][Automatic curve generation]]
+     - [[#constructors][Constructors]]
+     - [[#todo-bezier2][TODO Bezier2]]
+         - [[#pedgeaccess-pvertexaccess][PEdgeAccess, PVertexAccess]]
+         - [[#pgraph][PGraph]]
+         - [[#pmeshconvert][PMeshConvert]]
+         - [[#pproximity][PProximity]]
+         - [[#todo-psample][TODO PSample]]
+         - [[#end-of-implementations][End of implementations]]
+     - [[#todo-bezier3][TODO Bezier3]]
+         - [[#pedgeaccess-pvertexaccess][PEdgeAccess, PVertexAccess]]
+         - [[#pgraph][PGraph]]
+         - [[#pmeshconvert][PMeshConvert]]
+         - [[#pproximity][PProximity]]
+         - [[#todo-psample][TODO PSample]]
+         - [[#end-of-implementations][End of implementations]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
 * thi.ng.geom.bezier
 
 ** Shared 2d/3d helper functions

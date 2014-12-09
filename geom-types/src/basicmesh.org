@@ -1,5 +1,26 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeombasicmesh][thi.ng.geom.basicmesh]]
+     - [[#helper-functions][Helper functions]]
+     - [[#constructors][Constructors]]
+     - [[#protocol-implementations][Protocol implementations]]
+         - [[#parea][PArea]]
+         - [[#todo-pboundary][TODO PBoundary]]
+         - [[#pbounds][PBounds]]
+         - [[#pboundingsphere][PBoundingSphere]]
+         - [[#pcenter][PCenter]]
+         - [[#pflip][PFlip]]
+         - [[#pvertexaccess-pedgeaccess--pfaceaccess][PVertexAccess, PEdgeAccess & PFaceAccess]]
+         - [[#pnormalaccess][PNormalAccess]]
+         - [[#pgeomcontainer][PGeomContainer]]
+         - [[#pmeshconvert][PMeshConvert]]
+         - [[#ptessellate][PTessellate]]
+         - [[#ptransform][PTransform]]
+         - [[#pvolume][PVolume]]
+         - [[#end-of-implementation][End of implementation]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
 * thi.ng.geom.basicmesh
 
 ** Helper functions

@@ -1,5 +1,31 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeomcircle][thi.ng.geom.circle]]
+     - [[#constructors][Constructors]]
+     - [[#type-specific-functions][Type specific functions]]
+     - [[#protocol-implementations][Protocol implementations]]
+         - [[#parea][PArea]]
+         - [[#pbounds][PBounds]]
+         - [[#pboundingcircle][PBoundingCircle]]
+         - [[#pboundary][PBoundary]]
+         - [[#pcenter][PCenter]]
+         - [[#pcircumference][PCircumference]]
+         - [[#pclassify][PClassify]]
+         - [[#pextrude][PExtrude]]
+         - [[#pgraph][PGraph]]
+         - [[#pintersect][PIntersect]]
+         - [[#pmeshconvert][PMeshConvert]]
+         - [[#ppolygonconvert][PPolygonConvert]]
+         - [[#pproximity][PProximity]]
+         - [[#psample][PSample]]
+         - [[#ptessellate][PTessellate]]
+         - [[#todo-ptransform][TODO PTransform]]
+             - [[#todo-scale-with-non-uniform-values-should-return-ellipse][TODO scale with non-uniform values should return Ellipse]]
+         - [[#pvolume][PVolume]]
+         - [[#end-of-implementations][End of implementations]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
 * thi.ng.geom.circle
 
 ** Constructors

@@ -1,5 +1,26 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeomplane][thi.ng.geom.plane]]
+     - [[#constructor][Constructor]]
+     - [[#helper-functions][Helper functions]]
+     - [[#todo-protocol-implementation][TODO Protocol implementation]]
+         - [[#parea][PArea]]
+         - [[#pbounds][PBounds]]
+         - [[#pboundingsphere][PBoundingSphere]]
+         - [[#pcenter][PCenter]]
+         - [[#pclassify][PClassify]]
+         - [[#pdistance][PDistance]]
+         - [[#todo-pextrude][TODO PExtrude]]
+         - [[#pflip][PFlip]]
+         - [[#pintersect][PIntersect]]
+         - [[#pmeshconvert][PMeshConvert]]
+         - [[#pproximity][PProximity]]
+         - [[#ptransform][PTransform]]
+         - [[#pvolume][PVolume]]
+         - [[#end-implementation][End implementation]]
+     - [[#namespace-declaration][Namespace declaration]]
+
 * thi.ng.geom.plane
 
 ** Constructor

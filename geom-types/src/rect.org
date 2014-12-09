@@ -1,5 +1,34 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeomrect][thi.ng.geom.rect]]
+     - [[#constructor][Constructor]]
+         - [[#todo-replace-sequential-w-coll][TODO replace sequential? w/ coll?]]
+     - [[#type-specific-functions][Type specific functions]]
+     - [[#protocol-implementations][Protocol implementations]]
+         - [[#parea][PArea]]
+         - [[#pboundary][PBoundary]]
+         - [[#pbounds][PBounds]]
+         - [[#pboundingcircle][PBoundingCircle]]
+         - [[#pcenter][PCenter]]
+         - [[#pcircumference][PCircumference]]
+         - [[#pclassify][PClassify]]
+         - [[#pextrude][PExtrude]]
+         - [[#pgraph][PGraph]]
+         - [[#todo-pintersect][TODO PIntersect]]
+         - [[#pmeshconvert][PMeshConvert]]
+         - [[#ppointmap][PPointMap]]
+         - [[#ppolygonconvert][PPolygonConvert]]
+         - [[#pproximity][PProximity]]
+         - [[#psample][PSample]]
+         - [[#todo-psetops][TODO PSetOps]]
+         - [[#psubdivide][PSubdivide]]
+         - [[#todo-ptessellate][TODO PTessellate]]
+         - [[#todo-ptransform][TODO PTransform]]
+         - [[#pvolume][PVolume]]
+         - [[#end-of-implementations][End of implementations]]
+     - [[#namespace-declaration][Namespace declaration]]
+
 * thi.ng.geom.rect
 
 ** Constructor
