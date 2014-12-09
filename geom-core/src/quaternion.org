@@ -1,5 +1,40 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#namespace-thinggeomcorequaternion][Namespace: thi.ng.geom.core.quaternion]]
+     - [[#templates][Templates]]
+         - [[#apply][apply]]
+         - [[#assocn][assocN]]
+         - [[#containskey][containsKey]]
+         - [[#nth-w-error][nth w/ error]]
+         - [[#nth-w-notfound][nth w/ notfound]]
+         - [[#pop][pop]]
+         - [[#compare][compare]]
+         - [[#hashcode][hashCode]]
+         - [[#rest][rest]]
+         - [[#rseq][rseq]]
+     - [[#implementation][Implementation]]
+         - [[#clojure-protocols][Clojure protocols]]
+         - [[#clojurescript-protocols][ClojureScript protocols]]
+         - [[#pscale][PScale]]
+         - [[#protate3d][PRotate3D]]
+         - [[#pmathops][PMathOps]]
+         - [[#pdeltaequals][PDeltaEquals]]
+         - [[#pdotproduct][PDotProduct]]
+         - [[#pmagnitude][PMagnitude]]
+         - [[#pnormalize][PNormalize]]
+         - [[#pconjugate][PConjugate]]
+         - [[#pinvert][PInvert]]
+         - [[#pinterpolate][PInterpolate]]
+         - [[#pmatrixconvert][PMatrixConvert]]
+         - [[#pvectortransform][PVectorTransform]]
+         - [[#end-of-implementation][End of implementation]]
+         - [[#override-print-methods][Override print methods]]
+     - [[#constants][Constants]]
+     - [[#constructors][Constructors]]
+     - [[#swizzling][Swizzling]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
 * Namespace: thi.ng.geom.core.quaternion
 
 ** Templates

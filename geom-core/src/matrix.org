@@ -1,5 +1,36 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#namespace-thinggeomcorematrix][Namespace: thi.ng.geom.core.matrix]]
+     - [[#matrix-macros][Matrix macros]]
+     - [[#protocol-helpers][Protocol helpers]]
+     - [[#matrix-implementations][Matrix implementations]]
+         - [[#3x2-matrix-affine-2d-transform][3x2 Matrix (Affine 2D transform)]]
+             - [[#clojure-protocols][Clojure protocols]]
+             - [[#pmathops][PMathOps]]
+             - [[#pdeltaequals][PDeltaEquals]]
+             - [[#pdeterminant][PDeterminant]]
+             - [[#pinvert][PInvert]]
+             - [[#todo-ptranspose][TODO PTranspose]]
+             - [[#protate-pscale-ptranslate-ptransform][PRotate, PScale, PTranslate, PTransform]]
+             - [[#pvectortransform][PVectorTransform]]
+             - [[#end-of-implementations][End of implementations]]
+         - [[#4x4-matrix][4x4 Matrix]]
+             - [[#clojure-protocols][Clojure protocols]]
+             - [[#pmathops][PMathOps]]
+             - [[#pdeltaequals][PDeltaEquals]]
+             - [[#pdeterminant][PDeterminant]]
+             - [[#pinvert][PInvert]]
+             - [[#ptranspose][PTranspose]]
+             - [[#transformations][Transformations]]
+             - [[#pvectortransform][PVectorTransform]]
+             - [[#end-of-implementation][End of implementation]]
+     - [[#override-print-methods][Override print methods]]
+     - [[#constants][Constants]]
+     - [[#constructors][Constructors]]
+     - [[#matrix-functions][Matrix functions]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
 * Namespace: thi.ng.geom.core.matrix
 
 ** Matrix macros
