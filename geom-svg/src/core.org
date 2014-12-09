@@ -1,5 +1,24 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#namespace-thinggeomsvgcore][Namespace: thi.ng.geom.svg.core]]
+     - [[#constants--presets][Constants & presets]]
+     - [[#protocols][Protocols]]
+         - [[#psvgconvert][PSVGConvert]]
+     - [[#svg-serialization][SVG serialization]]
+         - [[#formatters][Formatters]]
+     - [[#attribute-conversion][Attribute conversion]]
+         - [[#colors][Colors]]
+         - [[#transforms][Transforms]]
+         - [[#attribute-processing][Attribute processing]]
+     - [[#svg-primitives][SVG primitives]]
+     - [[#decorators][Decorators]]
+     - [[#svg-conversions-for-geomtypes][SVG conversions for geom.types]]
+         - [[#example-use-case][Example use case]]
+         - [[#adapter-implementation][Adapter implementation]]
+     - [[#complete-namespace-svgcore][Complete namespace: svg.core]]
+     - [[#complete-namespace-svgadapter][Complete namespace: svg.adapter]]
+
 * Namespace: thi.ng.geom.svg.core
 
 ** Constants & presets
@@ -99,7 +118,8 @@ and will be automatically converted.
     (if-let [mat (attribs id)]
       (if (string? mat)
         attribs
-        (assoc attribs id (apply f/format *fmt-matrix* (g/transpose mat))))
+        (let [[a c e b d f] mat]
+          (assoc attribs id (apply f/format *fmt-matrix* [a b c d e f]))))
       attribs))
 #+END_SRC
 
