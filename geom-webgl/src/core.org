@@ -1,5 +1,27 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeomwebglcore][thi.ng.geom.webgl.core]]
+     - [[#constants][Constants]]
+     - [[#protocols][Protocols]]
+     - [[#helpers][Helpers]]
+         - [[#todo-attribute-buffer-generation][TODO Attribute buffer generation]]
+     - [[#webgl-buffer-conversions][WebGL buffer conversions]]
+         - [[#vec2--vec3][Vec2 & Vec3]]
+         - [[#persistentvector][PersistentVector]]
+         - [[#linestrip2][LineStrip2]]
+         - [[#linestrip3][LineStrip3]]
+         - [[#rect][Rect]]
+         - [[#polygon][Polygon]]
+         - [[#basicmesh][BasicMesh]]
+         - [[#gmesh][GMesh]]
+     - [[#weggl-context][WegGL context]]
+         - [[#default-configuration][Default configuration]]
+         - [[#context-creation][Context creation]]
+         - [[#context-manipulation-functions][Context manipulation functions]]
+         - [[#webgl-extensions][WebGL extensions]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
 * thi.ng.geom.webgl.core
 
 ** Constants
@@ -339,9 +361,8 @@
     [buf idx [x y] num stride]
     (loop [idx 0, num num]
       (when (pos? num)
-        (doto buf
-          (aset idx       x)
-          (aset (+ idx 1) y))
+        (aset buf idx       x)
+        (aset buf (+ idx 1) y)
         (recur (+ idx stride) (dec num))))
     buf)
 
@@ -349,10 +370,9 @@
     [buf idx [x y z] num stride]
     (loop [idx 0, num num]
       (when (pos? num)
-        (doto buf
-          (aset idx       x)
-          (aset (+ idx 1) y)
-          (aset (+ idx 2) z))
+        (aset buf idx       x)
+        (aset buf (+ idx 1) y)
+        (aset buf (+ idx 2) z)
         (recur (+ idx stride) (dec num))))
     buf)
 
@@ -375,35 +395,45 @@
         (recur (into-buffer (first coll) buf i stride) (next coll))
         buf)))
 
+  (defn fill-vertex-buffer-3
+    [f buf coll stride]
+    (loop [i 0, coll (seq coll)]
+      (if coll
+        (let [[a b c] (first coll)
+              i (f a buf i stride)
+              i (f b buf i stride)
+              i (f c buf i stride)]
+          (recur i (next coll)))
+        buf)))
+
   (defn face-normals
     [m]
     (let [fnorms (g/face-normals m true)
-          faces (g/faces m)
-          buf (arrays/float32 (* (count faces) 3 3))]
+          faces  (g/faces m)
+          buf    (arrays/float32 (* (count faces) 3 3))]
       (loop [idx 0, faces faces]
         (if faces
-          (let [n (fnorms (first faces))
+          (let [n  (fnorms (first faces))
                 nx (.-x ^thi.ng.geom.core.vector.Vec3 n)
                 ny (.-y ^thi.ng.geom.core.vector.Vec3 n)
                 nz (.-z ^thi.ng.geom.core.vector.Vec3 n)]
-            (doto buf
-              (aset idx       nx)
-              (aset (+ idx 1) ny)
-              (aset (+ idx 2) nz)
-              (aset (+ idx 3) nx)
-              (aset (+ idx 4) ny)
-              (aset (+ idx 5) nz)
-              (aset (+ idx 6) nx)
-              (aset (+ idx 7) ny)
-              (aset (+ idx 8) nz))
+            (aset buf idx       nx)
+            (aset buf (+ idx 1) ny)
+            (aset buf (+ idx 2) nz)
+            (aset buf (+ idx 3) nx)
+            (aset buf (+ idx 4) ny)
+            (aset buf (+ idx 5) nz)
+            (aset buf (+ idx 6) nx)
+            (aset buf (+ idx 7) ny)
+            (aset buf (+ idx 8) nz)
             (recur (+ idx 9) (next faces)))
           buf))))
 
   (defn vertex-normals
     [m]
     (let [vnorms (g/vertex-normals m true)
-          faces (g/faces m)
-          buf (arrays/float32 (* (count faces) 3 3))]
+          faces  (g/faces m)
+          buf    (arrays/float32 (* (count faces) 3 3))]
       (loop [i 0, faces faces]
         (if faces
           (let [f (first faces)]
@@ -447,7 +477,7 @@ supported.
        uv
        (assoc-in
         [:attribs :uv]
-        {:data (fill-vertex-buffer
+	{:data (fill-vertex-buffer
                 (arrays/float32 (* 2 (count uv))) uv 2)
          :size 2})
 
@@ -512,15 +542,21 @@ using the protocol.
   (extend-type cljs.core.PersistentVector
     PIntoBuffer
     (into-buffer [_ buf idx stride]
-      (let [t (type (nth _ 0))
+      (let [t     (type (first _))
             into* (case t
                    thi.ng.geom.core.vector.Vec2 into-buffer-vec2
                    thi.ng.geom.core.vector.Vec3 into-buffer-vec3
                    into-buffer)]
-        (loop [idx idx, xs _]
-          (if xs
-            (recur (into* (first xs) buf idx stride) (next xs))
-            idx)))))
+        (case (count _)
+          2 (let [idx (into* (first _) buf idx stride)]
+              (into* (nth _ 1) buf idx stride))
+          3 (let [idx (into* (first _) buf idx stride)
+                  idx (into* (nth _ 1) buf idx stride)]
+              (into* (nth _ 2) buf idx stride))
+          (loop [idx idx, xs _]
+            (if xs
+              (recur (into* (first xs) buf idx stride) (next xs))
+              idx))))))
 #+END_SRC
 
 *** LineStrip2
@@ -630,7 +666,8 @@ using the protocol.
             num-verts (* num-faces 3)]
         (common-attrib-buffer-specs
          {:attribs
-          {:position    {:data (fill-vertex-buffer
+          {:position    {:data (fill-vertex-buffer-3
+                                into-buffer-vec3
                                 (arrays/float32 (* num-verts stride))
                                 faces stride)
                          :size stride}}
@@ -657,7 +694,8 @@ using the protocol.
                        :default nil)]
         (common-attrib-buffer-specs
          {:attribs
-          {:position    {:data (fill-vertex-buffer
+          {:position    {:data (fill-vertex-buffer-3
+                                into-buffer-vec3
                                 (arrays/float32 (* num-verts stride))
                                 faces stride)
                          :size stride}}
@@ -798,21 +836,22 @@ using the protocol.
 ** Complete namespace definition
 
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/core.cljs :noweb yes :mkdirp yes :padline no
-(ns thi.ng.geom.webgl.core
-  (:refer-clojure :exclude [byte float int short keep repeat replace])
-  (:require
-    [thi.ng.geom.webgl.arrays :as arrays]
-    [thi.ng.geom.webgl.utils :as glu]
-    [thi.ng.geom.core :as g]
-    [thi.ng.geom.core.utils :as gu]
-    [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3Z]]
-    [thi.ng.geom.core.matrix :as mat]
-    [thi.ng.geom.types]
-    [thi.ng.geom.gmesh :as gm]
-    [thi.ng.geom.rect :as r]
-    [thi.ng.common.error :as err]))
+  (ns thi.ng.geom.webgl.core
+    (:refer-clojure :exclude [byte float int short keep repeat replace])
+    (:require
+     [thi.ng.geom.webgl.arrays :as arrays]
+     [thi.ng.geom.webgl.utils :as glu]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3Z]]
+     [thi.ng.geom.core.matrix :as mat]
+     [thi.ng.geom.types]
+     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.rect :as r]
+     [thi.ng.common.error :as err]))
 
   (declare into-buffer-vec3)
+
   <<const>>
 
   <<protos>>
