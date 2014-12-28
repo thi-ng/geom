@@ -346,7 +346,7 @@ Currently the following options are supported:
       vec4 worldPos = model * vec4(position, 1.0);
       vec4 eyePos = view * worldPos;
       vEyePos = eyePos.xyz;
-      vNormal = (normalMat * vec4(normal, 0.0)).xyz;
+      vNormal = surfaceNormal(normal, normalMat);
       vLightPos = (view * vec4(lightPos, 1.0)).xyz;
       vCol = normal * 0.5 + 0.5;
       gl_Position = proj * eyePos;
@@ -358,16 +358,6 @@ Currently the following options are supported:
   vec3 specularColor = vec3(1.0, 1.0, 1.0);
   vec3 diffuseColor = vCol;
 
-  float phong(vec3 L, vec3 E, vec3 N) {
-    vec3 R = reflect(-L, N);
-    return dot(R, E);
-  }
-
-  float blinnPhong(vec3 L, vec3 E, vec3 N) {
-    vec3 halfVec = normalize(L + E);
-    return dot(halfVec, N);
-  }
-
   void main() {
     vec3 L = normalize(vLightPos - vEyePos);
     vec3 E = normalize(-vEyePos);
@@ -377,11 +367,11 @@ Currently the following options are supported:
     vec3 color = ambientColor + NdotL * diffuseColor;
 
     float specular = 0.0;
-    if (useBlinnPhong)
+    if (useBlinnPhong) {
       specular = blinnPhong(L, E, N);
-    else
+    } else {
       specular = phong(L, E, N);
-
+    }
     color += max(pow(specular, shininess), 0.0) * specularColor;
 
     gl_FragColor = vec4(color, 1.0);
@@ -390,16 +380,25 @@ Currently the following options are supported:
 
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/phong.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.phong
+    (:require-macros
+     [thi.ng.glsl.minify :refer [minified]])
     (:require
-      [thi.ng.geom.core :as g]
-      [thi.ng.geom.webgl.core :as gl]
-      [thi.ng.geom.webgl.buffers :as buf]))
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.webgl.core :as gl]
+     [thi.ng.geom.webgl.buffers :as buf]
+     [thi.ng.glsl.core :as glsl]
+     [thi.ng.glsl.vertex.normal]
+     [thi.ng.glsl.lighting.phong]))
 
   (def shader-spec
-    {:vs "
-    <<phong-vs>>"
-     :fs "
-    <<phong-fs>>"
+    {:vs (glsl/assemble
+          {:deps [thi.ng.glsl.vertex.normal/spec]
+           :src (minified "
+    <<phong-vs>>")})
+     :fs (glsl/assemble
+          {:deps [thi.ng.glsl.lighting.phong/spec]
+           :src (minified "
+    <<phong-fs>>")})
      :uniforms {:view          :mat4
                 :proj          :mat4
                 :model         :mat4

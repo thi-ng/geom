@@ -32,6 +32,14 @@ thi.ng/geom-webgl
 target/geom-webgl-<<conf-version>>.js
 #+END_SRC
 
+** Dependencies
+
+*** [[http://thi.ng/shaderlib][thi.ng/shaderlib]]
+
+#+BEGIN_SRC clojure :exports none :noweb-ref dep-shaderlib
+[thi.ng/shaderlib "0.1.0-SNAPSHOT"]
+#+END_SRC
+
 ** Release history
 
 | *Version* | *Released* | *Description*      | *Lein coordinates*      | *Tagged Github URL*                       |
@@ -67,7 +75,8 @@ target/geom-webgl-<<conf-version>>.js
     :dependencies [<<dep-clj>>
                    <<dep-geom-core>>
                    <<dep-geom-types>>
-                   <<dep-geom-meshops>>]
+                   <<dep-geom-meshops>>
+                   <<dep-shaderlib>>]
 
     :profiles {:dev {:dependencies [<<dep-cljs>>
                                     <<dep-criterium>>]
