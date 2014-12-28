@@ -358,22 +358,21 @@
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn fill-buffer-vec2
-    [buf idx [x y] num stride]
-    (loop [idx 0, num num]
-      (when (pos? num)
-        (aset buf idx       x)
-        (aset buf (+ idx 1) y)
-        (recur (+ idx stride) (dec num))))
+    [buf idx v num stride]
+    (let [vbuf (arrays/float32 v)]
+      (loop [idx 0, num num]
+        (when (pos? num)
+          (.set buf vbuf idx)
+          (recur (+ idx stride) (dec num)))))
     buf)
 
   (defn fill-buffer-vec3
-    [buf idx [x y z] num stride]
-    (loop [idx 0, num num]
-      (when (pos? num)
-        (aset buf idx       x)
-        (aset buf (+ idx 1) y)
-        (aset buf (+ idx 2) z)
-        (recur (+ idx stride) (dec num))))
+    [buf idx v num stride]
+    (let [vbuf (arrays/float32 v)]
+      (loop [idx 0, num num]
+        (when (pos? num)
+          (.set buf vbuf idx)
+          (recur (+ idx stride) (dec num)))))
     buf)
 
   (defn fill-buffer
@@ -410,22 +409,17 @@
     [m]
     (let [fnorms (g/face-normals m true)
           faces  (g/faces m)
-          buf    (arrays/float32 (* (count faces) 3 3))]
+          buf    (arrays/float32 (* (count faces) 3 3))
+          nbuf   (arrays/float32 3)]
       (loop [idx 0, faces faces]
         (if faces
-          (let [n  (fnorms (first faces))
-                nx (.-x ^thi.ng.geom.core.vector.Vec3 n)
-                ny (.-y ^thi.ng.geom.core.vector.Vec3 n)
-                nz (.-z ^thi.ng.geom.core.vector.Vec3 n)]
-            (aset buf idx       nx)
-            (aset buf (+ idx 1) ny)
-            (aset buf (+ idx 2) nz)
-            (aset buf (+ idx 3) nx)
-            (aset buf (+ idx 4) ny)
-            (aset buf (+ idx 5) nz)
-            (aset buf (+ idx 6) nx)
-            (aset buf (+ idx 7) ny)
-            (aset buf (+ idx 8) nz)
+          (let [n  (fnorms (first faces))]
+            (aset nbuf 0 (.-x ^thi.ng.geom.core.vector.Vec3 n))
+            (aset nbuf 1 (.-y ^thi.ng.geom.core.vector.Vec3 n))
+            (aset nbuf 2 (.-z ^thi.ng.geom.core.vector.Vec3 n))
+            (.set buf nbuf idx)
+            (.set buf nbuf (+ idx 3))
+            (.set buf nbuf (+ idx 6))
             (recur (+ idx 9) (next faces)))
           buf))))
 
@@ -477,7 +471,7 @@ supported.
        uv
        (assoc-in
         [:attribs :uv]
-	{:data (fill-vertex-buffer
+        {:data (fill-vertex-buffer
                 (arrays/float32 (* 2 (count uv))) uv 2)
          :size 2})
 
