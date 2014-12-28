@@ -119,7 +119,7 @@
 These boilerplate =#define='s are prefixed by default to any given
 shader source before compilation with =compile-shader= below.
 
-#+BEGIN_SRC c :noweb-ref header
+#+BEGIN_SRC glsl :noweb-ref header
   #ifdef GL_FRAGMENT_PRECISION_HIGH
   precision highp int;
   precision highp float;
@@ -127,10 +127,18 @@ shader source before compilation with =compile-shader= below.
   precision mediump int;
   precision mediump float;
   #endif
+  #ifndef PI
   #define PI      3.141592653589793
+  #endif
+  #ifndef TWO_PI
   #define TWO_PI  6.283185307179586
+  #endif
+  #ifndef HALF_PI
   #define HALF_PI 1.570796326794896
+  #endif
+  #ifndef RAD
   #define RAD     0.008726646259972
+  #endif
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref ctors :noweb yes
@@ -333,7 +341,7 @@ Currently the following options are supported:
 
 *** Phong
 
-#+BEGIN_SRC c :noweb-ref phong-vs
+#+BEGIN_SRC glsl :noweb-ref phong-vs
   void main(){
       vec4 worldPos = model * vec4(position, 1.0);
       vec4 eyePos = view * worldPos;
@@ -345,7 +353,7 @@ Currently the following options are supported:
   }
 #+END_SRC
 
-#+BEGIN_SRC c :noweb-ref phong-fs
+#+BEGIN_SRC glsl :noweb-ref phong-fs
   vec3 ambientColor = vec3(0.1, 0.1, 0.1);
   vec3 specularColor = vec3(1.0, 1.0, 1.0);
   vec3 diffuseColor = vCol;
@@ -452,7 +460,7 @@ Currently the following options are supported:
 
 *** Spotlight
 
-#+BEGIN_SRC c :noweb-ref spot-vs
+#+BEGIN_SRC glsl :noweb-ref spot-vs
   void main(){
     vNormal = normal;
     vWorldPos = model * vec4(position, 1.0);
@@ -460,7 +468,7 @@ Currently the following options are supported:
   }
 #+END_SRC
 
-#+BEGIN_SRC c :noweb-ref spot-fs
+#+BEGIN_SRC glsl :noweb-ref spot-fs
   float attenuation(vec3 dir){
     float dist = length(dir);
     float radiance = 1.0/(1.0+pow(dist/10.0, 2.0));
@@ -523,14 +531,14 @@ Currently the following options are supported:
 
 *** Shadow
 
-#+BEGIN_SRC c :noweb-ref shadow-vs-pass1
+#+BEGIN_SRC glsl :noweb-ref shadow-vs-pass1
   void main() {
     vWorldPos = model * vec4(position, 1.0);
     gl_Position = proj * view * vWorldPos;
   }
 #+END_SRC
 
-#+BEGIN_SRC c :noweb-ref shadow-fs-pass1
+#+BEGIN_SRC glsl :noweb-ref shadow-fs-pass1
   void main() {
     vec3 lightPos = (view * vWorldPos).xyz;
     float depth = clamp(length(lightPos)/10.0, 0.0, 1.0);
@@ -538,7 +546,7 @@ Currently the following options are supported:
   }
 #+END_SRC
 
-#+BEGIN_SRC c :noweb-ref shadow-hard
+#+BEGIN_SRC glsl :noweb-ref shadow-hard
   // shadow calculation
   float lightDepth1 = texture2D(lightDepthTex, lightUV).r;                                                     
   float lightDepth2 = clamp(length(lightPos)/40.0, 0.0, 1.0);
@@ -546,7 +554,7 @@ Currently the following options are supported:
   float illuminated = step(lightDepth2, lightDepth1+bias);
 #+END_SRC
 
-#+BEGIN_SRC c :noweb-ref shadow-lerp1
+#+BEGIN_SRC glsl :noweb-ref shadow-lerp1
   float texture2DCompare(sampler2D depths, vec2 uv, float compare) {
     float depth = texture2D(depths, uv).r;
     return step(compare, depth);
@@ -565,14 +573,14 @@ Currently the following options are supported:
   }
 #+END_SRC
 
-#+BEGIN_SRC c :noweb-ref shadow-lerp2
+#+BEGIN_SRC glsl :noweb-ref shadow-lerp2
   // shadow calculation
   float bias = 1e-4;
   float lightDepth2 = clamp(length(lightPos)/10.0, 0.0, 1.0)-bias;
   float illuminated = texture2DShadowLerp(lightDepthTex, lightDepthSize, lightUV, lightDepth2);
 #+END_SRC
 
-#+BEGIN_SRC c :noweb-ref shadow-fs-pass2 :noweb yes
+#+BEGIN_SRC glsl :noweb-ref shadow-fs-pass2 :noweb yes
   float attenuation(vec3 dir) {
     float dist = length(dir);
     float radiance = 1.0/(1.0+pow(dist/10.0, 2.0));
@@ -705,14 +713,14 @@ Currently the following options are supported:
 
 *** 2D Overlay
 
-#+BEGIN_SRC c :noweb-ref overlay-vs
+#+BEGIN_SRC glsl :noweb-ref overlay-vs
   void main() {
     vUV = uv;
     gl_Position = proj * model * vec4(position, 0.0, 1.0);
   }
 #+END_SRC
 
-#+BEGIN_SRC c :noweb-ref overlay-fs
+#+BEGIN_SRC glsl :noweb-ref overlay-fs
   void main() {
     gl_FragColor = texture2D(tex, vUV);
   }
