@@ -135,16 +135,19 @@ rotation / transformation).
           view-rect  (gl/get-viewport-rect gl)
           teeth      20
           model      (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
-                         (g/extrude {:mesh (basic-mesh) :depth 0.1 :scale 0.9})
+                         (g/extrude-shell {:mesh (basic-mesh) :depth 0.1 :inset 0.025 :wall 0.015 :bottom? true})
                          (gl/as-webgl-buffer-spec {:tessellate true :fnormals true})
                          (buf/make-attribute-buffers-in-spec gl gl/static-draw)
                          (assoc :shader (sh/make-shader-from-spec gl phong/shader-spec))
                          (update-in [:uniforms] merge
-                                    {:proj (gl/perspective 45 view-rect 0.1 100.0)
-                                     :lightPos (vec3 0 0.5 1)
-                                     :shininess 64
-                                     :useBlinnPhong true
-                                     :wrap 0}))
+                                    {:proj          (gl/perspective 45 view-rect 0.1 100.0)
+                                     :lightPos      (vec3 0.1 0 1)
+                                     :ambientCol    [0.05 0.1 0.3]
+                                     :diffuseCol    [1 0.2 0.05]
+                                     :specularCol   [0.6 1 1]
+                                     :shininess     64
+                                     :wrap          0
+                                     :useBlinnPhong true}))
           stats      (init-stats)]
       (anim/animate
        (fn [[t frame]]
@@ -164,9 +167,12 @@ rotation / transformation).
            (gl/set-viewport gl view-rect)
            (gl/clear-color-buffer gl 1 0.98 0.95 1.0)
            (gl/clear-depth-buffer gl 1)
-           (gl/enable gl gl/depth-test)  
+           (gl/enable gl gl/depth-test)
            (phong/draw-phong gl (assoc-in model [:uniforms :model] tx1))
-           (phong/draw-phong gl (assoc-in model [:uniforms :model] tx2))
+           (phong/draw-phong
+            gl (-> model
+                   (assoc-in [:uniforms :model] tx2)
+                   (assoc-in [:uniforms :diffuseCol] [0.2 1 0.5])))
 
            (update-stats stats)
            true)))))
