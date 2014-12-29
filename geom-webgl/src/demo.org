@@ -142,10 +142,10 @@ rotation / transformation).
                          (update-in [:uniforms] merge
                                     {:proj          (gl/perspective 45 view-rect 0.1 100.0)
                                      :lightPos      (vec3 0.1 0 1)
-                                     :ambientCol    [0.05 0.1 0.3]
-                                     :diffuseCol    [1 0.2 0.05]
-                                     :specularCol   [0.6 1 1]
-                                     :shininess     64
+                                     :ambientCol    0x0e1a4c
+                                     :diffuseCol    0xff3310
+                                     :specularCol   0x99ffff
+                                     :shininess     100
                                      :wrap          0
                                      :useBlinnPhong true}))
           stats      (init-stats)]
@@ -168,11 +168,11 @@ rotation / transformation).
            (gl/clear-color-buffer gl 1 0.98 0.95 1.0)
            (gl/clear-depth-buffer gl 1)
            (gl/enable gl gl/depth-test)
-           (phong/draw-phong gl (assoc-in model [:uniforms :model] tx1))
-           (phong/draw-phong
+           (phong/draw gl (assoc-in model [:uniforms :model] tx1))
+           (phong/draw
             gl (-> model
                    (assoc-in [:uniforms :model] tx2)
-                   (assoc-in [:uniforms :diffuseCol] [0.2 1 0.5])))
+                   (assoc-in [:uniforms :diffuseCol] 0x33ff80)))
 
            (update-stats stats)
            true)))))

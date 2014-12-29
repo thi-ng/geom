@@ -9,8 +9,8 @@
      - [[#shader-creation][Shader creation]]
          - [[#header-injection][Header injection]]
          - [[#creation-compilation--linking][Creation, compilation & linking]]
-     - [[#shader-pipeline][Shader pipeline]]
      - [[#shading-state-preparation][Shading state preparation]]
+     - [[#helpers][Helpers]]
      - [[#complete-namespace-definition][Complete namespace definition]]
      - [[#presets][Presets]]
          - [[#basic][Basic]]
@@ -51,6 +51,14 @@
 
 *** Uniform setup & handling
 
+Special cases:
+
+- Setters for =:vec3= uniforms expect a 3-element vector or an
+  integer. If the latter, it is interpreted as 24bit RGB value and
+  converted into RGB vector (=[r g b]=)
+- Values for Matrix uniforms can be specified as vector =[mat transpose?]=
+  to indicate given matrix should be transposed
+
 #+BEGIN_SRC clojure :noweb-ref uniforms
   (defn init-shader-uniforms
     [^WebGLRenderingContext gl prog uniforms]
@@ -63,13 +71,22 @@
              setter (aget gl (str "uniform" u-type))]
          (assoc umap id
                 {:type type
-                 :setter (if (#{:mat2 :mat3 :mat4} type)
-                           (fn [x] (.call setter gl loc transpose?
-                                          (if (arrays/typed-array? x)
-                                            x (u-cast x))))
-                           (fn [x] (.call setter gl loc
-                                          (if (arrays/typed-array? x)
-                                            x (u-cast (if (not (sequential? x)) [x] x))))))
+                 :setter (cond
+                          (#{:mat2 :mat3 :mat4} type)
+                          (fn [x]
+                            (.call setter gl loc transpose?
+                                   (if (arrays/typed-array? x)
+                                     x (u-cast x))))
+                          (= :vec3 type)
+                          (fn [x]
+                            (if (number? x)
+                              (.call setter gl loc (u-cast (subvec (color/int->rgba x) 0 3)))
+                              (.call setter gl loc (if (arrays/typed-array? x) x (u-cast x)))))
+                          :else
+                          (fn [x]
+                            (.call setter gl loc
+                                   (if (arrays/typed-array? x)
+                                     x (u-cast (if (not (sequential? x)) [x] x))))))
                  :loc loc})))
      {} uniforms))
 
@@ -77,7 +94,7 @@
     [shader id val]
     (if-let [u-spec (get-in shader [:uniforms id])]
       ((:setter u-spec) val)
-      (err/illegal-arg! (str "Unknown shader uniform: " id))))
+      (prn "WARNING: Unknown shader uniform: " id)))
 #+END_SRC
 
 ** Shader attributes
@@ -220,12 +237,6 @@ shader source before compilation with =compile-shader= below.
           :fs (glu/get-script-text fs))))
 #+END_SRC
 
-** Shader pipeline
-
-#+BEGIN_SRC clojure :noweb-ref pipeline
-
-#+END_SRC
-
 ** Shading state preparation
 
 Shader specs can specify WebGL render state flags which can then be
@@ -256,14 +267,30 @@ Currently the following options are supported:
     gl)
 #+END_SRC
 
+** Helpers
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn inject-normal-matrix
+    [spec model-mat normal-mat-id]
+    (let [model-mat (if (keyword? model-mat)
+                      (-> spec :uniforms model-mat)
+                      model-mat)]
+      (assoc-in
+       spec [:uniforms normal-mat-id]
+       (-> model-mat (g/invert) (g/transpose)))))
+#+END_SRC
+
 ** Complete namespace definition
 
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders.cljs :noweb yes :mkdirp yes :padline no
 (ns thi.ng.geom.webgl.shaders
   (:require
+    [thi.ng.geom.core :as g]
+    [thi.ng.geom.core.matrix]
     [thi.ng.geom.webgl.core :as gl]
     [thi.ng.geom.webgl.arrays :as arrays]
     [thi.ng.geom.webgl.utils :as glu]
+    [thi.ng.color.core :as color]
     [thi.ng.common.error :as err]
     [clojure.string :as str]))
 
@@ -275,7 +302,7 @@ Currently the following options are supported:
 
   <<state>>
 
-  <<pipeline>>
+  <<helpers>>
 #+END_SRC
 
 ** Presets
@@ -324,6 +351,8 @@ Currently the following options are supported:
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/lambert.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.lambert
     (:require
+     [thi.ng.geom.webgl.buffers :as buf]
+     [thi.ng.geom.webgl.shaders :as sh]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.vertex :as vertex]
      [thi.ng.glsl.lighting :as light]))
@@ -333,7 +362,7 @@ Currently the following options are supported:
           (glsl/glsl-spec
            [vertex/mvp vertex/normal light/lambert-abs]
            "
-           <<lambert-vs>>"))
+  <<lambert-vs>>"))
      :fs "void main(){gl_FragColor=vCol;}"
      :uniforms {:model      :mat4
                 :view       :mat4
@@ -348,6 +377,10 @@ Currently the following options are supported:
                 :normal     :vec3}
      :varying  {:vCol       :vec4}
      :state    {:depth-test true}})
+
+  (defn draw
+    [^WebGLRenderingContext gl spec]
+    (buf/draw-arrays gl (sh/inject-normal-matrix spec :model :normalMat)))
 #+END_SRC
 
 *** Phong
@@ -386,9 +419,8 @@ Currently the following options are supported:
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/phong.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.phong
     (:require
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.webgl.core :as gl]
      [thi.ng.geom.webgl.buffers :as buf]
+     [thi.ng.geom.webgl.shaders :as sh]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.vertex :as vert]
      [thi.ng.glsl.lighting :as light]))
@@ -422,12 +454,9 @@ Currently the following options are supported:
                :vLightPos      :vec3}
      :state    {:depth-test true}})
 
-  (defn draw-phong
+  (defn draw
     [^WebGLRenderingContext gl spec]
-    (buf/draw-arrays
-     gl (update-in
-         spec [:uniforms]
-         #(assoc % :normalMat (-> (:model %) (g/invert) (g/transpose))))))
+    (buf/draw-arrays gl (sh/inject-normal-matrix spec :model :normalMat)))
 #+END_SRC
 
 *** X-Ray
