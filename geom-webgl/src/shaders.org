@@ -444,13 +444,13 @@ Currently the following options are supported:
           (glsl/glsl-spec
            [vert/normal]
            "void main() {
-              vIncident = (view * model * vec4(position, 1.0)).xyz;
+              vIncident = view * model * vec4(position, 1.0);
               vNormal = surfaceNormal(normal, normalMat);
               gl_Position = proj * vIncident;
             }"))
      :fs (glsl/minified
           "void main() {
-             float opac = abs(dot(normalize(-vNormal), normalize(-vIncident)));
+             float opac = abs(dot(normalize(-vNormal), normalize(-vIncident.xyz)));
              opac = 1.0 - pow(opac, alpha);
              gl_FragColor = vec4(lightCol * opac, opac);
            }")
@@ -462,7 +462,7 @@ Currently the following options are supported:
                 :alpha      :float}
      :attribs  {:position   :vec3
                 :normal     :vec3}
-     :varying  {:vIncident  :vec3
+     :varying  {:vIncident  :vec4
                 :vNormal    :vec3}
      :state    {:depth-test false
                 :blend true
