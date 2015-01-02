@@ -1559,7 +1559,10 @@ rules:
           (number? x) (Vec3. x x x nil nil)
           (map? x) (Vec3. (get x :x 0.0) (get x :y 0.0) (get x :z 0.0) nil (meta x))
           :default (err/type-error! "Vec3" x)))
-    ([x y] (Vec3. x y 0.0 nil nil))
+    ([x y] (cond
+            (sequential? x) (Vec3. (nth x 0 0.0) (nth x 1 0.0) y nil (meta x))
+            (map? x) (Vec3. (get x :x 0.0) (get x :y 0.0) y nil (meta x))
+            :default (Vec3. x y 0.0 nil nil)))
     ([x y z] (Vec3. x y z nil nil)))
 
   (defn vec2-with-meta
