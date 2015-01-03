@@ -270,14 +270,20 @@ Currently the following options are supported:
 ** Helpers
 
 #+BEGIN_SRC clojure :noweb-ref helpers
+  (defn compute-normal-matrix
+    [m v] (-> v (g/* m) (g/invert) (g/transpose)))
+
   (defn inject-normal-matrix
-    [spec model-mat normal-mat-id]
+    [spec model-mat view-mat normal-mat-id]
     (let [model-mat (if (keyword? model-mat)
                       (-> spec :uniforms model-mat)
-                      model-mat)]
+                      model-mat)
+          view-mat (if (keyword? view-mat)
+                      (-> spec :uniforms view-mat)
+                      view-mat)]
       (assoc-in
        spec [:uniforms normal-mat-id]
-       (-> model-mat (g/invert) (g/transpose)))))
+       (compute-normal-matrix model-mat view-mat))))
 #+END_SRC
 
 ** Complete namespace definition
@@ -380,7 +386,7 @@ Currently the following options are supported:
 
   (defn draw
     [^WebGLRenderingContext gl spec]
-    (buf/draw-arrays gl (sh/inject-normal-matrix spec :model :normalMat)))
+    (buf/draw-arrays gl (sh/inject-normal-matrix spec :model :view :normalMat)))
 #+END_SRC
 
 *** Phong
@@ -456,7 +462,7 @@ Currently the following options are supported:
 
   (defn draw
     [^WebGLRenderingContext gl spec]
-    (buf/draw-arrays gl (sh/inject-normal-matrix spec :model :normalMat)))
+    (buf/draw-arrays gl (sh/inject-normal-matrix spec :model :view :normalMat)))
 #+END_SRC
 
 *** X-Ray
@@ -688,7 +694,7 @@ Currently the following options are supported:
     (let [float-ext (.call (aget gl "getFloatExtension") gl
                            (clj->js {:require ["renderable"]
                                      :prefer ["filterable" "half"]}))
-          tex (buf/make-texture2d
+          tex (buf/make-texture
                gl {:type   (.-type float-ext)
                    :width  size
                    :height size
