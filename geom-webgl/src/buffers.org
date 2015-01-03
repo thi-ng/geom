@@ -140,7 +140,7 @@
       [_ {:keys [width height filter wrap]}]
       (.texImage2D gl target 0 channels width height 0 channels type nil)
       (when filter (gl/set-texture-filter _ filter))
-      (when wrap (gl/set-texture-wrap _ wrap))
+      (when wrap   (gl/set-texture-wrap _ wrap))
       (Texture2D. gl id channels type target width height))
 
     gl/PTexture
@@ -155,8 +155,8 @@
       (.texParameteri gl target gl/texture-wrap-t type)
       _))
 
-  (defn make-texture2d
-    [gl {:keys [channels type target width height] :as opts}]
+  (defn make-texture
+    [^WebGLRenderingContext gl {:keys [channels type target width height] :as opts}]
     (let [tex (Texture2D.
                gl (.createTexture gl)
                (or channels gl/rgb)
@@ -164,8 +164,23 @@
                (or target gl/texture-2d)
                nil nil)]
       (if (and width height)
-        (do (gl/bind tex 0) (gl/configure tex opts))
+        (do (gl/bind tex 0)
+            (gl/configure tex opts))
         tex)))
+
+  (defn make-canvas-texture
+    [^WebGLRenderingContext gl canvas & [opts]]
+    (let [tex (->> opts
+                   (merge {:channels gl/rgba
+                           :width    (.-width canvas)
+                           :height   (.-height canvas)
+                           :filter   gl/linear
+                           :wrap     gl/clamp-to-edge})
+                   (make-texture gl))]
+      (.pixelStorei gl gl/unpack-flip-y-webgl 0)
+      (.pixelStorei gl gl/unpack-premultiply-alpha-webgl 1)
+      (.texImage2D gl gl/texture-2d 0 gl/rgba gl/rgba gl/unsigned-byte canvas)
+      tex))
 #+END_SRC
 
 ** Complete namespace definition
