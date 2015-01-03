@@ -405,6 +405,22 @@
           (recur i (next coll)))
         buf)))
 
+  (defn face-normals-buffer
+    [faces]
+    (let [buf  (arrays/float32 (* (count faces) 3 3))
+          nbuf (arrays/float32 3)]
+      (loop [idx 0, faces faces]
+        (if faces
+          (let [n (gu/ortho-normal (first faces))]
+            (aset nbuf 0 (.-x ^thi.ng.geom.core.vector.Vec3 n))
+            (aset nbuf 1 (.-y ^thi.ng.geom.core.vector.Vec3 n))
+            (aset nbuf 2 (.-z ^thi.ng.geom.core.vector.Vec3 n))
+            (.set buf nbuf idx)
+            (.set buf nbuf (+ idx 3))
+            (.set buf nbuf (+ idx 6))
+            (recur (+ idx 9) (next faces)))
+          buf))))
+
   (defn face-normals
     [m]
     (let [fnorms (g/face-normals m true)
@@ -413,7 +429,7 @@
           nbuf   (arrays/float32 3)]
       (loop [idx 0, faces faces]
         (if faces
-          (let [n  (fnorms (first faces))]
+          (let [n (fnorms (first faces))]
             (aset nbuf 0 (.-x ^thi.ng.geom.core.vector.Vec3 n))
             (aset nbuf 1 (.-y ^thi.ng.geom.core.vector.Vec3 n))
             (aset nbuf 2 (.-z ^thi.ng.geom.core.vector.Vec3 n))
