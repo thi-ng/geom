@@ -333,7 +333,7 @@
     (as-webgl-buffer-spec [_ opts]))
 
   (defprotocol PIntoBuffer
-    (into-buffer [_ buf idx stride]))
+    (into-buffer [_ buf stride idx]))
 
   (defprotocol PRelease
     (release [_]))
@@ -391,18 +391,18 @@
     [buf coll stride]
     (loop [i 0, coll (seq coll)]
       (if coll
-        (recur (into-buffer (first coll) buf i stride) (next coll))
+        (recur (into-buffer (first coll) buf stride i) (next coll))
         buf)))
 
   (defn fill-vertex-buffer-3
     [f buf coll stride]
     (loop [i 0, coll (seq coll)]
       (if coll
-        (let [[a b c] (first coll)
-              i (f a buf i stride)
-              i (f b buf i stride)
-              i (f c buf i stride)]
-          (recur i (next coll)))
+        (let [[a b c] (first coll)]
+          (recur (->> (f a buf stride i)
+                      (f b buf stride)
+                      (f c buf stride))
+                 (next coll)))
         buf)))
 
   (defn face-normals-buffer
@@ -447,8 +447,7 @@
       (loop [i 0, faces faces]
         (if faces
           (let [f (first faces)]
-            (recur (->> i
-                        (into-buffer-vec3 (vnorms (f 0)) buf 3)
+            (recur (->> (into-buffer-vec3 (vnorms (f 0)) buf 3 i)
                         (into-buffer-vec3 (vnorms (f 1)) buf 3)
                         (into-buffer-vec3 (vnorms (f 2)) buf 3))
                    (next faces)))
@@ -519,13 +518,13 @@ using the protocol.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   (defn into-buffer-vec2
-    [^thi.ng.geom.core.vector.Vec2 v buf idx stride]
+    [^thi.ng.geom.core.vector.Vec2 v buf stride idx]
     (aset buf idx       (.-x v))
     (aset buf (+ idx 1) (.-y v))
     (+ idx stride))
   
   (defn into-buffer-vec3
-    [^thi.ng.geom.core.vector.Vec3 v buf idx stride]
+    [^thi.ng.geom.core.vector.Vec3 v buf stride idx]
     (aset buf idx       (.-x v))
     (aset buf (+ idx 1) (.-y v))
     (aset buf (+ idx 2) (.-z v))
@@ -533,14 +532,14 @@ using the protocol.
   
   (extend-type thi.ng.geom.core.vector.Vec2
     PIntoBuffer
-    (into-buffer [_ buf idx stride]
+    (into-buffer [_ buf stride idx]
       (aset buf idx       (.-x ^thi.ng.geom.core.vector.Vec2 _))
       (aset buf (+ idx 1) (.-y ^thi.ng.geom.core.vector.Vec2 _))
       (+ idx stride)))
   
   (extend-type thi.ng.geom.core.vector.Vec3
     PIntoBuffer
-    (into-buffer [_ buf idx stride]
+    (into-buffer [_ buf stride idx]
       (aset buf idx       (.-x ^thi.ng.geom.core.vector.Vec3 _))
       (aset buf (+ idx 1) (.-y ^thi.ng.geom.core.vector.Vec3 _))
       (aset buf (+ idx 2) (.-z ^thi.ng.geom.core.vector.Vec3 _))
@@ -551,21 +550,21 @@ using the protocol.
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type cljs.core.PersistentVector
     PIntoBuffer
-    (into-buffer [_ buf idx stride]
+    (into-buffer [_ buf stride idx]
       (let [t     (type (first _))
             into* (case t
                    thi.ng.geom.core.vector.Vec2 into-buffer-vec2
                    thi.ng.geom.core.vector.Vec3 into-buffer-vec3
                    into-buffer)]
         (case (count _)
-          2 (let [idx (into* (first _) buf idx stride)]
-              (into* (nth _ 1) buf idx stride))
-          3 (let [idx (into* (first _) buf idx stride)
-                  idx (into* (nth _ 1) buf idx stride)]
-              (into* (nth _ 2) buf idx stride))
+          2 (let [idx (into* (first _) buf stride idx)]
+              (into* (nth _ 1) buf stride idx))
+          3 (let [idx (into* (first _) buf stride idx)
+                  idx (into* (nth _ 1) buf stride idx)]
+              (into* (nth _ 2) buf stride idx))
           (loop [idx idx, xs _]
             (if xs
-              (recur (into* (first xs) buf idx stride) (next xs))
+              (recur (into* (first xs) buf stride idx) (next xs))
               idx))))))
 #+END_SRC
 
