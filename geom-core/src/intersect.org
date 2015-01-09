@@ -4,7 +4,9 @@
  - [[#namespace-thinggeomcoreintersect][Namespace: thi.ng.geom.core.intersect]]
      - [[#circle][Circle]]
      - [[#rect][Rect]]
+     - [[#rect-circle][Rect-Circle]]
      - [[#aabb][AABB]]
+     - [[#aabb-sphere][AABB-Sphere]]
      - [[#sphere][Sphere]]
      - [[#triangle3][Triangle3]]
      - [[#line2][Line2]]
@@ -42,15 +44,31 @@
        (not (or (> px1 qx2) (> px2 qx1) (> py1 qy2) (> py2 qy1)))))
 #+END_SRC
 
+** Rect-Circle
+
+#+BEGIN_SRC clojure :noweb-ref isec
+  (defn intersect-rect-circle?
+    ([{p :p sz :size} {s :p r :r}]
+       (intersect-rect-circle? p (g/+ p sz) s r))
+    ([[px py] [qx qy] [cx cy] r]
+       (let [ds (if (< cx px) (sq (- cx px)) (if (> cx qx) (sq (- cx qx)) 0.0))
+             ds (+ ds (if (< cy py) (sq (- cy py)) (if (> cy qy) (sq (- cy qy)) 0.0)))]
+         (<= ds (* r r)))))
+#+END_SRC
+
 ** AABB
+
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-aabb-aabb?
     ([{pa :p sa :size} {pb :p sb :size}]
-       (every?
-        #(and (<= (pa %) (+ (pb %) (sb %))) (<= (pb %) (+ (pa %) (sa %)))) [0 1 2]))
+       (intersect-aabb-aabb? pa pb (g/+ pa sa) (g/+ pb sb)))
     ([pa pb qa qb]
-       (every? #(and (<= (pa %) (qb %)) (<= (pb %) (qa %))) [0 1 2])))
+       (if (and (<= (pa 0) (qb 0)) (<= (pb 0) (qa 0)))
+         (if (and (<= (pa 1) (qb 1)) (<= (pb 1) (qa 1)))
+           (and (<= (pa 2) (qb 2)) (<= (pb 2) (qa 2)))))))
 #+END_SRC
+
+** AABB-Sphere
 
 Source:
 Graphics Gems 2 / SO:
@@ -62,13 +80,11 @@ Also works for rect/circle...
   (defn intersect-aabb-sphere?
     ([{p :p sz :size} {s :p r :r}]
        (intersect-aabb-sphere? p (g/+ p sz) s r))
-    ([p q c r]
-       (let [sq #(* % %)
-             ds (mapv
-                 (fn [x1 x2 sx]
-                   (if (< sx x1) (sq (- sx x1)) (if (> sx x2) (sq (- sx x2)) 0.0)))
-                 p q c)]
-         (<= (apply + ds) (* r r)))))
+    ([[px py pz] [qx qy qz] [cx cy cz] r]
+       (let [ds (if (< cx px) (sq (- cx px)) (if (> cx qx) (sq (- cx qx)) 0.0))
+             ds (+ ds (if (< cy py) (sq (- cy py)) (if (> cy qy) (sq (- cy qy)) 0.0)))
+             ds (+ ds (if (< cz pz) (sq (- cz pz)) (if (> cz qz) (sq (- cz qz)) 0.0)))]
+         (<= ds (* r r)))))
 #+END_SRC
 
 ** Sphere
@@ -313,6 +329,8 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
     ,#+cljs
     (:require-macros
      [thi.ng.macromath.core :as mm]))
+
+  (defn- sq [x] (* x x))
 
   <<isec>>
 #+END_SRC
