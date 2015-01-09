@@ -24,6 +24,7 @@
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.rect :as r]
      [thi.ng.geom.types]
@@ -76,30 +77,61 @@
 ** Tree selectors
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
+  (defn check-with
+    [q isec? inside?]
+    (if (isec? (g/bounds q))
+      (let [children (g/get-children q)]
+        (if children
+          (loop [ch children]
+            (if ch
+              (if-let [c (first ch)]
+                (if (check-with c isec? inside?)
+                  true
+                  (recur (next ch)))
+                (recur (next ch)))))
+          (let [p (g/get-point q)]
+            (and p (inside? p)))))))
+
   (defn select-with
     "Produces a vector of points in the tree within a given region.
     Uses two predicate fns to logically define the query region:
-  
+
     `isec?`  : single-arg fn to check if the bounds of a tree node
-               intersect the query region
+    intersect the query region
     `inside?`: single-arg fn to check if a point lies within the region."
-    ([isec? inside? q]
-       (select-with isec? inside? q (transient [])))
-    ([isec? inside? q acc]
+    ([q isec? inside?]
+       (select-with q isec? inside? (transient [])))
+    ([q isec? inside? acc]
        (if (isec? (g/bounds q))
          (let [children (g/get-children q)]
            (if children
              (reduce
-              (fn [acc c] (if c (select-with isec? inside? c acc) acc))
+              (fn [acc c] (if c (select-with c isec? inside? acc) acc))
               acc children)
              (let [p (g/get-point q)]
                (if (and p (inside? p)) (conj! acc p) acc))))
          acc)))
-  
+
   (defn select-with-shape
-    [s q]
-    (persistent! (select-with #(g/intersect-shape s %) #(g/contains-point? s %) q)))
-  
+    [q s] (persistent! (select-with q #(g/intersect-shape s %) #(g/contains-point? s %))))
+
+  (defn- do-with-radius
+    [f f2 q c r]
+    (let [rsq (* r r)]
+      (f q #(f2 (:p %) (g/+ (:p %) (:size %)) c r) #(< (g/dist-squared c %) rsq))))
+
+  (defn points-in-circle?
+    [q c r] (do-with-radius check-with isec/intersect-rect-circle? q c r))
+
+  (defn points-in-sphere?
+    [q c r] (do-with-radius check-with isec/intersect-aabb-sphere? q c r))
+
+  (defn select-with-circle
+    [q c r] (persistent! (do-with-radius select-with isec/intersect-rect-circle? q c r)))
+
+  (defn select-with-sphere
+    [q c r] (persistent! (do-with-radius select-with isec/intersect-aabb-sphere? q c r)))
+
   (defn- lazy-select-with*
     [isec? inside? queue]
     (lazy-seq
@@ -113,14 +145,14 @@
                (cons p (lazy-select-with* isec? inside? r))
                (when (seq r) (lazy-select-with* isec? inside? r)))))
          (when (seq r) (lazy-select-with* isec? inside? r))))))
-  
+
   (defn lazy-select-with
     "Same as `select-with`, only produces a lazy sequence of points."
-    [isec? inside? q]
+    [q isec? inside?]
     (lazy-select-with* isec? inside? [q]))
-  
+
   (defn lazy-select-with-shape
-    [s q] (lazy-select-with* #(g/intersect-shape s %) #(g/contains-point? s %) [q]))
+    [q s] (lazy-select-with* #(g/intersect-shape s %) #(g/contains-point? s %) [q]))
 #+END_SRC
 
 ** Tree implementations

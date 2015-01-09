@@ -27,19 +27,14 @@
     with a spherical region around `p` using the pre-configured radius.
     Returns the closest point found (if any)."
     [eps]
-    (let [eps2 (* eps eps)]
-      (fn [tree p]
-        (->> tree
-             (st/select-with
-              #(isec/intersect-aabb-sphere? (:p %) (g/+ (:p %) (:size %)) p eps)
-              #(<= (g/dist-squared p %) eps2))
-             (persistent!)
-             (sort-by #(g/dist-squared p %))
-             (first)))))
-  
+    (fn [tree p]
+      (->> (st/select-with-sphere tree p eps)
+           (sort-by #(g/dist-squared p %))
+           (first))))
+
   (defn unique-point-tree
     [points eps]
-    (let [finder (find-in-tree (/ eps 2.0))
+    (let [finder (find-in-tree eps)
           [tree dupes] (reduce
                         (fn [[t dupes :as state] p]
                           (if (finder t p)
@@ -48,28 +43,28 @@
                         [(st/octree (tu/bounding-box (seq points))) (transient [])]
                         points)]
       [tree (persistent! dupes)]))
-  
+
   (defn collapse-edges
     [m eps]
     (let [eps* (* eps eps)]
-      (reduce
-       (fn [m e] (if (get-in m [:edges e]) (gm/merge-vertices* m (first e) (second e)) m))
-       m
-       (filter
-        (fn [e] (let [[a b] (seq e)] (< (g/dist-squared a b) eps)))
-        (keys (:edges m))))))
-  
+      (->> (:edges m)
+           (keys)
+           (filter (fn [e] (let [[a b] (seq e)] (< (g/dist-squared a b) eps*))))
+           (reduce
+            (fn [m e] (if (-> m :edges e) (gm/merge-vertices* m (first e) (second e)) m))
+            m))))
+
   (defn canonicalize-vertices
     [mesh eps]
     (let [[tree dupes] (unique-point-tree (g/vertices mesh) eps)
-          finder (find-in-tree (/ eps 2.0))]
+          finder (find-in-tree eps)]
       [(reduce (fn [m f] (g/add-face m (mapv #(finder tree %) f))) (g/clear* mesh) (g/faces mesh))
+       ;;(g/into (g/clear* mesh) (map (fn [f] (mapv #(finder tree %) f)) (g/faces mesh)))
        dupes]))
-  
+
   (defn face-permutations
-    [f]
-    (take (count f) (iterate #(d/rotate-left 1 %) f)))
-  
+    [f] (take (count f) (iterate #(d/rotate-left 1 %) f)))
+
   (defn remove-internal
     "Takes a mesh and removes all faces which have coincident vertices,
     but opposite orientation. Returns updated mesh."
@@ -83,14 +78,14 @@
                 acc)))
           (set (g/faces mesh)))
          (assoc mesh :faces)))
-  
+
   (defn remove-internal-with-edges
     [mesh]
     (let [mesh (g/compute-face-normals mesh)]
       (->> (g/edges mesh)
            (reduce
             (fn [acc e]
-              (let [ef (get-in mesh [:edges e])]
+              (let [ef (-> mesh :edges e)]
                 (if (> (count ef) 1)
                   (let [efn (select-keys (:fnormals mesh) ef)
                         ef (set ef)
@@ -104,7 +99,7 @@
                   acc)))
             (set (g/faces mesh)))
            (assoc mesh :faces))))
-  
+
   (defn make-watertight
     [{:keys [vertices edges] :as m} eps]
     (let [split-face (fn [v e [fa fb fc :as f]]
@@ -115,7 +110,8 @@
           update-face (fn [m [f f1 f2]]
                         (-> (g/remove-face m f)
                             (g/add-face f1)
-                            (g/add-face f2)))]
+                            (g/add-face f2)))
+          eps* (* eps eps)]
       (reduce
        (fn [m v]
          (let [vedges (into #{} (map (fn [n] #{v n}) (g/vertex-neighbors m v)))
@@ -123,12 +119,12 @@
                v-on-edge? (fn [a b]
                             (let [t (coeff a b)
                                   p (if (m/in-range? 0.01 0.99 t) (g/mix a b t))]
-                              (if (and p (< (g/dist-squared v p) eps)) p)))]
+                              (if (and p (< (g/dist-squared v p) eps*)) p)))]
            (loop [edges (set/difference (into #{} (keys (:edges m))) vedges)]
              (if-let [e (first edges)]
                (let [[a b] (seq e) p (v-on-edge? a b)]
                  (if p
-                   (reduce update-face m (map #(split-face v e %) (get-in m [:edges e])))
+                   (reduce update-face m (map #(split-face v e %) (-> m :edges e)))
                    (recur (rest edges))))
                m))))
        m (keys vertices))))
