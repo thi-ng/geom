@@ -24,194 +24,207 @@
 
 *** Clojure/ClojureScript protocols
 #+BEGIN_SRC clojure :noweb-ref impl
-      ,#+clj  clojure.lang.IObj
-      ,#+cljs IMeta
-      ,#+cljs IWithMeta
-      (#+clj  meta #+cljs -meta [_] _meta)
-      (#+clj  withMeta #+cljs -with-meta [_ m] (VectorSeq. start end v m))
+  ,#+clj  clojure.lang.IObj
+  ,#+cljs IMeta
+  (#+clj  meta #+cljs -meta [_] _meta)
+  ,#+cljs IWithMeta
+  (#+clj  withMeta #+cljs -with-meta [_ m] (VectorSeq. start end v m))
 
-      ,#+clj  java.util.concurrent.Callable
-      ,#+clj  (call [_] (.invoke ^clojure.lang.IFn _))
+  ,#+clj  java.util.concurrent.Callable
+  ,#+clj  (call [_] (.invoke ^clojure.lang.IFn _))
 
-      ,#+clj  java.lang.Runnable
-      ,#+clj  (run [_] (.invoke ^clojure.lang.IFn _))
+  ,#+clj  java.lang.Runnable
+  ,#+clj  (run [_] (.invoke ^clojure.lang.IFn _))
 
-      ,#+clj  clojure.lang.ILookup
-      ,#+cljs ILookup
-      (#+clj  valAt #+cljs -lookup [_ k] (lookup v (int k) start end))
-      (#+clj  valAt #+cljs -lookup [_ k nf] (lookup v (int k) start end nf))
+  ,#+clj  clojure.lang.ILookup
+  ,#+cljs ILookup
+  (#+clj  valAt #+cljs -lookup [_ k] (lookup v (int k) start end))
+  (#+clj  valAt #+cljs -lookup [_ k nf] (lookup v (int k) start end nf))
 
-      ,#+clj  clojure.lang.IFn
-      ,#+cljs IFn
-      (#+clj  invoke #+cljs -invoke [_ idx] (lookup v (int idx) start end))
-      (#+clj  invoke #+cljs -invoke [_ idx default] (lookup v (int idx) start end default))
+  ,#+clj  clojure.lang.IFn
+  ,#+cljs IFn
+  (#+clj  invoke #+cljs -invoke [_ idx] (lookup v (int idx) start end))
+  (#+clj  invoke #+cljs -invoke [_ idx default] (lookup v (int idx) start end default))
 
-      ,#+clj
-      (applyTo [_ args]
-        (let [cnt (count args)]
-          (if (= 1 cnt)
-            (lookup v (int (first args)) start end)
-            (if (== 2 cnt)
-              (lookup v (int (first args)) start end (second args))
-              (err/arity-error! cnt)))))
+  ,#+clj
+  (applyTo [_ args]
+    (let [cnt (count args)]
+      (if (= 1 cnt)
+        (lookup v (int (first args)) start end)
+        (if (== 2 cnt)
+          (lookup v (int (first args)) start end (second args))
+          (err/arity-error! cnt)))))
 
-      ,#+clj clojure.lang.IEditableCollection
-      ,#+clj (asTransient [_]
-              (loop [v (transient [])
-                     idx start]
-                (if (== end idx)
-                  v
-                  (recur (conj! v (.nth v idx)) (inc idx)))))
+  ,#+clj clojure.lang.IEditableCollection
+  ,#+clj (asTransient [_]
+          (loop [v (transient [])
+                 idx start]
+            (if (== end idx)
+              v
+              (recur (conj! v (.nth v idx)) (inc idx)))))
 
-      ,#+clj  clojure.lang.Associative
-      ,#+clj  clojure.lang.IPersistentVector
-      ,#+cljs ICounted
-      (#+clj  count #+cljs -count [_] (- end start))
-      ,#+clj  (length [_] (- end start))
+  ,#+clj  clojure.lang.Associative
+  ,#+clj  clojure.lang.IPersistentVector
+  ,#+cljs ICounted
+  (#+clj  count #+cljs -count [_] (- end start))
+  ,#+clj  (length [_] (- end start))
 
-      ,#+cljs IAssociative
-      ,#+cljs IVector
-      (#+clj  containsKey #+cljs -contains-key? [_ k] (< -1 k (- end start)))
-      ,#+clj  (entryAt [_ k] (when-let [v (lookup v (int k) start end)] (clojure.lang.MapEntry. k v)))
-      ,#+clj  (assoc [_ k v] (.assocN _ (int k) v))
-      ,#+cljs (-assoc [_ k v] (-assoc-n _ (int k) v))
-      ,#+clj  (assocN [_ k v']
-               (VectorSeq.
-                start (if (= k end) (inc end) end)
-                (.assocN ^clojure.lang.IPersistentVector v (int (+ start k)) v')
-                _meta))
-      ,#+cljs (-assoc-n [_ k v']
-               (VectorSeq.
-                start (if (= k end) (inc end) end)
-                (-assoc v (int (+ start k)) v')
-                _meta))
+  ,#+cljs IAssociative
+  (#+clj  containsKey #+cljs -contains-key? [_ k] (< -1 k (- end start)))
+  ,#+clj  (entryAt [_ k] (when-let [v (lookup v (int k) start end)] (clojure.lang.MapEntry. k v)))
+  ,#+clj  (assoc [_ k v] (.assocN _ (int k) v))
+  ,#+cljs (-assoc [_ k v] (-assoc-n _ (int k) v))
+  ,#+clj  (assocN [_ k v']
+           (VectorSeq.
+            start (if (= k end) (inc end) end)
+            (.assocN ^clojure.lang.IPersistentVector v (int (+ start k)) v')
+            _meta))
+  ,#+cljs IVector
+  ,#+cljs (-assoc-n [_ k v']
+           (VectorSeq.
+            start (if (= k end) (inc end) end)
+            (-assoc v (int (+ start k)) v')
+            _meta))
 
-      ,#+clj java.util.Collection
-      ,#+clj (isEmpty [_] (== 0 (- end start)))
-      ,#+clj (iterator [_]
-              (let [^java.util.Collection l (->> v seq (drop start) (take (- end start)))]
-                (.iterator l)))
-      ,#+clj (toArray [_]
-              (->> v
-                   seq
-                   (drop start)
-                   (take (- end start))
-                   to-array))
-      ,#+clj  (size [_] (- end start))
+  ,#+clj java.util.Collection
+  ,#+clj (isEmpty [_] (== 0 (- end start)))
+  ,#+clj (iterator [_]
+          (let [^java.util.Collection l (->> v seq (drop start) (take (- end start)))]
+            (.iterator l)))
+  ,#+clj (toArray [_]
+          (->> v
+               seq
+               (drop start)
+               (take (- end start))
+               to-array))
+  ,#+clj  (size [_] (- end start))
 
-      ,#+clj  clojure.lang.IPersistentCollection
-      ,#+clj  clojure.lang.Indexed
-      ,#+clj  clojure.lang.Sequential
-      ,#+clj  clojure.lang.ISeq
-      ,#+clj  clojure.lang.Seqable
-      ,#+clj  java.util.List
-      ,#+cljs IEmptyableCollection
-      ,#+cljs INext
-      ,#+cljs ISeq
-      ,#+cljs ICollection
-      ,#+cljs IStack
-      ,#+cljs IIndexed
-      (#+clj  seq #+cljs -seq [_] _)
-      (#+clj  empty #+cljs -empty [_] (with-meta [] _meta))
-      (#+clj  first #+cljs -first [_]
-        (when (< 0 (- end start))
-          ,#+clj  (.nth v start)
-          ,#+cljs (-nth v start)))
-      (#+clj  next #+cljs -next [_]
-        (let [cnt (- end start)]
-          (when (< 1 cnt)
-            (VectorSeq. (inc start) end v _meta))))
-      ,#+clj  (more [_] (if-let [rst (next _)] rst '()))
-      (#+clj cons #+cljs -conj [_ k]
-        (VectorSeq.
-         start (inc end)
-         ,#+clj  (.assocN ^clojure.lang.IPersistentVector v end k)
-         ,#+cljs (-assoc v end k)
-         _meta))
-      (#+clj peek #+cljs -peek [_]
-        (when (< 0 (- end start))
-          ,#+clj  (.nth v (dec end))
-          ,#+cljs (-nth v (dec end))))
-      (#+clj pop #+cljs -pop [_]
-        (let [cnt (- end start)]
-          (if (< 0 cnt)
-            (VectorSeq. start (dec end) v _meta)
-            (err/throw! "Cannot pop from an empty vector."))))
+  ,#+clj  clojure.lang.IPersistentCollection
+  ,#+clj  clojure.lang.Indexed
+  ,#+clj  clojure.lang.Sequential
+  ,#+clj  clojure.lang.ISeq
+  ,#+clj  clojure.lang.Seqable
+  ,#+clj  java.util.List
 
-      (#+clj nth #+cljs -nth [_ idx nf] (lookup v idx start end nf))
-      (#+clj nth #+cljs -nth [_ idx] (lookup v idx start end))
-      ,#+clj  (get [_ idx] (lookup v idx start end))
+  ,#+cljs ISeqable
+  (#+clj  seq #+cljs -seq [_] _)
 
-      ,#+cljs IEquiv
-      (#+clj equiv #+cljs -equiv [_ x]
-        (and
-         (sequential? x)
-         (== (count _) (count x))
-         (loop [idx start, x x]
-           (if (== end idx)
-             true
-             (if (and x
-                      ,#+clj (clojure.lang.Util/equiv (.nth v idx) (first x))
-                      ,#+cljs (= (-nth v idx) (first x)))
-               (recur (inc idx) (rest x))
-               false)))))
+  ,#+cljs IEmptyableCollection
+  (#+clj  empty #+cljs -empty [_] (with-meta [] _meta))
 
-      ,#+clj
-      (equals [_ x]
-        (and
-         (sequential? x)
-         (== (count _) (count x))
-         (loop [idx start, x x]
-           (if (== end idx)
-             true
-             (if (and x (clojure.lang.Util/equals (.nth v idx) (first x)))
-               (recur (inc idx) (rest x))
-               false)))))
+  ,#+cljs ISeq
+  (#+clj  first #+cljs -first [_]
+    (when (< 0 (- end start))
+      ,#+clj  (.nth v start)
+      ,#+cljs (-nth v start)))
+  ,#+cljs
+  (-rest [_]
+   (let [cnt (- end start)]
+      (if (< 1 cnt)
+        (VectorSeq. (inc start) end v _meta)
+        '())))
 
-      ,#+clj  Comparable
-      ,#+cljs IComparable
-      (#+clj compareTo #+cljs -compare [_ x]
-        (let [cnt (count x)]
-          (if (== (- end start) cnt)
-            (- (compare x _))
-            (- (- end start) cnt))))
+  ,#+cljs INext
+  (#+clj  next #+cljs -next [_]
+    (let [cnt (- end start)]
+      (when (< 1 cnt)
+        (VectorSeq. (inc start) end v _meta))))
+  ,#+clj  (more [_] (if-let [rst (next _)] rst '()))
 
-      ,#+clj
-      (hashCode [_]
-        (unchecked-int
-         (loop [idx start, h 1]
-           (if (== end idx)
-             h
-             (recur
-              (inc idx)
-              (unchecked-add-int
-               (unchecked-multiply-int 31 h)
-               (clojure.lang.Util/hash (.nth v idx))))))))
+  ,#+cljs ICollection
+  (#+clj cons #+cljs -conj [_ k]
+    (VectorSeq.
+     start (inc end)
+     ,#+clj  (.assocN ^clojure.lang.IPersistentVector v end k)
+     ,#+cljs (-assoc v end k)
+     _meta))
 
-      ,#+clj clojure.lang.IHashEq
-      ,#+clj (hasheq [_]
-              (mix-collection-hash
-               (unchecked-int
-                (loop [idx start, h 1]
-                  (if (== end idx)
-                    h
-                    (recur
-                     (inc idx)
-                     (unchecked-add-int
-                      (unchecked-multiply-int 31 h)
-                      (clojure.lang.Util/hasheq (.nth v idx)))))))
-               (- end start)))
+  ,#+cljs IStack
+  (#+clj peek #+cljs -peek [_]
+    (when (< 0 (- end start))
+      ,#+clj  (.nth v (dec end))
+      ,#+cljs (-nth v (dec end))))
+  (#+clj pop #+cljs -pop [_]
+    (let [cnt (- end start)]
+      (if (< 0 cnt)
+        (VectorSeq. start (dec end) v _meta)
+        (err/throw! "Cannot pop from an empty vector."))))
 
-      ,#+cljs IHash
-      ,#+cljs (-hash [_]
-               (mix-collection-hash
-                (loop [idx start, h 1]
-                  (if (== end idx)
-                    h
-                    (recur
-                     (inc idx)
-                     (bit-or (+ (imul 31 h) (hash (-nth v idx))) 0))))
-                (- end start)))
+  ,#+cljs IIndexed
+  (#+clj nth #+cljs -nth [_ idx nf] (lookup v idx start end nf))
+  (#+clj nth #+cljs -nth [_ idx] (lookup v idx start end))
+  ,#+clj  (get [_ idx] (lookup v idx start end))
+
+  ,#+cljs IEquiv
+  (#+clj equiv #+cljs -equiv [_ x]
+    (and
+     (sequential? x)
+     (== (count _) (count x))
+     (loop [idx start, x x]
+       (if (== end idx)
+         true
+         (if (and x
+                  ,#+clj (clojure.lang.Util/equiv (.nth v idx) (first x))
+                  ,#+cljs (= (-nth v idx) (first x)))
+           (recur (inc idx) (rest x))
+           false)))))
+
+  ,#+clj
+  (equals [_ x]
+    (and
+     (sequential? x)
+     (== (count _) (count x))
+     (loop [idx start, x x]
+       (if (== end idx)
+         true
+         (if (and x (clojure.lang.Util/equals (.nth v idx) (first x)))
+           (recur (inc idx) (rest x))
+           false)))))
+
+  ,#+clj  Comparable
+  ,#+cljs IComparable
+  (#+clj compareTo #+cljs -compare [_ x]
+    (let [cnt (count x)]
+      (if (== (- end start) cnt)
+        (- (compare x _))
+        (- (- end start) cnt))))
+
+  ,#+clj
+  (hashCode [_]
+    (unchecked-int
+     (loop [idx start, h 1]
+       (if (== end idx)
+         h
+         (recur
+          (inc idx)
+          (unchecked-add-int
+           (unchecked-multiply-int 31 h)
+           (clojure.lang.Util/hash (.nth v idx))))))))
+
+  ,#+clj clojure.lang.IHashEq
+  ,#+clj (hasheq [_]
+          (mix-collection-hash
+           (unchecked-int
+            (loop [idx start, h 1]
+              (if (== end idx)
+                h
+                (recur
+                 (inc idx)
+                 (unchecked-add-int
+                  (unchecked-multiply-int 31 h)
+                  (clojure.lang.Util/hasheq (.nth v idx)))))))
+           (- end start)))
+
+  ,#+cljs IHash
+  ,#+cljs (-hash [_]
+           (mix-collection-hash
+            (loop [idx start, h 1]
+              (if (== end idx)
+                h
+                (recur
+                 (inc idx)
+                 (bit-or (+ (imul 31 h) (hash (-nth v idx))) 0))))
+            (- end start)))
 #+END_SRC
 *** PDeltaEquals
 #+BEGIN_SRC clojure :noweb-ref impl
