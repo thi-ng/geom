@@ -12,19 +12,21 @@
 * thi.ng.geom.tvec
 
 #+BEGIN_SRC clojure :noweb-ref vec3
+  ,#+cljs
   (declare swizzle swizzle-assoc)
 
+  ,#+cljs
   (deftype Vec3
-      [buf ^:mutable __hash __meta]
+      [buf ^:mutable _hash _meta]
 
     IMeta
-    (-meta [_] __meta)
+    (-meta [_] _meta)
     IWithMeta
-    (-with-meta [_ m] (Vec3. (js/Float32Array. buf) __hash m))
+    (-with-meta [_ m] (Vec3. (js/Float32Array. buf) _hash m))
 
     ICloneable
     (-clone
-      [_] (Vec3. (js/Float32Array. buf) __hash __meta))
+      [_] (Vec3. (js/Float32Array. buf) _hash _meta))
 
     ILookup
     (-lookup
@@ -54,7 +56,7 @@
       [_ n v]
       (let [b (js/Float32Array. buf)]
         (aset b n v)
-        (Vec3. b nil __meta)))
+        (Vec3. b nil _meta)))
 
     ISequential
     ISeq
@@ -78,7 +80,7 @@
         (aset b 0 (aget buf 2))
         (aset b 1 (aget buf 1))
         (aset b 2 (aget buf 0))
-        (Vec3. b nil __meta)))
+        (Vec3. b nil _meta)))
 
     IIndexed
     (-nth
@@ -114,7 +116,7 @@
     IHash
     (-hash
       [_]
-      (or __hash
+      (or _hash
           (set! (.-__hash _)
                 (mix-collection-hash
                  (-> 31 (+ (hash (aget buf 0)))
@@ -170,21 +172,21 @@
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PMathOps
   (+ [_] _)
-  (+ [_ v]       (vm/v3-op1-dispatch + buf v __meta))
-  (+ [_ v1 v2]   (vm/v3-op2-dispatch + + buf v1 v2 __meta))
-  (+ [_ x y z]   (vm/v3-op1-xyz + buf x y z __meta))
-  (- [_]         (vm/v3-op0 - buf __meta))
-  (- [_ v]       (vm/v3-op1-dispatch - buf v __meta))
-  (- [_ v1 v2]   (vm/v3-op2-dispatch - - buf v1 v2 __meta))
-  (- [_ x y z]   (vm/v3-op1-xyz - buf x y z __meta))
+  (+ [_ v]       (vm/v3-op1-dispatch + buf v _meta))
+  (+ [_ v1 v2]   (vm/v3-op2-dispatch + + buf v1 v2 _meta))
+  (+ [_ x y z]   (vm/v3-op1-xyz + buf x y z _meta))
+  (- [_]         (vm/v3-op0 - buf _meta))
+  (- [_ v]       (vm/v3-op1-dispatch - buf v _meta))
+  (- [_ v1 v2]   (vm/v3-op2-dispatch - - buf v1 v2 _meta))
+  (- [_ x y z]   (vm/v3-op1-xyz - buf x y z _meta))
   (* [_] _)
-  (* [_ v]       (vm/v3-op1-dispatch * buf v __meta))
-  (* [_ v1 v2]   (vm/v3-op2-dispatch * * buf v1 v2 __meta))
-  (* [_ x y z]   (vm/v3-op1-xyz * buf x y z __meta))
-  (div [_]       (vm/v3-op0 / buf __meta))
-  (div [_ v]     (vm/v3-op1-dispatch / buf v __meta))
-  (div [_ v1 v2] (vm/v3-op2-dispatch / / buf v1 v2 __meta))
-  (div [_ x y z] (vm/v3-op1-xyz / buf x y z __meta))
+  (* [_ v]       (vm/v3-op1-dispatch * buf v _meta))
+  (* [_ v1 v2]   (vm/v3-op2-dispatch * * buf v1 v2 _meta))
+  (* [_ x y z]   (vm/v3-op1-xyz * buf x y z _meta))
+  (div [_]       (vm/v3-op0 / buf _meta))
+  (div [_ v]     (vm/v3-op1-dispatch / buf v _meta))
+  (div [_ v1 v2] (vm/v3-op2-dispatch / / buf v1 v2 _meta))
+  (div [_ x y z] (vm/v3-op1-xyz / buf x y z _meta))
 #+END_SRC
 
 ** End implementation
@@ -196,6 +198,7 @@
 ** Swizzling
 
 #+BEGIN_SRC clojure :noweb-ref vec3-swizzle
+  ,#+cljs
   (defn- swizzle
     [buf k default meta]
     (if (number? k)
@@ -228,6 +231,7 @@
 ** Constructors
 
 #+BEGIN_SRC clojure :noweb-ref ctors
+  ,#+cljs
   (defn vec3
     [x y z]
     (let [b (js/Float32Array. 3)]
@@ -263,20 +267,39 @@
     ([op src x y z meta]
        `(let [src# ~src
               dest# (js/Float32Array. 3)]
-          (aset dest# 0 (~op (aget src# 0) ~x))
-          (aset dest# 1 (~op (aget src# 1) ~y))
-          (aset dest# 2 (~op (aget src# 2) ~z))
-          (new ~'Vec3 dest# nil ~meta))))
+          (v3-op1-xyz ~op dest# src# ~x ~y ~z ~meta)))
+    ([op dest src x y z meta]
+       `(do
+          (aset ~dest 0 (~op (aget ~src 0) ~x))
+          (aset ~dest 1 (~op (aget ~src 1) ~y))
+          (aset ~dest 2 (~op (aget ~src 2) ~z))
+          (new ~'Vec3 ~dest nil ~meta))))
+
+  (defmacro v3-op1-vs
+    [op dest src vs meta]
+      `(v3-op1-xyz ~op ~dest ~src (nth ~vs 0 0.0) (nth ~vs 1 0.0) (nth ~vs 2 0.0) ~meta))
 
   (defmacro v3-op1-v
-    [op a b meta]
-    `(let [src-a# ~a
-           src-b# ~b
+    ([op src v meta]
+       `(let [src# ~src
+              dest# (js/Float32Array. 3)]
+          (v3-op1-v ~op dest# src# ~v ~meta)))
+    ([op dest src v meta]
+       `(let [v# ~v]
+          (aset ~dest 0 (~op (aget ~src 0) (aget v# 0)))
+          (aset ~dest 1 (~op (aget ~src 1) (aget v# 1)))
+          (aset ~dest 2 (~op (aget ~src 2) (aget v# 2)))
+          (new ~'Vec3 ~dest nil ~meta))))
+
+  (defmacro v3-op1-dispatch
+    [op src v meta]
+    `(let [src# ~src
            dest# (js/Float32Array. 3)]
-       (aset dest# 0 (~op (aget src-a# 0) (aget src-b# 0)))
-       (aset dest# 1 (~op (aget src-a# 1) (aget src-b# 1)))
-       (aset dest# 2 (~op (aget src-a# 2) (aget src-b# 2)))
-       (new ~'Vec3 dest# nil ~meta)))
+       (if (instance? ~'Vec3 ~v)
+         (v3-op1-v ~op dest# src# (.-buf ~v) ~meta)
+         (if (number? ~v)
+           (v3-op1-xyz ~op dest# src# ~v ~v ~v ~meta)
+           (v3-op1-vs ~op dest# src# ~v ~meta)))))
 
   (defmacro v3-op2-xyz-v
     ([op op2 src-a vs src-c meta]
@@ -336,14 +359,6 @@
        (aset dest# 1 (~op2 (~op (aget src-a# 1) (aget src-b# 1)) (aget src-c# 1)))
        (aset dest# 2 (~op2 (~op (aget src-a# 2) (aget src-b# 2)) (aget src-c# 2)))
        (new ~'Vec3 dest# nil ~meta)))
-
-  (defmacro v3-op1-dispatch
-    [op src v meta]
-    `(if (instance? ~'Vec3 ~v)
-       (v3-op1-v ~op ~src (.-buf ~v) ~meta)
-       (if (number? ~v)
-         (v3-op1-xyz ~op ~src ~v ~v ~v ~meta)
-         (v3-op1-xyz ~op ~src ~v ~meta))))
 
   (defmacro v3-op2-dispatch
     [op op2 src v1 v2 meta]
