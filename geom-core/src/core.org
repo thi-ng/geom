@@ -9,6 +9,7 @@
          - [[#sub-shape-accessors][Sub-shape accessors]]
          - [[#shape-based--structural-operations][Shape based & structural operations]]
          - [[#type-specific-operations][Type specific operations]]
+         - [[#buffered-instances][Buffered instances]]
      - [[#constants][Constants]]
          - [[#default-circle-resolution][Default circle resolution]]
      - [[#complete-namespace-definition][Complete namespace definition]]
@@ -437,6 +438,14 @@ protocol consisting of just this one function:
     (split-node [_]))
 #+END_SRC
 
+*** Buffered instances
+**** PBuffered
+#+BEGIN_SRC clojure :noweb-ref protos-special
+  (defprotocol PBuffered
+    (get-buffer [_])
+    (copy-to-buffer [_ dest idx]))
+#+END_SRC
+
 ** Constants
 *** Default circle resolution
 #+BEGIN_SRC clojure :noweb-ref constants
@@ -459,4 +468,6 @@ protocol consisting of just this one function:
   <<protos-shape>>
 
   <<protos-types>>
+
+  <<protos-special>>
 #+END_SRC
