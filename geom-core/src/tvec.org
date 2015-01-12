@@ -22,6 +22,7 @@
      - [[#constructors][Constructors]]
      - [[#macros][Macros]]
      - [[#complete-namespace-definitions][Complete namespace definitions]]
+     - [[#js-bench][JS bench]]
 
 * thi.ng.geom.tvec
 
@@ -320,7 +321,7 @@
   (reflect
    [_ v]
    (let [b (js/Float32Array. 3)]
-     (vm/with-v3-or-vs-no-let buf v
+     (vm/with-v3-or-vs buf v
        (let [d (* (+ (+ (* x vx) (* y vy)) (* z vz)) 2.0)]
          (aset b 0 (mm/msub vx d x))
          (aset b 1 (mm/msub vy d y))
@@ -660,4 +661,22 @@
      [thi.ng.common.error :as err]))
 
   <<v3-macros>>
+#+END_SRC
+
+** JS bench
+
+#+BEGIN_SRC js
+  var g = thi.ng.geom.core;
+  var v = g.tvec;
+  var a = v.vec3(1,2,3);
+  var b = v.vec3(3,-2,1);
+  var avg = 0;
+  var n = 50;
+  for(var j = 0; j < n; j++) {
+    var t0=new Date().getTime(); for(var i=0; i<100000; i++) { g.cross(a,b); }
+    vat t = new Date().getTime()-t0;
+    avg += t;
+    console.log(t);
+  }
+  avg /= n;
 #+END_SRC
