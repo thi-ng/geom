@@ -3,6 +3,20 @@
 * Contents                                                         :toc_3_gh:
  - [[#thinggeomtvec][thi.ng.geom.tvec]]
      - [[#pmathops][PMathOps]]
+         - [[#pdotproduct][PDotProduct]]
+         - [[#pclear][PClear]]
+         - [[#pcrossproduct][PCrossProduct]]
+         - [[#plimit][PLimit]]
+         - [[#pminmax][PMinMax]]
+         - [[#pdeltaequals][PDeltaEquals]]
+         - [[#pmagnitude][PMagnitude]]
+         - [[#pnormalize][PNormalize]]
+         - [[#pdistance][PDistance]]
+         - [[#preflect][PReflect]]
+         - [[#pinvert][PInvert]]
+         - [[#pinterpolate][PInterpolate]]
+         - [[#pheading][PHeading]]
+         - [[#ppolar][PPolar]]
      - [[#end-implementation][End implementation]]
      - [[#swizzling][Swizzling]]
      - [[#constructors][Constructors]]
@@ -187,6 +201,204 @@
   (div [_ v]     (vm/v3-op1-dispatch / buf v _meta))
   (div [_ v1 v2] (vm/v3-op2-dispatch / / buf v1 v2 _meta))
   (div [_ x y z] (vm/v3-op1-xyz / buf x y z _meta))
+  (madd [_ a b]  (vm/v3-op2-dispatch * + buf a b _meta))
+  (addm [_ a b]  (vm/v3-op2-dispatch + * buf a b _meta))
+  (msub [_ a b]  (vm/v3-op2-dispatch * - buf a b _meta))
+  (subm [_ a b]  (vm/v3-op2-dispatch - * buf a b _meta))
+#+END_SRC
+*** PDotProduct
+#+BEGIN_SRC clojure :noweb-ref vec3
+  g/PDotProduct
+  (dot
+   [_ v] (vm/with-v3-or-vs-no-let buf v (+ (+ (* x vx) (* y vy)) (* z vz))))
+#+END_SRC
+*** PClear
+#+BEGIN_SRC clojure :noweb-ref vec3'
+  g/PClear
+  (clear* [_] V3)
+#+END_SRC
+*** PCrossProduct
+#+BEGIN_SRC clojure :noweb-ref vec3
+  g/PCrossProduct
+  (cross
+   [_ v]
+   (let [b (js/Float32Array. 3)]
+     (vm/with-v3-or-vs buf v
+       (aset b 0 (mm/msub y vz vy z))
+       (aset b 1 (mm/msub z vx vz x))
+       (aset b 2 (mm/msub x vy vx y)))
+     (Vec3. b nil _meta)))
+#+END_SRC
+*** PLimit
+#+BEGIN_SRC clojure :noweb-ref vec3
+  g/PLimit
+  (limit
+   [_ len]
+   (if (> (g/mag-squared _) (* len len))
+     (g/normalize _ len)
+     _))
+#+END_SRC
+*** PMinMax
+#+BEGIN_SRC clojure :noweb-ref vec3'
+  g/PMinMax
+  (min
+   [_ [ax ay az]]
+   (Vec3. (min x ax) (min y ay) (min z az) nil _meta))
+  (min
+   [_ [ax ay az] [bx by bz]]
+   (Vec3.
+    (min (min x ax) bx)
+    (min (min y ay) by)
+    (min (min z az) bz) nil _meta))
+  (max
+   [_ [ax ay az]]
+   (Vec3. (max x ax) (max y ay) (max z az) nil _meta))
+  (max
+   [_ [ax ay az] [bx by bz]]
+   (Vec3.
+    (max (max x ax) bx)
+    (max (max y ay) by)
+    (max (max z az) bz) nil _meta))
+#+END_SRC
+*** PDeltaEquals
+#+BEGIN_SRC clojure :noweb-ref vec3
+  m/PDeltaEquals
+  (delta=
+   [_ v] (m/delta= _ v *eps*))
+  (delta=
+   [_ v eps]
+   (if (and (sequential? v) (== 3 (count v)))
+     (vm/with-v3-or-vs buf v
+       (and
+        (m/delta= x vx eps)
+        (m/delta= y vy eps)
+        (m/delta= z vz eps)))))
+#+END_SRC
+*** PMagnitude
+#+BEGIN_SRC clojure :noweb-ref vec3
+  g/PMagnitude
+  (mag
+   [_] (vm/with-v3 buf (Math/sqrt (mm/madd x x y y z z))))
+  (mag-squared
+   [_] (vm/with-v3 buf (mm/madd x x y y z z)))
+#+END_SRC
+*** PNormalize
+#+BEGIN_SRC clojure :noweb-ref vec3'
+  g/PNormalize
+  (normalize
+   [_]
+   (let [l (Math/sqrt (mm/madd x x y y z z))]
+     (if (pos? l)
+       (Vec3. (/ x l) (/ y l) (/ z l) nil _meta)
+       _)))
+  (normalize
+   [_ len]
+   (let [l (Math/sqrt (mm/madd x x y y z z))]
+     (if (pos? l)
+       (let [l (/ len l)]
+         (Vec3. (* x l) (* y l) (* z l) nil _meta))
+       _)))
+  (normalized?
+   [_] (m/delta= 1.0 (g/mag-squared _)))
+#+END_SRC
+*** PDistance
+#+BEGIN_SRC clojure :noweb-ref vec3
+  g/PDistance
+  (dist
+   [_ v] (Math/sqrt (g/dist-squared _ v)))
+  (dist-squared
+   [_ v]
+   (vm/with-v3-or-vs buf v
+     (let [dx (- x vx)
+           dy (- y vy)
+           dz (- z vz)]
+       (mm/madd dx dx dy dy dz dz))))
+#+END_SRC
+*** PReflect
+#+BEGIN_SRC clojure :noweb-ref vec3
+  g/PReflect
+  (reflect
+   [_ v]
+   (let [b (js/Float32Array. 3)]
+     (vm/with-v3-or-vs-no-let buf v
+       (let [d (* (+ (+ (* x vx) (* y vy)) (* z vz)) 2.0)]
+         (aset b 0 (mm/msub vx d x))
+         (aset b 1 (mm/msub vy d y))
+         (aset b 2 (mm/msub vz d z))
+         (Vec3. b nil _meta)))))
+#+END_SRC
+*** PInvert
+#+BEGIN_SRC clojure :noweb-ref vec3'
+  g/PInvert
+  (invert
+   [_] (g/- _))
+#+END_SRC
+*** PInterpolate
+#+BEGIN_SRC clojure :noweb-ref vec3'
+  g/PInterpolate
+  (mix
+   [_ a]
+   (Vec3.
+    (mm/mix x (first a) 0.5)
+    (mm/mix y (nth a 1 0.0) 0.5)
+    (mm/mix z (nth a 2 0.0) 0.5)
+    nil _meta))
+  (mix
+   [_ a t]
+   (Vec3.
+    (mm/mix x (first a) t)
+    (mm/mix y (nth a 1 0.0) t)
+    (mm/mix z (nth a 2 0.0) t)
+    nil _meta))
+  (mix
+   [_ a b c u v]
+   (Vec3.
+    (mm/mix x (first a) (first b) (first c) u v)
+    (mm/mix y (nth a 1 0.0) (nth b 1 0.0) (nth c 1 0.0) u v)
+    (mm/mix z (nth a 2 0.0) (nth b 2 0.0) (nth c 2 0.0) u v)
+    nil _meta))
+#+END_SRC
+*** PHeading
+#+BEGIN_SRC clojure :noweb-ref vec3
+  g/PHeading
+  (heading [_] (g/heading-xy _))
+  (heading-xy
+   [_]
+   (let [t (Math/atan2 (aget buf 1) (aget buf 0))]
+     (if (neg? t) (+ t TWO_PI) t)))
+  (heading-xz
+   [_]
+   (let [t (Math/atan2 (aget buf 2) (aget buf 0))]
+     (if (neg? t) (+ t TWO_PI) t)))
+  (heading-yz
+   [_]
+   (let [t (Math/atan2 (aget buf 2) (aget buf 1))]
+     (if (neg? t) (+ t TWO_PI) t)))
+  (angle-between
+   [_ a] (Math/acos (g/dot _ a)))
+  (slope-xy [_] (/ (aget buf 1) (aget buf 0)))
+  (slope-xz [_] (/ (aget buf 2) (aget buf 0)))
+  (slope-yz [_] (/ (aget buf 2) (aget buf 1)))
+#+END_SRC
+*** PPolar
+
+- http://mathworld.wolfram.com/SphericalCoordinates.html
+- http://rbrundritt.wordpress.com/2008/10/14/conversion-between-spherical-and-cartesian-coordinates-systems/
+
+#+BEGIN_SRC clojure :noweb-ref vec3'
+  g/PPolar
+  (as-polar
+   [_]
+    (let [r (g/mag _)
+          theta (Math/asin (/ z r))
+          phi (Math/atan2 y x)]
+      (Vec3. r theta phi nil _meta)))
+  (as-cartesian [_]
+    (let [rcos (* x (Math/cos y))]
+      (Vec3.
+       (* rcos (Math/cos z))
+       (* rcos (Math/sin z))
+       (* x    (Math/sin y)) nil _meta)))
 #+END_SRC
 
 ** End implementation
@@ -252,6 +464,38 @@
        \z (aget ~src 2)
        (or ~nf (err/key-error! ~k))))
 
+  (defmacro with-v3
+    [src & body]
+    (let [[a x y z] (repeatedly 4 gensym)]
+      `(let [~a ~src, ~x (aget ~a 0), ~y (aget ~a 1), ~z (aget ~a 2)]
+         ~@(postwalk-replace {'x x 'y y 'z z} body))))
+
+  (defmacro with-v3-or-vs-no-let
+    [src v & body]
+    (let [a (gensym)
+          b (gensym)]
+      `(let [~a ~src]
+         (if (instance? ~'Vec3 ~v)
+           (let [~b (.-buf ~v)]
+             ~@(postwalk-replace
+                {'x `(aget ~a 0) 'y `(aget ~a 1) 'z `(aget ~a 2)
+                 'vx `(aget ~b 0) 'vy `(aget ~b 1) 'vz `(aget ~b 2)}
+                body))
+           ~@(postwalk-replace
+              {'x `(aget ~a 0) 'y `(aget ~a 1) 'z `(aget ~a 2)
+               'vx `(nth ~v 0 0.0) 'vy `(nth ~v 1 0.0) 'vz `(nth ~v 2 0.0)}
+              body)))))
+
+  (defmacro with-v3-or-vs
+    [src v & body]
+    (let [[a b x y z vx vy vz] (repeatedly 8 gensym)]
+      `(let [~a ~src, ~x (aget ~a 0), ~y (aget ~a 1), ~z (aget ~a 2)]
+         (if (instance? ~'Vec3 ~v)
+           (let [~b (.-buf ~v), ~vx (aget ~b 0), ~vy (aget ~b 1), ~vz (aget ~b 2)]
+             ~@(postwalk-replace {'x x 'y y 'z z 'vx vx 'vy vy 'vz vz} body))
+           (let [~vx (nth ~v 0 0.0), ~vy (nth ~v 1 0.0), ~vz (nth ~v 2 0.0)]
+             ~@(postwalk-replace {'x x 'y y 'z z 'vx vx 'vy vy 'vz vz} body))))))
+
   (defmacro v3-op0
     [op src meta]
     `(let [src# ~src
@@ -277,7 +521,7 @@
 
   (defmacro v3-op1-vs
     [op dest src vs meta]
-      `(v3-op1-xyz ~op ~dest ~src (nth ~vs 0 0.0) (nth ~vs 1 0.0) (nth ~vs 2 0.0) ~meta))
+    `(v3-op1-xyz ~op ~dest ~src (nth ~vs 0 0.0) (nth ~vs 1 0.0) (nth ~vs 2 0.0) ~meta))
 
   (defmacro v3-op1-v
     ([op src v meta]
@@ -357,7 +601,7 @@
     [op op2 src v1 v2 meta]
     `(let [src# ~src
            dest# (js/Float32Array. 3)]
-      (if (instance? ~'Vec3 ~v1)
+       (if (instance? ~'Vec3 ~v1)
          (if (instance? ~'Vec3 ~v2)
            (v3-op2-v-v ~op ~op2 dest# src# (.-buf ~v1) (.-buf ~v2) ~meta) ;; V V
            (if (number? ~v2)
@@ -382,10 +626,11 @@
   (ns thi.ng.geom.core.tvec
     ,#+cljs
     (:require-macros
-     [thi.ng.geom.core.vector.macros :as vm])
+     [thi.ng.geom.core.vector.macros :as vm]
+     [thi.ng.macromath.core :as mm])
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.common.math.core :as mm]
+     [thi.ng.common.math.core :as m :refer [TWO_PI *eps*]]
      [thi.ng.common.error :as err]))
 
   <<vec3>>
@@ -411,6 +656,7 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector/macros.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.vector.macros
     (:require
+     [clojure.walk :refer :all]
      [thi.ng.common.error :as err]))
 
   <<v3-macros>>
