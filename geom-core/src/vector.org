@@ -1260,7 +1260,7 @@ injected in the appropriate places of the code.
   (angle-between
    [_ a] (Math/acos (g/dot _ a)))
   (slope-xy [_] (/ y x))
-  (slope-xz [_] (/ x x))
+  (slope-xz [_] (/ z x))
   (slope-yz [_] (/ z y))
 #+END_SRC
 *** PPolar
