@@ -187,19 +187,19 @@
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PMathOps
   (+ [_] _)
-  (+ [_ v]       (vm/v3-op1-dispatch + buf v _meta))
+  (+ [_ v]       (vm/v3-op1 + buf v _meta))
   (+ [_ v1 v2]   (vm/v3-op2-dispatch + + buf v1 v2 _meta))
   (+ [_ x y z]   (vm/v3-op1-xyz + buf x y z _meta))
   (- [_]         (vm/v3-op0 - buf _meta))
-  (- [_ v]       (vm/v3-op1-dispatch - buf v _meta))
+  (- [_ v]       (vm/v3-op1 - buf v _meta))
   (- [_ v1 v2]   (vm/v3-op2-dispatch - - buf v1 v2 _meta))
   (- [_ x y z]   (vm/v3-op1-xyz - buf x y z _meta))
   (* [_] _)
-  (* [_ v]       (vm/v3-op1-dispatch * buf v _meta))
+  (* [_ v]       (vm/v3-op1 * buf v _meta))
   (* [_ v1 v2]   (vm/v3-op2-dispatch * * buf v1 v2 _meta))
   (* [_ x y z]   (vm/v3-op1-xyz * buf x y z _meta))
   (div [_]       (vm/v3-op0 / buf _meta))
-  (div [_ v]     (vm/v3-op1-dispatch / buf v _meta))
+  (div [_ v]     (vm/v3-op1 / buf v _meta))
   (div [_ v1 v2] (vm/v3-op2-dispatch / / buf v1 v2 _meta))
   (div [_ x y z] (vm/v3-op1-xyz / buf x y z _meta))
   (madd [_ a b]  (vm/v3-op2-dispatch * + buf a b _meta))
@@ -211,7 +211,7 @@
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PDotProduct
   (dot
-   [_ v] (vm/with-v3-or-vs-no-let buf v (+ (+ (* x vx) (* y vy)) (* z vz))))
+   [_ v] (vm/rewrite-v3-v-no-let buf v 0.0 (+ (+ (* x vx) (* y vy)) (* z vz))))
 #+END_SRC
 *** PClear
 #+BEGIN_SRC clojure :noweb-ref vec3'
@@ -224,7 +224,7 @@
   (cross
    [_ v]
    (let [b (js/Float32Array. 3)]
-     (vm/with-v3-or-vs buf v
+     (vm/rewrite-v3-v buf v 0.0
        (aset b 0 (mm/msub y vz vy z))
        (aset b 1 (mm/msub z vx vz x))
        (aset b 2 (mm/msub x vy vx y)))
@@ -243,23 +243,45 @@
 #+BEGIN_SRC clojure :noweb-ref vec3'
   g/PMinMax
   (min
-   [_ [ax ay az]]
-   (Vec3. (min x ax) (min y ay) (min z az) nil _meta))
+   [_ v]
+   (let [b (js/Float32Array. 3)]
+     (vm/rewrite-v3-nv-no-let buf v 0.0
+       (aset b 0 (min x vx))
+       (aset b 1 (min y vy))
+       (aset b 2 (min z vz)))
+     (Vec3. b nil _meta)))
   (min
-   [_ [ax ay az] [bx by bz]]
-   (Vec3.
-    (min (min x ax) bx)
-    (min (min y ay) by)
-    (min (min z az) bz) nil _meta))
+   [_ v v2]
+   (let [b (js/Float32Array. 3)]
+     (vm/rewrite-v3-nv-no-let buf v 0.0
+       (aset b 0 (min x vx))
+       (aset b 1 (min y vy))
+       (aset b 2 (min z vz)))
+     (vm/rewrite-v3-nv-no-let b v2 0.0
+       (aset b 0 (min x vx))
+       (aset b 1 (min y vy))
+       (aset b 2 (min z vz)))
+     (Vec3. b nil _meta)))
   (max
-   [_ [ax ay az]]
-   (Vec3. (max x ax) (max y ay) (max z az) nil _meta))
+   [_ v]
+   (let [b (js/Float32Array. 3)]
+     (vm/rewrite-v3-nv-no-let buf v 0.0
+       (aset b 0 (max x vx))
+       (aset b 1 (max y vy))
+       (aset b 2 (max z vz)))
+     (Vec3. b nil _meta)))
   (max
-   [_ [ax ay az] [bx by bz]]
-   (Vec3.
-    (max (max x ax) bx)
-    (max (max y ay) by)
-    (max (max z az) bz) nil _meta))
+   [_ v v2]
+   (let [b (js/Float32Array. 3)]
+     (vm/rewrite-v3-nv-no-let buf v 0.0
+       (aset b 0 (max x vx))
+       (aset b 1 (max y vy))
+       (aset b 2 (max z vz)))
+     (vm/rewrite-v3-nv-no-let b v2 0.0
+       (aset b 0 (max x vx))
+       (aset b 1 (max y vy))
+       (aset b 2 (max z vz)))
+     (Vec3. b nil _meta)))
 #+END_SRC
 *** PDeltaEquals
 #+BEGIN_SRC clojure :noweb-ref vec3
@@ -269,7 +291,7 @@
   (delta=
    [_ v eps]
    (if (and (sequential? v) (== 3 (count v)))
-     (vm/with-v3-or-vs buf v
+     (vm/rewrite-v3-v-no-let buf v 0.0
        (and
         (m/delta= x vx eps)
         (m/delta= y vy eps)
@@ -279,9 +301,9 @@
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PMagnitude
   (mag
-   [_] (vm/with-v3 buf (Math/sqrt (mm/madd x x y y z z))))
+   [_] (vm/rewrite-v3 buf (Math/sqrt (mm/madd x x y y z z))))
   (mag-squared
-   [_] (vm/with-v3 buf (mm/madd x x y y z z)))
+   [_] (vm/rewrite-v3 buf (mm/madd x x y y z z)))
 #+END_SRC
 *** PNormalize
 #+BEGIN_SRC clojure :noweb-ref vec3'
@@ -309,7 +331,7 @@
    [_ v] (Math/sqrt (g/dist-squared _ v)))
   (dist-squared
    [_ v]
-   (vm/with-v3-or-vs buf v
+   (vm/rewrite-v3-v buf v 0.0
      (let [dx (- x vx)
            dy (- y vy)
            dz (- z vz)]
@@ -321,7 +343,7 @@
   (reflect
    [_ v]
    (let [b (js/Float32Array. 3)]
-     (vm/with-v3-or-vs buf v
+     (vm/rewrite-v3-v buf v 0.0
        (let [d (* (+ (+ (* x vx) (* y vy)) (* z vz)) 2.0)]
          (aset b 0 (mm/msub vx d x))
          (aset b 1 (mm/msub vy d y))
@@ -465,14 +487,22 @@
        \z (aget ~src 2)
        (or ~nf (err/key-error! ~k))))
 
-  (defmacro with-v3
+  (defmacro rewrite-v3
     [src & body]
     (let [[a x y z] (repeatedly 4 gensym)]
       `(let [~a ~src, ~x (aget ~a 0), ~y (aget ~a 1), ~z (aget ~a 2)]
          ~@(postwalk-replace {'x x 'y y 'z z} body))))
 
-  (defmacro with-v3-or-vs-no-let
-    [src v & body]
+  (defmacro rewrite-v3-no-let
+    [src & body]
+    (let [a (gensym)]
+      `(let [~a ~src]
+         ~@(postwalk-replace
+            {'x `(aget ~a 0) 'y `(aget ~a 1) 'z `(aget ~a 2)}
+            body))))
+
+  (defmacro rewrite-v3-v-no-let
+    [src v default & body]
     (let [a (gensym)
           b (gensym)]
       `(let [~a ~src]
@@ -482,28 +512,116 @@
                 {'x `(aget ~a 0) 'y `(aget ~a 1) 'z `(aget ~a 2)
                  'vx `(aget ~b 0) 'vy `(aget ~b 1) 'vz `(aget ~b 2)}
                 body))
-           ~@(postwalk-replace
-              {'x `(aget ~a 0) 'y `(aget ~a 1) 'z `(aget ~a 2)
-               'vx `(nth ~v 0 0.0) 'vy `(nth ~v 1 0.0) 'vz `(nth ~v 2 0.0)}
-              body)))))
+           (do ~@(postwalk-replace
+                  {'x `(aget ~a 0) 'y `(aget ~a 1) 'z `(aget ~a 2)
+                   'vx `(nth ~v 0 ~default) 'vy `(nth ~v 1 ~default) 'vz `(nth ~v 2 ~default)}
+                  body))))))
 
-  (defmacro with-v3-or-vs
-    [src v & body]
+  (defmacro rewrite-v3-v
+    [src v default & body]
     (let [[a b x y z vx vy vz] (repeatedly 8 gensym)]
       `(let [~a ~src, ~x (aget ~a 0), ~y (aget ~a 1), ~z (aget ~a 2)]
          (if (instance? ~'Vec3 ~v)
            (let [~b (.-buf ~v), ~vx (aget ~b 0), ~vy (aget ~b 1), ~vz (aget ~b 2)]
              ~@(postwalk-replace {'x x 'y y 'z z 'vx vx 'vy vy 'vz vz} body))
-           (let [~vx (nth ~v 0 0.0), ~vy (nth ~v 1 0.0), ~vz (nth ~v 2 0.0)]
+           (let [~vx (nth ~v 0 ~default), ~vy (nth ~v 1 ~default), ~vz (nth ~v 2 ~default)]
              ~@(postwalk-replace {'x x 'y y 'z z 'vx vx 'vy vy 'vz vz} body))))))
+
+  (defmacro rewrite-v3-nv
+    [src v default & body]
+    (let [[a b x y z vx vy vz] (repeatedly 8 gensym)]
+      `(let [~a ~src, ~x (aget ~a 0), ~y (aget ~a 1), ~z (aget ~a 2)]
+         (if (instance? ~'Vec3 ~v)
+           (let [~b (.-buf ~v), ~vx (aget ~b 0), ~vy (aget ~b 1), ~vz (aget ~b 2)]
+             ~@(postwalk-replace {'x x 'y y 'z z 'vx vx 'vy vy 'vz vz} body))
+           (if (number? ~v)
+             (do ~@(postwalk-replace {'x x 'y y 'z z 'vx v 'vy v 'vz v} body))
+             (let [~vx (nth ~v 0 ~default), ~vy (nth ~v 1 ~default), ~vz (nth ~v 2 ~default)]
+               ~@(postwalk-replace {'x x 'y y 'z z 'vx vx 'vy vy 'vz vz} body)))))))
+
+  (defmacro rewrite-v3-nv-no-let
+    [src v default & body]
+    (let [a (gensym), b (gensym)]
+      `(let [~a ~src]
+         (if (instance? ~'Vec3 ~v)
+           (let [~b (.-buf ~v)]
+             ~@(postwalk-replace
+                {'x `(aget ~a 0) 'y `(aget ~a 1) 'z `(aget ~a 2)
+                 'vx `(aget ~b 0) 'vy `(aget ~b 1) 'vz `(aget ~b 2)}
+                body))
+           (if (number? ~v)
+             (do ~@(postwalk-replace
+                    {'x `(aget ~a 0) 'y `(aget ~a 1) 'z `(aget ~a 2) 'vx v 'vy v 'vz v} body))
+             (do ~@(postwalk-replace
+                  {'x `(aget ~a 0) 'y `(aget ~a 1) 'z `(aget ~a 2)
+                   'vx `(nth ~v 0 ~default) 'vy `(nth ~v 1 ~default) 'vz `(nth ~v 2 ~default)}
+                  body)))))))
+
+  (defmacro rewrite-v3-nv-nv
+    [src v v2 d1 d2 & body]
+    (let [[a b c x y z bx by bz cx cy cz] (repeatedly 12 gensym)]
+      `(let [~a ~src, ~x (aget ~a 0), ~y (aget ~a 1), ~z (aget ~a 2)]
+         (if (instance? ~'Vec3 ~v)
+           (let [~b (.-buf ~v) ~bx (aget ~b 0), ~by (aget ~b 1), ~bz (aget ~b 2)]
+             (if (instance? ~'Vec3 ~v2)
+               (let [~c (.-buf ~v2), ~cx (aget ~c 0), ~cy (aget ~c 1), ~cz (aget ~c 2)]
+                 ~@(postwalk-replace
+                    {'x x 'y y 'z z 'bx bx 'by by 'bz bz 'cx cx 'cy cy 'cz cz} body))
+               (if (number? ~v2)
+                 (do ~@(postwalk-replace
+                        {'x x 'y y 'z z 'bx bx 'by by 'bz bz 'cx v2 'cy v2 'cz v2} body))
+                 (let [~cx (nth ~v2 0 ~d2), ~cy (nth ~v2 1 ~d2), ~cz (nth ~v2 2 ~d2)]
+                   ~@(postwalk-replace
+                      {'x x 'y y 'z z 'bx bx 'by by 'bz bz 'cx cx 'cy cy 'cz cz} body)))))
+           (if (number? ~v)
+             (if (instance? ~'Vec3 ~v2)
+               (let [~c (.-buf ~v2) ~cx (aget ~c 0), ~cy (aget ~c 1), ~cz (aget ~c 2)]
+                 ~@(postwalk-replace
+                    {'x x 'y y 'z z 'bx v 'by v 'bz v 'cx cx 'cy cy 'cz cz} body))
+               (if (number? ~v2)
+                 (do ~@(postwalk-replace
+                        {'x x 'y y 'z z 'bx v 'by v 'bz v 'cx v2 'cy v2 'cz v2} body))
+                 (let [~cx (nth ~v2 0 ~d2), ~cy (nth ~v2 1 ~d2), ~cz (nth ~v2 2 ~d2)]
+                   ~@(postwalk-replace
+                      {'x x 'y y 'z z 'bx v 'by v 'bz v 'cx cx 'cy cy 'cz cz} body))))
+             (let [~bx (nth ~v 0 ~d1), ~by (nth ~v 1 ~d1), ~bz (nth ~v 2 ~d1)]
+               (if (instance? ~'Vec3 ~v2)
+                 (let [~c (.-buf ~v2), ~cx (aget ~c 0), ~cy (aget ~c 1), ~cz (aget ~c 2)]
+                   ~@(postwalk-replace
+                      {'x x 'y y 'z z 'bx bx 'by by 'bz bz 'cx cx 'cy cy 'cz cz} body))
+                 (if (number? ~v2)
+                   (do ~@(postwalk-replace
+                          {'x x 'y y 'z z 'bx bx 'by by 'bz bz 'cx v2 'cy v2 'cz v2} body))
+                   (let [~cx (nth ~v2 0 ~d2), ~cy (nth ~v2 1 ~d2), ~cz (nth ~v2 2 ~d2)]
+                     ~@(postwalk-replace
+                        {'x x 'y y 'z z 'bx bx 'by by 'bz bz 'cx cx 'cy cy 'cz cz} body))))))))))
+
+  (defmacro rewrite-v3-nv-nv-alt
+    [src v v2 d1 d2 & body]
+    (let [[a b c x y z bx by bz cx cy cz] (repeatedly 12 gensym)]
+      `(let [v1?# (instance? Vec3 v)
+             v2?# (instance? Vec3 v2)
+             n1?# (if-not v1? (number? v))
+             n2?# (if-not v2? (number? v2))
+             ~a ~src, ~b (if v1?# (.-buf ~v)), ~c (if v2?# (.-buf ~v2))
+             ~x (aget ~a 0), ~y (aget ~a 1), ~z (aget ~a 2)
+             ~bx (if v1?# (aget ~b 0) (if n1?# ~v (nth ~v 0 ~d1)))
+             ~by (if v1?# (aget ~b 1) (if n1?# ~v (nth ~v 1 ~d1)))
+             ~bz (if v1?# (aget ~b 2) (if n1?# ~v (nth ~v 2 ~d1)))
+             ~cx (if v2?# (aget ~c 0) (if n2?# ~v2 (nth ~v2 0 ~d2)))
+             ~cy (if v2?# (aget ~c 1) (if n2?# ~v2 (nth ~v2 1 ~d2)))
+             ~cz (if v2?# (aget ~c 2) (if n2?# ~v2 (nth ~v2 2 ~d2)))]
+         ~@(postwalk-replace
+            {'x x 'y y 'z z 'bx bx 'by by 'bz bz 'cx cx 'cy cy 'cz cz} body))))
 
   (defmacro v3-op0
     [op src meta]
-    `(let [src# ~src
-           dest# (js/Float32Array. 3)]
-       (aset dest# 0 (~op (aget src# 0)))
-       (aset dest# 1 (~op (aget src# 1)))
-       (aset dest# 2 (~op (aget src# 2)))
+    `(let [dest# (js/Float32Array. 3)]
+       (rewrite-v3-no-let
+        ~src
+        (aset dest# 0 (~op ~'x))
+        (aset dest# 1 (~op ~'y))
+        (aset dest# 2 (~op ~'z)))
        (new ~'Vec3 dest# nil ~meta)))
 
   (defmacro v3-op1-xyz
@@ -520,31 +638,16 @@
           (aset ~dest 2 (~op (aget ~src 2) ~z))
           (new ~'Vec3 ~dest nil ~meta))))
 
-  (defmacro v3-op1-vs
-    [op dest src vs meta]
-    `(v3-op1-xyz ~op ~dest ~src (nth ~vs 0 0.0) (nth ~vs 1 0.0) (nth ~vs 2 0.0) ~meta))
-
-  (defmacro v3-op1-v
-    ([op src v meta]
-       `(let [src# ~src
-              dest# (js/Float32Array. 3)]
-          (v3-op1-v ~op dest# src# ~v ~meta)))
-    ([op dest src v meta]
-       `(let [v# ~v]
-          (aset ~dest 0 (~op (aget ~src 0) (aget v# 0)))
-          (aset ~dest 1 (~op (aget ~src 1) (aget v# 1)))
-          (aset ~dest 2 (~op (aget ~src 2) (aget v# 2)))
-          (new ~'Vec3 ~dest nil ~meta))))
-
-  (defmacro v3-op1-dispatch
+  (defmacro v3-op1
     [op src v meta]
-    `(let [src# ~src
-           dest# (js/Float32Array. 3)]
-       (if (instance? ~'Vec3 ~v)
-         (v3-op1-v ~op dest# src# (.-buf ~v) ~meta)
-         (if (number? ~v)
-           (v3-op1-xyz ~op dest# src# ~v ~v ~v ~meta)
-           (v3-op1-vs ~op dest# src# ~v ~meta)))))
+    `(let [dest# (js/Float32Array. 3)]
+       (rewrite-v3-nv-no-let
+        ~src ~v 0.0
+        (aset dest# 0 (~op ~'x ~'vx))
+        (aset dest# 1 (~op ~'y ~'vy))
+        (aset dest# 2 (~op ~'z ~'vz)))
+       (new ~'Vec3 dest# nil ~meta)))
+
 
   (defmacro v3-op2-xyz-v
     ([op op2 dest src vs src-c meta]
