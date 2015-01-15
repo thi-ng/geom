@@ -534,15 +534,16 @@
 
   (defmacro rewrite-v3-nv
     [src v default & body]
-    (let [[a b x y z vx vy vz] (repeatedly 8 gensym)]
-      `(let [~a ~src, ~x (aget ~a 0), ~y (aget ~a 1), ~z (aget ~a 2)]
-         (if (instance? ~'Vec3 ~v)
-           (let [~b (.-buf ~v), ~vx (aget ~b 0), ~vy (aget ~b 1), ~vz (aget ~b 2)]
-             ~@(postwalk-replace {'x x 'y y 'z z 'vx vx 'vy vy 'vz vz} body))
-           (if (number? ~v)
-             (do ~@(postwalk-replace {'x x 'y y 'z z 'vx v 'vy v 'vz v} body))
-             (let [~vx (nth ~v 0 ~default), ~vy (nth ~v 1 ~default), ~vz (nth ~v 2 ~default)]
-               ~@(postwalk-replace {'x x 'y y 'z z 'vx vx 'vy vy 'vz vz} body)))))))
+    (let [[a v? nv vx vy vz] (repeatedly 6 gensym)]
+      `(let [~a ~src
+             ~v? (instance? ~'Vec3 ~v)
+             ~nv (if ~v? (.-buf ~v) (number? ~v))
+             ~vx (if ~v? (aget ~nv 0) (if ~nv ~v (nth ~v 0 ~default)))
+             ~vy (if ~v? (aget ~nv 1) (if ~nv ~v (nth ~v 1 ~default)))
+             ~vz (if ~v? (aget ~nv 2) (if ~nv ~v (nth ~v 2 ~default)))]
+         ~@(postwalk-replace
+            {'x `(aget ~a 0) 'y `(aget ~a 1) 'z `(aget ~a 2) 'vx vx 'vy vy 'vz vz}
+            body))))
 
   (defmacro rewrite-v3-nv-no-let
     [src v default & body]
@@ -663,6 +664,7 @@
      [thi.ng.macromath.core :as mm])
     (:require
      [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :as v]
      [thi.ng.common.math.core :as m :refer [TWO_PI *eps*]]
      [thi.ng.common.error :as err]))
 
@@ -795,8 +797,11 @@
           dist (bench-op-versions "dist" g/dist-squared v n s i #{:v :s})
           refl (bench-op-versions "refl" g/reflect v n s i #{:v :s})
           min  (bench-op-versions-all-not-self "min" g/min v n s i)
+          ;;min  (bench-op-versions "min" g/min v n s i #{:v :s :vv :vs :sv :ss})
           max  (bench-op-versions-all-not-self "max" g/max v n s i)
+          ;;max  (bench-op-versions "max" g/max v n s i #{:v :s :vv :vs :sv :ss})
           mix  (bench-op-versions "mix" g/mix v n s i #{:v :n :s :vv :vn :vs :nv :nn :ns :sv :sn :ss})
+          ;;mix  (bench-op-versions "mix" g/mix v n s i #{:v :s :vn :sn})
           csv (apply str "op," (interpose "," bench-version-specs))
           csv (apply str csv "\n" (interpose "\n" [add sub mul div madd dot cp norm magsq dist refl min max mix]))
           txt (.createElement js/document "textarea")]
