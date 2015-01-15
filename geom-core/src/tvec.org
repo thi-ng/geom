@@ -246,13 +246,13 @@
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PMinMax
   (min
-   [_ v] (vm/v3-op1 min buf v _meta))
+   [_ v] (vm/v3-op1 Math/min buf v _meta))
   (min
-   [_ v v2] (vm/v3-op2 min min buf v v2 0.0 0.0 _meta))
+   [_ v v2] (vm/v3-op2 Math/min Math/min buf v v2 0.0 0.0 _meta))
   (max
-   [_ v] (vm/v3-op1 max buf v _meta))
+   [_ v] (vm/v3-op1 Math/max buf v _meta))
   (max
-   [_ v v2] (vm/v3-op2 max max buf v v2 0.0 0.0 _meta))
+   [_ v v2] (vm/v3-op2 Math/max Math/max buf v v2 0.0 0.0 _meta))
 #+END_SRC
 *** PDeltaEquals
 #+BEGIN_SRC clojure :noweb-ref vec3
@@ -262,11 +262,11 @@
   (delta=
    [_ v eps]
    (if (and (sequential? v) (== 3 (count v)))
-     (vm/rewrite-v3-v-no-let buf v 0.0
-       (and
-        (m/delta= x vx eps)
-        (m/delta= y vy eps)
-        (m/delta= z vz eps)))))
+     (vm/rewrite-v3-v-no-let
+      buf v 0.0
+      (if (m/delta= x vx eps)
+        (if (m/delta= y vy eps)
+          (m/delta= z vz eps))))))
 #+END_SRC
 *** PMagnitude
 #+BEGIN_SRC clojure :noweb-ref vec3
@@ -345,11 +345,11 @@
   (mix
    [_ v]
    (let [b (js/Float32Array. 3)]
-     (vm/rewrite-v3-v
+     (vm/rewrite-v3-v-no-let
       buf v 0.0
-      (aset b 0 (+ (* (- vx x) 0.5) x))
-      (aset b 1 (+ (* (- vy y) 0.5) y))
-      (aset b 2 (+ (* (- vz z) 0.5) z)))
+      (aset b 0 (* (+ x vx) 0.5))
+      (aset b 1 (* (+ y vy) 0.5))
+      (aset b 2 (* (+ y vz) 0.5)))
      (Vec3. b nil _meta)))
   (mix
    [_ v t]
