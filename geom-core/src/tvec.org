@@ -22,7 +22,6 @@
      - [[#constructors][Constructors]]
      - [[#macros][Macros]]
      - [[#complete-namespace-definitions][Complete namespace definitions]]
-     - [[#js-bench][JS bench]]
 
 * thi.ng.geom.tvec
 
@@ -345,7 +344,7 @@
   (mix
    [_ v]
    (let [b (js/Float32Array. 3)]
-     (vm/rewrite-v3-v-no-let
+     (vm/rewrite-v3-nv-no-let
       buf v 0.0
       (aset b 0 (* (+ x vx) 0.5))
       (aset b 1 (* (+ y vy) 0.5))
@@ -674,11 +673,13 @@
   <<ctors>>
 
   ,#+cljs
+  (enable-console-print!)
+
+  ,#+cljs
   (defn ^:export tvec-foo
     []
     (let [a (vec3 1 2 3)
           b (vec3 10 20 30)]
-      (enable-console-print!)
       (prn :a a :b b)
       (prn "a+10" (g/+ a 10))
       (prn "a+b" (g/+ a b))
@@ -739,9 +740,18 @@
     [pre args t] (prn pre args t) t)
 
   ,#+cljs
+  (def bench-version-specs
+    [:- 
+     :v :n :s 
+     :vv :vn :vs 
+     :nv :nn :ns 
+     :sv :sn :ss])
+
+  ,#+cljs
   (defn bench-op-versions
     [pre op v n s i versions]
-    (->> [:v [v] :n [n] :s [s]
+    (->> [:- []
+          :v [v] :n [n] :s [s]
           :vv [v v] :vn [v n] :vs [v s]
           :nv [n v] :nn [n n] :ns [n s]
           :sv [s v] :sn [s n] :ss [s s]]
@@ -749,59 +759,46 @@
          (reduce
           (fn [acc [v args]]
             (if (versions v)
-              (->> (apply (if (== 1 (count args)) bench-op1 bench-op2) op (conj args i))
+              (->> (apply (condp = (count args) 0 bench-op0 1 bench-op1 bench-op2) op (conj args i))
                    (trace pre v)
-                   (conj acc))            
+                   (conj acc))
               (conj acc nil)))
           [pre])
          (interpose ",")
          (apply str)))
 
   ,#+cljs
-  (defn ^:export bench-mathop
+  (defn ^:export bench-op-versions-all
     [pre op v n s i]
-    (let [tv (trace pre "v" (bench-op1 op v i))
-          tn (trace pre "n" (bench-op1 op n i))
-          ts (trace pre "s" (bench-op1 op s i))
-          tvv (trace pre "vv" (bench-op2 op v v i))
-          tvn (trace pre "vn" (bench-op2 op v n i))
-          tvs (trace pre "vs" (bench-op2 op v s i))
-          tnv (trace pre "nv" (bench-op2 op n v i))
-          tnn (trace pre "nn" (bench-op2 op n n i))
-          tns (trace pre "ns" (bench-op2 op n s i))
-          tsv (trace pre "sv" (bench-op2 op s v i))
-          tsn (trace pre "sn" (bench-op2 op s n i))
-          tss (trace pre "ss" (bench-op2 op s s i))]
-      (apply str pre "," (interpose "," [tv tn ts tvv tvn tvs tnv tnn tns tsv tsn tss]))))
+    (bench-op-versions pre op v n s i (set bench-version-specs)))
+
+  ,#+cljs
+  (defn ^:export bench-op-versions-all-not-self
+    [pre op v n s i]
+    (bench-op-versions pre op v n s i (disj (set bench-version-specs) :-)))
 
   ,#+cljs
   (defn ^:export bench-all
     [i]
-    (let [bv (vec3 10 20 30)
-          bn 10
-          bs [10 20 30]
-          add (bench-mathop "+" g/+ bv bn bs i)
-          sub (bench-mathop "-" g/- bv bn bs i)
-          mul (bench-mathop "*" g/* bv bn bs i)
-          div (bench-mathop "/" g/div bv bn bs i)
-          madd (str "madd,,,,"
-                    (bench-op2 g/madd bv bv i) "," (bench-op2 g/madd bv bn i) "," (bench-op2 g/madd bv bs i) ","
-                    (bench-op2 g/madd bn bv i) "," (bench-op2 g/madd bn bn i) "," (bench-op2 g/madd bn bs i))
-          dot (str "dot," (bench-op1 g/dot bv i) ",," (bench-op1 g/dot bs i))
-          cp (str "cross," (bench-op1 g/cross bv i) ",," (bench-op1 g/cross bs i))
-          norm (str "norm," (bench-op0 g/normalize i) "," (bench-op1 g/normalize bn i))
-          magsq (str "magsq," (bench-op0 g/mag-squared i))
-          dist (str "dist," (bench-op1 g/dist-squared bv i) ",," (bench-op1 g/dist-squared bs i))
-          refl (str "reflect," (bench-op1 g/reflect bv i) ",," (bench-op1 g/reflect bs i))
-          min (str "min," (bench-op1 g/min bv i) "," (bench-op1 g/min bn i) "," (bench-op1 g/min bs i) ","
-                   (bench-op2 g/min bv bv i) "," (bench-op2 g/min bv bn i) "," (bench-op2 g/min bv bs i))
-          max (str "max," (bench-op1 g/max bv i) "," (bench-op1 g/max bn i) "," (bench-op1 g/max bs i) ","
-                   (bench-op2 g/max bv bv i) "," (bench-op2 g/max bv bn i) "," (bench-op2 g/max bv bs i))
-          mix (str "mix," (bench-op1 g/mix bv i) "," (bench-op1 g/mix bn i) "," (bench-op1 g/mix bs i) ","
-                    (bench-op2 g/mix bv bv i) "," (bench-op2 g/mix bv bn i) "," (bench-op2 g/mix bv bs i) ","
-                    (bench-op2 g/mix bn bv i) "," (bench-op2 g/mix bn bn i) "," (bench-op2 g/mix bn bs i))
-          csv (apply str "op,v,n,s,vv,vn,vs,nv,nn,ns,sv,sn,ss\n"
-                     (interpose "\n" [add sub mul div madd dot cp norm magsq dist refl min max mix]))
+    (let [v (vec3 10 20 30)
+          n 10
+          s [10 20 30]
+          add (bench-op-versions-all "+" g/+ v n s i)
+          sub (bench-op-versions-all "-" g/- v n s i)
+          mul (bench-op-versions-all "*" g/* v n s i)
+          div (bench-op-versions-all "/" g/div v n s i)
+          madd (bench-op-versions "madd" g/madd v n s i #{:vv :vn :vs :nv :nn :ns})
+          dot (bench-op-versions "dot" g/dot v n s i #{:v :s})
+          cp  (bench-op-versions "cross" g/cross v n s i #{:v :s})
+          norm (bench-op-versions "norm" g/normalize v n s i #{:- :n})
+          magsq (bench-op-versions "magsq" g/mag-squared v n s i #{:-})
+          dist (bench-op-versions "dist" g/dist-squared v n s i #{:v :s})
+          refl (bench-op-versions "refl" g/reflect v n s i #{:v :s})
+          min  (bench-op-versions-all-not-self "min" g/min v n s i)
+          max  (bench-op-versions-all-not-self "max" g/max v n s i)
+          mix  (bench-op-versions "mix" g/mix v n s i #{:v :n :s :vv :vn :vs :nv :nn :ns :sv :sn :ss})
+          csv (apply str "op," (interpose "," bench-version-specs))
+          csv (apply str csv "\n" (interpose "\n" [add sub mul div madd dot cp norm magsq dist refl min max mix]))
           txt (.createElement js/document "textarea")]
       (.appendChild (.-body js/document) txt)
       (set! (.-value txt) csv)))
@@ -816,20 +813,3 @@
   <<v3-macros>>
 #+END_SRC
 
-** JS bench
-
-#+BEGIN_SRC js
-  var g = thi.ng.geom.core;
-  var v = g.tvec;
-  var a = v.vec3(1,2,3);
-  var b = v.vec3(3,-2,1);
-  var avg = 0;
-  var n = 50;
-  for(var j = 0; j < n; j++) {
-    var t0=new Date().getTime(); for(var i=0; i<100000; i++) { g.cross(a,b); }
-    vat t = new Date().getTime()-t0;
-    avg += t;
-    console.log(t);
-  }
-  avg /= n;
-#+END_SRC
