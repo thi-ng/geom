@@ -683,6 +683,74 @@
       (prn "a+b" (g/+ a [100 200 300]))
       (prn "apply a+b" (apply g/+ a b))
       (prn ":zxy a" (:zxy a))))
+
+  ,#+cljs
+  (defn ^:export bench-op1
+    [op b iter]
+    (let [a (vec3 1 2 3)]
+      (loop [i iter, total 0]
+        (if (> i 0)
+          (let [t0 (.getTime (js/Date.))
+                _ (loop [j 100000]
+                    (when (> j 0)
+                      (op a b)
+                      (recur (- j 1))))
+                t (- (.getTime (js/Date.)) t0)]
+            ;;(.log js/console t)
+            (recur (- i 1) (+ total t)))
+          (/ total iter)))))
+
+  ,#+cljs
+  (defn ^:export bench-op2
+    [op b c iter]
+    (let [a (vec3 1 2 3)]
+      (loop [i iter, total 0]
+        (if (> i 0)
+          (let [t0 (.getTime (js/Date.))
+                _ (loop [j 100000]
+                    (when (> j 0)
+                      (op a b c)
+                      (recur (- j 1))))
+                t (- (.getTime (js/Date.)) t0)]
+            ;;(.log js/console t)
+            (recur (- i 1) (+ total t)))
+          (/ total iter)))))
+
+  (defn trace
+    [pre args t] (prn pre args t) t)
+
+  ,#+cljs
+  (defn ^:export bench-mathop
+    [pre op v n s i]
+    (let [tv (trace pre "v" (bench-op1 op v i))
+          tn (trace pre "n" (bench-op1 op n i))
+          ts (trace pre "s" (bench-op1 op s i))
+          tvv (trace pre "vv" (bench-op2 op v v i))
+          tvn (trace pre "vn" (bench-op2 op v n i))
+          tvs (trace pre "vs" (bench-op2 op v s i))
+          tnv (trace pre "nv" (bench-op2 op n v i))
+          tnn (trace pre "nn" (bench-op2 op n n i))
+          tns (trace pre "ns" (bench-op2 op n s i))
+          tsv (trace pre "sv" (bench-op2 op s v i))
+          tsn (trace pre "sn" (bench-op2 op s n i))
+          tss (trace pre "ss" (bench-op2 op s s i))]
+      (apply str "+," (interpose "," [tv tn ts tvv tvn tvs tnv tnn tns tsv tsn tss]))))
+
+  ,#+cljs
+  (defn ^:export bench-all
+    [i]
+    (let [bv (vec3 10 20 30)
+          bn 10
+          bs [10 20 30]
+          add (bench-mathop "+" g/+ bv bn bs i)
+          sub (bench-mathop "-" g/- bv bn bs i)
+          mul (bench-mathop "*" g/* bv bn bs i)
+          div (bench-mathop "/" g/div bv bn bs i)
+          csv (apply str "op,v,n,s,vv,vn,vs,nv,nn,ns,sv,sn,ss\n"
+                     (interpose "\n" [add sub mul div]))
+          txt (.createElement js/document "textarea")]
+      (.appendChild (.-body js/document) txt)
+      (set! (.-value txt) csv)))
 #+END_SRC
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector/macros.clj :noweb yes :mkdirp yes :padline no
