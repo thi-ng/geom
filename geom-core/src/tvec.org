@@ -349,24 +349,26 @@
       buf v 0.0
       (aset b 0 (* (+ x vx) 0.5))
       (aset b 1 (* (+ y vy) 0.5))
-      (aset b 2 (* (+ y vz) 0.5)))
+      (aset b 2 (* (+ z vz) 0.5)))
      (Vec3. b nil _meta)))
   (mix
-   [_ v t]
+   [_ v v2]
    (let [b (js/Float32Array. 3)]
-     (vm/rewrite-v3-v
-      buf v 0.0
-      (aset b 0 (+ (* (- vx x) t) x))
-      (aset b 1 (+ (* (- vy y) t) y))
-      (aset b 2 (+ (* (- vz z) t) z)))
+     (vm/rewrite-v3-nv-nv
+      buf v v2 0.0 0.0
+      (aset b 0 (+ (* (- bx x) cx) x))
+      (aset b 1 (+ (* (- by y) cy) y))
+      (aset b 2 (+ (* (- bz z) cz) z)))
      (Vec3. b nil _meta)))
   (mix
    [_ b c d u v]
    (let [b' (js/Float32Array. 3)
          dv? (instance? Vec3 d)
-         dx (if dv? (aget d 0) (nth d 0 0.0))
-         dy (if dv? (aget d 1) (nth d 1 0.0))
-         dz (if dv? (aget d 2) (nth d 2 0.0))]
+         dn? (number? d)
+         d  (if dv? (.-buf d) d)
+         dx (if dv? (aget d 0) (if dn? d (nth d 0 0.0)))
+         dy (if dv? (aget d 1) (if dn? d (nth d 1 0.0)))
+         dz (if dv? (aget d 2) (if dn? d (nth d 2 0.0)))]
      (vm/rewrite-v3-nv-nv
       buf b c 0.0 0.0
       (let [x1 (+ (* (- bx x) u) x)
@@ -685,6 +687,22 @@
       (prn ":zxy a" (:zxy a))))
 
   ,#+cljs
+  (defn ^:export bench-op0
+    [op iter]
+    (let [a (vec3 1 2 3)]
+      (loop [i iter, total 0]
+        (if (> i 0)
+          (let [t0 (.getTime (js/Date.))
+                _ (loop [j 100000]
+                    (when (> j 0)
+                      (op a)
+                      (recur (- j 1))))
+                t (- (.getTime (js/Date.)) t0)]
+            ;;(.log js/console t)
+            (recur (- i 1) (+ total t)))
+          (/ total iter)))))
+
+  ,#+cljs
   (defn ^:export bench-op1
     [op b iter]
     (let [a (vec3 1 2 3)]
@@ -716,8 +734,28 @@
             (recur (- i 1) (+ total t)))
           (/ total iter)))))
 
+  ,#+cljs
   (defn trace
     [pre args t] (prn pre args t) t)
+
+  ,#+cljs
+  (defn bench-op-versions
+    [pre op v n s i versions]
+    (->> [:v [v] :n [n] :s [s]
+          :vv [v v] :vn [v n] :vs [v s]
+          :nv [n v] :nn [n n] :ns [n s]
+          :sv [s v] :sn [s n] :ss [s s]]
+         (partition 2)
+         (reduce
+          (fn [acc [v args]]
+            (if (versions v)
+              (->> (apply (if (== 1 (count args)) bench-op1 bench-op2) op (conj args i))
+                   (trace pre v)
+                   (conj acc))            
+              (conj acc nil)))
+          [pre])
+         (interpose ",")
+         (apply str)))
 
   ,#+cljs
   (defn ^:export bench-mathop
@@ -734,7 +772,7 @@
           tsv (trace pre "sv" (bench-op2 op s v i))
           tsn (trace pre "sn" (bench-op2 op s n i))
           tss (trace pre "ss" (bench-op2 op s s i))]
-      (apply str "+," (interpose "," [tv tn ts tvv tvn tvs tnv tnn tns tsv tsn tss]))))
+      (apply str pre "," (interpose "," [tv tn ts tvv tvn tvs tnv tnn tns tsv tsn tss]))))
 
   ,#+cljs
   (defn ^:export bench-all
@@ -746,8 +784,24 @@
           sub (bench-mathop "-" g/- bv bn bs i)
           mul (bench-mathop "*" g/* bv bn bs i)
           div (bench-mathop "/" g/div bv bn bs i)
+          madd (str "madd,,,,"
+                    (bench-op2 g/madd bv bv i) "," (bench-op2 g/madd bv bn i) "," (bench-op2 g/madd bv bs i) ","
+                    (bench-op2 g/madd bn bv i) "," (bench-op2 g/madd bn bn i) "," (bench-op2 g/madd bn bs i))
+          dot (str "dot," (bench-op1 g/dot bv i) ",," (bench-op1 g/dot bs i))
+          cp (str "cross," (bench-op1 g/cross bv i) ",," (bench-op1 g/cross bs i))
+          norm (str "norm," (bench-op0 g/normalize i) "," (bench-op1 g/normalize bn i))
+          magsq (str "magsq," (bench-op0 g/mag-squared i))
+          dist (str "dist," (bench-op1 g/dist-squared bv i) ",," (bench-op1 g/dist-squared bs i))
+          refl (str "reflect," (bench-op1 g/reflect bv i) ",," (bench-op1 g/reflect bs i))
+          min (str "min," (bench-op1 g/min bv i) "," (bench-op1 g/min bn i) "," (bench-op1 g/min bs i) ","
+                   (bench-op2 g/min bv bv i) "," (bench-op2 g/min bv bn i) "," (bench-op2 g/min bv bs i))
+          max (str "max," (bench-op1 g/max bv i) "," (bench-op1 g/max bn i) "," (bench-op1 g/max bs i) ","
+                   (bench-op2 g/max bv bv i) "," (bench-op2 g/max bv bn i) "," (bench-op2 g/max bv bs i))
+          mix (str "mix," (bench-op1 g/mix bv i) "," (bench-op1 g/mix bn i) "," (bench-op1 g/mix bs i) ","
+                    (bench-op2 g/mix bv bv i) "," (bench-op2 g/mix bv bn i) "," (bench-op2 g/mix bv bs i) ","
+                    (bench-op2 g/mix bn bv i) "," (bench-op2 g/mix bn bn i) "," (bench-op2 g/mix bn bs i))
           csv (apply str "op,v,n,s,vv,vn,vs,nv,nn,ns,sv,sn,ss\n"
-                     (interpose "\n" [add sub mul div]))
+                     (interpose "\n" [add sub mul div madd dot cp norm magsq dist refl min max mix]))
           txt (.createElement js/document "textarea")]
       (.appendChild (.-body js/document) txt)
       (set! (.-value txt) csv)))
