@@ -2,7 +2,9 @@
 
 * Contents                                                         :toc_3_gh:
  - [[#thinggeomtvec][thi.ng.geom.tvec]]
-     - [[#pmathops][PMathOps]]
+     - [[#vec3][Vec3]]
+         - [[#clojurescript-protocols][ClojureScript protocols]]
+         - [[#pmathops][PMathOps]]
          - [[#pdotproduct][PDotProduct]]
          - [[#pclear][PClear]]
          - [[#pcrossproduct][PCrossProduct]]
@@ -17,172 +19,195 @@
          - [[#pinterpolate][PInterpolate]]
          - [[#pheading][PHeading]]
          - [[#ppolar][PPolar]]
-     - [[#end-implementation][End implementation]]
+         - [[#end-implementation][End implementation]]
      - [[#swizzling][Swizzling]]
      - [[#constructors][Constructors]]
-     - [[#macros][Macros]]
+     - [[#code-rewriting-macros][Code rewriting macros]]
      - [[#complete-namespace-definitions][Complete namespace definitions]]
 
 * thi.ng.geom.tvec
 
-#+BEGIN_SRC clojure :noweb-ref vec3
-  ,#+cljs
-  (declare swizzle swizzle-assoc)
+** Vec3
 
+#+BEGIN_SRC clojure :noweb-ref vec3
   ,#+cljs
   (deftype Vec3
       [buf ^:mutable _hash _meta]
-
-    IMeta
-    (-meta [_] _meta)
-    IWithMeta
-    (-with-meta [_ m] (Vec3. (js/Float32Array. buf) _hash m))
-
-    ICloneable
-    (-clone
-      [_] (Vec3. (js/Float32Array. buf) _hash _meta))
-
-    ILookup
-    (-lookup
-      [_ k] (swizzle buf k nil))
-    (-lookup
-      [_ k nf] (swizzle buf k nf))
-
-    IFn
-    (-invoke
-      [_ k] (swizzle buf k nil))
-    (-invoke
-      [_ k nf] (swizzle buf k nf))
-
-    ICounted
-    (-count
-      [_] 3)
-
-    IAssociative
-    (-contains-key?
-      [_ k] (or (and (number? k) (>= k 0) (<= k 2))
-                (= :x k) (= :y k) (= :z k)))
-    (-assoc
-      [_ k v] (swizzle-assoc _ k v))
-
-    IVector
-    (-assoc-n
-      [_ n v]
-      (let [b (js/Float32Array. buf)]
-        (aset b n v)
-        (Vec3. b nil _meta)))
-
-    ISequential
-    ISeq
-    (-first
-      [_] (aget buf 0))
-    (-rest
-      [_] (cons (aget buf 1) (cons (aget buf 2) nil)))
-
-    INext
-    (-next
-      [_] (cons (aget buf 1) (cons (aget buf 2) nil)))
-
-    ISeqable
-    (-seq
-      [_] _)
-
-    IReversible
-    (-rseq
-      [_]
-      (let [b (js/Float32Array. 3)]
-        (aset b 0 (aget buf 2))
-        (aset b 1 (aget buf 1))
-        (aset b 2 (aget buf 0))
-        (Vec3. b nil _meta)))
-
-    IIndexed
-    (-nth
-      [_ n] (aget buf n))
-    (-nth
-      [_ n nf] (if (and (>= n 0) (<= n 2)) (aget buf n) nf))
-
-    ICollection
-    (-conj
-      [_ x] [(aget buf 0) (aget buf 1) (aget buf 2) x])
-
-    IStack
-    (-peek
-      [_] (aget buf 2))
-    (-pop
-      [_] [(aget buf 0) (aget buf 1)]) ;; TODO Vec2
-
-    IComparable
-    (-compare
-      [_ x]
-      (if (instance? Vec3 x)
-        (let [b' (.-buf ^Vec3 x)
-              c (compare (aget buf 0) (aget b' 0))]
-          (if (== 0 c)
-            (let [c (compare (aget buf 1) (aget b' 1))]
-              (if (== 0 c)
-                (compare  (aget buf 2) (aget b' 2))
-                c))
-            c))
-        (let [c (count x)]
-          (if (== 3 c) (compare x _) (- 3 c)))))
-
-    IHash
-    (-hash
-      [_]
-      (or _hash
-          (set! (.-__hash _)
-                (mix-collection-hash
-                 (-> 31 (+ (hash (aget buf 0)))
-                     (bit-or 0)
-                     (imul 31) (+ (hash (aget buf 1)))
-                     (bit-or 0)
-                     (imul 31) (+ (hash (aget buf 2)))
-                     (bit-or 0))
-                 3))))
-
-    IEquiv
-    (-equiv
-      [_ o]
-      (if (instance? Vec3 o)
-        (let [b' (.-buf ^Vec3 o)]
-          (and (== (aget buf 0) (aget b' 0)) (== (aget buf 1) (aget b' 1)) (== (aget buf 2) (aget b' 2))))
-        (and (sequential? o) (== 3 (count o))
-             (= (aget buf 0) (first o)) (= (aget buf 1) (nth o 1)) (= (aget buf 2) (nth o 2)))))
-
-    IReduce
-    (-reduce
-      [coll f]
-      (let [acc (f (aget buf 0) (aget buf 1))]
-        (if (reduced? acc)
-          @acc
-          (let [acc (f acc (aget buf 2))]
-            (if (reduced? acc)
-              @acc
-              acc)))))
-    (-reduce
-      [coll f start]
-      (let [acc (f start (aget buf 0))]
-        (if (reduced? acc)
-          @acc
-          (let [acc (f acc (aget buf 1))]
-            (if (reduced? acc)
-              @acc
-              (let [acc (f acc (aget buf 2))]
-                (if (reduced? acc)
-                  @acc
-                  acc)))))))
-
-    Object
-    (toString
-      [_] (str "[" (aget buf 0) " " (aget buf 1) " " (aget buf 2) "]"))
-
-    g/PBuffered
-    (get-buffer [_] buf)
-    (copy-to-buffer [_ dest idx] (.set dest buf idx))
 #+END_SRC
 
-** PMathOps
+*** ClojureScript protocols
+
+#+BEGIN_SRC clojure :noweb-ref vec3
+  IMeta
+  (-meta [_] _meta)
+  IWithMeta
+  (-with-meta [_ m] (Vec3. (js/Float32Array. buf) _hash m))
+
+  ICloneable
+  (-clone
+   [_] (Vec3. (js/Float32Array. buf) _hash _meta))
+
+  ILookup
+  (-lookup
+   [_ k]
+   (if (keyword? k)
+     (if-let [f (swizzle3-fns k)]
+       (f _)
+       (err/key-error! k))
+     (if (and (>= k 0) (<= k 2))
+       (aget buf k)
+       (err/key-error! k))))
+  (-lookup
+   [_ k nf]
+   (if (keyword? k)
+     (if-let [f (swizzle3-fns k)] (f _) nf)
+     (if (and (>= k 0) (<= k 2)) (aget buf k) nf)))
+
+  IFn
+  (-invoke
+   [_ k]
+   (if (keyword? k)
+     (if-let [f (swizzle3-fns k)]
+       (f _)
+       (err/key-error! k))
+     (if (and (>= k 0) (<= k 2))
+       (aget buf k)
+       (err/key-error! k))))
+  (-invoke
+   [_ k nf]
+   (if (keyword? k)
+     (if-let [f (swizzle3-fns k)] (f _) nf)
+     (if (and (>= k 0) (<= k 2)) (aget buf k) nf)))
+
+  ICounted
+  (-count
+   [_] 3)
+
+  IAssociative
+  (-contains-key?
+   [_ k] (or (and (number? k) (>= k 0) (<= k 2))
+             (= :x k) (= :y k) (= :z k)))
+  (-assoc
+   [_ k v] (swizzle-assoc _ k v))
+
+  IVector
+  (-assoc-n
+   [_ n v]
+   (let [b (js/Float32Array. buf)]
+     (aset b n v)
+     (Vec3. b nil _meta)))
+
+  ISequential
+  ISeq
+  (-first
+   [_] (aget buf 0))
+  (-rest
+   [_] (cons (aget buf 1) (cons (aget buf 2) nil)))
+
+  INext
+  (-next
+   [_] (cons (aget buf 1) (cons (aget buf 2) nil)))
+
+  ISeqable
+  (-seq
+   [_] _)
+
+  IReversible
+  (-rseq
+   [_]
+   (let [b (js/Float32Array. 3)]
+     (aset b 0 (aget buf 2))
+     (aset b 1 (aget buf 1))
+     (aset b 2 (aget buf 0))
+     (Vec3. b nil _meta)))
+
+  IIndexed
+  (-nth
+   [_ n] (aget buf n))
+  (-nth
+   [_ n nf] (if (and (>= n 0) (<= n 2)) (aget buf n) nf))
+
+  ICollection
+  (-conj
+   [_ x] [(aget buf 0) (aget buf 1) (aget buf 2) x])
+
+  IStack
+  (-peek
+   [_] (aget buf 2))
+  (-pop
+   [_] [(aget buf 0) (aget buf 1)]) ;; TODO Vec2
+
+  IComparable
+  (-compare
+   [_ x]
+   (if (instance? Vec3 x)
+     (let [b' (.-buf ^Vec3 x)
+           c (compare (aget buf 0) (aget b' 0))]
+       (if (== 0 c)
+         (let [c (compare (aget buf 1) (aget b' 1))]
+           (if (== 0 c)
+             (compare  (aget buf 2) (aget b' 2))
+             c))
+         c))
+     (let [c (count x)]
+       (if (== 3 c) (compare x _) (- 3 c)))))
+
+  IHash
+  (-hash
+   [_]
+   (or _hash
+       (set! (.-__hash _)
+             (mix-collection-hash
+              (-> 31 (+ (hash (aget buf 0)))
+                  (bit-or 0)
+                  (imul 31) (+ (hash (aget buf 1)))
+                  (bit-or 0)
+                  (imul 31) (+ (hash (aget buf 2)))
+                  (bit-or 0))
+              3))))
+
+  IEquiv
+  (-equiv
+   [_ o]
+   (if (instance? Vec3 o)
+     (let [b' (.-buf ^Vec3 o)]
+       (and (== (aget buf 0) (aget b' 0)) (== (aget buf 1) (aget b' 1)) (== (aget buf 2) (aget b' 2))))
+     (and (sequential? o) (== 3 (count o))
+          (= (aget buf 0) (first o)) (= (aget buf 1) (nth o 1)) (= (aget buf 2) (nth o 2)))))
+
+  IReduce
+  (-reduce
+   [coll f]
+   (let [acc (f (aget buf 0) (aget buf 1))]
+     (if (reduced? acc)
+       @acc
+       (let [acc (f acc (aget buf 2))]
+         (if (reduced? acc)
+           @acc
+           acc)))))
+  (-reduce
+   [coll f start]
+   (let [acc (f start (aget buf 0))]
+     (if (reduced? acc)
+       @acc
+       (let [acc (f acc (aget buf 1))]
+         (if (reduced? acc)
+           @acc
+           (let [acc (f acc (aget buf 2))]
+             (if (reduced? acc)
+               @acc
+               acc)))))))
+
+  Object
+  (toString
+   [_] (str "[" (aget buf 0) " " (aget buf 1) " " (aget buf 2) "]"))
+
+  g/PBuffered
+  (get-buffer [_] buf)
+  (copy-to-buffer [_ dest idx] (.set dest buf idx))
+#+END_SRC
+
+*** PMathOps
 
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PMathOps
@@ -429,7 +454,7 @@
      (Vec3. b' nil _meta)))
 #+END_SRC
 
-** End implementation
+*** End implementation
 
 #+BEGIN_SRC clojure :noweb-ref vec3
   )
@@ -437,35 +462,42 @@
 
 ** Swizzling
 
-#+BEGIN_SRC clojure :noweb-ref vec3-swizzle
-  ,#+cljs
-  (defn- swizzle
-    [buf k default meta]
-    (if (number? k)
-      (case (int k)
-        0 (aget buf 0)
-        1 (aget buf 1)
-        2 (aget buf 2)
-        (or default (err/key-error! k)))
-      (case k
-        :x (aget buf 0)
-        :y (aget buf 1)
-        :z (aget buf 2)
-        (let [n (name k) c (count n)]
-          (case c
-            2 (with-meta
-                [(vm/lookup3 buf (first n) default)  ;; TODO vec2
-                 (vm/lookup3 buf (nth n 1) default)]
-                meta)
-            3 (let [x (vm/lookup3 buf (first n) default)
-                    y (vm/lookup3 buf (nth n 1) default)
-                    z (vm/lookup3 buf (nth n 2) default)
-                    b' (js/Float32Array. 3)]
-                (aset b' 0 x)
-                (aset b' 1 y)
-                (aset b' 2 z)
-                (Vec3. b' nil meta))
-            (or default (err/key-error! k)))))))
+#+BEGIN_SRC clojure :noweb-ref swizzle-macros
+  (def ^:private swizzle-keys
+    {\x 0 \y 1 \z 2 \w 3})
+
+  (def ^:private swizzle-perms
+    (->> [(d/cartesian-product '#{x y z} '#{x y z} '#{x y z})
+          (d/cartesian-product '#{x y} '#{x y})
+          (d/cartesian-product '#{x z} '#{x z})
+          (d/cartesian-product '#{y z} '#{y z})
+          '((x) (y) (z))]
+         (apply concat)
+         (map #(symbol (apply str %)))))
+
+  (defmacro float-array*
+    [n]
+    (let [name (symbol (str "float" n))]
+      `(defn ~name [] (js/Float32Array. ~n))))
+
+  (defmacro defswizzle
+    [key]
+    (let [id (str key)
+          a (gensym)
+          b (gensym)
+          c (count id)
+          type (if (== 3 c) 'Vec3 'Vec2)]
+      (if (== 1 c)
+        `(defn ~key
+           [_#] (aget (.-buf _#) ~(swizzle-keys (first id))))
+        `(defn ~key [_#]
+           (let [~a (.-buf _#)
+                 ~b (new js/Float32Array ~c)]
+             ~@(map-indexed
+                (fn [i ch]
+                  (list 'aset b i (list 'aget a (swizzle-keys ch))))
+                id)
+             (new ~type ~b nil (.-_meta _#)))))))
 #+END_SRC
 
 ** Constructors
@@ -481,7 +513,7 @@
       (Vec3. b nil nil)))
 #+END_SRC
 
-** Macros
+** Code rewriting macros
 
 #+BEGIN_SRC clojure :noweb-ref v3-macros
   (defmacro lookup3
@@ -660,7 +692,7 @@
   (ns thi.ng.geom.core.tvec
     ,#+cljs
     (:require-macros
-     [thi.ng.geom.core.vector.macros :as vm]
+     [thi.ng.geom.core.vector.macros :as vm :refer [defswizzle]]
      [thi.ng.macromath.core :as mm])
     (:require
      [thi.ng.geom.core :as g]
@@ -668,153 +700,74 @@
      [thi.ng.common.math.core :as m :refer [TWO_PI *eps*]]
      [thi.ng.common.error :as err]))
 
+  (declare swizzle-assoc swizzle2-fns swizzle3-fns)
+
   <<vec3>>
 
-  <<vec3-swizzle>>
+  ,#+cljs (defswizzle x)
+  ,#+cljs (defswizzle xx)
+  ,#+cljs (defswizzle xxx)
+  ,#+cljs (defswizzle xxy)
+  ,#+cljs (defswizzle xxz)
+  ,#+cljs (defswizzle xy)
+  ,#+cljs (defswizzle xyx)
+  ,#+cljs (defswizzle xyy)
+  ,#+cljs (defswizzle xyz)
+  ,#+cljs (defswizzle xz)
+  ,#+cljs (defswizzle xzx)
+  ,#+cljs (defswizzle xzy)
+  ,#+cljs (defswizzle xzz)
+  ,#+cljs (defswizzle y)
+  ,#+cljs (defswizzle yx)
+  ,#+cljs (defswizzle yxx)
+  ,#+cljs (defswizzle yxy)
+  ,#+cljs (defswizzle yxz)
+  ,#+cljs (defswizzle yy)
+  ,#+cljs (defswizzle yyx)
+  ,#+cljs (defswizzle yyy)
+  ,#+cljs (defswizzle yyz)
+  ,#+cljs (defswizzle yz)
+  ,#+cljs (defswizzle yzx)
+  ,#+cljs (defswizzle yzy)
+  ,#+cljs (defswizzle yzz)
+  ,#+cljs (defswizzle z)
+  ,#+cljs (defswizzle zx)
+  ,#+cljs (defswizzle zxx)
+  ,#+cljs (defswizzle zxy)
+  ,#+cljs (defswizzle zxz)
+  ,#+cljs (defswizzle zy)
+  ,#+cljs (defswizzle zyx)
+  ,#+cljs (defswizzle zyy)
+  ,#+cljs (defswizzle zyz)
+  ,#+cljs (defswizzle zz)
+  ,#+cljs (defswizzle zzx)
+  ,#+cljs (defswizzle zzy)
+  ,#+cljs (defswizzle zzz)
+
+  ,#+cljs
+  (def swizzle2-fns
+    {:x x :xx xx :xy xy :y y :yx yx :yy yy})
+
+  ,#+cljs
+  (def swizzle3-fns
+    {:x x, :xx xx, :xxx xxx, :xxy xxy, :xxz xxz, :xy xy, :xyx xyx,
+     :xyy xyy, :xyz xyz, :xz xz, :xzx xzx, :xzy xzy, :xzz xzz,
+     :y y, :yx yx, :yxx yxx, :yxy yxy, :yxz yxz, :yy yy, :yyx yyx,
+     :yyy yyy, :yyz yyz, :yz yz, :yzx yzx, :yzy yzy, :yzz yzz,
+     :z z, :zx zx, :zxx zxx, :zxy zxy, :zxz zxz, :zy zy, :zyx zyx,
+     :zyy zyy, :zyz zyz, :zz zz, :zzx zzx, :zzy zzy, :zzz zzz})
 
   <<ctors>>
-
-  ,#+cljs
-  (enable-console-print!)
-
-  ,#+cljs
-  (defn ^:export tvec-foo
-    []
-    (let [a (vec3 1 2 3)
-          b (vec3 10 20 30)]
-      (prn :a a :b b)
-      (prn "a+10" (g/+ a 10))
-      (prn "a+b" (g/+ a b))
-      (prn "a+b" (g/+ a [100 200 300]))
-      (prn "apply a+b" (apply g/+ a b))
-      (prn ":zxy a" (:zxy a))))
-
-  ,#+cljs
-  (defn ^:export bench-op0
-    [op iter]
-    (let [a (vec3 1 2 3)]
-      (loop [i iter, total 0]
-        (if (> i 0)
-          (let [t0 (.getTime (js/Date.))
-                _ (loop [j 100000]
-                    (when (> j 0)
-                      (op a)
-                      (recur (- j 1))))
-                t (- (.getTime (js/Date.)) t0)]
-            ;;(.log js/console t)
-            (recur (- i 1) (+ total t)))
-          (/ total iter)))))
-
-  ,#+cljs
-  (defn ^:export bench-op1
-    [op b iter]
-    (let [a (vec3 1 2 3)]
-      (loop [i iter, total 0]
-        (if (> i 0)
-          (let [t0 (.getTime (js/Date.))
-                _ (loop [j 100000]
-                    (when (> j 0)
-                      (op a b)
-                      (recur (- j 1))))
-                t (- (.getTime (js/Date.)) t0)]
-            ;;(.log js/console t)
-            (recur (- i 1) (+ total t)))
-          (/ total iter)))))
-
-  ,#+cljs
-  (defn ^:export bench-op2
-    [op b c iter]
-    (let [a (vec3 1 2 3)]
-      (loop [i iter, total 0]
-        (if (> i 0)
-          (let [t0 (.getTime (js/Date.))
-                _ (loop [j 100000]
-                    (when (> j 0)
-                      (op a b c)
-                      (recur (- j 1))))
-                t (- (.getTime (js/Date.)) t0)]
-            ;;(.log js/console t)
-            (recur (- i 1) (+ total t)))
-          (/ total iter)))))
-
-  ,#+cljs
-  (defn trace
-    [pre args t] (prn pre args t) t)
-
-  ,#+cljs
-  (def bench-version-specs
-    [:- 
-     :v :n :s 
-     :vv :vn :vs 
-     :nv :nn :ns 
-     :sv :sn :ss])
-
-  ,#+cljs
-  (defn bench-op-versions
-    [pre op v n s i versions]
-    (->> [:- []
-          :v [v] :n [n] :s [s]
-          :vv [v v] :vn [v n] :vs [v s]
-          :nv [n v] :nn [n n] :ns [n s]
-          :sv [s v] :sn [s n] :ss [s s]]
-         (partition 2)
-         (reduce
-          (fn [acc [v args]]
-            (if (versions v)
-              (->> (apply (condp = (count args) 0 bench-op0 1 bench-op1 bench-op2) op (conj args i))
-                   (trace pre v)
-                   (conj acc))
-              (conj acc nil)))
-          [pre])
-         (interpose ",")
-         (apply str)))
-
-  ,#+cljs
-  (defn ^:export bench-op-versions-all
-    [pre op v n s i]
-    (bench-op-versions pre op v n s i (set bench-version-specs)))
-
-  ,#+cljs
-  (defn ^:export bench-op-versions-all-not-self
-    [pre op v n s i]
-    (bench-op-versions pre op v n s i (disj (set bench-version-specs) :-)))
-
-  ,#+cljs
-  (defn ^:export bench-all
-    [i]
-    (let [v (vec3 10 20 30)
-          n 10
-          s [10 20 30]
-          add (bench-op-versions-all "+" g/+ v n s i)
-          sub (bench-op-versions-all "-" g/- v n s i)
-          mul (bench-op-versions-all "*" g/* v n s i)
-          div (bench-op-versions-all "/" g/div v n s i)
-          madd (bench-op-versions "madd" g/madd v n s i #{:vv :vn :vs :nv :nn :ns})
-          dot (bench-op-versions "dot" g/dot v n s i #{:v :s})
-          cp  (bench-op-versions "cross" g/cross v n s i #{:v :s})
-          norm (bench-op-versions "norm" g/normalize v n s i #{:- :n})
-          magsq (bench-op-versions "magsq" g/mag-squared v n s i #{:-})
-          dist (bench-op-versions "dist" g/dist-squared v n s i #{:v :s})
-          refl (bench-op-versions "refl" g/reflect v n s i #{:v :s})
-          min  (bench-op-versions-all-not-self "min" g/min v n s i)
-          ;;min  (bench-op-versions "min" g/min v n s i #{:v :s :vv :vs :sv :ss})
-          max  (bench-op-versions-all-not-self "max" g/max v n s i)
-          ;;max  (bench-op-versions "max" g/max v n s i #{:v :s :vv :vs :sv :ss})
-          mix  (bench-op-versions "mix" g/mix v n s i #{:v :n :s :vv :vn :vs :nv :nn :ns :sv :sn :ss})
-          ;;mix  (bench-op-versions "mix" g/mix v n s i #{:v :s :vn :sn})
-          csv (apply str "op," (interpose "," bench-version-specs))
-          csv (apply str csv "\n" (interpose "\n" [add sub mul div madd dot cp norm magsq dist refl min max mix]))
-          txt (.createElement js/document "textarea")]
-      (.appendChild (.-body js/document) txt)
-      (set! (.-value txt) csv)))
 #+END_SRC
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector/macros.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.vector.macros
     (:require
      [clojure.walk :refer :all]
+     [thi.ng.common.data.core :as d]
      [thi.ng.common.error :as err]))
+
+  <<swizzle-macros>>
 
   <<v3-macros>>
 #+END_SRC
-
