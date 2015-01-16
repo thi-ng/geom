@@ -85,10 +85,15 @@
 
   IAssociative
   (-contains-key?
-   [_ k] (or (and (number? k) (>= k 0) (<= k 2))
-             (= :x k) (= :y k) (= :z k)))
+   [_ k]
+   (if (number? k)
+     (and (>= k 0) (<= k 2))
+     (if (swizzle3-fns k) true false)))
   (-assoc
-   [_ k v] (swizzle-assoc _ k v))
+   [_ k v]
+   (let [b (js/Float32Array. buf)] ;; FIXME allow keywords & swizzling assoc
+     (aset b k v)
+     (Vec3. b nil _meta)))
 
   IVector
   (-assoc-n
@@ -204,7 +209,7 @@
 
   g/PBuffered
   (get-buffer [_] buf)
-  (copy-to-buffer [_ dest idx] (.set dest buf idx))
+  (copy-to-buffer [_ dest idx] (.set dest buf idx) dest)
 #+END_SRC
 
 *** PMathOps
