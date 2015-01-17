@@ -2,6 +2,11 @@
 
 * Contents                                                         :toc_3_gh:
  - [[#thinggeomtvec][thi.ng.geom.tvec]]
+     - [[#vec2][Vec2]]
+         - [[#templates-vec2][Templates Vec2]]
+         - [[#clojure-protocols][Clojure protocols]]
+         - [[#clojurescript-protocols][ClojureScript protocols]]
+         - [[#end-implementation][End implementation]]
      - [[#vec3][Vec3]]
          - [[#templates][Templates]]
          - [[#clojure-protocols][Clojure protocols]]
@@ -29,6 +34,318 @@
 
 * thi.ng.geom.tvec
 
+** Vec2
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  (deftype Vec2
+    ,#+clj  [^doubles buf ^:unsynchronized-mutable _hash _meta]
+    ,#+cljs [buf ^:mutable _hash _meta]
+#+END_SRC
+
+*** Templates Vec2
+
+**** compare
+
+#+BEGIN_SRC clojure :noweb-ref tpl-compare2
+  (if (instance? Vec2 o)
+    (let [^doubles b' (.-buf ^Vec2 o)
+          c (compare (aget buf 0) (aget b' 0))]
+      (if (== 0 c) (compare (aget buf 1) (aget b' 1)) c))
+    (let [c (count o)]
+      (if (== 2 c) (- (compare o _)) (- 2 c))))
+#+END_SRC
+
+**** contains-key?
+
+#+BEGIN_SRC clojure :noweb-ref tpl-contains2
+  (if (number? k)
+    (and (>= k 0) (< k 2))
+    (if (swizzle2-fns k) true false))
+#+END_SRC
+
+**** equals / equiv
+
+#+NAME: tpl-equals2
+#+BEGIN_SRC emacs-lisp :var fn=""
+  (replace-regexp-in-string
+   "{{fn}}" fn
+   "(if (instance? Vec2 o)
+      (let [^doubles b' (.-buf ^Vec2 o)]
+        (and (== (aget buf 0) (aget b' 0)) (== (aget buf 1) (aget b' 1))))
+      (and (sequential? o) (== 2 (count o))
+           ({{fn}} (aget buf 0) (first o))
+           ({{fn}} (aget buf 1) (nth o 1))))")
+#+END_SRC
+
+**** hashCode
+
+#+BEGIN_SRC clojure :noweb-ref tpl-hashcode2
+  (-> 31
+      (unchecked-add-int (hash (aget buf 0)))
+      (unchecked-multiply-int 31)
+      (unchecked-add-int (hash (aget buf 1))))
+#+END_SRC
+
+**** invoke
+
+#+BEGIN_SRC clojure :noweb-ref tpl-invoke2
+  (if (keyword? k)
+    (if-let [f (swizzle2-fns k)]
+      (f _)
+      (err/key-error! k))
+    (if (and (>= k 0) (< k 2))
+      (aget buf k)
+      (err/key-error! k)))
+#+END_SRC
+
+#+BEGIN_SRC clojure :noweb-ref tpl-invoke2-nf
+  (if (keyword? k)
+    (if-let [f (swizzle2-fns k)] (f _) nf)
+    (if (and (>= k 0) (< k 2)) (aget buf k) nf))
+#+END_SRC
+
+**** reduce
+
+#+BEGIN_SRC clojure :noweb-ref tpl-reduce2
+  (let [acc (f (aget buf 0) (aget buf 1))] (if (reduced? acc) @acc acc))
+#+END_SRC
+
+#+BEGIN_SRC clojure :noweb-ref tpl-reduce2-start
+  (let [acc (f start (aget buf 0))]
+    (if (reduced? acc)
+      @acc
+      (let [acc (f acc (aget buf 1))]
+        (if (reduced? acc)
+          @acc
+          acc))))
+#+END_SRC
+
+*** Clojure protocols
+
+#+BEGIN_SRC clojure :noweb-ref vec2 :noweb yes
+  ,#+clj clojure.lang.IObj
+  ,#+clj (meta [_] _meta)
+  ,#+clj (withMeta [_ m] (Vec2. (double-array buf) _hash m))
+
+  ,#+clj clojure.lang.ILookup
+  ,#+clj (valAt
+         [_ k]
+         <<tpl-invoke2>>)
+  ,#+clj (valAt
+         [_ k nf]
+         <<tpl-invoke2-nf>>)
+
+  ,#+clj java.util.concurrent.Callable
+  ,#+clj (call [_] (.invoke ^clojure.lang.IFn _))
+  ,#+clj java.lang.Runnable
+  ,#+clj (run [_] (.invoke ^clojure.lang.IFn _))
+
+  ,#+clj clojure.lang.IFn
+  ,#+clj (invoke
+         [_ k]
+         <<tpl-invoke2>>)
+  ,#+clj (invoke
+         [_ k nf]
+         <<tpl-invoke2-nf>>)
+  ,#+clj (applyTo
+         [_ args]
+         (case (count args)
+           1 (.invoke ^clojure.lang.IFn _ (first args))
+           2 (.invoke ^clojure.lang.IFn _ (first args) (nth args 1))
+           (err/illegal-arg! (str "wrong number of args (" (count args) ")"))))
+
+  ,#+clj clojure.lang.Associative
+  ,#+clj clojure.lang.IPersistentVector
+  ,#+clj (count [_] 2)
+  ,#+clj (length [_] 2)
+  ,#+clj (containsKey
+         [_ k]
+         <<tpl-contains2>>)
+  ,#+clj (entryAt
+         [_ k] (clojure.lang.MapEntry. k (aget buf k)))
+  ,#+clj (assoc
+            [_ k v]
+          ;; FIXME allow keywords & swizzling assoc
+          (let [b (double-array buf)] (aset b k (double v)) (Vec2. b nil _meta)))
+  ,#+clj (assocN
+         [_ k v]
+         (let [b (double-array buf)] (aset b k (double v)) (Vec2. b nil _meta)))
+
+  ,#+clj java.util.Collection
+  ,#+clj (isEmpty [_] false)
+  ,#+clj (iterator [_] (.iterator ^java.util.Collection (list (aget buf 0) (aget buf 1))))
+  ,#+clj (toArray [_] (object-array _))
+  ,#+clj (size [_] 2)
+
+  ,#+clj clojure.lang.IPersistentCollection
+  ,#+clj clojure.lang.Indexed
+  ,#+clj clojure.lang.Sequential
+  ,#+clj clojure.lang.Seqable
+  ,#+clj java.util.List
+  ,#+clj (seq [_] (seq buf))
+  ,#+clj (empty [_] (err/unsupported!))
+  ,#+clj (cons [_ x] (with-meta (vec3 (aget buf 0) (aget buf 1) x) _meta))
+  ,#+clj (peek [_] (aget buf 1))
+  ,#+clj (pop [_] (with-meta [(aget buf 0)] _meta))
+  ,#+clj (rseq [_] ((swizzle2-fns :yx) _))
+  ,#+clj (get [_ n] (aget buf n))
+  ,#+clj (nth [_ n] (aget buf n))
+  ,#+clj (nth [_ n nf] (if (and (>= n 0) (< n 2)) (aget buf n) nf))
+  ,#+clj (equiv
+         [_ o]
+         <<tpl-equals2(fn="clojure.lang.Util/equiv")>>)
+  ,#+clj (equals
+         [_ o]
+         <<tpl-equals2(fn="clojure.lang.Util/equals")>>)
+
+  ,#+clj Comparable
+  ,#+clj (compareTo
+         [_ o]
+         <<tpl-compare2>>)
+  ,#+clj (hashCode
+         [_]
+         <<tpl-hashcode2>>)
+
+  ,#+clj clojure.lang.IHashEq
+  ,#+clj (hasheq
+         [_]
+         (or _hash
+             (set! _hash
+                   (mix-collection-hash
+                    <<tpl-hashcode2>>
+                    2))))
+
+  ,#+clj cp/InternalReduce
+  ,#+clj (internal-reduce
+         [_ f start]
+         <<tpl-reduce2-start>>)
+
+  ,#+clj cp/CollReduce
+  ,#+clj (coll-reduce
+         [_ f]
+         <<tpl-reduce2>>)
+  ,#+clj (coll-reduce
+         [_ f start]
+         <<tpl-reduce2-start>>)
+#+END_SRC
+
+*** ClojureScript protocols
+
+#+BEGIN_SRC clojure :noweb-ref vec2 :noweb yes
+  ,#+cljs IMeta
+  ,#+cljs (-meta [_] _meta)
+  ,#+cljs IWithMeta
+  ,#+cljs (-with-meta [_ m] (Vec2. (js/Float32Array. buf) _hash m))
+
+  ,#+cljs ICloneable
+  ,#+cljs (-clone
+          [_] (Vec2. (js/Float32Array. buf) _hash _meta))
+
+  ,#+cljs ILookup
+  ,#+cljs (-lookup
+          [_ k]
+          <<tpl-invoke2>>)
+  ,#+cljs (-lookup
+          [_ k nf]
+          <<tpl-invoke2-nf>>)
+
+  ,#+cljs IFn
+  ,#+cljs (-invoke
+          [_ k]
+          <<tpl-invoke2>>)
+  ,#+cljs (-invoke
+          [_ k nf]
+          <<tpl-invoke2-nf>>)
+
+  ,#+cljs ICounted
+  ,#+cljs (-count [_] 2)
+
+  ,#+cljs IAssociative
+  ,#+cljs (-contains-key?
+          [_ k]
+          <<tpl-contains2>>)
+  ,#+cljs (-assoc
+          [_ k v]
+          ;; FIXME allow keywords & swizzling assoc
+          (let [b (js/Float32Array. buf)] (aset b k v) (Vec2. b nil _meta)))
+
+  ,#+cljs IVector
+  ,#+cljs (-assoc-n
+          [_ n v]
+          (let [b (js/Float32Array. buf)] (aset b n v) (Vec2. b nil _meta)))
+
+  ,#+cljs ISequential
+  ,#+cljs ISeq
+  ,#+cljs (-first
+          [_] (aget buf 0))
+  ,#+cljs (-rest
+          [_] (cons (aget buf 1) nil))
+
+  ,#+cljs INext
+  ,#+cljs (-next
+          [_] (cons (aget buf 1) nil))
+
+  ,#+cljs ISeqable
+  ,#+cljs (-seq [_] _)
+
+  ,#+cljs IReversible
+  ,#+cljs (-rseq [_] ((swizzle2-fns :yx) _))
+
+  ,#+cljs IIndexed
+  ,#+cljs (-nth [_ n] (aget buf n))
+  ,#+cljs (-nth [_ n nf] (if (and (>= n 0) (< n 2)) (aget buf n) nf))
+
+  ,#+cljs ICollection
+  ,#+cljs (-conj [_ x] (with-meta (vec3 (aget buf 0) (aget buf 1) x) _meta))
+
+  ,#+cljs IStack
+  ,#+cljs (-peek [_] (aget buf 1))
+  ,#+cljs (-pop [_] (with-meta [(aget buf 0)] _meta))
+
+  ,#+cljs IComparable
+  ,#+cljs (-compare
+          [_ o]
+          <<tpl-compare2>>)
+
+  ,#+cljs IHash
+  ,#+cljs (-hash
+          [_]
+          (or _hash
+              (set! (.-_hash _)
+                    (mix-collection-hash
+                     (-> 31 (+ (hash (aget buf 0)))
+                         (bit-or 0)
+                         (imul 31) (+ (hash (aget buf 1)))
+                         (bit-or 0))
+                     2))))
+
+  ,#+cljs IEquiv
+  ,#+cljs (-equiv
+          [_ o]
+          <<tpl-equals2(fn="=")>>)
+
+  ,#+cljs IReduce
+  ,#+cljs (-reduce
+          [coll f]
+          <<tpl-reduce2>>)
+  ,#+cljs (-reduce
+          [coll f start]
+          <<tpl-reduce2-start>>)
+
+  ,#+cljs g/PBuffered
+  ,#+cljs (get-buffer [_] buf)
+  ,#+cljs (copy-to-buffer [_ dest idx] (.set dest buf idx) dest)
+
+  Object
+  (toString [_] (str "[" (aget buf 0) " " (aget buf 1) " " (aget buf 2) "]"))
+#+END_SRC
+
+*** End implementation
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  )
+#+END_SRC
+
 ** Vec3
 
 #+BEGIN_SRC clojure :noweb-ref vec3
@@ -38,10 +355,9 @@
 #+END_SRC
 
 *** Templates
-
 **** compare
 
-#+BEGIN_SRC clojure :noweb-ref tpl-compare
+#+BEGIN_SRC clojure :noweb-ref tpl-compare3
   (if (instance? Vec3 o)
     (let [^doubles b' (.-buf ^Vec3 o)
           c (compare (aget buf 0) (aget b' 0))]
@@ -57,7 +373,7 @@
 
 **** contains-key?
 
-#+BEGIN_SRC clojure :noweb-ref tpl-contains
+#+BEGIN_SRC clojure :noweb-ref tpl-contains3
   (if (number? k)
     (and (>= k 0) (<= k 2))
     (if (swizzle3-fns k) true false))
@@ -65,7 +381,7 @@
 
 **** equals / equiv
 
-#+NAME: tpl-equals
+#+NAME: tpl-equals3
 #+BEGIN_SRC emacs-lisp :var fn=""
   (replace-regexp-in-string
    "{{fn}}" fn
@@ -80,7 +396,7 @@
 
 **** hashCode
 
-#+BEGIN_SRC clojure :noweb-ref tpl-hashcode
+#+BEGIN_SRC clojure :noweb-ref tpl-hashcode3
   (-> 31
       (unchecked-add-int (hash (aget buf 0)))
       (unchecked-multiply-int 31)
@@ -91,7 +407,7 @@
 
 **** invoke
 
-#+BEGIN_SRC clojure :noweb-ref tpl-invoke
+#+BEGIN_SRC clojure :noweb-ref tpl-invoke3
   (if (keyword? k)
     (if-let [f (swizzle3-fns k)]
       (f _)
@@ -101,7 +417,7 @@
       (err/key-error! k)))
 #+END_SRC
 
-#+BEGIN_SRC clojure :noweb-ref tpl-invoke-nf
+#+BEGIN_SRC clojure :noweb-ref tpl-invoke3-nf
   (if (keyword? k)
     (if-let [f (swizzle3-fns k)] (f _) nf)
     (if (and (>= k 0) (<= k 2)) (aget buf k) nf))
@@ -109,7 +425,7 @@
 
 **** reduce
 
-#+BEGIN_SRC clojure :noweb-ref tpl-reduce
+#+BEGIN_SRC clojure :noweb-ref tpl-reduce3
   (let [acc (f (aget buf 0) (aget buf 1))]
     (if (reduced? acc)
       @acc
@@ -121,7 +437,7 @@
 
 **** reduce w/ init
 
-#+BEGIN_SRC clojure :noweb-ref tpl-reduce-start
+#+BEGIN_SRC clojure :noweb-ref tpl-reduce3-start
   (let [acc (f start (aget buf 0))]
     (if (reduced? acc)
       @acc
@@ -144,10 +460,10 @@
   ,#+clj clojure.lang.ILookup
   ,#+clj (valAt
          [_ k]
-         <<tpl-invoke>>)
+         <<tpl-invoke3>>)
   ,#+clj (valAt
          [_ k nf]
-         <<tpl-invoke-nf>>)
+         <<tpl-invoke3-nf>>)
 
   ,#+clj java.util.concurrent.Callable
   ,#+clj (call [_] (.invoke ^clojure.lang.IFn _))
@@ -157,10 +473,10 @@
   ,#+clj clojure.lang.IFn
   ,#+clj (invoke
          [_ k]
-         <<tpl-invoke>>)
+         <<tpl-invoke3>>)
   ,#+clj (invoke
          [_ k nf]
-         <<tpl-invoke-nf>>)
+         <<tpl-invoke3-nf>>)
   ,#+clj (applyTo
          [_ args]
          (case (count args)
@@ -174,7 +490,7 @@
   ,#+clj (length [_] 3)
   ,#+clj (containsKey
          [_ k]
-         <<tpl-contains>>)
+         <<tpl-contains3>>)
   ,#+clj (entryAt
          [_ k] (clojure.lang.MapEntry. k (aget buf k)))
   ,#+clj (assoc
@@ -198,27 +514,32 @@
   ,#+clj java.util.List
   ,#+clj (seq [_] (seq buf))
   ,#+clj (empty [_] (err/unsupported!))
-  ,#+clj (cons [_ x] [(aget buf 0) (aget buf 1) (aget buf 2) x])
+  ,#+clj (cons [_ x] (with-meta [(aget buf 0) (aget buf 1) (aget buf 2) x] _meta))
   ,#+clj (peek [_] (aget buf 2))
-  ,#+clj (pop [_] [(aget buf 0) (aget buf 1)]) ;; TODO Vec2
+  ,#+clj (pop
+         [_]
+         (let [^doubles b (double-array 2)]
+           (aset b 0 (aget buf 0))
+           (aset b 1 (aget buf 1))
+           (Vec2. b nil _meta)))
   ,#+clj (rseq [_] ((swizzle3-fns :zyx) _))
   ,#+clj (get [_ n] (aget buf n))
   ,#+clj (nth [_ n] (aget buf n))
   ,#+clj (nth [_ n nf] (if (and (>= n 0) (<= n 2)) (aget buf n) nf))
   ,#+clj (equiv
          [_ o]
-         <<tpl-equals(fn="clojure.lang.Util/equiv")>>)
+         <<tpl-equals3(fn="clojure.lang.Util/equiv")>>)
   ,#+clj (equals
          [_ o]
-         <<tpl-equals(fn="clojure.lang.Util/equals")>>)
+         <<tpl-equals3(fn="clojure.lang.Util/equals")>>)
 
   ,#+clj Comparable
   ,#+clj (compareTo
          [_ o]
-         <<tpl-compare>>)
+         <<tpl-compare3>>)
   ,#+clj (hashCode
          [_]
-         <<tpl-hashcode>>)
+         <<tpl-hashcode3>>)
 
   ,#+clj clojure.lang.IHashEq
   ,#+clj (hasheq
@@ -226,21 +547,21 @@
          (or _hash
              (set! _hash
                    (mix-collection-hash
-                    <<tpl-hashcode>>
+                    <<tpl-hashcode3>>
                     3))))
 
   ,#+clj cp/InternalReduce
   ,#+clj (internal-reduce
          [_ f start]
-         <<tpl-reduce-start>>)
+         <<tpl-reduce3-start>>)
 
   ,#+clj cp/CollReduce
   ,#+clj (coll-reduce
          [_ f]
-         <<tpl-reduce>>)
+         <<tpl-reduce3>>)
   ,#+clj (coll-reduce
          [_ f start]
-         <<tpl-reduce-start>>)
+         <<tpl-reduce3-start>>)
 #+END_SRC
 
 *** ClojureScript protocols
@@ -258,18 +579,18 @@
   ,#+cljs ILookup
   ,#+cljs (-lookup
           [_ k]
-          <<tpl-invoke>>)
+          <<tpl-invoke3>>)
   ,#+cljs (-lookup
           [_ k nf]
-          <<tpl-invoke>>)
+          <<tpl-invoke3>>)
 
   ,#+cljs IFn
   ,#+cljs (-invoke
           [_ k]
-          <<tpl-invoke>>)
+          <<tpl-invoke3>>)
   ,#+cljs (-invoke
           [_ k nf]
-          <<tpl-invoke-nf>>)
+          <<tpl-invoke3-nf>>)
 
   ,#+cljs ICounted
   ,#+cljs (-count [_] 3)
@@ -277,7 +598,7 @@
   ,#+cljs IAssociative
   ,#+cljs (-contains-key?
           [_ k]
-          <<tpl-contains>>)
+          <<tpl-contains3>>)
   ,#+cljs (-assoc
           [_ k v]
           ;; FIXME allow keywords & swizzling assoc
@@ -310,16 +631,21 @@
   ,#+cljs (-nth [_ n nf] (if (and (>= n 0) (<= n 2)) (aget buf n) nf))
 
   ,#+cljs ICollection
-  ,#+cljs (-conj [_ x] [(aget buf 0) (aget buf 1) (aget buf 2) x])
+  ,#+cljs (-conj [_ x] (with-meta [(aget buf 0) (aget buf 1) (aget buf 2) x] _meta))
 
   ,#+cljs IStack
   ,#+cljs (-peek [_] (aget buf 2))
-  ,#+cljs (-pop [_] [(aget buf 0) (aget buf 1)]) ;; TODO Vec2
+  ,#+cljs (-pop
+          [_]
+          (let [b (js/Float32Array. 2)]
+           (aset b 0 (aget buf 0))
+           (aset b 1 (aget buf 1))
+           (Vec2. b nil _meta)))
 
   ,#+cljs IComparable
   ,#+cljs (-compare
           [_ o]
-          <<tpl-compare>>)
+          <<tpl-compare3>>)
 
   ,#+cljs IHash
   ,#+cljs (-hash
@@ -338,15 +664,15 @@
   ,#+cljs IEquiv
   ,#+cljs (-equiv
           [_ o]
-          <<tpl-equals(fn="=")>>)
+          <<tpl-equals3(fn="=")>>)
 
   ,#+cljs IReduce
   ,#+cljs (-reduce
           [coll f]
-          <<tpl-reduce>>)
+          <<tpl-reduce3>>)
   ,#+cljs (-reduce
           [coll f start]
-          <<tpl-reduce-start>>)
+          <<tpl-reduce3-start>>)
 
   ,#+cljs g/PBuffered
   ,#+cljs (get-buffer [_] buf)
@@ -634,10 +960,6 @@
 
 ** Swizzling
 
-#+BEGIN_SRC clojure :noweb-ref swizzle
-
-#+END_SRC
-
 #+BEGIN_SRC clojure :noweb-ref swizzle-macros
   (def ^:private swizzle-keys
     {\x 0 \y 1 \z 2 \w 3})
@@ -654,30 +976,39 @@
   (defmacro defswizzle
     [btype key]
     (let [id (str key)
-          a (gensym)
-          b (gensym)
-          v (gensym)
+          [a b v] (repeatedly 3 gensym)
           c (count id)
-          type (if (== 3 c) 'Vec3 'Vec3)] ;; FIXME Vec2
+          type (if (== 3 c) 'Vec3 'Vec2)]
       (if (== 1 c)
         `(defn ~key
-           [~(with-meta v {:tag "Vec3"})]
-           (let [~(with-meta a {:tag "doubles"}) (.-buf ~v)]
-             (aget ~a ~(swizzle-keys (first id)))))
+           [~v]
+           (let [~(with-meta a {:tag "doubles"}) (if (instance? ~'Vec2 ~v)
+                                                   (.-buf ~(with-meta v {:tag "Vec2"}))
+                                                   (.-buf ~(with-meta v {:tag "Vec3"})))]
+             (aget ~a ~(swizzle-keys (first id) 0.0))))
         `(defn ~key
            [~(with-meta v {:tag "Vec3"})]
-           (let [~(with-meta a {:tag "doubles"}) (.-buf ~v)
+           (let [~(with-meta a {:tag "doubles"}) (if (instance? ~'Vec2 ~v)
+                                                   (.-buf ~(with-meta v {:tag "Vec2"}))
+                                                   (.-buf ~(with-meta v {:tag "Vec3"})))
                  ~(with-meta b {:tag "doubles"}) (~@btype ~c)]
              ~@(map-indexed
                 (fn [i ch]
-                  (list 'aset b i (list 'double (list 'aget a (swizzle-keys ch)))))
+                  (list 'aset b i (list 'double (list 'aget a (swizzle-keys ch 0.0)))))
                 id)
-             (new ~type ~b nil (.-_meta ~v)))))))
+             (new ~type ~b nil (meta ~v)))))))
 #+END_SRC
 
 ** Constructors
 
 #+BEGIN_SRC clojure :noweb-ref ctors
+  (defn vec2
+    [x y]
+    (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+      (aset b 0 (double x))
+      (aset b 1 (double y))
+      (Vec2. b nil nil)))
+
   (defn vec3
     [x y z]
     (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
@@ -878,7 +1209,9 @@
      ,#+clj [thi.ng.macromath.core :as mm]
      ,#+clj [clojure.core.protocols :as cp]))
 
-  (declare swizzle2-fns swizzle3-fns)
+  (declare swizzle2-fns swizzle3-fns vec3)
+
+  <<vec2>>
 
   <<vec3>>
 
