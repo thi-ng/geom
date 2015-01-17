@@ -168,8 +168,8 @@
            2 (.invoke ^clojure.lang.IFn _ (first args) (nth args 1))
            (err/illegal-arg! (str "wrong number of args (" (count args) ")"))))
 
-  ,#+clj clojure.lang.IPersistentVector
   ,#+clj clojure.lang.Associative
+  ,#+clj clojure.lang.IPersistentVector
   ,#+clj (count [_] 3)
   ,#+clj (length [_] 3)
   ,#+clj (containsKey
@@ -180,10 +180,10 @@
   ,#+clj (assoc
             [_ k v]
           ;; FIXME allow keywords & swizzling assoc
-          (let [b (double-array buf)] (aset-double b k v) (Vec3. b nil _meta)))
+          (let [b (double-array buf)] (aset b k (double v)) (Vec3. b nil _meta)))
   ,#+clj (assocN
          [_ k v]
-         (let [b (double-array buf)] (aset-double b k v) (Vec3. b nil _meta)))
+         (let [b (double-array buf)] (aset b k (double v)) (Vec3. b nil _meta)))
 
   ,#+clj java.util.Collection
   ,#+clj (isEmpty [_] false)
@@ -191,17 +191,18 @@
   ,#+clj (toArray [_] (object-array _))
   ,#+clj (size [_] 3)
 
+  ,#+clj clojure.lang.IPersistentCollection
+  ,#+clj clojure.lang.Indexed
   ,#+clj clojure.lang.Sequential
-  ,#+clj clojure.lang.ISeq
   ,#+clj clojure.lang.Seqable
-  ,#+clj (first [_] (aget buf 0))
-  ,#+clj (next [_] (cons (aget buf 1) (cons (aget buf 2) nil)))
-  ,#+clj (more [_] (cons (aget buf 1) (cons (aget buf 2) nil)))
+  ,#+clj java.util.List
+  ,#+clj (seq [_] (seq buf))
+  ,#+clj (empty [_] (err/unsupported!))
   ,#+clj (cons [_ x] [(aget buf 0) (aget buf 1) (aget buf 2) x])
   ,#+clj (peek [_] (aget buf 2))
   ,#+clj (pop [_] [(aget buf 0) (aget buf 1)]) ;; TODO Vec2
   ,#+clj (rseq [_] ((swizzle3-fns :zyx) _))
-  ,#+clj (seq [_] _)
+  ,#+clj (get [_ n] (aget buf n))
   ,#+clj (nth [_ n] (aget buf n))
   ,#+clj (nth [_ n nf] (if (and (>= n 0) (<= n 2)) (aget buf n) nf))
   ,#+clj (equiv
@@ -210,6 +211,11 @@
   ,#+clj (equals
          [_ o]
          <<tpl-equals(fn="clojure.lang.Util/equals")>>)
+
+  ,#+clj Comparable
+  ,#+clj (compareTo
+         [_ o]
+         <<tpl-compare>>)
   ,#+clj (hashCode
          [_]
          <<tpl-hashcode>>)
@@ -222,11 +228,6 @@
                    (mix-collection-hash
                     <<tpl-hashcode>>
                     3))))
-
-  ,#+clj Comparable
-  ,#+clj (compareTo
-         [_ o]
-         <<tpl-compare>>)
 
   ,#+clj cp/InternalReduce
   ,#+clj (internal-reduce
@@ -402,11 +403,11 @@
   g/PCrossProduct
   (cross
    [_ v]
-   (let [b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+   (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
      (vm/rewrite-v3-v buf v 0.0
-       (#+clj aset-double #+cljs aset b 0 (mm/msub y vz vy z))
-       (#+clj aset-double #+cljs aset b 1 (mm/msub z vx vz x))
-       (#+clj aset-double #+cljs aset b 2 (mm/msub x vy vx y)))
+       (aset b 0 (double (mm/msub y vz vy z)))
+       (aset b 1 (double (mm/msub z vx vz x)))
+       (aset b 2 (double (mm/msub x vy vx y))))
      (Vec3. b nil _meta)))
 #+END_SRC
 
@@ -471,10 +472,10 @@
     buf
     (let [l (Math/sqrt (mm/madd x x y y z z))]
       (if (pos? l)
-        (let [b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
-          (#+clj aset-double #+cljs aset b 0 (/ x l))
-          (#+clj aset-double #+cljs aset b 1 (/ y l))
-          (#+clj aset-double #+cljs aset b 2 (/ z l))
+        (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+          (aset b 0 (double (/ x l)))
+          (aset b 1 (double (/ y l)))
+          (aset b 2 (double (/ z l)))
           (Vec3. b nil _meta))
         _))))
   (normalize
@@ -484,10 +485,10 @@
     (let [l (Math/sqrt (mm/madd x x y y z z))]
       (if (pos? l)
         (let [l (/ len l)
-              b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
-          (#+clj aset-double #+cljs aset b 0 (* x l))
-          (#+clj aset-double #+cljs aset b 1 (* y l))
-          (#+clj aset-double #+cljs aset b 2 (* z l))
+              ^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+          (aset b 0 (double (* x l)))
+          (aset b 1 (double (* y l)))
+          (aset b 2 (double (* z l)))
           (Vec3. b nil _meta))
         _))))
   (normalized?
@@ -515,12 +516,12 @@
   g/PReflect
   (reflect
    [_ v]
-   (let [b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+   (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
      (vm/rewrite-v3-v buf v 0.0
        (let [d (* (+ (+ (* x vx) (* y vy)) (* z vz)) 2.0)]
-         (#+clj aset-double #+cljs aset b 0 (mm/msub vx d x))
-         (#+clj aset-double #+cljs aset b 1 (mm/msub vy d y))
-         (#+clj aset-double #+cljs aset b 2 (mm/msub vz d z))
+         (aset b 0 (double (mm/msub vx d x)))
+         (aset b 1 (double (mm/msub vy d y)))
+         (aset b 2 (double (mm/msub vz d z)))
          (Vec3. b nil _meta)))))
 #+END_SRC
 
@@ -538,25 +539,25 @@
   g/PInterpolate
   (mix
    [_ v]
-   (let [b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+   (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
      (vm/rewrite-v3-nv-no-let
       buf v 0.0
-      (#+clj aset-double #+cljs aset b 0 (* (+ x vx) 0.5))
-      (#+clj aset-double #+cljs aset b 1 (* (+ y vy) 0.5))
-      (#+clj aset-double #+cljs aset b 2 (* (+ z vz) 0.5)))
+      (aset b 0 (double (* (+ x vx) 0.5)))
+      (aset b 1 (double (* (+ y vy) 0.5)))
+      (aset b 2 (double (* (+ z vz) 0.5))))
      (Vec3. b nil _meta)))
   (mix
    [_ v v2]
-   (let [b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+   (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
      (vm/rewrite-v3-nv-nv
       buf v v2 0.0 0.0
-      (#+clj aset-double #+cljs aset b 0 (+ (* (- bx x) cx) x))
-      (#+clj aset-double #+cljs aset b 1 (+ (* (- by y) cy) y))
-      (#+clj aset-double #+cljs aset b 2 (+ (* (- bz z) cz) z)))
+      (aset b 0 (double (+ (* (- bx x) cx) x)))
+      (aset b 1 (double (+ (* (- by y) cy) y)))
+      (aset b 2 (double (+ (* (- bz z) cz) z))))
      (Vec3. b nil _meta)))
   (mix
    [_ b c d u v]
-   (let [b' #+clj (double-array 3) #+cljs (js/Float32Array. 3)
+   (let [^doubles b' #+clj (double-array 3) #+cljs (js/Float32Array. 3)
          dv? (instance? Vec3 d)
          dn? (number? d)
          ^doubles dv (if dv? (.-buf ^Vec3 d))
@@ -568,9 +569,9 @@
       (let [x1 (+ (* (- bx x) u) x)
             y1 (+ (* (- by y) u) y)
             z1 (+ (* (- bz z) u) z)]
-        (#+clj aset-double #+cljs aset b' 0 (+ (* (- (+ (* (- dx cx) u) cx) x1) v) x1))
-        (#+clj aset-double #+cljs aset b' 1 (+ (* (- (+ (* (- dy cy) u) cy) y1) v) y1))
-        (#+clj aset-double #+cljs aset b' 2 (+ (* (- (+ (* (- dz cz) u) cz) z1) v) z1))))
+        (aset b' 0 (double (+ (* (- (+ (* (- dx cx) u) cx) x1) v) x1)))
+        (aset b' 1 (double (+ (* (- (+ (* (- dy cy) u) cy) y1) v) y1)))
+        (aset b' 2 (double (+ (* (- (+ (* (- dz cz) u) cz) z1) v) z1)))))
      (Vec3. b' nil _meta)))
 #+END_SRC
 *** PHeading
@@ -606,10 +607,10 @@
   (as-polar
    [_]
    (let [r (g/mag _)
-         b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
-     (#+clj aset-double #+cljs aset b 0 r)
-     (#+clj aset-double #+cljs aset b 1 (Math/asin (/ (aget buf 2) r)))
-     (#+clj aset-double #+cljs aset b 2 (Math/atan2 (aget buf 1) (aget buf 0)))
+         ^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+     (aset b 0 (double r))
+     (aset b 1 (double (Math/asin (/ (aget buf 2) r))))
+     (aset b 2 (double (Math/atan2 (aget buf 1) (aget buf 0))))
      (Vec3. b nil _meta)))
   (as-cartesian
    [_]
@@ -618,10 +619,10 @@
          y (aget b 1)
          z (aget b 2)
          rcos (* x (Math/cos y))
-         b' #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
-     (#+clj aset-double #+cljs aset b' 0 (* rcos (Math/cos z)))
-     (#+clj aset-double #+cljs aset b' 1 (* rcos (Math/sin z)))
-     (#+clj aset-double #+cljs aset b' 2 (* x    (Math/sin y)))
+         ^doubles b' #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+     (aset b' 0 (double (* rcos (Math/cos z))))
+     (aset b' 1 (double (* rcos (Math/sin z))))
+     (aset b' 2 (double (* x    (Math/sin y))))
      (Vec3. b' nil _meta)))
 #+END_SRC
 
@@ -649,11 +650,6 @@
           '((x) (y) (z))]
          (apply concat)
          (map #(symbol (apply str %)))))
-
-  #_(defmacro float-array*
-      [n]
-      (let [name (symbol (str "float" n))]
-        `(defn ~name [] (js/Float32Array. ~n))))
 
   (defmacro defswizzle
     [btype key]
