@@ -43,7 +43,7 @@
 
 #+BEGIN_SRC clojure :noweb-ref tpl-compare
   (if (instance? Vec3 o)
-    (let [b' (.-buf ^Vec3 o)
+    (let [^doubles b' (.-buf ^Vec3 o)
           c (compare (aget buf 0) (aget b' 0))]
       (if (== 0 c)
         (let [c (compare (aget buf 1) (aget b' 1))]
@@ -52,7 +52,7 @@
             c))
         c))
     (let [c (count o)]
-      (if (== 3 c) (compare o _) (- 3 c))))
+      (if (== 3 c) (- (compare o _)) (- 3 c))))
 #+END_SRC
 
 **** contains-key?
@@ -70,7 +70,7 @@
   (replace-regexp-in-string
    "{{fn}}" fn
    "(if (instance? Vec3 o)
-      (let [b' (.-buf ^Vec3 o)]
+      (let [^doubles b' (.-buf ^Vec3 o)]
         (and (== (aget buf 0) (aget b' 0)) (== (aget buf 1) (aget b' 1)) (== (aget buf 2) (aget b' 2))))
       (and (sequential? o) (== 3 (count o))
            ({{fn}} (aget buf 0) (first o))
@@ -426,13 +426,13 @@
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PMinMax
   (min
-   [_ v] (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) Math/min buf v _meta))
+   [_ v] (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) mm/min buf v _meta))
   (min
-   [_ v v2] (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) Math/min Math/min buf v v2 0.0 0.0 _meta))
+   [_ v v2] (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) mm/min mm/min buf v v2 0.0 0.0 _meta))
   (max
-   [_ v] (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) Math/max buf v _meta))
+   [_ v] (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) mm/max buf v _meta))
   (max
-   [_ v v2] (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) Math/max Math/max buf v v2 0.0 0.0 _meta))
+   [_ v v2] (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) mm/max mm/max buf v v2 0.0 0.0 _meta))
 #+END_SRC
 
 *** PDeltaEquals
@@ -559,10 +559,10 @@
    (let [b' #+clj (double-array 3) #+cljs (js/Float32Array. 3)
          dv? (instance? Vec3 d)
          dn? (number? d)
-         d  (if dv? (.-buf d) d)
-         dx (if dv? (aget d 0) (if dn? d (nth d 0 0.0)))
-         dy (if dv? (aget d 1) (if dn? d (nth d 1 0.0)))
-         dz (if dv? (aget d 2) (if dn? d (nth d 2 0.0)))]
+         ^doubles dv (if dv? (.-buf ^Vec3 d))
+         dx (if dv? (aget dv 0) (if dn? d (nth d 0 0.0)))
+         dy (if dv? (aget dv 1) (if dn? d (nth d 1 0.0)))
+         dz (if dv? (aget dv 2) (if dn? d (nth d 2 0.0)))]
      (vm/rewrite-v3-nv-nv
       buf b c 0.0 0.0
       (let [x1 (+ (* (- bx x) u) x)
@@ -651,40 +651,43 @@
          (map #(symbol (apply str %)))))
 
   #_(defmacro float-array*
-    [n]
-    (let [name (symbol (str "float" n))]
-      `(defn ~name [] (js/Float32Array. ~n))))
+      [n]
+      (let [name (symbol (str "float" n))]
+        `(defn ~name [] (js/Float32Array. ~n))))
 
   (defmacro defswizzle
     [btype key]
     (let [id (str key)
           a (gensym)
           b (gensym)
+          v (gensym)
           c (count id)
           type (if (== 3 c) 'Vec3 'Vec3)] ;; FIXME Vec2
       (if (== 1 c)
         `(defn ~key
-           [_#] (aget (.-buf _#) ~(swizzle-keys (first id))))
-        `(defn ~key [_#]
-           (let [~a (.-buf _#)
-                 ~b (~@btype ~c)]
+           [~(with-meta v {:tag "Vec3"})]
+           (let [~(with-meta a {:tag "doubles"}) (.-buf ~v)]
+             (aget ~a ~(swizzle-keys (first id)))))
+        `(defn ~key
+           [~(with-meta v {:tag "Vec3"})]
+           (let [~(with-meta a {:tag "doubles"}) (.-buf ~v)
+                 ~(with-meta b {:tag "doubles"}) (~@btype ~c)]
              ~@(map-indexed
                 (fn [i ch]
-                  (list 'aset b i (list 'aget a (swizzle-keys ch))))
+                  (list 'aset b i (list 'double (list 'aget a (swizzle-keys ch)))))
                 id)
-             (new ~type ~b nil (.-_meta _#)))))))
+             (new ~type ~b nil (.-_meta ~v)))))))
 #+END_SRC
 
 ** Constructors
 
 #+BEGIN_SRC clojure :noweb-ref ctors
-  ,#+cljs
   (defn vec3
     [x y z]
-    (let [b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
-      (aset b 0 x)
-      (aset b 1 y)
-      (aset b 2 z)
+    (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+      (aset b 0 (double x))
+      (aset b 1 (double y))
+      (aset b 2 (double z))
       (Vec3. b nil nil)))
 #+END_SRC
 
