@@ -7,33 +7,45 @@
          - [[#clojure-protocols][Clojure protocols]]
          - [[#clojurescript-protocols][ClojureScript protocols]]
          - [[#pmathops][PMathOps]]
-         - [[#pdotproduct][PDotProduct]]
+         - [[#pclear][PClear]]
          - [[#pcrossproduct][PCrossProduct]]
+         - [[#pdeltaequals][PDeltaEquals]]
+         - [[#pdistance][PDistance]]
+         - [[#pdotproduct][PDotProduct]]
          - [[#pheading][PHeading]]
+         - [[#pinterpolate][PInterpolate]]
          - [[#pinvert][PInvert]]
+         - [[#plimit][PLimit]]
+         - [[#pmagnitude][PMagnitude]]
+         - [[#pminmax][PMinMax]]
+         - [[#pnormal][PNormal]]
+         - [[#pnormalize][PNormalize]]
+         - [[#ppolar][PPolar]]
+         - [[#preflect][PReflect]]
          - [[#end-implementation][End implementation]]
      - [[#vec3][Vec3]]
          - [[#templates][Templates]]
          - [[#clojure-protocols][Clojure protocols]]
          - [[#clojurescript-protocols][ClojureScript protocols]]
          - [[#pmathops][PMathOps]]
-         - [[#pdotproduct][PDotProduct]]
          - [[#pclear][PClear]]
          - [[#pcrossproduct][PCrossProduct]]
-         - [[#plimit][PLimit]]
-         - [[#pminmax][PMinMax]]
          - [[#pdeltaequals][PDeltaEquals]]
-         - [[#pmagnitude][PMagnitude]]
-         - [[#pnormalize][PNormalize]]
          - [[#pdistance][PDistance]]
-         - [[#preflect][PReflect]]
-         - [[#pinvert][PInvert]]
-         - [[#pinterpolate][PInterpolate]]
+         - [[#pdotproduct][PDotProduct]]
          - [[#pheading][PHeading]]
+         - [[#pinterpolate][PInterpolate]]
+         - [[#pinvert][PInvert]]
+         - [[#plimit][PLimit]]
+         - [[#pmagnitude][PMagnitude]]
+         - [[#pminmax][PMinMax]]
+         - [[#pnormalize][PNormalize]]
          - [[#ppolar][PPolar]]
+         - [[#preflect][PReflect]]
          - [[#end-implementation][End implementation]]
      - [[#swizzling][Swizzling]]
      - [[#constructors][Constructors]]
+         - [[#random-vectors][Random vectors]]
      - [[#code-rewriting-macros][Code rewriting macros]]
          - [[#vec2][Vec2]]
          - [[#vec3][Vec3]]
@@ -372,13 +384,13 @@
   (+ [_] _)
   (+ [_ v]       (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) + buf v _meta))
   (+ [_ v1 v2]   (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) + buf v1 v2 0.0 _meta))
-  (- [_]         (vm/v3-op0 #+clj (double-array) #+cljs (new js/Float32Array) - buf _meta))
+  (- [_]         (vm/v2-op0 #+clj (double-array) #+cljs (new js/Float32Array) - buf _meta))
   (- [_ v]       (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) - buf v _meta))
   (- [_ v1 v2]   (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) - buf v1 v2 0.0 _meta))
   (* [_] _)
   (* [_ v]       (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) * buf v _meta))
   (* [_ v1 v2]   (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) * buf v1 v2 1.0 _meta))
-  (div [_]       (vm/v3-op0 #+clj (double-array) #+cljs (new js/Float32Array) / buf _meta))
+  (div [_]       (vm/v2-op0 #+clj (double-array) #+cljs (new js/Float32Array) / buf _meta))
   (div [_ v]     (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) / buf v _meta))
   (div [_ v1 v2] (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) / buf v1 v2 0.0 _meta))
   (madd [_ a b]  (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) * + buf a b 1.0 0.0 _meta))
@@ -387,18 +399,51 @@
   (subm [_ a b]  (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) - * buf a b 0.0 1.0 _meta))
 #+END_SRC
 
-*** PDotProduct
-
+*** PClear
 #+BEGIN_SRC clojure :noweb-ref vec2
-  g/PDotProduct
-  (dot [_ v] (vm/rewrite-v2-v-no-let buf v 0.0 (+ (* x vx) (* y vy))))
+  g/PClear
+  (clear* [_] V2)
 #+END_SRC
-
 *** PCrossProduct
 
 #+BEGIN_SRC clojure :noweb-ref vec2
   g/PCrossProduct
   (cross [_ v] (vm/rewrite-v2-v-no-let buf v 0.0 (mm/msub x vy y vx)))
+#+END_SRC
+
+*** PDeltaEquals
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  m/PDeltaEquals
+  (delta=
+   [_ v] (m/delta= _ v *eps*))
+  (delta=
+   [_ v eps]
+   (if (sequential? v)
+     (if (== 2 (count v))
+       (vm/rewrite-v2-v-no-let
+        buf v 0.0 (if (m/delta= x vx eps) (m/delta= y vy eps))))))
+#+END_SRC
+
+*** PDistance
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PDistance
+  (dist
+   [_ v] (Math/sqrt (g/dist-squared _ v)))
+  (dist-squared
+   [_ v]
+   (vm/rewrite-v2-v buf v 0.0
+     (let [dx (- x vx)
+           dy (- y vy)]
+       (mm/madd dx dx dy dy))))
+#+END_SRC
+
+*** PDotProduct
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PDotProduct
+  (dot [_ v] (vm/rewrite-v2-v-no-let buf v 0.0 (mm/madd x vx y vy)))
 #+END_SRC
 
 *** PHeading
@@ -416,11 +461,158 @@
   (slope-xy [_] (/ (aget buf 1) (aget buf 0)))
 #+END_SRC
 
+*** PInterpolate
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PInterpolate
+  (mix
+   [_ v]
+   (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+     (vm/rewrite-v2-nv-no-let
+      buf v 0.0
+      (aset b 0 (double (* (+ x vx) 0.5)))
+      (aset b 1 (double (* (+ y vy) 0.5))))
+     (Vec2. b nil _meta)))
+  (mix
+   [_ v v2]
+   (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+     (vm/rewrite-v2-nv-nv
+      buf v v2 0.0 0.0
+      (aset b 0 (double (+ (* (- bx x) cx) x)))
+      (aset b 1 (double (+ (* (- by y) cy) y))))
+     (Vec2. b nil _meta)))
+  (mix
+   [_ b c d u v]
+   (let [^doubles b' #+clj (double-array 2) #+cljs (js/Float32Array. 2)
+         dv? (instance? Vec2 d)
+         dn? (number? d)
+         ^doubles dv (if dv? (.-buf ^Vec2 d))
+         dx (if dv? (aget dv 0) (if dn? d (nth d 0 0.0)))
+         dy (if dv? (aget dv 1) (if dn? d (nth d 1 0.0)))]
+     (vm/rewrite-v2-nv-nv
+      buf b c 0.0 0.0
+      (let [x1 (+ (* (- bx x) u) x)
+            y1 (+ (* (- by y) u) y)]
+        (aset b' 0 (double (+ (* (- (+ (* (- dx cx) u) cx) x1) v) x1)))
+        (aset b' 1 (double (+ (* (- (+ (* (- dy cy) u) cy) y1) v) y1)))))
+     (Vec2. b' nil _meta)))
+#+END_SRC
 *** PInvert
 
 #+BEGIN_SRC clojure :noweb-ref vec2
   g/PInvert
   (invert [_] (g/- _))
+#+END_SRC
+
+*** PLimit
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PLimit
+  (limit
+   [_ len]
+   (if (> (g/mag-squared _) (* len len))
+     (g/normalize _ len)
+     _))
+#+END_SRC
+
+*** PMagnitude
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PMagnitude
+  (mag
+   [_] (vm/rewrite-v2 buf (Math/sqrt (mm/madd x x y y))))
+  (mag-squared
+   [_] (vm/rewrite-v2 buf (mm/madd x x y y)))
+#+END_SRC
+
+*** PMinMax
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PMinMax
+  (min
+   [_ v] (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) mm/min buf v _meta))
+  (min
+   [_ v v2] (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) mm/min mm/min buf v v2 0.0 0.0 _meta))
+  (max
+   [_ v] (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) mm/max buf v _meta))
+  (max
+   [_ v v2] (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) mm/max mm/max buf v v2 0.0 0.0 _meta))
+#+END_SRC
+
+*** PNormal
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PNormal
+  (normal
+   [_]
+   (let [^doubles b #+clj (double-array) #+cljs (js/Float32Array. 2)]
+     (aset b 0 (double (- (aget buf 1))))
+     (aset b 1 (double (aget buf 0)))
+     (Vec2. b nil _meta)))
+#+END_SRC
+
+*** PNormalize
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PNormalize
+  (normalize
+   [_]
+   (vm/rewrite-v2
+    buf
+    (let [l (Math/sqrt (mm/madd x x y y))]
+      (if (pos? l)
+        (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+          (aset b 0 (double (/ x l)))
+          (aset b 1 (double (/ y l)))
+          (Vec2. b nil _meta))
+        _))))
+  (normalize
+   [_ len]
+   (vm/rewrite-v2
+    buf
+    (let [l (Math/sqrt (mm/madd x x y y))]
+      (if (pos? l)
+        (let [l (/ len l)
+              ^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+          (aset b 0 (double (* x l)))
+          (aset b 1 (double (* y l)))
+          (Vec2. b nil _meta))
+        _))))
+  (normalized?
+   [_] (m/delta= 1.0 (g/mag-squared _)))
+#+END_SRC
+
+*** PPolar
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PPolar
+  (as-polar
+   [_]
+   (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+     (aset b 0 (double (g/mag _)))
+     (aset b 1 (double (g/heading _)))
+     (Vec2. b nil _meta)))
+  (as-cartesian
+   [_]
+   (vm/rewrite-v2
+    buf
+    (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+      (aset b 0 (double (* x (Math/cos y))))
+      (aset b 1 (double (* x (Math/sin y))))
+      (Vec2. b nil _meta))))
+#+END_SRC
+*** PReflect
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PReflect
+  (reflect
+   [_ v]
+   (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+     (vm/rewrite-v2-v buf v 0.0
+       (let [d (mm/madd x vx y vy 2)]
+         (aset b 0 (double (mm/msub vx d x)))
+         (aset b 1 (double (mm/msub vy d y)))
+         (Vec2. b nil _meta)))))
 #+END_SRC
 
 *** End implementation
@@ -810,16 +1002,9 @@
   (subm [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) - * buf a b 0.0 1.0 _meta))
 #+END_SRC
 
-*** PDotProduct
-
-#+BEGIN_SRC clojure :noweb-ref vec3
-  g/PDotProduct
-  (dot [_ v] (vm/rewrite-v3-v-no-let buf v 0.0 (+ (+ (* x vx) (* y vy)) (* z vz))))
-#+END_SRC
-
 *** PClear
 
-#+BEGIN_SRC clojure :noweb-ref vec3'
+#+BEGIN_SRC clojure :noweb-ref vec3
   g/PClear
   (clear* [_] V3)
 #+END_SRC
@@ -838,31 +1023,6 @@
      (Vec3. b nil _meta)))
 #+END_SRC
 
-*** PLimit
-
-#+BEGIN_SRC clojure :noweb-ref vec3
-  g/PLimit
-  (limit
-   [_ len]
-   (if (> (g/mag-squared _) (* len len))
-     (g/normalize _ len)
-     _))
-#+END_SRC
-
-*** PMinMax
-
-#+BEGIN_SRC clojure :noweb-ref vec3
-  g/PMinMax
-  (min
-   [_ v] (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) mm/min buf v _meta))
-  (min
-   [_ v v2] (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) mm/min mm/min buf v v2 0.0 0.0 _meta))
-  (max
-   [_ v] (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) mm/max buf v _meta))
-  (max
-   [_ v v2] (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) mm/max mm/max buf v v2 0.0 0.0 _meta))
-#+END_SRC
-
 *** PDeltaEquals
 
 #+BEGIN_SRC clojure :noweb-ref vec3
@@ -877,49 +1037,6 @@
       (if (m/delta= x vx eps)
         (if (m/delta= y vy eps)
           (m/delta= z vz eps))))))
-#+END_SRC
-
-*** PMagnitude
-
-#+BEGIN_SRC clojure :noweb-ref vec3
-  g/PMagnitude
-  (mag
-   [_] (vm/rewrite-v3 buf (Math/sqrt (mm/madd x x y y z z))))
-  (mag-squared
-   [_] (vm/rewrite-v3 buf (mm/madd x x y y z z)))
-#+END_SRC
-
-*** PNormalize
-
-#+BEGIN_SRC clojure :noweb-ref vec3
-  g/PNormalize
-  (normalize
-   [_]
-   (vm/rewrite-v3
-    buf
-    (let [l (Math/sqrt (mm/madd x x y y z z))]
-      (if (pos? l)
-        (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
-          (aset b 0 (double (/ x l)))
-          (aset b 1 (double (/ y l)))
-          (aset b 2 (double (/ z l)))
-          (Vec3. b nil _meta))
-        _))))
-  (normalize
-   [_ len]
-   (vm/rewrite-v3
-    buf
-    (let [l (Math/sqrt (mm/madd x x y y z z))]
-      (if (pos? l)
-        (let [l (/ len l)
-              ^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
-          (aset b 0 (double (* x l)))
-          (aset b 1 (double (* y l)))
-          (aset b 2 (double (* z l)))
-          (Vec3. b nil _meta))
-        _))))
-  (normalized?
-   [_] (m/delta= 1.0 (g/mag-squared _)))
 #+END_SRC
 
 *** PDistance
@@ -937,26 +1054,36 @@
        (mm/madd dx dx dy dy dz dz))))
 #+END_SRC
 
-*** PReflect
+*** PDotProduct
 
 #+BEGIN_SRC clojure :noweb-ref vec3
-  g/PReflect
-  (reflect
-   [_ v]
-   (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
-     (vm/rewrite-v3-v buf v 0.0
-       (let [d (* (+ (+ (* x vx) (* y vy)) (* z vz)) 2.0)]
-         (aset b 0 (double (mm/msub vx d x)))
-         (aset b 1 (double (mm/msub vy d y)))
-         (aset b 2 (double (mm/msub vz d z)))
-         (Vec3. b nil _meta)))))
+  g/PDotProduct
+  (dot [_ v] (vm/rewrite-v3-v-no-let buf v 0.0 (+ (+ (* x vx) (* y vy)) (* z vz))))
 #+END_SRC
 
-*** PInvert
-
+*** PHeading
 #+BEGIN_SRC clojure :noweb-ref vec3
-  g/PInvert
-  (invert [_] (g/- _))
+  g/PHeading
+  (heading [_] (g/heading-xy _))
+  (heading-xy
+   [_]
+   (let [t (Math/atan2 (aget buf 1) (aget buf 0))]
+     (if (neg? t) (+ t TWO_PI) t)))
+  (heading-xz
+   [_]
+   (let [t (Math/atan2 (aget buf 2) (aget buf 0))]
+     (if (neg? t) (+ t TWO_PI) t)))
+  (heading-yz
+   [_]
+   (let [t (Math/atan2 (aget buf 2) (aget buf 1))]
+     (if (neg? t) (+ t TWO_PI) t)))
+  (angle-between
+   [_ v]
+   (let [v (if (instance? Vec3 v) v (vec3 v))]
+     (Math/acos (g/dot (g/normalize _) (g/normalize v)))))
+  (slope-xy [_] (/ (aget buf 1) (aget buf 0)))
+  (slope-xz [_] (/ (aget buf 2) (aget buf 0)))
+  (slope-yz [_] (/ (aget buf 2) (aget buf 1)))
 #+END_SRC
 
 *** PInterpolate
@@ -1000,29 +1127,79 @@
         (aset b' 2 (double (+ (* (- (+ (* (- dz cz) u) cz) z1) v) z1)))))
      (Vec3. b' nil _meta)))
 #+END_SRC
-*** PHeading
+*** PInvert
+
 #+BEGIN_SRC clojure :noweb-ref vec3
-  g/PHeading
-  (heading [_] (g/heading-xy _))
-  (heading-xy
+  g/PInvert
+  (invert [_] (g/- _))
+#+END_SRC
+
+*** PLimit
+
+#+BEGIN_SRC clojure :noweb-ref vec3
+  g/PLimit
+  (limit
+   [_ len]
+   (if (> (g/mag-squared _) (* len len))
+     (g/normalize _ len)
+     _))
+#+END_SRC
+
+*** PMagnitude
+
+#+BEGIN_SRC clojure :noweb-ref vec3
+  g/PMagnitude
+  (mag
+   [_] (vm/rewrite-v3 buf (Math/sqrt (mm/madd x x y y z z))))
+  (mag-squared
+   [_] (vm/rewrite-v3 buf (mm/madd x x y y z z)))
+#+END_SRC
+
+*** PMinMax
+
+#+BEGIN_SRC clojure :noweb-ref vec3
+  g/PMinMax
+  (min
+   [_ v] (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) mm/min buf v _meta))
+  (min
+   [_ v v2] (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) mm/min mm/min buf v v2 0.0 0.0 _meta))
+  (max
+   [_ v] (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) mm/max buf v _meta))
+  (max
+   [_ v v2] (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) mm/max mm/max buf v v2 0.0 0.0 _meta))
+#+END_SRC
+
+*** PNormalize
+
+#+BEGIN_SRC clojure :noweb-ref vec3
+  g/PNormalize
+  (normalize
    [_]
-   (let [t (Math/atan2 (aget buf 1) (aget buf 0))]
-     (if (neg? t) (+ t TWO_PI) t)))
-  (heading-xz
-   [_]
-   (let [t (Math/atan2 (aget buf 2) (aget buf 0))]
-     (if (neg? t) (+ t TWO_PI) t)))
-  (heading-yz
-   [_]
-   (let [t (Math/atan2 (aget buf 2) (aget buf 1))]
-     (if (neg? t) (+ t TWO_PI) t)))
-  (angle-between
-   [_ v]
-   (let [v (if (instance? Vec3 v) v (vec3 v))]
-     (Math/acos (g/dot (g/normalize _) (g/normalize v)))))
-  (slope-xy [_] (/ (aget buf 1) (aget buf 0)))
-  (slope-xz [_] (/ (aget buf 2) (aget buf 0)))
-  (slope-yz [_] (/ (aget buf 2) (aget buf 1)))
+   (vm/rewrite-v3
+    buf
+    (let [l (Math/sqrt (mm/madd x x y y z z))]
+      (if (pos? l)
+        (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+          (aset b 0 (double (/ x l)))
+          (aset b 1 (double (/ y l)))
+          (aset b 2 (double (/ z l)))
+          (Vec3. b nil _meta))
+        _))))
+  (normalize
+   [_ len]
+   (vm/rewrite-v3
+    buf
+    (let [l (Math/sqrt (mm/madd x x y y z z))]
+      (if (pos? l)
+        (let [l (/ len l)
+              ^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+          (aset b 0 (double (* x l)))
+          (aset b 1 (double (* y l)))
+          (aset b 2 (double (* z l)))
+          (Vec3. b nil _meta))
+        _))))
+  (normalized?
+   [_] (m/delta= 1.0 (g/mag-squared _)))
 #+END_SRC
 
 *** PPolar
@@ -1054,6 +1231,21 @@
      (Vec3. b' nil _meta)))
 #+END_SRC
 
+*** PReflect
+
+#+BEGIN_SRC clojure :noweb-ref vec3
+  g/PReflect
+  (reflect
+   [_ v]
+   (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+     (vm/rewrite-v3-v buf v 0.0
+       (let [d (* (+ (+ (* x vx) (* y vy)) (* z vz)) 2.0)]
+         (aset b 0 (double (mm/msub vx d x)))
+         (aset b 1 (double (mm/msub vy d y)))
+         (aset b 2 (double (mm/msub vz d z)))
+         (Vec3. b nil _meta)))))
+#+END_SRC
+
 *** End implementation
 
 #+BEGIN_SRC clojure :noweb-ref vec3
@@ -1080,23 +1272,26 @@
     (let [id (str key)
           [a b v] (repeatedly 3 gensym)
           c (count id)
-          type (if (== 3 c) 'Vec3 'Vec2)]
+          type (if (== 3 c) 'Vec3 'Vec2)
+          pre (if (>= (.indexOf id "z") 0) {:pre [`(instance? ~'Vec3 ~v)]} {})]
       (if (== 1 c)
         `(defn ~key
            [~v]
+           ~pre
            (let [~(with-meta a {:tag "doubles"}) (if (instance? ~'Vec2 ~v)
                                                    (.-buf ~(with-meta v {:tag "Vec2"}))
                                                    (.-buf ~(with-meta v {:tag "Vec3"})))]
-             (aget ~a ~(swizzle-keys (first id) 0.0))))
+             (aget ~a ~(swizzle-keys (first id)))))
         `(defn ~key
-           [~(with-meta v {:tag "Vec3"})]
+           [~v]
+           ~pre
            (let [~(with-meta a {:tag "doubles"}) (if (instance? ~'Vec2 ~v)
                                                    (.-buf ~(with-meta v {:tag "Vec2"}))
                                                    (.-buf ~(with-meta v {:tag "Vec3"})))
                  ~(with-meta b {:tag "doubles"}) (~@btype ~c)]
              ~@(map-indexed
                 (fn [i ch]
-                  (list 'aset b i (list 'double (list 'aget a (swizzle-keys ch 0.0)))))
+                  (list 'aset b i (list 'double (list 'aget a (swizzle-keys ch)))))
                 id)
              (new ~type ~b nil (meta ~v)))))))
 #+END_SRC
@@ -1104,20 +1299,102 @@
 ** Constructors
 
 #+BEGIN_SRC clojure :noweb-ref ctors
+  (def V2 (Vec2. #+clj (double-array 2) #+cljs (js/Float32Array. 2) nil nil))
+  (def V3 (Vec2. #+clj (double-array 3) #+cljs (js/Float32Array. 3) nil nil))
+
   (defn vec2
-    [x y]
-    (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
-      (aset b 0 (double x))
-      (aset b 1 (double y))
-      (Vec2. b nil nil)))
+    ([] V2)
+    ([v]
+       (cond
+        (instance? Vec2 v) v
+        (number? v)        (vec2 v v)
+        (sequential? v)    (apply vec2 v)
+        (map? v)           (vec2 (:x v 0) (:y v 0))
+        :else              (err/type-error! "Vec2" v)))
+    ([x y]
+       (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+         (aset b 0 (double x))
+         (aset b 1 (double y))
+         (Vec2. b nil nil))))
 
   (defn vec3
-    [x y z]
-    (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
-      (aset b 0 (double x))
-      (aset b 1 (double y))
-      (aset b 2 (double z))
-      (Vec3. b nil nil)))
+    ([] V3)
+    ([v]
+       (cond
+        (instance? Vec3 v) v
+        (number? v)        (vec3 v v v)
+        (sequential? v)    (apply vec3 v)
+        (map? v)           (vec3 (:x v 0) (:y v 0) (:z v 0))
+        :else              (err/type-error! "Vec3" v)))
+    ([v z]
+       (cond
+        (sequential? v) (vec3 (nth v 0 0.0) (nth v 1 0.0) z)
+        (map? v)        (vec3 (:x v 0) (:y v 0) z)
+        (number? v)     (vec3 v z 0)
+        :else           (err/type-error! "Vec3" v)))
+    ([x y z]
+       (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+         (aset b 0 (double x))
+         (aset b 1 (double y))
+         (aset b 2 (double z))
+         (Vec3. b nil nil))))
+
+  (defn vec2-with-meta
+    ([v meta]
+       (cond
+        (instance? Vec2 v) (with-meta v meta)
+        (number? v)        (vec2-with-meta v v meta)
+        (sequential? v)    (vec2-with-meta (nth v 0 0.0) (nth v 1 0.0) meta)
+        (map? v)           (vec2-with-meta (:x v 0.0) (:y v 0.0) meta)
+        :else              (err/type-error! "Vec2" v)))
+    ([x y meta]
+       (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+         (aset b 0 (double x))
+         (aset b 1 (double y))
+         (Vec2. b nil meta))))
+
+  (defn vec3-with-meta
+    ([v meta]
+       (cond
+        (instance? Vec3 v) (with-meta v meta)
+        (number? v)        (vec3-with-meta v v v meta)
+        (sequential? v)    (vec3-with-meta (nth v 0 0.0) (nth v 1 0.0) (nth v 2 0.0) meta)
+        (map? v)           (vec3-with-meta (:x v 0.0) (:y v 0.0) (:z v 0.0) meta)
+        :else              (err/type-error! "Vec3" v)))
+    ([x y z meta]
+       (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+         (aset b 0 (double x))
+         (aset b 1 (double y))
+         (aset b 2 (double z))
+         (Vec3. b nil meta))))
+
+  (defn vec2? [x] (instance? Vec2 x))
+  (defn vec3? [x] (instance? Vec3 x))
+
+  (def V2X (vec2 1 0))
+  (def V2Y (vec2 0 1))
+
+  (def V3X (vec3 1 0 0))
+  (def V3Y (vec3 0 1 0))
+  (def V3Z (vec3 0 0 1))
+
+  (def V2INF- (vec2 INF-))
+  (def V2INF+ (vec2 INF+))
+
+  (def V3INF- (vec3 INF-))
+  (def V3INF+ (vec3 INF+))
+#+END_SRC
+
+*** Random vectors
+
+#+BEGIN_SRC clojure :noweb-ref ctors
+  (defn randvec2
+    ([] (g/normalize (vec2 (m/randnorm) (m/randnorm))))
+    ([n] (g/normalize (vec2 (m/randnorm) (m/randnorm)) n)))
+
+  (defn randvec3
+    ([] (g/normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm))))
+    ([n] (g/normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm)) n)))
 #+END_SRC
 
 ** Code rewriting macros
@@ -1127,10 +1404,11 @@
 #+BEGIN_SRC clojure :noweb-ref v2-macros
   (defmacro lookup2
     [src k nf]
-    `(case ~k
-       \x (aget ~src 0)
-       \y (aget ~src 1)
-       (or ~nf (err/key-error! ~k))))
+    `(if (= ~k \x)
+       (aget ~src 0)
+       (if (= ~k \y)
+         (aget ~src 1)
+         (or ~nf (err/key-error! ~k)))))
 
   (defmacro rewrite-v2
     [src & body]
@@ -1221,25 +1499,6 @@
              ~cy (if ~v2? (aget ~c 1) (if ~n2? ~v2 (nth ~v2 1 ~d2)))]
          ~@(postwalk-replace {'x x 'y y 'bx bx 'by by 'cx cx 'cy cy} body))))
 
-  (defmacro rewrite-v2-nv-nv-xy
-    [src v v2 d & body]
-    (let [[a b c x y bx by cx cy v1? v2? n1? n2? nall?] (repeatedly gensym)]
-      `(let [~v1? (instance? ~'Vec2 ~v)
-             ~v2? (instance? ~'Vec2 ~v2)
-             ~n1? (if-not ~v1? (number? ~v) false)
-             ~n2? (if-not ~v2? (number? ~v2) false)
-             ~nall? (if ~n1? ~n2? false)
-             ~(with-meta a {:tag "doubles"}) ~src
-             ~(with-meta b {:tag "doubles"}) (if ~v1? (.-buf ~(with-meta v {:tag "Vec2"})))
-             ~(with-meta c {:tag "doubles"}) (if ~v2? (.-buf ~(with-meta v2 {:tag "Vec2"})))
-             ~x (aget ~a 0)
-             ~y (aget ~a 1)
-             ~bx (if ~nall? ~v  (if ~v1? (aget ~b 0) (if ~n1? ~v (nth ~v 0 ~d))))
-             ~by (if ~nall? ~v2 (if ~v1? (aget ~b 1) (if ~n1? ~v (nth ~v 1 ~d))))
-             ~cx (if ~nall? ~v  (if ~v2? (aget ~c 0) (if ~n2? ~v2 (nth ~v2 0 ~d))))
-             ~cy (if ~nall? ~v2 (if ~v2? (aget ~c 1) (if ~n2? ~v2 (nth ~v2 1 ~d))))]
-         ~@(postwalk-replace {'x x 'y y 'bx bx 'by by 'cx cx 'cy cy} body))))
-
   (defmacro v2-op0
     [btype op src meta]
     `(let [dest# (~@btype 2)]
@@ -1251,12 +1510,27 @@
 
   (defmacro v2-op1-xy
     [btype op src v v2 d meta]
-    `(let [dest# (~@btype 2)]
-       (rewrite-v2-nv-nv-xy
-        ~src ~v ~v2 ~d
-        (aset dest# 0 (double (~op (~op ~'x ~'bx) ~'cx)))
-        (aset dest# 1 (double (~op (~op ~'y ~'by) ~'cy))))
-       (new ~'Vec2 dest# nil ~meta)))
+    (let [[a b c dest x y bx by cx cy n1? n2? v1? v2?] (repeatedly gensym)]
+      `(let [~(with-meta a {:tag "doubles"}) ~src
+             ~dest (~@btype 2)
+             ~x (aget ~a 0)
+             ~y (aget ~a 1)
+             ~n1? (number? ~v)
+             ~n2? (number? ~v2)]
+         (if (if ~n1? ~n2? false)
+           (do (aset ~dest 0 (double (~op ~x ~v)))
+               (aset ~dest 1 (double (~op ~y ~v2))))
+           (let [~v1? (if-not ~n1? (instance? ~'Vec2 ~v))
+                 ~v2? (if-not ~n2? (instance? ~'Vec2 ~v2))
+                 ~(with-meta b {:tag "doubles"}) (if ~v1? (.-buf ~(with-meta v {:tag "Vec2"})))
+                 ~(with-meta c {:tag "doubles"}) (if ~v2? (.-buf ~(with-meta v2 {:tag "Vec2"})))
+                 ~bx (if ~v1? (aget ~b 0) (if ~n1? ~v (nth ~v 0 ~d)))
+                 ~by (if ~v1? (aget ~b 1) (if ~n1? ~v (nth ~v 1 ~d)))
+                 ~cx (if ~v2? (aget ~c 0) (if ~n2? ~v2 (nth ~v2 0 ~d)))
+                 ~cy (if ~v2? (aget ~c 1) (if ~n2? ~v2 (nth ~v2 1 ~d)))]
+             (aset ~dest 0 (double (~op (~op ~x ~bx) ~cx)))
+             (aset ~dest 1 (double (~op (~op ~y ~by) ~cy)))))
+         (new ~'Vec2 ~dest nil ~meta))))
 
   (defmacro v2-op1
     [btype op src v meta]
@@ -1471,13 +1745,13 @@
      [thi.ng.macromath.core :as mm])
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.common.math.core :as m :refer [TWO_PI *eps*]]
+     [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI INF- INF+]]
      [thi.ng.common.error :as err]
      ,#+clj [thi.ng.geom.core.vector.macros :as vm :refer [defswizzle]]
      ,#+clj [thi.ng.macromath.core :as mm]
      ,#+clj [clojure.core.protocols :as cp]))
 
-  (declare swizzle2-fns swizzle3-fns vec3)
+  (declare V2 V3 swizzle2-fns swizzle3-fns vec3)
 
   <<vec2>>
 
