@@ -6,6 +6,11 @@
          - [[#templates][Templates]]
          - [[#clojure-protocols][Clojure protocols]]
          - [[#clojurescript-protocols][ClojureScript protocols]]
+         - [[#pmathops][PMathOps]]
+         - [[#pdotproduct][PDotProduct]]
+         - [[#pcrossproduct][PCrossProduct]]
+         - [[#pheading][PHeading]]
+         - [[#pinvert][PInvert]]
          - [[#end-implementation][End implementation]]
      - [[#vec3][Vec3]]
          - [[#templates][Templates]]
@@ -30,6 +35,8 @@
      - [[#swizzling][Swizzling]]
      - [[#constructors][Constructors]]
      - [[#code-rewriting-macros][Code rewriting macros]]
+         - [[#vec2][Vec2]]
+         - [[#vec3][Vec3]]
      - [[#complete-namespace-definitions][Complete namespace definitions]]
 
 * thi.ng.geom.tvec
@@ -356,6 +363,64 @@
 
   Object
   (toString [_] (str "[" (aget buf 0) " " (aget buf 1) " " (aget buf 2) "]"))
+#+END_SRC
+
+*** PMathOps
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PMathOps
+  (+ [_] _)
+  (+ [_ v]       (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) + buf v _meta))
+  (+ [_ v1 v2]   (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) + buf v1 v2 0.0 _meta))
+  (- [_]         (vm/v3-op0 #+clj (double-array) #+cljs (new js/Float32Array) - buf _meta))
+  (- [_ v]       (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) - buf v _meta))
+  (- [_ v1 v2]   (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) - buf v1 v2 0.0 _meta))
+  (* [_] _)
+  (* [_ v]       (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) * buf v _meta))
+  (* [_ v1 v2]   (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) * buf v1 v2 1.0 _meta))
+  (div [_]       (vm/v3-op0 #+clj (double-array) #+cljs (new js/Float32Array) / buf _meta))
+  (div [_ v]     (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) / buf v _meta))
+  (div [_ v1 v2] (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) / buf v1 v2 0.0 _meta))
+  (madd [_ a b]  (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) * + buf a b 1.0 0.0 _meta))
+  (addm [_ a b]  (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) + * buf a b 0.0 1.0 _meta))
+  (msub [_ a b]  (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) * - buf a b 1.0 0.0 _meta))
+  (subm [_ a b]  (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) - * buf a b 0.0 1.0 _meta))
+#+END_SRC
+
+*** PDotProduct
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PDotProduct
+  (dot [_ v] (vm/rewrite-v2-v-no-let buf v 0.0 (+ (* x vx) (* y vy))))
+#+END_SRC
+
+*** PCrossProduct
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PCrossProduct
+  (cross [_ v] (vm/rewrite-v2-v-no-let buf v 0.0 (mm/msub x vy y vx)))
+#+END_SRC
+
+*** PHeading
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PHeading
+  (heading
+   [_]
+   (let [t (Math/atan2 (aget buf 1) (aget buf 0))]
+     (if (neg? t) (+ t TWO_PI) t)))
+  (heading-xy [_] (g/heading _))
+  (angle-between
+   [_ a]
+   (let [t (- (g/heading a) (g/heading _))]
+     (if (neg? t) (+ t TWO_PI) t)))
+  (slope-xy [_] (/ (aget buf 1) (aget buf 0)))
+#+END_SRC
+
+*** PInvert
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PInvert
+  (invert [_] (g/- _))
 #+END_SRC
 
 *** End implementation
@@ -749,8 +814,7 @@
 
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PDotProduct
-  (dot
-   [_ v] (vm/rewrite-v3-v-no-let buf v 0.0 (+ (+ (* x vx) (* y vy)) (* z vz))))
+  (dot [_ v] (vm/rewrite-v3-v-no-let buf v 0.0 (+ (+ (* x vx) (* y vy)) (* z vz))))
 #+END_SRC
 
 *** PClear
@@ -892,8 +956,7 @@
 
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PInvert
-  (invert
-   [_] (g/- _))
+  (invert [_] (g/- _))
 #+END_SRC
 
 *** PInterpolate
@@ -954,7 +1017,9 @@
    (let [t (Math/atan2 (aget buf 2) (aget buf 1))]
      (if (neg? t) (+ t TWO_PI) t)))
   (angle-between
-   [_ a] (Math/acos (g/dot _ a)))
+   [_ v]
+   (let [v (if (instance? Vec3 v) v (vec3 v))]
+     (Math/acos (g/dot (g/normalize _) (g/normalize v)))))
   (slope-xy [_] (/ (aget buf 1) (aget buf 0)))
   (slope-xz [_] (/ (aget buf 2) (aget buf 0)))
   (slope-yz [_] (/ (aget buf 2) (aget buf 1)))
@@ -1056,6 +1121,172 @@
 #+END_SRC
 
 ** Code rewriting macros
+
+*** Vec2
+
+#+BEGIN_SRC clojure :noweb-ref v2-macros
+  (defmacro lookup2
+    [src k nf]
+    `(case ~k
+       \x (aget ~src 0)
+       \y (aget ~src 1)
+       (or ~nf (err/key-error! ~k))))
+
+  (defmacro rewrite-v2
+    [src & body]
+    (let [[a x y] (repeatedly gensym)]
+      `(let [~(with-meta a {:tag "doubles"}) ~src
+             ~x (aget ~a 0)
+             ~y (aget ~a 1)]
+         ~@(postwalk-replace {'x x 'y y} body))))
+
+  (defmacro rewrite-v2-no-let
+    [src & body]
+    (let [a (gensym)]
+      `(let [~(with-meta a {:tag "doubles"}) ~src]
+         ~@(postwalk-replace {'x `(aget ~a 0) 'y `(aget ~a 1)} body))))
+
+  (defmacro rewrite-v2-v-no-let
+    [src v default & body]
+    (let [a (gensym)
+          b (gensym)]
+      `(let [~(with-meta a {:tag "doubles"}) ~src]
+         (if (instance? ~'Vec2 ~v)
+           (let [~(with-meta b {:tag "doubles"}) (.-buf ~(with-meta v {:tag "Vec2"}))]
+             ~@(postwalk-replace
+                {'x `(aget ~a 0) 'y `(aget ~a 1) 'vx `(aget ~b 0) 'vy `(aget ~b 1)}
+                body))
+           (do ~@(postwalk-replace
+                  {'x `(aget ~a 0) 'y `(aget ~a 1) 'vx `(nth ~v 0 ~default) 'vy `(nth ~v 1 ~default)}
+                  body))))))
+
+  (defmacro rewrite-v2-v
+    [src v default & body]
+    (let [[a b x y vx vy] (repeatedly gensym)]
+      `(let [~(with-meta a {:tag "doubles"}) ~src
+             ~x (aget ~a 0)
+             ~y (aget ~a 1)]
+         (if (instance? ~'Vec2 ~v)
+           (let [~(with-meta b {:tag "doubles"}) (.-buf ~(with-meta v {:tag "Vec2"}))
+                 ~vx (aget ~b 0)
+                 ~vy (aget ~b 1)]
+             ~@(postwalk-replace {'x x 'y y 'vx vx 'vy vy} body))
+           (let [~vx (nth ~v 0 ~default), ~vy (nth ~v 1 ~default)]
+             ~@(postwalk-replace {'x x 'y y 'vx vx 'vy vy} body))))))
+
+  (defmacro rewrite-v2-nv
+    [src v default & body]
+    (let [[a v? nv vx vy] (repeatedly gensym)]
+      `(let [~(with-meta a {:tag "doubles"}) ~src
+             ~v? (instance? ~'Vec2 ~v)
+             ~nv (if ~v? (.-buf ~(with-meta v {:tag "Vec2"})) (number? ~v))
+             ~vx (if ~v? (aget ~nv 0) (if ~nv ~v (nth ~v 0 ~default)))
+             ~vy (if ~v? (aget ~nv 1) (if ~nv ~v (nth ~v 1 ~default)))]
+         ~@(postwalk-replace
+            {'x `(aget ~a 0) 'y `(aget ~a 1) 'vx vx 'vy vy}
+            body))))
+
+  (defmacro rewrite-v2-nv-no-let
+    [src v default & body]
+    (let [a (gensym), b (gensym)]
+      `(let [~(with-meta a {:tag "doubles"}) ~src]
+         (if (instance? ~'Vec2 ~v)
+           (let [~(with-meta b {:tag "doubles"}) (.-buf ~(with-meta v {:tag "Vec2"}))]
+             ~@(postwalk-replace
+                {'x `(aget ~a 0) 'y `(aget ~a 1) 'vx `(aget ~b 0) 'vy `(aget ~b 1)}
+                body))
+           (if (number? ~v)
+             (do ~@(postwalk-replace
+                    {'x `(aget ~a 0) 'y `(aget ~a 1) 'vx v 'vy v} body))
+             (do ~@(postwalk-replace
+                    {'x `(aget ~a 0) 'y `(aget ~a 1)
+                     'vx `(nth ~v 0 ~default) 'vy `(nth ~v 1 ~default)}
+                    body)))))))
+
+  (defmacro rewrite-v2-nv-nv
+    [src v v2 d1 d2 & body]
+    (let [[a b c x y bx by cx cy v1? v2? n1? n2?] (repeatedly gensym)]
+      `(let [~v1? (instance? ~'Vec2 ~v)
+             ~v2? (instance? ~'Vec2 ~v2)
+             ~n1? (if-not ~v1? (number? ~v))
+             ~n2? (if-not ~v2? (number? ~v2))
+             ~(with-meta a {:tag "doubles"}) ~src
+             ~(with-meta b {:tag "doubles"}) (if ~v1? (.-buf ~(with-meta v {:tag "Vec2"})))
+             ~(with-meta c {:tag "doubles"}) (if ~v2? (.-buf ~(with-meta v2 {:tag "Vec2"})))
+             ~x (aget ~a 0)
+             ~y (aget ~a 1)
+             ~bx (if ~v1? (aget ~b 0) (if ~n1? ~v (nth ~v 0 ~d1)))
+             ~by (if ~v1? (aget ~b 1) (if ~n1? ~v (nth ~v 1 ~d1)))
+             ~cx (if ~v2? (aget ~c 0) (if ~n2? ~v2 (nth ~v2 0 ~d2)))
+             ~cy (if ~v2? (aget ~c 1) (if ~n2? ~v2 (nth ~v2 1 ~d2)))]
+         ~@(postwalk-replace {'x x 'y y 'bx bx 'by by 'cx cx 'cy cy} body))))
+
+  (defmacro rewrite-v2-nv-nv-xy
+    [src v v2 d & body]
+    (let [[a b c x y bx by cx cy v1? v2? n1? n2? nall?] (repeatedly gensym)]
+      `(let [~v1? (instance? ~'Vec2 ~v)
+             ~v2? (instance? ~'Vec2 ~v2)
+             ~n1? (if-not ~v1? (number? ~v) false)
+             ~n2? (if-not ~v2? (number? ~v2) false)
+             ~nall? (if ~n1? ~n2? false)
+             ~(with-meta a {:tag "doubles"}) ~src
+             ~(with-meta b {:tag "doubles"}) (if ~v1? (.-buf ~(with-meta v {:tag "Vec2"})))
+             ~(with-meta c {:tag "doubles"}) (if ~v2? (.-buf ~(with-meta v2 {:tag "Vec2"})))
+             ~x (aget ~a 0)
+             ~y (aget ~a 1)
+             ~bx (if ~nall? ~v  (if ~v1? (aget ~b 0) (if ~n1? ~v (nth ~v 0 ~d))))
+             ~by (if ~nall? ~v2 (if ~v1? (aget ~b 1) (if ~n1? ~v (nth ~v 1 ~d))))
+             ~cx (if ~nall? ~v  (if ~v2? (aget ~c 0) (if ~n2? ~v2 (nth ~v2 0 ~d))))
+             ~cy (if ~nall? ~v2 (if ~v2? (aget ~c 1) (if ~n2? ~v2 (nth ~v2 1 ~d))))]
+         ~@(postwalk-replace {'x x 'y y 'bx bx 'by by 'cx cx 'cy cy} body))))
+
+  (defmacro v2-op0
+    [btype op src meta]
+    `(let [dest# (~@btype 2)]
+       (rewrite-v2-no-let
+        ~src
+        (aset dest# 0 (double (~op ~'x)))
+        (aset dest# 1 (double (~op ~'y))))
+       (new ~'Vec2 dest# nil ~meta)))
+
+  (defmacro v2-op1-xy
+    [btype op src v v2 d meta]
+    `(let [dest# (~@btype 2)]
+       (rewrite-v2-nv-nv-xy
+        ~src ~v ~v2 ~d
+        (aset dest# 0 (double (~op (~op ~'x ~'bx) ~'cx)))
+        (aset dest# 1 (double (~op (~op ~'y ~'by) ~'cy))))
+       (new ~'Vec2 dest# nil ~meta)))
+
+  (defmacro v2-op1
+    [btype op src v meta]
+    `(let [dest# (~@btype 2)]
+       (rewrite-v2-nv-no-let
+        ~src ~v 0.0
+        (aset dest# 0 (double (~op ~'x ~'vx)))
+        (aset dest# 1 (double (~op ~'y ~'vy))))
+       (new ~'Vec2 dest# nil ~meta)))
+
+  (defmacro v2-op2
+    [btype op op2 src v v2 d1 d2 meta]
+    `(let [dest# (~@btype 2)]
+       (rewrite-v2-nv-nv
+        ~src ~v ~v2 ~d1 ~d2
+        (aset dest# 0 (double (~op2 (~op ~'x ~'bx) ~'cx)))
+        (aset dest# 1 (double (~op2 (~op ~'y ~'by) ~'cy))))
+       (new ~'Vec2 dest# nil ~meta)))
+
+  (defmacro v2-op2-no-let
+    [btype op op2 src v v2 d1 d2 meta]
+    `(let [dest# (~@btype 2)]
+       (rewrite-v2-nv-nv-no-let
+        ~src ~v ~v2 ~d1 ~d2
+        (aset dest# 0 (double (~op2 (~op ~'x ~'bx) ~'cx)))
+        (aset dest# 1 (double (~op2 (~op ~'y ~'by) ~'cy))))
+       (new ~'Vec2 dest# nil ~meta)))
+#+END_SRC
+
+*** Vec3
 
 #+BEGIN_SRC clojure :noweb-ref v3-macros
   (defmacro lookup3
@@ -1314,6 +1545,8 @@
      [thi.ng.common.error :as err]))
 
   <<swizzle-macros>>
+
+  <<v2-macros>>
 
   <<v3-macros>>
 #+END_SRC
