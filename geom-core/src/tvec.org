@@ -3,7 +3,7 @@
 * Contents                                                         :toc_3_gh:
  - [[#thinggeomtvec][thi.ng.geom.tvec]]
      - [[#vec2][Vec2]]
-         - [[#templates-vec2][Templates Vec2]]
+         - [[#templates][Templates]]
          - [[#clojure-protocols][Clojure protocols]]
          - [[#clojurescript-protocols][ClojureScript protocols]]
          - [[#end-implementation][End implementation]]
@@ -42,7 +42,27 @@
     ,#+cljs [buf ^:mutable _hash _meta]
 #+END_SRC
 
-*** Templates Vec2
+*** Templates
+
+**** assoc
+
+#+NAME: tpl-assoc2
+#+BEGIN_SRC emacs-lisp :var fn=""
+  (replace-regexp-in-string
+   "{{fn}}" fn
+   "(cond
+      (number? k)  (if (and (>= k 0) (< k 2))
+                     (let [^doubles b ({{fn}} buf)]
+                       (aset b k (double v)) (Vec2. b nil _meta))
+                     (if (== k 2) (conj _ v) (err/key-error! k)))
+      (keyword? k) (if (= :z k)
+                     (conj _ v)
+                     (let [^doubles b ({{fn}} buf)
+                           id (if (= k :x) 0 (if (= k :y) 1))]
+                       (if id
+                         (do (aset b id (double v)) (Vec2. b nil _meta))
+                         (err/key-error! k)))))")
+#+END_SRC
 
 **** compare
 
@@ -165,8 +185,7 @@
          [_ k] (clojure.lang.MapEntry. k (aget buf k)))
   ,#+clj (assoc
             [_ k v]
-          ;; FIXME allow keywords & swizzling assoc
-          (let [b (double-array buf)] (aset b k (double v)) (Vec2. b nil _meta)))
+            <<tpl-assoc2(fn="double-array")>>)
   ,#+clj (assocN
          [_ k v]
          (let [b (double-array buf)] (aset b k (double v)) (Vec2. b nil _meta)))
@@ -266,8 +285,7 @@
           <<tpl-contains2>>)
   ,#+cljs (-assoc
           [_ k v]
-          ;; FIXME allow keywords & swizzling assoc
-          (let [b (js/Float32Array. buf)] (aset b k v) (Vec2. b nil _meta)))
+          <<tpl-assoc2(fn="js/Float32Array.")>>)
 
   ,#+cljs IVector
   ,#+cljs (-assoc-n
@@ -355,6 +373,27 @@
 #+END_SRC
 
 *** Templates
+
+**** assoc
+
+#+NAME: tpl-assoc3
+#+BEGIN_SRC emacs-lisp :var fn=""
+  (replace-regexp-in-string
+   "{{fn}}" fn
+   "(cond
+      (number? k)  (if (and (>= k 0) (<= k 2))
+                     (let [^doubles b ({{fn}} buf)]
+                       (aset b k (double v)) (Vec3. b nil _meta))
+                     (if (== k 3) (conj _ v) (err/key-error! k)))
+      (keyword? k) (if (= :w k)
+                     (conj _ v)
+                     (let [^doubles b ({{fn}} buf)
+                           id (if (= k :x) 0 (if (= k :y) 1 (if (= k :z) 2)))]
+                       (if id
+                         (do (aset b id (double v)) (Vec3. b nil _meta))
+                         (err/key-error! k)))))")
+#+END_SRC
+
 **** compare
 
 #+BEGIN_SRC clojure :noweb-ref tpl-compare3
@@ -495,8 +534,7 @@
          [_ k] (clojure.lang.MapEntry. k (aget buf k)))
   ,#+clj (assoc
             [_ k v]
-          ;; FIXME allow keywords & swizzling assoc
-          (let [b (double-array buf)] (aset b k (double v)) (Vec3. b nil _meta)))
+            <<tpl-assoc3(fn="double-array")>>)
   ,#+clj (assocN
          [_ k v]
          (let [b (double-array buf)] (aset b k (double v)) (Vec3. b nil _meta)))
@@ -601,8 +639,7 @@
           <<tpl-contains3>>)
   ,#+cljs (-assoc
           [_ k v]
-          ;; FIXME allow keywords & swizzling assoc
-          (let [b (js/Float32Array. buf)] (aset b k v) (Vec3. b nil _meta)))
+          <<tpl-assoc3(fn="js/Float32Array.")>>)
 
   ,#+cljs IVector
   ,#+cljs (-assoc-n
