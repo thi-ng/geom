@@ -109,7 +109,7 @@ define some macros to simplify them.
   ,#+cljs (-next [_] (seq [m01 m02 m10 m11 m12]))
 
   ,#+cljs ICollection
-  ,#+cljs (#+clj cons #+cljs -conj [_ x] [m00 m01 m02 m10 m11 m12 x])
+  (#+clj cons #+cljs -conj [_ x] [m00 m01 m02 m10 m11 m12 x])
 
   ,#+cljs IIndexed
   (#+clj nth #+cljs -nth [_ k]
