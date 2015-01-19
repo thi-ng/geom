@@ -1547,7 +1547,7 @@
 
 #+BEGIN_SRC clojure :noweb-ref ctors
   (def V2 (Vec2. #+clj (double-array 2) #+cljs (js/Float32Array. 2) nil nil))
-  (def V3 (Vec2. #+clj (double-array 3) #+cljs (js/Float32Array. 3) nil nil))
+  (def V3 (Vec3. #+clj (double-array 3) #+cljs (js/Float32Array. 3) nil nil))
 
   (defn vec2
     ([] V2)
