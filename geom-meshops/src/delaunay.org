@@ -1,28 +1,15 @@
 #+SETUPFILE: ../../src/setup.org
 
 * thi.ng.geom.mesh.delaunay
-** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/delaunay.cljx :mkdirp yes :padline no
-  (ns thi.ng.geom.mesh.delaunay
-    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
-    (:require
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.triangle :refer [circumcircle-raw triangle2]]
-     [thi.ng.common.math.core :as m :refer [*eps* delta=]]
-     ,#+clj [thi.ng.macromath.core :as mm])
-    #+clj
-    (:import
-     [thi.ng.geom.types Triangle2]))
-#+END_SRC
 
 ** Implementation
 
 Algorithm fails if *all* points are arranged in a circle. A workaround
-is to add an additional point in the center.
+is to add additional point(s) in the center.
 
 - http://astronomy.swin.edu.au/~pbourke/modelling/triangulate/
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/delaunay.cljx
+#+BEGIN_SRC clojure :noweb-ref delaunay
   (defn- add-unique-edge!
     [edges p q]
     (let [e [p q]]
@@ -83,4 +70,21 @@ is to add an additional point in the center.
                (persistent!)
                (remove #(shared-vertex? sa sb sc %))
                (map (fn [t] [(t 1) (t 0) (t 2)])))))))
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/delaunay.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.mesh.delaunay
+    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.triangle :refer [circumcircle-raw triangle2]]
+     [thi.ng.common.math.core :as m :refer [*eps* delta=]]
+     ,#+clj [thi.ng.macromath.core :as mm])
+    #+clj
+    (:import
+     [thi.ng.geom.types Triangle2]))
+
+  <<delaunay>>
 #+END_SRC
