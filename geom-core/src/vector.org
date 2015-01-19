@@ -403,6 +403,7 @@
   (addm [_ a b]  (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) + * buf a b 0.0 1.0 _meta))
   (msub [_ a b]  (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) * - buf a b 1.0 0.0 _meta))
   (subm [_ a b]  (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) - * buf a b 0.0 1.0 _meta))
+  (abs [_]       (vm/v2-op0 #+clj (double-array) #+cljs (new js/Float32Array) m/abs buf _meta))
 #+END_SRC
 
 *** PClear
@@ -1053,6 +1054,7 @@
   (addm [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) + * buf a b 0.0 0.0 _meta))
   (msub [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) * - buf a b 0.0 0.0 _meta))
   (subm [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) - * buf a b 0.0 0.0 _meta))
+  (abs [_]       (vm/v3-op0 #+clj (double-array) #+cljs (new js/Float32Array) m/abs buf _meta))
 #+END_SRC
 
 *** PClear
