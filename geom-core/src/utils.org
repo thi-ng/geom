@@ -101,7 +101,9 @@
       0 nil
       1 x
       2 (g/mix x (first xs))
-      (g/addm x xs (/ 1.0 (count coll)))))
+      (let [s (/ 1.0 (count coll))
+            f (fn [x _] (* x s))]
+        (g/reduce-vector x + f xs))))
 
   (defn center
     ([c' coll]
@@ -139,22 +141,22 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
 
 #+BEGIN_SRC clojure :noweb-ref bounds
   (defn bounds*
-    [f zero [x & xs :as coll]]
+    [zero [x & xs :as coll]]
     (let [c (count coll)]
       (cond
-       (> c 1) (let [p (f min x xs)
-                     q (f max x xs)]
+       (> c 1) (let [p (g/reduce-vector x min xs)
+                     q (g/reduce-vector x max xs)]
                  [p (g/- q p)])
        (= c 1) [x zero]
        :default nil)))
   
   (defn bounding-rect
     [points]
-    (bounds* v/vec2-op-seq V2 points))
+    (bounds* V2 points))
   
   (defn bounding-box
     [points]
-    (bounds* v/vec3-op-seq V3 points))
+    (bounds* V3 points))
   
   (defn radial-bounds
     [ctor c r-or-points]

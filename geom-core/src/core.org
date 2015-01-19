@@ -420,9 +420,17 @@ protocol consisting of just this one function:
 #+END_SRC
 
 *** Type specific operations
+**** Vector reduction
+
+#+BEGIN_SRC clojure :noweb-ref protos-types
+  (defprotocol PVectorReduce
+    (reduce-vector [_ f xs] [_ f f2 xs]))
+#+END_SRC
+
 **** TODO PSpatialTree
 ***** TODO refactor to use conj & disj?
 ***** TODO extract more general tree protocol?
+
 #+BEGIN_SRC clojure :noweb-ref protos-types
   (defprotocol PSpatialTree
     (add-point [_ p])

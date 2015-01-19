@@ -23,6 +23,7 @@
          - [[#ppolar][PPolar]]
          - [[#preflect][PReflect]]
          - [[#transformations][Transformations]]
+         - [[#pvectorreduce][PVectorReduce]]
          - [[#end-implementation][End implementation]]
      - [[#vec3][Vec3]]
          - [[#templates][Templates]]
@@ -44,9 +45,10 @@
          - [[#ppolar][PPolar]]
          - [[#preflect][PReflect]]
          - [[#transformations][Transformations]]
+         - [[#pvectorreduce][PVectorReduce]]
          - [[#end-implementation][End implementation]]
      - [[#swizzling][Swizzling]]
-     - [[#collection-ops][Collection ops]]
+     - [[#reductions][Reductions]]
      - [[#constructors][Constructors]]
          - [[#random-vectors][Random vectors]]
      - [[#code-rewriting-macros][Code rewriting macros]]
@@ -652,6 +654,20 @@
   (transform
    [_ m] (g/transform-vector m _))
 #+END_SRC
+*** PVectorReduce
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PVectorReduce
+  (reduce-vector
+   [_ f xs]
+   (Vec2. (vec2-reduce* f _ xs) nil _meta))
+  (reduce-vector
+   [_ f f2 xs]
+   (let [^doubles b (vec2-reduce* f _ xs)]
+     (aset b 0 (double (f2 (aget b 0) 0)))
+     (aset b 1 (double (f2 (aget b 1) 1)))
+     (Vec2. b nil _meta)))
+#+END_SRC
+
 *** End implementation
 
 #+BEGIN_SRC clojure :noweb-ref vec2
@@ -1369,6 +1385,21 @@
   (transform
    [_ m] (g/transform-vector m _))
 #+END_SRC
+*** PVectorReduce
+#+BEGIN_SRC clojure :noweb-ref vec3
+  g/PVectorReduce
+  (reduce-vector
+   [_ f xs]
+   (Vec3. (vec3-reduce* f _ xs) nil _meta))
+  (reduce-vector
+   [_ f f2 xs]
+   (let [^doubles b (vec3-reduce* f _ xs)]
+     (aset b 0 (double (f2 (aget b 0) 0)))
+     (aset b 1 (double (f2 (aget b 1) 1)))
+     (aset b 2 (double (f2 (aget b 2) 2)))
+     (Vec3. b nil _meta)))
+#+END_SRC
+
 *** End implementation
 
 #+BEGIN_SRC clojure :noweb-ref vec3
@@ -1483,10 +1514,10 @@
         (err/key-error! k))))
 #+END_SRC
 
-** Collection ops
+** Reductions
 
 #+BEGIN_SRC clojure :noweb-ref ops
-  (defn vec2-op-seq
+  (defn vec2-reduce*
     [op ^Vec2 acc xs]
     (let [^doubles b (.-buf acc)]
       (loop [ax (aget b 0), ay (aget b 1), xs xs]
@@ -1496,9 +1527,9 @@
           (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
             (aset b 0 ax)
             (aset b 1 ay)
-            (Vec2. b nil (.-_meta acc)))))))
+            b)))))
 
-  (defn vec3-op-seq
+  (defn vec3-reduce*
     [op ^Vec3 acc xs]
     (let [^doubles b (.-buf acc)]
       (loop [ax (aget b 0), ay (aget b 1), az (aget b 2), xs xs]
@@ -1509,7 +1540,7 @@
             (aset b 0 ax)
             (aset b 1 ay)
             (aset b 2 az)
-            (Vec3. b nil (.-_meta acc)))))))
+            b)))))
 #+END_SRC
 
 ** Constructors
@@ -1967,7 +1998,7 @@
      ,#+clj [thi.ng.macromath.core :as mm]
      ,#+clj [clojure.core.protocols :as cp]))
 
-  (declare V2 V3 swizzle2-fns swizzle3-fns vec3)
+  (declare V2 V3 vec2 vec3 vec2-reduce* vec3-reduce* swizzle2-fns swizzle3-fns)
 
   <<vec2>>
 
