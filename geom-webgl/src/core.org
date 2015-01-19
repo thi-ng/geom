@@ -332,9 +332,6 @@
   (defprotocol PWebGLConvert
     (as-webgl-buffer-spec [_ opts]))
 
-  (defprotocol PIntoBuffer
-    (into-buffer [_ buf stride idx]))
-
   (defprotocol PRelease
     (release [_]))
 
@@ -377,13 +374,10 @@
 
   (defn fill-buffer
     [buf idx coll n stride]
-    (let [nc  (count coll)]
+    (let [b  (arrays/float32 coll)]
       (loop [i idx, n n]
         (when (pos? n)
-          (loop [j i, k 0]
-            (when (< k nc)
-              (aset buf j (nth coll k))
-              (recur (inc j) (inc k))))
+          (.set buf b i)
           (recur (+ i stride) (dec n))))
       buf))
 
@@ -391,7 +385,7 @@
     [buf coll stride]
     (loop [i 0, coll (seq coll)]
       (if coll
-        (recur (into-buffer (first coll) buf stride i) (next coll))
+        (recur (g/copy-to-buffer (first coll) buf stride i) (next coll))
         buf)))
 
   (defn fill-vertex-buffer-3
@@ -439,9 +433,9 @@
       (loop [i 0, faces faces]
         (if faces
           (let [f (first faces)]
-            (recur (->> (into-buffer-vec3 (vnorms (f 0)) buf 3 i)
-                        (into-buffer-vec3 (vnorms (f 1)) buf 3)
-                        (into-buffer-vec3 (vnorms (f 2)) buf 3))
+            (recur (->> (g/copy-to-buffer (vnorms (f 0)) buf 3 i)
+                        (g/copy-to-buffer (vnorms (f 1)) buf 3)
+                        (g/copy-to-buffer (vnorms (f 2)) buf 3))
                    (next faces)))
           buf))))
 #+END_SRC
@@ -517,31 +511,19 @@ using the protocol.
   (defn into-buffer-vec3
     [^thi.ng.geom.core.vector.Vec3 v buf stride idx]
     (.set buf (.-buf v) idx)
-    (+ idx stride))
-  
-  (extend-type thi.ng.geom.core.vector.Vec2
-    PIntoBuffer
-    (into-buffer [_ buf stride idx]
-      (.set buf (.-buf _) idx)
-      (+ idx stride)))
-  
-  (extend-type thi.ng.geom.core.vector.Vec3
-    PIntoBuffer
-    (into-buffer [_ buf stride idx]
-      (.set buf (.-buf _) idx)
-      (+ idx stride)))
+    (+ idx stride))  
 #+END_SRC
 
 *** PersistentVector
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type cljs.core.PersistentVector
-    PIntoBuffer
-    (into-buffer [_ buf stride idx]
+    g/PBuffered
+    (copy-to-buffer [_ buf stride idx]
       (let [t     (type (first _))
             into* (case t
                    thi.ng.geom.core.vector.Vec2 into-buffer-vec2
                    thi.ng.geom.core.vector.Vec3 into-buffer-vec3
-                   into-buffer)]
+                   g/copy-to-buffer)]
         (case (count _)
           2 (let [idx (into* (first _) buf stride idx)]
               (into* (nth _ 1) buf stride idx))
