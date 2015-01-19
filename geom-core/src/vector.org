@@ -377,7 +377,7 @@
 
   ,#+cljs g/PBuffered
   ,#+cljs (get-buffer [_] buf)
-  ,#+cljs (copy-to-buffer [_ dest idx] (.set dest buf idx) dest)
+  ,#+cljs (copy-to-buffer [_ dest stride idx] (.set dest buf idx) (+ idx stride))
 
   Object
   (toString [_] (str "[" (aget buf 0) " " (aget buf 1) "]"))
@@ -1024,7 +1024,7 @@
 
   ,#+cljs g/PBuffered
   ,#+cljs (get-buffer [_] buf)
-  ,#+cljs (copy-to-buffer [_ dest idx] (.set dest buf idx) dest)
+  ,#+cljs (copy-to-buffer [_ dest stride idx] (.set dest buf idx) (+ idx stride))
 
   Object
   (toString [_] (str "[" (aget buf 0) " " (aget buf 1) " " (aget buf 2) "]"))

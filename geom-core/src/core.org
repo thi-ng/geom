@@ -451,7 +451,7 @@ protocol consisting of just this one function:
 #+BEGIN_SRC clojure :noweb-ref protos-special
   (defprotocol PBuffered
     (get-buffer [_])
-    (copy-to-buffer [_ dest idx]))
+    (copy-to-buffer [_ dest stride idx]))
 #+END_SRC
 
 ** Constants
