@@ -82,7 +82,8 @@ link for more discussion about these options.
           model      (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
                          (gl/as-webgl-buffer-spec {:normals false :single-color [1 0 0 1]})
                          (buf/make-attribute-buffers-in-spec gl gl/static-draw)
-                         (assoc-in [:uniforms :proj] (gl/ortho view-rect)))
+                         (assoc-in [:uniforms :proj] (gl/ortho view-rect))
+                         (time))
           stats      (init-stats)]
       (anim/animate
        (fn [[t frame]]
@@ -147,7 +148,8 @@ rotation / transformation).
                                      :specularCol   0x99ffff
                                      :shininess     100
                                      :wrap          0
-                                     :useBlinnPhong true}))
+                                     :useBlinnPhong true})
+                         (time))
           stats      (init-stats)]
       (anim/animate
        (fn [[t frame]]
