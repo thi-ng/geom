@@ -8,7 +8,6 @@
          - [[#containskey][containsKey]]
          - [[#nth-w-error][nth w/ error]]
          - [[#nth-w-notfound][nth w/ notfound]]
-         - [[#pop][pop]]
          - [[#compare][compare]]
          - [[#hashcode][hashCode]]
          - [[#rest][rest]]
@@ -72,10 +71,6 @@ of the code.
 #+BEGIN_SRC clojure :noweb-ref tpl-nth-nf
   (case (int k) 0 x, 1 y, 2 z, 3 w, nf)
 #+END_SRC
-*** pop
-#+BEGIN_SRC clojure :noweb-ref tpl-pop
-  (thi.ng.geom.core.vector.Vec3. x y z nil nil)
-#+END_SRC
 *** compare
 #+BEGIN_SRC clojure :noweb-ref tpl-compare
   (if (instance? Quat4 o)
@@ -90,7 +85,7 @@ of the code.
             c))
         c))
     (let [c (count o)]
-      (if (== 4 c) (compare o _) (- 4 c))))
+      (if (== 4 c) (- (compare o _)) (- 4 c))))
 #+END_SRC
 *** hashCode
 #+BEGIN_SRC clojure :noweb-ref tpl-hashcode
@@ -146,6 +141,8 @@ of the code.
   ,#+clj (count [_] 4)
   ,#+clj (length [_] 4)
   ,#+clj (containsKey [_ k] <<tpl-contains-key>>)
+  ,#+clj (entryAt
+         [_ k] (clojure.lang.MapEntry. k (swizzle4 _ k nil)))
   ,#+clj (assoc [_ k v] (swizzle4-assoc _ k v))
   ,#+clj (assocN [_ k v]
          <<tpl-assoc-n>>)
@@ -159,16 +156,15 @@ of the code.
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.Indexed
   ,#+clj clojure.lang.Sequential
-  ,#+clj clojure.lang.ISeq
   ,#+clj clojure.lang.Seqable
-  ,#+clj (first [_] x)
-  ,#+clj (next [_] <<tpl-rest>>)
-  ,#+clj (more [_] <<tpl-rest>>)
-  ,#+clj (cons [_ v] (VectorSeq. 0 5 [x y z w v] nil))
+  ,#+clj java.util.List
+  ,#+clj (seq [_] (seq [x y z w]))
+  ,#+clj (empty [_] (err/unsupported!))
+  ,#+clj (cons [_ v] [x y z w v])
   ,#+clj (peek [_] w)
-  ,#+clj (pop [_] <<tpl-pop>>)
+  ,#+clj (pop [_] (vec3 x y z))
   ,#+clj (rseq [_] <<tpl-rseq>>)
-  ,#+clj (seq [_] _)
+  ,#+clj (get [_ k] <<tpl-nth-err>>)
   ,#+clj (nth [_ k] <<tpl-nth-err>>)
   ,#+clj (nth [_ k nf] <<tpl-nth-nf>>)
   ,#+clj (equiv
@@ -269,7 +265,7 @@ of the code.
 
   ,#+cljs IStack
   ,#+cljs (-peek [_] w)
-  ,#+cljs (-pop [_] <<tpl-pop>>)
+  ,#+cljs (-pop [_] (vec3 x y z))
 
   ,#+cljs IComparable
   ,#+cljs (-compare
@@ -504,11 +500,12 @@ of the code.
          iy (mm/maddsub w vy z vx x vz)
          iz (mm/maddsub w vz x vy y vx)
          nx (- x) ny (- y) nz (- z)
-         iw (mm/msub nx vx y vy z vz)]
-     (thi.ng.geom.core.vector.Vec3.
-      (mm/maddsub ix w iw nx iy nz iz ny)
-      (mm/maddsub iy w iw ny iz nx ix nz)
-      (mm/maddsub iz w iw nz ix ny iy nx) nil (meta v))))
+         iw (mm/msub nx vx y vy z vz)
+         ^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+     (aset b 0 (double (mm/maddsub ix w iw nx iy nz iz ny)))
+     (aset b 1 (double (mm/maddsub iy w iw ny iz nx ix nz)))
+     (aset b 2 (double (mm/maddsub iz w iw nz ix ny iy nx)))
+     (thi.ng.geom.core.vector.Vec3. b nil (meta v))))
 #+END_SRC
 *** End of implementation
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -636,15 +633,13 @@ of the code.
         :w (.-w _)
         (let [n (name k) c (count n)]
           (case c
-            2 (thi.ng.geom.core.vector.Vec2.
+            2 (vec2
+               (lookup4 _ (first n) default)
+               (lookup4 _ (nth n 1) default))
+            3 (vec3
                (lookup4 _ (first n) default)
                (lookup4 _ (nth n 1) default)
-               nil nil)
-            3 (thi.ng.geom.core.vector.Vec3.
-               (lookup4 _ (first n) default)
-               (lookup4 _ (nth n 1) default)
-               (lookup4 _ (nth n 2) default)
-               nil nil)
+               (lookup4 _ (nth n 2) default))
             4 (Quat4.
                (lookup4 _ (first n) default)
                (lookup4 _ (nth n 1) default)
@@ -677,15 +672,13 @@ of the code.
      [thi.ng.macromath.core :as mm])
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [vec3 V3X V3Y V3Z]]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3X V3Y V3Z]]
      [thi.ng.geom.core.matrix :as mat]
      [thi.ng.common.error :as err]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
-     ,#+clj [thi.ng.macromath.core :as mm]
-     ,#+clj [thi.ng.geom.core.vectorseq])  
+     ,#+clj [thi.ng.macromath.core :as mm])
     ,#+clj
     (:import
-     [thi.ng.geom.core.vectorseq VectorSeq]
      [thi.ng.geom.core.matrix Matrix44]))
 
   (declare swizzle4 swizzle4-assoc)

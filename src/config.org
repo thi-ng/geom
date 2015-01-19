@@ -36,7 +36,7 @@ target/test-classes
 **** [[https://github.com/clojure/clojurescript][ClojureScript]]
 #+NAME: dep-cljs
 #+BEGIN_SRC clojure
-[org.clojure/clojurescript "0.0-2665"]
+[org.clojure/clojurescript "0.0-2657"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/geom/][thi.ng/geom-core]]
@@ -103,7 +103,7 @@ target/test-classes
 **** [[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]
 #+NAME: dep-cljsbuild
 #+BEGIN_SRC clojure
-[lein-cljsbuild "1.0.4-SNAPSHOT"]
+[lein-cljsbuild "1.0.4"]
 #+END_SRC
 
 **** [[https://github.com/hugoduncan/criterium][Criterium]]

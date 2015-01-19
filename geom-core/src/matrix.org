@@ -39,8 +39,8 @@ Some matrix operations (e.g. computing the determinant or inverse of
 matrix) require quite long mathematical expressions and we therefore
 define some macros to simplify them.
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/macros.clj :mkdirp yes :padline no
-  (ns thi.ng.geom.core.macros
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/macros/matrix.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.core.macros.matrix
     (:require [thi.ng.macromath.core :as mm]))
 
   (defmacro det-item
@@ -89,7 +89,6 @@ define some macros to simplify them.
   ,#+clj java.util.Collection
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.IPersistentVector
-  ,#+clj clojure.lang.ISeq
   ,#+clj clojure.lang.Seqable
   ,#+clj clojure.lang.Sequential
   ,#+clj clojure.lang.IHashEq
@@ -100,17 +99,17 @@ define some macros to simplify them.
   (#+clj count #+cljs -count [_] 6)
 
   ,#+cljs ISeqable
-  (#+clj seq #+cljs -seq [_] _)
+  ,#+clj  (seq [_] (seq [m00 m01 m02 m10 m11 m12]))
+  ,#+cljs (-seq [_] _)
 
   ,#+cljs ISeq
-  (#+clj more #+cljs -rest [_] (next _))
-  (#+clj first #+cljs -first [_] m00)
+  ,#+cljs (-rest [_] (seq [m01 m02 m10 m11 m12]))
+  ,#+cljs (-first [_] m00)
   ,#+cljs INext
-  (#+clj next #+cljs -next [_] (seq [m01 m02 m10 m11 m12]))
+  ,#+cljs (-next [_] (seq [m01 m02 m10 m11 m12]))
 
   ,#+cljs ICollection
-  ,#+clj  (cons [_ x] (VectorSeq. 0 7 [m00 m01 m02 m10 m11 m12 x] nil))
-  ,#+cljs (-conj[_ x] [m00 m01 m02 m10 m11 m12 x])
+  (#+clj cons #+cljs -conj [_ x] [m00 m01 m02 m10 m11 m12 x])
 
   ,#+cljs IIndexed
   (#+clj nth #+cljs -nth [_ k]
@@ -294,9 +293,10 @@ Check discrepancy with SVG transforms
   g/PVectorTransform
   (transform-vector
    [_ [x y :as v]]
-   (thi.ng.geom.core.vector.Vec2.
-    (mm/madd x m00 y m01 m02)
-    (mm/madd x m10 y m11 m12) nil (meta v)))
+   (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+     (aset b 0 (double (mm/madd x m00 y m01 m02)))
+     (aset b 1 (double (mm/madd x m10 y m11 m12)))
+     (thi.ng.geom.core.vector.Vec2. b nil (meta v))))
 #+END_SRC
 
 **** End of implementations
@@ -340,7 +340,6 @@ ordering (row major).
   ,#+clj java.util.Collection
   ,#+clj clojure.lang.IPersistentCollection
   ,#+clj clojure.lang.IPersistentVector
-  ,#+clj clojure.lang.ISeq
   ,#+clj clojure.lang.Seqable
   ,#+clj clojure.lang.Sequential
   ,#+clj clojure.lang.IHashEq
@@ -351,29 +350,24 @@ ordering (row major).
   (#+clj count #+cljs -count [_] 16)
 
   ,#+cljs ISeqable
-  (#+clj seq #+cljs -seq [_] _)
+  ,#+clj (seq [_] (seq [m00 m01 m02 m03
+                   m10 m11 m12 m13
+                   m20 m21 m22 m23
+                   m30 m31 m32 m33]))
+  ,#+cljs (-seq [_] _)
 
   ,#+cljs ISeq
-  (#+clj more #+cljs -rest [_] (next _))
-  (#+clj first #+cljs -first [_] m00)
+  ,#+cljs (-rest [_] (next _))
+  ,#+cljs (-first [_] m00)
   ,#+cljs INext
-  (#+clj next #+cljs -next
+  ,#+cljs (-next
          [_] (seq [m01 m02 m03
                    m10 m11 m12 m13
                    m20 m21 m22 m23
                    m30 m31 m32 m33]))
 
   ,#+cljs ICollection
-  ,#+clj (cons
-         [_ x]
-         (VectorSeq.
-          0 17
-          [m00 m01 m02 m03
-           m10 m11 m12 m13
-           m20 m21 m22 m23
-           m30 m31 m32 m33 x]
-          nil))
-  ,#+cljs (-conj
+  (#+clj cons #+cljs -conj
           [_ x]
           [m00 m01 m02 m03
            m10 m11 m12 m13
@@ -671,10 +665,11 @@ ordering (row major).
       (mm/madd x m01 y m11 z m21 w m31)
       (mm/madd x m02 y m12 z m22 w m32)
       (mm/madd x m03 y m13 z m23 w m33)]
-     (thi.ng.geom.core.vector.Vec3.
-      (mm/madd x m00 y m10 z m20 m30)
-      (mm/madd x m01 y m11 z m21 m31)
-      (mm/madd x m02 y m12 z m22 m32) nil (meta v))))
+     (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+       (aset b 0 (double (mm/madd x m00 y m10 z m20 m30)))
+       (aset b 1 (double (mm/madd x m01 y m11 z m21 m31)))
+       (aset b 2 (double (mm/madd x m02 y m12 z m22 m32)))
+       (thi.ng.geom.core.vector.Vec3. b nil (meta v)))))
 #+END_SRC
 
 **** End of implementation
@@ -872,20 +867,18 @@ ordering (row major).
     ,#+cljs
     (:require-macros
      [thi.ng.macromath.core :as mm]
-     [thi.ng.geom.core.macros :as gmc])
+     [thi.ng.geom.core.macros.matrix :as gmc])
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3 V3X]]
      [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
      [thi.ng.common.error :as err]
-     ,#+clj [thi.ng.geom.core.vectorseq]
      ,#+clj [thi.ng.macromath.core :as mm]
-     ,#+clj [thi.ng.geom.core.macros :as gmc])
+     ,#+clj [thi.ng.geom.core.macros.matrix :as gmc])
     ,#+clj
     (:import
-     [thi.ng.geom.core.vector Vec2 Vec3]
-     [thi.ng.geom.core.vectorseq VectorSeq]))
+     [thi.ng.geom.core.vector Vec2 Vec3]))
 
   <<proto-helpers>>
 
