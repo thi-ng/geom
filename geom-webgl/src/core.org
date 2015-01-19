@@ -359,7 +359,7 @@
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn fill-buffer-vec2
     [buf idx v num stride]
-    (let [vbuf (arrays/float32 v)]
+    (let [vbuf (.-buf ^thi.ng.geom.core.vector.Vec2 v)]
       (loop [idx 0, num num]
         (when (pos? num)
           (.set buf vbuf idx)
@@ -368,7 +368,7 @@
 
   (defn fill-buffer-vec3
     [buf idx v num stride]
-    (let [vbuf (arrays/float32 v)]
+    (let [vbuf (.-buf ^thi.ng.geom.core.vector.Vec3 v)]
       (loop [idx 0, num num]
         (when (pos? num)
           (.set buf vbuf idx)
@@ -407,14 +407,10 @@
 
   (defn face-normals-buffer
     [faces]
-    (let [buf  (arrays/float32 (* (count faces) 3 3))
-          nbuf (arrays/float32 3)]
+    (let [buf  (arrays/float32 (* (count faces) 3 3))]
       (loop [idx 0, faces faces]
         (if faces
-          (let [n (gu/ortho-normal (first faces))]
-            (aset nbuf 0 (.-x ^thi.ng.geom.core.vector.Vec3 n))
-            (aset nbuf 1 (.-y ^thi.ng.geom.core.vector.Vec3 n))
-            (aset nbuf 2 (.-z ^thi.ng.geom.core.vector.Vec3 n))
+          (let [nbuf (.-buf ^thi.ng.geom.core.vector.Vec3 (gu/ortho-normal (first faces)))]
             (.set buf nbuf idx)
             (.set buf nbuf (+ idx 3))
             (.set buf nbuf (+ idx 6))
@@ -425,14 +421,10 @@
     [m]
     (let [fnorms (g/face-normals m true)
           faces  (g/faces m)
-          buf    (arrays/float32 (* (count faces) 3 3))
-          nbuf   (arrays/float32 3)]
+          buf    (arrays/float32 (* (count faces) 3 3))]
       (loop [idx 0, faces faces]
         (if faces
-          (let [n (fnorms (first faces))]
-            (aset nbuf 0 (.-x ^thi.ng.geom.core.vector.Vec3 n))
-            (aset nbuf 1 (.-y ^thi.ng.geom.core.vector.Vec3 n))
-            (aset nbuf 2 (.-z ^thi.ng.geom.core.vector.Vec3 n))
+          (let [nbuf (.-buf ^thi.ng.geom.core.vector.Vec3 (fnorms (first faces)))]
             (.set buf nbuf idx)
             (.set buf nbuf (+ idx 3))
             (.set buf nbuf (+ idx 6))
@@ -519,30 +511,24 @@ using the protocol.
 #+BEGIN_SRC clojure :noweb-ref impl
   (defn into-buffer-vec2
     [^thi.ng.geom.core.vector.Vec2 v buf stride idx]
-    (aset buf idx       (.-x v))
-    (aset buf (+ idx 1) (.-y v))
+    (.set buf (.-buf v) idx)
     (+ idx stride))
   
   (defn into-buffer-vec3
     [^thi.ng.geom.core.vector.Vec3 v buf stride idx]
-    (aset buf idx       (.-x v))
-    (aset buf (+ idx 1) (.-y v))
-    (aset buf (+ idx 2) (.-z v))
+    (.set buf (.-buf v) idx)
     (+ idx stride))
   
   (extend-type thi.ng.geom.core.vector.Vec2
     PIntoBuffer
     (into-buffer [_ buf stride idx]
-      (aset buf idx       (.-x ^thi.ng.geom.core.vector.Vec2 _))
-      (aset buf (+ idx 1) (.-y ^thi.ng.geom.core.vector.Vec2 _))
+      (.set buf (.-buf _) idx)
       (+ idx stride)))
   
   (extend-type thi.ng.geom.core.vector.Vec3
     PIntoBuffer
     (into-buffer [_ buf stride idx]
-      (aset buf idx       (.-x ^thi.ng.geom.core.vector.Vec3 _))
-      (aset buf (+ idx 1) (.-y ^thi.ng.geom.core.vector.Vec3 _))
-      (aset buf (+ idx 2) (.-z ^thi.ng.geom.core.vector.Vec3 _))
+      (.set buf (.-buf _) idx)
       (+ idx stride)))
 #+END_SRC
 
