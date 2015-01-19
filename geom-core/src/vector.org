@@ -222,6 +222,7 @@
   ,#+clj clojure.lang.Indexed
   ,#+clj clojure.lang.Sequential
   ,#+clj clojure.lang.Seqable
+  ,#+clj clojure.lang.Reversible
   ,#+clj java.util.List
   ,#+clj (seq [_] (seq buf))
   ,#+clj (empty [_] (err/unsupported!))
@@ -231,7 +232,7 @@
   ,#+clj (rseq [_] (seq ((swizzle2-fns :yx) _)))
   ,#+clj (get [_ n] (aget buf n))
   ,#+clj (nth [_ n] (aget buf n))
-  ,#+clj (nth [_ n nf] (if (and (>= n 0) (< n 2)) (aget buf n) nf))
+  ,#+clj (nth [_ n nf] (if (>= n 0) (if (< n 2) (aget buf n) nf)))
   ,#+clj (equiv
          [_ o]
          <<tpl-equals2(fn="clojure.lang.Util/equiv")>>)
@@ -332,8 +333,8 @@
   ,#+cljs (-rseq [_] ((swizzle2-fns :yx) _))
 
   ,#+cljs IIndexed
-  ,#+cljs (-nth [_ n] (aget buf n))
-  ,#+cljs (-nth [_ n nf] (if (and (>= n 0) (< n 2)) (aget buf n) nf))
+  ,#+cljs (-nth [_ n] (if (>= n 0) (if (< n 2) (aget buf n) (err/key-error! n))))
+  ,#+cljs (-nth [_ n nf] (if (>= n 0) (if (< n 2) (aget buf n) nf)))
 
   ,#+cljs ICollection
   ,#+cljs (-conj [_ x] (with-meta (vec3 (aget buf 0) (aget buf 1) x) _meta))
@@ -856,7 +857,7 @@
   ,#+clj (rseq [_] (seq ((swizzle3-fns :zyx) _)))
   ,#+clj (get [_ n] (aget buf n))
   ,#+clj (nth [_ n] (aget buf n))
-  ,#+clj (nth [_ n nf] (if (and (>= n 0) (<= n 2)) (aget buf n) nf))
+  ,#+clj (nth [_ n nf] (if (>= n 0) (if (< n 3) (aget buf n) nf)))
   ,#+clj (equiv
          [_ o]
          <<tpl-equals3(fn="clojure.lang.Util/equiv")>>)
@@ -957,8 +958,8 @@
   ,#+cljs (-rseq [_] ((swizzle3-fns :zyx) _))
 
   ,#+cljs IIndexed
-  ,#+cljs (-nth [_ n] (aget buf n))
-  ,#+cljs (-nth [_ n nf] (if (and (>= n 0) (<= n 2)) (aget buf n) nf))
+  ,#+cljs (-nth [_ n] (if (>= n 0) (if (< n 3) (aget buf n) (err/key-error! n))))
+  ,#+cljs (-nth [_ n nf] (if (>= n 0) (if (< n 3) (aget buf n) nf)))
 
   ,#+cljs ICollection
   ,#+cljs (-conj [_ x] (with-meta [(aget buf 0) (aget buf 1) (aget buf 2) x] _meta))
@@ -1026,16 +1027,16 @@
   (- [_ x y z]   (vm/v3-op1-xyz #+clj (double-array) #+cljs (new js/Float32Array) - buf x y z _meta))
   (* [_] _)
   (* [_ v]       (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) * buf v _meta))
-  (* [_ v1 v2]   (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) * * buf v1 v2 1.0 1.0 _meta))
+  (* [_ v1 v2]   (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) * * buf v1 v2 0.0 0.0 _meta))
   (* [_ x y z]   (vm/v3-op1-xyz #+clj (double-array) #+cljs (new js/Float32Array) * buf x y z _meta))
   (div [_]       (vm/v3-op0 #+clj (double-array) #+cljs (new js/Float32Array) / buf _meta))
   (div [_ v]     (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) / buf v _meta))
   (div [_ v1 v2] (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) / / buf v1 v2 0.0 0.0 _meta))
   (div [_ x y z] (vm/v3-op1-xyz #+clj (double-array) #+cljs (new js/Float32Array) / buf x y z _meta))
-  (madd [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) * + buf a b 1.0 0.0 _meta))
-  (addm [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) + * buf a b 0.0 1.0 _meta))
-  (msub [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) * - buf a b 1.0 0.0 _meta))
-  (subm [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) - * buf a b 0.0 1.0 _meta))
+  (madd [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) * + buf a b 0.0 0.0 _meta))
+  (addm [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) + * buf a b 0.0 0.0 _meta))
+  (msub [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) * - buf a b 0.0 0.0 _meta))
+  (subm [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) - * buf a b 0.0 0.0 _meta))
 #+END_SRC
 
 *** PClear
