@@ -28,7 +28,7 @@ is defined in its own namespace and can be loaded from the REPL via:
      [thi.ng.geom.core.matrix :as mat]
      [thi.ng.geom.mesh.io :as mio]
      [thi.ng.geom.svg.core :as svg]
-     [thi.ng.geom.svg.shader :as shader]
+     [thi.ng.geom.svg.shaders :as shader]
      [thi.ng.geom.svg.renderer :as render]
      [thi.ng.common.math.core :as m]
      [clojure.java.io :as io]))
@@ -89,7 +89,7 @@ is defined in its own namespace and can be loaded from the REPL via:
      [thi.ng.geom.polygon :as p]
      [thi.ng.geom.mesh.subdivision :as sd]
      [thi.ng.geom.svg.core :as svg]
-     [thi.ng.geom.svg.shader :as shader]
+     [thi.ng.geom.svg.shaders :as shader]
      [thi.ng.geom.svg.renderer :as render]
      [thi.ng.common.math.core :as m]))
 
@@ -196,7 +196,6 @@ is defined in its own namespace and can be loaded from the REPL via:
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :refer [vec2]]
      [thi.ng.geom.svg.core :as svg]
-     [thi.ng.color.core :as col]
      [thi.ng.common.math.core :as m]
      [thi.ng.macromath.core :as mm]))
 
@@ -212,7 +211,7 @@ is defined in its own namespace and can be loaded from the REPL via:
   (->> (svg/svg
         {:width 300 :height 300}
         (svg/defs
-          (apply svg/radial-gradient-hsb "rainbow" rainbow-gradient))
+          (apply svg/radial-gradient-hsv "rainbow" rainbow-gradient))
         (svg/line-strip
          (spiral [150 150] 0 (* 6 m/TWO_PI) 0 140 300)
          (assoc svg/stroke-round
@@ -233,7 +232,6 @@ is defined in its own namespace and can be loaded from the REPL via:
      [thi.ng.geom.core.vector :refer [vec2]]
      [thi.ng.geom.core.matrix :refer [M32]]
      [thi.ng.geom.svg.core :as svg]
-     [thi.ng.color.core :as col]
      [thi.ng.common.math.core :as m]
      [thi.ng.macromath.core :as mm]))
 
@@ -249,8 +247,8 @@ is defined in its own namespace and can be loaded from the REPL via:
   (->> (svg/svg
         {:width 600 :height 300}
         (svg/defs
-          (apply svg/radial-gradient-hsb "rainbow-rad" rainbow-gradient)
-          (apply svg/linear-gradient-hsb "rainbow-lin" rainbow-gradient)
+          (apply svg/radial-gradient-hsv "rainbow-rad" rainbow-gradient)
+          (apply svg/linear-gradient-hsv "rainbow-lin" rainbow-gradient)
           (svg/line-strip
            (spiral [0 0] 0 (* 6 m/TWO_PI) 0 140 300)
            (assoc svg/stroke-round :id "spiral")))

@@ -30,6 +30,7 @@
 ** Protocols
 
 *** PSVGConvert
+
 #+BEGIN_SRC clojure :noweb-ref protos
   (defprotocol PSVGConvert
     (as-svg [_ opts]))
@@ -88,12 +89,12 @@ introduce uneccessary dependencies.
 Colors in SVG need to be defined as CSS color strings and hence are
 completely opaque to other parts of the code base and which might deal
 with the dynamic generation of color values. Therefore we allow the
-=:stroke= and =:fill= attributes to be defined as RGB(A) or HSB(A)
+=:stroke= and =:fill= attributes to be defined as RGB(A) or HSV(A)
 vectors (e.g. in conjuction with the color utilities defined in the
 [[http://thi.ng/color][thi.ng/color]] library. If these attributes are present and *not*
 already a string value, they will be converted into a CSS color
-automatically (using the =rgba->css= or =hsba->css= fns). In order to
-specify HSB colors, use the =:stoke-hsb= or =:fill-hsb= attributes.
+automatically (using the =rgba->css= or =hsva->css= fns). In order to
+specify HSV colors, use the =:stoke-hsv= or =:fill-hsv= attributes.
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn color-attrib
@@ -140,9 +141,9 @@ and will be automatically converted.
     (if (seq attribs)
       (-> (filter-attribs attribs)
           (color-attrib :stroke :stroke col/rgba->css)
-          (color-attrib :stroke-hsb :stroke col/hsba->css)
+          (color-attrib :stroke-hsv :stroke col/hsva->css)
           (color-attrib :fill :fill col/rgba->css)
-          (color-attrib :fill-hsb :fill col/hsba->css)
+          (color-attrib :fill-hsv :fill col/hsva->css)
           (matrix-attrib :transform)
           (into base))
       base))
@@ -182,17 +183,17 @@ and will be automatically converted.
      {:id id}
      (map #(gradient-stop col/rgba->css %) stops)])
 
-  (defn linear-gradient-hsb
+  (defn linear-gradient-hsv
     [id & stops]
     [:linearGradient
      {:id id}
-     (map #(gradient-stop col/hsba->css %) stops)])
+     (map #(gradient-stop col/hsva->css %) stops)])
 
-  (defn radial-gradient-hsb
+  (defn radial-gradient-hsv
     [id & stops]
     [:radialGradient
      {:id id}
-     (map #(gradient-stop col/hsba->css %) stops)])
+     (map #(gradient-stop col/hsva->css %) stops)])
 
   (defn group
     [attribs & body]
@@ -349,7 +350,7 @@ visualize the result in SVG:
         c1 c2
         ;; we can use metadata to override specific attribs per shape
         ;; here we also demonstrate automatic color attrib conversion
-        (with-meta c3 {:fill [0 1 1 0.25] :stroke-hsb [0 1 1]}))
+        (with-meta c3 {:fill [0 1 1 0.25] :stroke-hsv [0 1 1]}))
        (svg/group
         {:fill "#000"
          :font-family "Arial, sans-serif"
@@ -430,7 +431,8 @@ Btw. This example can be run from the REPL via this command:
      form))
 #+END_SRC
 
-** Complete namespace: svg.core                                    :noexport:
+** Complete namespace: svg.core
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/core.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.core
     (:require
@@ -457,7 +459,8 @@ Btw. This example can be run from the REPL via this command:
   <<decorators>>
 #+END_SRC
 
-** Complete namespace: svg.adapter                                 :noexport:
+** Complete namespace: svg.adapter
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/adapter.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.adapter
     (:require

@@ -1,16 +1,18 @@
 #+SETUPFILE: ../../src/setup.org
 
 * Contents                                                         :toc_4_gh:
- - [[#namespace-thinggeomsvgshader][Namespace: thi.ng.geom.svg.shader]]
+ - [[#namespace-thinggeomsvgshaders][Namespace: thi.ng.geom.svg.shaders]]
      - [[#protocols][Protocols]]
          - [[#pshader][PShader]]
      - [[#shaders][Shaders]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
-* Namespace: thi.ng.geom.svg.shader
+* Namespace: thi.ng.geom.svg.shaders
 
 ** Protocols
+
 *** PShader
+
 #+BEGIN_SRC clojure :noweb-ref protos
   (defprotocol PShader
     (uniforms [_])
@@ -19,6 +21,7 @@
 #+END_SRC
 
 ** Shaders
+
 #+BEGIN_SRC clojure :noweb-ref shader
   (defn normal-rgb
     ([] (normal-rgb M44))
@@ -82,9 +85,10 @@
               (g/min [1.0 1.0 1.0]))))))
 #+END_SRC
 
-** Complete namespace definition                                   :noexport:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/shader.cljx :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.svg.shader
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/shaders.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.svg.shaders
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]

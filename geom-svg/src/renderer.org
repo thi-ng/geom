@@ -2,14 +2,11 @@
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeomsvgrenderer][Namespace: thi.ng.geom.svg.renderer]]
-     - [[#protocols][Protocols]]
      - [[#3d-to-2d-projection][3D to 2D projection]]
      - [[#render-functions][Render functions]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
 * Namespace: thi.ng.geom.svg.renderer
-
-** Protocols
 
 ** 3D to 2D projection
 
@@ -60,14 +57,14 @@
          (map (fn [f] (svg/polygon (f 2) nil)) faces)))))
 #+END_SRC
 
-** Complete namespace definition                                   :noexport:
+** Complete namespace definition
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/renderer.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.renderer
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.svg.core :as svg]
-     [thi.ng.geom.svg.shader :as shader]
+     [thi.ng.geom.svg.shaders :as shader]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :refer [vec3 V3Z]]
      [thi.ng.geom.core.matrix :as mat :refer [M44]]))
