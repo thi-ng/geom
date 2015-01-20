@@ -37,6 +37,7 @@
 ** 2D types
 
 *** Bezier2
+
 #+BEGIN_SRC clojure :noweb-ref types2d
   (defrecord Bezier2 [points])
 #+END_SRC
@@ -52,38 +53,43 @@ an extra Circle type for performance reasons.
 #+END_SRC
 
 *** Line2 & LineStrip2
+
 #+BEGIN_SRC clojure :noweb-ref types2d
   (defrecord Line2 [points])
   (defrecord LineStrip2 [points])
 #+END_SRC
 
 *** Mesh2
+
 #+BEGIN_SRC clojure :noweb-ref types2d
   (defrecord Mesh2 [vertices normals fnormals vnormals edges faces attribs])
 #+END_SRC
 
 *** Path2
+
 #+BEGIN_SRC clojure :noweb-ref types2d
   (defrecord Path2 [segments])
 #+END_SRC
 
 *** Polygon2
+
 #+BEGIN_SRC clojure :noweb-ref types2d
   (defrecord Polygon2 [points])
 #+END_SRC
 
 *** Rect2
+
 #+BEGIN_SRC clojure :noweb-ref types2d
   (defrecord Rect2 #+clj [^Vec2 p ^Vec2 size] #+cljs [p size])
 #+END_SRC
 
 *** Triangle2
+
 #+BEGIN_SRC clojure :noweb-ref types2d
   (defrecord Triangle2 [points])
 #+END_SRC
 
 ** 3D types
-
 *** AABB
 
 An Axis-aligned bounding box is defined as the cartesian volume
@@ -105,11 +111,13 @@ grouping a set of 8 vertices in a specific order (see
 #+END_SRC
 
 *** Bezier3
+
 #+BEGIN_SRC clojure :noweb-ref types3d
   (defrecord Bezier3 [points])
 #+END_SRC
 
 *** Meshes
+
 #+BEGIN_SRC clojure :noweb-ref types3d
   (defrecord BasicMesh [vertices faces fnormals attribs])
 #+END_SRC
@@ -119,12 +127,14 @@ grouping a set of 8 vertices in a specific order (see
 #+END_SRC
 
 *** Line3 & LineStrip3
+
 #+BEGIN_SRC clojure :noweb-ref types3d
   (defrecord Line3 [points])
   (defrecord LineStrip3 [points])
 #+END_SRC
 
 *** Mesh
+
 #+BEGIN_SRC clojure :noweb-ref types3d
   (defrecord Mesh3 [vertices normals fnormals vnormals edges faces attribs])
 #+END_SRC
@@ -140,6 +150,7 @@ The latter defines the plane's orientation in space.
 #+END_SRC
 
 *** Quad3
+
 #+BEGIN_SRC clojure :noweb-ref types3d
   (defrecord Quad3 [points])
 #+END_SRC
@@ -154,19 +165,21 @@ center point =o= and radius =r=.
 #+END_SRC
 
 *** Tetrahedron
+
 #+BEGIN_SRC clojure :noweb-ref types3d
   (defrecord Tetrahedron [points])
 #+END_SRC
 
 *** Triangle3
+
 #+BEGIN_SRC clojure :noweb-ref types3d
   (defrecord Triangle3 [points])
 #+END_SRC
 
-** Complete namespace definition                                   :noexport:
+** Complete namespace definition
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/types.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.types
-    ;;(:refer-clojure :exclude [->Box])
     (:require
       [thi.ng.geom.core.vector])
     ,#+clj (:import [thi.ng.geom.core.vector Vec2 Vec3]))

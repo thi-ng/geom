@@ -29,6 +29,7 @@
 * thi.ng.geom.circle
 
 ** Constructors
+
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn circle
     ([] (thi.ng.geom.types.Circle2. (vec2) 1.0))
@@ -36,7 +37,6 @@
     ([p r] (thi.ng.geom.types.Circle2. (vec2 p) r))
     ([x y r] (thi.ng.geom.types.Circle2. (vec2 x y) r)))
 #+END_SRC
-
 
 ** Type specific functions
 
@@ -48,17 +48,20 @@
 #+END_SRC
 
 ** Protocol implementations
+
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.Circle2
 #+END_SRC
 
 *** PArea
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PArea
   (area [{r :r}] (* PI (* r r)))
 #+END_SRC
 
 *** PBounds
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBounds
   (bounds
@@ -70,12 +73,14 @@
 #+END_SRC
 
 *** PBoundingCircle
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBoundingCircle
   (bounding-circle [_] _)
 #+END_SRC
 
 *** PBoundary
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBoundary
   (contains-point?
@@ -84,6 +89,7 @@
 #+END_SRC
 
 *** PCenter
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PCenter
   (center
@@ -93,12 +99,14 @@
 #+END_SRC
 
 *** PCircumference
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PCircumference
   (circumference [_] (* TWO_PI (:r _)))
 #+END_SRC
 
 *** PClassify
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PClassify
   (classify-point
@@ -107,6 +115,7 @@
 #+END_SRC
 
 *** PExtrude
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PExtrude
   (extrude
@@ -138,6 +147,7 @@
 #+END_SRC
 
 *** PGraph
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PVertexAccess
   (vertices
@@ -153,6 +163,7 @@
 #+END_SRC
 
 *** PIntersect
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PIntersect
   (intersect-shape
@@ -164,6 +175,7 @@
 #+END_SRC
 
 *** PMeshConvert
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PMeshConvert
   (as-mesh
@@ -177,6 +189,7 @@
 #+END_SRC
 
 *** PPolygonConvert
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PPolygonConvert
   (as-polygon
@@ -185,6 +198,7 @@
 #+END_SRC
 
 *** PProximity
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PProximity
   (closest-point
@@ -193,6 +207,7 @@
 #+END_SRC
 
 *** PSample
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PSample
   (point-at
@@ -246,6 +261,7 @@ results, the =transform= implementation returns a [[file:polygon.org][polygon]].
 #+END_SRC
 
 *** PVolume
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PVolume
   (volume [_] 0)
@@ -256,7 +272,8 @@ results, the =transform= implementation returns a [[file:polygon.org][polygon]].
   )
 #+END_SRC
 
-** Complete namespace definition                                   :noexport:
+** Complete namespace definition
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/circle.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.circle
     (:require

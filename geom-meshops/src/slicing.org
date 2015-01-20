@@ -1,5 +1,12 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeommeshslicing][thi.ng.geom.mesh.slicing]]
+     - [[#slicing-algorithm][Slicing algorithm]]
+     - [[#java-2d-graphics-helpers][Java 2D graphics helpers]]
+     - [[#complete-namespace][Complete namespace]]
+     - [[#example-use][Example use]]
+
 * thi.ng.geom.mesh.slicing
 
 ** Slicing algorithm
@@ -139,7 +146,8 @@
 
 ** Complete namespace
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/slicing.clj :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure
+  ;; :tangle ../babel/src/cljx/thi/ng/geom/mesh/slicing.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.slicing
     (:require
      [thi.ng.geom.core :as g]

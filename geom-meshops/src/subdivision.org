@@ -1,21 +1,18 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeommeshsubdivision][thi.ng.geom.mesh.subdivision]]
+     - [[#shared-helpers][Shared helpers]]
+     - [[#catmull-clark][Catmull-Clark]]
+     - [[#doo-sabin][Doo-Sabin]]
+     - [[#butterfly][Butterfly]]
+     - [[#namespace-declaration][Namespace declaration]]
+
 * thi.ng.geom.mesh.subdivision
-** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx :mkdirp yes :padline no
-  (ns thi.ng.geom.mesh.subdivision
-    (:require
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec3]]
-     [thi.ng.geom.gmesh :as gm]
-     [thi.ng.geom.triangle :as t]
-     [thi.ng.common.data.core :as d]
-     [thi.ng.common.error :as err]
-     [clojure.core.reducers :as r]))
-#+END_SRC
+
 ** Shared helpers
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
+
+#+BEGIN_SRC clojure :noweb-ref helpers
   (defn fold-into-map
     [coll] (r/fold (r/monoid into hash-map) conj coll))
   
@@ -36,7 +33,7 @@ graph functions.
 
 Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_subdivision_surface][Wikipedia]]
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
+#+BEGIN_SRC clojure :noweb-ref catmull
   (defn cc-face-points
     "Takes a seq of faces and returns map with faces as keys and their
     centroids as values."
@@ -94,7 +91,8 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
 #+END_SRC
 
 ** Doo-Sabin
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
+
+#+BEGIN_SRC clojure :noweb-ref doosabin
   (defn ds-edge-midpoints
     [edges]
     (->> edges
@@ -190,7 +188,7 @@ you're not sure your mesh contains only triangles, pass it through
 
 - http://graphics.stanford.edu/courses/cs468-10-fall/LectureSlides/10_Subdivision.pdf
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx
+#+BEGIN_SRC clojure :noweb-ref butterfly
   ;; TODO move into tri or gmesh ns?
   (defn other-point-in-opp-tri
     [edges a b f]
@@ -234,4 +232,27 @@ you're not sure your mesh contains only triangles, pass it through
               (r/mapcat
                (fn [f] (bf-faces-from-edge-points e-points f)))
               (g/into (g/clear* mesh))))))
+#+END_SRC
+
+** Namespace declaration
+
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/subdivision.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.mesh.subdivision
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :as v :refer [vec3]]
+     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.triangle :as t]
+     [thi.ng.common.data.core :as d]
+     [thi.ng.common.error :as err]
+     [clojure.core.reducers :as r]))
+
+  <<helpers>>
+
+  <<catmull>>
+
+  <<doosabin>>
+
+  <<butterfly>>
 #+END_SRC

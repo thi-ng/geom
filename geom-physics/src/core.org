@@ -333,7 +333,7 @@
         (recur (next ps)))))
 #+END_SRC
 
-** Complete namespace definition                                   :noexport:
+** Complete namespace definition
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/physics/core.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.physics.core
@@ -359,6 +359,7 @@
 
 #+BEGIN_SRC clojure
   (require '[thi.ng.geom.physics.core :as ph] :reload)
+
   (def a (ph/particle (v/vec2) 1 true))
   (def b (ph/particle (v/vec2 1 0) 1))
   (def s (ph/spring a b 10.0 0.1))

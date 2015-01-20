@@ -1,5 +1,40 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeommesh-deprecated-do-not-use][thi.ng.geom.mesh (deprecated, do not use)]]
+     - [[#shared-2d3d-functions][Shared 2d/3d functions]]
+     - [[#constructors][Constructors]]
+     - [[#protocol-implementations][Protocol implementations]]
+         - [[#mesh2][Mesh2]]
+             - [[#pgraph][PGraph]]
+             - [[#parea][PArea]]
+             - [[#todo-pcircumference][TODO PCircumference]]
+             - [[#pbounds][PBounds]]
+             - [[#pboundingcircle][PBoundingCircle]]
+             - [[#todo-pcenter][TODO PCenter]]
+             - [[#todo-pboundary][TODO PBoundary]]
+             - [[#pmesh][PMesh]]
+             - [[#pmeshconvert][PMeshConvert]]
+             - [[#psubdivide][PSubdivide]]
+             - [[#pslice][PSlice]]
+             - [[#end-of-implementation][End of implementation]]
+         - [[#mesh3][Mesh3]]
+             - [[#pgraph][PGraph]]
+             - [[#parea][PArea]]
+             - [[#pbounds][PBounds]]
+             - [[#todo-pcenter][TODO PCenter]]
+             - [[#pboundingsphere][PBoundingSphere]]
+             - [[#todo-pvolume][TODO PVolume]]
+             - [[#todo-pboundary][TODO PBoundary]]
+             - [[#pmesh][PMesh]]
+             - [[#pmeshconvert][PMeshConvert]]
+             - [[#psubdivide][PSubdivide]]
+             - [[#pslice][PSlice]]
+             - [[#end-of-implementation][End of implementation]]
+     - [[#type-specific-functions][Type specific functions]]
+         - [[#todo-refactor-transform-as-protocol-method][TODO refactor transform as protocol method]]
+     - [[#namespace-declaration][Namespace declaration]]
+
 * thi.ng.geom.mesh (deprecated, do not use)
 
 ** Shared 2d/3d functions

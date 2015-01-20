@@ -52,6 +52,7 @@
 #+END_SRC
 
 *** PArea
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PArea
   (area
@@ -59,11 +60,13 @@
 #+END_SRC
 
 *** TODO PBoundary
+
 #+BEGIN_SRC clojure :noweb-ref impl
 
 #+END_SRC
 
 *** PBounds
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBounds
   (bounds [_] (tu/bounding-box (seq (:vertices _))))
@@ -73,6 +76,7 @@
 #+END_SRC
 
 *** PBoundingSphere
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBoundingSphere
   (bounding-sphere
@@ -80,6 +84,7 @@
 #+END_SRC
 
 *** PCenter
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PCenter
   (center
@@ -90,12 +95,14 @@
 #+END_SRC
 
 *** PFlip
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PFlip
   (flip [_] (tu/map-mesh (fn [f] [(vec (rseq f))]) _))
 #+END_SRC
 
 *** PVertexAccess, PEdgeAccess & PFaceAccess
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PVertexAccess
   (vertices
@@ -119,6 +126,7 @@
 #+END_SRC
 
 *** PNormalAccess
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PNormalAccess
   (face-normals
@@ -137,6 +145,7 @@
 #+END_SRC
 
 *** PGeomContainer
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PGeomContainer
   (into
@@ -147,6 +156,7 @@
 #+END_SRC
 
 *** PMeshConvert
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PMeshConvert
   (as-mesh
@@ -155,6 +165,7 @@
 #+END_SRC
 
 *** PTessellate
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PTessellate
   (tessellate
@@ -163,6 +174,7 @@
 #+END_SRC
 
 *** PTransform
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PScale
   (scale
@@ -196,7 +208,8 @@
   )
 #+END_SRC
 
-** Complete namespace definition                                   :noexport:
+** Complete namespace definition
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/basicmesh.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.basicmesh
     (:require

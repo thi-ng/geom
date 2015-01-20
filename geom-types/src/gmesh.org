@@ -27,6 +27,7 @@
 * thi.ng.geom.gmesh
 
 ** Helper functions
+
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn add-face
     [{:keys [vertices edges faces] :as mesh} verts]
@@ -219,11 +220,13 @@ located on the rotation axis.
 #+END_SRC
 
 *** TODO PBoundary
+
 #+BEGIN_SRC clojure :noweb-ref impl
 
 #+END_SRC
 
 *** PBounds
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBounds
   (bounds [_] (tu/bounding-box (keys (:vertices _))))
@@ -233,6 +236,7 @@ located on the rotation axis.
 #+END_SRC
 
 *** PBoundingSphere
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBoundingSphere
   (bounding-sphere
@@ -240,6 +244,7 @@ located on the rotation axis.
 #+END_SRC
 
 *** TODO PCenter
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PCenter
   (center
@@ -250,12 +255,14 @@ located on the rotation axis.
 #+END_SRC
 
 *** PFlip
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PFlip
   (flip [_] (tu/map-mesh (fn [f] [(vec (rseq f))]) _))
 #+END_SRC
 
 *** TODO PGraph
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PGraph
   (connected-components
@@ -273,6 +280,7 @@ located on the rotation axis.
 #+END_SRC
 
 *** PVertexAccess, PEdgeAccess & PFaceAccess
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PVertexAccess
   (vertices
@@ -315,6 +323,7 @@ located on the rotation axis.
 #+END_SRC
 
 *** PNormalAccess
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PNormalAccess
   (face-normals
@@ -351,6 +360,7 @@ located on the rotation axis.
 #+END_SRC
 
 *** PGeomContainer
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PGeomContainer
   (into
@@ -361,6 +371,7 @@ located on the rotation axis.
 #+END_SRC
 
 *** PMeshConvert
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PMeshConvert
   (as-mesh
@@ -369,6 +380,7 @@ located on the rotation axis.
 #+END_SRC
 
 *** PTessellate
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PTessellate
   (tessellate
@@ -377,6 +389,7 @@ located on the rotation axis.
 #+END_SRC
 
 *** PTransform
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PScale
   (scale
@@ -406,11 +419,13 @@ located on the rotation axis.
 #+END_SRC
 
 *** End of implementation                                          :noexport:
+
 #+BEGIN_SRC clojure :noweb-ref impl
   )
 #+END_SRC
 
-** Complete namespace definition                                   :noexport:
+** Complete namespace definition
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/gmesh.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.gmesh
     (:require

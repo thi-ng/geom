@@ -57,6 +57,7 @@ define some macros to simplify them.
 #+END_SRC
 
 ** Protocol helpers
+
 #+BEGIN_SRC clojure :noweb-ref proto-helpers
   ,#+clj
   (defn- hash-coll*
@@ -67,6 +68,7 @@ define some macros to simplify them.
 #+END_SRC
 ** Matrix implementations
 *** 3x2 Matrix (Affine 2D transform)
+
 #+BEGIN_SRC clojure :noweb-ref mat32
   (deftype Matrix32
     ,#+clj  [^double m00 ^double m01 ^double m02
@@ -79,6 +81,7 @@ define some macros to simplify them.
 #+END_SRC
 
 **** Clojure protocols
+
 #+BEGIN_SRC clojure :noweb-ref mat32
   ,#+clj clojure.lang.IObj
   ,#+cljs IMeta
@@ -154,6 +157,7 @@ define some macros to simplify them.
 #+END_SRC
 
 **** PMathOps
+
 #+BEGIN_SRC clojure :noweb-ref mat32
   g/PMathOps
   (+
@@ -184,6 +188,7 @@ define some macros to simplify them.
 #+END_SRC
 
 **** PDeltaEquals
+
 #+BEGIN_SRC clojure :noweb-ref mat32
   m/PDeltaEquals
   (delta=
@@ -199,7 +204,9 @@ define some macros to simplify them.
         (m/delta= m11 (nth m 4) eps)
         (m/delta= m12 (nth m 5) eps)))
 #+END_SRC
+
 **** PDeterminant
+
 #+BEGIN_SRC clojure :noweb-ref mat32
   g/PDeterminant
   (determinant
@@ -207,6 +214,7 @@ define some macros to simplify them.
 #+END_SRC
 
 **** PInvert
+
 #+BEGIN_SRC clojure :noweb-ref mat32
   g/PInvert
   (invert
@@ -231,6 +239,7 @@ Check discrepancy with SVG transforms
 #+END_SRC
 
 **** PRotate, PScale, PTranslate, PTransform
+
 #+BEGIN_SRC clojure :noweb-ref mat32
   g/PRotate
   (rotate
@@ -289,6 +298,7 @@ Check discrepancy with SVG transforms
 #+END_SRC
 
 **** PVectorTransform
+
 #+BEGIN_SRC clojure :noweb-ref mat32
   g/PVectorTransform
   (transform-vector
@@ -300,6 +310,7 @@ Check discrepancy with SVG transforms
 #+END_SRC
 
 **** End of implementations
+
 #+BEGIN_SRC clojure :noweb-ref mat32
   )
 #+END_SRC
@@ -330,6 +341,7 @@ ordering (row major).
 #+END_SRC
 
 **** Clojure protocols
+
 #+BEGIN_SRC clojure :noweb-ref mat44
   ,#+clj clojure.lang.IObj
   ,#+cljs IMeta
@@ -428,6 +440,7 @@ ordering (row major).
 #+END_SRC
 
 **** PMathOps
+
 #+BEGIN_SRC clojure :noweb-ref mat44
   g/PMathOps
   (+
@@ -475,6 +488,7 @@ ordering (row major).
 #+END_SRC
 
 **** PDeltaEquals
+
 #+BEGIN_SRC clojure :noweb-ref mat44
   m/PDeltaEquals
   (delta=
@@ -483,7 +497,9 @@ ordering (row major).
    [_ m eps]
    (and (sequential? m) (== 16 (count m)) (m/delta= (into [] _) m eps)))
 #+END_SRC
+
 **** PDeterminant
+
 #+BEGIN_SRC clojure :noweb-ref mat44
   g/PDeterminant
   (determinant
@@ -505,6 +521,7 @@ ordering (row major).
 #+END_SRC
 
 **** PInvert
+
 #+BEGIN_SRC clojure :noweb-ref mat44
   g/PInvert
   (invert
@@ -546,6 +563,7 @@ ordering (row major).
 #+END_SRC
 
 **** PTranspose
+
 #+BEGIN_SRC clojure :noweb-ref mat44
   g/PTranspose
   (transpose
@@ -559,6 +577,7 @@ ordering (row major).
 #+END_SRC
 
 **** Transformations
+
 #+BEGIN_SRC clojure :noweb-ref mat44
   g/PScale
   (scale
@@ -656,6 +675,7 @@ ordering (row major).
 #+END_SRC
 
 **** PVectorTransform
+
 #+BEGIN_SRC clojure :noweb-ref mat44
   g/PVectorTransform
   (transform-vector
@@ -673,17 +693,20 @@ ordering (row major).
 #+END_SRC
 
 **** End of implementation
+
 #+BEGIN_SRC clojure :noweb-ref mat44
     )
 #+END_SRC
 
 ** Override print methods
+
 #+BEGIN_SRC clojure :noweb-ref printers
   #+clj (defmethod print-method Matrix32 [^Matrix32 o ^java.io.Writer w] (.write w (.toString o)))
   #+clj (defmethod print-method Matrix44 [^Matrix44 o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 
 ** Constants
+
 #+BEGIN_SRC clojure :noweb-ref constants
   (def M32
     (Matrix32.
@@ -861,7 +884,8 @@ ordering (row major).
             (g/div (vec3 v') (v' 3)))))))
 #+END_SRC
 
-** Complete namespace definition                                   :noexport:
+** Complete namespace definition
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.matrix
     ,#+cljs

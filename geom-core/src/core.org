@@ -19,6 +19,7 @@
 ** Protocols
 *** Math operations
 **** PMathOps
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PMathOps
     (+ [_] [_ a] [_ a b] [_ a b c])
@@ -31,33 +32,45 @@
     (subm [_ a b])
     (abs [_]))
 #+END_SRC
+
 **** PConjugate
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PConjugate
     (conjugate [_]))
 #+END_SRC
+
 **** PCrossProduct
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PCrossProduct
     (cross [_ a]))
 #+END_SRC
+
 **** PDeterminant
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PDeterminant
     (determinant [_]))
 #+END_SRC
+
 **** PDistance
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PDistance
     (dist [_ a])
     (dist-squared [_ a]))
 #+END_SRC
+
 **** PDotProduct
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PDotProduct
     (dot [_ a]))
 #+END_SRC
+
 **** PHeading
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PHeading
     (heading [_])
@@ -69,44 +82,60 @@
     (slope-xz [_])
     (slope-yz [_]))
 #+END_SRC
+
 **** PInterpolate
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PInterpolate
     (mix [_ x] [_ x t] [_ a b c u v]))
 #+END_SRC
+
 **** PInvert
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PInvert
     (invert [_]))
 #+END_SRC
+
 **** PLimit
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PLimit
     (limit [_ x]))
 #+END_SRC
+
 **** PMagnitude
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PMagnitude
     (mag [_])
     (mag-squared [_]))
 #+END_SRC
+
 **** PMatrixConvert
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PMatrixConvert
     (as-matrix [_] [_ opts]))
 #+END_SRC
+
 **** PMinMax
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PMinMax
     (min [_ x] [_ a b])
     (max [_ y] [_ a b]))
 #+END_SRC
+
 **** PNormal
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PNormal
     (normal [_] [_ a]))
 #+END_SRC
+
 **** PNormalize
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PNormalize
     (normalize [_] [_ len])
@@ -114,13 +143,16 @@
 #+END_SRC
 
 **** PSetOps
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PSetOps
     (union [_ x])
     (intersection [_ y])
     (difference [_ x]))
 #+END_SRC
+
 **** PTranspose
+
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PTranspose
     (transpose [_]))
@@ -134,21 +166,27 @@ scale & translate. Other, more complex transformations can be
 achieved through combination and repetition of these.
 
 **** PPolar
+
 #+BEGIN_SRC clojure :noweb-ref protos-tx
   (defprotocol PPolar
     (as-polar [_])
     (as-cartesian [_]))
 #+END_SRC
+
 **** PReflect
+
 #+BEGIN_SRC clojure :noweb-ref protos-tx
   (defprotocol PReflect
     (reflect [_ r]))
 #+END_SRC
+
 **** PRotate & PRotate3D
+
   Rotation is always relative to the world origin. For 2D
   implementations, the rotation angle \theta (theta) is always
   interpreted clockwise and only the =rotate= method is
   implemented.
+
 #+BEGIN_SRC clojure :noweb-ref protos-tx
   (defprotocol PRotate
     (rotate [_ t]))
@@ -159,28 +197,38 @@ achieved through combination and repetition of these.
     (rotate-z [_ t])
     (rotate-around-axis [_ a t]))
 #+END_SRC
+
 **** PScale
+
 #+BEGIN_SRC clojure :noweb-ref protos-tx
   (defprotocol PScale
     (scale [_ s] [_ a b] [_ a b c])
     (scale-size [_ s]))
 #+END_SRC
+
 **** PShear
+
 #+BEGIN_SRC clojure :noweb-ref protos-tx
   (defprotocol PShear
     (shear [_ s] [_ sx sy] [_ sx sy sz]))
 #+END_SRC
+
 **** PTransform
+
 #+BEGIN_SRC clojure :noweb-ref protos-tx
   (defprotocol PTransform
     (transform [_ matrix]))
 #+END_SRC
+
 **** PTranslate
+
 #+BEGIN_SRC clojure :noweb-ref protos-tx
   (defprotocol PTranslate
     (translate [_ t] [_ x y] [_ x y z]))
 #+END_SRC
+
 **** PVectorTransform
+
 #+BEGIN_SRC clojure :noweb-ref protos-tx
   (defprotocol PVectorTransform
     (transform-vector [_ v]))
@@ -193,6 +241,7 @@ graph of vertices, connected by edges. This protocol provides read
 access to entities in this context.
 
 **** PGraph
+
 #+BEGIN_SRC clojure :noweb-ref protos-graph
   (defprotocol PGraph
     (connected-components [_])
@@ -203,29 +252,39 @@ access to entities in this context.
     (replace-vertex [_ a b])
     (merge-vertices [_ a b]))
 #+END_SRC
+
 **** PDirectedGraph
+
 #+BEGIN_SRC clojure :noweb-ref protos-graph
   (defprotocol PDirectedGraph
     (in-vertices [_ v])
     (out-vertices [_ v]))
 #+END_SRC
+
 **** PGraphConvert
+
 #+BEGIN_SRC clojure :noweb-ref protos-graph
   (defprotocol PGraphConvert
     (as-graph [_] [_ opts]))
 #+END_SRC
+
 *** Sub-shape accessors
 **** PVertexAccess
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PVertexAccess
     (vertices [_] [_ opts]))
 #+END_SRC
+
 **** PEdgeAccess
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PEdgeAccess
     (edges [_] [_ opts]))
 #+END_SRC
+
 **** PFaceAccess
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PFaceAccess
     (add-face [_ f])
@@ -233,7 +292,9 @@ access to entities in this context.
     (remove-face [_ f])
     (vertex-faces [_ v]))
 #+END_SRC
+
 **** PNormalAccess
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PNormalAccess
     (compute-face-normals [_])
@@ -243,36 +304,48 @@ access to entities in this context.
     (vertex-normals [_ force?])
     (vertex-normal [_ v]))
 #+END_SRC
+
 *** Shape based & structural operations
 **** PAlign
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PAlign
     (align-with [_ x opts]
       "Returns updated entity aligned with `x` in the specified manner"))
 #+END_SRC
+
 **** PArea
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PArea
     (area [_]
       "Returns an entity's total surface area"))
 #+END_SRC
+
 **** PBoundary
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PBoundary
     (contains-entity? [_ s])
     (contains-point? [_ p]))
 #+END_SRC
+
 **** PBoundingCircle
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PBoundingCircle
     (bounding-circle [_]))
 #+END_SRC
+
 **** PBoundingSphere
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PBoundingSphere
     (bounding-sphere [_]))
 #+END_SRC
+
 **** PBounds
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PBounds
     (bounds [_]
@@ -284,7 +357,9 @@ access to entities in this context.
     (width [_]
       "Returns entity's extent along X axis"))
 #+END_SRC
+
 **** PCenter
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PCenter
     (center [_] [_ p]
@@ -292,18 +367,24 @@ access to entities in this context.
     (centroid [_]
       "Returns centroid of entity"))
 #+END_SRC
+
 **** PCircumference
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PCircumference
     (circumference [_]
       "Returns an entity's circumference"))
 #+END_SRC
+
 **** PClassify
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PClassify
     (classify-point [_ p]))
 #+END_SRC
+
 **** PClear
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PClear
     (clear* [_]))
@@ -311,45 +392,58 @@ access to entities in this context.
 
 **** TODO PClip
 ***** TODO remove protocol, method is already part of PSetOps
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PClip
     (clip-with [_ s]))
 #+END_SRC
+
 **** TODO PConvexHull
 ***** TODO rename into PConvex, add convex? method
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PConvexHull
     (convex-hull [_]))
 #+END_SRC
+
 **** PExtrude
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PExtrude
     (extrude [_ opts])
     (extrude-shell [_ opts]))
 #+END_SRC
+
 **** PFlip
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PFlip
     (flip [_]))
 #+END_SRC
+
 **** PGeomContainer
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PGeomContainer
     (into [_ m]))
 #+END_SRC
 
 **** PInset
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PInset
     (inset [_ inset]))
 #+END_SRC
+
 **** PIntersect
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PIntersect
     (intersect-line [_ l] [_ p q])
     (intersect-ray [_ r] [_ p dir])
     (intersect-shape [_ s]))
 #+END_SRC
+
 **** PMeshConvert
 
 Anything which can be turned into a 2D or 3D mesh will implement this
@@ -360,6 +454,7 @@ protocol consisting of just this one function:
     (as-mesh [_] [_ opts]
       "Transforms the current enitity into a mesh instance"))
  #+END_SRC
+
 **** PPointMap
 
 This protocol is intended to provide domain transfers of points from
@@ -370,6 +465,7 @@ one shape into another.
     (map-point [_ p])
     (unmap-point [_ p]))
 #+END_SRC
+
 **** PPolygonConvert
 
 Anything which can be turned into a 2D polygon will implement this
@@ -380,13 +476,17 @@ protocol consisting of just this one function:
     (as-polygon [_] [_ res]
       "Transforms current entity into a Polygon2 instance"))
 #+END_SRC
+
 **** PProximity
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PProximity
     (closest-point [_ p]))
 #+END_SRC
+
 **** PSample
 ***** TODO move random-point-inside into PBoundary
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PSample
     (point-at [_ t] [_ u v])
@@ -395,24 +495,32 @@ protocol consisting of just this one function:
     (sample-uniform [_ dist include-last?])
     (sample-with-resolution [_ res]))
 #+END_SRC
+
 **** PSlice
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PSlice
     (slice-with [_ e] [_ e classifier] [_ e classifier parts]))
 #+END_SRC
+
 **** PSubdivide
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PSubdivide
     (subdivide [_] [_ opts])
     (subdivide-edge [_ a b splits])
     (subdivide-face [_ f p displace splits]))
 #+END_SRC
+
 **** PTessellate
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PTessellate
     (tessellate [_] [_ opts]))
 #+END_SRC
+
 **** PVolume
+
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PVolume
     (volume [_] "Returns an entity's inner volume.")
@@ -448,6 +556,7 @@ protocol consisting of just this one function:
 
 *** Buffered instances
 **** PBuffered
+
 #+BEGIN_SRC clojure :noweb-ref protos-special
   (defprotocol PBuffered
     (get-buffer [_])
@@ -456,11 +565,13 @@ protocol consisting of just this one function:
 
 ** Constants
 *** Default circle resolution
+
 #+BEGIN_SRC clojure :noweb-ref constants
   (def ^:dynamic *resolution* 20)
 #+END_SRC
 
-** Complete namespace definition                                   :noexport:
+** Complete namespace definition
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core
     (:refer-clojure :exclude [+ - * min max into]))

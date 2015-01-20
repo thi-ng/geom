@@ -380,7 +380,8 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
           (and (>= u 0.0) (>= w 0.0) (m/in-range? 0.0 1.0 v))))))
 #+END_SRC
 
-** Complete namespace definition                                   :noexport:
+** Complete namespace definition
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/utils.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.utils
     ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])

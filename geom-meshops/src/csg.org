@@ -1,5 +1,12 @@
 #+SETUPFILE: ../../src/setup.org
 
+* Contents                                                         :toc_4_gh:
+ - [[#namespace-thinggeomcsgcore][Namespace: thi.ng.geom.csg.core]]
+     - [[#helper-functions][Helper functions]]
+     - [[#public-api][Public API]]
+     - [[#constructors][Constructors]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
 * Namespace: thi.ng.geom.csg.core
 
 Parts of the functionality in this namespace is originally based on an
@@ -207,7 +214,7 @@ meshes.
           (range res)))))
 #+END_SRC
 
-** Namespace declaration
+** Complete namespace definition
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/csg.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.csg
     ,#+cljs

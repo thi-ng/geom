@@ -44,13 +44,16 @@ as re-usable templates, which are injected in the appropriate places
 of the code.
 
 *** apply
+
 #+BEGIN_SRC clojure :noweb-ref tpl-apply
   (condp == (count args)
     1 (swizzle4 _ (first args) nil)
     2 (swizzle4 _ (first args) (second args))
     (err/arity-error! (count args)))
 #+END_SRC
+
 *** assocN
+
 #+BEGIN_SRC clojure :noweb-ref tpl-assoc-n
   (case (int k)
     0 (Quat4. v y z w -1 #+clj -1)
@@ -59,19 +62,27 @@ of the code.
     3 (Quat4. x y z v -1 #+clj -1)
     (err/key-error! k))
 #+END_SRC
+
 *** containsKey
+
 #+BEGIN_SRC clojure :noweb-ref tpl-contains-key
   (not (nil? (#{0 1 2 3 :x :y :z :w} k)))
 #+END_SRC
+
 *** nth w/ error
+
 #+BEGIN_SRC clojure :noweb-ref tpl-nth-err
   (case (int k) 0 x, 1 y, 2 z, 3 w, (err/key-error! k))
 #+END_SRC
+
 *** nth w/ notfound
+
 #+BEGIN_SRC clojure :noweb-ref tpl-nth-nf
   (case (int k) 0 x, 1 y, 2 z, 3 w, nf)
 #+END_SRC
+
 *** compare
+
 #+BEGIN_SRC clojure :noweb-ref tpl-compare
   (if (instance? Quat4 o)
     (let [c (compare x (.-x ^Quat4 o))]
@@ -87,7 +98,9 @@ of the code.
     (let [c (count o)]
       (if (== 4 c) (- (compare o _)) (- 4 c))))
 #+END_SRC
+
 *** hashCode
+
 #+BEGIN_SRC clojure :noweb-ref tpl-hashcode
   (if (== -1 _hashc)
     (set! _hashc
@@ -101,15 +114,20 @@ of the code.
               (unchecked-add-int (hash w))))
     _hashc)
 #+END_SRC
+
 *** rest
+
 #+BEGIN_SRC clojure :noweb-ref tpl-rest
   (cons y (cons z (cons w nil)))
 #+END_SRC
+
 *** rseq
+
 #+BEGIN_SRC clojure :noweb-ref tpl-rseq
   (Quat4. w z y x -1 #+clj -1)
 #+END_SRC
 ** Implementation
+
 #+BEGIN_SRC clojure :noweb-ref impl
   (deftype Quat4
     ,#+clj  [^double x ^double y ^double z ^double w
@@ -117,7 +135,9 @@ of the code.
              ^:unsynchronized-mutable _hashc]
     ,#+cljs [x y z w ^:mutable _hasheq]
 #+END_SRC
+
 *** Clojure protocols
+
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   ,#+clj clojure.lang.ILookup
   ,#+clj (valAt
@@ -216,7 +236,9 @@ of the code.
   (toString
    [_] (str "[" x " " y " " z " " w "]"))
 #+END_SRC
+
 *** ClojureScript protocols
+
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   ,#+cljs ICloneable
   ,#+cljs (-clone
@@ -301,13 +323,16 @@ of the code.
 #+END_SRC
 
 *** PScale
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PScale
   (scale
    [_ s]
    (Quat4. (* x s) (* y s) (* z s) (* w s) -1 #+clj -1))
 #+END_SRC
+
 *** PRotate3D
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PRotate3D
   (rotate-x
@@ -341,7 +366,9 @@ of the code.
       (mm/msub w c z s)
       -1 #+clj -1)))
 #+END_SRC
+
 *** PMathOps
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PMathOps
   (+
@@ -388,7 +415,9 @@ of the code.
       (mm/msub w' rw x' rx y' ry z' rz)
       -1 #+clj -1)))
 #+END_SRC
+
 *** PDeltaEquals
+
 #+BEGIN_SRC clojure :noweb-ref impl
   m/PDeltaEquals
   (delta=
@@ -402,7 +431,9 @@ of the code.
         (m/delta= z (nth q 2) eps)
         (m/delta= w (nth q 3) eps)))
 #+END_SRC
+
 *** PDotProduct
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PDotProduct
   (dot
@@ -410,7 +441,9 @@ of the code.
    (let [q ^Quat4 q]
      (mm/madd x (.-x q) y (.-y q) z (.-z q) w (.-w q))))
 #+END_SRC
+
 *** PMagnitude
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PMagnitude
   (mag
@@ -418,7 +451,9 @@ of the code.
   (mag-squared
    [_] (mm/madd x x y y z z w w))
 #+END_SRC
+
 *** PNormalize
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PNormalize
   (normalize [_]
@@ -427,13 +462,17 @@ of the code.
         (Quat4. (/ x m) (/ y m) (/ z m) (/ w m) -1 #+clj -1)
         _)))
 #+END_SRC
+
 *** PConjugate
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PConjugate
   (conjugate [_]
     (Quat4. (- x) (- y) (- z) w -1 #+clj -1))
 #+END_SRC
+
 *** PInvert
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PInvert
   (invert [_]
@@ -442,7 +481,9 @@ of the code.
           id (- d)]
       (Quat4. (* x id) (* y id) (* z id) (* w d) -1 #+clj -1)))
 #+END_SRC
+
 *** PInterpolate
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PInterpolate
   (mix [_ q] (g/mix _ q 0.5))
@@ -464,7 +505,9 @@ of the code.
            -1 #+clj -1))
         _)))
 #+END_SRC
+
 *** PMatrixConvert
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PMatrixConvert
   (as-matrix
@@ -491,7 +534,9 @@ of the code.
       (or tx 0.0) (or ty 0.0) (or tz 0.0) 1.0
       nil nil)))
 #+END_SRC
+
 *** PVectorTransform
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PVectorTransform
   (transform-vector
@@ -507,19 +552,27 @@ of the code.
      (aset b 2 (double (mm/maddsub iz w iw nz ix ny iy nx)))
      (thi.ng.geom.core.vector.Vec3. b nil (meta v))))
 #+END_SRC
+
 *** End of implementation
+
 #+BEGIN_SRC clojure :noweb-ref impl
     )
 #+END_SRC
+
 *** Override print methods
+
 #+BEGIN_SRC clojure :noweb-ref impl
   #+clj (defmethod print-method Quat4 [^Quat4 o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
+
 ** Constants
+
 #+BEGIN_SRC clojure :noweb-ref const
   (def Q (Quat4. 0.0 0.0 0.0 1.0 -1 #+clj -1))
 #+END_SRC
+
 ** Constructors
+
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn quat
     ([] Q)
@@ -607,6 +660,7 @@ of the code.
 #+END_SRC
 
 ** Swizzling
+
 #+BEGIN_SRC clojure :noweb-ref swizzle
   (defn lookup4
     [^Quat4 _ k nf]
@@ -664,7 +718,9 @@ of the code.
         :w (Quat4. (.-x _) (.-y _) (.-z _) v -1 #+clj -1)
         (v/swizzle-assoc* _ quat {\x 0 \y 1 \z 2 \w 3} k v))))
 #+END_SRC
-** Complete namespace definition                                         :noexport:
+
+** Complete namespace definition
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/quaternion.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.quaternion
     ,#+cljs

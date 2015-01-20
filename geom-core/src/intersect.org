@@ -316,7 +316,7 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
              p qb [[:f 0 1] [:f 2 0] [:f 1 2] [:f* 4 3]])))))
 #+END_SRC
 
-** Complete namespace definition                                   :noexport:
+** Complete namespace definition
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/intersect.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.intersect

@@ -33,6 +33,7 @@ this type and an AABB can be converted into a cuboid via the =cuboid=
 constructor function defined in this namespace.
 
 ** Constructors
+
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn cuboid
     ([] (cuboid 1.0))
@@ -58,6 +59,7 @@ constructor function defined in this namespace.
 #+END_SRC
 
 ** Type specific functions
+
 #+BEGIN_SRC clojure :noweb-ref helpers
 
 #+END_SRC
@@ -69,6 +71,7 @@ constructor function defined in this namespace.
 #+END_SRC
 
 *** PArea                                                            :verify:
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PArea
   (area
@@ -79,16 +82,19 @@ constructor function defined in this namespace.
 #+END_SRC
 
 *** PBounds                                                          :verify:
+
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-bounds(fn="tu/bounding-box", depth="yes")>>
 #+END_SRC
 
 *** PBoundingSphere                                                  :verify:
+
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-bsphere>>
 #+END_SRC
 
 *** PBoundary                                                           :fix:
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBoundary
   (contains-point?
@@ -96,6 +102,7 @@ constructor function defined in this namespace.
 #+END_SRC
 
 *** PCenter                                                          :verify:
+
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-center(type="thi.ng.geom.types.Cuboid", vtype="vec3")>>
   (centroid
@@ -167,6 +174,7 @@ front, back - assuming the vertex order given in the diagram.
 #+END_SRC
 
 *** TODO PIntersect                                                     :fix:
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PIntersect
   (intersect-shape
@@ -174,6 +182,7 @@ front, back - assuming the vertex order given in the diagram.
 #+END_SRC
 
 *** PMeshConvert                                                     :verify:
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PMeshConvert
   (as-mesh
@@ -232,6 +241,7 @@ Do not use, work in progress...
 #+END_SRC
 
 *** TODO PSample                                                        :fix:
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PSample
   (random-point-inside
@@ -288,6 +298,7 @@ from the first vertex of the original with inner sorting over XYZ.
 #+END_SRC
 
 *** PTessellate                                                      :verify:
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PTessellate
   (tessellate
@@ -313,17 +324,20 @@ from the first vertex of the original with inner sorting over XYZ.
 #+END_SRC
 
 *** TODO PVolume                                                        :fix:
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PVolume
   (volume [_] 0)
 #+END_SRC
 
 *** End of implementation                                          :noexport:
+
 #+BEGIN_SRC clojure :noweb-ref impl
   )
 #+END_SRC
 
-** Complete namespace definition                                   :noexport:
+** Complete namespace definition
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/cuboid.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.cuboid
     (:require
