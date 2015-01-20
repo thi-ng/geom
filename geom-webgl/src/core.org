@@ -337,7 +337,7 @@
 
   (defprotocol PBind
     (bind [_] [_ opts])
-    (unbind [_]))
+    (unbind [_] [_ opts]))
 
   (defprotocol PConfigure
     (configure [_ opts]))

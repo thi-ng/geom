@@ -61,6 +61,7 @@
   (defrecord FBO [^WebGLRenderingContext gl id]
     gl/PBind
     (bind [_] (.bindFramebuffer gl gl/framebuffer id) _)
+    (bind [_ _] (err/unsupported!))
     (unbind [_] (.bindFramebuffer gl gl/framebuffer nil) _)
 
     gl/PRelease
@@ -102,6 +103,7 @@
   (defrecord RenderBuffer [^WebGLRenderingContext gl id format width height]
     gl/PBind
     (bind [_] (.bindRenderbuffer gl gl/renderbuffer id) _)
+    (bind [_ _] (err/unsupported!))
     (unbind [_] (.bindRenderbuffer gl gl/renderbuffer nil) _)
 
     gl/PRelease
@@ -129,6 +131,7 @@
 #+BEGIN_SRC clojure :noweb-ref tex
   (defrecord Texture2D [^WebGLRenderingContext gl id channels type target width height]
     gl/PBind
+    (bind [_] (err/unsupported! "must specify texture unit"))
     (bind
       [_ unit]
       (.activeTexture gl (+ gl/texture0 unit))
