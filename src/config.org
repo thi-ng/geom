@@ -78,19 +78,19 @@ target/test-classes
 **** [[https://github.com/thi-ng/common/][thi.ng/common]]
 #+NAME: dep-common
 #+BEGIN_SRC clojure
-[thi.ng/common "0.3.0-SNAPSHOT"]
+[thi.ng/common "0.3.0"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/macromath][thi.ng/macromath]]
 #+NAME: dep-mmath
 #+BEGIN_SRC clojure
-[thi.ng/macromath "0.3.0-SNAPSHOT"]
+[thi.ng/macromath "0.3.0"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/color/][thi.ng/color]]
 #+NAME: dep-color
 #+BEGIN_SRC clojure
-[thi.ng/color "0.1.0-SNAPSHOT"]
+[thi.ng/color "0.1.0"]
 #+END_SRC
 
 *** Development
@@ -110,12 +110,6 @@ target/test-classes
 #+NAME: dep-criterium
 #+BEGIN_SRC clojure
 [criterium "0.4.3"]
-#+END_SRC
-
-**** [[https://github.com/cemerick/austin][Austin]]
-#+NAME: dep-austin
-#+BEGIN_SRC clojure
-[com.cemerick/austin "0.1.4"]
 #+END_SRC
 
 **** [[https://github.com/cemerick/clojurescript.test][clojurescript.test]]

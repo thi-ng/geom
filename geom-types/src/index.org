@@ -65,7 +65,7 @@ Please see the [[file:../../src/index.org][parent project]] for further informat
 
 ** Injected properties                                             :noexport:
 
-This template uses shared project configuration defined in [[file:../../src/config.org][config.org]].
+This template uses shared project configuration defined in [[../../src/config.org][config.org]].
 Module specific settings are defined below:
 
 #+BEGIN_SRC clojure :exports none :noweb-ref project-name
@@ -184,18 +184,29 @@ symbol =version= holding the version string defined above:
   (def version "<<conf-version>>")
 #+END_SRC
 
-* Modules
+* Namespaces
 
-*** Note for Github users
-
-The following sections contain links to project modules, but are not
-visibile when reading this file on Github. Please navigate to the
-source files via the normal [[https://github.com/thi-ng/geom/tree/master/geom-types/][GH repo browser]].
-
-** Type definitions
-
-#+INCLUDE: "types.org"             :minlevel 2
+- [[./aabb.org][thi.ng.geom.aabb]]
+- [[./basicmesh.org][thi.ng.geom.basicmesh]]
+- [[./bezier.org][thi.ng.geom.bezier]]
+- [[./circle.org][thi.ng.geom.circle]]
+- [[./cuboid.org][thi.ng.geom.cuboid]]
+- [[./gmesh.org][thi.ng.geom.gmesh]]
+- [[./line.org][thi.ng.geom.line]]
+- [[./path.org][thi.ng.geom.path]]
+- [[./plane.org][thi.ng.geom.plane]]
+- [[./polygon.org][thi.ng.geom.polygon]]
+- [[./quad.org][thi.ng.geom.quad]]
+- [[./rect.org][thi.ng.geom.rect]]
+- [[./spatialtree.org][thi.ng.geom.spatialtree]]
+- [[./sphere.org][thi.ng.geom.sphere]]
+- [[./tetrahedron.org][thi.ng.geom.tetrahedron]]
+- [[./triangle.org][thi.ng.geom.triangle]]
+- [[./types.org][thi.ng.geom.types]]
+- [[./utils.org][thi.ng.geom.types.utils]]
+- [[./ptf.org][thi.ng.geom.types.utils.ptf]]
 
 * Tests
 
-#+INCLUDE: "../test/protocols.org" :minlevel 2
+- [[../test/protocols.org][thi.ng.geom.types.test.protocols]]
+

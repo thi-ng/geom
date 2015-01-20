@@ -19,7 +19,7 @@ Please see the [[file:../../src/index.org][parent project]] for further informat
 
 ** Injected properties                                             :noexport:
 
-This template uses shared project configuration defined in [[file:../../src/config.org][config.org]].
+This template uses shared project configuration defined in [[../../src/config.org][config.org]].
 Module specific settings are defined below:
 
 #+BEGIN_SRC clojure :exports none :noweb-ref project-name
@@ -139,9 +139,9 @@ symbol =version= holding the version string defined above:
   (def version "<<conf-version>>")
 #+END_SRC
 
-* Modules
+* Namespaces
 
-- [[core.org]]
+- [[./core.org][thi.ng.geom.physics.core]]
 
 * Tests
 

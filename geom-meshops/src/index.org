@@ -20,7 +20,7 @@ Please see the [[file:../../src/index.org][parent project]] for further informat
 
 ** Injected properties                                             :noexport:
 
-This template uses shared project configuration defined in [[file:../../src/config.org][config.org]].
+This template uses shared project configuration defined in [[../../src/config.org][config.org]].
 Module specific settings are defined below:
 
 #+BEGIN_SRC clojure :exports none :noweb-ref project-name
@@ -140,20 +140,13 @@ symbol =version= holding the version string defined above:
   (def version "<<conf-version>>")
 #+END_SRC
 
-* Modules
+* Namespaces
 
-*** Note for Github users
-
-The following sections contain links to project modules, but are not
-visibile when reading this file on Github. Please navigate to the
-source files via the normal [[https://github.com/thi-ng/geom/tree/master/geom-meshops/][GH repo browser]].
-
-** Module namespaces
-
-#+INCLUDE: "csg.org"             :minlevel 2
-#+INCLUDE: "meshio.org"          :minlevel 2
-#+INCLUDE: "meshops.org"         :minlevel 2
-#+INCLUDE: "subdivision.org"     :minlevel 2
+- [[./csg.org][thi.ng.geom.mesh.csg]]
+- [[./delaunay.org][thi.ng.geom.mesh.delaunay]]
+- [[./io.org][thi.ng.geom.mesh.io]]
+- [[./meshops.org][thi.ng.geom.mesh.ops]]
+- [[./subdivision.org][thi.ng.geom.mesh.subdivision]]
 
 * Tests
 

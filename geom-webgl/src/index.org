@@ -21,7 +21,7 @@ Please see the [[file:../../src/index.org][parent project]] for further informat
 
 ** Injected properties                                             :noexport:
 
-This template uses shared project configuration defined in [[file:../../src/config.org][config.org]].
+This template uses shared project configuration defined in [[../../src/config.org][config.org]].
 Module specific settings are defined below:
 
 #+BEGIN_SRC clojure :exports none :noweb-ref project-name
@@ -115,7 +115,7 @@ target/geom-webgl-<<conf-version>>.js
       </style>
     </head>
     <body>
-      <canvas id="main" width="640" height="480"></canvas>
+      <canvas id="main" width="1280" height="720"></canvas>
       <script type="text/javascript" src="resources/stats.js"></script>
       <script type="text/javascript" src="resources/webgl-texture-float-extension-shims.js"></script>
       <script type="text/javascript" src="<<cljs-artefact-path>>"></script>
@@ -142,22 +142,15 @@ symbol =version= holding the version string defined above:
   (def version "<<conf-version>>")
 #+END_SRC
 
-* Modules
+* Namespaces
 
-*** Note for Github users
-
-The following sections contain links to project modules, but are not
-visibile when reading this file on Github. Please navigate to the
-source files via the normal [[https://github.com/thi-ng/geom/tree/master/geom-webgl/][GH repo browser]].
-
-** Module namespaces
-
-#+INCLUDE: "core.org"              :minlevel 2
-#+INCLUDE: "animator.org"          :minlevel 2
-#+INCLUDE: "buffers.org"           :minlevel 2
-#+INCLUDE: "shaders.org"           :minlevel 2
-#+INCLUDE: "utils.org"             :minlevel 2
+- [[./core.org][thi.ng.geom.webgl.core]]
+- [[./animator.org][thi.ng.geom.webgl.animator]]
+- [[./arrays.org][thi.ng.geom.webgl.arrays]]
+- [[./buffers.org][thi.ng.geom.webgl.buffers]]
+- [[./shaders.org][thi.ng.geom.webgl.shaders]]
+- [[./utils.org][thi.ng.geom.webgl.utils]]
+- [[./demo.org][examples]]
 
 * Tests
 
-#+INCLUDE: "../test/core.org"    :minlevel 2

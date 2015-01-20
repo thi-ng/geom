@@ -131,8 +131,8 @@ positive or negative force fields (attractors).
 *** [[../geom-svg/src/index.org][geom-svg]]
 
 A module to help with building SVG based visualizations of geom
-entities (incl. a customizable 3D mesh renderer). CLJS support for
-this module is planned, but currently untested.
+entities (incl. a customizable 3D mesh renderer w/ shader support).
+CLJS support for this module is planned, but currently untested.
 
 *** [[../geom-webgl/src/index.org][geom-webgl]]
 
@@ -144,14 +144,11 @@ rendering functions to simplify the use of types defined in the
 
 The project has been in development since late 2011 and is currently
 in its 4th iteration/rewrite cycle. It should still be considered
-ALPHA quality with several breaking API changes planned over the next
-few weeks. On the other hand, the library has already been used
+BETA quality. On the other hand, the library has already been used
 successfully in several commercial projects over the past 2 years and
-can be considered stable for basic use cases.
+can be considered stable for most use cases.
 
 A full test suite, website & tutorials are actively being worked on.
-Right now, focus of development is on features required for my
-[[https://devart.withgoogle.com/#/project/16501507][Google DevArt commission]].
 
 ** Example usage
 
