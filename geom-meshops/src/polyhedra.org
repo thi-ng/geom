@@ -20,15 +20,19 @@ http://paulbourke.net/geometry/platonic/
 
 The =polyhedron-mesh= function acts as a generic HOF constructor of
 mesh instances for the polyhedra defined below. It takes a polyhedron
-face list generator, scale and optional subdivision scheme and returns
-either a =BasicMesh= or =GMesh= instance.
+face list generator, mesh scale and optional subdivision scheme and
+returns either a =BasicMesh= or =GMesh= instance.
 
 #+BEGIN_SRC clojure 
   ;; import subdivsion ns
-  (require '[thi.ng.geom.mesh.subdivision :as 
+  (require '[thi.ng.geom.mesh.subdivision :as sd])
+  (require '[thi.ng.geom.mesh.io :as mio])
+  (require '[clojure.java.io :as io])
 
   ;; create icosahedron sphere (3x subdivided)
   (def sphere (polyhedron-mesh icosahedron sd/catmull-clark 1 3))
+
+  (with-open [o (io/output-stream "icosphere.stl")] (mio/write-stl o (g/tessellate sphere)))
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref polyhedra
