@@ -37,6 +37,8 @@ returns either a =BasicMesh= or =GMesh= instance.
          (mio/write-stl o)))
 #+END_SRC
 
+[[http://media.thi.ng/geom/mesh/icosphere.svg]]
+
 #+BEGIN_SRC clojure :noweb-ref polyhedra
   (defn polyhedron-mesh
    ([f] (polyhedron-mesh f 1))
