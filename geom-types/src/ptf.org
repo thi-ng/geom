@@ -79,7 +79,8 @@
   (defn sweep-profile
     [profile [points _ norms bnorms]]
     (let [frames (map vector points norms bnorms)
-          tx     (fn [[p n b]] (mapv #(sweep-point p n b %) profile))]
+          tx     (fn [[p n b]] (mapv #(sweep-point p n b %) profile))
+          frame0 (tx (first frames))]
       (->> (next frames)
            (reduce
             (fn [[faces prev] frame]
@@ -91,7 +92,7 @@
                                 (d/successive-nth 2 curr))
                                (concat faces))]
                 [faces curr]))
-            [nil (tx (conj (first frames) (ffirst frames)))])
+            [nil (conj frame0 (first frame0))])
            (first))))
 
   (defn sweep-mesh
