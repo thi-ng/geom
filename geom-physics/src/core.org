@@ -160,8 +160,8 @@
     PTimeStep
     (timestep
       [_ delta]
-      (let [aw   (.-inv-weight a)
-            bw   (.-inv-weight b)
+      (let [aw   (.-inv-weight ^VerletParticle a)
+            bw   (.-inv-weight ^VerletParticle b)
             pa   (position a)
             pb   (position b)
             diff (g/- pb pa)
@@ -186,8 +186,8 @@
             diff (g/- pb pa)
             dist (+ (g/mag diff) 1e-6)]
         (if (> dist min-len)
-          (let [aw (.-inv-weight a)
-                bw (.-inv-weight b)
+          (let [aw (.-inv-weight ^VerletParticle a)
+                bw (.-inv-weight ^VerletParticle b)
                 nd (* (/ (- dist rest-len) (* dist (+ aw bw))) (* strength delta))]
             (if-not (locked? a)
               (set-position a (g/madd diff (* nd aw) pa)))
