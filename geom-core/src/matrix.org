@@ -849,39 +849,39 @@ ordering (row major).
            (- (g/dot x eye)) (- (g/dot y eye)) (- (g/dot z eye)) 1.0
            nil nil)))))
 
-  (defn viewport-transform
+  (defn viewport-matrix
     ([width height]
-       (viewport-transform width height false))
+     (viewport-matrix width height false))
     ([width height invert-y?]
-       (let [w2 (/ width 2.0)
-             h2 (/ height 2.0)]
-         (-> M32
-             (g/translate w2 h2)
-             (g/* (g/scale M32 w2 (if invert-y? h2 (- h2))))))))
+     (let [w2 (/ width 2.0)
+           h2 (/ height 2.0)]
+       (-> M32
+           (g/translate w2 h2)
+           (g/* (g/scale M32 w2 (if invert-y? h2 (- h2))))))))
 
   (defn project-point
     [p mvp vtx]
-    (let [[x y _ w] (g/transform-vector mvp (conj (vec p) 1))]
+    (let [[x y _ w] (g/transform-vector mvp (conj (vec3 p) 1))]
       (g/transform-vector vtx (g/div (vec2 x y) w))))
 
   (defn project-point-z
     [p mvp vtx]
-    (let [[x y z w] (g/transform-vector mvp (conj (vec p) 1))]
+    (let [[x y z w] (g/transform-vector mvp (conj (vec3 p) 1))]
       (conj (g/transform-vector vtx (g/div (vec2 x y) w)) (/ z w))))
 
-  ;; FIXME add arity for pre-computed vpm matrix
   (defn unproject-point
-    "Takes a vec3 in screenspace, view matrix, projection matrix and
-      view rect. Returns vector in model space or nil."
-    [v vmat pmat {:keys [p width height]}]
-    (let [x (mm/msub (- (v 0) (p 0)) (/ 2.0 width) 1.0)
-          y (mm/msub (- (v 1) (p 1)) (/ 2.0 height) 1.0)
-          z (mm/msub (v 2) 2.0 1.0)
-          vpm (g/* pmat vmat)]
-      (if (g/invert vpm)
-        (let [v' (g/transform-vector vpm [x y z 1.0])]
-          (if-not (zero? (v' 3))
-            (g/div (vec3 v') (v' 3)))))))
+    "Takes a vec3 in screenspace, model-view matrix, projection matrix
+    and screen rect. Returns vector in model space or nil if matrix is
+    not invertible."
+    ([p model-view proj screen-rect]
+     (if-let [inv-mat (g/invert (g/* proj model-view))]
+       (unproject-point p inv-mat screen-rect)))
+    ([[x y z] inv-mat {[vx vy] :p [w h] :size}]
+     (g/transform-vector
+      inv-mat
+      (vec3 (m/map-interval x vx (+ vx w) -1 1)
+            (m/map-interval y vy (+ vy h) -1 1)
+            (- (* z 2) 1)))))
 #+END_SRC
 
 ** Complete namespace definition

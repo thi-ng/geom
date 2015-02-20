@@ -61,7 +61,7 @@ is defined in its own namespace and can be loaded from the REPL via:
 
   (defn render-svg
     [path mesh mvp width height]
-    (let [screen (mat/viewport-transform width height)]
+    (let [screen (mat/viewport-matrix width height)]
       (->> (svg/svg
             {:width width :height height}
             (render/mesh mesh mvp screen shader))
@@ -166,7 +166,7 @@ is defined in its own namespace and can be loaded from the REPL via:
 
   (defn render-svg
     [path mesh mvp shader width height labels]
-    (let [screen (mat/viewport-transform width height)
+    (let [screen (mat/viewport-matrix width height)
           max-z  (/ 0.75 2)]
       (->> (svg/svg
             {:width width :height height}
