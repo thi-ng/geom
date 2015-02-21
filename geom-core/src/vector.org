@@ -75,17 +75,13 @@
   (replace-regexp-in-string
    "{{fn}}" fn
    "(cond
-      (number? k)  (if (and (>= k 0) (< k 2))
+      (number? k)  (if (or (== k 0) (== k 1))
                      (let [^doubles b ({{fn}} buf)]
                        (aset b k (double v)) (Vec2. b nil _meta))
                      (if (== k 2) (conj _ v) (err/key-error! k)))
       (keyword? k) (if (= :z k)
                      (conj _ v)
-                     (let [^doubles b ({{fn}} buf)
-                           id (if (= k :x) 0 (if (= k :y) 1))]
-                       (if id
-                         (do (aset b id (double v)) (Vec2. b nil _meta))
-                         (err/key-error! k)))))")
+                     (Vec2. (swizzle-assoc* buf ({{fn}} buf) {\\x 0 \\y 1} k v) nil _meta)))")
 #+END_SRC
 
 **** compare
@@ -698,11 +694,7 @@
                      (if (== k 3) (conj _ v) (err/key-error! k)))
       (keyword? k) (if (= :w k)
                      (conj _ v)
-                     (let [^doubles b ({{fn}} buf)
-                           id (if (= k :x) 0 (if (= k :y) 1 (if (= k :z) 2)))]
-                       (if id
-                         (do (aset b id (double v)) (Vec3. b nil _meta))
-                         (err/key-error! k)))))")
+                     (Vec3. (swizzle-assoc* buf ({{fn}} buf) {\\x 0 \\y 1 \\z 2} k v) nil _meta)))")
 #+END_SRC
 
 **** compare
@@ -1505,15 +1497,21 @@
      :zyy zyy, :zyz zyz, :zz zz, :zzx zzx, :zzy zzy, :zzz zzz})
 
   (defn swizzle-assoc*
-    [_ ctor keymap k v]
+    ,#+clj [^doubles src ^doubles dest keymap k v]
+    ,#+cljs [src dest keymap k v]
     (let [n (name k)
           c (count n)]
-      (if (and (<= c (count keymap)) (== c (count v) (count (into #{} n))))
-        (loop [acc (vec _), i 0, n n]
-          (if n
-            (recur (assoc acc (keymap (first n)) (v i)) (inc i) (next n))
-            (ctor acc)))
-        (err/key-error! k))))
+      (if-let [idx (and (== 1 c) (keymap (first n)))]
+        (do (aset dest (int idx) (double v)) dest)
+        (if (and (<= c (count keymap)) (== c (count v) (count (into #{} n))))
+          (loop [i 0, n n]
+            (if n
+              (if-let [idx (keymap (first n))]
+                (do (aset dest (int idx) (double (v i)))
+                    (recur (inc i) (next n)))
+                (err/key-error! k))
+              dest))
+          (err/key-error! k)))))
 #+END_SRC
 
 ** Reductions
@@ -2000,7 +1998,7 @@
      ,#+clj [thi.ng.macromath.core :as mm]
      ,#+clj [clojure.core.protocols :as cp]))
 
-  (declare V2 V3 vec2 vec3 vec2-reduce* vec3-reduce* swizzle2-fns swizzle3-fns)
+  (declare V2 V3 vec2 vec3 vec2-reduce* vec3-reduce* swizzle-assoc* swizzle2-fns swizzle3-fns)
 
   <<vec2>>
 
