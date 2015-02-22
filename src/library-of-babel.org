@@ -191,3 +191,12 @@ them from other templates.
   g/PVolume
   (volume [_] 0.0)
 #+END_SRC
+** Inject Git revision
+#+NAME: lob-git-rev
+#+BEGIN_SRC emacs-lisp
+  (replace-regexp-in-string
+   "\\`[ \t\n]*" ""
+   (replace-regexp-in-string
+    "[ \t\n]*\\'" ""
+    (shell-command-to-string "git describe --match 'v*.*' --abbrev=4 | cut -d '-' -f 2")))
+#+END_SRC
