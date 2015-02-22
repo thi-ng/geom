@@ -702,6 +702,17 @@ of the code.
                -1 #+clj -1)
             (or default (err/key-error! k)))))))
 
+  (defn swizzle-assoc*
+    [_ ctor keymap k v]
+    (let [n (name k)
+          c (count n)]
+      (if (and (<= c (count keymap)) (== c (count v) (count (into #{} n))))
+        (loop [acc (vec (seq _)), i 0, n n]
+          (if n
+            (recur (assoc acc (keymap (first n)) (v i)) (inc i) (next n))
+            (ctor acc)))
+        (err/key-error! k))))
+
   (defn swizzle4-assoc
     [^Quat4 _ k v]
     (if (number? k)
@@ -716,7 +727,7 @@ of the code.
         :y (Quat4. (.-x _) v (.-z _) (.-w _) -1 #+clj -1)
         :z (Quat4. (.-x _) (.-y _) v (.-w _) -1 #+clj -1)
         :w (Quat4. (.-x _) (.-y _) (.-z _) v -1 #+clj -1)
-        (v/swizzle-assoc* _ quat {\x 0 \y 1 \z 2 \w 3} k v))))
+        (swizzle-assoc* _ quat {\x 0 \y 1 \z 2 \w 3} k v))))
 #+END_SRC
 
 ** Complete namespace definition
