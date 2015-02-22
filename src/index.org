@@ -270,7 +270,7 @@ thi.ng/geom
 #+END_SRC
 
 #+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref cljs-artefact-path
-target/geom-<<version>>.js
+target/geom-<<conf-version()>>.js
 #+END_SRC
 
 ** License
@@ -291,12 +291,12 @@ This project is open source and licensed under the [[http://www.apache.org/licen
 
 ** Leiningen coordinates
 #+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
-  [thi.ng/geom "<<version>>"]
+  [thi.ng/geom "<<conf-version()>>"]
 #+END_SRC
 
 ** Leiningen project file                                          :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
-  (defproject <<project-name>> "<<conf-version>>"
+  (defproject <<project-name>> "<<conf-version()>>"
     :description  "thi.ng geometry kit - meta project spec including all modules"
     :url          "<<conf-project-url>>"
     :license      {:name "Apache Software License"
@@ -305,12 +305,12 @@ This project is open source and licensed under the [[http://www.apache.org/licen
     :scm          {:name "git"
                    :url  "<<conf-project-url>>"}
 
-    :dependencies [<<dep-geom-core>>
-                   <<dep-geom-types>>
-                   <<dep-geom-meshops>>
-                   <<dep-geom-physics>>
-                   <<dep-geom-svg>>
-                   <<dep-geom-webgl>>]
+    :dependencies [[thi.ng/geom-core "<<conf-version()>>"]
+                   [thi.ng/geom-types "<<conf-version()>>"]
+                   [thi.ng/geom-meshops "<<conf-version()>>"]
+                   [thi.ng/geom-physics "<<conf-version()>>"]
+                   [thi.ng/geom-svg "<<conf-version()>>"]
+                   [thi.ng/geom-webgl "<<conf-version()>>"]]
 
     :pom-addition [:developers [:developer
                                 [:name "Karsten Schmidt"]

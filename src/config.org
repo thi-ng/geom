@@ -5,8 +5,14 @@
 ** Injected properties
 
 #+NAME: conf-version
-#+BEGIN_SRC clojure :noweb-ref conf-version
-0.3.0-SNAPSHOT
+#+BEGIN_SRC emacs-lisp
+  (concat
+   "0.0-"
+   (replace-regexp-in-string
+    "\\`[ \t\n]*" ""
+    (replace-regexp-in-string
+     "[ \t\n]*\\'" ""
+     (shell-command-to-string "git describe --match 'v0.0' --dirty | cut -d '-' -f 2,4"))))
 #+END_SRC
 
 #+NAME: conf-project-url
@@ -37,42 +43,6 @@ target/test-classes
 #+NAME: dep-cljs
 #+BEGIN_SRC clojure
 [org.clojure/clojurescript "0.0-2913"]
-#+END_SRC
-
-**** [[https://github.com/thi-ng/geom/][thi.ng/geom-core]]
-#+NAME: dep-geom-core
-#+BEGIN_SRC clojure
-[thi.ng/geom-core "0.3.0-SNAPSHOT"]
-#+END_SRC
-
-**** [[https://github.com/thi-ng/geom/][thi.ng/geom-meshops]]
-#+NAME: dep-geom-meshops
-#+BEGIN_SRC clojure
-[thi.ng/geom-meshops "0.3.0-SNAPSHOT"]
-#+END_SRC
-
-**** [[https://github.com/thi-ng/geom/][thi.ng/geom-types]]
-#+NAME: dep-geom-types
-#+BEGIN_SRC clojure :noweb yes
-[thi.ng/geom-types "0.3.0-SNAPSHOT"]
-#+END_SRC
-
-**** [[https://github.com/thi-ng/geom/][thi.ng/geom-physics]]
-#+NAME: dep-geom-physics
-#+BEGIN_SRC clojure :noweb yes
-[thi.ng/geom-physics "0.3.0-SNAPSHOT"]
-#+END_SRC
-
-**** [[https://github.com/thi-ng/geom/][thi.ng/geom-svg]]
-#+NAME: dep-geom-svg
-#+BEGIN_SRC clojure :noweb yes
-[thi.ng/geom-svg "0.3.0-SNAPSHOT"]
-#+END_SRC
-
-**** [[https://github.com/thi-ng/geom/][thi.ng/geom-webgl]]
-#+NAME: dep-geom-webgl
-#+BEGIN_SRC clojure :noweb yes
-[thi.ng/geom-webgl "0.3.0-SNAPSHOT"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/common/][thi.ng/common]]

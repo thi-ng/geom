@@ -35,7 +35,7 @@ thi.ng/geom-core
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb yes :noweb-ref cljs-artefact-path
-target/geom-core-<<conf-version>>.js
+target/geom-core-<<conf-version()>>.js
 #+END_SRC
 
 ** Release history
@@ -53,13 +53,13 @@ target/geom-core-<<conf-version>>.js
 ** Leiningen coordinates
 
 #+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
-  [<<project-name>> "<<conf-version>>"]
+  [<<project-name>> "<<conf-version()>>"]
 #+END_SRC
 
 ** Leiningen project file                                          :noexport:
 
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
-  (defproject <<project-name>> "<<conf-version>>"
+  (defproject <<project-name>> "<<conf-version()>>"
     :description  "thi.ng geometry kit - core module"
     :url          "<<conf-project-url>>"
     :license      {:name "Apache Software License"
@@ -137,14 +137,14 @@ symbol =version= holding the version string defined above:
   (use 'thi.ng.geom.core.version)
   
   (prn version)
-  ; "<<conf-version>>"
+  ; "<<conf-version()>>"
 #+END_SRC
 
 *** Version namespace                                              :noexport:
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/version.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.version)
-  (def version "<<conf-version>>")
+  (def version "<<conf-version()>>")
 #+END_SRC
 
 * Namespaces

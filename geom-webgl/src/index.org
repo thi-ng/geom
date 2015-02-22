@@ -29,7 +29,7 @@ thi.ng/geom-webgl
 #+END_SRC
 
 #+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref cljs-artefact-path
-target/geom-webgl-<<conf-version>>.js
+target/geom-webgl-<<conf-version()>>.js
 #+END_SRC
 
 *** Dependencies
@@ -55,13 +55,13 @@ target/geom-webgl-<<conf-version>>.js
 ** Leiningen coordinates
 
 #+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
-  [<<project-name>> "<<conf-version>>"]
+  [<<project-name>> "<<conf-version()>>"]
 #+END_SRC
 
 ** Leiningen project file                                          :noexport:
 
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
-  (defproject <<project-name>> "<<conf-version>>"
+  (defproject <<project-name>> "<<conf-version()>>"
     :description  "thi.ng geometry kit - WebGL module"
     :url          "<<conf-project-url>>"
     :license      {:name "Apache Software License"
@@ -73,9 +73,9 @@ target/geom-webgl-<<conf-version>>.js
     :min-lein-version "2.4.0"
 
     :dependencies [<<dep-clj>>
-                   <<dep-geom-core>>
-                   <<dep-geom-types>>
-                   <<dep-geom-meshops>>
+                   [thi.ng/geom-core "<<conf-version()>>"]
+                   [thi.ng/geom-types "<<conf-version()>>"]
+                   [thi.ng/geom-meshops "<<conf-version()>>"]
                    <<dep-color>>
                    <<dep-shaderlib>>]
 
@@ -132,14 +132,14 @@ symbol =version= holding the version string defined above:
   (use 'thi.ng.geom.webgl.version)
   
   (prn version)
-  ; "<<conf-version>>"
+  ; "<<conf-version()>>"
 #+END_SRC
 
 *** Version namespace                                              :noexport:
 
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/version.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.version)
-  (def version "<<conf-version>>")
+  (def version "<<conf-version()>>")
 #+END_SRC
 
 * Namespaces

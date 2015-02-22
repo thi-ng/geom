@@ -12,6 +12,7 @@ defined here are all using the prefix =lob= to clearly differentiate
 them from other templates.
 
 ** Master template builder
+
 #+NAME: lob-geom-tpl
 #+BEGIN_SRC emacs-lisp :var bindings=nil :var src=""
   (reduce
@@ -22,12 +23,15 @@ them from other templates.
 #+END_SRC
 
 ** PArea (zero)
+
 #+NAME: lob-geom-zeroarea
 #+BEGIN_SRC clojure
   g/PArea
   (area [_] 0.0)
 #+END_SRC
+
 ** PBounds
+
 #+NAME: lob-geom-bounds
 #+BEGIN_SRC emacs-lisp :var fn="" :var depth="no"
   (let ((body (replace-regexp-in-string "{{fn}}" fn
@@ -41,6 +45,7 @@ them from other templates.
 #+END_SRC
 
 ** PBoundingCircle
+
 #+NAME: lob-geom-bcircle
 #+BEGIN_SRC clojure
   g/PBoundingCircle
@@ -49,6 +54,7 @@ them from other templates.
 #+END_SRC
 
 ** PBoundingSphere
+
 #+NAME: lob-geom-bsphere
 #+BEGIN_SRC clojure
   g/PBoundingSphere
@@ -57,6 +63,7 @@ them from other templates.
 #+END_SRC
 
 ** PCenter
+
 #+NAME: lob-geom-center
 #+BEGIN_SRC emacs-lisp :var type="" :var vtype=""
   (replace-regexp-in-string
@@ -70,6 +77,7 @@ them from other templates.
 #+END_SRC
 
 ** PCircumference
+
 #+NAME: lob-geom-circum
 #+BEGIN_SRC clojure
   g/PCircumference
@@ -78,6 +86,7 @@ them from other templates.
 #+END_SRC
 
 ** PFlip
+
 #+NAME: lob-geom-flip
 #+BEGIN_SRC emacs-lisp :var type=""
   (replace-regexp-in-string "{{type}}" type
@@ -87,6 +96,7 @@ them from other templates.
 #+END_SRC
 
 ** PPolygonConvert
+
 #+NAME: lob-geom-as-polygon
 #+BEGIN_SRC clojure
   g/PPolygonConvert
@@ -95,6 +105,7 @@ them from other templates.
 #+END_SRC
 
 ** PProximity
+
 #+NAME: lob-geom-proxi
 #+BEGIN_SRC clojure
   g/PProximity
@@ -104,6 +115,7 @@ them from other templates.
 #+END_SRC
 
 ** PRotate
+
 #+NAME: lob-geom-rotate
 #+BEGIN_SRC emacs-lisp :var type=""
   (replace-regexp-in-string "{{type}}" type
@@ -114,6 +126,7 @@ them from other templates.
 #+END_SRC
 
 ** PRotate3D
+
 #+NAME: lob-geom-rotate3d
 #+BEGIN_SRC emacs-lisp :var type=""
   (replace-regexp-in-string "{{type}}" type
@@ -134,6 +147,7 @@ them from other templates.
 #+END_SRC
 
 ** PSample
+
 #+NAME: lob-geom-sample
 #+BEGIN_SRC emacs-lisp :var n="3"
   (replace-regexp-in-string "{{n}}" n
@@ -150,6 +164,7 @@ them from other templates.
 #+END_SRC
 
 ** PScale
+
 #+NAME: lob-geom-scale
 #+BEGIN_SRC emacs-lisp :var type=""
   (replace-regexp-in-string "{{type}}" type
@@ -166,6 +181,7 @@ them from other templates.
 #+END_SRC
 
 ** PTranslate
+
 #+NAME: lob-geom-translate
 #+BEGIN_SRC emacs-lisp :var type=""
   (replace-regexp-in-string "{{type}}" type
@@ -176,6 +192,7 @@ them from other templates.
 #+END_SRC
 
 ** PTransform
+
 #+NAME: lob-geom-tx
 #+BEGIN_SRC emacs-lisp :var type=""
   (replace-regexp-in-string "{{type}}" type
@@ -186,17 +203,9 @@ them from other templates.
 #+END_SRC
 
 ** PVolume (zero)
+
 #+NAME: lob-geom-zerovol
 #+BEGIN_SRC clojure
   g/PVolume
   (volume [_] 0.0)
-#+END_SRC
-** Inject Git revision
-#+NAME: lob-git-rev
-#+BEGIN_SRC emacs-lisp
-  (replace-regexp-in-string
-   "\\`[ \t\n]*" ""
-   (replace-regexp-in-string
-    "[ \t\n]*\\'" ""
-    (shell-command-to-string "git describe --match 'v*.*' --abbrev=4 | cut -d '-' -f 2")))
 #+END_SRC

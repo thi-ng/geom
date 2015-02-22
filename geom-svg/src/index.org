@@ -31,7 +31,7 @@ thi.ng/geom-svg
 #+END_SRC
 
 #+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref cljs-artefact-path
-target/geom-svg-<<conf-version>>.js
+target/geom-svg-<<conf-version()>>.js
 #+END_SRC
 
 #+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref dep-hiccup
@@ -52,13 +52,13 @@ target/geom-svg-<<conf-version>>.js
 ** Leiningen coordinates
 
 #+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
-  [<<project-name>> "<<conf-version>>"]
+  [<<project-name>> "<<conf-version()>>"]
 #+END_SRC
 
 ** Leiningen project file                                          :noexport:
 
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
-  (defproject <<project-name>> "<<conf-version>>"
+  (defproject <<project-name>> "<<conf-version()>>"
     :description  "thi.ng geometry kit - SVG module"
     :url          "<<conf-project-url>>"
     :license      {:name "Apache Software License"
@@ -70,8 +70,9 @@ target/geom-svg-<<conf-version>>.js
     :min-lein-version "2.4.0"
 
     :dependencies [<<dep-clj>>
-                   <<dep-geom-core>>
-                   <<dep-geom-types>>
+                   [thi.ng/geom-core "<<conf-version()>>"]
+                   [thi.ng/geom-types "<<conf-version()>>"]
+                   [thi.ng/geom-meshops "<<conf-version()>>"]
                    <<dep-color>>
                    <<dep-hiccup>>]
 
@@ -79,8 +80,7 @@ target/geom-svg-<<conf-version>>.js
     :test-paths   ["<<conf-gen-test-path>>"]
 
     :profiles     {:dev {:dependencies [<<dep-cljs>>
-                                        <<dep-criterium>>
-                                        <<dep-geom-meshops>>]
+                                        <<dep-criterium>>]
                          :plugins      [<<dep-cljx>>
                                         <<dep-cljsbuild>>
                                         <<dep-cljs-test>>]
@@ -139,14 +139,14 @@ symbol =version= holding the version string defined above:
   (use 'thi.ng.geom.svg.version)
   
   (prn version)
-  ; "<<conf-version>>"
+  ; "<<conf-version()>>"
 #+END_SRC
 
 *** Version namespace                                              :noexport:
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/version.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.version)
-  (def version "<<conf-version>>")
+  (def version "<<conf-version()>>")
 #+END_SRC
 
 * Namespaces
