@@ -548,7 +548,7 @@
   g/PNormal
   (normal
    [_]
-   (let [^doubles b #+clj (double-array) #+cljs (js/Float32Array. 2)]
+   (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
      (aset b 0 (double (- (aget buf 1))))
      (aset b 1 (double (aget buf 0)))
      (Vec2. b nil _meta)))
