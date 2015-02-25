@@ -319,7 +319,7 @@ top-left to bottom-right ordering and inner sorting along X.
             ry (range 0.0 1.0 dy)
             s (g/* (:size _) dx dy)]
         (for [y ry x rx
-              :let [[px py] (g/unmap-point _ [x y])
+              :let [[px py] (g/unmap-point _ (vec2 x y))
                     px (m/roundto px *eps*)
                     py (m/roundto py *eps*)]]
           (thi.ng.geom.types.Rect2. (vec2 px py) s)))))

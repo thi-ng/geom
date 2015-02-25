@@ -15,6 +15,9 @@ main() {
         cd $PROGDIR/$PREFIX$m/babel
         lein deploy clojars
     done
+
+    cd $PROGDIR/babel
+    lein deploy clojars
 }
 
 main
