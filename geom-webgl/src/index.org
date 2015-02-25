@@ -15,14 +15,28 @@ cross-platform source code.
 
 ALPHA quality, in active development.
 
+* Namespaces
+
+- [[./core.org][thi.ng.geom.webgl.core]]
+- [[./animator.org][thi.ng.geom.webgl.animator]]
+- [[./arrays.org][thi.ng.geom.webgl.arrays]]
+- [[./buffers.org][thi.ng.geom.webgl.buffers]]
+- [[./shaders.org][thi.ng.geom.webgl.shaders]]
+- [[./utils.org][thi.ng.geom.webgl.utils]]
+- [[./demo.org][Examples]]
+
+* Module definition
+
 ** Building & testing this project
 
 Please see the [[file:../../src/index.org][parent project]] for further information.
 
-** Injected properties                                             :noexport:
+** Injected properties
 
 This template uses shared project configuration defined in [[../../src/config.org][config.org]].
 Module specific settings are defined below:
+
+*** Properties                                                     :noexport:
 
 #+BEGIN_SRC clojure :exports none :noweb-ref project-name
 thi.ng/geom-webgl
@@ -34,25 +48,13 @@ target/geom-webgl-<<conf-version()>>.js
 
 *** Dependencies
 
-**** [[http://thi.ng/shaderlib][thi.ng/shaderlib]]
+**** [[http://thi.ng/shadergraph][thi.ng/shadergraph]]
 
-#+BEGIN_SRC clojure :exports none :noweb-ref dep-shaderlib
-[thi.ng/shaderlib "0.1.0"]
+#+BEGIN_SRC clojure :exports none :noweb-ref dep-shadergraph
+[thi.ng/shadergraph "0.1.0"]
 #+END_SRC
 
-** Release history
-
-| *Version* | *Released* | *Description*      | *Lein coordinates*      | *Tagged Github URL*                       |
-|-----------+------------+--------------------+-------------------------+-------------------------------------------|
-|     0.2.0 | 2014-03-10 | 1st public release | =[thi.ng/geom "0.2.0"]= | https://github.com/thi-ng/geom/tree/0.2.0 |
-
-** Contributors
-
-| *Name*          | *Role*                          | *Website*           |
-| [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://postspectacular.com][postspectacular.com]] |
-|                 |                                 | [[http://thi.ng][thi.ng]]              |
-
-** Leiningen coordinates
+** Leiningen coordinates                                           :noexport:
 
 #+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
   [<<project-name>> "<<conf-version()>>"]
@@ -77,7 +79,7 @@ target/geom-webgl-<<conf-version()>>.js
                    [thi.ng/geom-types "<<conf-version()>>"]
                    [thi.ng/geom-meshops "<<conf-version()>>"]
                    <<dep-color>>
-                   <<dep-shaderlib>>]
+                   <<dep-shadergraph>>]
 
     :profiles {:dev {:dependencies [<<dep-cljs>>
                                     <<dep-criterium>>]
@@ -142,15 +144,8 @@ symbol =version= holding the version string defined above:
   (def version "<<conf-version()>>")
 #+END_SRC
 
-* Namespaces
+** Contributors
 
-- [[./core.org][thi.ng.geom.webgl.core]]
-- [[./animator.org][thi.ng.geom.webgl.animator]]
-- [[./arrays.org][thi.ng.geom.webgl.arrays]]
-- [[./buffers.org][thi.ng.geom.webgl.buffers]]
-- [[./shaders.org][thi.ng.geom.webgl.shaders]]
-- [[./utils.org][thi.ng.geom.webgl.utils]]
-- [[./demo.org][examples]]
-
-* Tests
-
+| *Name*          | *Role*                          | *Website*           |
+| [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://postspectacular.com][postspectacular.com]] |
+|                 |                                 | [[http://thi.ng][thi.ng]]              |

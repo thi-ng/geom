@@ -154,60 +154,18 @@ A full test suite, website & tutorials are actively being worked on.
 
 A preliminary list of other projects using this library:
 
+- [[http://holiday2014.movingbrands.com][MB Home installation]]
 - [[https://github.com/postspectacular/devart-codefactory/][Google DevArt Co(de)Factory]]
 - [[http://github.com/learn-postspectacular/resonate-2014-workshop][Resonate 2014 workshop]]
 - [[http://github.com/thi-ng/luxor][Luxor]]
 - [[http://github.com/thi-ng/morphogen][Morphogen]]
-- [[http://dev.thi.ng/20140523/][WebGL demo]]
+- [[http://thi.ng/][thi.ng website]]
 
-The basic examples below show some common usage patterns how entities
-can be created, dissected & transformed in a very functional/pipelined
-way. Each results in a 3D model file in PLY/STL formats and can
-then be imported into other 3D software. If you need a simple mesh
-viewer, we recommend [[http://meshlab.sf.net][Meshlab]].
+Several small examples are include in this repo:
 
-#+BEGIN_SRC clojure
-  (require
-   '[thi.ng.geom.core :as g]
-   '[thi.ng.geom.bezier :as b]
-   '[thi.ng.geom.circle :as c]
-   '[thi.ng.geom.polygon :as p]
-   '[thi.ng.geom.rect :as r]
-   '[thi.ng.geom.gmesh :as gm]
-   '[thi.ng.geom.mesh.io :as mio]
-   '[thi.ng.common.math.core :as m]
-   '[clojure.java.io :as io])
-  
-  (with-open [out (io/output-stream "grid.ply")]
-    (->> (for [x (range -4 5)                        ;; create 9x9 grid in XY plane
-               y (range -4 5)]
-           (-> (c/circle x y 0.5)                    ;; create circle at X,Y radius=0.5
-               (g/as-polygon 8)                      ;; convert into octagon
-               (g/extrude-shell                      ;; convert into walled, cylindrical mesh
-                {:depth (m/random 0.25 2)
-                 :wall 0.1})))
-         (reduce g/into)                             ;; combine into single mesh
-         (mio/write-ply out)))                       ;; output as Stanford PLY file
-  
-  (with-open [out (io/output-stream "pedals.stl")]
-    (let [pedal (-> (r/rect 100 60)                  ;; create rect 100x60 wide
-                    (g/vertices)                     ;; get corner points
-                    (b/auto-spline2 true)            ;; convert to spline
-                    (g/sample-uniform 10 false)      ;; sample curve at uniform distance
-                    (p/polygon)                      ;; convert to polygon
-                    (g/as-mesh))]                    ;; tessellate & convert to mesh
-      (->> (range 16)
-           (map
-            (fn [i]
-              (-> pedal                              ;; replicate rotated around X & Z axis
-                  (g/transform                       ;; pedal transformed using 4x4 matrix
-                   (-> (g/matrix44)
-                       (g/translate 0 0 (* i 2))
-                       (g/rotate-z (* i m/PHI 0.5))  ;; Φ = golden ratio angle
-                       (g/rotate-x (* m/PI 0.1)))))));; slight tilt to minimize overlap
-           (reduce g/into)                           ;; combine into single mesh
-           (mio/write-stl out))))                    ;; output as Stanford PLY file
-#+END_SRC
+- [[geom-types/src/ptf.org][PTF examples]]
+- [[geom-svg/src/examples.org][SVG examples]]
+- [[geom-webgl/src/demo.org][WebGL demos]]
 
 ** Building & testing this project
 
@@ -273,25 +231,9 @@ thi.ng/geom
 target/geom-<<conf-version()>>.js
 #+END_SRC
 
-** License
-
-This project is open source and licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache Software License 2.0]].
-
-** Release history
-
-| *Version* | *Released* | *Description*      | *Lein coordinates*      | *Tagged Github URL*                       |
-|-----------+------------+--------------------+-------------------------+-------------------------------------------|
-|     0.2.0 | 2014-03-10 | 1st public release | =[thi.ng/geom "0.2.0"]= | https://github.com/thi-ng/geom/tree/0.2.0 |
-
-** Authors
-
-| *Name*          | *Role*                          | *Website*           |
-| [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://postspectacular.com][postspectacular.com]] |
-|                 |                                 | [[http://thi.ng][thi.ng]]              |
-
 ** Leiningen coordinates
 #+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
-  [thi.ng/geom "<<conf-version()>>"]
+  [thi.ng/geom "0.0-710"]
 #+END_SRC
 
 ** Leiningen project file                                          :noexport:
@@ -317,3 +259,21 @@ This project is open source and licensed under the [[http://www.apache.org/licen
                                 [:url "http://postspectacular.com"]
                                 [:timezone "0"]]])
 #+END_SRC
+
+** Release history
+
+| *Version* | *Released* | *Lein coordinates*        | *Tagged Github URL* |
+|-----------+------------+---------------------------+---------------------|
+|   0.0-710 | 2014-03-10 | =[thi.ng/geom "0.0-710"]= | [[https://github.com/thi-ng/geom/tree/0.0-710][0.0-710]]             |
+|   0.0-709 | 2014-03-10 | =[thi.ng/geom "0.0-709"]= | [[https://github.com/thi-ng/geom/tree/0.0-709][0.0-709]]             |
+|     0.2.0 | 2014-03-10 | =[thi.ng/geom "0.2.0"]=   | [[https://github.com/thi-ng/geom/tree/0.2.0][0.2.0]]               |
+
+** Contributors
+
+| *Name*          | *Role*                          | *Website*           |
+| [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://postspectacular.com][postspectacular.com]] |
+|                 |                                 | [[http://thi.ng][thi.ng]]              |
+
+** License
+
+This project is open source and licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache Software License 2.0]].

@@ -21,6 +21,22 @@ the other library modules).
 
 ALPHA quality, in active development.
 
+* Namespaces
+
+- [[./core.org][thi.ng.geom.core]]
+- [[./intersect.org][thi.ng.geom.core.intersect]]
+- [[./matrix.org][thi.ng.geom.core.matrix]]
+- [[./quaternion.org][thi.ng.geom.core.quaternion]]
+- [[./subdiv.org][thi.ng.geom.core.subdiv]]
+- [[./utils.org][thi.ng.geom.core.utils]]
+- [[./vector.org][thi.ng.geom.core.vector]]
+
+* Tests
+
+- [[../test/core.org][thi.ng.geom.core.test.core]]
+
+* Module definition
+
 ** Building & testing this project
 
 Please see the [[file:../../src/index.org][parent project]] for further information.
@@ -38,19 +54,7 @@ thi.ng/geom-core
 target/geom-core-<<conf-version()>>.js
 #+END_SRC
 
-** Release history
-
-| *Version* | *Released* | *Description*      | *Lein coordinates*      | *Tagged Github URL*                       |
-|-----------+------------+--------------------+-------------------------+-------------------------------------------|
-|     0.2.0 | 2014-03-10 | 1st public release | =[thi.ng/geom "0.2.0"]= | https://github.com/thi-ng/geom/tree/0.2.0 |
-
-** Contributors
-
-| *Name*          | *Role*                          | *Website*           |
-| [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://postspectacular.com][postspectacular.com]] |
-|                 |                                 | [[http://thi.ng][thi.ng]]              |
-
-** Leiningen coordinates
+** Leiningen coordinates                                           :noexport:
 
 #+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
   [<<project-name>> "<<conf-version()>>"]
@@ -147,16 +151,8 @@ symbol =version= holding the version string defined above:
   (def version "<<conf-version()>>")
 #+END_SRC
 
-* Namespaces
+** Contributors
 
-- [[./core.org][thi.ng.geom.core]]
-- [[./intersect.org][thi.ng.geom.core.intersect]]
-- [[./matrix.org][thi.ng.geom.core.matrix]]
-- [[./quaternion.org][thi.ng.geom.core.quaternion]]
-- [[./subdiv.org][thi.ng.geom.core.subdiv]]
-- [[./utils.org][thi.ng.geom.core.utils]]
-- [[./vector.org][thi.ng.geom.core.vector]]
-
-* Tests
-
-- [[../test/core.org][thi.ng.geom.core.test.core]]
+| *Name*          | *Role*                          | *Website*           |
+| [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://postspectacular.com][postspectacular.com]] |
+|                 |                                 | [[http://thi.ng][thi.ng]]              |
