@@ -64,7 +64,7 @@
              - [[#pboundingcircle][PBoundingCircle]]
              - [[#pcenter][PCenter]]
              - [[#pcircumference][PCircumference]]
-             - [[#todo-pboundary][TODO PBoundary]]
+             - [[#todo-pclassify][TODO PClassify]]
              - [[#pextrude][PExtrude]]
              - [[#todo-pgraph][TODO PGraph]]
              - [[#todo-pintersect][TODO PIntersect]]
@@ -72,7 +72,7 @@
              - [[#pproximity][PProximity]]
              - [[#todo-preflect][TODO PReflect]]
              - [[#psample][PSample]]
-             - [[#todo-ptransform][TODO PTransform]]
+             - [[#ptransform][PTransform]]
              - [[#pvolume][PVolume]]
              - [[#end-of-implementations][End of implementations]]
      - [[#todo-linestrip3][TODO LineStrip3]]
@@ -83,7 +83,7 @@
              - [[#pboundingsphere][PBoundingSphere]]
              - [[#pcenter][PCenter]]
              - [[#pcircumference][PCircumference]]
-             - [[#todo-pboundary][TODO PBoundary]]
+             - [[#todo-pclassify][TODO PClassify]]
              - [[#pextrude][PExtrude]]
              - [[#todo-pgraph][TODO PGraph]]
              - [[#todo-pintersect][TODO PIntersect]]
@@ -91,7 +91,7 @@
              - [[#pproximity][PProximity]]
              - [[#todo-preflect][TODO PReflect]]
              - [[#psample][PSample]]
-             - [[#todo-ptransform][TODO PTransform]]
+             - [[#ptransform][PTransform]]
              - [[#pvolume][PVolume]]
              - [[#end-of-implementations][End of implementations]]
      - [[#namespace-declaration][Namespace declaration]]
@@ -519,7 +519,7 @@ further below.
   (circumference
    [_] (g/mag _))
 #+END_SRC
-**** TODO PBoundary
+**** TODO PClassify
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
   g/PClassify
   (classify-point [_ v])
@@ -602,7 +602,7 @@ further below.
    [_ udist include-last?]
    (gu/sample-uniform udist include-last? (:points _)))
 #+END_SRC
-**** TODO PTransform
+**** PTransform
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
   g/PRotate
   (rotate
@@ -670,7 +670,7 @@ further below.
   (circumference
    [_] (g/mag _))
 #+END_SRC
-**** TODO PBoundary
+**** TODO PClassify
 #+BEGIN_SRC clojure :noweb-ref impl-ls3
   g/PClassify
   (classify-point [_ v])
@@ -732,7 +732,8 @@ further below.
   <<lob-geom-proxi>>
 #+END_SRC
 **** TODO PReflect
-***** TODO add support for reflect-on-line
+     - Note taken on [2015-03-15 Sun 01:19] \\
+       add support for reflect-on-line
 #+BEGIN_SRC clojure :noweb-ref impl-ls3
   g/PReflect
   (reflect
@@ -752,18 +753,27 @@ further below.
    [_ udist include-last?]
    (gu/sample-uniform udist include-last? (:points _)))
 #+END_SRC
-**** TODO PTransform
+**** PTransform
 #+BEGIN_SRC clojure :noweb-ref impl-ls3
   g/PRotate
-  (rotate
+  (rotate-around-axis
+   [_ axis theta]
+   (thi.ng.geom.types.LineStrip3. (mapv #(g/rotate-around-axis % axis theta) (:points _))))
+  (rotate-x
    [_ theta]
-   (thi.ng.geom.types.LineStrip3. (mapv #(g/rotate % theta) (:points _))))
+   (thi.ng.geom.types.LineStrip3. (mapv #(g/rotate-x % theta) (:points _))))
+  (rotate-y
+   [_ theta]
+   (thi.ng.geom.types.LineStrip3. (mapv #(g/rotate-y % theta) (:points _))))
+  (rotate-z
+   [_ theta]
+   (thi.ng.geom.types.LineStrip3. (mapv #(g/rotate-z % theta) (:points _))))
   g/PScale
   (scale
    ([_ s]
-      (thi.ng.geom.types.LineStrip3. (mapv #(g/* % s) (:points _))))
+    (thi.ng.geom.types.LineStrip3. (mapv #(g/* % s) (:points _))))
    ([_ sx sy]
-      (thi.ng.geom.types.LineStrip3. (mapv #(g/* % sx sy) (:points _)))))
+    (thi.ng.geom.types.LineStrip3. (mapv #(g/* % sx sy) (:points _)))))
   (scale-size
    [_ s]
    (thi.ng.geom.types.LineStrip3. (gu/scale-size s (:points _))))
