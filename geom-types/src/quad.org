@@ -153,12 +153,12 @@ than 1.0.
                          (->> (g/scale-size _ scale)
                               (g/vertices)
                               (map #(g/+ offset %))))
-         [n s e w f b*] (d/demunge-flags-seq flags "nsewfb")]
+         [n s e w f b'] (d/demunge-flags-seq flags "nsewfb")]
      (->> [(if n [d2 c2 c d])
            (if s [b2 a2 a b])
            (if e [c2 b2 b c])
            (if w [a2 d2 d a])
-           (if b* [a2 b2 c2 d2])
+           (if b' [a2 b2 c2 d2])
            (if f [d c b a])]
           (filter identity)
           (map order)
@@ -289,7 +289,7 @@ function returns a lazyseq of triangles of the subdivided quad.
    ([{[a b c d] :points}]
       [(thi.ng.geom.types.Triangle3. [a b c])
        (thi.ng.geom.types.Triangle3. [a c d])])
-   ([_ {tess-fn :fn :or {tess-fn gu/tessellate-with-first} :as opts}]
+   ([_ {tess-fn :fn :or {tess-fn gu/tessellate-3} :as opts}]
       (->> (g/subdivide _ opts)
            (mapcat #(tess-fn (:points %)))
            (map #(thi.ng.geom.types.Triangle3. %)))))
