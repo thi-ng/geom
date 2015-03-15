@@ -3,7 +3,6 @@
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomrect][thi.ng.geom.rect]]
      - [[#constructor][Constructor]]
-         - [[#todo-replace-sequential-w-coll][TODO replace sequential? w/ coll?]]
      - [[#type-specific-functions][Type specific functions]]
      - [[#protocol-implementations][Protocol implementations]]
          - [[#parea][PArea]]
@@ -23,7 +22,7 @@
          - [[#psample][PSample]]
          - [[#todo-psetops][TODO PSetOps]]
          - [[#psubdivide][PSubdivide]]
-         - [[#todo-ptessellate][TODO PTessellate]]
+         - [[#ptessellate][PTessellate]]
          - [[#todo-ptransform][TODO PTransform]]
          - [[#pvolume][PVolume]]
          - [[#end-of-implementations][End of implementations]]
@@ -32,14 +31,13 @@
 * thi.ng.geom.rect
 
 ** Constructor
-*** TODO replace sequential? w/ coll?
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn rect
     ([] (thi.ng.geom.types.Rect2. (vec2) (vec2 1.0)))
     ([w] (thi.ng.geom.types.Rect2. (vec2) (vec2 w)))
     ([p q]
-       (if (sequential? p)
-         (if (sequential? q)
+       (if (coll? p)
+         (if (coll? q)
            (let [p (vec2 p) q (vec2 q)
                  [p q] [(g/min p q) (g/max p q)]]
              (thi.ng.geom.types.Rect2. p (g/- q p)))
@@ -260,6 +258,8 @@ than 1.0.
 #+END_SRC
 
 *** TODO PSetOps
+    - Note taken on [2015-03-15 Sun 01:31] \\
+      same as for PSetOps impl for AABB: consider only impls for ops retaining type
 
 The implementations for this protocol are only intended to work with
 other rects and no type checking is done.
@@ -325,7 +325,7 @@ top-left to bottom-right ordering and inner sorting along X.
           (thi.ng.geom.types.Rect2. (vec2 px py) s)))))
 #+END_SRC
 
-*** TODO PTessellate
+*** PTessellate
 
 A rectangle can be tessellated into a number of triangles. When
 called without options map as 2nd argument, the rect will be split
@@ -338,10 +338,12 @@ of triangles of the subdivided rects.
   g/PTessellate
   (tessellate
    ([_]
-      (let [[a b c d] (g/vertices _)]
-        [(thi.ng.geom.types.Triangle2. a b c) (thi.ng.geom.types.Triangle2. a c d)]))
-   ([_ opts]
-      (mapcat g/tessellate (g/subdivide _ opts))))
+    (let [[a b c d] (g/vertices _)]
+      [(thi.ng.geom.types.Triangle2. [a b c]) (thi.ng.geom.types.Triangle2. [a c d])]))
+   ([_ {tess-fn :fn :or {tess-fn gu/tessellate-3} :as opts}]
+    (->> (g/subdivide _ opts)
+         (mapcat #(tess-fn (g/vertices %)))
+         (map #(thi.ng.geom.types.Triangle2. %)))))
 #+END_SRC
 *** TODO PTransform
 #+BEGIN_SRC clojure :noweb-ref impl
