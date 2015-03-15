@@ -12,14 +12,14 @@
          - [[#pgraph][PGraph]]
          - [[#pmeshconvert][PMeshConvert]]
          - [[#pproximity][PProximity]]
-         - [[#todo-psample][TODO PSample]]
+         - [[#psample][PSample]]
          - [[#end-of-implementations][End of implementations]]
      - [[#todo-bezier3][TODO Bezier3]]
          - [[#pedgeaccess-pvertexaccess][PEdgeAccess, PVertexAccess]]
          - [[#pgraph][PGraph]]
          - [[#pmeshconvert][PMeshConvert]]
          - [[#pproximity][PProximity]]
-         - [[#todo-psample][TODO PSample]]
+         - [[#psample][PSample]]
          - [[#end-of-implementations][End of implementations]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
@@ -186,7 +186,7 @@ required control points. This only works for non-closed curves, though.
    (gu/closest-point-on-segments p (g/edges _)))
 #+END_SRC
 
-*** TODO PSample
+*** PSample
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   g/PSample
   (point-at
@@ -256,7 +256,7 @@ required control points. This only works for non-closed curves, though.
    (gu/closest-point-on-segments p (g/edges _)))
 #+END_SRC
 
-*** TODO PSample
+*** PSample
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   g/PSample
   (point-at

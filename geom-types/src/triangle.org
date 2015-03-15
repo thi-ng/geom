@@ -261,7 +261,6 @@
 #+END_SRC
 
 ** Protocol implementations
-
 *** Triangle2
 #+BEGIN_SRC clojure :noweb-ref impl2
   (extend-type thi.ng.geom.types.Triangle2
@@ -407,7 +406,8 @@
   <<tpl-graph>>
 #+END_SRC
 **** TODO PIntersect
-***** TODO update ray definition or protocol?
+     - Note taken on [2015-03-15 Sun 01:47] \\
+       update ray definition or protocol?
 #+BEGIN_SRC clojure :noweb-ref impl3
   g/PIntersect
   (intersect-ray

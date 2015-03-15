@@ -222,6 +222,8 @@ Also see: [[file:~/work/clj/thing/geom/geom-core/src/utils.org::Interpolation][m
 #+END_SRC
 
 *** TODO PProximity                                                     :fix:
+    - Note taken on [2015-03-15 Sun 01:06] \\
+      either calc barycentric coords for quad or use triangles (already implemented)
 
 Do not use, work in progress...
 
@@ -324,6 +326,8 @@ from the first vertex of the original with inner sorting over XYZ.
 #+END_SRC
 
 *** TODO PVolume                                                        :fix:
+    - Note taken on [2015-03-15 Sun 01:09] \\
+      calc via tetrahedrons
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PVolume

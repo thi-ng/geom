@@ -7,7 +7,6 @@
      - [[#stl][STL]]
      - [[#ply][PLY]]
      - [[#todo-obj][TODO OBJ]]
-         - [[#todo-update-to-use-protocols][TODO update to use protocols]]
      - [[#off][OFF]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
@@ -92,7 +91,8 @@
       stream))
 #+END_SRC
 ** TODO OBJ
-*** TODO update to use protocols
+   - Note taken on [2015-03-15 Sun 01:49] \\
+     update to use protocols
 #+BEGIN_SRC clojure :noweb-ref obj
   (defn write-obj
     [^OutputStream stream {:keys [vertices vnormals faces]}]

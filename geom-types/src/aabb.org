@@ -263,6 +263,8 @@ front, back (see diagram below).
 #+END_SRC
 
 *** TODO PSetOps
+    - Note taken on [2015-03-15 Sun 00:50] \\
+      Maybe `difference` isn't suitable here and should only implement ops which retain AABB type. Difference already implemented in csg ns
 
 The implementations for this protocol are only intended to work with
 other AABBs and no type checking is done.
@@ -329,6 +331,8 @@ of the original with inner sorting over XYZ.
 
 *** TODO PTessellate
 **** TODO Only keep faces on the surface of the original box (no inside walls)
+    - Note taken on [2015-03-15 Sun 00:55] \\
+      could use Quad3 face tessellation, but would require moving Q3's subdivision into utils ns to avoid circular dependency.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PTessellate
