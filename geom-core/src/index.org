@@ -119,10 +119,17 @@ target/geom-core-<<conf-version()>>.js
                              :output-path "<<conf-gen-test-path>>"
                              :rules :cljs}]}
 
-    :cljsbuild    {:builds [{:source-paths ["<<conf-gen-source-path>>" "<<conf-gen-test-path>>"]
-                             :id "simple"
+    :cljsbuild    {:builds [{:id "simple"
+                             :source-paths ["<<conf-gen-source-path>>" "<<conf-gen-test-path>>"]
                              :compiler {:output-to "<<cljs-artefact-path>>"
                                         :optimizations :whitespace
+                                        :pretty-print true}}
+                            {:id "bench"
+                             :source-paths ["<<conf-gen-source-path>>" "<<conf-gen-test-path>>" "benchmarks"]
+                             :notify-command ["node" "target/cljs/benchmark.js"]
+                             :compiler {:target :nodejs
+                                        :output-to "target/cljs/benchmark.js"
+                                        :optimizations :simple
                                         :pretty-print true}}]
                    :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}}
 
