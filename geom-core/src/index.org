@@ -92,8 +92,7 @@ target/geom-core-<<conf-version()>>.js
     :perforate {:environments [{:namespaces [thi.ng.geom.bench.core.vector]}]}
 
     :profiles     {:dev {:dependencies [<<dep-cljs>>
-                                        <<dep-criterium>>
-                                        <<dep-perforate>>]
+                                        <<dep-perforate-x>>]
                          :plugins      [<<dep-cljx>>
                                         <<dep-cljsbuild>>
                                         <<dep-cljs-test>>

@@ -149,12 +149,11 @@
 #+BEGIN_SRC clojure :tangle ../babel/benchmarks/thi/ng/geom/bench/core/vector.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.bench.core.vector
     (:require
-     [perforate.core]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.common.math.core :as m :refer [*eps* HALF_PI PI]]
-     [thi.ng.geom.bench.core :refer [defgoal defcase]]))
+     [perforate-x.core :refer :all]))
 
   <<helpers>>
 
@@ -168,7 +167,7 @@
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.common.math.core :as m :refer [*eps* HALF_PI PI]]
-     [thi.ng.geom.bench.core :refer [defcase defgoal run-goals]]))
+     [perforate-x.core :refer :all]))
 
   <<helpers>>
 
