@@ -7,7 +7,7 @@
 #+NAME: conf-version
 #+BEGIN_SRC emacs-lisp
   (concat
-   "0.0-"
+   "0.0."
    (replace-regexp-in-string
     "\\`[ \t\n]*" ""
     (replace-regexp-in-string
@@ -87,4 +87,18 @@ target/test-classes
 #+BEGIN_SRC clojure
 [com.cemerick/clojurescript.test "0.3.3"]
 #+END_SRC
-
+**** [[https://github.com/davidsantiago/perforate][perforate]]
+#+NAME: dep-perforate
+#+BEGIN_SRC clojure
+[perforate "0.3.4"]
+#+END_SRC
+**** [[https://github.com/RyanMcG/lein-npm][lein-npm]]
+#+NAME: dep-lein-npm
+#+BEGIN_SRC clojure
+[lein-npm "0.5.0"]
+#+END_SRC
+**** [[https://www.npmjs.com/package/benchmark][node benchmark]]
+#+NAME: dep-npm-benchmark
+#+BEGIN_SRC clojure
+[benchmark "1.0.0"]
+#+END_SRC

@@ -35,6 +35,14 @@ ALPHA quality, in active development.
 
 - [[../test/core.org][thi.ng.geom.core.test.core]]
 
+* Benchmarks
+
+Benchmarks are in the process of being worked and use [[https://github.com/davidsantiago/perforate][lein-perforate]]
+(Criterium) and the npm [[https://www.npmjs.com/package/benchmark][benchmark]] package (for CLJS). Results are
+available in this spreadsheet:
+
+[[https://docs.google.com/spreadsheets/d/15VBRlZMa0iY2HZEPQ0pFevp3Pzlfi0f2z944LsJD6O8/edit?usp%3Dsharing][Benchmark results]]
+
 * Module definition
 
 ** Building & testing this project
@@ -81,11 +89,17 @@ target/geom-core-<<conf-version()>>.js
     :source-paths ["src/cljx"]
     :test-paths   ["<<conf-gen-test-path>>"]
 
+    :perforate {:environments [{:namespaces [thi.ng.geom.bench.core.vector]}]}
+
     :profiles     {:dev {:dependencies [<<dep-cljs>>
-                                        <<dep-criterium>>]
+                                        <<dep-criterium>>
+                                        <<dep-perforate>>]
                          :plugins      [<<dep-cljx>>
                                         <<dep-cljsbuild>>
-                                        <<dep-cljs-test>>]
+                                        <<dep-cljs-test>>
+                                        <<dep-perforate>>
+                                        <<dep-lein-npm>>]
+                         :node-dependencies [<<dep-npm-benchmark>>]
                          :global-vars {*warn-on-reflection* true}
                          :jvm-opts ^:replace []
                          :auto-clean false
