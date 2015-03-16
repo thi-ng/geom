@@ -14,7 +14,7 @@
          - [[#pclassify][PClassify]]
          - [[#pextrude][PExtrude]]
          - [[#pgraph][PGraph]]
-         - [[#todo-pintersect][TODO PIntersect]]
+         - [[#pintersect][PIntersect]]
          - [[#pmeshconvert][PMeshConvert]]
          - [[#ppointmap][PPointMap]]
          - [[#ppolygonconvert][PPolygonConvert]]
@@ -182,19 +182,27 @@ than 1.0.
    [_ v] (if ((set (g/vertices _)) (vec2 v)) 2 0))
 #+END_SRC
 
-*** TODO PIntersect
+*** PIntersect
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PIntersect
   (intersect-line
-   [_ l])
+   [_ {[p q] :points}]
+   (if (and (g/contains-point? _ p) (g/contains-point? _ q))
+     {:type :coincident}
+     (isec/intersect-line2-edges? p q (g/edges _))))
   (intersect-ray
-   [_ r])
+   ([_ ray]
+    (let [[p dir] (if (map? ray) [(:p ray) (:dir ray)] ray)]
+      (isec/intersect-ray2-edges? p dir (g/edges _))))
+   ([_ p dir]
+    (isec/intersect-ray2-edges? p dir (g/edges _))))
   (intersect-shape
    [_ s]
    (cond
-    (instance? thi.ng.geom.types.Rect2 s) (isec/intersect-rect-rect? _ s)
-    (instance? thi.ng.geom.types.Circle2 s) (isec/intersect-aabb-sphere? _ s)
-    :default (err/type-error! "Rect2" s)))
+     (instance? thi.ng.geom.types.Line2 s) (g/intersect-line _ s)
+     (instance? thi.ng.geom.types.Rect2 s) (isec/intersect-rect-rect? _ s)
+     (instance? thi.ng.geom.types.Circle2 s) (isec/intersect-aabb-sphere? _ s)
+     :default (err/unsupported! (str "can't intersect w/ " s))))
 #+END_SRC
 
 *** PMeshConvert                                                     :verify:

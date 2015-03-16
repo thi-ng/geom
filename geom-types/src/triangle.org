@@ -22,6 +22,7 @@
              - [[#pextrude][PExtrude]]
              - [[#pflip][PFlip]]
              - [[#pgraph][PGraph]]
+             - [[#pintersect][PIntersect]]
              - [[#pmeshconvert][PMeshConvert]]
              - [[#ppolygonconvert][PPolygonConvert]]
              - [[#pproximity][PProximity]]
@@ -314,6 +315,23 @@
 **** PGraph                                                     :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<tpl-graph>>
+#+END_SRC
+**** PIntersect
+     - Note taken on [2015-03-15 Sun 01:47] \\
+       update ray definition or protocol?
+#+BEGIN_SRC clojure :noweb-ref impl2
+  g/PIntersect
+  (intersect-line
+   [_ {[p q] :points}]
+   (if (and (g/contains-point? _ p) (g/contains-point? _ q))
+     {:type :coincident}
+     (isec/intersect-line2-edges? p q (g/edges _))))
+  (intersect-ray
+   ([_ ray]
+    (let [[p dir] (if (map? ray) [(:p ray) (:dir ray)] ray)]
+      (isec/intersect-ray2-edges? p dir (g/edges _))))
+   ([_ p dir]
+    (isec/intersect-ray2-edges? p dir (g/edges _))))
 #+END_SRC
 **** PMeshConvert                                                       :fix:
 #+BEGIN_SRC clojure :noweb-ref impl2
