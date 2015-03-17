@@ -137,19 +137,20 @@
   (as-mesh
    ([_] (g/as-mesh _ {}))
    ([_ {:keys [p width height size mesh] :or {size 1.0}}]
-      (let [w (* (or width size) 0.5)
-            h (* (or height size) 0.5)
-            flip? (m/delta= -1.0 (g/dot (:n _) v/V3Z))
-            p (g/closest-point _ (or p (vec3)))
-            q (if flip?
-                (q/quat 0 0 0 1)
-                (q/alignment-quat v/V3Z (:n _)))
-            [a b c d] (map #(g/+ p (g/transform-vector q %))
-                           [(vec3 (- w) (- h) 0) (vec3 (- w) h 0)
-                            (vec3 w h 0) (vec3 w (- h) 0)])]
-        (gm/add-face
-         (or mesh (gm/gmesh))
-         (if flip? [a b c d] [d c b a])))))
+    (let [w     (* (or width size) 0.5)
+          h     (* (or height size) 0.5)
+          flip? (m/delta= -1.0 (g/dot (:n _) v/V3Z))
+          p     (g/closest-point _ (or p (vec3)))
+          q     (if flip?
+                  (q/quat 0 0 0 1)
+                  (q/alignment-quat v/V3Z (:n _)))
+          face  (mapv
+                 #(g/+ p (g/transform-vector q %))
+                 [(vec3 (- w) (- h) 0) (vec3 (- w) h 0)
+                  (vec3 w h 0) (vec3 w (- h) 0)])]
+      (g/into
+       (or mesh (bm/basic-mesh))
+       [(if flip? face (rseq face))]))))
 #+END_SRC
 *** PProximity
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -199,7 +200,7 @@
      [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec3]]
      [thi.ng.geom.core.quaternion :as q]
-     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.error :as err]

@@ -103,7 +103,7 @@ quad.
 #+END_SRC
 *** PCenter                                                     :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
-  <<lob-geom-center(type="thi.ng.geom.types.Quad3")>>
+  <<lob-geom-center(type="thi.ng.geom.types.Quad3",vtype="vec3")>>
   (centroid [_] (gu/centroid (:points _)))
 #+END_SRC
 *** PCircumference                                              :usetemplate:
@@ -115,9 +115,7 @@ quad.
   g/PClassify
   (classify-point
    [_ p]
-   (->> (g/edges _)
-        (map #(g/classify-point (thi.ng.geom.types.Line3. %) p))
-        (reduce min)))
+   (transduce (map #(g/classify-point (thi.ng.geom.types.Line3. %) p)) min (g/edges _)))
 #+END_SRC
 *** TODO PExtrude
 
@@ -147,12 +145,11 @@ than 1.0.
          norm (gu/ortho-normal a b c)
          offset (or offset (g/* norm depth))
          dp (g/dot norm (g/normalize offset))
-         order (if (neg? dp) rseq identity)
          [a2 b2 c2 d2] (if (== 1.0 scale)
-                         (map #(g/+ offset %) v)
+                         (mapv #(g/+ offset %) v)
                          (->> (g/scale-size _ scale)
                               (g/vertices)
-                              (map #(g/+ offset %))))
+                              (mapv #(g/+ offset %))))
          [n s e w f b'] (d/demunge-flags-seq flags "nsewfb")]
      (->> [(if n [d2 c2 c d])
            (if s [b2 a2 a b])
@@ -160,9 +157,13 @@ than 1.0.
            (if w [a2 d2 d a])
            (if b' [a2 b2 c2 d2])
            (if f [d c b a])]
-          (filter identity)
-          (map order)
-          (g/into (or mesh (gm/gmesh))))))
+          (eduction
+           (if (neg? dp)
+             (comp
+              (filter identity)
+              (map rseq))
+             (filter identity)))
+          (g/into (or mesh (bm/basic-mesh))))))
   (extrude-shell
    [_ opts] nil)
 #+END_SRC
@@ -208,7 +209,7 @@ A quad's mesh representation is simply a quad mesh with a single face.
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([_ opts] (g/add-face (or (:mesh opts) (gm/gmesh)) (:points _))))
+   ([_ opts] (g/add-face (or (:mesh opts) (bm/basic-mesh)) (:points _))))
 #+END_SRC
 *** TODO PPointMap
 
@@ -270,7 +271,7 @@ default for missing args.
    ([{:keys [points]} {:keys [num cols rows] :or {num 2}}]
       (let [ru (d/successive-nth 2 (m/norm-range (or cols num)))
             rv (d/successive-nth 2 (m/norm-range (or rows num)))
-            map-p (fn [p] (->> p (gu/map-bilinear points) (map #(m/roundto % *eps*)) vec3))]
+            map-p (fn [p] (->> p (gu/map-bilinear points) (mapv #(m/roundto % *eps*)) vec3))]
         (for [[v1 v2] rv, [u1 u2] ru]
           (thi.ng.geom.types.Quad3.
            [(map-p [u1 v1]) (map-p [u2 v1]) (map-p [u2 v2]) (map-p [u1 v2])])))))
@@ -287,12 +288,14 @@ function returns a lazyseq of triangles of the subdivided quad.
   g/PTessellate
   (tessellate
    ([{[a b c d] :points}]
-      [(thi.ng.geom.types.Triangle3. [a b c])
-       (thi.ng.geom.types.Triangle3. [a c d])])
+    [(thi.ng.geom.types.Triangle3. [a b c])
+     (thi.ng.geom.types.Triangle3. [a c d])])
    ([_ {tess-fn :fn :or {tess-fn gu/tessellate-3} :as opts}]
-      (->> (g/subdivide _ opts)
+    (->> (g/subdivide _ opts)
+         (sequence
+          (comp
            (mapcat #(tess-fn (:points %)))
-           (map #(thi.ng.geom.types.Triangle3. %)))))
+           (map #(thi.ng.geom.types.Triangle3. %)))))))
 #+END_SRC
 
 *** PTransform                                                  :usetemplate:
@@ -322,7 +325,7 @@ function returns a lazyseq of triangles of the subdivided quad.
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.line :as l]
-     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]

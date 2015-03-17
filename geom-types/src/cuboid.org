@@ -75,10 +75,7 @@ constructor function defined in this namespace.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PArea
   (area
-   [_]
-   (->> (g/tessellate _)
-        (map #(apply gu/tri-area3 %))
-        (reduce +)))
+   [_] (transduce (map #(apply gu/tri-area3 %)) + (g/tessellate _)))
 #+END_SRC
 
 *** PBounds                                                          :verify:
@@ -196,8 +193,8 @@ front, back - assuming the vertex order given in the diagram.
               (if rt [c d h g])
               (if tp [e f g h])
               (if bt [a d c b])]
-             (filter identity)
-             (g/into (or mesh (gm/gmesh)))))))
+             (eduction (filter identity))
+             (g/into (or mesh (bm/basic-mesh)))))))
 #+END_SRC
 
 *** TODO PPointMap
@@ -291,7 +288,7 @@ from the first vertex of the original with inner sorting over XYZ.
             rw (d/successive-nth 2 (m/norm-range (or slices num)))
             map-p (fn [p]
                     (->> (gu/map-trilinear points p)
-                         (map #(m/roundto % *eps*))
+                         (mapv #(m/roundto % *eps*))
                          (vec3)))]
         (for [[w1 w2] rw, [v1 v2] rv, [u1 u2] ru]
           (thi.ng.geom.types.Cuboid.
@@ -309,8 +306,10 @@ from the first vertex of the original with inner sorting over XYZ.
       (->> (if (some #{:num :cols :rows :slices} (keys opts))
              (g/subdivide _ opts)
              [_])
-           (mapcat g/faces)
-           (mapcat f))))
+           (sequence
+            (comp
+             (mapcat g/faces)
+             (mapcat f))))))
 #+END_SRC
 
 *** Transformations                                                  :verify:
@@ -348,7 +347,7 @@ from the first vertex of the original with inner sorting over XYZ.
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec3]]
-     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.plane :as p]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]

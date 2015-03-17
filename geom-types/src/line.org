@@ -532,8 +532,8 @@ further below.
     {:keys [mesh depth offset scale] :or {depth 1.0 scale 1.0}}]
    (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
          off     (or offset (vec3 0 0 depth))
-         bottom  (map vec3 points)
-         top     (map #(g/+ off %) tpoints)]
+         bottom  (mapv vec3 points)
+         top     (mapv #(g/+ off %) tpoints)]
      (g/into
       (or mesh (bm/basic-mesh))
       (mapcat
@@ -547,7 +547,7 @@ further below.
   (vertices
    ([_] (:points _))
    ([{points :points} res]
-      (map #(gu/point-at % points) (m/norm-range res))))
+      (map #(gu/point-at % points) (m/norm-range res)))) ;; TODO transduce
   g/PEdgeAccess
   (edges
    ([_] (d/successive-nth 2 (:points _)))
@@ -683,7 +683,7 @@ further below.
     {:keys [mesh depth offset scale] :or {depth 1.0 scale 1.0}}]
    (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
          off     (or offset (vec3 0 0 depth))
-         top     (map #(g/+ off %) tpoints)]
+         top     (mapv #(g/+ off %) tpoints)]
      (g/into
       (or mesh (bm/basic-mesh))
       (mapcat
@@ -697,7 +697,7 @@ further below.
   (vertices
    ([_] (:points _))
    ([{points :points} res]
-      (map #(gu/point-at % points) (m/norm-range res))))
+      (map #(gu/point-at % points) (m/norm-range res)))) ;; TODO transduce
   g/PEdgeAccess
   (edges
    ([_] (d/successive-nth 2 (:points _)))

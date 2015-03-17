@@ -2,7 +2,6 @@
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomsphere][thi.ng.geom.sphere]]
-     - [[#namespace-declaration][Namespace declaration]]
      - [[#constructor][Constructor]]
      - [[#type-specific-functions][Type specific functions]]
      - [[#protocol-implementations][Protocol implementations]]
@@ -22,55 +21,50 @@
              - [[#todo-scale-with-non-uniform-values-should-return-ellipsoid][TODO scale with non-uniform values should return Ellipsoid]]
          - [[#pvolume][PVolume]]
          - [[#end-of-implementation][End of implementation]]
+     - [[#namespace-declaration][Namespace declaration]]
 
 * thi.ng.geom.sphere
-** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx :mkdirp yes :padline no
-  (ns thi.ng.geom.sphere
-    #+cljs (:require-macros [thi.ng.macromath.core :as mm])
-    (:require
-     [thi.ng.geom.core :as g :refer [*resolution*]]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec3]]
-     [thi.ng.geom.core.intersect :as isec]
-     [thi.ng.geom.gmesh :as gm]
-     [thi.ng.geom.types :as types]
-     [thi.ng.common.error :as err]
-     [thi.ng.common.math.core :as m :refer [TWO_PI PI *eps*]]
-     ,#+clj [thi.ng.macromath.core :as mm])
-    ,#+clj
-    (:import
-     [thi.ng.geom.types AABB Sphere]))
-#+END_SRC
+
 ** Constructor
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref ctor
   (defn sphere
     ([] (thi.ng.geom.types.Sphere. (vec3) 1.0))
     ([r] (thi.ng.geom.types.Sphere. (vec3) #+clj (double r) #+cljs r))
     ([p r] (thi.ng.geom.types.Sphere. (vec3 p) #+clj (double r) #+cljs r)))
 #+END_SRC
+
 ** Type specific functions
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref helpers
 
 #+END_SRC
+
 ** Protocol implementations
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.Sphere
 #+END_SRC
+
 *** PArea
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PArea
   (area
    [{r :r}] (* 4.0 PI r r))
 #+END_SRC
+
 *** PBoundary
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PBoundary
   (contains-point?
    [{p :p r :r} q] (<= (g/dist-squared p q) (* r r)))
 #+END_SRC
+
 *** PBounds
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PBounds
   (bounds
    [_] (thi.ng.geom.types.AABB. (g/- (:p _) (:r _)) (vec3 (* 2 (:r _)))))
@@ -78,30 +72,39 @@
   (height [_] (* 2.0 (:r _)))
   (depth  [_] (* 2.0 (:r _)))
 #+END_SRC
+
 *** PBoundingSphere
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PBoundingSphere
   (bounding-sphere [_] _)
 #+END_SRC
+
 *** PCenter
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PCenter
   (center
    ([_] (thi.ng.geom.types.Sphere. (vec3) (:r _)))
    ([_ p] (thi.ng.geom.types.Sphere. (vec3 p) (:r _))))
   (centroid [_] (:p _))
 #+END_SRC
+
 *** PClassify
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PClassify
   (classify-point
    [{p :p r :r} q]
    (m/signum (- (* r r) (g/dist-squared p q)) *eps*))
 #+END_SRC
+
 *** TODO PGraph
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref impl
 
 #+END_SRC
+
 *** PIntersect
 
 If ray intersects sphere, the function will return a 2-element vector
@@ -119,7 +122,7 @@ computed by passing the distances into the following form:
 
 If there's no intersection, the function returns =nil=.
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PIntersect
   (intersect-ray
    [{p :p r :r} ray]
@@ -136,8 +139,10 @@ If there's no intersection, the function returns =nil=.
     (isec/intersect-plane-sphere? (:n s) (:w s) (:p _) (:r _))
     :default (err/type-error! "Sphere" s)))
 #+END_SRC
+
 *** TODO PMeshConvert
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
@@ -153,6 +158,7 @@ If there's no intersection, the function returns =nil=.
                          verts (if (pos? j) (conj verts [u1 v]) verts)
                          verts (if (< j (dec stacks)) (conj verts [u1 v1]) verts)]]
                (conj verts [u v1]))
+             ;; TODO transduce
              (map
               (fn [verts]
                 (map
@@ -166,17 +172,21 @@ If there's no intersection, the function returns =nil=.
                       (mm/madd cp r y)
                       (+ (mm/mul st sp r) z))))
                  verts)))
-             (g/into (or mesh (gm/gmesh)))))))
+             (g/into (or mesh (bm/basic-mesh)))))))
 #+END_SRC
+
 *** PProximity
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PProximity
   (closest-point
    [{p :p r :r} q]
    (g/+ p (g/normalize (g/- q p) r)))
 #+END_SRC
+
 *** PSample
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PSample
   (random-point-inside
    [_]
@@ -185,8 +195,10 @@ If there's no intersection, the function returns =nil=.
    [_]
    (g/+ (:p _) (v/randvec3 (:r _))))
 #+END_SRC
+
 *** PTessellate
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PTessellate
   (tessellate
    [_] (g/tessellate _ {}))
@@ -196,7 +208,8 @@ If there's no intersection, the function returns =nil=.
 
 *** TODO Transformations
 **** TODO scale with non-uniform values should return Ellipsoid
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PRotate
   (rotate
    [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-z (:p _) theta) (:r _)))
@@ -219,14 +232,42 @@ If there's no intersection, the function returns =nil=.
   g/PTranslate
   (translate [_ t] (thi.ng.geom.types.Sphere. (g/+ (:p _) t) (:r _)))
 #+END_SRC
+
 *** PVolume
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref impl
   g/PVolume
   (volume [{r :r}] (mm/mul (/ 4.0 3.0) PI r r r))
 #+END_SRC
+
 *** End of implementation                                          :noexport:
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx
+
+#+BEGIN_SRC clojure :noweb-ref impl
   )
 #+END_SRC
 
+** Namespace declaration
 
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.sphere
+    #+cljs (:require-macros [thi.ng.macromath.core :as mm])
+    (:require
+     [thi.ng.geom.core :as g :refer [*resolution*]]
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :as v :refer [vec3]]
+     [thi.ng.geom.core.intersect :as isec]
+     [thi.ng.geom.basicmesh :as bm]
+     [thi.ng.geom.types :as types]
+     [thi.ng.common.error :as err]
+     [thi.ng.common.math.core :as m :refer [TWO_PI PI *eps*]]
+     ,#+clj [thi.ng.macromath.core :as mm])
+    ,#+clj
+    (:import
+     [thi.ng.geom.types AABB Sphere]))
+
+  <<ctor>>
+
+  <<helpers>>
+
+  <<impl>>
+#+END_SRC

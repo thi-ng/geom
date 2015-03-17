@@ -109,17 +109,23 @@
    [_] (:vertices _))
   g/PEdgeAccess
   (edges
-   [_] (->> (:faces _)
-            (r/mapcat #(d/successive-nth 2 (conj % (first %))))
-            (r/map set)
-            (into #{})))
+   [_]
+   (into
+    #{}
+    (comp
+     (mapcat #(d/successive-nth 2 (conj % (first %))))
+     (map set))
+    (:faces _)))
   g/PFaceAccess
   (faces
    [_] (:faces _))
   (add-face
    [_ f] (add-face _ f))
   (vertex-faces
-   [_ v] (filter #(>= #+clj (.indexOf ^clojure.lang.PersistentVector % v) #+cljs (d/index-of % v) 0) (:faces _)))
+   [_ v] (filter
+          #(>= #+clj (.indexOf ^clojure.lang.PersistentVector % v)
+               ,#+cljs (d/index-of % v) 0)
+          (:faces _)))
   (remove-face
    [_ f]
    (err/unsupported!))

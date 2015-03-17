@@ -74,6 +74,7 @@
 #+END_SRC
 
 ** SVG path parser
+
 #+BEGIN_SRC clojure :noweb-ref parser
   (defn parse-svg-coords
     [coords]
@@ -82,7 +83,7 @@
          ,#+clj  (map #(Double/parseDouble %))
          ,#+cljs (map js/parseFloat)
          (partition 2)
-         (map vec2)))
+         (mapv vec2)))
   
   (defn parse-svg-path
     ([svg]
@@ -125,7 +126,7 @@
          (xml/parse)
          (xml-seq)
          (filter #(= :path (:tag %)))
-         (map #(parse-svg-path (get-in % [:attrs :d])))
+         (mapv #(parse-svg-path (get-in % [:attrs :d])))
          (map path2)))
 #+END_SRC
 
@@ -208,7 +209,7 @@
         :segments
         (sample-segments* 8)
         (map #(gu/sample-uniform udist include-last? %))
-        (first)))
+        (first))) ;; TODO why first?
 #+END_SRC
 
 *** End of implementation                                          :noexport:

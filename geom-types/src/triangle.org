@@ -157,7 +157,7 @@
                        (check-edge classifier e c a false false))
              cmap (fn [ids]
                     (->> ids
-                         (map (fn [[a b c]] [(verts a) (verts b) (verts c)]))
+                         (map (fn [[a b c]] [(verts a) (verts b) (verts c)])) ;; TODO transducer
                          (reduce
                           (fn [m [a b c]]
                             (update-in m [(a 1)] conj [(a 0) (b 0) (c 0)]))
@@ -295,7 +295,7 @@
 #+END_SRC
 **** PCenter                                                    :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
-  <<lob-geom-center(type="thi.ng.geom.types.Triangle2")>>
+  <<lob-geom-center(type="thi.ng.geom.types.Triangle2",vtype="vec2")>>
   (centroid [_] (centroid (:points _)))
 #+END_SRC
 **** PCircumference                                             :usetemplate:
@@ -338,7 +338,7 @@
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([_ opts] (g/add-face (or (:mesh opts) (gm/gmesh)) (mapv vec3 (:points _)))))
+   ([_ opts] (g/add-face (or (:mesh opts) (bm/basic-mesh)) (mapv vec3 (:points _)))))
 #+END_SRC
 **** PPolygonConvert                                            :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
@@ -403,7 +403,7 @@
 #+END_SRC
 **** PCenter                                                    :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
-  <<lob-geom-center(type="thi.ng.geom.types.Triangle3")>>
+  <<lob-geom-center(type="thi.ng.geom.types.Triangle3",vtype="vec3")>>
   (centroid [_] (centroid (:points _)))
 #+END_SRC
 **** PCircumference                                             :usetemplate:
@@ -444,7 +444,7 @@ currently not possible to turn triangles into meshes.
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([_ opts] (g/add-face (or (:mesh opts) (gm/gmesh)) (:points _))))
+   ([_ opts] (g/add-face (or (:mesh opts) (bm/basic-mesh)) (:points _))))
 #+END_SRC
 **** TODO PProximity
 #+BEGIN_SRC clojure :noweb-ref impl3
@@ -501,7 +501,7 @@ https://web.archive.org/web/20090320013931/http://amp.ece.cmu.edu/Publication/Ch
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3Z]]
-     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.common.data.core :as d]

@@ -179,7 +179,7 @@ located on the rotation axis.
                                :default [b1 b2 a2 a1])]
                         (if (and f face-fn) (face-fn f) [f])))]
       (->> (d/successive-nth 2 strips)
-           (mapcat
+           (mapcat ;; TODO transduce
             (fn [[sa sb]]
               (mapcat make-face
                    (d/successive-nth 2 sa)
@@ -213,10 +213,12 @@ located on the rotation axis.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PArea
   (area
-   [_] (->> (:faces _)
-            (r/mapcat gu/tessellate-with-first)
-            (r/map #(->> % (apply gu/tri-area3) m/abs))
-            (r/fold +)))
+   [_]
+   (transduce
+    (comp
+     (mapcat gu/tessellate-with-first)
+     (map #(->> % (apply gu/tri-area3) m/abs)))
+    + (:faces _)))
 #+END_SRC
 
 *** TODO PBoundary
@@ -327,35 +329,39 @@ located on the rotation axis.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PNormalAccess
   (face-normals
-   [_ force?] (if (seq (:fnormals _)) (:fnormals _) (if force? (:fnormals (g/compute-face-normals _)))))
+   [_ force?]
+   (if (seq (:fnormals _))
+     (:fnormals _)
+     (if force? (:fnormals (g/compute-face-normals _)))))
   (vertex-normals
-   [_ force?] (if (seq (:vnormals _)) (:vnormals _) (if force? (:vnormals (g/compute-vertex-normals _)))))
+   [_ force?]
+   (if (seq (:vnormals _))
+     (:vnormals _)
+     (if force? (:vnormals (g/compute-vertex-normals _)))))
   (compute-face-normals
    [_]
    (loop [norms (transient #{}), fnorms (transient {}), faces (:faces _)]
      (if faces
-       (let [[a b c :as f] (first faces)
-             [norms n] (d/index! norms (gu/ortho-normal a b c))]
+       (let [f (first faces)
+             [norms n] (d/index! norms (apply gu/ortho-normal f))]
          (recur norms (assoc! fnorms f n) (next faces)))
        (assoc _
-         :normals (persistent! norms)
+         :normals  (persistent! norms)
          :fnormals (persistent! fnorms)))))
   (compute-vertex-normals
    [_]
-   (let [_ (if (seq (:fnormals _)) _ (g/compute-face-normals _))
-         {:keys [vertices normals fnormals]} _]
-     (loop [norms (transient normals), vnorms (transient {}), verts (keys vertices)]
+   (let [{:keys [vertices normals fnormals] :as this} (if (seq (:fnormals _)) _ (g/compute-face-normals _))
+         ntx (map #(get fnormals %))]
+     (loop [norms (transient normals), vnorms (transient (hash-map)), verts (keys vertices)]
        (if verts
          (let [v (first verts)
-               n (->> v
-                      (g/vertex-faces _)
-                      (map #(get fnormals %))
-                      (reduce g/+)
+               n (->> (g/vertex-faces this v)
+                      (transduce ntx g/+)
                       (g/normalize))
                [norms n] (d/index! norms n)]
            (recur norms (assoc! vnorms v n) (next verts)))
-         (assoc _
-           :normals (persistent! norms)
+         (assoc this
+           :normals  (persistent! norms)
            :vnormals (persistent! vnorms))))))
 #+END_SRC
 

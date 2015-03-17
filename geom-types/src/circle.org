@@ -129,19 +129,19 @@
          points3 (mapv vec3 points)
          tpoints3 (mapv #(g/+ off %) tpoints)]
      (g/into
-      (or mesh (gm/gmesh))
+      (or mesh (bm/basic-mesh))
       (concat
        (when bottom?
          (->> points
               (gu/tessellate-with-point (:p _))
-              (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)]))))
+              (mapv (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)]))))
        (mapcat (fn [[a1 b1] [a2 b2]] [[a1 b1 b2 a2]])
                (d/successive-nth 2 (conj points3 (points3 0)))
                (d/successive-nth 2 (conj tpoints3 (tpoints3 0))))
        (when top?
          (->> tpoints
               (gu/tessellate-with-point (:p _))
-              (map (fn [[a b c]] [(g/+ off a) (g/+ off b) (g/+ off c)]))))))))
+              (mapv (fn [[a b c]] [(g/+ off a) (g/+ off b) (g/+ off c)]))))))))
   (extrude-shell
    [_ opts] (g/extrude-shell (g/as-polygon _) opts))
 #+END_SRC
@@ -185,7 +185,7 @@
            (g/vertices _)
            (mapv vec3)
            (gu/tessellate-with-point (vec3 (:p _)))
-           (g/into (or (gm/gmesh))))))
+           (g/into (or (bm/basic-mesh))))))
 #+END_SRC
 
 *** PPolygonConvert
@@ -281,7 +281,7 @@ results, the =transform= implementation returns a [[file:polygon.org][polygon]].
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.intersect :as isec]
-     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types :as types]
      [thi.ng.common.data.core :as d]
      [thi.ng.common.error :as err]

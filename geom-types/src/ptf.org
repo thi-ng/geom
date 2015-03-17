@@ -81,7 +81,7 @@
     (let [frames (map vector points norms bnorms)
           tx     (fn [[p n b]] (mapv #(sweep-point p n b %) profile))
           frame0 (tx (first frames))]
-      (->> (next frames)
+      (->> (next frames) ;; TODO transducer
            (reduce
             (fn [[faces prev] frame]
               (let [curr  (tx frame)
@@ -163,7 +163,7 @@ which has both the =geom= and =luxor= libs on its classpath.
   (-> (scene/base-scene {:width 640 :height 360})
       (scene/add-main-mesh
        (ptf/sweep-mesh
-        (map cinquefoil (m/norm-range 400))
+        (mapv cinquefoil (m/norm-range 400))
         (g/vertices (c/circle 0.5) 20)
         {:align? true})
        {:id :knot :bounds (a/aabb 1.5) :target [0 0.5 -2] :rx (- m/THIRD_PI)})

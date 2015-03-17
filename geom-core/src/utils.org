@@ -33,29 +33,25 @@
   (defn closest-point-on-segment
     [p a b]
     (let [t (closest-point-coeff p a b)]
-      (cond
-       (<= t 0.0) a
-       (>= t 1.0) b
-       :default (g/mix a b t))))
+      (if (<= t 0.0) a (if (>= t 1.0) b (g/mix a b t)))))
 
   (defn closest-point-on-segments
     [p segments]
-    (let [[a & more] (map #(apply closest-point-on-segment p %) segments)]
-      (loop [c a, d (g/dist-squared p a), more more]
-        (if more
-          (let [q (first more)
-                d' (g/dist-squared p q)]
-            (if (< d' d)
-              (recur q d' (next more))
-              (recur c d (next more))))
-          c))))
+    (transduce
+     (map #(apply closest-point-on-segment p %))
+     (completing
+      (fn [a q]
+        (let [d' (g/dist-squared p q)]
+          (if (< d' (a 1)) [q d'] a))))
+     [nil m/INF+]
+     segments))
 
   (defn closest-line-between
     [a1 b1 a2 b2]
     (let [p43 (g/- b2 a2)]
-      (if-not (m/delta= [0 0 0] p43 *eps*)
+      (if-not (m/delta= [0.0 0.0 0.0] p43 *eps*)
         (let [p21 (g/- b1 a1)]
-          (if-not (m/delta= [0 0 0] p21 *eps*)
+          (if-not (m/delta= [0.0 0.0 0.0] p21 *eps*)
             (let [p13 (g/- a1 a2)
                   d1343 (g/dot p13 p43)
                   d4321 (g/dot p43 p21)
@@ -72,20 +68,24 @@
                    :a (g/madd p21 ua a1) :b (g/madd p43 ub a2)
                    :ua ua :ub ub}))))))))
 
-  (defn max-dist
-    [c points]
-    (->> points
-         (map #(g/dist-squared c %))
-         (reduce max)
-         (Math/sqrt)))
+  (defn dist*
+    [rf]
+    (fn [c points]
+      (->> points
+           (transduce (map #(g/dist-squared c %)) rf)
+           (Math/sqrt))))
+
+  (def min-dist (dist* min))
+  (def max-dist (dist* max))
 
   (defn arc-length-index
     [points]
     (->> points
          (d/successive-nth 2)
-         (map #(g/dist (% 0) (% 1)))
-         (reductions + 0)
-         (vec)))
+         (transduce
+          (map #(g/dist (% 0) (% 1)))
+          (completing (fn [a d] (conj a (+ (peek a) d))))
+          [0])))
 
   (defn arc-length
     [points]
@@ -113,7 +113,7 @@
 
   (defn scale-size
     ([s coll] (scale-size (centroid coll) s coll))
-    ([c s coll] (mapv #(-> % (g/- c) (g/madd s c)) coll)))
+    ([c s coll] (mapv #(g/madd (g/- % c) s c) coll)))
 #+END_SRC
 
 *** Area & volume
@@ -121,20 +121,23 @@
 Volume calculation is using [[file:triangle.org::*Triangle3][signed volume implementation of Triangle3]].
 
 #+BEGIN_SRC clojure :noweb-ref area-volume
+  (defn- tessellating-transducer
+    [f]
+    (comp
+     (mapcat tessellate-with-first)
+     (map f)))
+
+  (def ^:private area-xf
+    (tessellating-transducer #(->> % (apply tri-area3) m/abs)))
+
+  (def ^:private volume-xf
+    (tessellating-transducer #(g/dot (% 0) (g/cross (% 1) (% 2)))))
+
   (defn total-area-3d
-    [faces]
-    (->> faces
-         (r/mapcat tessellate-with-first)
-         (r/map #(->> % (apply tri-area3) m/abs))
-         (r/fold +)))
-  
+    [faces] (transduce area-xf + faces))
+
   (defn total-volume
-    [faces]
-    (->> faces
-         (r/mapcat tessellate-with-first)
-         (r/map #(g/dot (% 0) (g/cross (% 1) (% 2))))
-         (r/fold +)
-         (* (/ 6.0))))
+    [faces] (/ (transduce volume-xf + faces) 6.0))
 #+END_SRC
 
 *** Bounds
@@ -167,7 +170,7 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
   
   (defn axis-bounds
     [axis coll]
-    (let [xs (map #(nth % axis) coll)]
+    (let [xs (mapv #(nth % axis) coll)]
       [(reduce min xs) (reduce max xs)]))
   
   (defn axis-range
@@ -281,13 +284,13 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
        (->> [(first points)]
             (concat points)
             (d/successive-nth 2)
-            (map #(vector c (% 0) (% 1))))))
+            (mapv #(vector c (% 0) (% 1))))))
 
   (defn tessellate-with-first
     [points]
     (if (> (count points) 3)
       (let [[v0 & more] points]
-        (map (fn [[a b]] [v0 a b]) (d/successive-nth 2 more)))
+        (mapv (fn [[a b]] [v0 a b]) (d/successive-nth 2 more)))
       [points]))
 
   (defn tessellate-tri-with-midpoints
