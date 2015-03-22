@@ -31,6 +31,7 @@
 * thi.ng.geom.rect
 
 ** Constructor
+
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn rect
     ([] (thi.ng.geom.types.Rect2. (vec2) (vec2 1.0)))
@@ -49,16 +50,18 @@
          (thi.ng.geom.types.Rect2. (vec2 x) (vec2 y w))))
     ([x y w h] (thi.ng.geom.types.Rect2. (vec2 x y) (vec2 w h))))
 #+END_SRC
+
 ** Type specific functions
+
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn union
     [{p :p [w h] :size} {q :p [qw qh] :size}]
-    (let [[x1 y1 :as p*] (g/min p q)
+    (let [[x1 y1 :as p'] (g/min p q)
           x2 (max (+ (p 0) w) (+ (q 0) qw))
           y2 (max (+ (p 1) h) (+ (q 1) qh))
           w (- x2 x1)
           h (- y2 y1)]
-      (thi.ng.geom.types.Rect2. p* (vec2 w h))))
+      (thi.ng.geom.types.Rect2. p' (vec2 w h))))
 
   (defn left [r] ((:p r) 0))
   (defn right [r] (+ ((:p r) 0) ((:size r) 0)))
@@ -75,12 +78,14 @@
 #+END_SRC
 
 *** PArea
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PArea
   (area [_] (reduce * (:size _)))
 #+END_SRC
 
 *** PBoundary
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBoundary
   (contains-point?
@@ -89,6 +94,7 @@
 #+END_SRC
 
 *** PBounds
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBounds
   (bounds[_] _)
@@ -98,6 +104,7 @@
 #+END_SRC
 
 *** PBoundingCircle
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBoundingCircle
   (bounding-circle
@@ -107,6 +114,7 @@
 #+END_SRC
 
 *** PCenter
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PCenter
   (center
@@ -119,12 +127,14 @@
 #+END_SRC
 
 *** PCircumference
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PCircumference
   (circumference [_] (* 2.0 (reduce + (:size _))))
 #+END_SRC
 
 *** PClassify
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PClassify
   (classify-point
@@ -163,6 +173,7 @@ than 1.0.
 #+END_SRC
 
 *** PGraph
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PVertexAccess
   (vertices
@@ -185,6 +196,7 @@ than 1.0.
 #+END_SRC
 
 *** PIntersect
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PIntersect
   (intersect-line
@@ -208,6 +220,7 @@ than 1.0.
 #+END_SRC
 
 *** PMeshConvert                                                     :verify:
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PMeshConvert
   (as-mesh
@@ -239,7 +252,9 @@ than 1.0.
   (unmap-point
    [_ q] (g/madd q (:size _) (:p _)))
 #+END_SRC
+
 *** PPolygonConvert
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PPolygonConvert
   (as-polygon
@@ -247,13 +262,13 @@ than 1.0.
 #+END_SRC
 
 *** PProximity
-#+BEGIN_SRC clojure :noweb-ref impl
-  g/PProximity
-  (closest-point
-   [_ p] (gu/closest-point-on-segments p (g/edges _)))
+
+#+BEGIN_SRC clojure :noweb-ref impl :noweb yes
+  <<lob-geom-proxi>>
 #+END_SRC
 
 *** PSample
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PSample
   (point-at
@@ -359,6 +374,7 @@ of triangles of the subdivided rects.
            (map #(thi.ng.geom.types.Triangle2. %)))))))
 #+END_SRC
 *** TODO PTransform
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PRotate
   (rotate
@@ -386,16 +402,21 @@ of triangles of the subdivided rects.
   (transform
    [_ m] (g/transform (g/as-polygon _) m))
 #+END_SRC
+
 *** PVolume                                                     :usetemplate:
+
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-zerovol>>
 #+END_SRC
 
 *** End of implementations                                         :noexport:
+
 #+BEGIN_SRC clojure :noweb-ref impl
   )
 #+END_SRC
+
 ** Namespace declaration
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/rect.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.rect
     (:require

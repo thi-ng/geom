@@ -111,7 +111,7 @@ them from other templates.
   g/PProximity
   (closest-point
    [_ p]
-   (gu/closest-point-on-segments p (g/edges _)))
+   (first (gu/closest-point-on-segments p (g/edges _))))
 #+END_SRC
 
 ** PRotate

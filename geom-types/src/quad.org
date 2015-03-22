@@ -20,7 +20,7 @@
          - [[#todo-pintersect][TODO PIntersect]]
          - [[#pmeshconvert][PMeshConvert]]
          - [[#todo-ppointmap][TODO PPointMap]]
-         - [[#todo-pproximity][TODO PProximity]]
+         - [[#pproximity][PProximity]]
          - [[#todo-psample][TODO PSample]]
          - [[#psubdivide][PSubdivide]]
          - [[#ptessellate][PTessellate]]
@@ -32,6 +32,7 @@
 * thi.ng.geom.quad
 
 ** Constructor
+
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn quad3
     ([] (quad3 1.0))
@@ -41,6 +42,7 @@
           :default (err/illegal-arg! w)))
     ([a b c d] (thi.ng.geom.types.Quad3. [(vec3 a) (vec3 b) (vec3 c) (vec3 d)])))
 #+END_SRC
+
 ** TODO Type specific functions
 
 #+BEGIN_SRC clojure :noweb-ref helpers
@@ -77,46 +79,62 @@ quad.
 #+END_SRC
 
 ** Protocol implementations
+
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.Quad3
 #+END_SRC
+
 *** PArea
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PArea
   (area
    [{[a b c d] :points}]
    (+ (gu/tri-area3 a b c) (gu/tri-area3 a c d)))
 #+END_SRC
+
 *** TODO PBoundary
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PBoundary
   (contains-point?
    [_ p] )
 #+END_SRC
+
 *** PBounds                                                     :usetemplate:
+
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-bounds(fn="tu/bounding-box", depth="yes")>>
 #+END_SRC
+
 *** PBoundingSphere                                             :usetemplate:
+
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-bsphere>>
 #+END_SRC
+
 *** PCenter                                                     :usetemplate:
+
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-center(type="thi.ng.geom.types.Quad3",vtype="vec3")>>
   (centroid [_] (gu/centroid (:points _)))
 #+END_SRC
+
 *** PCircumference                                              :usetemplate:
+
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-circum>>
 #+END_SRC
+
 *** TODO PClassify
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PClassify
   (classify-point
    [_ p]
    (transduce (map #(g/classify-point (thi.ng.geom.types.Line3. %) p)) min (g/edges _)))
 #+END_SRC
+
 *** TODO PExtrude
 
 Extruding a quad along an axis vector results in a 3D quad mesh.
@@ -167,11 +185,15 @@ than 1.0.
   (extrude-shell
    [_ opts] nil)
 #+END_SRC
+
 *** PFlip                                                       :usetemplate:
+
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-flip(type="thi.ng.geom.types.Quad3")>>
 #+END_SRC
+
 *** PGraph
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PVertexAccess
   (vertices
@@ -185,13 +207,17 @@ than 1.0.
   (vertex-valence
    [_ v] (if ((set (:points _)) v) 2 0))
 #+END_SRC
+
 *** PInset
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PInset
   (inset
    [_ inset] (thi.ng.geom.types.Quad3. (inset-quad (:points _) inset)))
 #+END_SRC
+
 *** TODO PIntersect
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PIntersect
   (intersect-line
@@ -201,6 +227,7 @@ than 1.0.
   (intersect-shape
    [_ s])
 #+END_SRC
+
 *** PMeshConvert
 
 A quad's mesh representation is simply a quad mesh with a single face.
@@ -211,6 +238,7 @@ A quad's mesh representation is simply a quad mesh with a single face.
    ([_] (g/as-mesh _ {}))
    ([_ opts] (g/add-face (or (:mesh opts) (bm/basic-mesh)) (:points _))))
 #+END_SRC
+
 *** TODO PPointMap
 
 =map-point= currently broken, based on:
@@ -236,16 +264,21 @@ https://www.garagegames.com/community/forums/viewthread/76960/1#comment-543505
   (unmap-point
     [_ p] (gu/map-bilinear (:points _) p))
 #+END_SRC
-*** TODO PProximity
+
+*** PProximity
+
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-proxi>>
 #+END_SRC
+
 *** TODO PSample
+
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-sample(n="4")>>
   (random-point-inside
    [_] (gu/map-bilinear (:points _) (vec2 (m/random) (m/random))))
 #+END_SRC
+
 *** PSubdivide
 
 A quad can be subdivided into smaller ones, i.e. to create a list
@@ -276,6 +309,7 @@ default for missing args.
           (thi.ng.geom.types.Quad3.
            [(map-p [u1 v1]) (map-p [u2 v1]) (map-p [u2 v2]) (map-p [u1 v2])])))))
 #+END_SRC
+
 *** PTessellate
 
 A quad can be tessellated into a number of triangles. When called
@@ -299,6 +333,7 @@ function returns a lazyseq of triangles of the subdivided quad.
 #+END_SRC
 
 *** PTransform                                                  :usetemplate:
+
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-rotate(type="thi.ng.geom.types.Quad3")>>
   <<lob-geom-rotate3d(type="thi.ng.geom.types.Quad3")>>
@@ -308,11 +343,13 @@ function returns a lazyseq of triangles of the subdivided quad.
 #+END_SRC
 
 *** PVolume                                                     :usetemplate:
+
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-zerovol>>
 #+END_SRC
 
 *** End of implementations                                         :noexport:
+
 #+BEGIN_SRC clojure :noweb-ref impl
   )
 #+END_SRC

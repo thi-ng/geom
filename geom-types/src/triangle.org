@@ -447,9 +447,8 @@ currently not possible to turn triangles into meshes.
    ([_ opts] (g/add-face (or (:mesh opts) (bm/basic-mesh)) (:points _))))
 #+END_SRC
 **** TODO PProximity
-#+BEGIN_SRC clojure :noweb-ref impl3
-  g/PProximity
-  (closest-point [_ p] nil) ; TODO
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<lob-geom-proxi>>
 #+END_SRC
 **** PSample                                             :verify:usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes

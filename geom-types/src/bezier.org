@@ -179,11 +179,8 @@ required control points. This only works for non-closed curves, though.
 #+END_SRC
 
 *** PProximity
-#+BEGIN_SRC clojure :noweb-ref impl2
-  g/PProximity
-  (closest-point
-   [_ p]
-   (gu/closest-point-on-segments p (g/edges _)))
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<lob-geom-proxi>>
 #+END_SRC
 
 *** PSample
@@ -249,11 +246,8 @@ required control points. This only works for non-closed curves, though.
 #+END_SRC
 
 *** PProximity
-#+BEGIN_SRC clojure :noweb-ref impl3
-  g/PProximity
-  (closest-point
-   [_ p]
-   (gu/closest-point-on-segments p (g/edges _)))
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<lob-geom-proxi>>
 #+END_SRC
 
 *** PSample
