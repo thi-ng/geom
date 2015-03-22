@@ -228,7 +228,10 @@
             (recur (next ps)))))
       _)
     (update-springs
-      [_ delta] (loop [s (seq springs)] (when s (timestep (first s) delta) (recur (next s)))) _)
+      [_ delta]
+      (loop [s (seq springs)]
+        (when s (timestep (first s) delta) (recur (next s))))
+      _)
     PTimeStep
     (timestep
       [_ iter]
@@ -257,9 +260,10 @@
       (fn [p delta]
         (let [d (g/- pos (position p))
               l (g/mag-squared d)]
-          (if (and (> l 0.0) (< l rsq))
-            (add-force p (g/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
-                                   (Math/sqrt l)))))))))
+          (if (< l rsq)
+            (if (> l 0.0)
+              (add-force p (g/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
+                                     (Math/sqrt l))))))))))
 
   (defn attract-particle
     [p r strength]
@@ -268,15 +272,15 @@
         (if-not (= p q)
           (let [d (g/- (position p) (position q))
                 l (g/mag-squared d)]
-            (if (and (> l 0.0) (< l rsq))
-              (add-force q (g/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
-                                     (Math/sqrt l))))))))))
+            (if (< l rsq)
+              (if (> l 0.0)
+                (add-force q (g/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
+                                       (Math/sqrt l)))))))))))
 
   (defn align
     [vel strength]
     (fn [p delta]
-      (let [d (g/- vel (velocity p))]
-        (add-force p (g/* d (* strength delta))))))
+      (add-force p (g/subm vel (velocity p) (* strength delta)))))
 #+END_SRC
 
 ** Constraints
