@@ -2,7 +2,7 @@
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeomspatialtree][Namespace: thi.ng.geom.spatialtree]]
-     - [[#namespace-declaration][Namespace declaration]]
+     - [[#internal-tree-protocols][Internal tree protocols]]
      - [[#tree-operations][Tree operations]]
      - [[#tree-selectors][Tree selectors]]
      - [[#tree-implementations][Tree implementations]]
@@ -12,75 +12,76 @@
      - [[#constructors][Constructors]]
          - [[#quadtree][Quadtree]]
          - [[#octree][Octree]]
+     - [[#complete-namespace-declaration][Complete namespace declaration]]
      - [[#examples][Examples]]
 
 * Namespace: thi.ng.geom.spatialtree
 
-** Namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx :mkdirp yes :padline no
-  (ns thi.ng.geom.spatialtree
-    (:require
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     [thi.ng.geom.core.intersect :as isec]
-     [thi.ng.geom.aabb :as a]
-     [thi.ng.geom.rect :as r]
-     [thi.ng.geom.types]
-     [thi.ng.geom.types.utils :as tu]
-     [thi.ng.common.math.core :refer [*eps* delta=]])
-    ,#+clj (:import [thi.ng.geom.types AABB Rect2]))
+** Internal tree protocols
+
+#+BEGIN_SRC clojure :noweb-ref protos
+  (defprotocol PTreeOps
+    (child-index-for-point [_ p])
+    (child-for-point [_ p])
+    (get-children [_])
+    (set-child [_ i c])
+    (set-children [_ c])
+    (set-point [_ p d])
+    (make-child-for-point [_ p d add-point?])
+    (split-node [_]))
+
 #+END_SRC
 
 ** Tree operations
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :noweb-ref ops
   (defn path-for-point
     "Returns depth-first seq of nodes for given point."
     [root p]
     (loop [node root, path (list root)]
-      (let [c (g/child-for-point node p)]
+      (let [c (child-for-point node p)]
         (if c (recur c (conj path c)) path))))
-  
+
   (defn add-point*
-    "Adds point to tree, recursively creates all required intermediate nodes."
-    [root p]
-    (loop [node root, p p]
-      (if (g/get-children node)
-        (recur (g/make-child-for-point node p false) p)
+    "Associates point with data in tree, recursively creates all required intermediate nodes."
+    [root p d]
+    (loop [node root, p p, d d]
+      (if (get-children node)
+        (recur (make-child-for-point node p d false) p d)
         (let [point (g/get-point node)]
           (if point
-            (when-not (delta= point p *eps*)
-                (g/split-node node)
-                (g/make-child-for-point node p true)
-                (recur node point))
-            (g/set-point node p))))))
-  
+            (if-not (delta= point p *eps*)
+              (let [data (g/get-point-data node)]
+                (split-node node)
+                (make-child-for-point node p d true)
+                (recur node point data)))
+            (set-point node p d))))))
+
   (defn delete-point*
     "Removes point from tree (if found) and prunes any resulting empty nodes.
     Returns given node (root)."
     [root p]
     (let [[node & path] (path-for-point root p)]
       (when (delta= p (g/get-point node) *eps*)
-        (g/set-point node nil)
+        (set-point node nil nil)
         (loop [path path]
           (if path
             (let [[node & parents] path]
-              (g/set-child node (g/child-index-for-point node p) nil)
-              (when (every? nil? (g/get-children node))
-                (g/set-children node nil)
+              (set-child node (child-index-for-point node p) nil)
+              (when (every? nil? (get-children node))
+                (set-children node nil)
                 (recur parents))))))
       root))
 #+END_SRC
 
 ** Tree selectors
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :noweb-ref select
   (defn check-with
     [q isec? inside?]
     (if (isec? (g/bounds q))
-      (let [children (g/get-children q)]
+      (let [children (get-children q)]
         (if children
           (loop [ch children]
             (if ch
@@ -100,17 +101,17 @@
     intersect the query region
     `inside?`: single-arg fn to check if a point lies within the region."
     ([q isec? inside?]
-       (select-with q isec? inside? (transient [])))
+     (select-with q isec? inside? (transient [])))
     ([q isec? inside? acc]
-       (if (isec? (g/bounds q))
-         (let [children (g/get-children q)]
-           (if children
-             (reduce
-              (fn [acc c] (if c (select-with c isec? inside? acc) acc))
-              acc children)
-             (let [p (g/get-point q)]
-               (if (and p (inside? p)) (conj! acc p) acc))))
-         acc)))
+     (if (isec? (g/bounds q))
+       (let [children (get-children q)]
+         (if children
+           (reduce
+            (fn [acc c] (if c (select-with c isec? inside? acc) acc))
+            acc children)
+           (let [p (g/get-point q)]
+             (if (and p (inside? p)) (conj! acc (g/get-point-data q)) acc))))
+       acc)))
 
   (defn select-with-shape
     [q s] (persistent! (select-with q #(g/intersect-shape s %) #(g/contains-point? s %))))
@@ -137,12 +138,12 @@
     (lazy-seq
      (let [[q & r] queue]
        (if (and q (isec? (g/bounds q)))
-         (let [cs (filter identity (g/get-children q))
+         (let [cs (filter identity (get-children q))
                p (g/get-point q)]
            (if (seq cs)
              (lazy-select-with* isec? inside? (concat cs r))
              (if (and p (inside? p))
-               (cons p (lazy-select-with* isec? inside? r))
+               (cons (g/get-point-data q) (lazy-select-with* isec? inside? r))
                (when (seq r) (lazy-select-with* isec? inside? r)))))
          (when (seq r) (lazy-select-with* isec? inside? r))))))
 
@@ -159,45 +160,51 @@
 
 *** Quadtree implementation
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   (deftype MutableQuadtreeNode
       ,#+clj [^double x ^double y ^double w ^double h
              ^:unsynchronized-mutable children
              ^:unsynchronized-mutable point
+             ^:unsynchronized-mutable data
              ^:unsynchronized-mutable bounds]
       ,#+cljs [x y w h
               ^:mutable children
               ^:mutable point
+              ^:mutable data
               ^:mutable bounds]
 
       g/PSpatialTree
-      (add-point [_ p] (add-point* _ p))
+      (add-point [_ p d] (add-point* _ p d) _)
+      (delete-point [_ p] (delete-point* _ p))
+      (get-point [_] point)
+      (get-point-data [_] data)
+
+      PTreeOps
       (child-index-for-point [_ [px py]]
         (if (< px (+ x w))
           (if (< py (+ y h)) 0 2)
           (if (< py (+ y h)) 1 3)))
       (child-for-point
-        [_ p] (if children (children (g/child-index-for-point _ p))))
-      (delete-point [_ p] (delete-point* _ p))
-      (make-child-for-point [_ p add?]
-        (let [idx (g/child-index-for-point _ p)]
-          (if (children idx)
-            (children idx)
-            (let [cx (if (pos? (bit-and idx 1)) (+ x w) x)
-                  cy (if (pos? (bit-and idx 2)) (+ y h) y)
-                  c (MutableQuadtreeNode.
-                     cx cy (* 0.5 w) (* 0.5 h) nil (if add? p) nil)]
-              (g/set-child _ idx c)
-              c))))
+        [_ p] (if children (children (child-index-for-point _ p))))
+
+      (make-child-for-point [_ p d add?]
+        (let [idx (child-index-for-point _ p)]
+          (or (children idx)
+              (let [cx (if (pos? (bit-and idx 1)) (+ x w) x)
+                    cy (if (pos? (bit-and idx 2)) (+ y h) y)
+                    c (MutableQuadtreeNode.
+                       cx cy (* 0.5 w) (* 0.5 h) nil (if add? p) (if add? d) nil)]
+                (set-child _ idx c)
+                c))))
       (split-node [_]
         (set! children [nil nil nil nil])
         (set! point nil)
+        (set! data nil)
         _)
       (get-children [_] children)
-      (get-point [_] point)
       (set-child [_ i c] (set! children (assoc children i c)) _)
       (set-children [_ c] (set! children c) _)
-      (set-point [_ p] (set! point p) _)
+      (set-point [_ p d] (set! point p) (set! data d) _)
 
       g/PBounds
       (bounds [_]
@@ -211,52 +218,60 @@
       (toString [_] (str "#thi.ng.geom.spatialtree.MutableQuadtreeNode"
                          "{:bounds " (pr-str (g/bounds _))
                          " :children " (pr-str children)
-                         " :p " (pr-str point) "}")))
+                         " :p " (pr-str point)
+                         " :d " (pr-str data)
+                         "}")))
 #+END_SRC
 
 *** Octree implementation
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   (deftype MutableOctreeNode
       ,#+clj [^double x ^double y ^double z ^double w ^double h ^double d
              ^:unsynchronized-mutable children
              ^:unsynchronized-mutable point
+             ^:unsynchronized-mutable data
              ^:unsynchronized-mutable bounds]
       ,#+cljs [x y z w h d
               ^:mutable children
               ^:mutable point
+              ^:mutable data
               ^:mutable bounds]
 
       g/PSpatialTree
-      (add-point [_ p] (add-point* _ p) _)
+      (add-point [_ p d] (add-point* _ p d) _)
+      (delete-point [_ p] (delete-point* _ p))
+      (get-point [_] point)
+      (get-point-data [_] data)
+
+      PTreeOps
       (child-index-for-point [_ [px py pz]]
         (+ (if (< pz (+ z d)) 0 4)
            (if (< px (+ x w))
              (if (< py (+ y h)) 0 2)
              (if (< py (+ y h)) 1 3))))
       (child-for-point
-        [_ p] (if children (children (g/child-index-for-point _ p))))
-      (delete-point [_ p] (delete-point* _ p))
-      (make-child-for-point [_ p add?]
-        (let [idx (g/child-index-for-point _ p)]
+        [_ p] (if children (children (child-index-for-point _ p))))
+
+      (make-child-for-point [_ p data add?]
+        (let [idx (child-index-for-point _ p)]
           (if (children idx)
             (children idx)
             (let [cx (if (pos? (bit-and idx 1)) (+ x w) x)
                   cy (if (pos? (bit-and idx 2)) (+ y h) y)
                   cz (if (pos? (bit-and idx 4)) (+ z d) z)
                   c (MutableOctreeNode.
-                     cx cy cz (* 0.5 w) (* 0.5 h) (* 0.5 d) nil (if add? p) nil)]
-              (g/set-child _ idx c)
+                     cx cy cz (* 0.5 w) (* 0.5 h) (* 0.5 d) nil (if add? p) (if add? data) nil)]
+              (set-child _ idx c)
               c))))
       (split-node [_]
         (set! children [nil nil nil nil nil nil nil nil])
         (set! point nil)
         _)
       (get-children [_] children)
-      (get-point [_] point)
       (set-child [_ i c] (set! children (assoc children i c)) _)
       (set-children [_ c] (set! children c) _)
-      (set-point [_ p] (set! point p) _)
+      (set-point [_ p d] (set! point p) (set! data d) _)
 
       g/PBounds
       (bounds [_]
@@ -270,12 +285,14 @@
       (toString [_] (str "#thi.ng.geom.spatialtree.MutableOctreeNode"
                          "{:bounds " (pr-str (g/bounds _))
                          " :children " (pr-str children)
-                         " :p " (pr-str point) "}")))
+                         " :p " (pr-str point)
+                         " :d " (pr-str data)
+                         "}")))
 #+END_SRC
 
 *** Override print methods
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :noweb-ref impl
   #+clj (require 'clojure.pprint)
   #+clj (defmethod print-method MutableQuadtreeNode [o ^java.io.Writer w] (.write w (.toString o)))
   #+clj (defmethod print-method MutableOctreeNode [o ^java.io.Writer w] (.write w (.toString o)))
@@ -285,34 +302,61 @@
 
 *** Quadtree
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :noweb-ref ctor
   (defn quadtree
     "Create a new quadtree root node with the given XY position & dimensions."
     ([{[x y] :p [w h] :size}]
-       (quadtree x y w h))
+     (quadtree x y w h))
     ([[x y] size]
-       (let [[w h] (if (number? size) [size size] size)]
-         (quadtree x y w h)))
+     (let [[w h] (if (number? size) [size size] size)]
+       (quadtree x y w h)))
     ([x y size]
-       (quadtree x y size size))
+     (quadtree x y size size))
     ([x y w h]
-       (MutableQuadtreeNode. x y (* 0.5 w) (* 0.5 h) nil nil nil)))
+     (MutableQuadtreeNode. x y (* 0.5 w) (* 0.5 h) nil nil nil nil)))
 #+END_SRC
 
 *** Octree
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx
+#+BEGIN_SRC clojure :noweb-ref ctor
   (defn octree
     "Create a new octree root node with the given XYZ position & dimensions."
     ([{[x y z] :p [w h d] :size}]
-       (octree x y z w h d))
+     (octree x y z w h d))
     ([[x y z] size]
-       (let [[w h d] (if (number? size) [size size size] size)]
-         (octree x y z w h d)))
+     (let [[w h d] (if (number? size) [size size size] size)]
+       (octree x y z w h d)))
     ([x y z size]
-       (octree x y z size size size))
+     (octree x y z size size size))
     ([x y z w h d]
-       (MutableOctreeNode. x y z (* 0.5 w) (* 0.5 h) (* 0.5 d) nil nil nil)))
+     (MutableOctreeNode. x y z (* 0.5 w) (* 0.5 h) (* 0.5 d) nil nil nil nil)))
+#+END_SRC
+
+** Complete namespace declaration
+
+#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.spatialtree
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.core.intersect :as isec]
+     [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.rect :as r]
+     [thi.ng.geom.types]
+     [thi.ng.geom.types.utils :as tu]
+     [thi.ng.common.math.core :refer [*eps* delta=]])
+    ,#+clj (:import [thi.ng.geom.types AABB Rect2]))
+
+  <<protos>>
+
+  <<ops>>
+
+  <<select>>
+
+  <<impl>>
+
+  <<ctor>>
 #+END_SRC
 
 ** Examples
@@ -332,7 +376,7 @@
          q))
      q points))
 
-  (dotimes [i 10] (time (def q (reduce add-point (quadtree 0 0 100 100) (for [x (range 0 100 0.5) y (range 0 100 0.5)] [x y])))))
+  (dotimes [i 10] (time (def q (reduce #(g/add-point % %2 %2) (st/quadtree 0 0 100 100) (for [x (range 0 100 0.5) y (range 0 100 0.5)] [x y])))))
 
   (dotimes [i 10] (time (def q (reduce add-point (octree 0 0 0 100 100 100) (for [x (range 0 100 2) y (range 0 100 2) z (range 0 100 2)] [x y z])))))
 #+END_SRC

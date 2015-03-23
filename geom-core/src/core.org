@@ -541,17 +541,10 @@ protocol consisting of just this one function:
 
 #+BEGIN_SRC clojure :noweb-ref protos-types
   (defprotocol PSpatialTree
-    (add-point [_ p])
-    (child-index-for-point [_ p])
-    (child-for-point [_ p])
+    (add-point [_ p d])
     (delete-point [_ p])
-    (get-children [_])
     (get-point [_])
-    (set-child [_ i c])
-    (set-children [_ c])
-    (set-point [_ p])
-    (make-child-for-point [_ p add-point?])
-    (split-node [_]))
+    (get-point-data [_]))
 #+END_SRC
 
 *** Buffered instances
