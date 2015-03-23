@@ -109,30 +109,30 @@ required control points. This only works for non-closed curves, though.
 
   (defn auto-spline2
     ([points]
-       (->> points
-            (find-cpoints* vec2 0.25)
-            (auto-spline* points)
-            (thi.ng.geom.types.Bezier2.)))
+     (->> points
+          (find-cpoints* vec2 0.25)
+          (auto-spline* points)
+          (thi.ng.geom.types.Bezier2.)))
     ([points closed?]
-       (auto-spline2
-        (if closed?
-          (conj (vec points) (first points))
-          points))))
+     (auto-spline2
+      (if closed?
+        (conj (vec points) (first points))
+        points))))
 
   (defn bezier3
-      [points] (thi.ng.geom.types.Bezier3. (mapv vec3 points)))
-    
-    (defn auto-spline3
-      ([points]
-         (->> points
-              (find-cpoints* vec3 0.25)
-              (auto-spline* points)
-              (thi.ng.geom.types.Bezier3.)))
-      ([points closed?]
-         (auto-spline3
-          (if closed?
-            (conj (vec points) (first points))
-            points))))
+    [points] (thi.ng.geom.types.Bezier3. (mapv vec3 points)))
+
+  (defn auto-spline3
+    ([points]
+     (->> points
+          (find-cpoints* vec3 0.25)
+          (auto-spline* points)
+          (thi.ng.geom.types.Bezier3.)))
+    ([points closed?]
+     (auto-spline3
+      (if closed?
+        (conj (vec points) (first points))
+        points))))
 #+END_SRC
 
 ** TODO Bezier2
