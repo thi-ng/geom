@@ -170,7 +170,7 @@
    [_ s]
    (cond
     (instance? thi.ng.geom.types.Circle2 s) (isec/intersect-circle-circle? _ s)
-    (instance? thi.ng.geom.types.Rect2 s) (isec/intersect-aabb-sphere? s _)
+    (instance? thi.ng.geom.types.Rect2 s) (isec/intersect-rect-circle? s _)
     :default (err/type-error! "Circle2" s)))
 #+END_SRC
 
