@@ -1,4 +1,14 @@
+** r743
+
+| [[https://github.com/thi-ng/geom/commit/8e7ba4f69cd8407d68fafa66eef0783c333e2cef][8e7ba4f]] | [core] [types] breaking change update to quadtree & octree - update tree impls to use points as unqiue keys w/ attached data values - update PSpatialTree protocol, split out PTreeOps (in spatialtree ns) for non-public ops - update tree selection fns to return stored values, not the points they're indexed at - update org structure of spatialtree ns |
+| [[https://github.com/thi-ng/geom/commit/2f672cf9ae5c012bc82763481f1bba267e3d4f0d][2f672cf]] | [types] bugfix circle/rect intersection call |
+| [[https://github.com/thi-ng/geom/commit/e00c63d0c38a1b49b9705092260a1ee4d4e8f86f][e00c63d]] | [types] minor format update bezier ns |
+| [[https://github.com/thi-ng/geom/commit/6a1f9fadf4c6eef6c638e098a440b156a2866849][6a1f9fa]] | [all] add CHANGELOG.org, update update-changelog.sh |
+
 ** r737
+
+*Important:* Starting with this release, thi.ng/geom is transitioning
+to use transducers in many places and therefore requires Clojure 1.7.0(-alpha*).
 
 | [[https://github.com/thi-ng/geom/commit/6425f62d01409f91755c7a0d2120685e1aa2d419][6425f62]] | [physics] minor optimizations |
 | [[https://github.com/thi-ng/geom/commit/b1721a95f3f1d814573397611d20bf7ca396a8b7][b1721a9]] | [types] bugfix closest-point impls for Bezier2/3, Quad3, Rect2 & Triangle3, update lob-geom-proxi template |

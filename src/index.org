@@ -231,11 +231,6 @@ thi.ng/geom
 target/geom-<<conf-version()>>.js
 #+END_SRC
 
-** Leiningen coordinates
-#+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
-  [thi.ng/geom "0.0.737"]
-#+END_SRC
-
 ** Leiningen project file                                          :noexport:
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
   (defproject <<project-name>> "<<conf-version()>>"
@@ -264,6 +259,7 @@ target/geom-<<conf-version()>>.js
 
 | *Version* | *Released* | *Lein coordinates*        | *Tagged Github URL* |
 |-----------+------------+---------------------------+---------------------|
+|   0.0.743 | 2015-03-23 | =[thi.ng/geom "0.0.743"]= | [[https://github.com/thi-ng/geom/tree/r743][r743]]                |
 |   0.0.737 | 2015-03-22 | =[thi.ng/geom "0.0.737"]= | [[https://github.com/thi-ng/geom/tree/r737][r737]]                |
 |   0.0-725 | 2015-03-15 | =[thi.ng/geom "0.0-725"]= | [[https://github.com/thi-ng/geom/tree/r725][r725]]                |
 |   0.0-715 | 2015-02-25 | =[thi.ng/geom "0.0-715"]= | [[https://github.com/thi-ng/geom/tree/r715][r715]]                |
