@@ -1,11 +1,11 @@
-** r743
+** r743 - 2015-03-23
 
 | [[https://github.com/thi-ng/geom/commit/8e7ba4f69cd8407d68fafa66eef0783c333e2cef][8e7ba4f]] | [core] [types] breaking change update to quadtree & octree - update tree impls to use points as unqiue keys w/ attached data values - update PSpatialTree protocol, split out PTreeOps (in spatialtree ns) for non-public ops - update tree selection fns to return stored values, not the points they're indexed at - update org structure of spatialtree ns |
 | [[https://github.com/thi-ng/geom/commit/2f672cf9ae5c012bc82763481f1bba267e3d4f0d][2f672cf]] | [types] bugfix circle/rect intersection call |
 | [[https://github.com/thi-ng/geom/commit/e00c63d0c38a1b49b9705092260a1ee4d4e8f86f][e00c63d]] | [types] minor format update bezier ns |
-| [[https://github.com/thi-ng/geom/commit/6a1f9fadf4c6eef6c638e098a440b156a2866849][6a1f9fa]] | [all] add CHANGELOG.org, update update-changelog.sh |
+| [[https://github.com/thi-ng/geom/commit/6a1f9fadf4c6eef6c638e098a440b156a2866849][6a1f9fa]] | [meta] add CHANGELOG.org, update update-changelog.sh |
 
-** r737
+** r737 - 2015-03-22
 
 *Important:* Starting with this release, thi.ng/geom is transitioning
 to use transducers in many places and therefore requires Clojure 1.7.0(-alpha*).
@@ -14,27 +14,26 @@ to use transducers in many places and therefore requires Clojure 1.7.0(-alpha*).
 | [[https://github.com/thi-ng/geom/commit/b1721a95f3f1d814573397611d20bf7ca396a8b7][b1721a9]] | [types] bugfix closest-point impls for Bezier2/3, Quad3, Rect2 & Triangle3, update lob-geom-proxi template |
 | [[https://github.com/thi-ng/geom/commit/50ce3d19ceab15ed5869105e8075fb060b1c20b5][50ce3d1]] | [all] transducers - major update & bugfixes |
 | [[https://github.com/thi-ng/geom/commit/25526c51ede149768d98c61d6964bdf208c92792][25526c5]] | [core] bugfix ns import in vector bench |
-| [[https://github.com/thi-ng/geom/commit/667e73f6c5f92f5e1c9427f119a80558b1b112a9][667e73f]] | [all] add perforate-x dep, remove obsolete bench helpers, update vector benchmarks |
-| [[https://github.com/thi-ng/geom/commit/62a3f7956e80e312fa0a2a1ae0d165526a0ad2ce][62a3f79]] | [all] update tangle-all.sh & tangle-module.sh |
+| [[https://github.com/thi-ng/geom/commit/667e73f6c5f92f5e1c9427f119a80558b1b112a9][667e73f]] | [meta] add perforate-x dep, remove obsolete bench helpers, update vector benchmarks |
+| [[https://github.com/thi-ng/geom/commit/62a3f7956e80e312fa0a2a1ae0d165526a0ad2ce][62a3f79]] | [meta] update tangle-all.sh & tangle-module.sh |
 | [[https://github.com/thi-ng/geom/commit/3d5c3135f68cb9145ef53a866bb4893568e0f9b5][3d5c313]] | [core] refactor benchmark setup (as bench.core ns), add cljs benchmarks, update cljs dep |
 | [[https://github.com/thi-ng/geom/commit/65984376daf0597c8c5b65e5c5ce80cd4a11aada][6598437]] | [core] prepare project for benchmarking, add deps and vector benchmarks |
-| [[https://github.com/thi-ng/geom/commit/4366b082515742b99d61419c9c2ed38c10ff1a66][4366b08]] | [all] add setagenda.el for global task list |
+| [[https://github.com/thi-ng/geom/commit/4366b082515742b99d61419c9c2ed38c10ff1a66][4366b08]] | [meta] add setagenda.el for global task list |
 
-** r725
+** r725 - 2015-03-15
 
-| [[https://github.com/thi-ng/geom/commit/037db1d28da681e20e3d7f1d3ed0ff820109eafa][037db1d]] | [all] update thi.ng/common & color deps |
+| [[https://github.com/thi-ng/geom/commit/037db1d28da681e20e3d7f1d3ed0ff820109eafa][037db1d]] | [meta] update thi.ng/common & color deps |
 | [[https://github.com/thi-ng/geom/commit/66e6be12ec88d72ead3bd6bb908eec5d45f9104a][66e6be1]] | [types] update intersections for Rect2 & Triangle2 |
 | [[https://github.com/thi-ng/geom/commit/6a9cdbcd770ff940e2f3a7574183a97d614532b2][6a9cdbc]] | [core] add intersect-line2-edges & intersect-ray2-edges |
-| [[https://github.com/thi-ng/geom/commit/9310f84d0b913fcbb36e2b69dcca811836dc62b9][9310f84]] | [all] add install-module.sh |
+| [[https://github.com/thi-ng/geom/commit/9310f84d0b913fcbb36e2b69dcca811836dc62b9][9310f84]] | [meta] add install-module.sh |
 | [[https://github.com/thi-ng/geom/commit/9deca1b963b6a6ce4dd8a6a30840a70042d833a7][9deca1b]] | [types] update PTessellate for Quad3 (use tessellate-3 as default) |
 | [[https://github.com/thi-ng/geom/commit/94ab30d3cecf4c8208723117b82434207925d957][94ab30d]] | [types] bugfix/update PTessellate for Rect2, update ctor to support maps |
 | [[https://github.com/thi-ng/geom/commit/23cd0bdfa29560ffbb3dbee078dc5a43cbb87e2b][23cd0bd]] | [types] add dev notes |
 | [[https://github.com/thi-ng/geom/commit/2228eed45914c53d99beac332509c1296796db22][2228eed]] | [types] add PRotate impls for LineStrip3 |
 | [[https://github.com/thi-ng/geom/commit/6eea3c99633f3b4d3502f4d9e6b868f0409b4ace][6eea3c9]] | [webgl] add colored mesh demo |
 
-** r715
+** r715 - 2015-02-25
 
 | [[https://github.com/thi-ng/geom/commit/78c19dddc0ada29afb51861613637b7038f28beb][78c19dd]] | [types] bugfix rect/subdivide, update version infos, bugfix deploy-all.sh |
 | [[https://github.com/thi-ng/geom/commit/7b265051c53fd5d28060a5aa972a82e2ecbd65ce][7b26505]] | [core] bugfix array alloc in vec2/normal |
-| [[https://github.com/thi-ng/geom/commit/d530a9e77ccc3fe689108d6d7e670985cc563794][d530a9e]] | refactoring module index files, updating deps (cljx & shadergraph), update example section |
-
+| [[https://github.com/thi-ng/geom/commit/d530a9e77ccc3fe689108d6d7e670985cc563794][d530a9e]] | [meta] refactoring module index files, updating deps (cljx & shadergraph), update example section |
