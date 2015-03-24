@@ -33,8 +33,8 @@ the rest of the library is built on, currently:
 | Matrix32       | Matrix44                  |
 |                | Quaternion                |
 | Line2          | Line3                     |
-| LineStrip2     | LineStrip3 (TBD)          |
-| Bezier2        | Bezier3 (TBD)             |
+| LineStrip2     | LineStrip3                |
+| Bezier2        | Bezier3                   |
 | Circle2        | Sphere                    |
 | Ellipse2 (TBD) | Ellipsoid (TBD)           |
 | Rect2          | AABB                      |
@@ -44,7 +44,8 @@ the rest of the library is built on, currently:
 | Polygon2       | Polygon3 (TBD)            |
 | Path2          | Path3 (TBD)               |
 |                | Plane                     |
-|                | GMesh                     |
+|                | BasicMesh (polygon soup)  |
+|                | GMesh (navigatable)       |
 | Point quadtree | Point octree              |
 |                | SVO (experimental)        |
 |                | Isosurface (experimental) |
@@ -58,27 +59,28 @@ source code to see which operations are supported.
 In addition to these types, the library also implements these common
 operations:
 
-- Automatic spline generation from set of points
+- Automatic spline generation from list of points
+- Parallel-transport frame sweep mesh generation
 - Basic SVG path parsing
 - 2D Delaunay triangulation
 - 2D convex hull
 - Shape extrusion as solid or walled mesh
-- Tesselation of simple 2D polygons
-- Insetting of simple 2D polygons
+- Tesselation of simple 2D polygons (no holes)
+- Basic insetting of simple 2D polygons (no miter support)
 - Sutherland-Hodgeman clipping of 2D polygons
-- Entity area, circumference & volume calculations
-- Entity intersection checks (vs. line, ray, shape)
-- Entity to mesh conversion (w/ many options)
+- Entity area, circumference & volume calculations for all implemented types
+- 2D/3D entity intersection checks (vs. line, ray, shape)
+- 2D/3D entity to mesh conversion (w/ many options)
 - Access entities as graph-like structures (vertices/edges)
 - Entity sampling (at fixed resolution or uniform distance)
-- Entity subdivision (only lines, rects, quads, tetrahedrons)
+- Entity subdivision (only lines, triangles, rects, quads, tetrahedrons)
 - Subdivision meshes (Catmull-Clark, Doo-Sabin, Butterfly)
 - 3D Boolean operations on meshes (union, difference, intersection)
 - 3D geometry export (PLY, STL, OBJ, OFF formats)
 
 *** API scope
 
-Since this project does not provide any display & rendering
+Since the core lib does not provide any display & rendering
 functionality at all, a number of support libraries are being worked
 on, incl. WebGL & SVG support via Clojurescript and wrappers &
 GUI libraries for JOGL based desktop apps. Together with sister
@@ -99,6 +101,8 @@ daunting for newcomers to navigate the project.
 
 *** [[../geom-core/src/index.org][geom-core]]
 
+[[http://crossclj.info/doc/thi.ng/geom-core/latest/index.html][CrossCLJ info]]
+
 This module forms the library's core and is required by all others. It
 defines approx. 50 protocols and provides implementations of
 fundamental geometry types/functions like 2d/3d vector algebra,
@@ -108,6 +112,8 @@ with point collections, normals, sampling, triangles etc.
 
 *** [[../geom-types/src/index.org][geom-types]]
 
+[[http://crossclj.info/doc/thi.ng/geom-types/latest/index.html][CrossCLJ info]]
+
 This module defines all high-level 2d/3d data types and
 implementations of the various core protocols for each. From a user
 perspective this module should be considered part of the core, however
@@ -116,11 +122,15 @@ where only vectors/matrix ops are needed.
 
 *** [[../geom-meshops/src/index.org][geom-meshops]]
 
+[[http://crossclj.info/doc/thi.ng/geom-meshops/latest/index.html][CrossCLJ info]]
+
 This module provides several tools & operations related to working
 with meshes, incl. I/O, subdivisions, Delaunay triangulation,
 cleaning, CSG/Boolean mesh merge etc.
 
 *** [[../geom-physics/src/index.org][geom-physics]]
+
+[[http://crossclj.info/doc/thi.ng/geom-physics/latest/index.html][CrossCLJ info]]
 
 This module consists of a simple particle-based physics engine with
 Verlet integration and support for behaviors and constaints, both for
@@ -130,15 +140,21 @@ positive or negative force fields (attractors).
 
 *** [[../geom-svg/src/index.org][geom-svg]]
 
+[[http://crossclj.info/doc/thi.ng/geom-svg/latest/index.html][CrossCLJ info]]
+
 A module to help with building SVG based visualizations of geom
-entities (incl. a customizable 3D mesh renderer w/ shader support).
-CLJS support for this module is planned, but currently untested.
+entities using hiccup compatible syntax. Includes a customizable 3D
+mesh renderer w/ software shader support.
 
 *** [[../geom-webgl/src/index.org][geom-webgl]]
 
-This is a pure CLJS module and provides a number of conversion &
-rendering functions to simplify the use of types defined in the
-=geom-types= module under CLJS with WebGL.
+[[http://crossclj.info/doc/thi.ng/geom-webgl/latest/index.html][CrossCLJ info]]
+
+This is a pure CLJS module and provides a common WebGL functionality
+(context creation, shader management & presets, buffer management,
+textures, FBO etc.), as well as a number of conversion & rendering
+functions to simplify the use of types defined in the =geom-types=
+module under CLJS with WebGL.
 
 ** Status
 
@@ -154,14 +170,14 @@ A full test suite, website & tutorials are actively being worked on.
 
 A preliminary list of other projects using this library:
 
-- [[http://holiday2014.movingbrands.com][MB Home installation]]
 - [[https://github.com/postspectacular/devart-codefactory/][Google DevArt Co(de)Factory]]
+- [[http://holiday2014.movingbrands.com][MB Home installation]]
 - [[http://github.com/learn-postspectacular/resonate-2014-workshop][Resonate 2014 workshop]]
 - [[http://github.com/thi-ng/luxor][Luxor]]
 - [[http://github.com/thi-ng/morphogen][Morphogen]]
 - [[http://thi.ng/][thi.ng website]]
 
-Several small examples are include in this repo:
+Several small examples are included in this repo:
 
 - [[../geom-types/src/ptf.org][PTF examples]]
 - [[../geom-svg/src/examples.org][SVG examples]]
@@ -255,7 +271,9 @@ target/geom-<<conf-version()>>.js
                                 [:timezone "0"]]])
 #+END_SRC
 
-** Release history
+** Release history & changelog
+
+See [[../CHANGELOG.org][CHANGELOG.org]] for further details.
 
 | *Version* | *Released* | *Lein coordinates*        | *Tagged Github URL* |
 |-----------+------------+---------------------------+---------------------|
