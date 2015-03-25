@@ -361,13 +361,13 @@
         (voxels yz)   (bit-or 0x80)))))
 
   (defn boundary-voxel-checker
-    [f cells config]
+    [f config cells]
     (fn [v] (let [id (f cells config v)] (if (> id 0) (< id 0xff)))))
 
   (defn boundary-voxels
     [config cells]
-    (let [front (boundary-voxel-checker voxel-id-front cells config)
-          back  (boundary-voxel-checker voxel-id-back cells config)]
+    (let [front (boundary-voxel-checker voxel-id-front config cells)
+          back  (boundary-voxel-checker voxel-id-back config cells)]
       (eduction (filter #(if (front %) true (back %))) cells)))
 
   (defn thicken-boundary
@@ -378,7 +378,7 @@
     [voxels config cells]
     (for [idx cells
           :let [id (voxel-id-front voxels config idx)]
-          :when (if (pos? id) (< id 0xff))]
+          :when (if (> id 0) (< id 0xff))]
       [id (* 3 idx) idx (voxel-cell config idx)]))
 #+END_SRC
 
