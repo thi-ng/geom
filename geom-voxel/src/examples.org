@@ -2,6 +2,10 @@
 
 * geom.voxels examples
 
+This is a render of the voxel mesh generated with the code below:
+
+[[../../assets/svo-d7.jpg]]
+
 #+BEGIN_SRC clojure :tangle ../babel/examples/example01.clj :mkdirp yes :padline no
   (ns example01
     (:require

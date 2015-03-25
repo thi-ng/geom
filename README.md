@@ -1,5 +1,7 @@
 # thi.ng/geom
 
+![SVO mesh created with geom-voxel module](assets/svo-d7.jpg)
+
 Comprehensive and modular geometry toolkit for Clojure/ClojureScript
 developed in a literate programming style.
 
