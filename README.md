@@ -1,5 +1,7 @@
 # thi.ng/geom
 
+[![Join the chat at https://gitter.im/thi-ng/geom](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/thi-ng/geom?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Comprehensive and modular geometry toolkit for Clojure/ClojureScript
 developed in a literate programming style.
 
