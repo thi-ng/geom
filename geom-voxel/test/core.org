@@ -1,0 +1,34 @@
+#+SETUPFILE: ../../src/setup.org
+
+* thi.ng.geom.voxel.test.core
+
+** Constants & helpers
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+
+#+END_SRC
+
+** Main
+#+BEGIN_SRC clojure :noweb-ref tests
+  (deftest test-main
+    (is true "is true"))
+#+END_SRC
+
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/voxel/test/core.cljx :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.voxel.test.core
+    ,#+cljs
+    (:require-macros
+     [cemerick.cljs.test :refer (is deftest with-test run-tests testing)])
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :refer [vec3]]
+     [thi.ng.geom.voxel.svo :as svo]
+     [thi.ng.geom.voxel.isosurface :as iso]
+     ,#+clj  [clojure.test :refer :all]
+     ,#+cljs [cemerick.cljs.test]))
+
+  <<helpers>>
+
+  <<tests>>
+#+END_SRC
