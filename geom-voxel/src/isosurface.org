@@ -323,38 +323,40 @@
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn voxel-id-front
-    [voxels {:keys [stride stride-z]} idx]
-    (let [y2 (+ idx stride) z2 (+ idx stride-z) yz (+ z2 stride)
-          idx1 (inc idx) y21 (inc y2) z21 (inc z2) yz1 (inc yz)]
-      (->> 0
-           (set-bit-if-index voxels idx 0x01)
-           (set-bit-if-index voxels idx1 0x02)
-           (set-bit-if-index voxels z21 0x04)
-           (set-bit-if-index voxels z2 0x08)
-           (set-bit-if-index voxels y2 0x10)
-           (set-bit-if-index voxels y21 0x20)
-           (set-bit-if-index voxels yz1 0x40)
-           (set-bit-if-index voxels yz 0x80))))
+    (^long
+     [voxels {:keys [stride stride-z]} idx]
+     (let [y2 (+ idx stride), z2 (+ idx stride-z), yz (+ z2 stride)
+           idx1 (inc idx), y21 (inc y2), z21 (inc z2), yz1 (inc yz)]
+       (->> 0
+            (set-bit-if-index voxels idx 0x01)
+            (set-bit-if-index voxels idx1 0x02)
+            (set-bit-if-index voxels z21 0x04)
+            (set-bit-if-index voxels z2 0x08)
+            (set-bit-if-index voxels y2 0x10)
+            (set-bit-if-index voxels y21 0x20)
+            (set-bit-if-index voxels yz1 0x40)
+            (set-bit-if-index voxels yz 0x80)))))
 
   (defn voxel-id-back
-    [voxels {:keys [stride stride-z]} idx]
-    (let [y2 (- idx stride) z2 (- idx stride-z) yz (- z2 stride)
-          idx1 (dec idx) y21 (dec y2) z21 (dec z2) yz1 (dec yz)]
-      (->> 0
-           (set-bit-if-index voxels idx 0x01)
-           (set-bit-if-index voxels idx1 0x02)
-           (set-bit-if-index voxels z21 0x04)
-           (set-bit-if-index voxels z2 0x08)
-           (set-bit-if-index voxels y2 0x10)
-           (set-bit-if-index voxels y21 0x20)
-           (set-bit-if-index voxels yz1 0x40)
-           (set-bit-if-index voxels yz 0x80))))
+    (^long
+     [voxels {:keys [stride stride-z]} idx]
+     (let [y2 (- idx stride), z2 (- idx stride-z), yz (- z2 stride)
+           idx1 (dec idx), y21 (dec y2), z21 (dec z2), yz1 (dec yz)]
+       (->> 0
+            (set-bit-if-index voxels idx 0x01)
+            (set-bit-if-index voxels idx1 0x02)
+            (set-bit-if-index voxels z21 0x04)
+            (set-bit-if-index voxels z2 0x08)
+            (set-bit-if-index voxels y2 0x10)
+            (set-bit-if-index voxels y21 0x20)
+            (set-bit-if-index voxels yz1 0x40)
+            (set-bit-if-index voxels yz 0x80)))))
 
   (defn boundary-voxels
     [config cells]
     (filter
-     #(or (let [id (voxel-id-front cells config %)] (and (pos? id) (< id 0xff)))
-          (let [id (voxel-id-back cells config %)] (and (pos? id) (< id 0xff))))
+     #(or (let [id (voxel-id-front cells config %)] (if (> id 0) (< id 0xff)))
+          (let [id (voxel-id-back cells config %)] (if (> id 0) (< id 0xff))))
      cells))
 
   (defn thicken-boundary
@@ -368,52 +370,63 @@
     [voxels config cells]
     (for [idx cells
           :let [id (voxel-id-front voxels config idx)]
-          :when (and (pos? id) (< id 0xff))]
+          :when (if (pos? id) (< id 0xff))]
       [id (* 3 idx) idx (voxel-cell config idx)]))
 #+END_SRC
 
 ** Isosurface computation
 
 #+BEGIN_SRC clojure :noweb-ref isosurf
+  (defn- cell-vertice-builder
+    [size iso iso*]
+    (fn [vertices cell]
+      (let [eflags (int (compute-edges (cell 0)))]
+        (if (> eflags 0)
+          (let [[voxel-id vid idx cell] cell
+                vid1 (inc vid)
+                vid2 (inc vid1)
+                delta (if (zero? (bit-and voxel-id 1)) iso* iso)
+                [x y z] (g/* cell size)
+                vertices (if (> (bit-and eflags 0x01) 0)
+                           (if (nil? (vertices vid))
+                             (assoc! vertices vid
+                                     (vec3 (if (zero? (bit-and voxel-id 0x02)) (+ x delta) (- x delta)) y z))
+                             vertices)
+                           vertices)
+                vertices (if (> (bit-and eflags 0x02) 0)
+                           (if (nil? (vertices vid1))
+                             (assoc! vertices vid1
+                                     (vec3 x (if (zero? (bit-and voxel-id 0x10)) (+ y delta) (- y delta)) z))
+                             vertices)
+                           vertices)]
+            (if (> (bit-and eflags 0x04) 0)
+              (if (nil? (vertices vid2))
+                (assoc! vertices vid2
+                        (vec3 x y (if (zero? (bit-and voxel-id 0x08)) (+ z delta) (- z delta))))
+                vertices)
+              vertices))
+          vertices))))
+
   (defn surface-mesh
     "Computes a triangle mesh of a voxel tree's iso surface
     at the given tree depth and iso value (between 0.0 ... 1.0)"
     [{:keys [dim maxdepth] :as tree} depth iso-val]
     (let [{:keys [depth size stride stride-z] :as config} (voxel-config-at-depth tree depth)
-          kernel [-1 0 1]
-          offsets (map (fn [[x y z]] (cell-index stride stride-z x y z)) (for [z kernel y kernel x kernel] [x y z]))
-          indexed-eo (->> edge-offsets (map (fn [[x y z w]] (+ (* 3 (cell-index stride stride-z x y z)) w))) vec)
-          scaled-isov (* size iso-val)
-          scaled-isov1 (- scaled-isov size)
-          voxels (select-cells tree depth)
-          _ (prn "orig voxels" (count voxels))
+          kernel     [-1 0 1]
+          offsets    (for [z kernel y kernel x kernel] (cell-index stride stride-z x y z))
+          indexed-eo (mapv (fn [[x y z w]] (+ (* 3 (cell-index stride stride-z x y z)) w)) edge-offsets)
+          iso        (* size iso-val)
+          iso*       (- iso size)
+          voxels     (select-cells tree depth)
+          ;;_ (prn "orig voxels" (count voxels))
           ;; select boundary voxels
-          cells (->> voxels
-                     (boundary-voxels config)
-                     (thicken-boundary offsets)
-                     (precompute-cells voxels config))
-          _ (prn "filtered" (count cells))
-          vertices (persistent!
-                    (reduce
-                     (fn [vertices cell]
-                       (let [eflags (int (compute-edges (cell 0)))]
-                         (if (pos? eflags)
-                           (let [[voxel-id vid idx cell] cell
-                                 vid1 (inc vid) vid2 (inc vid1)
-                                 delta (if (zero? (bit-and voxel-id 1)) scaled-isov1 scaled-isov)
-                                 [x y z] (g/* cell size)
-                                 vertices (if (and (pos? (bit-and eflags 0x01)) (nil? (vertices vid)))
-                                            (assoc! vertices vid (vec3 (if (zero? (bit-and voxel-id 0x02)) (+ x delta) (- x delta)) y z))
-                                            vertices)
-                                 vertices (if (and (pos? (bit-and eflags 0x02)) (nil? (vertices vid1)))
-                                            (assoc! vertices vid1 (vec3 x (if (zero? (bit-and voxel-id 0x10)) (+ y delta) (- y delta)) z))
-                                            vertices)]
-                             (if (and (pos? (bit-and eflags 0x04)) (nil? (vertices vid2)))
-                               (assoc! vertices vid2 (vec3 x y (if (zero? (bit-and voxel-id 0x08)) (+ z delta) (- z delta))))
-                               vertices))
-                           vertices)))
-                     (transient {}) cells))]
-      (prn "creating mesh...")
+          cells      (->> voxels
+                          (boundary-voxels config)
+                          (thicken-boundary offsets)
+                          (precompute-cells voxels config))
+          ;;_ (prn "filtered" (count cells))
+          vertices   (persistent! (reduce (cell-vertice-builder size iso iso*) (transient {}) cells))]
+      ;; (prn "creating mesh...")
       (->> cells
            (mapcat
             (fn [[vid eid]]
