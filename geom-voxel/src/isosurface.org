@@ -314,9 +314,15 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/voxel/macros.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.voxel.macros)
 
-  (defmacro set-bit-if-index
-    [voxels idx mask id]
-    `(if (~voxels ~idx) ~id (bit-or ~id ~mask)))
+  (defmacro not-cond->
+    "Like clojure.core/cond-> but with inverted test semantics."
+    [expr & clauses]
+    (assert (even? (count clauses)))
+    (let [g (gensym)
+          pstep (fn [[test step]] `(if ~test ~g (-> ~g ~step)))]
+      `(let [~g ~expr
+             ~@(interleave (repeat g) (map pstep (partition 2 clauses)))]
+         ~g)))
 #+END_SRC
 
 *** Voxel lookups
@@ -327,37 +333,40 @@
      [voxels {:keys [stride stride-z]} idx]
      (let [y2 (+ idx stride), z2 (+ idx stride-z), yz (+ z2 stride)
            idx1 (inc idx), y21 (inc y2), z21 (inc z2), yz1 (inc yz)]
-       (->> 0
-            (set-bit-if-index voxels idx 0x01)
-            (set-bit-if-index voxels idx1 0x02)
-            (set-bit-if-index voxels z21 0x04)
-            (set-bit-if-index voxels z2 0x08)
-            (set-bit-if-index voxels y2 0x10)
-            (set-bit-if-index voxels y21 0x20)
-            (set-bit-if-index voxels yz1 0x40)
-            (set-bit-if-index voxels yz 0x80)))))
+       (not-cond-> 0
+         (voxels idx)  (bit-or 0x01)
+         (voxels idx1) (bit-or 0x02)
+         (voxels z21)  (bit-or 0x04)
+         (voxels z2)   (bit-or 0x08)
+         (voxels y2)   (bit-or 0x10)
+         (voxels y21)  (bit-or 0x20)
+         (voxels yz1)  (bit-or 0x40)
+         (voxels yz)   (bit-or 0x80)))))
 
   (defn voxel-id-back
     (^long
      [voxels {:keys [stride stride-z]} idx]
      (let [y2 (- idx stride), z2 (- idx stride-z), yz (- z2 stride)
            idx1 (dec idx), y21 (dec y2), z21 (dec z2), yz1 (dec yz)]
-       (->> 0
-            (set-bit-if-index voxels idx 0x01)
-            (set-bit-if-index voxels idx1 0x02)
-            (set-bit-if-index voxels z21 0x04)
-            (set-bit-if-index voxels z2 0x08)
-            (set-bit-if-index voxels y2 0x10)
-            (set-bit-if-index voxels y21 0x20)
-            (set-bit-if-index voxels yz1 0x40)
-            (set-bit-if-index voxels yz 0x80)))))
+       (not-cond-> 0
+         (voxels idx)  (bit-or 0x01)
+         (voxels idx1) (bit-or 0x02)
+         (voxels z21)  (bit-or 0x04)
+         (voxels z2)   (bit-or 0x08)
+         (voxels y2)   (bit-or 0x10)
+         (voxels y21)  (bit-or 0x20)
+         (voxels yz1)  (bit-or 0x40)
+         (voxels yz)   (bit-or 0x80)))))
+
+  (defn boundary-voxel-checker
+    [f cells config]
+    (fn [v] (let [id (f cells config v)] (if (> id 0) (< id 0xff)))))
 
   (defn boundary-voxels
     [config cells]
-    (filter
-     #(or (let [id (voxel-id-front cells config %)] (if (> id 0) (< id 0xff)))
-          (let [id (voxel-id-back cells config %)] (if (> id 0) (< id 0xff))))
-     cells))
+    (let [front (boundary-voxel-checker voxel-id-front cells config)
+          back  (boundary-voxel-checker voxel-id-back cells config)]
+      (eduction (filter #(if (front %) true (back %))) cells)))
 
   (defn thicken-boundary
     [offsets cells]
@@ -383,10 +392,10 @@
       (let [eflags (int (compute-edges (cell 0)))]
         (if (> eflags 0)
           (let [[voxel-id vid idx cell] cell
-                vid1 (inc vid)
-                vid2 (inc vid1)
-                delta (if (zero? (bit-and voxel-id 1)) iso* iso)
-                [x y z] (g/* cell size)
+                vid1     (inc vid)
+                vid2     (inc vid1)
+                delta    (if (zero? (bit-and voxel-id 1)) iso* iso)
+                [x y z]  (g/* cell size)
                 vertices (if (> (bit-and eflags 0x01) 0)
                            (if (nil? (vertices vid))
                              (assoc! vertices vid
@@ -443,14 +452,14 @@
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/voxel/isosurface.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.voxel.isosurface
-    ,#+cljs (:require-macros [thi.ng.geom.voxel.macros :refer [set-bit-if-index]])
+    ,#+cljs (:require-macros [thi.ng.geom.voxel.macros :refer [not-cond->]])
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec3]]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.voxel.svo :as svo :refer [cell-index select-cells voxel-cell voxel-config-at-depth]]
      [thi.ng.common.math.core :as m]
-     ,#+clj [thi.ng.geom.voxel.macros :refer [set-bit-if-index]]))
+     ,#+clj [thi.ng.geom.voxel.macros :refer [not-cond->]]))
 
   <<lut>>
 
