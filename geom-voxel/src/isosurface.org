@@ -333,30 +333,32 @@
      [voxels {:keys [stride stride-z]} idx]
      (let [y2 (+ idx stride), z2 (+ idx stride-z), yz (+ z2 stride)
            idx1 (inc idx), y21 (inc y2), z21 (inc z2), yz1 (inc yz)]
-       (not-cond-> 0
-         (voxels idx)  (bit-or 0x01)
-         (voxels idx1) (bit-or 0x02)
-         (voxels z21)  (bit-or 0x04)
-         (voxels z2)   (bit-or 0x08)
-         (voxels y2)   (bit-or 0x10)
-         (voxels y21)  (bit-or 0x20)
-         (voxels yz1)  (bit-or 0x40)
-         (voxels yz)   (bit-or 0x80)))))
+       (not-cond->
+        0
+        (voxels idx)  (bit-or 0x01)
+        (voxels idx1) (bit-or 0x02)
+        (voxels z21)  (bit-or 0x04)
+        (voxels z2)   (bit-or 0x08)
+        (voxels y2)   (bit-or 0x10)
+        (voxels y21)  (bit-or 0x20)
+        (voxels yz1)  (bit-or 0x40)
+        (voxels yz)   (bit-or 0x80)))))
 
   (defn voxel-id-back
     (^long
      [voxels {:keys [stride stride-z]} idx]
      (let [y2 (- idx stride), z2 (- idx stride-z), yz (- z2 stride)
            idx1 (dec idx), y21 (dec y2), z21 (dec z2), yz1 (dec yz)]
-       (not-cond-> 0
-         (voxels idx)  (bit-or 0x01)
-         (voxels idx1) (bit-or 0x02)
-         (voxels z21)  (bit-or 0x04)
-         (voxels z2)   (bit-or 0x08)
-         (voxels y2)   (bit-or 0x10)
-         (voxels y21)  (bit-or 0x20)
-         (voxels yz1)  (bit-or 0x40)
-         (voxels yz)   (bit-or 0x80)))))
+       (not-cond->
+        0
+        (voxels idx)  (bit-or 0x01)
+        (voxels idx1) (bit-or 0x02)
+        (voxels z21)  (bit-or 0x04)
+        (voxels z2)   (bit-or 0x08)
+        (voxels y2)   (bit-or 0x10)
+        (voxels y21)  (bit-or 0x20)
+        (voxels yz1)  (bit-or 0x40)
+        (voxels yz)   (bit-or 0x80)))))
 
   (defn boundary-voxel-checker
     [f cells config]
@@ -370,10 +372,7 @@
 
   (defn thicken-boundary
     [offsets cells]
-    (persistent!
-     (reduce
-      (fn [acc v] (reduce #(conj! % (+ v %2)) acc offsets))
-      (transient #{}) cells)))
+    (into #{} (mapcat (fn [v] (eduction (map #(+ v %)) offsets))) cells))
 
   (defn precompute-cells
     [voxels config cells]
@@ -389,7 +388,7 @@
   (defn- cell-vertice-builder
     [size iso iso*]
     (fn [vertices cell]
-      (let [eflags (int (compute-edges (cell 0)))]
+      (let [eflags (int (compute-edges (first cell)))]
         (if (> eflags 0)
           (let [[voxel-id vid idx cell] cell
                 vid1     (inc vid)
@@ -422,7 +421,7 @@
     [{:keys [dim maxdepth] :as tree} depth iso-val]
     (let [{:keys [depth size stride stride-z] :as config} (voxel-config-at-depth tree depth)
           kernel     [-1 0 1]
-          offsets    (for [z kernel y kernel x kernel] (cell-index stride stride-z x y z))
+          offsets    (vec (for [z kernel y kernel x kernel] (cell-index stride stride-z x y z)))
           indexed-eo (mapv (fn [[x y z w]] (+ (* 3 (cell-index stride stride-z x y z)) w)) edge-offsets)
           iso        (* size iso-val)
           iso*       (- iso size)
@@ -437,14 +436,16 @@
           vertices   (persistent! (reduce (cell-vertice-builder size iso iso*) (transient {}) cells))]
       ;; (prn "creating mesh...")
       (->> cells
-           (mapcat
-            (fn [[vid eid]]
-              (map
-               (fn [t]
-                 [(vertices (+ eid (indexed-eo (t 0))))
-                  (vertices (+ eid (indexed-eo (t 2))))
-                  (vertices (+ eid (indexed-eo (t 1))))])
-               (cell-triangles vid))))
+           (eduction
+            (mapcat
+             (fn [[vid eid]]
+               (eduction
+                (map
+                 (fn [t]
+                   [(vertices (+ eid (indexed-eo (t 0))))
+                    (vertices (+ eid (indexed-eo (t 2))))
+                    (vertices (+ eid (indexed-eo (t 1))))]))
+                (cell-triangles vid)))))
            (g/into (bm/basic-mesh)))))
 #+END_SRC
 
