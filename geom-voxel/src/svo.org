@@ -48,6 +48,14 @@
   (defn node-offset
     "Computes the position of a child node id"
     (^thi.ng.geom.core.vector.Vec3
+     [[x y z :as p] d]
+     (let [[x' y' z'] (g/+ p d)]
+       (fn [b]
+         (vec3
+          (if (pos? (bit-and b 2)) x' x)
+          (if (pos? (bit-and b 1)) y' y)
+          (if (pos? (bit-and b 4)) z' z)))))
+    (^thi.ng.geom.core.vector.Vec3
      [[x y z] d b]
      (vec3
       (if (pos? (bit-and b 2)) (+ x d) x)
@@ -222,21 +230,24 @@
 
   (defn select-cells
     ([tree min-depth]
-     (select-cells
-      tree V3 (* (:dim tree) 0.5) 0 0
-      (voxel-config-at-depth tree min-depth) (:branches tree) #{}))
-    ([tree offset dim idx depth config branches acc]
-     (let [n-val (get (:data tree) idx 0)
+     (->> (transient #{})
+          (select-cells
+           (:data tree) V3 (* (:dim tree) 0.5) 0 0
+           (voxel-config-at-depth tree min-depth) (:branches tree))
+          (persistent!)))
+    ([data offset dim idx depth config branches acc]
+     (let [n-val (get data idx 0)
            c-depth (inc depth)
-           c-dim (* dim 0.5)]
+           c-dim (* dim 0.5)
+           noff (node-offset offset dim)]
        ;; (prn :d depth :o offset :o2 (g/madd (vec3 dim) 2 offset) :dim dim :idx idx :val n-val)
        (if (zero? n-val) acc
            (if (< depth (:depth config))
              (reduce
               (fn [acc id]
                 (select-cells
-                 tree
-                 (node-offset offset dim id)
+                 data
+                 (noff id)
                  c-dim
                  (node-index idx id c-depth branches)
                  c-depth
@@ -244,11 +255,12 @@
                  acc))
               acc (used-bits n-val))
              ;; collect voxels
-             (let [{:keys [inv-size stride stride-z]} config]
+             (let [{:keys [inv-size stride stride-z]} config
+                   noff (node-offset offset dim)]
                (reduce
                 (fn [acc c]
-                  (let [[x y z] (g/* (node-offset offset dim c) inv-size)]
-                    (conj acc (+ (+ (int x) (* (int y) stride)) (* (int z) stride-z)))))
+                  (let [[x y z] (g/* (noff c) inv-size)]
+                    (conj! acc (+ (+ (int x) (* (int y) stride)) (* (int z) stride-z)))))
                 acc (used-bits n-val))))))))
 
   (defn apply-voxels
