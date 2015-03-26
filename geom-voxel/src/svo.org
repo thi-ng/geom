@@ -145,7 +145,7 @@
 
   (defn delete-at
     ([tree v]
-     (delete-at tree V3 (* (:dim tree) 0.5) 0 0 (:max-depth tree) (:branches tree) v))
+     (first (delete-at tree V3 (* (:dim tree) 0.5) 0 0 (:max-depth tree) (:branches tree) v)))
     ([tree offset dim idx depth max-depth branches v]
      (let [id    (node-id offset dim v)
            bmask (bit-shift-left 1 id)

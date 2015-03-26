@@ -29,8 +29,6 @@ This is a render of the voxel mesh generated with the code below:
              (* (Math/cos z) (Math/sin y))))
          t)))
 
-  (def delete-voxels #(first (svo/delete-at % %2)))
-
   (defn voxel-box
     ([tree op flt r]
      (voxel-box tree op flt r r r))
@@ -50,8 +48,8 @@ This is a render of the voxel mesh generated with the code below:
    (def v2
      (reduce
       (fn [tree [op r]] (voxel-box tree op identity r))
-      v [[delete-voxels (range (+ 10 wall) (- 20 wall) res)]
-         [delete-voxels (range (+ 15 wall) (- 25 wall) res)]])))
+      v [[svo/delete-at (range (+ 10 wall) (- 20 wall) res)]
+         [svo/delete-at (range (+ 15 wall) (- 25 wall) res)]])))
 
   (time
    (def v3
@@ -64,8 +62,8 @@ This is a render of the voxel mesh generated with the code below:
   (time
    (def v4
      (reduce
-      (fn [tree [f rx ry rz]] (voxel-box tree identity rx ry rz))
-      v3 [[delete-voxels (range 9 26 res) (range 9 26 res) (range 18 26 res)]])))
+      (fn [tree [op rx ry rz]] (voxel-box tree op identity rx ry rz))
+      v3 [[svo/delete-at (range 9 26 res) (range 9 26 res) (range 18 26 res)]])))
 
   (time (with-open [o (io/output-stream "foo.stl")] (mio/write-stl o (g/tessellate (iso/surface-mesh v4 11 0.5)))))
 #+END_SRC
