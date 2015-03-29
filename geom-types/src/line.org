@@ -56,7 +56,7 @@
              - [[#ptransform][PTransform]]
              - [[#pvolume][PVolume]]
              - [[#end-of-implementations][End of implementations]]
-     - [[#todo-linestrip2][TODO LineStrip2]]
+     - [[#linestrip2][LineStrip2]]
          - [[#protocol-implementations][Protocol implementations]]
              - [[#parea][PArea]]
              - [[#todo-pboundary][TODO PBoundary]]
@@ -75,7 +75,7 @@
              - [[#ptransform][PTransform]]
              - [[#pvolume][PVolume]]
              - [[#end-of-implementations][End of implementations]]
-     - [[#todo-linestrip3][TODO LineStrip3]]
+     - [[#linestrip3][LineStrip3]]
          - [[#protocol-implementations][Protocol implementations]]
              - [[#parea][PArea]]
              - [[#todo-pboundary][TODO PBoundary]]
@@ -485,7 +485,7 @@ further below.
 #+BEGIN_SRC clojure :noweb-ref impl3
   )
 #+END_SRC
-** TODO LineStrip2
+** LineStrip2
 *** Protocol implementations
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
   (extend-type thi.ng.geom.types.LineStrip2
@@ -603,28 +603,11 @@ further below.
    (gu/sample-uniform udist include-last? (:points _)))
 #+END_SRC
 **** PTransform
-#+BEGIN_SRC clojure :noweb-ref impl-ls2
-  g/PRotate
-  (rotate
-   [_ theta]
-   (thi.ng.geom.types.LineStrip2. (mapv #(g/rotate % theta) (:points _))))
-  g/PScale
-  (scale
-   ([_ s]
-      (thi.ng.geom.types.LineStrip2. (mapv #(g/* % s) (:points _))))
-   ([_ sx sy]
-      (thi.ng.geom.types.LineStrip2. (mapv #(g/* % sx sy) (:points _)))))
-  (scale-size
-   [_ s]
-   (thi.ng.geom.types.LineStrip2. (gu/scale-size s (:points _))))
-  g/PTranslate
-  (translate
-   [_ t]
-   (thi.ng.geom.types.LineStrip2. (mapv #(g/+ % t) (:points _))))
-  g/PTransform
-  (transform
-   [_ m]
-   (thi.ng.geom.types.LineStrip2. (mapv #(g/transform-vector m %) (:points _))))
+#+BEGIN_SRC clojure :noweb-ref impl-ls2 :noweb yes
+  <<lob-geom-rotate(type="thi.ng.geom.types.LineStrip2")>>
+  <<lob-geom-scale(type="thi.ng.geom.types.LineStrip2")>>
+  <<lob-geom-translate(type="thi.ng.geom.types.LineStrip2")>>
+  <<lob-geom-tx(type="thi.ng.geom.types.LineStrip2")>>
 #+END_SRC
 **** PVolume
 #+BEGIN_SRC clojure :noweb-ref impl-ls2 :noweb yes
@@ -636,7 +619,7 @@ further below.
   )
 #+END_SRC
 
-** TODO LineStrip3
+** LineStrip3
 *** Protocol implementations
 #+BEGIN_SRC clojure :noweb-ref impl-ls3
   (extend-type thi.ng.geom.types.LineStrip3
@@ -754,37 +737,12 @@ further below.
    (gu/sample-uniform udist include-last? (:points _)))
 #+END_SRC
 **** PTransform
-#+BEGIN_SRC clojure :noweb-ref impl-ls3
-  g/PRotate
-  (rotate-around-axis
-   [_ axis theta]
-   (thi.ng.geom.types.LineStrip3. (mapv #(g/rotate-around-axis % axis theta) (:points _))))
-  (rotate-x
-   [_ theta]
-   (thi.ng.geom.types.LineStrip3. (mapv #(g/rotate-x % theta) (:points _))))
-  (rotate-y
-   [_ theta]
-   (thi.ng.geom.types.LineStrip3. (mapv #(g/rotate-y % theta) (:points _))))
-  (rotate-z
-   [_ theta]
-   (thi.ng.geom.types.LineStrip3. (mapv #(g/rotate-z % theta) (:points _))))
-  g/PScale
-  (scale
-   ([_ s]
-    (thi.ng.geom.types.LineStrip3. (mapv #(g/* % s) (:points _))))
-   ([_ sx sy]
-    (thi.ng.geom.types.LineStrip3. (mapv #(g/* % sx sy) (:points _)))))
-  (scale-size
-   [_ s]
-   (thi.ng.geom.types.LineStrip3. (gu/scale-size s (:points _))))
-  g/PTranslate
-  (translate
-   [_ t]
-   (thi.ng.geom.types.LineStrip3. (mapv #(g/+ % t) (:points _))))
-  g/PTransform
-  (transform
-   [_ m]
-   (thi.ng.geom.types.LineStrip3. (mapv #(g/transform-vector m %) (:points _))))
+#+BEGIN_SRC clojure :noweb-ref impl-ls3 :noweb yes
+  <<lob-geom-rotate(type="thi.ng.geom.types.LineStrip3")>>
+  <<lob-geom-rotate3d(type="thi.ng.geom.types.LineStrip3")>>
+  <<lob-geom-scale(type="thi.ng.geom.types.LineStrip3")>>
+  <<lob-geom-translate(type="thi.ng.geom.types.LineStrip3")>>
+  <<lob-geom-tx(type="thi.ng.geom.types.LineStrip3")>>
 #+END_SRC
 **** PVolume
 #+BEGIN_SRC clojure :noweb-ref impl-ls3 :noweb yes
