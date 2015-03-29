@@ -178,7 +178,7 @@
       (get-point-data [_] data)
 
       g/PClear
-      (clear [_]
+      (clear* [_]
         (set! children nil)
         (set! children point)
         (set! children data)
@@ -250,7 +250,7 @@
       (get-point-data [_] data)
 
       g/PClear
-      (clear [_]
+      (clear* [_]
         (set! children nil)
         (set! children point)
         (set! children data)
