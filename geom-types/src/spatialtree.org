@@ -16,8 +16,6 @@
      - [[#examples][Examples]]
 
 * Namespace: thi.ng.geom.spatialtree
-
-
 ** Internal tree protocols
 
 #+BEGIN_SRC clojure :noweb-ref protos
@@ -179,6 +177,13 @@
       (get-point [_] point)
       (get-point-data [_] data)
 
+      g/PClear
+      (clear [_]
+        (set! children nil)
+        (set! children point)
+        (set! children data)
+        _)
+
       PTreeOps
       (child-index-for-point [_ [px py]]
         (if (< px (+ x w))
@@ -244,6 +249,13 @@
       (get-point [_] point)
       (get-point-data [_] data)
 
+      g/PClear
+      (clear [_]
+        (set! children nil)
+        (set! children point)
+        (set! children data)
+        _)
+
       PTreeOps
       (child-index-for-point [_ [px py pz]]
         (+ (if (< pz (+ z d)) 0 4)
@@ -294,8 +306,8 @@
 
 #+BEGIN_SRC clojure :noweb-ref impl
   #+clj (require 'clojure.pprint)
-  #+clj (defmethod print-method MutableQuadtreeNode [o ^java.io.Writer w] (.write w (.toString o)))
-  #+clj (defmethod print-method MutableOctreeNode [o ^java.io.Writer w] (.write w (.toString o)))
+  #+clj (defmethod print-method MutableQuadtreeNode [^MutableQuadtreeNode o ^java.io.Writer w] (.write w (.toString o)))
+  #+clj (defmethod print-method MutableOctreeNode [^MutableOctreeNode o ^java.io.Writer w] (.write w (.toString o)))
 #+END_SRC
 
 ** Constructors
