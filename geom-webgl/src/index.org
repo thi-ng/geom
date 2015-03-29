@@ -54,12 +54,6 @@ target/geom-webgl-<<conf-version()>>.js
 [thi.ng/shadergraph "0.1.0"]
 #+END_SRC
 
-** Leiningen coordinates                                           :noexport:
-
-#+BEGIN_SRC clojure :noweb yes :noweb-ref lein-coords
-  [<<project-name>> "<<conf-version()>>"]
-#+END_SRC
-
 ** Leiningen project file                                          :noexport:
 
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no

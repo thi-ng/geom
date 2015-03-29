@@ -1,3 +1,18 @@
+** r770 - 2015-03-29
+
+| [[https://github.com/thi-ng/geom/commit/b5410ea3af6192c383c85f8a832ca4c7014c73e0][b5410ea]] | [meta] add voxel module to all bulk build scripts |
+| [[https://github.com/thi-ng/geom/commit/4772c08481deb1f1d2298841f2ef8b9d95b7fc9e][4772c08]] | [physics] add :timestep & :iter listener support to VerletPhysics |
+| [[https://github.com/thi-ng/geom/commit/363dddf50db7bbcbf8738ea0b88485f82e5840ce][363dddf]] | [types] refactor PRotate/PScale/PTransform protocol impls for LineStrip2/3 |
+| [[https://github.com/thi-ng/geom/commit/d2581c23aae02a0f66967faef39c6d8c7dbd85c2][d2581c2]] | [types] add PClear impl for quadtree/octree, add typehints for print-method |
+| [[https://github.com/thi-ng/geom/commit/71a5a56cf7ef384700e6f0d2f02ec70d70c59ddb][71a5a56]] | [voxel] add SVO defrecord, minor optimizations |
+| [[https://github.com/thi-ng/geom/commit/b425a183c40df2c826862fa7121eb11564199c1b][b425a18]] | [voxel] minor optimizations in svo ns (set-at, delete-at, select) |
+| [[https://github.com/thi-ng/geom/commit/b24e54f8a00eaa936631c54ff1e7d7e3e41e27ed][b24e54f]] | [voxel] update svo select-cells to use transient, add HOF version of node-offset |
+| [[https://github.com/thi-ng/geom/commit/27466c01ec140c2cf306ebb1f3c970a1b6609130][27466c0]] | [voxel] more transducers in surface-mesh fn |
+| [[https://github.com/thi-ng/geom/commit/511c00d3c8f264c824d0f7f3bb432c0ef3e08e7c][511c00d]] | [voxel] refactor voxel lookup macro, start adding transducers |
+| [[https://github.com/thi-ng/geom/commit/38a72d6b34c17213973a18fc923d62d54ede2e59][38a72d6]] | [voxel] refactor isosurface ns & example |
+| [[https://github.com/thi-ng/geom/commit/f732d61f9f3be622c30cf76bbe2ebfdf4b80fb43][f732d61]] | [voxel] update SVO & isosurface ns to current core API, add example |
+| [[https://github.com/thi-ng/geom/commit/9b1aa120a193aa0df427a5b737efa4d33ae18e4c][9b1aa12]] | Merge pull request #17 from jgmize/fix-example-links-master |
+
 ** r743 - 2015-03-23
 
 | [[https://github.com/thi-ng/geom/commit/8e7ba4f69cd8407d68fafa66eef0783c333e2cef][8e7ba4f]] | [core] [types] breaking change update to quadtree & octree - update tree impls to use points as unqiue keys w/ attached data values - update PSpatialTree protocol, split out PTreeOps (in spatialtree ns) for non-public ops - update tree selection fns to return stored values, not the points they're indexed at - update org structure of spatialtree ns |
