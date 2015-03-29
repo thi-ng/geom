@@ -1078,12 +1078,13 @@
    [_ v] (m/delta= _ v *eps*))
   (delta=
    [_ v eps]
-   (if (and (sequential? v) (== 3 (count v)))
-     (vm/rewrite-v3-v-no-let
-      buf v 0.0
-      (if (m/delta= x vx eps)
-        (if (m/delta= y vy eps)
-          (m/delta= z vz eps))))))
+   (if (sequential? v)
+     (if (== 3 (count v))
+       (vm/rewrite-v3-v-no-let
+        buf v 0.0
+        (if (m/delta= x vx eps)
+          (if (m/delta= y vy eps)
+            (m/delta= z vz eps)))))))
 #+END_SRC
 
 *** PDistance

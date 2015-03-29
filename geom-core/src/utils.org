@@ -49,24 +49,26 @@
   (defn closest-line-between
     [a1 b1 a2 b2]
     (let [p43 (g/- b2 a2)]
-      (if-not (m/delta= [0.0 0.0 0.0] p43 *eps*)
+      (if-not (m/delta= V3 p43 *eps*)
         (let [p21 (g/- b1 a1)]
-          (if-not (m/delta= [0.0 0.0 0.0] p21 *eps*)
-            (let [p13 (g/- a1 a2)
+          (if-not (m/delta= V3 p21 *eps*)
+            (let [p13   (g/- a1 a2)
                   d1343 (g/dot p13 p43)
                   d4321 (g/dot p43 p21)
                   d1321 (g/dot p13 p21)
                   d4343 (g/dot p43 p43)
                   d2121 (g/dot p21 p21)
-                  d (mm/msub d2121 d4343 d4321 d4321)]
+                  d     (mm/msub d2121 d4343 d4321 d4321)]
               (if (m/delta= 0.0 d *eps*)
                 {:type :parallel}
-                (let [n (mm/msub d1343 d4321 d1321 d4343)
+                (let [n  (mm/msub d1343 d4321 d1321 d4343)
                       ua (/ n d)
                       ub (/ (mm/madd d4321 ua d1343) d4343)]
                   {:type :intersect
-                   :a (g/madd p21 ua a1) :b (g/madd p43 ub a2)
-                   :ua ua :ub ub}))))))))
+                   :a    (g/madd p21 ua a1)
+                   :b    (g/madd p43 ub a2)
+                   :ua   ua
+                   :ub   ub}))))))))
 
   (defn dist*
     [rf]
