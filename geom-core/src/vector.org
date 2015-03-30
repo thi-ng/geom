@@ -6,6 +6,8 @@
          - [[#templates][Templates]]
          - [[#clojure-protocols][Clojure protocols]]
          - [[#clojurescript-protocols][ClojureScript protocols]]
+         - [[#object-tostring][Object (toString)]]
+         - [[#pbuffered][PBuffered]]
          - [[#pmathops][PMathOps]]
          - [[#pclear][PClear]]
          - [[#pcrossproduct][PCrossProduct]]
@@ -29,6 +31,8 @@
          - [[#templates][Templates]]
          - [[#clojure-protocols][Clojure protocols]]
          - [[#clojurescript-protocols][ClojureScript protocols]]
+         - [[#object-tostring][Object (toString)]]
+         - [[#pbuffered][PBuffered]]
          - [[#pmathops][PMathOps]]
          - [[#pclear][PClear]]
          - [[#pcrossproduct][PCrossProduct]]
@@ -167,6 +171,14 @@
   ,#+clj (meta [_] _meta)
   ,#+clj (withMeta [_ m] (Vec2. (double-array buf) _hash m))
 
+  ,#+clj Cloneable
+  ,#+clj (clone
+         [_]
+         (let [^doubles buf' (double-array 2)]
+           (aset buf' 0 (aget buf 0))
+           (aset buf' 1 (aget buf 1))
+           (Vec2. buf' _hash _meta)))
+
   ,#+clj clojure.lang.ILookup
   ,#+clj (valAt
          [_ k]
@@ -204,8 +216,8 @@
   ,#+clj (entryAt
          [_ k] (clojure.lang.MapEntry. k (aget buf k)))
   ,#+clj (assoc
-            [_ k v]
-            <<tpl-assoc2(fn="double-array")>>)
+         [_ k v]
+         <<tpl-assoc2(fn="double-array")>>)
   ,#+clj (assocN
          [_ k v]
          (let [b (double-array buf)] (aset b k (double v)) (Vec2. b nil _meta)))
@@ -370,13 +382,26 @@
   ,#+cljs (-reduce
           [coll f start]
           <<tpl-reduce2-start>>)
+#+END_SRC
 
-  ,#+cljs g/PBuffered
-  ,#+cljs (get-buffer [_] buf)
-  ,#+cljs (copy-to-buffer [_ dest stride idx] (.set dest buf idx) (+ idx stride))
+*** Object (toString)
 
+#+BEGIN_SRC clojure :noweb-ref vec2
   Object
   (toString [_] (str "[" (aget buf 0) " " (aget buf 1) "]"))
+#+END_SRC
+
+*** PBuffered
+
+#+BEGIN_SRC clojure :noweb-ref vec2
+  g/PBuffered
+  (get-buffer [_] buf)
+  (copy-to-buffer
+   [_ dest stride idx]
+   ,#+clj  (aset ^doubles dest idx (aget buf 0))
+   ,#+clj  (aset ^doubles dest (inc idx) (aget buf 1))
+   ,#+cljs (.set dest buf idx)
+   (+ idx stride))
 #+END_SRC
 
 *** PMathOps
@@ -387,6 +412,7 @@
   (+ [_ v]       (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) + buf v _meta))
   (+ [_ v1 v2]   (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) + buf v1 v2 0.0 _meta))
   (- [_]         (vm/v2-op0 #+clj (double-array) #+cljs (new js/Float32Array) - buf _meta))
+  ;;(-! [_]        (vm/vec-op0! - buf 2) (set! _hash nil) _)
   (- [_ v]       (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) - buf v _meta))
   (- [_ v1 v2]   (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) - buf v1 v2 0.0 _meta))
   (* [_] _)
@@ -656,13 +682,19 @@
   g/PVectorReduce
   (reduce-vector
    [_ f xs]
-   (Vec2. (vec2-reduce* f _ xs) nil _meta))
+   (let [^doubles buf' #+clj (double-array 2) #+cljs (js/Float32Array. buf)]
+     ,#+clj (aset buf' 0 (aget buf 0))
+     ,#+clj (aset buf' 1 (aget buf 1))
+     (Vec2. (vec2-reduce* f buf' xs) nil _meta)))
   (reduce-vector
    [_ f f2 xs]
-   (let [^doubles b (vec2-reduce* f _ xs)]
-     (aset b 0 (double (f2 (aget b 0) 0)))
-     (aset b 1 (double (f2 (aget b 1) 1)))
-     (Vec2. b nil _meta)))
+   (let [^doubles buf' #+clj (double-array 2) #+cljs (js/Float32Array. buf)]
+     ,#+clj (aset buf' 0 (aget buf 0))
+     ,#+clj (aset buf' 1 (aget buf 1))
+     (vec2-reduce* f buf' xs)
+     (aset buf' 0 (double (f2 (aget buf' 0) 0)))
+     (aset buf' 1 (double (f2 (aget buf' 1) 1)))
+     (Vec2. buf' nil _meta)))
 #+END_SRC
 
 *** End implementation
@@ -798,6 +830,15 @@
   ,#+clj clojure.lang.IObj
   ,#+clj (meta [_] _meta)
   ,#+clj (withMeta [_ m] (Vec3. (double-array buf) _hash m))
+
+  ,#+clj Cloneable
+  ,#+clj (clone
+         [_]
+         (let [^doubles buf' (double-array 3)]
+           (aset buf' 0 (aget buf 0))
+           (aset buf' 1 (aget buf 1))
+           (aset buf' 2 (aget buf 2))
+           (Vec2. buf' _hash _meta)))
 
   ,#+clj clojure.lang.ILookup
   ,#+clj (valAt
@@ -1013,13 +1054,27 @@
   ,#+cljs (-reduce
           [coll f start]
           <<tpl-reduce3-start>>)
+#+END_SRC
 
-  ,#+cljs g/PBuffered
-  ,#+cljs (get-buffer [_] buf)
-  ,#+cljs (copy-to-buffer [_ dest stride idx] (.set dest buf idx) (+ idx stride))
+*** Object (toString)
 
+#+BEGIN_SRC clojure :noweb-ref vec3
   Object
   (toString [_] (str "[" (aget buf 0) " " (aget buf 1) " " (aget buf 2) "]"))
+#+END_SRC
+
+*** PBuffered
+
+#+BEGIN_SRC clojure :noweb-ref vec3
+  g/PBuffered
+  (get-buffer [_] buf)
+  (copy-to-buffer
+   [_ dest stride idx]
+   ,#+clj  (aset ^doubles dest idx (aget buf 0))
+   ,#+clj  (aset ^doubles dest (inc idx) (aget buf 1))
+   ,#+clj  (aset ^doubles dest (+ idx 2) (aget buf 2))
+   ,#+cljs (.set dest buf idx)
+   (+ idx stride))
 #+END_SRC
 
 *** PMathOps
@@ -1385,14 +1440,22 @@
   g/PVectorReduce
   (reduce-vector
    [_ f xs]
-   (Vec3. (vec3-reduce* f _ xs) nil _meta))
+   (let [^doubles buf' #+clj (double-array 3) #+cljs (js/Float32Array. buf)]
+     ,#+clj (aset buf' 0 (aget buf 0))
+     ,#+clj (aset buf' 1 (aget buf 1))
+     ,#+clj (aset buf' 2 (aget buf 2))
+     (Vec3. (vec3-reduce* f buf' xs) nil _meta)))
   (reduce-vector
    [_ f f2 xs]
-   (let [^doubles b (vec3-reduce* f _ xs)]
-     (aset b 0 (double (f2 (aget b 0) 0)))
-     (aset b 1 (double (f2 (aget b 1) 1)))
-     (aset b 2 (double (f2 (aget b 2) 2)))
-     (Vec3. b nil _meta)))
+   (let [^doubles buf' #+clj (double-array 3) #+cljs (js/Float32Array. buf)]
+     ,#+clj (aset buf' 0 (aget buf 0))
+     ,#+clj (aset buf' 1 (aget buf 1))
+     ,#+clj (aset buf' 2 (aget buf 2))
+     (vec3-reduce* f buf' xs)
+     (aset buf' 0 (double (f2 (aget buf' 0) 0)))
+     (aset buf' 1 (double (f2 (aget buf' 1) 1)))
+     (aset buf' 2 (double (f2 (aget buf' 2) 2)))
+     (Vec3. buf' nil _meta)))
 #+END_SRC
 
 *** End implementation
@@ -1519,29 +1582,29 @@
 
 #+BEGIN_SRC clojure :noweb-ref ops
   (defn vec2-reduce*
-    [op ^Vec2 acc xs]
-    (let [^doubles b (.-buf acc)]
-      (loop [ax (aget b 0), ay (aget b 1), xs xs]
-        (if xs
-          (let [^doubles v (.-buf ^Vec2 (first xs))]
-            (recur (double (op ax (aget v 0))) (double (op ay (aget v 1))) (next xs)))
-          (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
-            (aset b 0 ax)
-            (aset b 1 ay)
-            b)))))
+    [op ^doubles acc xs]
+    (transduce
+     (map (fn [^Vec2 x] (.-buf x)))
+     (fn
+       ([a] a)
+       ([^doubles a ^doubles b]
+        (aset a 0 (double (op (aget a 0) (aget b 0))))
+        (aset a 1 (double (op (aget a 1) (aget b 1))))
+        a))
+     acc xs))
 
   (defn vec3-reduce*
-    [op ^Vec3 acc xs]
-    (let [^doubles b (.-buf acc)]
-      (loop [ax (aget b 0), ay (aget b 1), az (aget b 2), xs xs]
-        (if xs
-          (let [^doubles v (.-buf ^Vec3 (first xs))]
-            (recur (double (op ax (aget v 0))) (double (op ay (aget v 1))) (double (op az (aget v 2))) (next xs)))
-          (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
-            (aset b 0 ax)
-            (aset b 1 ay)
-            (aset b 2 az)
-            b)))))
+    [op ^doubles acc xs]
+    (transduce
+     (map (fn [^Vec3 x] (.-buf x)))
+     (fn
+       ([a] a)
+       ([^doubles a ^doubles b]
+        (aset a 0 (double (op (aget a 0) (aget b 0))))
+        (aset a 1 (double (op (aget a 1) (aget b 1))))
+        (aset a 2 (double (op (aget a 2) (aget b 2))))
+        a))
+     acc xs))
 #+END_SRC
 
 ** Constructors
@@ -1646,7 +1709,6 @@
 #+END_SRC
 
 ** Code rewriting macros
-
 *** Vec2
 
 #+BEGIN_SRC clojure :noweb-ref v2-macros
@@ -1755,6 +1817,11 @@
         (aset dest# 0 (double (~op ~'x)))
         (aset dest# 1 (double (~op ~'y))))
        (new ~'Vec2 dest# nil ~meta)))
+
+  (defmacro vec-op0!
+    [op src n]
+    `(do
+       ~@(map #(list 'aset src % (list 'double (list op (list 'aget src %)))) (range n))))
 
   (defmacro v2-op1-xy
     [btype op src v v2 d meta]
