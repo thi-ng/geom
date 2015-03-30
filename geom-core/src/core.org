@@ -33,6 +33,21 @@
     (abs [_]))
 #+END_SRC
 
+**** PMathOps
+
+#+BEGIN_SRC clojure :noweb-ref protos-math
+  (defprotocol PMutableMathOps
+    (+! [_] [_ a] [_ a b] [_ a b c])
+    (-! [_] [_ a] [_ a b] [_ a b c])
+    (*! [_] [_ a] [_ a b] [_ a b c])
+    (div! [_] [_ a] [_ a b] [_ a b c])
+    (madd! [_ a b])
+    (addm! [_ a b])
+    (msub! [_ a b])
+    (subm! [_ a b])
+    (abs! [_]))
+#+END_SRC
+
 **** PConjugate
 
 #+BEGIN_SRC clojure :noweb-ref protos-math

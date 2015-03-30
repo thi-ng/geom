@@ -412,7 +412,6 @@
   (+ [_ v]       (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) + buf v _meta))
   (+ [_ v1 v2]   (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) + buf v1 v2 0.0 _meta))
   (- [_]         (vm/v2-op0 #+clj (double-array) #+cljs (new js/Float32Array) - buf _meta))
-  ;;(-! [_]        (vm/vec-op0! - buf 2) (set! _hash nil) _)
   (- [_ v]       (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) - buf v _meta))
   (- [_ v1 v2]   (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) - buf v1 v2 0.0 _meta))
   (* [_] _)
@@ -426,6 +425,25 @@
   (msub [_ a b]  (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) * - buf a b 1.0 0.0 _meta))
   (subm [_ a b]  (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) - * buf a b 0.0 1.0 _meta))
   (abs [_]       (vm/v2-op0 #+clj (double-array) #+cljs (new js/Float32Array) m/abs buf _meta))
+
+  g/PMutableMathOps
+  (+! [_]         _)
+  (+! [_ v]       (vm/v2-op1! + buf v) _)
+  (+! [_ v1 v2]   (vm/v2-op1-xy! + buf v1 v2 0.0) _)
+  (-! [_]         (vm/vec-op0! - buf 2) _)
+  (-! [_ v]       (vm/v2-op1! - buf v) _)
+  (-! [_ v1 v2]   (vm/v2-op1-xy! - buf v1 v2 0.0) _)
+  (*! [_]         _)
+  (*! [_ v]       (vm/v2-op1! * buf v) _)
+  (*! [_ v1 v2]   (vm/v2-op1-xy! * buf v1 v2 0.0) _)
+  (div! [_]       (vm/vec-op0! / buf 2) _)
+  (div! [_ v]     (vm/v2-op1! / buf v) _)
+  (div! [_ v1 v2] (vm/v2-op1-xy! / buf v1 v2 0.0) _)
+  (madd! [_ a b]  (vm/v2-op2! * + buf a b 1.0 0.0) _)
+  (addm! [_ a b]  (vm/v2-op2! + * buf a b 0.0 1.0) _)
+  (msub! [_ a b]  (vm/v2-op2! * - buf a b 1.0 0.0) _)
+  (subm! [_ a b]  (vm/v2-op2! - * buf a b 0.0 1.0) _)
+  (abs! [_]       (vm/vec-op0! m/abs buf 2) _)
 #+END_SRC
 
 *** PClear
@@ -1097,11 +1115,34 @@
   (div [_ v]     (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) / buf v _meta))
   (div [_ v1 v2] (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) / / buf v1 v2 0.0 0.0 _meta))
   (div [_ x y z] (vm/v3-op1-xyz #+clj (double-array) #+cljs (new js/Float32Array) / buf x y z _meta))
-  (madd [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) * + buf a b 0.0 0.0 _meta))
-  (addm [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) + * buf a b 0.0 0.0 _meta))
-  (msub [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) * - buf a b 0.0 0.0 _meta))
-  (subm [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) - * buf a b 0.0 0.0 _meta))
+  (madd [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) * + buf a b 1.0 0.0 _meta))
+  (addm [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) + * buf a b 0.0 1.0 _meta))
+  (msub [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) * - buf a b 1.0 0.0 _meta))
+  (subm [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) - * buf a b 0.0 1.0 _meta))
   (abs [_]       (vm/v3-op0 #+clj (double-array) #+cljs (new js/Float32Array) m/abs buf _meta))
+
+  g/PMutableMathOps
+  (+! [_]         _)
+  (+! [_ v]       (vm/v3-op1! + buf v) _)
+  (+! [_ v1 v2]   (vm/v3-op2! + + buf v1 v2 0.0 0.0) _)
+  (+! [_ x y z]   (vm/v3-op1-xyz! + buf x y z) _)
+  (-! [_]         (vm/vec-op0! - buf 3) _)
+  (-! [_ v]       (vm/v3-op1! - buf v) _)
+  (-! [_ v1 v2]   (vm/v3-op2! - - buf v1 v2 0.0 0.0) _)
+  (-! [_ x y z]   (vm/v3-op1-xyz! - buf x y z) _)
+  (*! [_]         _)
+  (*! [_ v]       (vm/v3-op1! * buf v) _)
+  (*! [_ v1 v2]   (vm/v3-op2! * * buf v1 v2 0.0 0.0) _)
+  (*! [_ x y z]   (vm/v3-op1-xyz! * buf x y z) _)
+  (div! [_]       (vm/vec-op0! / buf 3) _)
+  (div! [_ v]     (vm/v3-op1! / buf v) _)
+  (div! [_ v1 v2] (vm/v3-op2! / / buf v1 v2 0.0 0.0) _)
+  (div! [_ x y z] (vm/v3-op1-xyz! / buf x y z) _)
+  (madd! [_ a b]  (vm/v3-op2! * + buf a b 1.0 0.0) _)
+  (addm! [_ a b]  (vm/v3-op2! + * buf a b 0.0 1.0) _)
+  (msub! [_ a b]  (vm/v3-op2! * - buf a b 1.0 0.0) _)
+  (subm! [_ a b]  (vm/v3-op2! - * buf a b 0.0 1.0) _)
+  (abs! [_]       (vm/vec-op0! m/abs buf 3) _)
 #+END_SRC
 
 *** PClear
@@ -1821,7 +1862,8 @@
   (defmacro vec-op0!
     [op src n]
     `(do
-       ~@(map #(list 'aset src % (list 'double (list op (list 'aget src %)))) (range n))))
+       ~@(map #(list 'aset src % (list 'double (list op (list 'aget src %)))) (range n))
+       (set! ~'_hash nil)))
 
   (defmacro v2-op1-xy
     [btype op src v v2 d meta]
@@ -1847,6 +1889,26 @@
              (aset ~dest 1 (double (~op (~op ~y ~by) ~cy)))))
          (new ~'Vec2 ~dest nil ~meta))))
 
+  (defmacro v2-op1-xy!
+    [op src v v2 d]
+    (let [[a b c bx by cx cy n1? n2? v1? v2?] (repeatedly gensym)]
+      `(let [~n1? (number? ~v)
+             ~n2? (number? ~v2)]
+         (if (if ~n1? ~n2? false)
+           (do (aset ~src 0 (double (~op (aget ~src 0) ~v)))
+               (aset ~src 1 (double (~op (aget ~src 1) ~v2))))
+           (let [~v1? (if-not ~n1? (instance? ~'Vec2 ~v))
+                 ~v2? (if-not ~n2? (instance? ~'Vec2 ~v2))
+                 ~(with-meta b {:tag "doubles"}) (if ~v1? (.-buf ~(with-meta v {:tag "Vec2"})))
+                 ~(with-meta c {:tag "doubles"}) (if ~v2? (.-buf ~(with-meta v2 {:tag "Vec2"})))
+                 ~bx (if ~v1? (aget ~b 0) (if ~n1? ~v (nth ~v 0 ~d)))
+                 ~by (if ~v1? (aget ~b 1) (if ~n1? ~v (nth ~v 1 ~d)))
+                 ~cx (if ~v2? (aget ~c 0) (if ~n2? ~v2 (nth ~v2 0 ~d)))
+                 ~cy (if ~v2? (aget ~c 1) (if ~n2? ~v2 (nth ~v2 1 ~d)))]
+             (aset ~src 0 (double (~op (~op (aget ~src 0) ~bx) ~cx)))
+             (aset ~src 1 (double (~op (~op (aget ~src 1) ~by) ~cy)))))
+         (set! ~'_hash nil))))
+
   (defmacro v2-op1
     [btype op src v meta]
     `(let [dest# (~@btype 2)]
@@ -1856,6 +1918,14 @@
         (aset dest# 1 (double (~op ~'y ~'vy))))
        (new ~'Vec2 dest# nil ~meta)))
 
+  (defmacro v2-op1!
+    [op src v]
+    `(rewrite-v2-nv-no-let
+      ~src ~v 0.0
+      (aset ~src 0 (double (~op ~'x ~'vx)))
+      (aset ~src 1 (double (~op ~'y ~'vy)))
+      (set! ~'_hash nil)))
+
   (defmacro v2-op2
     [btype op op2 src v v2 d1 d2 meta]
     `(let [dest# (~@btype 2)]
@@ -1864,6 +1934,14 @@
         (aset dest# 0 (double (~op2 (~op ~'x ~'bx) ~'cx)))
         (aset dest# 1 (double (~op2 (~op ~'y ~'by) ~'cy))))
        (new ~'Vec2 dest# nil ~meta)))
+
+  (defmacro v2-op2!
+    [op op2 src v v2 d1 d2]
+    `(rewrite-v2-nv-nv
+      ~src ~v ~v2 ~d1 ~d2
+      (aset ~src 0 (double (~op2 (~op ~'x ~'bx) ~'cx)))
+      (aset ~src 1 (double (~op2 (~op ~'y ~'by) ~'cy)))
+      (set! ~'_hash nil)))
 
   (defmacro v2-op2-no-let
     [btype op op2 src v v2 d1 d2 meta]
@@ -2019,6 +2097,16 @@
             (aset dest# 2 (double (~op (aget ~a 2) ~z)))
             (new ~'Vec3 dest# nil ~meta)))))
 
+  (defmacro v3-op1-xyz!
+    ([op src vs]
+       `(v3-op1-xyz ~op ~src (nth ~vs 0 0.0) (nth ~vs 1 0.0) (nth ~vs 2 0.0)))
+    ([op src x y z]
+       `(do
+          (aset ~src 0 (double (~op (aget ~src 0) ~x)))
+          (aset ~src 1 (double (~op (aget ~src 1) ~y)))
+          (aset ~src 2 (double (~op (aget ~src 2) ~z)))
+          (set! ~'_hash nil))))
+
   (defmacro v3-op1
     [btype op src v meta]
     `(let [dest# (~@btype 3)]
@@ -2029,6 +2117,15 @@
         (aset dest# 2 (double (~op ~'z ~'vz))))
        (new ~'Vec3 dest# nil ~meta)))
 
+  (defmacro v3-op1!
+    [op src v]
+    `(rewrite-v3-nv-no-let
+      ~src ~v 0.0
+      (aset ~src 0 (double (~op ~'x ~'vx)))
+      (aset ~src 1 (double (~op ~'y ~'vy)))
+      (aset ~src 2 (double (~op ~'z ~'vz)))
+      (set! ~'_hash nil)))
+
   (defmacro v3-op2
     [btype op op2 src v v2 d1 d2 meta]
     `(let [dest# (~@btype 3)]
@@ -2038,6 +2135,15 @@
         (aset dest# 1 (double (~op2 (~op ~'y ~'by) ~'cy)))
         (aset dest# 2 (double (~op2 (~op ~'z ~'bz) ~'cz))))
        (new ~'Vec3 dest# nil ~meta)))
+
+  (defmacro v3-op2!
+    [op op2 src v v2 d1 d2]
+    `(rewrite-v3-nv-nv
+      ~src ~v ~v2 ~d1 ~d2
+      (aset ~src 0 (double (~op2 (~op ~'x ~'bx) ~'cx)))
+      (aset ~src 1 (double (~op2 (~op ~'y ~'by) ~'cy)))
+      (aset ~src 2 (double (~op2 (~op ~'z ~'bz) ~'cz)))
+      (set! ~'_hash nil)))
 
   (defmacro v3-op2-no-let
     [btype op op2 src v v2 d1 d2 meta]
