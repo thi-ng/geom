@@ -181,7 +181,7 @@ If there's no intersection, the function returns =nil=.
   g/PProximity
   (closest-point
    [{p :p r :r} q]
-   (g/+ p (g/normalize (g/- q p) r)))
+   (g/+! (g/normalize (g/- q p) r) p))
 #+END_SRC
 
 *** PSample

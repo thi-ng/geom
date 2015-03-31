@@ -85,7 +85,7 @@
   g/PBoundary
   (contains-point?
    [{p :p r :r} q]
-   (<= (g/mag-squared (g/- p q)) (* r r)))
+   (<= (g/dist-squared p q) (* r r)))
 #+END_SRC
 
 *** PCenter
@@ -203,7 +203,7 @@
   g/PProximity
   (closest-point
    [{p :p r :r} q]
-   (g/+ p (g/normalize (g/- q p) r)))
+   (g/+! (g/normalize (g/- q p) r) p))
 #+END_SRC
 
 *** PSample
