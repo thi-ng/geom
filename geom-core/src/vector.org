@@ -449,7 +449,8 @@
 *** PClear
 #+BEGIN_SRC clojure :noweb-ref vec2
   g/PClear
-  (clear* [_] V2)
+  (clear* [_] (Vec2. #+clj (double-array 2) #+cljs (js/Float32Array. 2) nil nil))
+  (clear! [_] (aset buf 0 0.0) (aset buf 1 0.0) (set! _hash nil) _)
 #+END_SRC
 *** PCrossProduct
 
@@ -1149,7 +1150,8 @@
 
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PClear
-  (clear* [_] V3)
+  (clear* [_] (Vec3. #+clj (double-array 3) #+cljs (js/Float32Array. 3) nil nil))
+  (clear! [_] (aset buf 0 0.0) (aset buf 1 0.0) (aset buf 2 0.0) (set! _hash nil) _)
 #+END_SRC
 
 *** PCrossProduct

@@ -178,30 +178,35 @@
       (get-point-data [_] data)
 
       g/PClear
-      (clear* [_]
+      (clear*
+        [_] (MutableQuadtreeNode. x y w h nil nil nil bounds))
+      (clear!
+        [_]
         (set! children nil)
         (set! children point)
         (set! children data)
         _)
 
       PTreeOps
-      (child-index-for-point [_ [px py]]
+      (child-index-for-point
+        [_ [px py]]
         (if (< px (+ x w))
           (if (< py (+ y h)) 0 2)
           (if (< py (+ y h)) 1 3)))
       (child-for-point
         [_ p] (if children (children (child-index-for-point _ p))))
-
-      (make-child-for-point [_ p d add?]
+      (make-child-for-point
+        [_ p d add?]
         (let [idx (child-index-for-point _ p)]
           (or (children idx)
-              (let [cx (if (pos? (bit-and idx 1)) (+ x w) x)
-                    cy (if (pos? (bit-and idx 2)) (+ y h) y)
-                    c (MutableQuadtreeNode.
-                       cx cy (* 0.5 w) (* 0.5 h) nil (if add? p) (if add? d) nil)]
+              (let [cx (if (> (bit-and idx 1) 0) (+ x w) x)
+                    cy (if (> (bit-and idx 2) 0) (+ y h) y)
+                    c  (MutableQuadtreeNode.
+                        cx cy (* 0.5 w) (* 0.5 h) nil (if add? p) (if add? d) nil)]
                 (set-child _ idx c)
                 c))))
-      (split-node [_]
+      (split-node
+        [_]
         (set! children [nil nil nil nil])
         (set! point nil)
         (set! data nil)
@@ -212,7 +217,8 @@
       (set-point [_ p d] (set! point p) (set! data d) _)
 
       g/PBounds
-      (bounds [_]
+      (bounds
+        [_]
         (if bounds
           bounds
           (set! bounds
@@ -220,12 +226,14 @@
                  (vec2 x y) (vec2 (* w 2.0) (* h 2.0))))))
 
       Object
-      (toString [_] (str "#thi.ng.geom.spatialtree.MutableQuadtreeNode"
-                         "{:bounds " (pr-str (g/bounds _))
-                         " :children " (pr-str children)
-                         " :p " (pr-str point)
-                         " :d " (pr-str data)
-                         "}")))
+      (toString
+        [_]
+        (str "#thi.ng.geom.spatialtree.MutableQuadtreeNode"
+             "{:bounds " (pr-str (g/bounds _))
+             " :children " (pr-str children)
+             " :p " (pr-str point)
+             " :d " (pr-str data)
+             "}")))
 #+END_SRC
 
 *** Octree implementation
@@ -250,33 +258,38 @@
       (get-point-data [_] data)
 
       g/PClear
-      (clear* [_]
+      (clear*
+        [_] (MutableOctreeNode. x y z w h d nil nil nil bounds))
+      (clear!
+        [_]
         (set! children nil)
         (set! children point)
         (set! children data)
         _)
 
       PTreeOps
-      (child-index-for-point [_ [px py pz]]
+      (child-index-for-point
+        [_ [px py pz]]
         (+ (if (< pz (+ z d)) 0 4)
            (if (< px (+ x w))
              (if (< py (+ y h)) 0 2)
              (if (< py (+ y h)) 1 3))))
       (child-for-point
         [_ p] (if children (children (child-index-for-point _ p))))
-
-      (make-child-for-point [_ p data add?]
+      (make-child-for-point
+        [_ p data add?]
         (let [idx (child-index-for-point _ p)]
           (if (children idx)
             (children idx)
-            (let [cx (if (pos? (bit-and idx 1)) (+ x w) x)
-                  cy (if (pos? (bit-and idx 2)) (+ y h) y)
-                  cz (if (pos? (bit-and idx 4)) (+ z d) z)
-                  c (MutableOctreeNode.
-                     cx cy cz (* 0.5 w) (* 0.5 h) (* 0.5 d) nil (if add? p) (if add? data) nil)]
+            (let [cx (if (> (bit-and idx 1) 0) (+ x w) x)
+                  cy (if (> (bit-and idx 2) 0) (+ y h) y)
+                  cz (if (> (bit-and idx 4) 0) (+ z d) z)
+                  c  (MutableOctreeNode.
+                      cx cy cz (* 0.5 w) (* 0.5 h) (* 0.5 d) nil (if add? p) (if add? data) nil)]
               (set-child _ idx c)
               c))))
-      (split-node [_]
+      (split-node
+        [_]
         (set! children [nil nil nil nil nil nil nil nil])
         (set! point nil)
         _)
@@ -286,7 +299,8 @@
       (set-point [_ p d] (set! point p) (set! data d) _)
 
       g/PBounds
-      (bounds [_]
+      (bounds
+        [_]
         (if bounds
           bounds
           (set! bounds
@@ -294,12 +308,14 @@
                  (vec3 x y z) (vec3 (* w 2.0) (* h 2.0) (* d 2.0))))))
 
       Object
-      (toString [_] (str "#thi.ng.geom.spatialtree.MutableOctreeNode"
-                         "{:bounds " (pr-str (g/bounds _))
-                         " :children " (pr-str children)
-                         " :p " (pr-str point)
-                         " :d " (pr-str data)
-                         "}")))
+      (toString
+        [_]
+        (str "#thi.ng.geom.spatialtree.MutableOctreeNode"
+             "{:bounds " (pr-str (g/bounds _))
+             " :children " (pr-str children)
+             " :p " (pr-str point)
+             " :d " (pr-str data)
+             "}")))
 #+END_SRC
 
 *** Override print methods

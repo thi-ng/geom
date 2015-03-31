@@ -116,12 +116,12 @@
     (velocity
       [_] (g/- pos prev))
     (add-force
-      [_ f] (set! force (g/+ force f)) _)
+      [_ f] (g/+! force f) _)
     (clear-force
-      [_] (set! force (g/clear* force)))
+      [_] (g/clear! force) _)
     (apply-force
       [_ delta]
-      (let [pos' (g/madd force (* inv-weight (* delta delta)) (g/msub pos 2.0 prev))]
+      (let [pos' (g/madd! force (* inv-weight (* delta delta)) (g/msub pos 2.0 prev))]
         (set! prev pos)
         (set! pos pos')
         (set! force (g/clear* force)))
@@ -170,7 +170,7 @@
         (if-not (locked? a)
           (set-position a (g/madd diff (* nd aw) pa)))
         (if-not (locked? b)
-          (set-position b (g/madd diff (* (- nd) bw) pb))))))
+          (set-position b (g/madd! diff (* (- nd) bw) pb))))))
 
   (defrecord PullbackSpring
       [^VerletParticle a
@@ -192,7 +192,7 @@
             (if-not (locked? a)
               (set-position a (g/madd diff (* nd aw) pa)))
             (if-not (locked? b)
-              (set-position b (g/madd diff (* (- nd) bw) pb))))))))
+              (set-position b (g/madd! diff (* (- nd) bw) pb))))))))
 #+END_SRC
 
 *** VerletPhysics

@@ -81,6 +81,22 @@
     [] #(g/rotate A2 HALF_PI))
 #+END_SRC
 
+#+BEGIN_SRC clojure :noweb-ref bench
+  (defgoal :vec2-ops-mut "vec2-ops-mutable")
+
+  (defcase :vec2-ops-mut :add-v-ctor
+    [] #(g/+ (vec2 1 2) B2))
+
+  (defcase :vec2-ops-mut :add-v!
+    [] #(g/+! (vec2 1 2) B2))
+
+  (defcase :vec2-ops-mut :madd-v-ctor
+    [] #(g/madd (vec2 1 2) N B2))
+
+  (defcase :vec2-ops-mut :madd-v!
+    [] #(g/madd! (vec2 1 2) N B2))
+#+END_SRC
+
 ** Vec3
 
 #+BEGIN_SRC clojure :noweb-ref bench

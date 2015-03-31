@@ -402,7 +402,8 @@ access to entities in this context.
 
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PClear
-    (clear* [_]))
+    (clear* [_])
+    (clear! [_]))
 #+END_SRC
 
 **** TODO PClip

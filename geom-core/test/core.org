@@ -271,7 +271,7 @@
    (is (delta= [(* ax) (* ay)] (g/* a2)) "* a2")
    (is (delta= [(/ ax) (/ ay)] (g/div a2)) "/ a2")
    (is (delta= [(m/abs ax) (m/abs ay)] (g/abs (g/- a2))) "abs a2")
-   (is (identical? V2 (g/clear* a2)) "clear a2")
+   (is (= V2 (g/clear* a2)) "clear a2")
    (context-vec2-op "+" g/+ + 0.0)
    (context-vec2-op "-" g/- - 0.0)
    (context-vec2-op "*" g/* * 0.0)
@@ -286,7 +286,7 @@
    (is (delta= [(* ax) (* ay) (* az)] (g/* a3))) "* a3"
    (is (delta= [(/ ax) (/ ay) (/ az)] (g/div a3))) "/ a3"
    (is (delta= [(m/abs ax) (m/abs ay) (m/abs az)] (g/abs (g/- a3))) "abs a3")
-   (is (identical? V3 (g/clear* a3)) "clear a3")
+   (is (= V3 (g/clear* a3)) "clear a3")
    (context-vec3-op "+" g/+ + 0.0)
    (context-vec3-op "-" g/- - 0.0)
    (context-vec3-op "*" g/* * 0.0)
