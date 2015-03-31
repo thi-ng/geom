@@ -261,11 +261,10 @@
     (let [rsq (* r r)]
       (fn [p delta]
         (let [d (g/- pos (position p))
-              l (g/mag-squared d)]
+              l (+ (g/mag-squared d) 1e-6)]
           (if (< l rsq)
-            (if (> l 0.0)
-              (add-force p (g/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
-                                     (Math/sqrt l))))))))))
+            (add-force p (g/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
+                                   (Math/sqrt l)))))))))
 
   (defn attract-particle
     [p r strength]
@@ -273,11 +272,10 @@
       (fn [q delta]
         (if-not (= p q)
           (let [d (g/- (position p) (position q))
-                l (g/mag-squared d)]
+                l (+ (g/mag-squared d) 1e-6)]
             (if (< l rsq)
-              (if (> l 0.0)
-                (add-force q (g/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
-                                       (Math/sqrt l)))))))))))
+              (add-force q (g/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
+                                     (Math/sqrt l))))))))))
 
   (defn align
     [vel strength]
@@ -290,7 +288,7 @@
 #+BEGIN_SRC clojure :noweb-ref constraints
   (defn shape-constraint*
     [pred shape]
-    (fn [p delta]
+    (fn [p _]
       (let [pos (position p)]
         (if (pred pos) (set-position p (g/closest-point shape pos))))))
 
@@ -301,7 +299,15 @@
     [shape] (shape-constraint* #(g/contains-point? shape %) shape))
 
   (defn shape-constraint-boundary
-    [shape] (shape-constraint* (constantly true) shape))
+    [shape] (shape-constraint* identity shape))
+
+  (defn distance-constraint
+    [pred p r]
+    (let [rsq (* r r)]
+      (fn [q _]
+        (let [pos (position q)]
+          (if (pred (g/dist-squared p pos) rsq)
+            (set-position q (g/+! (g/normalize (g/- pos p) r) p)))))))
 #+END_SRC
 
 ** Constructors
