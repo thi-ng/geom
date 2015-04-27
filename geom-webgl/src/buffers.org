@@ -3,6 +3,7 @@
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomwebglbuffers][thi.ng.geom.webgl.buffers]]
      - [[#attribute-buffers][Attribute buffers]]
+         - [[#drawing][Drawing]]
      - [[#frame-buffer][Frame buffer]]
      - [[#render-buffer][Render buffer]]
      - [[#textures][Textures]]
@@ -42,16 +43,21 @@
       (.bindBuffer gl target buffer)
       (.bufferData gl target data buffer-mode)
       gl))
+#+END_SRC
 
+*** Drawing
+
+#+BEGIN_SRC clojure :noweb-ref a-buffer
   (defn draw-arrays
-    [^WebGLRenderingContext gl
-     {:keys [shader attribs uniforms mode num-vertices]
-      :or   {mode gl/triangles}}]
-    (.useProgram gl (:program shader))
-    (loop-kv #(sh/set-uniform shader % %2) uniforms)
-    (loop-kv #(sh/set-attribute gl shader % %2) attribs)
+    [^WebGLRenderingContext gl {:keys [mode num-vertices] :or {mode gl/triangles}}]
     (.drawArrays gl mode 0 num-vertices)
-    (loop-kv (fn [id _] (sh/disable-attribute gl shader id)) attribs)
+    gl)
+
+  (defn draw-arrays-with-shader
+    [^WebGLRenderingContext gl {:keys [shader attribs uniforms] :as spec}]
+    (sh/begin-shader gl shader uniforms attribs)
+    (draw-arrays gl spec)
+    (sh/end-shader gl shader)
     gl)
 #+END_SRC
 
@@ -202,7 +208,6 @@
      [thi.ng.geom.webgl.core :as gl]
      [thi.ng.geom.webgl.arrays :as arrays]
      [thi.ng.geom.webgl.shaders :as sh]
-     [thi.ng.geom.webgl.utils :refer [loop-kv]]
      [thi.ng.common.error :as err]))
 
   (declare check-fbo)

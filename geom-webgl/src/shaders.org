@@ -2,13 +2,15 @@
 
 * Contents                                                         :toc_3_gh:
  - [[#thinggeomwebglshaders][thi.ng.geom.webgl.shaders]]
+     - [[#todo-shader-specs][TODO Shader specs]]
      - [[#shader-uniforms][Shader uniforms]]
          - [[#supported-types][Supported types]]
-         - [[#uniform-setup--handling][Uniform setup & handling]]
+         - [[#todo-uniform-setup--handling][TODO Uniform setup & handling]]
      - [[#shader-attributes][Shader attributes]]
      - [[#shader-creation][Shader creation]]
          - [[#header-injection][Header injection]]
          - [[#creation-compilation--linking][Creation, compilation & linking]]
+     - [[#shader-usage][Shader usage]]
      - [[#shading-state-preparation][Shading state preparation]]
      - [[#helpers][Helpers]]
      - [[#complete-namespace-definition][Complete namespace definition]]
@@ -22,6 +24,8 @@
          - [[#2d-overlay][2D Overlay]]
 
 * thi.ng.geom.webgl.shaders
+
+** TODO Shader specs
 
 ** Shader uniforms
 
@@ -49,14 +53,32 @@
 
 #+END_SRC
 
-*** Uniform setup & handling
+*** TODO Uniform setup & handling
+
+Shader specs define uniforms as a map under the =:uniforms= key. In
+this map, each of the shader's uniform names must be stated as keys
+and their types as values. Default values can be given by using a
+vector of =[type default]=. Default values are only used when a user
+doesn't specify a uniform in her model spec when drawing geometry. The
+example below defines default values for the =:ambient=, =:model= and
+=:texture= uniforms:
+
+#+BEGIN_SRC clojure
+  :uniforms {:alpha    :float
+             :diffuse  :vec3
+             :ambient  [:vec3 [0.1 0.1 0.1]]
+             :texture  [:sampler2D 0]
+             :modelMat [:mat4 M44]
+             :viewMat  :mat4
+             :projMat  :mat4}
+#+END_SRC
 
 Special cases:
 
 - Setters for =:vec3= uniforms expect a 3-element vector or an
   integer. If the latter, it is interpreted as 24bit RGB value and
-  converted into RGB vector (=[r g b]=)
-- Values for Matrix uniforms can be specified as vector =[mat transpose?]=
+  converted into a normalized RGB vector (=[r g b]=)
+- Values for Matrix uniforms can be specified as vector =[mat default transpose?]=
   to indicate given matrix should be transposed
 
 #+BEGIN_SRC clojure :noweb-ref uniforms
@@ -65,28 +87,30 @@ Special cases:
     (reduce
      (fn [umap [id type]]
        (let [loc (.getUniformLocation gl prog (name id))
-             [type transpose?] (if (sequential? type) type [type])
+             [type default transpose?] (if (sequential? type) type [type])
              transpose? (boolean transpose?)
              [u-type u-cast] (uniform-types type)
              setter (aget gl (str "uniform" u-type))]
+         ;; TODO add check if valid uniform
          (assoc umap id
                 {:type type
+                 :default default
                  :setter (cond
-                          (#{:mat2 :mat3 :mat4} type)
-                          (fn [x]
-                            (.call setter gl loc transpose?
-                                   (if (arrays/typed-array? x)
-                                     x (u-cast x))))
-                          (= :vec3 type)
-                          (fn [x]
-                            (if (number? x)
-                              (.call setter gl loc (u-cast (subvec (color/int->rgba x) 0 3)))
-                              (.call setter gl loc (if (arrays/typed-array? x) x (u-cast x)))))
-                          :else
-                          (fn [x]
-                            (.call setter gl loc
-                                   (if (arrays/typed-array? x)
-                                     x (u-cast (if (not (sequential? x)) [x] x))))))
+                           (#{:mat2 :mat3 :mat4} type)
+                           (fn [x]
+                             (.call setter gl loc transpose?
+                                    (if (arrays/typed-array? x)
+                                      x (u-cast x))))
+                           (= :vec3 type)
+                           (fn [x]
+                             (if (number? x)
+                               (.call setter gl loc (u-cast (subvec (color/int->rgba x) 0 3)))
+                               (.call setter gl loc (if (arrays/typed-array? x) x (u-cast x)))))
+                           :else
+                           (fn [x]
+                             (.call setter gl loc
+                                    (if (arrays/typed-array? x)
+                                      x (u-cast (if (not (sequential? x)) [x] x))))))
                  :loc loc})))
      {} uniforms))
 
@@ -94,7 +118,7 @@ Special cases:
     [shader id val]
     (if-let [u-spec (get-in shader [:uniforms id])]
       ((:setter u-spec) val)
-      (prn "WARNING: Unknown shader uniform: " id)))
+      (warn "Unknown shader uniform: " id)))
 #+END_SRC
 
 ** Shader attributes
@@ -172,7 +196,10 @@ shader source before compilation with =compile-shader= below.
     [qualifier coll]
     (->> coll
          (map
-          (fn [[id type]] (str qualifier " " (name type) " " (name id) ";\n")))
+          (fn [[id type]]
+            (str qualifier " "
+                 (name (if (sequential? type) (first type) type)) " "
+                 (name id) ";\n")))
          (apply str)))
 
   (defn parse-and-throw-error
@@ -205,13 +232,13 @@ shader source before compilation with =compile-shader= below.
 
   (defn make-shader-from-spec
     [^WebGLRenderingContext gl {:keys [vs fs uniforms attribs varying prefix state]}]
-    (let [u-src (compile-glsl-vars "uniform" uniforms)
-          a-src (compile-glsl-vars "attribute" attribs)
-          v-src (compile-glsl-vars "varying" varying)
+    (let [u-src  (compile-glsl-vars "uniform" uniforms)
+          a-src  (compile-glsl-vars "attribute" attribs)
+          v-src  (compile-glsl-vars "varying" varying)
           prefix (str (or prefix header-prefix) u-src v-src)
-          vs (compile-shader gl (str prefix a-src vs) gl/vertex-shader)
-          fs (compile-shader gl (str prefix fs) gl/fragment-shader)
-          prog (.createProgram gl)]
+          vs     (compile-shader gl (str prefix a-src vs) gl/vertex-shader)
+          fs     (compile-shader gl (str prefix fs) gl/fragment-shader)
+          prog   (.createProgram gl)]
       (doto gl
         (.attachShader prog vs)
         (.attachShader prog fs)
@@ -237,6 +264,30 @@ shader source before compilation with =compile-shader= below.
           :fs (glu/get-script-text fs))))
 #+END_SRC
 
+** Shader usage
+
+#+BEGIN_SRC clojure :noweb-ref draw
+  (defn apply-default-uniforms
+    [shader uniforms]
+    (->> (keys uniforms)
+         (apply dissoc (:uniforms shader))
+         (transduce
+          (filter #(:default (val %)))
+          (completing #(set-uniform shader (key %2) (:default (val %2))))
+          nil)))
+
+  (defn begin-shader
+    [^WebGLRenderingContext gl shader uniforms attribs]
+    (.useProgram gl (:program shader))
+    (apply-default-uniforms shader uniforms)
+    (reduce-kv #(set-uniform shader %2 %3) nil uniforms)
+    (reduce-kv #(set-attribute gl shader %2 %3) nil attribs))
+
+  (defn end-shader
+    [^WebGLRenderingContext gl shader]
+    (reduce #(disable-attribute gl shader (key %2)) nil (:attribs shader)))
+#+END_SRC
+
 ** Shading state preparation
 
 Shader specs can specify WebGL render state flags which can then be
@@ -253,17 +304,18 @@ Currently the following options are supported:
 #+BEGIN_SRC clojure :noweb-ref state
   (defn prepare-render-state
     "Takes a Gl context and shader spec, sets GL render flags stored
-    under :state key."
+    under :state key (only if :state is present)."
     [gl {:keys [state]}]
-    (if (:depth-test state)
-      (gl/enable gl gl/depth-test)
-      (gl/disable gl gl/depth-test))
-    (if (:blend state)
-      (let [[src dest] (or (:blend-fn state) [gl/src-alpha gl/one])]
-        (doto gl
-          (gl/enable gl/blend)
-          (.blendFunc src dest)))
-      (gl/disable gl gl/blend))
+    (when state
+      (if (:depth-test state)
+        (gl/enable gl gl/depth-test)
+        (gl/disable gl gl/depth-test))
+      (if (:blend state)
+        (let [[src dest] (or (:blend-fn state) [gl/src-alpha gl/one])]
+          (doto gl
+            (gl/enable gl/blend)
+            (.blendFunc src dest)))
+        (gl/disable gl gl/blend)))
     gl)
 #+END_SRC
 
@@ -290,6 +342,8 @@ Currently the following options are supported:
 
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders.cljs :noweb yes :mkdirp yes :padline no
 (ns thi.ng.geom.webgl.shaders
+  (:require-macros
+    [cljs-log.core :refer [info warn]])
   (:require
     [thi.ng.geom.core :as g]
     [thi.ng.geom.core.matrix]
@@ -306,6 +360,8 @@ Currently the following options are supported:
 
   <<ctors>>
 
+  <<draw>>
+
   <<state>>
 
   <<helpers>>
@@ -315,38 +371,55 @@ Currently the following options are supported:
 *** Basic
 
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/basic.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.shaders.basic)
+  (ns thi.ng.geom.webgl.shaders.basic
+    (:require
+     [thi.ng.geom.core.matrix :refer [M44]]))
 
-  (defn make-color-shader-spec
+  (defn make-shader-spec
     [& [{attr? :use-attrib is3d? :3d :or {is3d? true}}]]
-    (let [spec {:vs (str "void main() { "
-                         (if attr?
-                           "vCol = color; " "")
-                         "gl_Position = proj * "
-                         (if is3d?
-                           "view * model * vec4(position, 1.0)"
-                           "model * vec4(position, 0.0, 1.0)")
-                         "; }")
-                :fs (str "void main() { gl_FragColor = "
-                         (if attr? "vCol" "color")
-                         "; }")
+    (let [spec {:vs       (str "void main(){"
+                               (if attr? "vCol=color;")
+                               "gl_Position=proj*"
+                               (if is3d?
+                                 "view*model*vec4(position,1.0)"
+                                 "view*model*vec4(position,0.0,1.0)")
+                               ";}")
+                :fs       (str "void main(){gl_FragColor="
+                               (if attr? "vCol" "color")
+                               ";}")
                 :uniforms {:proj  :mat4
-                           :model :mat4}
+                           :model [:mat4 M44]
+                           :view  [:mat4 M44]}
                 :attribs  {:position (if is3d? :vec3 :vec2)}}
           spec (if attr?
                  (-> spec
                      (assoc-in [:attribs :color] :vec4)
                      (assoc :varying {:vCol :vec4}))
-                 (assoc-in spec [:uniforms :color] :vec4))
-          spec (if is3d?
-                 (assoc-in spec [:uniforms :view] :mat4)
-                 spec)]
+                 (assoc-in spec [:uniforms :color] :vec4))]
       spec))
+
+  (defn make-shader-spec-2d
+    [attrib?] (make-shader-spec {:use-attrib attrib? :3d false}))
+
+  (defn make-shader-spec-3d
+    [attrib?] (make-shader-spec {:use-attrib attrib? :3d true}))
 #+END_SRC
 
 *** Lambert
 
+**** Standard shading
+
 #+BEGIN_SRC glsl :noweb-ref lambert-vs
+  void main() {
+    float lambert = lambert(surfaceNormal(normal, normalMat), lightDir);
+    vCol = vec4(ambientCol + diffuseCol * lightCol * lambert, alpha);
+    gl_Position = mvp(position, model, view, proj);
+  }
+#+END_SRC
+
+**** Two-sided shading
+
+#+BEGIN_SRC glsl :noweb-ref lambert-vs-abs
   void main() {
     float lambert = lambertAbs(surfaceNormal(normal, normalMat), lightDir);
     vCol = vec4(ambientCol + diffuseCol * lightCol * lambert, alpha);
@@ -354,51 +427,64 @@ Currently the following options are supported:
   }
 #+END_SRC
 
+**** Full namespace
+
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/lambert.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.lambert
     (:require
+     [thi.ng.geom.core.matrix :refer [M44]]
      [thi.ng.geom.webgl.buffers :as buf]
      [thi.ng.geom.webgl.shaders :as sh]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.vertex :as vertex]
      [thi.ng.glsl.lighting :as light]))
 
-  (def shader-spec
+  (defn- make-shader-spec
+    [vs-src]
     {:vs (glsl/assemble
           (glsl/glsl-spec
            [vertex/mvp vertex/normal light/lambert-abs]
-           "
-  <<lambert-vs>>"))
+           vs-src))
      :fs "void main(){gl_FragColor=vCol;}"
-     :uniforms {:model      :mat4
+     :uniforms {:model      [:mat4 M44]
                 :view       :mat4
                 :proj       :mat4
                 :normalMat  :mat4
-                :ambientCol :vec3
-                :diffuseCol :vec3
-                :lightCol   :vec3
-                :lightDir   :vec3
-                :alpha      :float}
+                :ambientCol [:vec3 [0 0 0]]
+                :diffuseCol [:vec3 [1 1 1]]
+                :lightCol   [:vec3 [1 1 1]]
+                :lightDir   [:vec3 [0 0 1]]
+                :alpha      [:float 1]}
      :attribs  {:position   :vec3
                 :normal     :vec3}
      :varying  {:vCol       :vec4}
      :state    {:depth-test true}})
 
+  (def shader-spec
+    (make-shader-spec
+     "
+  <<lambert-vs>>"))
+
+  (def shader-spec-two-sided
+    (make-shader-spec
+     "
+  <<lambert-vs-abs>>"))
+
   (defn draw
     [^WebGLRenderingContext gl spec]
-    (buf/draw-arrays gl (sh/inject-normal-matrix spec :model :view :normalMat)))
+    (buf/draw-arrays-with-shader gl (sh/inject-normal-matrix spec :model :view :normalMat)))
 #+END_SRC
 
 *** Phong
 
 #+BEGIN_SRC glsl :noweb-ref phong-vs
   void main(){
-      vec4 worldPos = model * vec4(position, 1.0);
-      vec4 eyePos = view * worldPos;
-      vEyePos = eyePos.xyz;
-      vNormal = surfaceNormal(normal, normalMat);
-      vLightPos = (view * vec4(lightPos, 1.0)).xyz;
-      gl_Position = proj * eyePos;
+    vec4 worldPos = model * vec4(position, 1.0);
+    vec4 eyePos = view * worldPos;
+    vEyePos = eyePos.xyz;
+    vNormal = surfaceNormal(normal, normalMat);
+    vLightPos = (view * vec4(lightPos, 1.0)).xyz;
+    gl_Position = proj * eyePos;
   }
 #+END_SRC
 
@@ -425,6 +511,7 @@ Currently the following options are supported:
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/phong.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.phong
     (:require
+     [thi.ng.geom.core.matrix :refer [M44]]
      [thi.ng.geom.webgl.buffers :as buf]
      [thi.ng.geom.webgl.shaders :as sh]
      [thi.ng.glsl.core :as glsl :include-macros true]
@@ -444,15 +531,15 @@ Currently the following options are supported:
   <<phong-fs>>"))
      :uniforms {:view          :mat4
                 :proj          :mat4
-                :model         :mat4
+                :model         [:mat4 M44]
                 :normalMat     :mat4
-                :shininess     :float
-                :ambientCol    :vec3
-                :diffuseCol    :vec3
-                :specularCol   :vec3
-                :lightPos      :vec3
-                :useBlinnPhong :bool
-                :wrap          :float}
+                :shininess     [:float 32]
+                :ambientCol    [:vec3 [0 0 0]]
+                :diffuseCol    [:vec3 [0.8 0.8 0.8]]
+                :specularCol   [:vec3 [1 1 1]]
+                :lightPos      [:vec3 [0 0 0]]
+                :useBlinnPhong [:bool true]
+                :wrap          [:float 0]}
      :attribs {:position       :vec3
                :normal         :vec3}
      :varying {:vNormal        :vec3
@@ -462,7 +549,7 @@ Currently the following options are supported:
 
   (defn draw
     [^WebGLRenderingContext gl spec]
-    (buf/draw-arrays gl (sh/inject-normal-matrix spec :model :view :normalMat)))
+    (buf/draw-arrays-with-shader gl (sh/inject-normal-matrix spec :model :view :normalMat)))
 #+END_SRC
 
 *** X-Ray
@@ -470,7 +557,10 @@ Currently the following options are supported:
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/xray.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.xray
     (:require
+     [thi.ng.geom.core.matrix :refer [M44]]
      [thi.ng.geom.webgl.core :as gl]
+     [thi.ng.geom.webgl.buffers :as buf]
+     [thi.ng.geom.webgl.shaders :as sh]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.vertex :as vert]))
 
@@ -489,12 +579,12 @@ Currently the following options are supported:
              opac = 1.0 - pow(opac, alpha);
              gl_FragColor = vec4(lightCol * opac, opac);
            }")
-     :uniforms {:model      :mat4
+     :uniforms {:model      [:mat4 M44]
                 :view       :mat4
                 :normalMat  :mat4
                 :proj       :mat4
-                :lightCol   :vec3
-                :alpha      :float}
+                :lightCol   [:vec3 [1 1 1]]
+                :alpha      [:float 0.5]}
      :attribs  {:position   :vec3
                 :normal     :vec3}
      :varying  {:vIncident  :vec4
@@ -502,6 +592,10 @@ Currently the following options are supported:
      :state    {:depth-test false
                 :blend true
                 :blend-func [gl/src-alpha gl/one]}})
+
+  (defn draw
+    [^WebGLRenderingContext gl spec]
+    (buf/draw-arrays-with-shader gl (sh/inject-normal-matrix spec :model :view :normalMat)))
 #+END_SRC
 
 *** Spotlight
@@ -538,6 +632,7 @@ Currently the following options are supported:
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/spotlight.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.spotlight
     (:require
+     [thi.ng.geom.core.matrix :refer [M44]]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.lighting :as light]))
 
@@ -552,10 +647,10 @@ Currently the following options are supported:
   <<spot-fs>>"))
      :uniforms {:view :mat4
                 :proj :mat4
-                :model :mat4
+                :model [:mat4 M44]
                 :lightView :mat4
                 :lightRot :mat3
-                :coneAngle :float}
+                :coneAngle [:float 15]}
      :attribs {:position :vec3
                :normal :vec3}
      :varying {:vNormal :vec3
@@ -649,6 +744,7 @@ Currently the following options are supported:
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/shadow.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.shadow
     (:require
+     [thi.ng.geom.core.matrix :refer [M44]]
      [thi.ng.geom.webgl.core :as gl]
      [thi.ng.geom.webgl.buffers :as buf]
      [thi.ng.geom.webgl.shaders :as sh]
@@ -660,10 +756,10 @@ Currently the following options are supported:
   <<shadow-vs-pass1>>")
      :fs (glsl/minified "
   <<shadow-fs-pass1>>")
-     :uniforms {:view :mat4
-                :proj :mat4
-                :model :mat4}
-     :attribs {:position :vec3}
+     :uniforms {:view     :mat4
+                :proj     :mat4
+                :model    [:mat4 M44]} 
+     :attribs {:position  :vec3}
      :varying {:vWorldPos :vec4}})
 
   (def cam-pass-spec
@@ -675,25 +771,25 @@ Currently the following options are supported:
             light/lambert light/skylight]
            "
   <<shadow-fs-pass2>>"))
-     :uniforms {:view :mat4
-                :proj :mat4
-                :model :mat4
-                :lightView :mat4
-                :lightProj :mat4
-                :lightRot :mat3
-                :lightDepthTex :sampler2D
+     :uniforms {:view           :mat4
+                :proj           :mat4
+                :model          [:mat4 M44]
+                :lightView      :mat4
+                :lightProj      :mat4
+                :lightRot       :mat3
+                :lightDepthTex  [:sampler2D 0]
                 :lightDepthSize :vec2
-                :coneAngle :float}
-     :attribs  {:position :vec3
-                :normal :vec3}
-     :varying  {:vNormal :vec3
-                :vWorldPos :vec4}})
+                :coneAngle      [:float 15]}
+     :attribs  {:position       :vec3
+                :normal         :vec3}
+     :varying  {:vNormal        :vec3
+                :vWorldPos      :vec4}})
 
   (defn init-light-fbo
     [^WebGLRenderingContext gl size]
-    (let [float-ext (.call (aget gl "getFloatExtension") gl
-                           (clj->js {:require ["renderable"]
-                                     :prefer ["filterable" "half"]}))
+    (let [float-ext (.call (aget gl "getFloatExtension")
+                           gl #js {:require ["renderable"]
+                                   :prefer  ["filterable" "half"]})
           tex (buf/make-texture
                gl {:type   (.-type float-ext)
                    :width  size
@@ -708,7 +804,7 @@ Currently the following options are supported:
                 (gl/unbind))}))
 
   (defn draw-light-pass
-    [^WebGLRenderingContext gl {:keys [fbo tex]} draw]
+    [^WebGLRenderingContext gl {:keys [fbo tex]} draw-fn]
     (gl/bind fbo)
     (doto gl
       (gl/set-viewport 0 0 (:width tex) (:height tex))
@@ -716,18 +812,18 @@ Currently the following options are supported:
       (gl/clear-depth-buffer 1)
       (gl/enable gl/depth-test)
       (gl/cull-faces gl/front))
-    (draw)
+    (draw-fn)
     (gl/unbind fbo))
 
   (defn draw-cam-pass
-    [^WebGLRenderingContext gl tex draw]
+    [^WebGLRenderingContext gl tex draw-fn]
     (doto gl
       (gl/clear-depth-buffer 1)
       (gl/enable gl/depth-test)
       (gl/cull-faces gl/back))
     (gl/bind tex 0)
-    (draw {:lightDepthTex 0
-           :lightDepthSize [(:width tex) (:height tex)]}))
+    (draw-fn {:lightDepthTex 0
+              :lightDepthSize [(:width tex) (:height tex)]}))
 #+END_SRC
 
 *** 2D Overlay
@@ -763,12 +859,12 @@ Currently the following options are supported:
   <<overlay-vs>>")
      :fs (glsl/minified "
   <<overlay-fs>>")
-     :uniforms {:proj     :mat4
-                :model    :mat4
-                :tex      :sampler2D}
-     :attribs  {:position :vec2
-                :uv       :vec2}
-     :varying  {:vUV      :vec2}
+     :uniforms {:proj       :mat4
+                :model      [:mat4 M44]
+                :tex        [:sampler2D 0]}
+     :attribs  {:position   :vec2
+                :uv         :vec2}
+     :varying  {:vUV        :vec2}
      :state    {:depth-test false
                 :blend true
                 :blend-func [gl/src-alpha gl/one-minus-src-alpha]}})
@@ -784,7 +880,7 @@ Currently the following options are supported:
                               gl gl/static-draw
                               {:position {:data vbuf :size 2}
                                :uv       {:data (arrays/float32 [0 0, 1 0, 0 1, 1 1]) :size 2}})
-                   :uniforms {:tex 0
+                   :uniforms {:tex  0
                               :proj (gl/ortho)}
                    :mode     gl/triangle-strip
                    :num-vertices 4}]
@@ -801,5 +897,5 @@ Currently the following options are supported:
           spec (assoc-in spec [:uniforms :model] (-> M44 (g/translate x y 0) (g/scale s)))]
       (when tex
         (gl/bind tex (get-in spec [:uniforms :tex])))
-      (buf/draw-arrays gl spec)))
+      (buf/draw-arrays-with-shader gl spec)))
 #+END_SRC

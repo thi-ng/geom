@@ -83,9 +83,9 @@ link for more discussion about these options.
     (let [gl         (gl/gl-context "main")
           view-rect  (gl/get-viewport-rect gl)
           shader1    (sh/make-shader-from-spec
-                      gl (basic/make-color-shader-spec {:use-attrib false :3d false}))
+                      gl (basic/make-shader-spec-2d false))
           shader2    (sh/make-shader-from-spec
-                      gl (basic/make-color-shader-spec {:use-attrib true :3d false}))
+                      gl (basic/make-shader-spec-2d true))
           teeth      20
           model      (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
                          (gl/as-webgl-buffer-spec {:normals false :single-color [1 0 0 1]})
@@ -98,7 +98,7 @@ link for more discussion about these options.
          (gl/set-viewport gl view-rect)
          (gl/clear-color-buffer gl 1 0.98 0.95 1.0)
          ;; draw left polygon using color uniform (that's why we need to remove color attrib)
-         (buf/draw-arrays
+         (buf/draw-arrays-with-shader
           gl (-> model
                  (assoc :shader  shader1)
                  (update-in [:attribs] dissoc :color)
@@ -106,7 +106,7 @@ link for more discussion about these options.
                             {:model (-> M44 (g/translate -0.48 0 0) (g/rotate t))
                              :color [0 1 1 1]})))
          ;; draw right polygon using color attribs
-         (buf/draw-arrays
+         (buf/draw-arrays-with-shader
           gl (-> model
                  (assoc :shader shader2)
                  (assoc-in [:uniforms :model]
@@ -333,7 +333,7 @@ rotation / transformation).
                                         :view     (mat/look-at (v/vec3 0 0 2) (v/vec3) v/V3Y)}
                          :mode         gl/triangles
                          :num-vertices (/ (count verts) 3)
-                         :shader       (->> (basic/make-color-shader-spec {:use-attrib true :3d true})
+                         :shader       (->> (basic/make-shader-spec {:use-attrib true :3d true})
                                             (sh/make-shader-from-spec gl))}
                         (buf/make-attribute-buffers-in-spec gl gl/static-draw))]
       (anim/animate
@@ -341,7 +341,7 @@ rotation / transformation).
          (gl/set-viewport gl view-rect)
          (gl/clear-color-buffer gl 1 1 1 1)
          (gl/enable gl gl/depth-test)
-         (buf/draw-arrays
+         (buf/draw-arrays-with-shader
           gl (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2)))))
          true))))
 #+END_SRC
