@@ -208,7 +208,7 @@ front, back (see diagram below).
               (if rt [c d h g])
               (if tp [e f g h])
               (if bt [a d c b])]
-             (eduction (filter identity))
+             (sequence (filter identity)) ;; FIXME eduction
              (g/into (or mesh (bm/basic-mesh)))))))
 #+END_SRC
 

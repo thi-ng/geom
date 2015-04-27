@@ -193,7 +193,7 @@ front, back - assuming the vertex order given in the diagram.
               (if rt [c d h g])
               (if tp [e f g h])
               (if bt [a d c b])]
-             (eduction (filter identity))
+             (sequence (filter identity)) ;; FIXME eduction
              (g/into (or mesh (bm/basic-mesh)))))))
 #+END_SRC
 
@@ -233,7 +233,6 @@ Do not use, work in progress...
          (fn [acc f]
            (let [p' (g/closest-point (p/plane-from-points f) p)
                  d (g/dist-squared p p')]
-             (prn p' d)
              (if (< d (acc 1)) [p' d] acc)))
          [nil 1e+100])
         (first)))

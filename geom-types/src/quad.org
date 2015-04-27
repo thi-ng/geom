@@ -175,7 +175,7 @@ than 1.0.
            (if w [a2 d2 d a])
            (if b' [a2 b2 c2 d2])
            (if f [d c b a])]
-          (eduction
+          (sequence ;; FIXME eduction
            (if (neg? dp)
              (comp
               (filter identity)
