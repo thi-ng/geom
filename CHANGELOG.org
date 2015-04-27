@@ -1,3 +1,17 @@
+** r783 - 2015-04-27
+
+| [[https://github.com/thi-ng/geom/commit/9276792827b8ac75c9569e3a4cae91db98d12f70][9276792]] | [meta] add geom-voxel module to meta geom project.clj |
+| [[https://github.com/thi-ng/geom/commit/1792f9782c6cc66033fde5070b332161145b8ae9][1792f97]] | [webgl] update shadergraph dep, bugfix lambert make-shader-spec |
+| [[https://github.com/thi-ng/geom/commit/ad819e78e51ec82fa27942b451ac6f1b01fca11d][ad819e7]] | [types] temporarily switch from eduction to sequence until CLJS-1209 is fixed |
+| [[https://github.com/thi-ng/geom/commit/59e5e9d2cb26f0ef842207e9ad704334119cef47][59e5e9d]] | [all] update deps: clj-1.7.0-beta1, cljs-3211, thi.ng/color 0.1.3 |
+| [[https://github.com/thi-ng/geom/commit/4931a0d7380a43f6331e7ba75c6060f758f40ac5][4931a0d]] | [webgl] rename draw-arrays -> draw-arrays-with-shader, refactor draw-arrays to only invoke GL call, add begin-shader / end-shader fns, add support for uniform default vals (and update docs), update prepare-render-state to only update if state is given, update shader presets, update examples, add cljs-log dependency |
+| [[https://github.com/thi-ng/geom/commit/d3d12b63cdadb3a162da598bfae645189749111d][d3d12b6]] | [types] bugfix cog polygon generator |
+| [[https://github.com/thi-ng/geom/commit/9b538edae38a9bcdb7721d385935d89a4aa507a8][9b538ed]] | [physics] minor update attraction behaviors, add distance-constraint |
+| [[https://github.com/thi-ng/geom/commit/887415a6a62d408e34c6bbc1246a68f1bf06d204][887415a]] | [types] minor optimizations contains-point? & closest-point for Circle2 & Sphere |
+| [[https://github.com/thi-ng/geom/commit/d8b61f90581b5a7feb39774a83d4c90837e44c77][d8b61f9]] | [core][types][physics] update PClear protocol & impls (add support for mutable types), add vec benchmarks |
+| [[https://github.com/thi-ng/geom/commit/5385b4f044f902ac816cf9fc5a56066b1cdc3bc8][5385b4f]] | [core] add PMutableMathOps protocol and implement for Vec2/3 |
+| [[https://github.com/thi-ng/geom/commit/1863e36c3cd36ead2e6ebd765d4c592346cb5995][1863e36]] | [core] add impls of PBuffered & Cloneable for Vec2/3 (CLJ), refactor PVectorReduce impls to use transducers |
+
 ** r770 - 2015-03-29
 
 | [[https://github.com/thi-ng/geom/commit/b5410ea3af6192c383c85f8a832ca4c7014c73e0][b5410ea]] | [meta] add voxel module to all bulk build scripts |
