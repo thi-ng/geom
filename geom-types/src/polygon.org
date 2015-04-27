@@ -47,8 +47,7 @@
     [radius teeth profile]
     (-> (thi.ng.geom.types.Circle2. (vec2) radius)
         (g/vertices (* teeth (count profile)))
-        (->> (cycle profile)
-             (mapv (fn [p v] (g/* v p)))
+        (->> (mapv (fn [p v] (g/* v p)) (cycle profile))
              (thi.ng.geom.types.Polygon2.))))
 #+END_SRC
 
