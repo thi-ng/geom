@@ -376,7 +376,7 @@ Currently the following options are supported:
      [thi.ng.geom.core.matrix :refer [M44]]))
 
   (defn make-shader-spec
-    [& [{attr? :use-attrib is3d? :3d :or {is3d? true}}]]
+    [& [{attr? :color-attrib? is3d? :3d :or {is3d? true}}]]
     (let [spec {:vs       (str "void main(){"
                                (if attr? "vCol=color;")
                                "gl_Position=proj*"
@@ -399,10 +399,10 @@ Currently the following options are supported:
       spec))
 
   (defn make-shader-spec-2d
-    [attrib?] (make-shader-spec {:use-attrib attrib? :3d false}))
+    [color-attrib?] (make-shader-spec {:color-attrib? color-attrib? :3d false}))
 
   (defn make-shader-spec-3d
-    [attrib?] (make-shader-spec {:use-attrib attrib? :3d true}))
+    [color-attrib?] (make-shader-spec {:color-attrib? color-attrib? :3d true}))
 #+END_SRC
 
 *** Lambert
@@ -441,10 +441,10 @@ Currently the following options are supported:
 
   (defn- make-shader-spec
     [vs-src]
-    {:vs (glsl/assemble
-          (glsl/glsl-spec
-           [vertex/mvp vertex/normal light/lambert-abs]
-           vs-src))
+    {:vs (->> vs-src
+              (glsl/glsl-spec-plain
+               [vertex/mvp vertex/normal light/lambert-abs])
+              (glsl/assemble))
      :fs "void main(){gl_FragColor=vCol;}"
      :uniforms {:model      [:mat4 M44]
                 :view       :mat4
@@ -462,13 +462,13 @@ Currently the following options are supported:
 
   (def shader-spec
     (make-shader-spec
-     "
-  <<lambert-vs>>"))
+     (glsl/minified "
+  <<lambert-vs>>")))
 
   (def shader-spec-two-sided
     (make-shader-spec
-     "
-  <<lambert-vs-abs>>"))
+     (glsl/minified "
+  <<lambert-vs-abs>>")))
 
   (defn draw
     [^WebGLRenderingContext gl spec]
