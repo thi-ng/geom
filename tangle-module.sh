@@ -4,6 +4,8 @@ DIR=`pwd`
 FILES=""
 SRC="geom-$1/src/*.org geom-$1/test/*.org geom-$1/bench/*.org"
 
+rm -rf geom-$1/babel/src geom-$1/babel/test
+
 # wrap each argument in the code required to call tangle on it
 for i in `ls $SRC`; do
     FILES="$FILES \"$i\""
