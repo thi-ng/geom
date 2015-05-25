@@ -75,6 +75,7 @@ target/geom-webgl-<<conf-version()>>.js
     :min-lein-version "2.4.0"
 
     :dependencies [<<dep-clj>>
+                   <<dep-cljs>>
                    [thi.ng/geom-core "<<conf-version()>>"]
                    [thi.ng/geom-types "<<conf-version()>>"]
                    [thi.ng/geom-meshops "<<conf-version()>>"]
@@ -82,8 +83,7 @@ target/geom-webgl-<<conf-version()>>.js
                    <<dep-shadergraph>>
                    <<dep-cljs-log>>]
 
-    :profiles {:dev {:dependencies [<<dep-cljs>>
-                                    <<dep-criterium>>]
+    :profiles {:dev {:dependencies [<<dep-criterium>>]
                      :plugins      [<<dep-cljsbuild>>
                                     <<dep-cljs-test>>]
                      :aliases {"cleantest" ["do" "clean," "cljsbuild" "test"]}}}

@@ -852,7 +852,7 @@ Currently the following options are supported:
      [thi.ng.geom.webgl.shaders :as sh]
      [thi.ng.geom.webgl.arrays :as arrays]
      [thi.ng.glsl.core :as glsl :include-macros true]
-     [thi.ng.common.math.core :as m]))
+     [thi.ng.math.core :as m]))
 
   (def shader-spec
     {:vs (glsl/minified "

@@ -13,7 +13,7 @@
 ** Templates for namespace setup
 #+BEGIN_SRC clojure :noweb-ref require-macros
   (:require-macros
-   [thi.ng.macromath.core :as mm])
+   [thi.ng.math.macros :as mm])
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref default-requires
@@ -27,7 +27,7 @@
   [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
   [thi.ng.geom.core.matrix :as mat :refer [M44]]
   [thi.ng.geom.types]
-  [thi.ng.common.math.core :as m :refer [PI HALF_PI TWO_PI]]
+  [thi.ng.math.core :as m :refer [PI HALF_PI TWO_PI]]
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref stats
