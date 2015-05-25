@@ -58,95 +58,98 @@
 
 #+BEGIN_SRC clojure :noweb-ref impl
   (deftype VerletParticle
-      ,#+clj
-    [^:unsynchronized-mutable pos
-     ^:unsynchronized-mutable prev
-     ^:unsynchronized-mutable force
-     ^:unsynchronized-mutable locked?
-     ^:unsynchronized-mutable behaviors
-     ^:unsynchronized-mutable constraints
-     ^double inv-weight
-     _meta]
-    ,#+cljs
-    [^:mutable pos
-     ^:mutable prev
-     ^:mutable force
-     ^:mutable locked?
-     ^:mutable behaviors
-     ^:mutable constraints
-     inv-weight
-     _meta]
-    ,#+clj clojure.lang.IObj
-    ,#+cljs IMeta
-    (#+clj meta #+cljs -meta
-      [_] _meta)
-    ,#+cljs IWithMeta
-    (#+clj withMeta #+cljs -with-meta
-      [_ meta']
-      (VerletParticle. pos prev force locked? behaviors constraints inv-weight meta'))
-    PBehavioral
-    (add-behaviors
-      [_ bmap] (set! behaviors (merge behaviors bmap)) _)
-    (apply-behaviors
-      [_ delta] (when (seq behaviors) (apply-to-particle _ delta (vals behaviors))) _)
-    (remove-behavior
-      [_ id] (set! behaviors (dissoc behaviors id)) _)
-    (clear-behaviors
-      [_] (set! behaviors {}) _)
-    PConstrained
-    (add-constraints
-      [_ cmap] (set! constraints (merge constraints cmap)) _)
-    (apply-constraints
-      [_ delta] (when (seq constraints) (apply-to-particle _ delta (vals constraints))) _)
-    (remove-constraint
-      [_ id] (set! constraints (dissoc constraints id)) _)
-    (clear-constraints
-      [_] (set! constraints {}) _)
-    PParticle
-    (lock
-      [_] (set! locked? true) _)
-    (unlock
-      [_] (set! locked? false) _)
-    (locked?
-      [_] locked?)
-    (position
-      [_] pos)
-    (set-position
-      [_ p] (set! pos p) _)
-    (velocity
-      [_] (g/- pos prev))
-    (add-force
-      [_ f] (g/+! force f) _)
-    (clear-force
-      [_] (g/clear! force) _)
-    (apply-force
-      [_ delta]
-      (let [pos' (g/madd! force (* inv-weight (* delta delta)) (g/msub pos 2.0 prev))]
-        (set! prev pos)
-        (set! pos pos')
-        (set! force (g/clear* force)))
-      _)
-    (scale-velocity
-      [_ s] (set! prev (g/mix prev pos s)) _)
-    PTimeStep
-    (timestep
-      [_ delta]
-      (if-not locked?
-        (-> (apply-behaviors _ delta)
-            (apply-force delta)
-            (apply-constraints delta))
-        _))
-    Object
-    (toString
-      [_]
-      (pr-str
-       {:pos pos
-        :prev prev
-        :force force
-        :locked? locked?
-        :inv-weight inv-weight
-        :behaviors behaviors
-        :constraints constraints})))
+      #?@(:clj
+           [[^:unsynchronized-mutable pos
+             ^:unsynchronized-mutable prev
+             ^:unsynchronized-mutable force
+             ^:unsynchronized-mutable locked?
+             ^:unsynchronized-mutable behaviors
+             ^:unsynchronized-mutable constraints
+             ^double inv-weight
+             _meta]
+            clojure.lang.IObj
+            (meta [_] _meta)
+            (withMeta
+             [_ meta']
+             (VerletParticle. pos prev force locked? behaviors constraints inv-weight meta'))]
+           :cljs
+           [[^:mutable pos
+             ^:mutable prev
+             ^:mutable force
+             ^:mutable locked?
+             ^:mutable behaviors
+             ^:mutable constraints
+             inv-weight
+             _meta]
+            IMeta
+            (meta [_] _meta)
+            IWithMeta
+            (-with-meta
+             [_ meta']
+             (VerletParticle. pos prev force locked? behaviors constraints inv-weight meta'))])
+      PBehavioral
+      (add-behaviors
+        [_ bmap] (set! behaviors (merge behaviors bmap)) _)
+      (apply-behaviors
+        [_ delta] (when (seq behaviors) (apply-to-particle _ delta (vals behaviors))) _)
+      (remove-behavior
+        [_ id] (set! behaviors (dissoc behaviors id)) _)
+      (clear-behaviors
+        [_] (set! behaviors {}) _)
+      PConstrained
+      (add-constraints
+        [_ cmap] (set! constraints (merge constraints cmap)) _)
+      (apply-constraints
+        [_ delta] (when (seq constraints) (apply-to-particle _ delta (vals constraints))) _)
+      (remove-constraint
+        [_ id] (set! constraints (dissoc constraints id)) _)
+      (clear-constraints
+        [_] (set! constraints {}) _)
+      PParticle
+      (lock
+        [_] (set! locked? true) _)
+      (unlock
+        [_] (set! locked? false) _)
+      (locked?
+        [_] locked?)
+      (position
+        [_] pos)
+      (set-position
+        [_ p] (set! pos p) _)
+      (velocity
+        [_] (g/- pos prev))
+      (add-force
+        [_ f] (g/+! force f) _)
+      (clear-force
+        [_] (g/clear! force) _)
+      (apply-force
+        [_ delta]
+        (let [pos' (g/madd! force (* inv-weight (* delta delta)) (g/msub pos 2.0 prev))]
+          (set! prev pos)
+          (set! pos pos')
+          (set! force (g/clear* force)))
+        _)
+      (scale-velocity
+        [_ s] (set! prev (g/mix prev pos s)) _)
+      PTimeStep
+      (timestep
+        [_ delta]
+        (if-not locked?
+          (-> (apply-behaviors _ delta)
+              (apply-force delta)
+              (apply-constraints delta))
+          _))
+      Object
+      (toString
+        [_]
+        (pr-str
+         {:pos pos
+          :prev prev
+          :force force
+          :locked? locked?
+          :inv-weight inv-weight
+          :behaviors behaviors
+          :constraints constraints})))
 #+END_SRC
 
 *** Springs
@@ -348,14 +351,14 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/physics/core.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/physics/core.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.physics.core
-    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
+    #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     [thi.ng.common.data.core :as d]
-     ,#+clj [thi.ng.macromath.core :as mm]))
+     [thi.ng.dstruct.core :as d]
+     #?(:clj [thi.ng.math.macros :as mm])))
 
   <<protos>>
 
