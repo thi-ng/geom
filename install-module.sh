@@ -11,7 +11,7 @@ main() {
         echo "installing module $PREFIX$m..."
         echo "----------------------------------------"
         cd $PROGDIR/$PREFIX$m/babel
-        lein do clean, cljx once, install
+        lein do clean, install
     done
 }
 
