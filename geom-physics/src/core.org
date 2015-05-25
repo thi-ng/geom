@@ -82,7 +82,7 @@
              inv-weight
              _meta]
             IMeta
-            (meta [_] _meta)
+            (-meta [_] _meta)
             IWithMeta
             (-with-meta
              [_ meta']
