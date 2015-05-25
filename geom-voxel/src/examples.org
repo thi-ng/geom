@@ -1,4 +1,4 @@
-#+SETUPFILE: setup.org
+#+SETUPFILE: ../../src/setup.org
 
 * geom.voxels examples
 
@@ -14,7 +14,7 @@ This is a render of the voxel mesh generated with the code below:
      [thi.ng.geom.voxel.svo :as svo]
      [thi.ng.geom.voxel.isosurface :as iso]
      [thi.ng.geom.mesh.io :as mio]
-     [thi.ng.common.math.core :as m]
+     [thi.ng.math.core :as m]
      [clojure.java.io :as io]))
 
   (def res (double 1/8))
@@ -65,5 +65,7 @@ This is a render of the voxel mesh generated with the code below:
       (fn [tree [op rx ry rz]] (voxel-box tree op identity rx ry rz))
       v3 [[svo/delete-at (range 9 26 res) (range 9 26 res) (range 18 26 res)]])))
 
-  (time (with-open [o (io/output-stream "foo.stl")] (mio/write-stl o (g/tessellate (iso/surface-mesh v4 11 0.5)))))
+  (time
+   (with-open [o (io/output-stream "voxel.stl")]
+     (mio/write-stl o (g/tessellate (iso/surface-mesh v4 11 0.5)))))
 #+END_SRC

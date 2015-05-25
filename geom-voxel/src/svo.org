@@ -282,25 +282,25 @@
   (defn apply-voxels
     [f tree coll] (reduce f tree coll))
 
-  ,#+clj
-  (defn as-array
-    [tree min-depth]
-    (let [{:keys [stride stride-z]} (voxel-config-at-depth tree min-depth)
-          ^bytes buf (byte-array (* stride stride-z))
-          v   (byte 127)]
-      (doseq [c (select-cells tree min-depth)]
-        (aset-byte buf (int c) v))
-      buf))
+  #?(:clj
+     (defn as-array
+       [tree min-depth]
+       (let [{:keys [stride stride-z]} (voxel-config-at-depth tree min-depth)
+             ^bytes buf (byte-array (* stride stride-z))
+             v   (byte 127)]
+         (doseq [c (select-cells tree min-depth)]
+           (aset-byte buf (int c) v))
+         buf)))
 #+END_SRC
 
 ** Namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/voxel/svo.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/voxel/svo.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.voxel.svo
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec3 V3]])
-    ,#+clj (:import [thi.ng.geom.core.vector Vec3]))
+    #?(:clj (:import [thi.ng.geom.core.vector Vec3])))
 
   <<const>>
 

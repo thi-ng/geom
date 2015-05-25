@@ -311,7 +311,7 @@
 ** Helper functions
 *** Voxel bit test macro
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/voxel/macros.clj :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/voxel/macros.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.voxel.macros)
 
   (defmacro not-cond->
@@ -451,16 +451,16 @@
 
 ** Namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/voxel/isosurface.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/voxel/isosurface.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.voxel.isosurface
-    ,#+cljs (:require-macros [thi.ng.geom.voxel.macros :refer [not-cond->]])
+    #?(:cljs (:require-macros [thi.ng.geom.voxel.macros :refer [not-cond->]]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec3]]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.voxel.svo :as svo :refer [cell-index select-cells voxel-cell voxel-config-at-depth]]
-     [thi.ng.common.math.core :as m]
-     ,#+clj [thi.ng.geom.voxel.macros :refer [not-cond->]]))
+     [thi.ng.math.core :as m]
+     #?(:clj [thi.ng.geom.voxel.macros :refer [not-cond->]])))
 
   <<lut>>
 
