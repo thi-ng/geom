@@ -36,25 +36,37 @@ target/test-classes
 **** [[https://github.com/clojure/clojure][Clojure]]
 #+NAME: dep-clj
 #+BEGIN_SRC clojure
-[org.clojure/clojure "1.7.0-beta1"]
+[org.clojure/clojure "1.7.0-beta3"]
 #+END_SRC
 
 **** [[https://github.com/clojure/clojurescript][ClojureScript]]
 #+NAME: dep-cljs
 #+BEGIN_SRC clojure
-[org.clojure/clojurescript "0.0-3211"]
+[org.clojure/clojurescript "0.0-3291"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/common/][thi.ng/common]]
 #+NAME: dep-common
 #+BEGIN_SRC clojure
-[thi.ng/common "0.3.1"]
+[thi.ng/common "0.3.2"]
 #+END_SRC
 
-**** [[https://github.com/thi-ng/macromath][thi.ng/macromath]]
-#+NAME: dep-mmath
+**** [[https://github.com/thi-ng/math][thi.ng/math]]
+#+NAME: dep-math
 #+BEGIN_SRC clojure
-[thi.ng/macromath "0.3.0"]
+[thi.ng/math "0.1.0-SNAPSHOT"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/dstruct][thi.ng/dstruct]]
+#+NAME: dep-dstruct
+#+BEGIN_SRC clojure
+[thi.ng/dstruct "0.1.0-SNAPSHOT"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/strf][thi.ng/strf]]
+#+NAME: dep-strf
+#+BEGIN_SRC clojure
+[thi.ng/strf "0.1.0-SNAPSHOT"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/color/][thi.ng/color]]
