@@ -274,7 +274,7 @@ results, the =transform= implementation returns a [[file:polygon.org][polygon]].
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/circle.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/circle.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.circle
     (:require
      [thi.ng.geom.core :as g :refer [*resolution*]]
@@ -283,12 +283,12 @@ results, the =transform= implementation returns a [[file:polygon.org][polygon]].
      [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types :as types]
-     [thi.ng.common.data.core :as d]
+     [thi.ng.dstruct.core :as d]
      [thi.ng.common.error :as err]
-     [thi.ng.common.math.core :as m :refer [PI TWO_PI *eps*]])
-    ,#+clj
-    (:import
-     [thi.ng.geom.types Circle2 Line2 Polygon2 Rect2 Triangle2]))
+     [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]])
+    #?(:clj
+       (:import
+        [thi.ng.geom.types Circle2 Line2 Polygon2 Rect2 Triangle2])))
 
   <<ctors>>
 

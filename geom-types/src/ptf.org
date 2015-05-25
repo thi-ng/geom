@@ -117,7 +117,7 @@
     (let [delta (/ (* twists TWO_PI) (dec (count (first base))))]
       (->> (m/norm-range strands)
            (butlast)
-           (#+clj pmap #+cljs map #(sweep-strand base r (* % TWO_PI) delta profile)))))
+           (#?(:clj pmap :cljs map) #(sweep-strand base r (* % TWO_PI) delta profile)))))
 
   (defn sweep-strand-mesh
     [base r strands twists profile & [{:as opts}]]
@@ -148,7 +148,7 @@ which has both the =geom= and =luxor= libs on its classpath.
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.types.utils.ptf :as ptf]
-     [thi.ng.common.math.core :as m :refer [THIRD_PI TWO_PI]]
+     [thi.ng.math.core :as m :refer [THIRD_PI TWO_PI]]
      [thi.ng.luxor.scenes :as scene]
      [thi.ng.luxor.io :as lio]))
 
@@ -187,7 +187,7 @@ with different parameters:
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.types.utils.ptf :as ptf]
-     [thi.ng.common.math.core :as m]
+     [thi.ng.math.core :as m]
      [thi.ng.luxor.scenes :as scene]
      [thi.ng.luxor.io :as lio]))
 
@@ -223,7 +223,7 @@ with different parameters:
      [thi.ng.geom.core.vector :as v]
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.types.utils.ptf :as ptf]
-     [thi.ng.common.math.core :as m]
+     [thi.ng.math.core :as m]
      [thi.ng.luxor.core :as lux]
      [thi.ng.luxor.scenes :as scene]
      [thi.ng.luxor.io :as lio]))
@@ -272,7 +272,7 @@ with different parameters:
      [thi.ng.geom.bezier :as b]
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.types.utils.ptf :as ptf]
-     [thi.ng.common.math.core :as m]
+     [thi.ng.math.core :as m]
      [thi.ng.luxor.core :as lux]
      [thi.ng.luxor.scenes :as scene]
      [thi.ng.luxor.io :as lio]))
@@ -293,17 +293,17 @@ with different parameters:
 
 ** Namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/types/utils/ptf.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/types/utils/ptf.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.types.utils.ptf
-    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
+    #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :refer [vec2 vec3 V3]]
      [thi.ng.geom.core.matrix :refer [matrix44 M44]]
      [thi.ng.geom.basicmesh :as bm]
-     [thi.ng.common.data.core :as d]
-     [thi.ng.common.math.core :as m :refer [*eps* TWO_PI]]
-     ,#+clj [thi.ng.macromath.core :as mm]))
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.math.core :as m :refer [*eps* TWO_PI]]
+     #?(:clj [thi.ng.math.macros :as mm])))
 
   <<ptf>>
 #+END_SRC

@@ -91,7 +91,7 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/types/utils.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/types/utils.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.types.utils
     (:require
      [thi.ng.geom.core :as g]

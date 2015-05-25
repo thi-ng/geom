@@ -123,8 +123,7 @@
    [_ f] (add-face _ f))
   (vertex-faces
    [_ v] (filter
-          #(>= #+clj (.indexOf ^clojure.lang.PersistentVector % v)
-               ,#+cljs (d/index-of % v) 0)
+          #(>= #?(:clj (.indexOf ^clojure.lang.PersistentVector % v) :cljs (d/index-of % v)) 0)
           (:faces _)))
   (remove-face
    [_ f]
@@ -220,7 +219,7 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/basicmesh.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/basicmesh.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.basicmesh
     (:require
      [thi.ng.geom.core :as g]
@@ -229,8 +228,8 @@
      [thi.ng.geom.core.matrix :refer [M44]]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
-     [thi.ng.common.data.core :as d]
-     [thi.ng.common.math.core :as m :refer [*eps*]]
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.math.core :as m :refer [*eps*]]
      [thi.ng.common.error :as err]
      [clojure.core.reducers :as r]))
 

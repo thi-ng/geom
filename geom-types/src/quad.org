@@ -355,7 +355,7 @@ function returns a lazyseq of triangles of the subdivided quad.
 #+END_SRC
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/quad.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.quad
     (:require
      [thi.ng.geom.core :as g]
@@ -366,12 +366,12 @@ function returns a lazyseq of triangles of the subdivided quad.
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
-     [thi.ng.common.data.core :as d]
+     [thi.ng.dstruct.core :as d]
      [thi.ng.common.error :as err]
-     [thi.ng.common.math.core :as m :refer [*eps*]])
-    ,#+clj
-    (:import
-     [thi.ng.geom.types Quad3 Triangle3 Line3]))
+     [thi.ng.math.core :as m :refer [*eps*]])
+    #?(:clj
+       (:import
+        [thi.ng.geom.types Quad3 Triangle3 Line3])))
 
   <<ctors>>
 

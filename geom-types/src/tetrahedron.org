@@ -225,9 +225,9 @@
   )
 #+END_SRC
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/tetrahedron.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/tetrahedron.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.tetrahedron
-    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
+    #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
@@ -237,10 +237,10 @@
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
-     [thi.ng.common.data.core :as d]
+     [thi.ng.dstruct.core :as d]
      [thi.ng.common.error :as err]
-     [thi.ng.common.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
-     ,#+clj [thi.ng.macromath.core :as mm]))
+     [thi.ng.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
+     #?(:clj [thi.ng.math.macros :as mm])))
 
   <<helpers>>
 

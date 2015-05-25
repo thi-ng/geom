@@ -80,54 +80,53 @@
     [coords]
     (->> coords
          (re-seq #"[0-9\.\-\+]+")
-         ,#+clj  (map #(Double/parseDouble %))
-         ,#+cljs (map js/parseFloat)
+         #?(:clj (map #(Double/parseDouble %)) :cljs (map js/parseFloat))
          (partition 2)
          (mapv vec2)))
-  
+
   (defn parse-svg-path
     ([svg]
-       (parse-svg-path
-        (->> svg
-             (re-seq #"([MLCZz])\s*(((([0-9\.\-]+)\,?){2}\s*){0,3})")
-             (map (fn [[_ t c]]
-                    [t (parse-svg-coords c)])))
-        [0 0] [0 0]))
+     (parse-svg-path
+      (->> svg
+           (re-seq #"([MLCZz])\s*(((([0-9\.\-]+)\,?){2}\s*){0,3})")
+           (map (fn [[_ t c]]
+                  [t (parse-svg-coords c)])))
+      [0 0] [0 0]))
     ([[[type points :as seg] & more] p0 pc]
-       (when seg
-         (cond
-          (= "M" type)
-          (let [p (first points)] (recur more p p))
-  
-          (= "L" type)
-          (let [p (first points)]
-            (lazy-seq (cons {:type :line :points [pc p]}
-                            (parse-svg-path more p0 p))))
-  
-          (= "C" type)
-          (let [p (last points)]
-            (lazy-seq (cons {:type :bezier :points (cons pc points)}
-                            (parse-svg-path more p0 p))))
-  
-          (or (= "Z" type) (= "z" type))
-          (lazy-seq (cons {:type :close :points [pc p0]}
-                          (parse-svg-path more p0 p0)))
-  
-          :default
-          (err/unsupported! (str "Unsupported path segment type" type))))))
+     (when seg
+       (cond
+         (= "M" type)
+         (let [p (first points)] (recur more p p))
+
+         (= "L" type)
+         (let [p (first points)]
+           (lazy-seq (cons {:type :line :points [pc p]}
+                           (parse-svg-path more p0 p))))
+
+         (= "C" type)
+         (let [p (last points)]
+           (lazy-seq (cons {:type :bezier :points (cons pc points)}
+                           (parse-svg-path more p0 p))))
+
+         (or (= "Z" type) (= "z" type))
+         (lazy-seq (cons {:type :close :points [pc p0]}
+                         (parse-svg-path more p0 p0)))
+
+         :default
+         (err/unsupported! (str "Unsupported path segment type" type))))))
 #+END_SRC
 
 ** SVG path parser (Clojure only)
 #+BEGIN_SRC clojure :noweb-ref parser
-  ,#+clj
-  (defn parse-svg
-    [src res udist]
-    (->> src
-         (xml/parse)
-         (xml-seq)
-         (filter #(= :path (:tag %)))
-         (mapv #(parse-svg-path (get-in % [:attrs :d])))
-         (map path2)))
+  #?(:clj
+     (defn parse-svg
+       [src res udist]
+       (->> src
+            (xml/parse)
+            (xml-seq)
+            (filter #(= :path (:tag %)))
+            (mapv #(parse-svg-path (get-in % [:attrs :d])))
+            (map path2))))
 #+END_SRC
 
 ** Protocol implementations
@@ -219,7 +218,7 @@
 
 ** Namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/path.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/path.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.path
     (:require
      [thi.ng.geom.core :as g :refer [*resolution*]]
@@ -227,8 +226,8 @@
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.bezier :as b]
      [thi.ng.common.error :as err]
-     ,#+clj [clojure.xml :as xml])
-    ,#+clj (:import [thi.ng.geom.types Line2 Path2]))
+     #?(:clj [clojure.xml :as xml]))
+    #?(:clj (:import [thi.ng.geom.types Line2 Path2])))
 
   <<ctors>>
 

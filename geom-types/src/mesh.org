@@ -563,18 +563,18 @@
 
 ** Namespace declaration
 #+BEGIN_SRC clojure
-  ;;:tangle ../babel/src/cljx/thi/ng/geom/mesh.cljx :mkdirp yes :padline no
+  ;;:tangle ../babel/src/thi/ng/geom/mesh.cljc :mkdirp yes :padline no
   (ns thi.ng.geom.mesh
     (:require
-     [thi.ng.common.data.core :as d]
-     [thi.ng.common.math.core :as m]
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g :refer [vec2 vec3]]
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.types :as types]
      [clojure.set :as set])
-    #+clj
-    (:import
-     [thi.ng.geom.types AABB Sphere Mesh2 Mesh3]))
+    #?(:clj
+       (:import
+        [thi.ng.geom.types AABB Sphere Mesh2 Mesh3])))
 
   <<helpers>>
 

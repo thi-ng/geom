@@ -30,8 +30,8 @@
 #+BEGIN_SRC clojure :noweb-ref ctor
   (defn sphere
     ([] (thi.ng.geom.types.Sphere. (vec3) 1.0))
-    ([r] (thi.ng.geom.types.Sphere. (vec3) #+clj (double r) #+cljs r))
-    ([p r] (thi.ng.geom.types.Sphere. (vec3 p) #+clj (double r) #+cljs r)))
+    ([r] (thi.ng.geom.types.Sphere. (vec3) #?(:clj (double r) :cljs r)))
+    ([p r] (thi.ng.geom.types.Sphere. (vec3 p) #?(:clj (double r) :cljs r))))
 #+END_SRC
 
 ** Type specific functions
@@ -248,9 +248,9 @@ If there's no intersection, the function returns =nil=.
 
 ** Namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/sphere.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/sphere.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.sphere
-    #+cljs (:require-macros [thi.ng.macromath.core :as mm])
+    #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g :refer [*resolution*]]
      [thi.ng.geom.core.utils :as gu]
@@ -259,11 +259,11 @@ If there's no intersection, the function returns =nil=.
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types :as types]
      [thi.ng.common.error :as err]
-     [thi.ng.common.math.core :as m :refer [TWO_PI PI *eps*]]
-     ,#+clj [thi.ng.macromath.core :as mm])
-    ,#+clj
-    (:import
-     [thi.ng.geom.types AABB Sphere]))
+     [thi.ng.math.core :as m :refer [TWO_PI PI *eps*]]
+     #?(:clj [thi.ng.math.macros :as mm]))
+    #?(:clj
+       (:import
+        [thi.ng.geom.types AABB Sphere])))
 
   <<ctor>>
 

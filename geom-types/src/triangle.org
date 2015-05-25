@@ -492,9 +492,9 @@ https://web.archive.org/web/20090320013931/http://amp.ece.cmu.edu/Publication/Ch
 
 ** Namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/triangle.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/triangle.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.triangle
-    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
+    #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
@@ -503,13 +503,13 @@ https://web.archive.org/web/20090320013931/http://amp.ece.cmu.edu/Publication/Ch
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
-     [thi.ng.common.data.core :as d]
-     [thi.ng.common.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
      [thi.ng.common.error :as err]
-     ,#+clj [thi.ng.macromath.core :as mm])
-    ,#+clj
-    (:import
-     [thi.ng.geom.types Circle2 Rect2 Polygon2 Triangle2 Triangle3]))
+     #?(:clj [thi.ng.math.macros :as mm]))
+    #?(:clj
+       (:import
+        [thi.ng.geom.types Circle2 Rect2 Polygon2 Triangle2 Triangle3])))
 
   <<ctors>>
 

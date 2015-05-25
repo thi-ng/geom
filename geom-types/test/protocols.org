@@ -65,18 +65,18 @@
   (def shape-common-3d
     (conj shape-common :bsphere))
 
-  ,#+clj
+  #?(:clj
   (defn satisfies-all?
     [type & protos]
     (testing
         (.getName type)
       (doseq [p protos]
         (is (true? (extends? (proto-ids p) type))
-            (str (get-in proto-ids [p :on-interface]))))))
+            (str (get-in proto-ids [p :on-interface])))))))
 #+END_SRC
 ** Main context
 #+BEGIN_SRC clojure :noweb-ref tests
-  ,#+clj
+  #?(:clj
   (deftest proto-implementation-check
     (dorun
      (map
@@ -130,15 +130,15 @@
        thi.ng.geom.types.Triangle3
        (conj shape-common-3d :flip :isec :prox :subdiv)
 
-       })))
+       }))))
 #+END_SRC
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/types/test/protocols.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/types/test/protocols.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.types.test.protocols
-    ,#+cljs
-    (:require-macros
-     [cemerick.cljs.test :refer (is deftest with-test run-tests testing)])
+    #?(:cljs
+       (:require-macros
+        [cemerick.cljs.test :refer (is deftest with-test run-tests testing)]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.types]
@@ -156,8 +156,10 @@
      [thi.ng.geom.sphere]
      [thi.ng.geom.tetrahedron]
      [thi.ng.geom.triangle]
-     ,#+clj [clojure.test :refer :all]
-     ,#+cljs [cemerick.cljs.test :as t]))
+     #?(:clj
+        [clojure.test :refer :all]
+        :cljs
+        [cemerick.cljs.test :as t])))
 
   <<helpers>>
 

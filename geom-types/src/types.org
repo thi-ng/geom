@@ -48,8 +48,8 @@ Even though a circle is a specialization of an Ellipse, we define
 an extra Circle type for performance reasons.
 
 #+BEGIN_SRC clojure :noweb-ref types2d
-  (defrecord Circle2 #+clj [^Vec2 p ^double r] #+cljs [p r])
-  (defrecord Ellipse2 #+clj [^Vec2 p ^double rx ^double ry] #+cljs [p rx ry])
+  (defrecord Circle2 #?(:clj [^Vec2 p ^double r] :cljs [p r]))
+  (defrecord Ellipse2 #?(:clj [^Vec2 p ^double rx ^double ry] :cljs [p rx ry]))
 #+END_SRC
 
 *** Line2 & LineStrip2
@@ -80,7 +80,7 @@ an extra Circle type for performance reasons.
 *** Rect2
 
 #+BEGIN_SRC clojure :noweb-ref types2d
-  (defrecord Rect2 #+clj [^Vec2 p ^Vec2 size] #+cljs [p size])
+  (defrecord Rect2 #?(:clj [^Vec2 p ^Vec2 size] :cljs [p size]))
 #+END_SRC
 
 *** Triangle2
@@ -146,7 +146,7 @@ the plane and normal vector =n= standing perpendicular on the plane.
 The latter defines the plane's orientation in space.
 
 #+BEGIN_SRC clojure :noweb-ref types3d
-  (defrecord Plane #+clj [n ^double w] #+cljs [n w])
+  (defrecord Plane #?(:clj [n ^double w] :cljs [n w]))
 #+END_SRC
 
 *** Quad3
@@ -161,7 +161,7 @@ Just like a circle in 2D, a sphere in 3D is uniquely defined via its
 center point =o= and radius =r=.
 
 #+BEGIN_SRC clojure :noweb-ref types3d
-  (defrecord Sphere #+clj [^Vec3 p ^double r] #+cljs [p r])
+  (defrecord Sphere #?(:clj [^Vec3 p ^double r] :cljs [p r]))
 #+END_SRC
 
 *** Tetrahedron
@@ -178,11 +178,11 @@ center point =o= and radius =r=.
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/types.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/types.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.types
     (:require
       [thi.ng.geom.core.vector])
-    ,#+clj (:import [thi.ng.geom.core.vector Vec2 Vec3]))
+    #?(:clj (:import [thi.ng.geom.core.vector Vec2 Vec3])))
 
   <<types-graph>>
 

@@ -340,8 +340,11 @@ from the first vertex of the original with inner sorting over XYZ.
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/cuboid.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/cuboid.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.cuboid
+    #?(:cljs
+       (:require-macros
+        [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
@@ -350,14 +353,13 @@ from the first vertex of the original with inner sorting over XYZ.
      [thi.ng.geom.plane :as p]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
-     [thi.ng.common.data.core :as d]
+     [thi.ng.dstruct.core :as d]
      [thi.ng.common.error :as err]
-     [thi.ng.common.math.core :as m :refer [*eps*]]
-     ,#+clj [thi.ng.macromath.core :as mm])
-    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
-    ,#+clj
-    (:import
-     [thi.ng.geom.types AABB Cuboid Sphere]))
+     [thi.ng.math.core :as m :refer [*eps*]]
+     #?(:clj [thi.ng.math.macros :as mm]))
+    #?(:clj
+       (:import
+        [thi.ng.geom.types AABB Cuboid Sphere])))
 
   <<ctors>>
 

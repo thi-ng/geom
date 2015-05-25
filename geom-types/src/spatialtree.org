@@ -160,16 +160,18 @@
 
 #+BEGIN_SRC clojure :noweb-ref impl
   (deftype MutableQuadtreeNode
-      ,#+clj [^double x ^double y ^double w ^double h
-             ^:unsynchronized-mutable children
-             ^:unsynchronized-mutable point
-             ^:unsynchronized-mutable data
-             ^:unsynchronized-mutable bounds]
-      ,#+cljs [x y w h
-              ^:mutable children
-              ^:mutable point
-              ^:mutable data
-              ^:mutable bounds]
+      #?(:clj
+          [^double x ^double y ^double w ^double h
+           ^:unsynchronized-mutable children
+           ^:unsynchronized-mutable point
+           ^:unsynchronized-mutable data
+           ^:unsynchronized-mutable bounds]
+          :cljs
+          [x y w h
+           ^:mutable children
+           ^:mutable point
+           ^:mutable data
+           ^:mutable bounds])
 
       g/PSpatialTree
       (add-point [_ p d] (add-point* _ p d) _)
@@ -240,16 +242,18 @@
 
 #+BEGIN_SRC clojure :noweb-ref impl
   (deftype MutableOctreeNode
-      ,#+clj [^double x ^double y ^double z ^double w ^double h ^double d
-             ^:unsynchronized-mutable children
-             ^:unsynchronized-mutable point
-             ^:unsynchronized-mutable data
-             ^:unsynchronized-mutable bounds]
-      ,#+cljs [x y z w h d
-              ^:mutable children
-              ^:mutable point
-              ^:mutable data
-              ^:mutable bounds]
+      #?(:clj
+          [^double x ^double y ^double z ^double w ^double h ^double d
+           ^:unsynchronized-mutable children
+           ^:unsynchronized-mutable point
+           ^:unsynchronized-mutable data
+           ^:unsynchronized-mutable bounds]
+          :cljs
+          [x y z w h d
+           ^:mutable children
+           ^:mutable point
+           ^:mutable data
+           ^:mutable bounds])
 
       g/PSpatialTree
       (add-point [_ p d] (add-point* _ p d) _)
@@ -321,9 +325,10 @@
 *** Override print methods
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  #+clj (require 'clojure.pprint)
-  #+clj (defmethod print-method MutableQuadtreeNode [^MutableQuadtreeNode o ^java.io.Writer w] (.write w (.toString o)))
-  #+clj (defmethod print-method MutableOctreeNode [^MutableOctreeNode o ^java.io.Writer w] (.write w (.toString o)))
+  #?@(:clj
+      [(require 'clojure.pprint)
+       (defmethod print-method MutableQuadtreeNode [^MutableQuadtreeNode o ^java.io.Writer w] (.write w (.toString o)))
+       (defmethod print-method MutableOctreeNode [^MutableOctreeNode o ^java.io.Writer w] (.write w (.toString o)))])
 #+END_SRC
 
 ** Constructors
@@ -362,7 +367,7 @@
 
 ** Complete namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/spatialtree.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/spatialtree.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.spatialtree
     (:require
      [thi.ng.geom.core :as g]
@@ -373,8 +378,8 @@
      [thi.ng.geom.rect :as r]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
-     [thi.ng.common.math.core :refer [*eps* delta=]])
-    ,#+clj (:import [thi.ng.geom.types AABB Rect2]))
+     [thi.ng.math.core :refer [*eps* delta=]])
+    #?(:clj (:import [thi.ng.geom.types AABB Rect2])))
 
   <<protos>>
 

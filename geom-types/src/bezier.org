@@ -271,7 +271,7 @@ required control points. This only works for non-closed curves, though.
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/bezier.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/bezier.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.bezier
     (:require
      [thi.ng.geom.core :as g :refer [*resolution*]]
@@ -280,8 +280,8 @@ required control points. This only works for non-closed curves, though.
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.geom.types.utils.ptf :as ptf]
-     [thi.ng.common.data.core :as d]
-     [thi.ng.common.math.core :as m]))
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.math.core :as m]))
 
   <<helpers>>
 

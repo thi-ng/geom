@@ -385,7 +385,7 @@
 #+END_SRC
 
 *** PInset
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/quad.cljx
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/quad.cljc
   g/PInset
   (inset
    [_ inset] (th.ng.geom.types.Polygon2. (inset-polygon (:points _) inset)))
@@ -463,7 +463,7 @@
 #+END_SRC
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/polygon.cljx :noweb yes :mkdip yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/polygon.cljc :noweb yes :mkdip yes :padline no
   (ns thi.ng.geom.polygon
     (:require
      [thi.ng.geom.core :as g]
@@ -475,11 +475,11 @@
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
-     [thi.ng.common.data.core :as d]
-     [thi.ng.common.math.core :as m :refer [PI HALF_PI THREE_HALVES_PI *eps*]])
-    ,#+clj
-    (:import
-     [thi.ng.geom.types Circle2 Line2 Rect2 Polygon2]))
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.math.core :as m :refer [PI HALF_PI THREE_HALVES_PI *eps*]])
+    #?(:clj
+       (:import
+        [thi.ng.geom.types Circle2 Line2 Rect2 Polygon2])))
 
   <<ctors>>
 

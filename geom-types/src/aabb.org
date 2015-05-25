@@ -399,9 +399,11 @@ of the original with inner sorting over XYZ.
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/aabb.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/aabb.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.aabb
-    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
+    #?(:cljs
+       (:require-macros
+        [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
@@ -412,10 +414,10 @@ of the original with inner sorting over XYZ.
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
-     [thi.ng.common.data.core :as d]
+     [thi.ng.dstruct.core :as d]
      [thi.ng.common.error :as err]
-     [thi.ng.common.math.core :as m :refer [*eps*]]
-     ,#+clj [thi.ng.macromath.core :as mm]))
+     [thi.ng.math.core :as m :refer [*eps*]]
+     #?(:clj [thi.ng.math.macros :as mm])))
 
   <<ctors>>
 
@@ -428,11 +430,11 @@ of the original with inner sorting over XYZ.
 *** TODO add rotate tests
 *** TODO add isec tests
 
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/types/test/aabb.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/types/test/aabb.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.types.test.aabb
-    ,#+cljs
-    (:require-macros
-     [cemerick.cljs.test :refer (is deftest with-test run-tests testing)])
+    #?(:cljs
+       (:require-macros
+        [cemerick.cljs.test :refer (is deftest with-test run-tests testing)]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :refer [vec3]]
@@ -445,9 +447,11 @@ of the original with inner sorting over XYZ.
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.triangle :as t]
-     ,#+clj [clojure.test :refer :all]
-     ,#+cljs [cemerick.cljs.test]))
-  
+     #?(:clj
+        [clojure.test :refer :all]
+        :cljs
+        [cemerick.cljs.test])))
+
   (deftest test-ctors
     (is (= (a/aabb [100 200 300] [10 20 30])
            (a/aabb-from-minmax [100 200 300] [110 220 330]))
@@ -456,7 +460,7 @@ of the original with inner sorting over XYZ.
         "aabb n")
     (is (= (a/aabb [0 0 0] [10 20 30]) (a/aabb 10 20 30))
         "aabb sz sy sz"))
-  
+
   (deftest test-impls
     (let [[px py pz :as p] (vec3 100 200 300)
           [w h d :as s]    (vec3 10 20 30)
