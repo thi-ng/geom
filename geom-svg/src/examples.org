@@ -87,6 +87,7 @@ is defined in its own namespace and can be loaded from the REPL via:
      [thi.ng.geom.core.matrix :as mat]
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.polygon :as p]
+     [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.mesh.subdivision :as sd]
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.geom.svg.shaders :as shader]
@@ -138,7 +139,7 @@ is defined in its own namespace and can be loaded from the REPL via:
     [res radius depth wall]
     (-> (c/circle radius)
         (g/as-polygon res)
-        (g/extrude-shell {:depth depth :wall wall :inset -0.1})
+        (g/extrude-shell {:depth depth :wall wall :inset -0.1 :mesh (gm/gmesh)})
         (g/center)))
 
   (def mesh
