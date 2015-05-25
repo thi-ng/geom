@@ -115,7 +115,7 @@ symbol =version= holding the version string defined above:
 
 *** Version namespace                                              :noexport:
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/version.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/mesh/version.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.version)
   (def version "<<conf-version()>>")
 #+END_SRC

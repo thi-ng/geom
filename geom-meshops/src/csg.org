@@ -70,7 +70,7 @@ meshes.
        (< d (- r)) (assoc state 3 (conj (state 3) poly))
        :default
        (let [[ptype types] (compute-split-types n w (.-vertices poly))]
-         (case ptype
+         (case (int ptype)
            ;; co-planar
            0 (if (pos? (g/dot n (:n (.-plane poly))))
                (assoc state 0 (conj (state 0) poly))
@@ -215,7 +215,7 @@ meshes.
 #+END_SRC
 
 ** Complete namespace definition
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/csg.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/mesh/csg.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.csg
     #?(:cljs
        (:require-macros

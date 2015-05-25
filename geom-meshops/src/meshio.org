@@ -174,7 +174,7 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/io.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/mesh/io.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.io
     (:require
      [thi.ng.geom.core :as g]

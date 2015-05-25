@@ -150,7 +150,7 @@
 ** Complete namespace
 
 #+BEGIN_SRC clojure
-  ;; :tangle ../babel/src/cljx/thi/ng/geom/mesh/slicing.clj :noweb yes :mkdirp yes :padline no
+  ;; :tangle ../babel/src/thi/ng/geom/mesh/slicing.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.slicing
     (:require
      [thi.ng.geom.core :as g]

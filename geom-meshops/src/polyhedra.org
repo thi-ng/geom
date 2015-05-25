@@ -159,7 +159,7 @@ returns either a =BasicMesh= or =GMesh= instance.
 
 *** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/polyhedra.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/mesh/polyhedra.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.polyhedra
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
