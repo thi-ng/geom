@@ -333,11 +333,15 @@ located on the rotation axis.
    (if (seq (:fnormals _))
      (:fnormals _)
      (if force? (:fnormals (g/compute-face-normals _)))))
+  (face-normal
+   [_ f] ((:fnormals _) f))
   (vertex-normals
    [_ force?]
    (if (seq (:vnormals _))
      (:vnormals _)
      (if force? (:vnormals (g/compute-vertex-normals _)))))
+  (vertex-normal
+   [_ v] ((:vnormals _) v))
   (compute-face-normals
    [_]
    (loop [norms (transient #{}), fnorms (transient {}), faces (:faces _)]
@@ -346,8 +350,8 @@ located on the rotation axis.
              [norms n] (d/index! norms (apply gu/ortho-normal f))]
          (recur norms (assoc! fnorms f n) (next faces)))
        (assoc _
-         :normals  (persistent! norms)
-         :fnormals (persistent! fnorms)))))
+              :normals  (persistent! norms)
+              :fnormals (persistent! fnorms)))))
   (compute-vertex-normals
    [_]
    (let [{:keys [vertices normals fnormals] :as this} (if (seq (:fnormals _)) _ (g/compute-face-normals _))
@@ -355,14 +359,14 @@ located on the rotation axis.
      (loop [norms (transient normals), vnorms (transient (hash-map)), verts (keys vertices)]
        (if verts
          (let [v (first verts)
-               n (->> (g/vertex-faces this v)
-                      (transduce ntx g/+)
-                      (g/normalize))
-               [norms n] (d/index! norms n)]
+               [norms n] (->> (d/value-set :f vertices v)
+                              (transduce ntx g/+ v/V3)
+                              (g/normalize)
+                              (d/index! norms))]
            (recur norms (assoc! vnorms v n) (next verts)))
          (assoc this
-           :normals  (persistent! norms)
-           :vnormals (persistent! vnorms))))))
+                :normals  (persistent! norms)
+                :vnormals (persistent! vnorms))))))
 #+END_SRC
 
 *** PGeomContainer

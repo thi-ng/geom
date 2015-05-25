@@ -137,8 +137,12 @@
   g/PNormalAccess
   (face-normals
    [_ force?] (if (seq (:fnormals _)) (:fnormals _) (if force? (:fnormals (g/compute-face-normals _)))))
+  (face-normal
+   [_ f] ((:fnormals _) f))
   (vertex-normals
    [_ force?] (if force? (err/unsupported!)))
+  (vertex-normal
+   [_ v] (err/unsupported!))
   (compute-face-normals
    [_]
    (loop [fnorms (transient {}), faces (:faces _)]
