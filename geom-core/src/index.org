@@ -77,48 +77,33 @@ target/geom-core-<<conf-version()>>.js
     :min-lein-version "2.4.0"
 
     :dependencies [<<dep-clj>>
+                   <<dep-cljs>>
                    <<dep-common>>
-                   <<dep-mmath>>]
+                   <<dep-math>>
+                   <<dep-dstruct>>]
 
-    :source-paths ["src/cljx"]
-    :test-paths   ["<<conf-gen-test-path>>"]
+    :source-paths ["src"]
+    :test-paths   ["test"]
 
     :perforate {:environments [{:namespaces [thi.ng.geom.bench.core.vector]}]}
 
-    :profiles     {:dev {:dependencies [<<dep-cljs>>
-                                        <<dep-perforate-x>>]
-                         :plugins      [<<dep-cljx>>
-                                        <<dep-cljsbuild>>
+    :profiles     {:dev {:dependencies [<<dep-perforate-x>>]
+                         :plugins      [<<dep-cljsbuild>>
                                         <<dep-cljs-test>>
                                         <<dep-perforate>>
                                         <<dep-lein-npm>>]
                          :node-dependencies [<<dep-npm-benchmark>>]
                          :global-vars {*warn-on-reflection* true}
                          :jvm-opts ^:replace []
-                         :auto-clean false
-                         :prep-tasks [["cljx" "once"]]
-                         :aliases {"cleantest" ["do" "clean," "cljx" "once," "test," "cljsbuild" "test"]}}}
-
-    :cljx         {:builds [{:source-paths ["src/cljx"]
-                             :output-path "<<conf-gen-source-path>>"
-                             :rules :clj}
-                            {:source-paths ["src/cljx"]
-                             :output-path "<<conf-gen-source-path>>"
-                             :rules :cljs}
-                            {:source-paths ["test/cljx"]
-                             :output-path "<<conf-gen-test-path>>"
-                             :rules :clj}
-                            {:source-paths ["test/cljx"]
-                             :output-path "<<conf-gen-test-path>>"
-                             :rules :cljs}]}
+                         :aliases {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]}}}
 
     :cljsbuild    {:builds [{:id "simple"
-                             :source-paths ["<<conf-gen-source-path>>" "<<conf-gen-test-path>>"]
+                             :source-paths ["src" "test"]
                              :compiler {:output-to "<<cljs-artefact-path>>"
                                         :optimizations :whitespace
                                         :pretty-print true}}
                             {:id "bench"
-                             :source-paths ["<<conf-gen-source-path>>" "<<conf-gen-test-path>>" "benchmarks"]
+                             :source-paths ["src" "test" "benchmarks"]
                              :notify-command ["node" "target/cljs/benchmark.js"]
                              :compiler {:target :nodejs
                                         :output-to "target/cljs/benchmark.js"
@@ -160,7 +145,7 @@ symbol =version= holding the version string defined above:
 
 *** Version namespace                                              :noexport:
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/version.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core/version.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.version)
   (def version "<<conf-version()>>")
 #+END_SRC

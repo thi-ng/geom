@@ -39,9 +39,9 @@ Some matrix operations (e.g. computing the determinant or inverse of
 matrix) require quite long mathematical expressions and we therefore
 define some macros to simplify them.
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/macros/matrix.clj :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core/macros/matrix.clj :mkdirp yes :padline no
   (ns thi.ng.geom.core.macros.matrix
-    (:require [thi.ng.macromath.core :as mm]))
+    (:require [thi.ng.math.macros :as mm]))
 
   (defmacro det-item
     [a b c d, e f g h, i j k l, m n o p]
@@ -59,101 +59,138 @@ define some macros to simplify them.
 ** Protocol helpers
 
 #+BEGIN_SRC clojure :noweb-ref proto-helpers
-  ,#+clj
-  (defn- hash-coll*
-    [coll]
-    (reduce
-     #(-> % (unchecked-multiply-int 31) (unchecked-add-int (hash %2)))
-     1 coll))
+  #?(:clj
+     (defn- hash-coll*
+       [coll]
+       (reduce
+        #(-> % (unchecked-multiply-int 31) (unchecked-add-int (hash %2)))
+        1 coll)))
 #+END_SRC
+
 ** Matrix implementations
 *** 3x2 Matrix (Affine 2D transform)
 
 #+BEGIN_SRC clojure :noweb-ref mat32
   (deftype Matrix32
-    ,#+clj  [^double m00 ^double m01 ^double m02
-            ^double m10 ^double m11 ^double m12
-            ^:unsynchronized-mutable _hasheq
-            _meta]
-    ,#+cljs [m00 m01 m02 m10 m11 m12
-            ^:mutable _hasheq
-            _meta]
+      #?(:clj
+          [^double m00 ^double m01 ^double m02
+           ^double m10 ^double m11 ^double m12
+           ^:unsynchronized-mutable _hasheq
+           _meta]
+          :cljs
+          [m00 m01 m02 m10 m11 m12
+           ^:mutable _hasheq
+           _meta])
 #+END_SRC
 
 **** Clojure protocols
 
 #+BEGIN_SRC clojure :noweb-ref mat32
-  ,#+clj clojure.lang.IObj
-  ,#+cljs IMeta
-  (#+clj meta #+cljs -meta [_] _meta)
-  ,#+cljs IWithMeta
-  (#+clj withMeta #+cljs -with-meta
-         [_ m] (Matrix32. m00 m01 m02 m10 m11 m12 _hasheq m))
-  ,#+clj java.util.Collection
-  ,#+clj clojure.lang.IPersistentCollection
-  ,#+clj clojure.lang.IPersistentVector
-  ,#+clj clojure.lang.Seqable
-  ,#+clj clojure.lang.Sequential
-  ,#+clj clojure.lang.IHashEq
-  ,#+cljs ISequential
-  ,#+clj (empty [_] (err/unsupported!))
-
-  ,#+cljs ICounted
-  (#+clj count #+cljs -count [_] 6)
-
-  ,#+cljs ISeqable
-  ,#+clj  (seq [_] (seq [m00 m01 m02 m10 m11 m12]))
-  ,#+cljs (-seq [_] _)
-
-  ,#+cljs ISeq
-  ,#+cljs (-rest [_] (seq [m01 m02 m10 m11 m12]))
-  ,#+cljs (-first [_] m00)
-  ,#+cljs INext
-  ,#+cljs (-next [_] (seq [m01 m02 m10 m11 m12]))
-
-  ,#+cljs ICollection
-  (#+clj cons #+cljs -conj [_ x] [m00 m01 m02 m10 m11 m12 x])
-
-  ,#+cljs IIndexed
-  (#+clj nth #+cljs -nth [_ k]
-         (case (int k)
-           0 m00 1 m01 2 m02 3 m10 4 m11 5 m12
-           (err/illegal-arg! k)))
-  (#+clj nth #+cljs -nth [_ k nf]
-         (case (int k) 0 m00 1 m01 2 m02 3 m10 4 m11 5 m12 nf))
-
-  ,#+cljs IEquiv
-  (#+clj equiv #+cljs -equiv [_ o]
-         (and
-          (sequential? o)
-          (== 6 (count o))
-          (every? #(= (% 0) (% 1)) (map vector _ o))))
-
-  ,#+cljs IHash
-  (#+clj hasheq #+cljs -hash  [_]
-         (or _hasheq
-             (set! _hasheq (hash-ordered-coll _))))
-
-  ,#+clj (hashCode [_] (hash-coll* _))
-
-  ,#+clj (equals
-         [_ o]
-         (and
-          (sequential? o)
-          (== 6 (count o))
-          (every? #(clojure.lang.Util/equals (% 0) (% 1)) (map vector _ o))))
-  ,#+clj (isEmpty
-         [_] false)
-  ,#+clj (iterator
-         [_] (.iterator ^java.util.Collection (list m00 m01 m02 m10 m11 m12)))
-  ,#+clj (toArray
-         [_] (object-array _))
-  ,#+clj (size [_] 6)
-  ,#+clj (length [_] 6)
-
+  #?@(:clj
+      [clojure.lang.IObj
+       (meta
+        [_] _meta)
+       (withMeta
+        [_ m] (Matrix32. m00 m01 m02 m10 m11 m12 _hasheq m))
+       java.util.Collection
+       clojure.lang.IPersistentCollection
+       clojure.lang.IPersistentVector
+       clojure.lang.Seqable
+       clojure.lang.Sequential
+       clojure.lang.IHashEq
+       (empty
+        [_] (err/unsupported!))
+       (count
+        [_] 6)
+       (seq
+        [_] (seq [m00 m01 m02 m10 m11 m12]))
+       (cons
+        [_ x] [m00 m01 m02 m10 m11 m12 x])
+       (nth
+        [_ k]
+        (case (int k)
+          0 m00 1 m01 2 m02 3 m10 4 m11 5 m12
+          (err/illegal-arg! k)))
+       (nth
+        [_ k nf]
+        (case (int k) 0 m00 1 m01 2 m02 3 m10 4 m11 5 m12 nf))
+       (equiv
+        [_ o]
+        (and
+         (sequential? o)
+         (== 6 (count o))
+         (every? #(= (% 0) (% 1)) (map vector _ o))))
+       (hasheq
+        [_]
+        (or _hasheq
+            (set! _hasheq (hash-ordered-coll _))))
+       (hashCode
+        [_] (hash-coll* _))
+       (equals
+        [_ o]
+        (and
+         (sequential? o)
+         (== 6 (count o))
+         (every? #(clojure.lang.Util/equals (% 0) (% 1)) (map vector _ o))))
+       (isEmpty
+        [_] false)
+       (iterator
+        [_] (.iterator ^java.util.Collection (list m00 m01 m02 m10 m11 m12)))
+       (toArray
+        [_] (object-array _))
+       (size
+        [_] 6)
+       (length
+        [_] 6)]
+      :cljs
+      [IMeta
+       (-meta
+        [_] _meta)
+       IWithMeta
+       (-with-meta
+        [_ m] (Matrix32. m00 m01 m02 m10 m11 m12 _hasheq m))
+       ISequential
+       ICounted
+       (-count
+        [_] 6)
+       ISeqable
+       (-seq
+        [_] _)
+       ISeq
+       (-rest
+        [_] (seq [m01 m02 m10 m11 m12]))
+       (-first
+        [_] m00)
+       INext
+       (-next
+        [_] (seq [m01 m02 m10 m11 m12]))
+       ICollection
+       (-conj
+        [_ x] [m00 m01 m02 m10 m11 m12 x])
+       IIndexed
+       (-nth
+        [_ k]
+        (case (int k)
+          0 m00 1 m01 2 m02 3 m10 4 m11 5 m12
+          (err/illegal-arg! k)))
+       (-nth
+        [_ k nf]
+        (case (int k) 0 m00 1 m01 2 m02 3 m10 4 m11 5 m12 nf))
+       IEquiv
+       (-equiv
+        [_ o]
+        (and
+         (sequential? o)
+         (== 6 (count o))
+         (every? #(= (% 0) (% 1)) (map vector _ o))))
+       IHash
+       (-hash
+        [_]
+        (or _hasheq
+            (set! _hasheq (hash-ordered-coll _))))])
   Object
   (toString
-   [_] (apply str (concat "[" (interpose \space _) "]")))
+   [_] (str "[" m00 " " m01 " " m02 " " m10 " " m11 " " m12 "]"))
 #+END_SRC
 
 **** PMathOps
@@ -303,7 +340,7 @@ Check discrepancy with SVG transforms
   g/PVectorTransform
   (transform-vector
    [_ [x y :as v]]
-   (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+   (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
      (aset b 0 (double (mm/madd x m00 y m01 m02)))
      (aset b 1 (double (mm/madd x m10 y m11 m12)))
      (thi.ng.geom.core.vector.Vec2. b nil (meta v))))
@@ -326,117 +363,163 @@ ordering (row major).
 
 #+BEGIN_SRC clojure :noweb-ref mat44
   (deftype Matrix44
-    #+clj  [^double m00 ^double m01 ^double m02 ^double m03
-            ^double m10 ^double m11 ^double m12 ^double m13
-            ^double m20 ^double m21 ^double m22 ^double m23
-            ^double m30 ^double m31 ^double m32 ^double m33
-            ^:unsynchronized-mutable _hasheq
-            _meta]
-    #+cljs [m00 m01 m02 m03
-            m10 m11 m12 m13
-            m20 m21 m22 m23
-            m30 m31 m32 m33
-            ^:mutable _hasheq
-            _meta]
+      #?(:clj
+          [^double m00 ^double m01 ^double m02 ^double m03
+           ^double m10 ^double m11 ^double m12 ^double m13
+           ^double m20 ^double m21 ^double m22 ^double m23
+           ^double m30 ^double m31 ^double m32 ^double m33
+           ^:unsynchronized-mutable _hasheq
+           _meta]
+          :cljs
+          [m00 m01 m02 m03
+           m10 m11 m12 m13
+           m20 m21 m22 m23
+           m30 m31 m32 m33
+           ^:mutable _hasheq
+           _meta])
 #+END_SRC
 
 **** Clojure protocols
 
 #+BEGIN_SRC clojure :noweb-ref mat44
-  ,#+clj clojure.lang.IObj
-  ,#+cljs IMeta
-  (#+clj meta #+cljs -meta [_] _meta)
-  ,#+cljs IWithMeta
-  (#+clj withMeta #+cljs -with-meta
-          [_ m] (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33 _hasheq m))
-  ,#+clj java.util.Collection
-  ,#+clj clojure.lang.IPersistentCollection
-  ,#+clj clojure.lang.IPersistentVector
-  ,#+clj clojure.lang.Seqable
-  ,#+clj clojure.lang.Sequential
-  ,#+clj clojure.lang.IHashEq
-  ,#+cljs ISequential
-  ,#+clj (empty [_] (err/unsupported!))
-
-  ,#+cljs ICounted
-  (#+clj count #+cljs -count [_] 16)
-
-  ,#+cljs ISeqable
-  ,#+clj (seq [_] (seq [m00 m01 m02 m03
-                   m10 m11 m12 m13
-                   m20 m21 m22 m23
-                   m30 m31 m32 m33]))
-  ,#+cljs (-seq [_] _)
-
-  ,#+cljs ISeq
-  ,#+cljs (-rest [_] (next _))
-  ,#+cljs (-first [_] m00)
-  ,#+cljs INext
-  ,#+cljs (-next
-         [_] (seq [m01 m02 m03
-                   m10 m11 m12 m13
-                   m20 m21 m22 m23
-                   m30 m31 m32 m33]))
-
-  ,#+cljs ICollection
-  (#+clj cons #+cljs -conj
-          [_ x]
-          [m00 m01 m02 m03
-           m10 m11 m12 m13
-           m20 m21 m22 m23
-           m30 m31 m32 m33 x])
-
-  ,#+cljs IIndexed
-  (#+clj nth #+cljs -nth [_ k]
-         (case (int k)
-           0 m00  1 m01  2 m02  3 m03
-           4 m10  5 m11  6 m12  7 m13
-           8 m20  9 m21  10 m22 11 m23
-           12 m30 13 m31 14 m32 15 m33
-           (err/illegal-arg! k)))
-  (#+clj nth #+cljs -nth [_ k nf]
-         (case (int k)
-           0 m00  1 m01  2 m02  3 m03
-           4 m10  5 m11  6 m12  7 m13
-           8 m20  9 m21  10 m22 11 m23
-           12 m30 13 m31 14 m32 15 m33
-           nf))
-
-  ,#+cljs IEquiv
-  (#+clj equiv #+cljs -equiv [_ o]
-         (and
-          (sequential? o) (== 16 (count o))
-          (every? #(= (% 0) (% 1)) (map vector _ o))))
-
-  ,#+cljs IHash
-  (#+clj hasheq #+cljs -hash
-         [_] (or _hasheq (set! _hasheq (hash-ordered-coll _))))
-
-  ,#+clj (hashCode [_] (hash-coll* _))
-
-  ,#+clj (equals
-         [_ o]
-         (and
-          (sequential? o)
-          (== 16 (count o))
-          (every? #(clojure.lang.Util/equals (% 0) (% 1)) (map vector _ o))))
-
-  ,#+clj (isEmpty
-         [_] false)
-  ,#+clj (iterator
-         [_] (.iterator
-              ^java.util.Collection
-              (list
-               m00 m01 m02 m03
-               m10 m11 m12 m13
-               m20 m21 m22 m23
-               m30 m31 m32 m33)))
-  ,#+clj (toArray [_] (object-array _))
-  ,#+clj (size [_] 16)
-  ,#+clj (length [_] 16)
-
+  #?@(:clj
+      [clojure.lang.IObj
+       (meta
+        [_] _meta)
+       (withMeta
+        [_ m] (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33 _hasheq m))
+       java.util.Collection
+       clojure.lang.IPersistentCollection
+       clojure.lang.IPersistentVector
+       clojure.lang.Seqable
+       clojure.lang.Sequential
+       clojure.lang.IHashEq
+       (empty
+        [_] (err/unsupported!))
+       (count
+        [_] 16)
+       (seq
+        [_]
+        (seq [m00 m01 m02 m03
+              m10 m11 m12 m13
+              m20 m21 m22 m23
+              m30 m31 m32 m33]))
+       (cons
+        [_ x]
+        [m00 m01 m02 m03
+         m10 m11 m12 m13
+         m20 m21 m22 m23
+         m30 m31 m32 m33 x])
+       (nth
+        [_ k]
+        (case (int k)
+          0 m00  1 m01  2 m02  3 m03
+          4 m10  5 m11  6 m12  7 m13
+          8 m20  9 m21  10 m22 11 m23
+          12 m30 13 m31 14 m32 15 m33
+          (err/illegal-arg! k)))
+       (nth
+        [_ k nf]
+        (case (int k)
+          0 m00  1 m01  2 m02  3 m03
+          4 m10  5 m11  6 m12  7 m13
+          8 m20  9 m21  10 m22 11 m23
+          12 m30 13 m31 14 m32 15 m33
+          nf))
+       (equiv
+        [_ o]
+        (and
+         (sequential? o) (== 16 (count o))
+         (every? #(= (% 0) (% 1)) (map vector _ o))))
+       (hasheq
+        [_] (or _hasheq (set! _hasheq (hash-ordered-coll _))))
+       (hashCode
+        [_] (hash-coll* _))
+       (equals
+        [_ o]
+        (and
+         (sequential? o)
+         (== 16 (count o))
+         (every? #(clojure.lang.Util/equals (% 0) (% 1)) (map vector _ o))))
+       (isEmpty
+        [_] false)
+       (iterator
+        [_]
+        (.iterator
+         ^java.util.Collection
+         (list
+          m00 m01 m02 m03
+          m10 m11 m12 m13
+          m20 m21 m22 m23
+          m30 m31 m32 m33)))
+       (toArray
+        [_] (object-array _))
+       (size
+        [_] 16)
+       (length
+        [_] 16)]
+      :cljs
+      [IMeta
+       (-meta
+        [_] _meta)
+       IWithMeta
+       (-with-meta
+        [_ m] (Matrix44. m00 m01 m02 m03 m10 m11 m12 m13 m20 m21 m22 m23 m30 m31 m32 m33 _hasheq m))
+       ISequential
+       ICounted
+       (-count
+        [_] 16)
+       ISeqable
+       (-seq
+        [_] _)
+       ISeq
+       (-rest
+        [_] (next _))
+       (-first
+        [_] m00)
+       INext
+       (-next
+        [_]
+        (seq [m01 m02 m03
+              m10 m11 m12 m13
+              m20 m21 m22 m23
+              m30 m31 m32 m33]))
+       ICollection
+       (-conj
+        [_ x]
+        [m00 m01 m02 m03
+         m10 m11 m12 m13
+         m20 m21 m22 m23
+         m30 m31 m32 m33 x])
+       IIndexed
+       (-nth
+        [_ k]
+        (case (int k)
+          0 m00  1 m01  2 m02  3 m03
+          4 m10  5 m11  6 m12  7 m13
+          8 m20  9 m21  10 m22 11 m23
+          12 m30 13 m31 14 m32 15 m33
+          (err/illegal-arg! k)))
+       (-nth
+        [_ k nf]
+        (case (int k)
+          0 m00  1 m01  2 m02  3 m03
+          4 m10  5 m11  6 m12  7 m13
+          8 m20  9 m21  10 m22 11 m23
+          12 m30 13 m31 14 m32 15 m33
+          nf))
+       IEquiv
+       (-equiv
+        [_ o]
+        (and
+         (sequential? o) (== 16 (count o))
+         (every? #(= (% 0) (% 1)) (map vector _ o))))
+       IHash
+       (-hash
+        [_] (or _hasheq (set! _hasheq (hash-ordered-coll _))))])
   Object
-  (toString [_] (apply str (concat "[" (interpose \space _) "]")))
+  (toString
+   [_] (apply str (concat "[" (interpose \space _) "]")))
 #+END_SRC
 
 **** PMathOps
@@ -685,7 +768,7 @@ ordering (row major).
       (mm/madd x m01 y m11 z m21 w m31)
       (mm/madd x m02 y m12 z m22 w m32)
       (mm/madd x m03 y m13 z m23 w m33)]
-     (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+     (let [^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
        (aset b 0 (double (mm/madd x m00 y m10 z m20 m30)))
        (aset b 1 (double (mm/madd x m01 y m11 z m21 m31)))
        (aset b 2 (double (mm/madd x m02 y m12 z m22 m32)))
@@ -701,8 +784,9 @@ ordering (row major).
 ** Override print methods
 
 #+BEGIN_SRC clojure :noweb-ref printers
-  #+clj (defmethod print-method Matrix32 [^Matrix32 o ^java.io.Writer w] (.write w (.toString o)))
-  #+clj (defmethod print-method Matrix44 [^Matrix44 o ^java.io.Writer w] (.write w (.toString o)))
+  #?@(:clj
+      [(defmethod print-method Matrix32 [^Matrix32 o ^java.io.Writer w] (.write w (.toString o)))
+       (defmethod print-method Matrix44 [^Matrix44 o ^java.io.Writer w] (.write w (.toString o)))])
 #+END_SRC
 
 ** Constants
@@ -886,23 +970,24 @@ ordering (row major).
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/matrix.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core/matrix.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.matrix
-    ,#+cljs
-    (:require-macros
-     [thi.ng.macromath.core :as mm]
-     [thi.ng.geom.core.macros.matrix :as gmc])
+    #?(:cljs
+       (:require-macros
+        [thi.ng.math.macros :as mm]
+        [thi.ng.geom.core.macros.matrix :as gmc]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3 V3X]]
-     [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI]]
+     [thi.ng.math.core :as m :refer [*eps* PI TWO_PI]]
      [thi.ng.common.error :as err]
-     ,#+clj [thi.ng.macromath.core :as mm]
-     ,#+clj [thi.ng.geom.core.macros.matrix :as gmc])
-    ,#+clj
-    (:import
-     [thi.ng.geom.core.vector Vec2 Vec3]))
+     #?@(:clj
+         [[thi.ng.math.macros :as mm]
+          [thi.ng.geom.core.macros.matrix :as gmc]]))
+    #?(:clj
+       (:import
+        [thi.ng.geom.core.vector Vec2 Vec3])))
 
   <<proto-helpers>>
 

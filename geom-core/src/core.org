@@ -581,7 +581,7 @@ protocol consisting of just this one function:
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core
     (:refer-clojure :exclude [+ - * min max into]))
 

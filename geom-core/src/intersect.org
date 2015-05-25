@@ -340,17 +340,17 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/intersect.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core/intersect.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.intersect
+    #?(:cljs
+       (:require-macros
+        [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V2 V3]]
-     [thi.ng.common.math.core :as m :refer [*eps*]]
-     ,#+clj [thi.ng.macromath.core :as mm])
-    ,#+cljs
-    (:require-macros
-     [thi.ng.macromath.core :as mm]))
+     [thi.ng.math.core :as m :refer [*eps*]]
+     #?(:clj [thi.ng.math.macros :as mm])))
 
   (defn- sq [x] (* x x))
 

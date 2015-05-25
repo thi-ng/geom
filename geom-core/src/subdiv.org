@@ -22,7 +22,7 @@ http://algorithmicbotany.org/papers/subgpu.sig2003.pdf
   (require '[thi.ng.geom.core.vector :refer [vec2]])
   (require '[thi.ng.geom.core.subdiv :as sd])
   (require '[thi.ng.geom.svg.core :as svg])
-  (require '[thi.ng.common.data.core :as d])
+  (require '[thi.ng.dstruct.core :as d])
 
   (defn demo
     [points [id col]]
@@ -81,13 +81,15 @@ http://algorithmicbotany.org/papers/subgpu.sig2003.pdf
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/subdiv.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core/subdiv.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.subdiv
-    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
+    #?(:cljs
+       (:require-macros
+        [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     ,#+clj [thi.ng.macromath.core :as mm]))
+     #?(:clj [thi.ng.math.macros :as mm])))
 
   <<subdiv>>
 #+END_SRC

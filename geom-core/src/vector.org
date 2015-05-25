@@ -5,7 +5,6 @@
      - [[#vec2][Vec2]]
          - [[#templates][Templates]]
          - [[#clojure-protocols][Clojure protocols]]
-         - [[#clojurescript-protocols][ClojureScript protocols]]
          - [[#object-tostring][Object (toString)]]
          - [[#pbuffered][PBuffered]]
          - [[#pmathops][PMathOps]]
@@ -30,7 +29,6 @@
      - [[#vec3][Vec3]]
          - [[#templates][Templates]]
          - [[#clojure-protocols][Clojure protocols]]
-         - [[#clojurescript-protocols][ClojureScript protocols]]
          - [[#object-tostring][Object (toString)]]
          - [[#pbuffered][PBuffered]]
          - [[#pmathops][PMathOps]]
@@ -66,8 +64,10 @@
 
 #+BEGIN_SRC clojure :noweb-ref vec2
   (deftype Vec2
-    ,#+clj  [^doubles buf ^:unsynchronized-mutable _hash _meta]
-    ,#+cljs [buf ^:mutable _hash _meta]
+      #?(:clj
+          [^doubles buf ^:unsynchronized-mutable _hash _meta]
+          :cljs
+          [buf ^:mutable _hash _meta])
 #+END_SRC
 
 *** Templates
@@ -167,221 +167,209 @@
 *** Clojure protocols
 
 #+BEGIN_SRC clojure :noweb-ref vec2 :noweb yes
-  ,#+clj clojure.lang.IObj
-  ,#+clj (meta [_] _meta)
-  ,#+clj (withMeta [_ m] (Vec2. (double-array buf) _hash m))
-
-  ,#+clj Cloneable
-  ,#+clj (clone
-         [_]
-         (let [^doubles buf' (double-array 2)]
-           (aset buf' 0 (aget buf 0))
-           (aset buf' 1 (aget buf 1))
-           (Vec2. buf' _hash _meta)))
-
-  ,#+clj clojure.lang.ILookup
-  ,#+clj (valAt
-         [_ k]
-         <<tpl-invoke2>>)
-  ,#+clj (valAt
-         [_ k nf]
-         <<tpl-invoke2-nf>>)
-
-  ,#+clj java.util.concurrent.Callable
-  ,#+clj (call [_] (.invoke ^clojure.lang.IFn _))
-  ,#+clj java.lang.Runnable
-  ,#+clj (run [_] (.invoke ^clojure.lang.IFn _))
-
-  ,#+clj clojure.lang.IFn
-  ,#+clj (invoke
-         [_ k]
-         <<tpl-invoke2>>)
-  ,#+clj (invoke
-         [_ k nf]
-         <<tpl-invoke2-nf>>)
-  ,#+clj (applyTo
-         [_ args]
-         (case (count args)
-           1 (.invoke ^clojure.lang.IFn _ (first args))
-           2 (.invoke ^clojure.lang.IFn _ (first args) (nth args 1))
-           (err/illegal-arg! (str "wrong number of args (" (count args) ")"))))
-
-  ,#+clj clojure.lang.Associative
-  ,#+clj clojure.lang.IPersistentVector
-  ,#+clj (count [_] 2)
-  ,#+clj (length [_] 2)
-  ,#+clj (containsKey
-         [_ k]
-         <<tpl-contains2>>)
-  ,#+clj (entryAt
-         [_ k] (clojure.lang.MapEntry. k (aget buf k)))
-  ,#+clj (assoc
-         [_ k v]
-         <<tpl-assoc2(fn="double-array")>>)
-  ,#+clj (assocN
-         [_ k v]
-         (let [b (double-array buf)] (aset b k (double v)) (Vec2. b nil _meta)))
-
-  ,#+clj java.util.Collection
-  ,#+clj (isEmpty [_] false)
-  ,#+clj (iterator [_] (.iterator ^java.util.Collection (list (aget buf 0) (aget buf 1))))
-  ,#+clj (toArray [_] (object-array _))
-  ,#+clj (size [_] 2)
-
-  ,#+clj clojure.lang.IPersistentCollection
-  ,#+clj clojure.lang.Indexed
-  ,#+clj clojure.lang.Sequential
-  ,#+clj clojure.lang.Seqable
-  ,#+clj clojure.lang.Reversible
-  ,#+clj java.util.List
-  ,#+clj (seq [_] (seq buf))
-  ,#+clj (empty [_] (err/unsupported!))
-  ,#+clj (cons [_ x] (with-meta (vec3 (aget buf 0) (aget buf 1) x) _meta))
-  ,#+clj (peek [_] (aget buf 1))
-  ,#+clj (pop [_] (with-meta [(aget buf 0)] _meta))
-  ,#+clj (rseq [_] (seq ((swizzle2-fns :yx) _)))
-  ,#+clj (get [_ n] (aget buf n))
-  ,#+clj (nth [_ n] (aget buf n))
-  ,#+clj (nth [_ n nf] (if (>= n 0) (if (< n 2) (aget buf n) nf)))
-  ,#+clj (equiv
-         [_ o]
-         <<tpl-equals2(fn="clojure.lang.Util/equiv")>>)
-  ,#+clj (equals
-         [_ o]
-         <<tpl-equals2(fn="clojure.lang.Util/equals")>>)
-
-  ,#+clj Comparable
-  ,#+clj (compareTo
-         [_ o]
-         <<tpl-compare2>>)
-  ,#+clj (hashCode
-         [_]
-         <<tpl-hashcode2>>)
-
-  ,#+clj clojure.lang.IHashEq
-  ,#+clj (hasheq
-         [_]
-         (or _hash
-             (set! _hash
-                   (mix-collection-hash
-                    <<tpl-hashcode2>>
-                    2))))
-
-  ,#+clj cp/InternalReduce
-  ,#+clj (internal-reduce
-         [_ f start]
-         <<tpl-reduce2-start>>)
-
-  ,#+clj cp/CollReduce
-  ,#+clj (coll-reduce
-         [_ f]
-         <<tpl-reduce2>>)
-  ,#+clj (coll-reduce
-         [_ f start]
-         <<tpl-reduce2-start>>)
-#+END_SRC
-
-*** ClojureScript protocols
-
-#+BEGIN_SRC clojure :noweb-ref vec2 :noweb yes
-  ,#+cljs IMeta
-  ,#+cljs (-meta [_] _meta)
-  ,#+cljs IWithMeta
-  ,#+cljs (-with-meta [_ m] (Vec2. (js/Float32Array. buf) _hash m))
-
-  ,#+cljs ICloneable
-  ,#+cljs (-clone
-          [_] (Vec2. (js/Float32Array. buf) _hash _meta))
-
-  ,#+cljs ILookup
-  ,#+cljs (-lookup
-          [_ k]
-          <<tpl-invoke2>>)
-  ,#+cljs (-lookup
-          [_ k nf]
-          <<tpl-invoke2-nf>>)
-
-  ,#+cljs IFn
-  ,#+cljs (-invoke
-          [_ k]
-          <<tpl-invoke2>>)
-  ,#+cljs (-invoke
-          [_ k nf]
-          <<tpl-invoke2-nf>>)
-
-  ,#+cljs ICounted
-  ,#+cljs (-count [_] 2)
-
-  ,#+cljs IAssociative
-  ,#+cljs (-contains-key?
-          [_ k]
-          <<tpl-contains2>>)
-  ,#+cljs (-assoc
-          [_ k v]
-          <<tpl-assoc2(fn="js/Float32Array.")>>)
-
-  ,#+cljs IVector
-  ,#+cljs (-assoc-n
-          [_ n v]
-          (let [b (js/Float32Array. buf)] (aset b n v) (Vec2. b nil _meta)))
-
-  ,#+cljs ISequential
-  ,#+cljs ISeq
-  ,#+cljs (-first
-          [_] (aget buf 0))
-  ,#+cljs (-rest
-          [_] (cons (aget buf 1) nil))
-
-  ,#+cljs INext
-  ,#+cljs (-next
-          [_] (cons (aget buf 1) nil))
-
-  ,#+cljs ISeqable
-  ,#+cljs (-seq [_] _)
-
-  ,#+cljs IReversible
-  ,#+cljs (-rseq [_] ((swizzle2-fns :yx) _))
-
-  ,#+cljs IIndexed
-  ,#+cljs (-nth [_ n] (if (>= n 0) (if (< n 2) (aget buf n) (err/key-error! n))))
-  ,#+cljs (-nth [_ n nf] (if (>= n 0) (if (< n 2) (aget buf n) nf)))
-
-  ,#+cljs ICollection
-  ,#+cljs (-conj [_ x] (with-meta (vec3 (aget buf 0) (aget buf 1) x) _meta))
-
-  ,#+cljs IStack
-  ,#+cljs (-peek [_] (aget buf 1))
-  ,#+cljs (-pop [_] (with-meta [(aget buf 0)] _meta))
-
-  ,#+cljs IComparable
-  ,#+cljs (-compare
-          [_ o]
-          <<tpl-compare2>>)
-
-  ,#+cljs IHash
-  ,#+cljs (-hash
-          [_]
-          (or _hash
-              (set! (.-_hash _)
-                    (mix-collection-hash
-                     (-> 31 (+ (hash (aget buf 0)))
-                         (bit-or 0)
-                         (imul 31) (+ (hash (aget buf 1)))
-                         (bit-or 0))
-                     2))))
-
-  ,#+cljs IEquiv
-  ,#+cljs (-equiv
-          [_ o]
-          <<tpl-equals2(fn="=")>>)
-
-  ,#+cljs IReduce
-  ,#+cljs (-reduce
-          [coll f]
-          <<tpl-reduce2>>)
-  ,#+cljs (-reduce
-          [coll f start]
-          <<tpl-reduce2-start>>)
+  #?@(:clj
+      [clojure.lang.IObj
+       (meta
+        [_] _meta)
+       (withMeta
+        [_ m] (Vec2. (double-array buf) _hash m))
+       Cloneable
+       (clone
+        [_]
+        (let [^doubles buf' (double-array 2)]
+          (aset buf' 0 (aget buf 0))
+          (aset buf' 1 (aget buf 1))
+          (Vec2. buf' _hash _meta)))
+       clojure.lang.ILookup
+       (valAt
+        [_ k]
+        <<tpl-invoke2>>)
+       (valAt
+        [_ k nf]
+        <<tpl-invoke2-nf>>)
+       java.util.concurrent.Callable
+       (call
+        [_] (.invoke ^clojure.lang.IFn _))
+       java.lang.Runnable
+       (run
+         [_] (.invoke ^clojure.lang.IFn _))
+       clojure.lang.IFn
+       (invoke
+        [_ k]
+        <<tpl-invoke2>>)
+       (invoke
+        [_ k nf]
+        <<tpl-invoke2-nf>>)
+       (applyTo
+        [_ args]
+        (case (count args)
+          1 (.invoke ^clojure.lang.IFn _ (first args))
+          2 (.invoke ^clojure.lang.IFn _ (first args) (nth args 1))
+          (err/illegal-arg! (str "wrong number of args (" (count args) ")"))))
+       clojure.lang.Associative
+       clojure.lang.IPersistentVector
+       (count
+        [_] 2)
+       (length
+        [_] 2)
+       (containsKey
+        [_ k]
+        <<tpl-contains2>>)
+       (entryAt
+        [_ k] (clojure.lang.MapEntry. k (aget buf k)))
+       (assoc
+        [_ k v]
+        <<tpl-assoc2(fn="double-array")>>)
+       (assocN
+        [_ k v]
+        (let [b (double-array buf)] (aset b k (double v)) (Vec2. b nil _meta)))
+       java.util.Collection
+       (isEmpty
+        [_] false)
+       (iterator
+        [_] (.iterator ^java.util.Collection (list (aget buf 0) (aget buf 1))))
+       (toArray
+        [_] (object-array _))
+       (size
+        [_] 2)
+       clojure.lang.IPersistentCollection
+       clojure.lang.Indexed
+       clojure.lang.Sequential
+       clojure.lang.Seqable
+       clojure.lang.Reversible
+       java.util.List
+       (seq
+        [_] (seq buf))
+       (empty
+        [_] (err/unsupported!))
+       (cons
+        [_ x] (with-meta (vec3 (aget buf 0) (aget buf 1) x) _meta))
+       (peek
+        [_] (aget buf 1))
+       (pop
+        [_] (with-meta [(aget buf 0)] _meta))
+       (rseq
+        [_] (seq ((swizzle2-fns :yx) _)))
+       (get
+        [_ n] (aget buf n))
+       (nth
+        [_ n] (aget buf n))
+       (nth
+        [_ n nf] (if (>= n 0) (if (< n 2) (aget buf n) nf)))
+       (equiv
+        [_ o]
+        <<tpl-equals2(fn="clojure.lang.Util/equiv")>>)
+       (equals
+        [_ o]
+        <<tpl-equals2(fn="clojure.lang.Util/equals")>>)
+       Comparable
+       (compareTo
+        [_ o]
+        <<tpl-compare2>>)
+       (hashCode
+        [_]
+        <<tpl-hashcode2>>)
+       clojure.lang.IHashEq
+       (hasheq
+        [_]
+        (or _hash
+            (set! _hash
+                  (mix-collection-hash
+                   <<tpl-hashcode2>>
+                   2))))
+       cp/InternalReduce
+       (internal-reduce
+        [_ f start]
+        <<tpl-reduce2-start>>)
+       cp/CollReduce
+       (coll-reduce
+        [_ f]
+        <<tpl-reduce2>>)
+       (coll-reduce
+        [_ f start]
+        <<tpl-reduce2-start>>)]
+      :cljs
+      [IMeta
+       (-meta [_] _meta)
+       IWithMeta
+       (-with-meta [_ m] (Vec2. (js/Float32Array. buf) _hash m))
+       ICloneable
+       (-clone
+        [_] (Vec2. (js/Float32Array. buf) _hash _meta))
+       ILookup
+       (-lookup
+        [_ k]
+        <<tpl-invoke2>>)
+       (-lookup
+        [_ k nf]
+        <<tpl-invoke2-nf>>)
+       IFn
+       (-invoke
+        [_ k]
+        <<tpl-invoke2>>)
+       (-invoke
+        [_ k nf]
+        <<tpl-invoke2-nf>>)
+       ICounted
+       (-count [_] 2)
+       IAssociative
+       (-contains-key?
+        [_ k]
+        <<tpl-contains2>>)
+       (-assoc
+        [_ k v]
+        <<tpl-assoc2(fn="js/Float32Array.")>>)
+       IVector
+       (-assoc-n
+        [_ n v]
+        (let [b (js/Float32Array. buf)] (aset b n v) (Vec2. b nil _meta)))
+       ISequential
+       ISeq
+       (-first
+        [_] (aget buf 0))
+       (-rest
+        [_] (cons (aget buf 1) nil))
+       INext
+       (-next
+        [_] (cons (aget buf 1) nil))
+       ISeqable
+       (-seq [_] _)
+       IReversible
+       (-rseq [_] ((swizzle2-fns :yx) _))
+       IIndexed
+       (-nth [_ n] (if (>= n 0) (if (< n 2) (aget buf n) (err/key-error! n))))
+       (-nth [_ n nf] (if (>= n 0) (if (< n 2) (aget buf n) nf)))
+       ICollection
+       (-conj [_ x] (with-meta (vec3 (aget buf 0) (aget buf 1) x) _meta))
+       IStack
+       (-peek [_] (aget buf 1))
+       (-pop [_] (with-meta [(aget buf 0)] _meta))
+       IComparable
+       (-compare
+        [_ o]
+        <<tpl-compare2>>)
+       IHash
+       (-hash
+        [_]
+        (or _hash
+            (set! (.-_hash _)
+                  (mix-collection-hash
+                   (-> 31 (+ (hash (aget buf 0)))
+                       (bit-or 0)
+                       (imul 31) (+ (hash (aget buf 1)))
+                       (bit-or 0))
+                   2))))
+       IEquiv
+       (-equiv
+        [_ o]
+        <<tpl-equals2(fn="=")>>)
+       IReduce
+       (-reduce
+        [coll f]
+        <<tpl-reduce2>>)
+       (-reduce
+        [coll f start]
+        <<tpl-reduce2-start>>)])
 #+END_SRC
 
 *** Object (toString)
@@ -398,9 +386,11 @@
   (get-buffer [_] buf)
   (copy-to-buffer
    [_ dest stride idx]
-   ,#+clj  (aset ^doubles dest idx (aget buf 0))
-   ,#+clj  (aset ^doubles dest (inc idx) (aget buf 1))
-   ,#+cljs (.set dest buf idx)
+   #?@(:clj
+       [(aset ^doubles dest idx (aget buf 0))
+        (aset ^doubles dest (inc idx) (aget buf 1))]
+       :cljs
+       [(.set dest buf idx)])
    (+ idx stride))
 #+END_SRC
 
@@ -409,22 +399,22 @@
 #+BEGIN_SRC clojure :noweb-ref vec2
   g/PMathOps
   (+ [_] _)
-  (+ [_ v]       (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) + buf v _meta))
-  (+ [_ v1 v2]   (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) + buf v1 v2 0.0 _meta))
-  (- [_]         (vm/v2-op0 #+clj (double-array) #+cljs (new js/Float32Array) - buf _meta))
-  (- [_ v]       (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) - buf v _meta))
-  (- [_ v1 v2]   (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) - buf v1 v2 0.0 _meta))
+  (+ [_ v]       (vm/v2-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) + buf v _meta))
+  (+ [_ v1 v2]   (vm/v2-op1-xy #?(:clj (double-array) :cljs (new js/Float32Array)) + buf v1 v2 0.0 _meta))
+  (- [_]         (vm/v2-op0 #?(:clj (double-array) :cljs (new js/Float32Array)) - buf _meta))
+  (- [_ v]       (vm/v2-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) - buf v _meta))
+  (- [_ v1 v2]   (vm/v2-op1-xy #?(:clj (double-array) :cljs (new js/Float32Array)) - buf v1 v2 0.0 _meta))
   (* [_] _)
-  (* [_ v]       (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) * buf v _meta))
-  (* [_ v1 v2]   (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) * buf v1 v2 1.0 _meta))
-  (div [_]       (vm/v2-op0 #+clj (double-array) #+cljs (new js/Float32Array) / buf _meta))
-  (div [_ v]     (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) / buf v _meta))
-  (div [_ v1 v2] (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) / buf v1 v2 0.0 _meta))
-  (madd [_ a b]  (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) * + buf a b 1.0 0.0 _meta))
-  (addm [_ a b]  (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) + * buf a b 0.0 1.0 _meta))
-  (msub [_ a b]  (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) * - buf a b 1.0 0.0 _meta))
-  (subm [_ a b]  (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) - * buf a b 0.0 1.0 _meta))
-  (abs [_]       (vm/v2-op0 #+clj (double-array) #+cljs (new js/Float32Array) m/abs buf _meta))
+  (* [_ v]       (vm/v2-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) * buf v _meta))
+  (* [_ v1 v2]   (vm/v2-op1-xy #?(:clj (double-array) :cljs (new js/Float32Array)) * buf v1 v2 1.0 _meta))
+  (div [_]       (vm/v2-op0 #?(:clj (double-array) :cljs (new js/Float32Array)) / buf _meta))
+  (div [_ v]     (vm/v2-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) / buf v _meta))
+  (div [_ v1 v2] (vm/v2-op1-xy #?(:clj (double-array) :cljs (new js/Float32Array)) / buf v1 v2 0.0 _meta))
+  (madd [_ a b]  (vm/v2-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) * + buf a b 1.0 0.0 _meta))
+  (addm [_ a b]  (vm/v2-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) + * buf a b 0.0 1.0 _meta))
+  (msub [_ a b]  (vm/v2-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) * - buf a b 1.0 0.0 _meta))
+  (subm [_ a b]  (vm/v2-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) - * buf a b 0.0 1.0 _meta))
+  (abs [_]       (vm/v2-op0 #?(:clj (double-array) :cljs (new js/Float32Array)) m/abs buf _meta))
 
   g/PMutableMathOps
   (+! [_]         _)
@@ -449,7 +439,7 @@
 *** PClear
 #+BEGIN_SRC clojure :noweb-ref vec2
   g/PClear
-  (clear* [_] (Vec2. #+clj (double-array 2) #+cljs (js/Float32Array. 2) nil nil))
+  (clear* [_] (Vec2. #?(:clj (double-array 2) :cljs (js/Float32Array. 2)) nil nil))
   (clear! [_] (aset buf 0 0.0) (aset buf 1 0.0) (set! _hash nil) _)
 #+END_SRC
 *** PCrossProduct
@@ -515,7 +505,7 @@
   g/PInterpolate
   (mix
    [_ v]
-   (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+   (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
      (vm/rewrite-v2-nv-no-let
       buf v 0.0
       (aset b 0 (double (* (+ x vx) 0.5)))
@@ -523,7 +513,7 @@
      (Vec2. b nil _meta)))
   (mix
    [_ v v2]
-   (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+   (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
      (vm/rewrite-v2-nv-nv
       buf v v2 0.0 0.0
       (aset b 0 (double (+ (* (- bx x) cx) x)))
@@ -531,7 +521,7 @@
      (Vec2. b nil _meta)))
   (mix
    [_ b c d u v]
-   (let [^doubles b' #+clj (double-array 2) #+cljs (js/Float32Array. 2)
+   (let [^doubles b' #?(:clj (double-array 2) :cljs (js/Float32Array. 2))
          dv? (instance? Vec2 d)
          dn? (number? d)
          ^doubles dv (if dv? (.-buf ^Vec2 d))
@@ -578,13 +568,13 @@
 #+BEGIN_SRC clojure :noweb-ref vec2
   g/PMinMax
   (min
-   [_ v] (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) mm/min buf v _meta))
+   [_ v] (vm/v2-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) mm/min buf v _meta))
   (min
-   [_ v v2] (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) mm/min mm/min buf v v2 0.0 0.0 _meta))
+   [_ v v2] (vm/v2-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) mm/min mm/min buf v v2 0.0 0.0 _meta))
   (max
-   [_ v] (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) mm/max buf v _meta))
+   [_ v] (vm/v2-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) mm/max buf v _meta))
   (max
-   [_ v v2] (vm/v2-op2 #+clj (double-array) #+cljs (new js/Float32Array) mm/max mm/max buf v v2 0.0 0.0 _meta))
+   [_ v v2] (vm/v2-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) mm/max mm/max buf v v2 0.0 0.0 _meta))
 #+END_SRC
 
 *** PNormal
@@ -593,7 +583,7 @@
   g/PNormal
   (normal
    [_]
-   (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+   (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
      (aset b 0 (double (- (aget buf 1))))
      (aset b 1 (double (aget buf 0)))
      (Vec2. b nil _meta)))
@@ -609,7 +599,7 @@
     buf
     (let [l (Math/sqrt (mm/madd x x y y))]
       (if (pos? l)
-        (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+        (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
           (aset b 0 (double (/ x l)))
           (aset b 1 (double (/ y l)))
           (Vec2. b nil _meta))
@@ -621,7 +611,7 @@
     (let [l (Math/sqrt (mm/madd x x y y))]
       (if (pos? l)
         (let [l (/ len l)
-              ^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+              ^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
           (aset b 0 (double (* x l)))
           (aset b 1 (double (* y l)))
           (Vec2. b nil _meta))
@@ -636,7 +626,7 @@
   g/PPolar
   (as-polar
    [_]
-   (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+   (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
      (aset b 0 (double (g/mag _)))
      (aset b 1 (double (g/heading _)))
      (Vec2. b nil _meta)))
@@ -644,7 +634,7 @@
    [_]
    (vm/rewrite-v2
     buf
-    (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+    (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
       (aset b 0 (double (* x (Math/cos y))))
       (aset b 1 (double (* x (Math/sin y))))
       (Vec2. b nil _meta))))
@@ -655,7 +645,7 @@
   g/PReflect
   (reflect
    [_ v]
-   (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+   (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
      (vm/rewrite-v2-v buf v 0.0
        (let [d (mm/madd x vx y vy 2)]
          (aset b 0 (double (mm/msub vx d x)))
@@ -668,24 +658,24 @@
   g/PScale
   (scale
    [_ v]
-   (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) * buf v _meta))
+   (vm/v2-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) * buf v _meta))
   (scale
    [_ v1 v2]
-   (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) * buf v1 v2 1.0 _meta))
+   (vm/v2-op1-xy #?(:clj (double-array) :cljs (new js/Float32Array)) * buf v1 v2 1.0 _meta))
 
   g/PTranslate
   (translate
    [_ v]
-   (vm/v2-op1 #+clj (double-array) #+cljs (new js/Float32Array) + buf v _meta))
+   (vm/v2-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) + buf v _meta))
   (translate
    [_ v1 v2]
-   (vm/v2-op1-xy #+clj (double-array) #+cljs (new js/Float32Array) + buf v1 v2 0.0 _meta))
+   (vm/v2-op1-xy #?(:clj (double-array) :cljs (new js/Float32Array)) + buf v1 v2 0.0 _meta))
 
   g/PRotate
   (rotate
    [_ theta]
    (let [s (Math/sin theta) c (Math/cos theta)
-         ^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+         ^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
      (vm/rewrite-v2
       buf
       (aset b 0 (double (mm/msub x c y s)))
@@ -701,15 +691,17 @@
   g/PVectorReduce
   (reduce-vector
    [_ f xs]
-   (let [^doubles buf' #+clj (double-array 2) #+cljs (js/Float32Array. buf)]
-     ,#+clj (aset buf' 0 (aget buf 0))
-     ,#+clj (aset buf' 1 (aget buf 1))
+   (let [^doubles buf' #?(:clj (double-array 2) :cljs (js/Float32Array. buf))]
+     #?@(:clj
+         [(aset buf' 0 (aget buf 0))
+          (aset buf' 1 (aget buf 1))])
      (Vec2. (vec2-reduce* f buf' xs) nil _meta)))
   (reduce-vector
    [_ f f2 xs]
-   (let [^doubles buf' #+clj (double-array 2) #+cljs (js/Float32Array. buf)]
-     ,#+clj (aset buf' 0 (aget buf 0))
-     ,#+clj (aset buf' 1 (aget buf 1))
+   (let [^doubles buf' #?(:clj (double-array 2) :cljs (js/Float32Array. buf))]
+     #?@(:clj
+         [(aset buf' 0 (aget buf 0))
+          (aset buf' 1 (aget buf 1))])
      (vec2-reduce* f buf' xs)
      (aset buf' 0 (double (f2 (aget buf' 0) 0)))
      (aset buf' 1 (double (f2 (aget buf' 1) 1)))
@@ -726,8 +718,10 @@
 
 #+BEGIN_SRC clojure :noweb-ref vec3
   (deftype Vec3
-    ,#+clj  [^doubles buf ^:unsynchronized-mutable _hash _meta]
-    ,#+cljs [buf ^:mutable _hash _meta]
+      #?(:clj
+          [^doubles buf ^:unsynchronized-mutable _hash _meta]
+          :cljs
+          [buf ^:mutable _hash _meta])
 #+END_SRC
 
 *** Templates
@@ -846,240 +840,237 @@
 *** Clojure protocols
 
 #+BEGIN_SRC clojure :noweb-ref vec3 :noweb yes
-  ,#+clj clojure.lang.IObj
-  ,#+clj (meta [_] _meta)
-  ,#+clj (withMeta [_ m] (Vec3. (double-array buf) _hash m))
-
-  ,#+clj Cloneable
-  ,#+clj (clone
-         [_]
-         (let [^doubles buf' (double-array 3)]
-           (aset buf' 0 (aget buf 0))
-           (aset buf' 1 (aget buf 1))
-           (aset buf' 2 (aget buf 2))
-           (Vec2. buf' _hash _meta)))
-
-  ,#+clj clojure.lang.ILookup
-  ,#+clj (valAt
-         [_ k]
-         <<tpl-invoke3>>)
-  ,#+clj (valAt
-         [_ k nf]
-         <<tpl-invoke3-nf>>)
-
-  ,#+clj java.util.concurrent.Callable
-  ,#+clj (call [_] (.invoke ^clojure.lang.IFn _))
-  ,#+clj java.lang.Runnable
-  ,#+clj (run [_] (.invoke ^clojure.lang.IFn _))
-
-  ,#+clj clojure.lang.IFn
-  ,#+clj (invoke
-         [_ k]
-         <<tpl-invoke3>>)
-  ,#+clj (invoke
-         [_ k nf]
-         <<tpl-invoke3-nf>>)
-  ,#+clj (applyTo
-         [_ args]
-         (case (count args)
-           1 (.invoke ^clojure.lang.IFn _ (first args))
-           2 (.invoke ^clojure.lang.IFn _ (first args) (nth args 1))
-           (err/illegal-arg! (str "wrong number of args (" (count args) ")"))))
-
-  ,#+clj clojure.lang.Associative
-  ,#+clj clojure.lang.IPersistentVector
-  ,#+clj (count [_] 3)
-  ,#+clj (length [_] 3)
-  ,#+clj (containsKey
-         [_ k]
-         <<tpl-contains3>>)
-  ,#+clj (entryAt
-         [_ k] (clojure.lang.MapEntry. k (aget buf k)))
-  ,#+clj (assoc
-            [_ k v]
-            <<tpl-assoc3(fn="double-array")>>)
-  ,#+clj (assocN
-         [_ k v]
-         (let [b (double-array buf)] (aset b k (double v)) (Vec3. b nil _meta)))
-
-  ,#+clj java.util.Collection
-  ,#+clj (isEmpty [_] false)
-  ,#+clj (iterator [_] (.iterator ^java.util.Collection (list (aget buf 0) (aget buf 1) (aget buf 2))))
-  ,#+clj (toArray [_] (object-array _))
-  ,#+clj (size [_] 3)
-
-  ,#+clj clojure.lang.IPersistentCollection
-  ,#+clj clojure.lang.Indexed
-  ,#+clj clojure.lang.Sequential
-  ,#+clj clojure.lang.Seqable
-  ,#+clj java.util.List
-  ,#+clj (seq [_] (seq buf))
-  ,#+clj (empty [_] (err/unsupported!))
-  ,#+clj (cons [_ x] (with-meta [(aget buf 0) (aget buf 1) (aget buf 2) x] _meta))
-  ,#+clj (peek [_] (aget buf 2))
-  ,#+clj (pop
-         [_]
-         (let [^doubles b (double-array 2)]
-           (aset b 0 (aget buf 0))
-           (aset b 1 (aget buf 1))
-           (Vec2. b nil _meta)))
-  ,#+clj (rseq [_] (seq ((swizzle3-fns :zyx) _)))
-  ,#+clj (get [_ n] (aget buf n))
-  ,#+clj (nth [_ n] (aget buf n))
-  ,#+clj (nth [_ n nf] (if (>= n 0) (if (< n 3) (aget buf n) nf)))
-  ,#+clj (equiv
-         [_ o]
-         <<tpl-equals3(fn="clojure.lang.Util/equiv")>>)
-  ,#+clj (equals
-         [_ o]
-         <<tpl-equals3(fn="clojure.lang.Util/equals")>>)
-
-  ,#+clj Comparable
-  ,#+clj (compareTo
-         [_ o]
-         <<tpl-compare3>>)
-  ,#+clj (hashCode
-         [_]
-         <<tpl-hashcode3>>)
-
-  ,#+clj clojure.lang.IHashEq
-  ,#+clj (hasheq
-         [_]
-         (or _hash
-             (set! _hash
-                   (mix-collection-hash
-                    <<tpl-hashcode3>>
-                    3))))
-
-  ,#+clj cp/InternalReduce
-  ,#+clj (internal-reduce
-         [_ f start]
-         <<tpl-reduce3-start>>)
-
-  ,#+clj cp/CollReduce
-  ,#+clj (coll-reduce
-         [_ f]
-         <<tpl-reduce3>>)
-  ,#+clj (coll-reduce
-         [_ f start]
-         <<tpl-reduce3-start>>)
-#+END_SRC
-
-*** ClojureScript protocols
-
-#+BEGIN_SRC clojure :noweb-ref vec3 :noweb yes
-  ,#+cljs IMeta
-  ,#+cljs (-meta [_] _meta)
-  ,#+cljs IWithMeta
-  ,#+cljs (-with-meta [_ m] (Vec3. (js/Float32Array. buf) _hash m))
-
-  ,#+cljs ICloneable
-  ,#+cljs (-clone
-          [_] (Vec3. (js/Float32Array. buf) _hash _meta))
-
-  ,#+cljs ILookup
-  ,#+cljs (-lookup
-          [_ k]
-          <<tpl-invoke3>>)
-  ,#+cljs (-lookup
-          [_ k nf]
-          <<tpl-invoke3>>)
-
-  ,#+cljs IFn
-  ,#+cljs (-invoke
-          [_ k]
-          <<tpl-invoke3>>)
-  ,#+cljs (-invoke
-          [_ k nf]
-          <<tpl-invoke3-nf>>)
-
-  ,#+cljs ICounted
-  ,#+cljs (-count [_] 3)
-
-  ,#+cljs IAssociative
-  ,#+cljs (-contains-key?
-          [_ k]
-          <<tpl-contains3>>)
-  ,#+cljs (-assoc
-          [_ k v]
-          <<tpl-assoc3(fn="js/Float32Array.")>>)
-
-  ,#+cljs IVector
-  ,#+cljs (-assoc-n
-          [_ n v]
-          (let [b (js/Float32Array. buf)] (aset b n v) (Vec3. b nil _meta)))
-
-  ,#+cljs ISequential
-  ,#+cljs ISeq
-  ,#+cljs (-first
-          [_] (aget buf 0))
-  ,#+cljs (-rest
-          [_] (cons (aget buf 1) (cons (aget buf 2) nil)))
-
-  ,#+cljs INext
-  ,#+cljs (-next
-          [_] (cons (aget buf 1) (cons (aget buf 2) nil)))
-
-  ,#+cljs ISeqable
-  ,#+cljs (-seq [_] _)
-
-  ,#+cljs IReversible
-  ,#+cljs (-rseq [_] ((swizzle3-fns :zyx) _))
-
-  ,#+cljs IIndexed
-  ,#+cljs (-nth [_ n] (if (>= n 0) (if (< n 3) (aget buf n) (err/key-error! n))))
-  ,#+cljs (-nth [_ n nf] (if (>= n 0) (if (< n 3) (aget buf n) nf)))
-
-  ,#+cljs ICollection
-  ,#+cljs (-conj [_ x] (with-meta [(aget buf 0) (aget buf 1) (aget buf 2) x] _meta))
-
-  ,#+cljs IStack
-  ,#+cljs (-peek [_] (aget buf 2))
-  ,#+cljs (-pop
-          [_]
-          (let [b (js/Float32Array. 2)]
-           (aset b 0 (aget buf 0))
-           (aset b 1 (aget buf 1))
-           (Vec2. b nil _meta)))
-
-  ,#+cljs IComparable
-  ,#+cljs (-compare
-          [_ o]
-          <<tpl-compare3>>)
-
-  ,#+cljs IHash
-  ,#+cljs (-hash
-          [_]
-          (or _hash
-              (set! (.-_hash _)
-                    (mix-collection-hash
-                     (-> 31 (+ (hash (aget buf 0)))
-                         (bit-or 0)
-                         (imul 31) (+ (hash (aget buf 1)))
-                         (bit-or 0)
-                         (imul 31) (+ (hash (aget buf 2)))
-                         (bit-or 0))
-                     3))))
-
-  ,#+cljs IEquiv
-  ,#+cljs (-equiv
-          [_ o]
-          <<tpl-equals3(fn="=")>>)
-
-  ,#+cljs IReduce
-  ,#+cljs (-reduce
-          [coll f]
-          <<tpl-reduce3>>)
-  ,#+cljs (-reduce
-          [coll f start]
-          <<tpl-reduce3-start>>)
+  #?@(:clj
+      [clojure.lang.IObj
+       (meta
+        [_] _meta)
+       (withMeta
+        [_ m] (Vec3. (double-array buf) _hash m))
+       Cloneable
+       (clone
+        [_]
+        (let [^doubles buf' (double-array 3)]
+          (aset buf' 0 (aget buf 0))
+          (aset buf' 1 (aget buf 1))
+          (aset buf' 2 (aget buf 2))
+          (Vec2. buf' _hash _meta)))
+       clojure.lang.ILookup
+       (valAt
+        [_ k]
+        <<tpl-invoke3>>)
+       (valAt
+        [_ k nf]
+        <<tpl-invoke3-nf>>)
+       java.util.concurrent.Callable
+       (call
+        [_] (.invoke ^clojure.lang.IFn _))
+       java.lang.Runnable
+       (run
+         [_] (.invoke ^clojure.lang.IFn _))
+       clojure.lang.IFn
+       (invoke
+        [_ k]
+        <<tpl-invoke3>>)
+       (invoke
+        [_ k nf]
+        <<tpl-invoke3-nf>>)
+       (applyTo
+        [_ args]
+        (case (count args)
+          1 (.invoke ^clojure.lang.IFn _ (first args))
+          2 (.invoke ^clojure.lang.IFn _ (first args) (nth args 1))
+          (err/illegal-arg! (str "wrong number of args (" (count args) ")"))))
+       clojure.lang.Associative
+       clojure.lang.IPersistentVector
+       (count
+        [_] 3)
+       (length
+        [_] 3)
+       (containsKey
+        [_ k]
+        <<tpl-contains3>>)
+       (entryAt
+        [_ k] (clojure.lang.MapEntry. k (aget buf k)))
+       (assoc
+        [_ k v]
+        <<tpl-assoc3(fn="double-array")>>)
+       (assocN
+        [_ k v]
+        (let [b (double-array buf)] (aset b k (double v)) (Vec3. b nil _meta)))
+       java.util.Collection
+       (isEmpty
+        [_] false)
+       (iterator
+        [_] (.iterator ^java.util.Collection (list (aget buf 0) (aget buf 1) (aget buf 2))))
+       (toArray
+        [_] (object-array _))
+       (size
+        [_] 3)
+       clojure.lang.IPersistentCollection
+       clojure.lang.Indexed
+       clojure.lang.Sequential
+       clojure.lang.Seqable
+       java.util.List
+       (seq
+        [_] (seq buf))
+       (empty
+        [_] (err/unsupported!))
+       (cons
+        [_ x] (with-meta [(aget buf 0) (aget buf 1) (aget buf 2) x] _meta))
+       (peek
+        [_] (aget buf 2))
+       (pop
+        [_]
+        (let [^doubles b (double-array 2)]
+          (aset b 0 (aget buf 0))
+          (aset b 1 (aget buf 1))
+          (Vec2. b nil _meta)))
+       (rseq
+        [_] (seq ((swizzle3-fns :zyx) _)))
+       (get
+        [_ n] (aget buf n))
+       (nth
+        [_ n] (aget buf n))
+       (nth
+        [_ n nf] (if (>= n 0) (if (< n 3) (aget buf n) nf)))
+       (equiv
+        [_ o]
+        <<tpl-equals3(fn="clojure.lang.Util/equiv")>>)
+       (equals
+        [_ o]
+        <<tpl-equals3(fn="clojure.lang.Util/equals")>>)
+       Comparable
+       (compareTo
+        [_ o]
+        <<tpl-compare3>>)
+       (hashCode
+        [_]
+        <<tpl-hashcode3>>)
+       clojure.lang.IHashEq
+       (hasheq
+        [_]
+        (or _hash
+            (set! _hash
+                  (mix-collection-hash
+                   <<tpl-hashcode3>>
+                   3))))
+       cp/InternalReduce
+       (internal-reduce
+        [_ f start]
+        <<tpl-reduce3-start>>)
+       cp/CollReduce
+       (coll-reduce
+        [_ f]
+        <<tpl-reduce3>>)
+       (coll-reduce
+        [_ f start]
+        <<tpl-reduce3-start>>)]
+      :cljs
+      [IMeta
+       (-meta
+        [_] _meta)
+       IWithMeta
+       (-with-meta
+        [_ m] (Vec3. (js/Float32Array. buf) _hash m))
+       ICloneable
+       (-clone
+        [_] (Vec3. (js/Float32Array. buf) _hash _meta))
+       ILookup
+       (-lookup
+        [_ k]
+        <<tpl-invoke3>>)
+       (-lookup
+        [_ k nf]
+        <<tpl-invoke3>>)
+       IFn
+       (-invoke
+        [_ k]
+        <<tpl-invoke3>>)
+       (-invoke
+        [_ k nf]
+        <<tpl-invoke3-nf>>)
+       ICounted
+       (-count
+        [_] 3)
+       IAssociative
+       (-contains-key?
+        [_ k]
+        <<tpl-contains3>>)
+       (-assoc
+        [_ k v]
+        <<tpl-assoc3(fn="js/Float32Array.")>>)
+       IVector
+       (-assoc-n
+        [_ n v]
+        (let [b (js/Float32Array. buf)] (aset b n v) (Vec3. b nil _meta)))
+       ISequential
+       ISeq
+       (-first
+        [_] (aget buf 0))
+       (-rest
+        [_] (cons (aget buf 1) (cons (aget buf 2) nil)))
+       INext
+       (-next
+        [_] (cons (aget buf 1) (cons (aget buf 2) nil)))
+       ISeqable
+       (-seq
+        [_] _)
+       IReversible
+       (-rseq
+        [_] ((swizzle3-fns :zyx) _))
+       IIndexed
+       (-nth
+        [_ n] (if (>= n 0) (if (< n 3) (aget buf n) (err/key-error! n))))
+       (-nth
+        [_ n nf] (if (>= n 0) (if (< n 3) (aget buf n) nf)))
+       ICollection
+       (-conj
+        [_ x] (with-meta [(aget buf 0) (aget buf 1) (aget buf 2) x] _meta))
+       IStack
+       (-peek
+        [_] (aget buf 2))
+       (-pop
+        [_]
+        (let [b (js/Float32Array. 2)]
+          (aset b 0 (aget buf 0))
+          (aset b 1 (aget buf 1))
+          (Vec2. b nil _meta)))
+       IComparable
+       (-compare
+        [_ o]
+        <<tpl-compare3>>)
+       IHash
+       (-hash
+        [_]
+        (or _hash
+            (set! (.-_hash _)
+                  (mix-collection-hash
+                   (-> 31 (+ (hash (aget buf 0)))
+                       (bit-or 0)
+                       (imul 31) (+ (hash (aget buf 1)))
+                       (bit-or 0)
+                       (imul 31) (+ (hash (aget buf 2)))
+                       (bit-or 0))
+                   3))))
+       IEquiv
+       (-equiv
+        [_ o]
+        <<tpl-equals3(fn="=")>>)
+       IReduce
+       (-reduce
+        [coll f]
+        <<tpl-reduce3>>)
+       (-reduce
+        [coll f start]
+        <<tpl-reduce3-start>>)])
 #+END_SRC
 
 *** Object (toString)
 
 #+BEGIN_SRC clojure :noweb-ref vec3
   Object
-  (toString [_] (str "[" (aget buf 0) " " (aget buf 1) " " (aget buf 2) "]"))
+  (toString
+   [_] (str "[" (aget buf 0) " " (aget buf 1) " " (aget buf 2) "]"))
 #+END_SRC
 
 *** PBuffered
@@ -1089,10 +1080,12 @@
   (get-buffer [_] buf)
   (copy-to-buffer
    [_ dest stride idx]
-   ,#+clj  (aset ^doubles dest idx (aget buf 0))
-   ,#+clj  (aset ^doubles dest (inc idx) (aget buf 1))
-   ,#+clj  (aset ^doubles dest (+ idx 2) (aget buf 2))
-   ,#+cljs (.set dest buf idx)
+   #?@(:clj
+       [(aset ^doubles dest idx (aget buf 0))
+        (aset ^doubles dest (inc idx) (aget buf 1))
+        (aset ^doubles dest (+ idx 2) (aget buf 2))]
+       :cljs
+       [(.set dest buf idx)])
    (+ idx stride))
 #+END_SRC
 
@@ -1101,26 +1094,26 @@
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PMathOps
   (+ [_] _)
-  (+ [_ v]       (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) + buf v _meta))
-  (+ [_ v1 v2]   (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) + + buf v1 v2 0.0 0.0 _meta))
-  (+ [_ x y z]   (vm/v3-op1-xyz #+clj (double-array) #+cljs (new js/Float32Array) + buf x y z _meta))
-  (- [_]         (vm/v3-op0 #+clj (double-array) #+cljs (new js/Float32Array) - buf _meta))
-  (- [_ v]       (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) - buf v _meta))
-  (- [_ v1 v2]   (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) - - buf v1 v2 0.0 0.0 _meta))
-  (- [_ x y z]   (vm/v3-op1-xyz #+clj (double-array) #+cljs (new js/Float32Array) - buf x y z _meta))
+  (+ [_ v]       (vm/v3-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) + buf v _meta))
+  (+ [_ v1 v2]   (vm/v3-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) + + buf v1 v2 0.0 0.0 _meta))
+  (+ [_ x y z]   (vm/v3-op1-xyz #?(:clj (double-array) :cljs (new js/Float32Array)) + buf x y z _meta))
+  (- [_]         (vm/v3-op0 #?(:clj (double-array) :cljs (new js/Float32Array)) - buf _meta))
+  (- [_ v]       (vm/v3-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) - buf v _meta))
+  (- [_ v1 v2]   (vm/v3-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) - - buf v1 v2 0.0 0.0 _meta))
+  (- [_ x y z]   (vm/v3-op1-xyz #?(:clj (double-array) :cljs (new js/Float32Array)) - buf x y z _meta))
   (* [_] _)
-  (* [_ v]       (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) * buf v _meta))
-  (* [_ v1 v2]   (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) * * buf v1 v2 0.0 0.0 _meta))
-  (* [_ x y z]   (vm/v3-op1-xyz #+clj (double-array) #+cljs (new js/Float32Array) * buf x y z _meta))
-  (div [_]       (vm/v3-op0 #+clj (double-array) #+cljs (new js/Float32Array) / buf _meta))
-  (div [_ v]     (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) / buf v _meta))
-  (div [_ v1 v2] (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) / / buf v1 v2 0.0 0.0 _meta))
-  (div [_ x y z] (vm/v3-op1-xyz #+clj (double-array) #+cljs (new js/Float32Array) / buf x y z _meta))
-  (madd [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) * + buf a b 1.0 0.0 _meta))
-  (addm [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) + * buf a b 0.0 1.0 _meta))
-  (msub [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) * - buf a b 1.0 0.0 _meta))
-  (subm [_ a b]  (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) - * buf a b 0.0 1.0 _meta))
-  (abs [_]       (vm/v3-op0 #+clj (double-array) #+cljs (new js/Float32Array) m/abs buf _meta))
+  (* [_ v]       (vm/v3-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) * buf v _meta))
+  (* [_ v1 v2]   (vm/v3-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) * * buf v1 v2 0.0 0.0 _meta))
+  (* [_ x y z]   (vm/v3-op1-xyz #?(:clj (double-array) :cljs (new js/Float32Array)) * buf x y z _meta))
+  (div [_]       (vm/v3-op0 #?(:clj (double-array) :cljs (new js/Float32Array)) / buf _meta))
+  (div [_ v]     (vm/v3-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) / buf v _meta))
+  (div [_ v1 v2] (vm/v3-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) / / buf v1 v2 0.0 0.0 _meta))
+  (div [_ x y z] (vm/v3-op1-xyz #?(:clj (double-array) :cljs (new js/Float32Array)) / buf x y z _meta))
+  (madd [_ a b]  (vm/v3-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) * + buf a b 1.0 0.0 _meta))
+  (addm [_ a b]  (vm/v3-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) + * buf a b 0.0 1.0 _meta))
+  (msub [_ a b]  (vm/v3-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) * - buf a b 1.0 0.0 _meta))
+  (subm [_ a b]  (vm/v3-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) - * buf a b 0.0 1.0 _meta))
+  (abs [_]       (vm/v3-op0 #?(:clj (double-array) :cljs (new js/Float32Array)) m/abs buf _meta))
 
   g/PMutableMathOps
   (+! [_]         _)
@@ -1150,7 +1143,7 @@
 
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PClear
-  (clear* [_] (Vec3. #+clj (double-array 3) #+cljs (js/Float32Array. 3) nil nil))
+  (clear* [_] (Vec3. #?(:clj (double-array 3) :cljs (js/Float32Array. 3)) nil nil))
   (clear! [_] (aset buf 0 0.0) (aset buf 1 0.0) (aset buf 2 0.0) (set! _hash nil) _)
 #+END_SRC
 
@@ -1160,7 +1153,7 @@
   g/PCrossProduct
   (cross
    [_ v]
-   (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+   (let [^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
      (vm/rewrite-v3-v buf v 0.0
        (aset b 0 (double (mm/msub y vz vy z)))
        (aset b 1 (double (mm/msub z vx vz x)))
@@ -1238,7 +1231,7 @@
   g/PInterpolate
   (mix
    [_ v]
-   (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+   (let [^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
      (vm/rewrite-v3-nv-no-let
       buf v 0.0
       (aset b 0 (double (* (+ x vx) 0.5)))
@@ -1247,7 +1240,7 @@
      (Vec3. b nil _meta)))
   (mix
    [_ v v2]
-   (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+   (let [^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
      (vm/rewrite-v3-nv-nv
       buf v v2 0.0 0.0
       (aset b 0 (double (+ (* (- bx x) cx) x)))
@@ -1256,7 +1249,7 @@
      (Vec3. b nil _meta)))
   (mix
    [_ b c d u v]
-   (let [^doubles b' #+clj (double-array 3) #+cljs (js/Float32Array. 3)
+   (let [^doubles b' #?(:clj (double-array 3) :cljs (js/Float32Array. 3))
          dv? (instance? Vec3 d)
          dn? (number? d)
          ^doubles dv (if dv? (.-buf ^Vec3 d))
@@ -1306,13 +1299,13 @@
 #+BEGIN_SRC clojure :noweb-ref vec3
   g/PMinMax
   (min
-   [_ v] (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) mm/min buf v _meta))
+   [_ v] (vm/v3-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) mm/min buf v _meta))
   (min
-   [_ v v2] (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) mm/min mm/min buf v v2 0.0 0.0 _meta))
+   [_ v v2] (vm/v3-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) mm/min mm/min buf v v2 0.0 0.0 _meta))
   (max
-   [_ v] (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) mm/max buf v _meta))
+   [_ v] (vm/v3-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) mm/max buf v _meta))
   (max
-   [_ v v2] (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) mm/max mm/max buf v v2 0.0 0.0 _meta))
+   [_ v v2] (vm/v3-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) mm/max mm/max buf v v2 0.0 0.0 _meta))
 #+END_SRC
 
 *** PNormalize
@@ -1325,7 +1318,7 @@
     buf
     (let [l (Math/sqrt (mm/madd x x y y z z))]
       (if (pos? l)
-        (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+        (let [^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
           (aset b 0 (double (/ x l)))
           (aset b 1 (double (/ y l)))
           (aset b 2 (double (/ z l)))
@@ -1338,7 +1331,7 @@
     (let [l (Math/sqrt (mm/madd x x y y z z))]
       (if (pos? l)
         (let [l (/ len l)
-              ^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+              ^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
           (aset b 0 (double (* x l)))
           (aset b 1 (double (* y l)))
           (aset b 2 (double (* z l)))
@@ -1358,7 +1351,7 @@
   (as-polar
    [_]
    (let [r (g/mag _)
-         ^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+         ^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
      (aset b 0 (double r))
      (aset b 1 (double (Math/asin (/ (aget buf 2) r))))
      (aset b 2 (double (Math/atan2 (aget buf 1) (aget buf 0))))
@@ -1370,7 +1363,7 @@
          y (aget b 1)
          z (aget b 2)
          rcos (* x (Math/cos y))
-         ^doubles b' #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+         ^doubles b' #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
      (aset b' 0 (double (* rcos (Math/cos z))))
      (aset b' 1 (double (* rcos (Math/sin z))))
      (aset b' 2 (double (* x    (Math/sin y))))
@@ -1383,7 +1376,7 @@
   g/PReflect
   (reflect
    [_ v]
-   (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+   (let [^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
      (vm/rewrite-v3-v buf v 0.0
        (let [d (* (+ (+ (* x vx) (* y vy)) (* z vz)) 2.0)]
          (aset b 0 (double (mm/msub vx d x)))
@@ -1397,24 +1390,24 @@
   g/PScale
   (scale
    [_ v]
-   (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) * buf v _meta))
+   (vm/v3-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) * buf v _meta))
   (scale
    [_ v1 v2]
-   (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) * * buf v1 v2 1.0 1.0 _meta))
+   (vm/v3-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) * * buf v1 v2 1.0 1.0 _meta))
   (scale
    [_ x y z]
-   (vm/v3-op1-xyz #+clj (double-array) #+cljs (new js/Float32Array) * buf x y z _meta))
+   (vm/v3-op1-xyz #?(:clj (double-array) :cljs (new js/Float32Array)) * buf x y z _meta))
 
   g/PTranslate
   (translate
    [_ v]
-   (vm/v3-op1 #+clj (double-array) #+cljs (new js/Float32Array) + buf v _meta))
+   (vm/v3-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) + buf v _meta))
   (translate
    [_ v1 v2]
-   (vm/v3-op2 #+clj (double-array) #+cljs (new js/Float32Array) + + buf v1 v2 0.0 0.0 _meta))
+   (vm/v3-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) + + buf v1 v2 0.0 0.0 _meta))
   (translate
    [_ x y z]
-   (vm/v3-op1-xyz #+clj (double-array) #+cljs (new js/Float32Array) + buf x y z _meta))
+   (vm/v3-op1-xyz #?(:clj (double-array) :cljs (new js/Float32Array)) + buf x y z _meta))
 
   g/PRotate
   (rotate [_ theta] (g/rotate-z _ theta))
@@ -1423,7 +1416,7 @@
   (rotate-x
    [_ theta]
    (let [s (Math/sin theta) c (Math/cos theta)
-         ^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+         ^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
      (vm/rewrite-v3
       buf
       (aset b 0 (double x))
@@ -1433,7 +1426,7 @@
   (rotate-y
    [_ theta]
    (let [s (Math/sin theta) c (Math/cos theta)
-         ^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+         ^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
      (vm/rewrite-v3
       buf
       (aset b 0 (double (mm/madd x c z s)))
@@ -1443,7 +1436,7 @@
   (rotate-z
    [_ theta]
    (let [s (Math/sin theta) c (Math/cos theta)
-         ^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+         ^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
      (vm/rewrite-v3
       buf
       (aset b 0 (double (mm/msub x c y s)))
@@ -1460,7 +1453,7 @@
           vx2 (* vx vx), vy2 (* vy vy), vz2 (* vz vz)
           s (Math/sin theta), c (Math/cos theta)
           uvw (mm/add ux' vy' wz')
-          ^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+          ^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
       (aset b 0 (double (mm/madd uvw vx
                                  (mm/msub (+ vy2 vz2) x (+ vy' wz') vx) c
                                  (mm/subm vz' wy' s))))
@@ -1483,17 +1476,19 @@
   g/PVectorReduce
   (reduce-vector
    [_ f xs]
-   (let [^doubles buf' #+clj (double-array 3) #+cljs (js/Float32Array. buf)]
-     ,#+clj (aset buf' 0 (aget buf 0))
-     ,#+clj (aset buf' 1 (aget buf 1))
-     ,#+clj (aset buf' 2 (aget buf 2))
+   (let [^doubles buf' #?(:clj (double-array 3) :cljs (js/Float32Array. buf))]
+     #?@(:clj
+         [(aset buf' 0 (aget buf 0))
+          (aset buf' 1 (aget buf 1))
+          (aset buf' 2 (aget buf 2))])
      (Vec3. (vec3-reduce* f buf' xs) nil _meta)))
   (reduce-vector
    [_ f f2 xs]
-   (let [^doubles buf' #+clj (double-array 3) #+cljs (js/Float32Array. buf)]
-     ,#+clj (aset buf' 0 (aget buf 0))
-     ,#+clj (aset buf' 1 (aget buf 1))
-     ,#+clj (aset buf' 2 (aget buf 2))
+   (let [^doubles buf' #?(:clj (double-array 3) :cljs (js/Float32Array. buf))]
+     #?@(:clj
+         [(aset buf' 0 (aget buf 0))
+          (aset buf' 1 (aget buf 1))
+          (aset buf' 2 (aget buf 2))])
      (vec3-reduce* f buf' xs)
      (aset buf' 0 (double (f2 (aget buf' 0) 0)))
      (aset buf' 1 (double (f2 (aget buf' 1) 1)))
@@ -1552,45 +1547,45 @@
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref swizzle-fns
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) x)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) xx)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) xxx)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) xxy)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) xxz)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) xy)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) xyx)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) xyy)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) xyz)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) xz)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) xzx)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) xzy)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) xzz)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) y)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) yx)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) yxx)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) yxy)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) yxz)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) yy)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) yyx)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) yyy)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) yyz)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) yz)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) yzx)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) yzy)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) yzz)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) z)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) zx)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) zxx)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) zxy)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) zxz)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) zy)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) zyx)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) zyy)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) zyz)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) zz)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) zzx)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) zzy)
-  (defswizzle #+clj (double-array) #+cljs (new js/Float32Array) zzz)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) x)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) xx)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) xxx)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) xxy)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) xxz)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) xy)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) xyx)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) xyy)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) xyz)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) xz)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) xzx)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) xzy)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) xzz)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) y)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) yx)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) yxx)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) yxy)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) yxz)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) yy)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) yyx)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) yyy)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) yyz)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) yz)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) yzx)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) yzy)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) yzz)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) z)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) zx)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) zxx)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) zxy)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) zxz)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) zy)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) zyx)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) zyy)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) zyz)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) zz)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) zzx)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) zzy)
+  (defswizzle #?(:clj (double-array) :cljs (new js/Float32Array)) zzz)
 
   (def swizzle2-fns
     {:x x :xx xx :xy xy :y y :yx yx :yy yy})
@@ -1604,8 +1599,7 @@
      :zyy zyy, :zyz zyz, :zz zz, :zzx zzx, :zzy zzy, :zzz zzz})
 
   (defn swizzle-assoc*
-    ,#+clj [^doubles src ^doubles dest keymap k v]
-    ,#+cljs [src dest keymap k v]
+    #?(:clj [^doubles src ^doubles dest keymap k v] :cljs [src dest keymap k v])
     (let [n (name k)
           c (count n)]
       (if-let [idx (and (== 1 c) (keymap (first n)))]
@@ -1653,8 +1647,8 @@
 ** Constructors
 
 #+BEGIN_SRC clojure :noweb-ref ctors
-  (def V2 (Vec2. #+clj (double-array 2) #+cljs (js/Float32Array. 2) nil nil))
-  (def V3 (Vec3. #+clj (double-array 3) #+cljs (js/Float32Array. 3) nil nil))
+  (def V2 (Vec2. #?(:clj (double-array 2) :cljs (js/Float32Array. 2)) nil nil))
+  (def V3 (Vec3. #?(:clj (double-array 3) :cljs (js/Float32Array. 3)) nil nil))
 
   (defn vec2
     ([] V2)
@@ -1666,7 +1660,7 @@
         (map? v)           (vec2 (:x v 0) (:y v 0))
         :else              (err/type-error! "Vec2" v)))
     ([x y]
-       (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+       (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
          (aset b 0 (double x))
          (aset b 1 (double y))
          (Vec2. b nil nil))))
@@ -1687,7 +1681,7 @@
         (number? v)     (vec3 v z 0)
         :else           (err/type-error! "Vec3" v)))
     ([x y z]
-       (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+       (let [^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
          (aset b 0 (double x))
          (aset b 1 (double y))
          (aset b 2 (double z))
@@ -1702,7 +1696,7 @@
         (map? v)           (vec2-with-meta (:x v 0.0) (:y v 0.0) meta)
         :else              (err/type-error! "Vec2" v)))
     ([x y meta]
-       (let [^doubles b #+clj (double-array 2) #+cljs (js/Float32Array. 2)]
+       (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
          (aset b 0 (double x))
          (aset b 1 (double y))
          (Vec2. b nil meta))))
@@ -1716,7 +1710,7 @@
         (map? v)           (vec3-with-meta (:x v 0.0) (:y v 0.0) (:z v 0.0) meta)
         :else              (err/type-error! "Vec3" v)))
     ([x y z meta]
-       (let [^doubles b #+clj (double-array 3) #+cljs (js/Float32Array. 3)]
+       (let [^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
          (aset b 0 (double x))
          (aset b 1 (double y))
          (aset b 2 (double z))
@@ -2160,19 +2154,20 @@
 
 ** Complete namespace definitions
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/vector.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core/vector.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.vector
-    ,#+cljs
-    (:require-macros
-     [thi.ng.geom.core.macros.vector :as vm :refer [defswizzle]]
-     [thi.ng.macromath.core :as mm])
+    #?(:cljs
+       (:require-macros
+        [thi.ng.geom.core.macros.vector :as vm :refer [defswizzle]]
+        [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.common.math.core :as m :refer [*eps* PI TWO_PI INF- INF+]]
+     [thi.ng.math.core :as m :refer [*eps* PI TWO_PI INF- INF+]]
      [thi.ng.common.error :as err]
-     ,#+clj [thi.ng.geom.core.macros.vector :as vm :refer [defswizzle]]
-     ,#+clj [thi.ng.macromath.core :as mm]
-     ,#+clj [clojure.core.protocols :as cp]))
+     #?@(:clj
+         [[thi.ng.geom.core.macros.vector :as vm :refer [defswizzle]]
+          [thi.ng.math.macros :as mm]
+          [clojure.core.protocols :as cp]])))
 
   (declare V2 V3 vec2 vec3 vec2-reduce* vec3-reduce* swizzle-assoc* swizzle2-fns swizzle3-fns)
 
@@ -2187,11 +2182,11 @@
   <<ctors>>
 #+END_SRC
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/core/macros/vector.clj :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core/macros/vector.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.macros.vector
     (:require
      [clojure.walk :refer :all]
-     [thi.ng.common.data.core :as d]
+     [thi.ng.dstruct.core :as d]
      [thi.ng.common.error :as err]))
 
   <<swizzle-macros>>

@@ -3,6 +3,7 @@
 * thi.ng.geom.core.test.protocols
 
 ** Constants & helpers
+
 #+BEGIN_SRC clojure :noweb-ref helpers
   (def proto-ids
     {:conj      g/PConjugate
@@ -36,58 +37,63 @@
   (def mat-common
     #{:math :det :inv :rotate :scale :tx :vtx})
 
-  ,#+clj
-  (defn satisfies-all?
-    [type & protos]
-    (testing
-        (.getName type)
-      (doseq [p protos]
-        (is (true? (extends? (proto-ids p) type))
-            (str (get-in proto-ids [p :on-interface]))))))
+  #?(:clj
+     (defn satisfies-all?
+       [type & protos]
+       (testing
+           (.getName type)
+         (doseq [p protos]
+           (is (true? (extends? (proto-ids p) type))
+               (str (get-in proto-ids [p :on-interface])))))))
 #+END_SRC
+
 ** Main context
+
 #+BEGIN_SRC clojure :noweb-ref tests
-  ,#+clj
-  (deftest proto-implementation-check
-    (dorun
-     (map
-      (fn [[t protos]] (apply satisfies-all? t protos))
-      {
-       thi.ng.geom.core.matrix.Matrix32
-       (conj mat-common :shear)
+  #?(:clj
+     (deftest proto-implementation-check
+       (dorun
+        (map
+         (fn [[t protos]] (apply satisfies-all? t protos))
+         {
+          thi.ng.geom.core.matrix.Matrix32
+          (conj mat-common :shear)
 
-       thi.ng.geom.core.matrix.Matrix44
-       mat-common
+          thi.ng.geom.core.matrix.Matrix44
+          mat-common
 
-       thi.ng.geom.core.quaternion.Quat4
-       #{:conj :dot :inv :mag :mat :math :mix :norm :scale :vtx}
+          thi.ng.geom.core.quaternion.Quat4
+          #{:conj :dot :inv :mag :mat :math :mix :norm :scale :vtx}
 
-       thi.ng.geom.core.vector.Vec2
-       vec-common
+          thi.ng.geom.core.vector.Vec2
+          vec-common
 
-       thi.ng.geom.core.vector.Vec3
-       (conj vec-common :rot3d)
-      })))
+          thi.ng.geom.core.vector.Vec3
+          (conj vec-common :rot3d)
+          }))))
 #+END_SRC
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/core/test/protocols.cljx :noweb yes :mkdirp yes :padline no
+
+#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/core/test/protocols.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.test.protocols
-    ,#+cljs
-    (:require-macros
-     [cemerick.cljs.test :refer (is deftest with-test run-tests testing)])
+    #?(:cljs
+       (:require-macros
+        [cemerick.cljs.test :refer (is deftest with-test run-tests testing)]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.matrix]
      [thi.ng.geom.core.quaternion]
      [thi.ng.geom.core.vector]
-     ,#+clj [clojure.test :refer :all]
-     ,#+cljs [cemerick.cljs.test :as t])
-    ,#+clj
-    (:import
-     [thi.ng.geom.core.matrix Matrix32 Matrix44]
-     [thi.ng.geom.core.quaternion Quat4]
-     [thi.ng.geom.core.vector Vec2 Vec3]))
+     #?(:clj
+        [clojure.test :refer :all]
+        :cljs
+        [cemerick.cljs.test]))
+    #?(:clj
+       (:import
+        [thi.ng.geom.core.matrix Matrix32 Matrix44]
+        [thi.ng.geom.core.quaternion Quat4]
+        [thi.ng.geom.core.vector Vec2 Vec3])))
 
   <<helpers>>
 

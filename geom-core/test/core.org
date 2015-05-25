@@ -3,6 +3,7 @@
 * thi.ng.geom.core.test.core
 
 ** Test constants
+
 #+BEGIN_SRC clojure :noweb-ref const
   (def s 10.0)
   (def ax 1.0) (def ay 2.0) (def az 3.0)
@@ -15,6 +16,7 @@
 #+END_SRC
 
 ** Callable contexts
+
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn context-vec2-op
     [label op cop default]
@@ -30,8 +32,10 @@
       (is (delta= (op (op a2 bx) b2) (op a2 bx b2)) (str label " a2 n b2"))
       ;;(is (= (op (op (op a2 b2) a2) b2) (op a2 [b2 a2 b2])) (str label " a2 [b2 a2 b2]"))
       (if (= cop /)
-        (is #+clj (not (Double/isFinite ((op a2 [s]) :y)))
-            ,#+cljs (not (js/isFinite ((op a2 [s]) :y)))
+        (is #?(:clj
+               (not (Double/isFinite ((op a2 [s]) :y)))
+               :cljs
+               (not (js/isFinite ((op a2 [s]) :y))))
             (str label " a2 [n] fail"))
         (is (delta= (op a2 s default) (op a2 [s])) (str label " a2 [n]")))))
 
@@ -53,8 +57,10 @@
       ;;(is (= (op (op (op a3 bx) by) b3) (op a3 bx by b3)) (str label " a3 n m b3"))
       ;;(is (= (op (op (op a3 b3) a3) b3) (op a3 [b3 a3 b3])) (str label " a3 [b3 a3 b3]"))
       (if (= cop /)
-        (is #+clj (not (Double/isFinite ((op a3 [bx by]) :z)))
-            ,#+cljs (not (js/isFinite ((op a3 [bx by]) :z)))
+        (is #?(:clj
+               (not (Double/isFinite ((op a3 [bx by]) :z)))
+               :cljs
+               (not (js/isFinite ((op a3 [bx by]) :z))))
             (str label " a3 [n m] fail"))
         (is (delta= (op a3 bx by default) (op a3 [bx by])) (str label " a3 [n m]")))))
 
@@ -76,6 +82,7 @@
 #+END_SRC
 
 ** Vector creation
+
 #+BEGIN_SRC clojure :noweb-ref tests
   (deftest vec2-ctor
    (is (v/vec2? (vec2 1)) "vec2?")
@@ -87,7 +94,7 @@
    (is (= [1.0 0.0] (vec2 {:x 1})) "single :x map")
    (is (= [0.0 2.0] (vec2 {:y 2})) "single :y map")
    (is (= [0.0 0.0] (vec2 {})) "single empty map")
-   (is (thrown? #+clj IllegalArgumentException #+cljs js/Error (vec2 "a")) "fail w/ str arg v2")
+   (is (thrown? #?(:clj IllegalArgumentException :cljs js/Error) (vec2 "a")) "fail w/ str arg v2")
    ;; (is (thrown? #+clj ClassCastException #+cljs js/Error (vec2 ["a"])) "fail w/ [str] arg v2")
    ;; (is (thrown? #+clj ClassCastException #+cljs js/Error (vec2 {:x "a"})) "fail w/ str map v2")
    ;; (is (thrown? #+clj ClassCastException #+cljs js/Error (vec2 "a" "a")) "fail w/ str args v2")
@@ -110,7 +117,7 @@
    (is (= [1.0 2.0 3.0] (vec3 [1 2] 3)) "v3 from vec + y")
    (is (= [1.0 2.0 3.0] (vec3 {:x 1 :y 2} 3)) "v3 from map + y")
    (is (= [1.0 2.0 0.0] (vec3 1 2)) "v3 from xy")
-   (is (thrown? #+clj IllegalArgumentException #+cljs js/Error (vec3 "a")) "fail w/ str arg v3")
+   (is (thrown? #?(:clj IllegalArgumentException :cljs js/Error) (vec3 "a")) "fail w/ str arg v3")
    ;; (is (thrown? #+clj ClassCastException #+cljs js/Error (vec3 ["a"])) "fail w/ [str] arg v3")
    ;; (is (thrown? #+clj ClassCastException #+cljs js/Error (vec3 {:x "a"})) "fail w/ str map v3")
    ;; (is (thrown? #+clj ClassCastException #+cljs js/Error (vec3 "a" "a")) "fail w/ str args v3")
@@ -118,12 +125,13 @@
 #+END_SRC
 
 ** Swizzling
+
 #+BEGIN_SRC clojure :noweb-ref tests
   (deftest swizzle-read
     (is (= ax (:x a2) (:x a3)) ":x")
     (is (= ay (:y a2) (:y a3)) ":y")
     (is (= az (:z a3)) ":z")
-    (is (thrown? #+clj IllegalArgumentException #+cljs js/Error (:z a2)) ":z fail a2")
+    (is (thrown? #?(:clj IllegalArgumentException :cljs js/Error) (:z a2)) ":z fail a2")
     (is (= (:xy a2) (:xy a3)) ":xy a2=a3")
     (is (= [ax ay] (:xy a2)) ":xy")
     (is (= (:yx a2) (:yx a3)) ":yx a2=a3")
@@ -132,14 +140,14 @@
     (is (= [ay ay] (:yy a2)) ":yy")
     (is (= [ay ay] (:yy a3)) ":yy")
     (is (= [ay az] (:yz a3)) ":yz")
-    (is (thrown? #+clj IllegalArgumentException #+cljs js/Error (:xyz a2)) ":xyz fail a2")
+    (is (thrown? #?(:clj IllegalArgumentException :cljs js/Error) (:xyz a2)) ":xyz fail a2")
     (is (= [ax ay az] (:xyz a3)) ":xyz a3")
     (is (= [az ax ay] (:zxy a3)) ":zxy a3")
     (is (= (a2 0) (a3 0)) "idx 0")
     (is (= (a2 1) (a3 1)) "idx 1")
     (is (= az (a3 2)) "idx 2")
-    (is (thrown? #+clj IllegalArgumentException #+cljs js/Error (a2 2)) "idx 2 fail a2")
-    (is (thrown? #+clj IllegalArgumentException #+cljs js/Error (a3 3)) "idx 3 fail a3"))
+    (is (thrown? #?(:clj IllegalArgumentException :cljs js/Error) (a2 2)) "idx 2 fail a2")
+    (is (thrown? #?(:clj IllegalArgumentException :cljs js/Error) (a3 3)) "idx 3 fail a3"))
 
   (deftest swizzle-write
     (is (= [bx ay] (assoc a2 :x bx)) ":x")
@@ -154,25 +162,26 @@
     (is (= [bx ay by] (assoc a3 :xz [bx by])) ":xz")
     (is (= [bx by bz] (assoc a3 :xyz [bx by bz])) ":xyz 3d")
     (is (= [by bz bx] (assoc a3 :zxy [bx by bz])) ":zxy 3d")
-    (is (thrown? #+clj IllegalArgumentException #+cljs js/Error (assoc a2 :xz [bx by])) ":xz fail 2d")
+    (is (thrown? #?(:clj IllegalArgumentException :cljs js/Error) (assoc a2 :xz [bx by])) ":xz fail 2d")
     (is (= [by ay bx] (assoc a3 :zx [bx by])) ":zx")
-    (is (thrown? #+clj IllegalArgumentException #+cljs js/Error (assoc a2 :zx [bx by])) ":zx fail 2d")
+    (is (thrown? #?(:clj IllegalArgumentException :cljs js/Error) (assoc a2 :zx [bx by])) ":zx fail 2d")
     (is (= [ax bx by] (assoc a3 :yz [bx by])) ":yz")
-    (is (thrown? #+clj IllegalArgumentException #+cljs js/Error (assoc a2 :yz [bx by])) ":yz fail 2d")
+    (is (thrown? #?(:clj IllegalArgumentException :cljs js/Error) (assoc a2 :yz [bx by])) ":yz fail 2d")
     (is (= [ax by bx] (assoc a3 :zy [bx by])) ":zy")
-    (is (thrown? #+clj IllegalArgumentException #+cljs js/Error (assoc a2 :zy [bx by])) ":zy fail 2d")
-    (is (thrown? #+clj IllegalArgumentException #+cljs js/Error (assoc a2 :xyz [bx by bz])) ":xyz fail 2d"))
+    (is (thrown? #?(:clj IllegalArgumentException :cljs js/Error) (assoc a2 :zy [bx by])) ":zy fail 2d")
+    (is (thrown? #?(:clj IllegalArgumentException :cljs js/Error) (assoc a2 :xyz [bx by bz])) ":xyz fail 2d"))
 #+END_SRC
 
 ** Clojure/Java protocol impls
+
 #+BEGIN_SRC clojure :noweb-ref tests
   (deftest protocol-impls
     (is (= (seq a2) (seq av2)) "seq a2")
     (is (= (rseq a2) (rseq av2)) "rseq a2")
-    (is #+clj (not (v/vec2? (rseq a2))) #+cljs (v/vec2? (rseq a2)) "rseq a vec2?")
+    (is #?(:clj (not (v/vec2? (rseq a2))) :cljs (v/vec2? (rseq a2))) "rseq a vec2?")
     (is (= (seq a3) (seq av3)) "seq a3")
     (is (= (rseq a3) (rseq av3)) "rseq a3")
-    (is #+clj (not (v/vec3? (rseq a3))) #+cljs (v/vec3? (rseq a3)) "rseq a vec3?")
+    (is #?(:clj (not (v/vec3? (rseq a3))) :cljs (v/vec3? (rseq a3))) "rseq a vec3?")
     (is (= ax (first a2)) "first a2")
     (is (= ax (first a3)) "first a3")
     (is (= (rest a2) [ay]) "rest a2")
@@ -184,20 +193,25 @@
     (is (nil? (next (nnext a2))) "nnext a3 nil?")
     (is (= ay (nth a2 1)) "nth a2")
     (is (= -1 (nth a2 2 -1)) "nth a2 default")
-    (is (thrown? #+clj ArrayIndexOutOfBoundsException #+cljs js/Error (nth a2 2)) "nth a2 fail")
+    #?(:clj
+       (is (thrown? ArrayIndexOutOfBoundsException (nth a2 2)) "nth a2 fail")
+       :cljs
+       (is (thrown? js/Error (nth a2 2)) "nth a2 fail"))
     (is (= az (nth a3 2)) "nth a3")
     (is (= -1 (nth a3 3 -1)) "nth a3 default")
-    (is (thrown? #+clj ArrayIndexOutOfBoundsException #+cljs js/Error (nth a3 3)) "nth a3 fail")
+    #?(:clj
+       (is (thrown? ArrayIndexOutOfBoundsException (nth a3 3)) "nth a3 fail")
+       :cljs
+       (is (thrown? js/Error (nth a3 3)) "nth a3 fail"))
     (is (= ay (peek a2)) "peek a2")
     (is (= az (peek a3)) "peek a3")
     (is (= (pop a2) [ax]) "pop a2")
     (is (= (pop a3) a2) "pop a3")
-    (is (= (type (pop a2)) #+clj clojure.lang.PersistentVector #+cljs cljs.core.PersistentVector) "pop a2 type")
+    (is (= (type (pop a2)) #?(:clj clojure.lang.PersistentVector :cljs cljs.core.PersistentVector)) "pop a2 type")
     (is (v/vec2? (pop a3)) "pop a3 vec2?")
     (is (v/vec3? (conj a2 3)) "conj a2")
     (is (= a3 (conj a2 3)) "conj a2 = a3")
-    ,#+clj  (is (instance? clojure.lang.PersistentVector (conj a3 4)) "conj a3 PersistentVector?")
-    ,#+cljs (is (instance? cljs.core.PersistentVector (conj a3 4)) "conj a3 PersistentVector?")
+    (is (instance? #?(:clj clojure.lang.PersistentVector :cljs cljs.core.PersistentVector) (conj a3 4)) "conj a3 PersistentVector?")
     (is (= [ax ay az 4] (conj a3 4)) "conj a3 = [1 2 3 4]")
     (is (let [[x y z] a2] (and (= a2 [x y]) (nil? z))) "destructure a2")
     (is (let [[x y z w] a3] (and (= a3 [x y z]) (nil? w))) "destructure a3")
@@ -207,8 +221,9 @@
     (is (== (hash [ax ay az]) (hash a3)) "hash vec = a3")
     (is (== (hash [1.0 2.0]) (hash (vec2 1 2))) "hash v2")
     (is (== (hash [1.0 2.0 3.0]) (hash (vec3 1 2 3))) "hash v3")
-    ,#+clj (is (= (.hashCode [ax ay]) (.hashCode a2)) "hashCode vec = a2")
-    ,#+clj (is (= (.hashCode [ax ay az]) (.hashCode a3)) "hashCode vec = a3")
+    #?@(:clj
+        [(is (= (.hashCode [ax ay]) (.hashCode a2)) "hashCode vec = a2")
+         (is (= (.hashCode [ax ay az]) (.hashCode a3)) "hashCode vec = a3")])
     (is (= {:foo 2} (meta (with-meta a2 {:foo 2}))) "meta v2")
     (is (= {:foo 3} (meta (with-meta a3 {:foo 3}))) "meta v3")
     (is (= [ax ay] a2) "vec = a2")
@@ -225,20 +240,21 @@
     (is (= 1 (count (into #{} [a3 av3 a3]))) "#{a3 a3}")
     (is (= 2 (count a2)) "count a2")
     (is (= 3 (count a3)) "count a3")
-    ,#+clj (is (= 2 (.size a2)) "size a2")
-    ,#+clj (is (= 3 (.size a3)) "size a3")
-    ,#+clj (is (= (seq av2) (iterator-seq (.iterator a2))) "iterator a2")
-    ,#+clj (is (= (seq av3) (iterator-seq (.iterator a3))) "iterator a3")
+    #?@(:clj
+        [(is (= 2 (.size a2)) "size a2")
+         (is (= 3 (.size a3)) "size a3")
+         (is (= (seq av2) (iterator-seq (.iterator a2))) "iterator a2")
+         (is (= (seq av3) (iterator-seq (.iterator a3))) "iterator a3")])
     (is (= ax (apply a2 [0])) "apply a2")
     (is (= ay (apply a2 [:y])) "apply a2 kw")
     (is (= [ay ax] (apply a2 [:yx])) "apply a2 swizzle")
     (is (= -1 (apply a2 [:z -1])) "apply a2 w/ default")
-    (is (thrown? #+clj IllegalArgumentException #+cljs js/Error (apply a2 [:z])) "apply a2 fail")
+    (is (thrown? #?(:clj IllegalArgumentException :cljs js/Error) (apply a2 [:z])) "apply a2 fail")
     (is (= ax (apply a3 [0])) "apply a3")
     (is (= ay (apply a3 [:y])) "apply a3 kw")
     (is (= [ay ax az] (apply a3 [:yxz])) "apply a3 swizzle")
     (is (= -1 (apply a3 [:w -1])) "apply a3 w/ default")
-    (is (thrown? #+clj IllegalArgumentException #+cljs js/Error (apply a3 [:w])) "apply a3 fail")
+    (is (thrown? #?(:clj IllegalArgumentException :cljs js/Error) (apply a3 [:w])) "apply a3 fail")
     (is (= 3.0 (reduce + a2)) "reduce a2")
     (is (= 6.0 (reduce + a3)) "reduce a3")
     (is (= 13.0 (reduce + 10 a2)) "reduce a2 w/ init")
@@ -247,8 +263,8 @@
     (is (= -1 (reduce (fn [_ _] (reduced -1)) a3)) "reduce a3 w/ reduced")
     (is (= -1 (reduce (fn [acc _] (reduced acc)) -1 a2)) "reduce a2 w/ reduced + init")
     (is (= -1 (reduce (fn [acc _] (reduced acc)) -1 a3)) "reduce a3 w/ reduced + init")
-    (is (= #+clj "[1.0 2.0]" #+cljs "[1 2]" (str a2)) "toString a2")
-    (is (= #+clj "[1.0 2.0 3.0]" #+cljs "[1 2 3]" (str a3)) "toString a3")
+    (is (= #?(:clj "[1.0 2.0]" :cljs "[1 2]") (str a2)) "toString a2")
+    (is (= #?(:clj "[1.0 2.0 3.0]" :cljs "[1 2 3]") (str a3)) "toString a3")
     (is (delta= a2 av2) "delta= a2 av2")
     (is (delta= a2 av2 1e-5) "delta= a2 av2 eps")
     (is (delta= a3 av3) "delta= a3 av3")
@@ -263,7 +279,9 @@
 #+END_SRC
 
 ** Vector operations
+
 *** 2D ops
+
 #+BEGIN_SRC clojure :noweb-ref tests  
   (deftest vec2-math-ops
    (is (delta= [(+ ax) (+ ay)] (g/+ a2)) "+ a2")
@@ -279,6 +297,7 @@
 #+END_SRC
 
 *** 3D ops
+
 #+BEGIN_SRC clojure :noweb-ref tests    
   (deftest vec3-math-ops
    (is (delta= [(+ ax) (+ ay) (+ az)] (g/+ a3))) "+ a3"
@@ -294,6 +313,7 @@
 #+END_SRC
 
 *** Dual math ops
+
 #+BEGIN_SRC clojure :noweb-ref tests  
   (deftest dual-math-ops
     (context-dual-op "madd" g/madd g/* g/+)
@@ -303,6 +323,7 @@
 #+END_SRC
 
 *** Dot product
+
 #+BEGIN_SRC clojure :noweb-ref tests  
   (deftest dotproduct
    (is (== (g/mag-squared a2) (g/dot a2 a2)) "dot a2 a2")
@@ -318,6 +339,7 @@
 #+END_SRC
 
 *** Cross product
+
 #+BEGIN_SRC clojure :noweb-ref tests  
    (deftest crossproduct
     (is (== 0 (g/cross V2X V2X)) "x cross x = 0")
@@ -328,6 +350,7 @@
 #+END_SRC
 
 *** Magnitude
+
 #+BEGIN_SRC clojure :noweb-ref tests  
   (deftest mag
     (is (== (Math/sqrt (+ (* ax ax) (* ay ay))) (g/mag a2)) "mag a2")
@@ -341,6 +364,7 @@
 #+END_SRC
 
 *** Normalize
+
 #+BEGIN_SRC clojure :noweb-ref tests  
   (deftest normalize
     (is (delta= (let [m (g/mag a2)] [(/ ax m) (/ ay m)]) (g/normalize a2)) "norm a2")
@@ -355,6 +379,7 @@
 #+END_SRC
 
 *** Interpolation
+
 #+BEGIN_SRC clojure :noweb-ref tests  
   (deftest mix
     (is (delta= (g/mix (g/mix a2 b2 0.25) (g/mix b2 a2 0.25) 0.5)
@@ -364,6 +389,7 @@
 #+END_SRC
 
 *** Transformations
+
 #+BEGIN_SRC clojure :noweb-ref tests2
   (deftest vec-transforms
     (is (delta= V2Y (g/rotate V2X HALF_PI)) "rot2d(+x) = +y")
@@ -384,14 +410,16 @@
 #+END_SRC
 
 ** Matrix operations
+
 #+BEGIN_SRC clojure :noweb-ref tests
   (deftest matrix-ops
     (let [m32a (matrix32 (range 1 7))  m32b (matrix32 (range 10 70 10))
           m44a (matrix44 (range 1 17)) m44b (matrix44 (range 10 170 10))]
       (is (== (hash (mapv double (range 1 7))) (hash m32a)) "hash M32")
       (is (== (hash (mapv double (range 1 17))) (hash m44a)) "hash M44")
-      ,#+clj (is (== (.hashCode (mapv double (range 1 7))) (.hashCode m32a)) "hashCode M32")
-      ,#+clj (is (== (.hashCode (mapv double (range 1 17))) (.hashCode m44a)) "hashCode M44")
+      #?@(:clj
+          [(is (== (.hashCode (mapv double (range 1 7))) (.hashCode m32a)) "hashCode M32")
+           (is (== (.hashCode (mapv double (range 1 17))) (.hashCode m44a)) "hashCode M44")])
       (is (= {:foo 32} (meta (with-meta m32a {:foo 32}))) "meta M32")
       (is (= {:foo 44} (meta (with-meta m44a {:foo 44}))) "meta M44")
       (is (delta= V2Y (-> M32 (g/rotate HALF_PI) (g/transform-vector V2X))))
@@ -445,13 +473,12 @@
       (is (not (delta= M44 1)) "not delta= M44 1")
       (is (delta= [1 0 0 0 1 0 2] (conj M32 2)) "conj M32")
       (is (delta= [1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1 2] (conj M44 2)) "conj M44")
-      ,#+clj  (is (instance? clojure.lang.PersistentVector (conj M32 2)) "conj M32 PersistentVector?")
-      ,#+clj  (is (instance? clojure.lang.PersistentVector (conj M44 2)) "conj M44 PersistentVector?")
-      ,#+cljs (is (instance? cljs.core.PersistentVector (conj M32 2)) "conj M32 PersistentVector?")
-      ,#+cljs (is (instance? cljs.core.PersistentVector (conj M44 2)) "conj M44 PersistentVector?")))
+      (is (instance? #?(:clj clojure.lang.PersistentVector :cljs cljs.core.PersistentVector) (conj M32 2)) "conj M32 PersistentVector?")
+      (is (instance? #?(:clj clojure.lang.PersistentVector :cljs cljs.core.PersistentVector) (conj M44 2)) "conj M44 PersistentVector?")))
 #+END_SRC
 
 ** Quaternion operations
+
 #+BEGIN_SRC clojure :noweb-ref tests
   (defn quat-matrix-roundtrip
     [n]
@@ -464,7 +491,7 @@
 
   (deftest quat-ops
     (is (== (hash [1.0 2.0 3.0 4.0]) (hash (q/quat 1 2 3 4))) "hash Quat4")
-    ,#+clj (is (== (.hashCode [1.0 2.0 3.0 4.0]) (.hashCode (q/quat 1 2 3 4))) "hashCode Quat4")
+    #?(:clj (is (== (.hashCode [1.0 2.0 3.0 4.0]) (.hashCode (q/quat 1 2 3 4))) "hashCode Quat4"))
     (is (delta= a3 (-> (q/quat-from-axis-angle V3X 0.0) (g/transform-vector a3))))
     (is (delta= a3 (-> (q/quat-from-axis-angle V3Y 0.0) (g/transform-vector a3))))
     (is (delta= a3 (-> (q/quat-from-axis-angle V3Z 0.0) (g/transform-vector a3))))
@@ -497,23 +524,26 @@
     (is (delta= Q Q) "delta= Q")
     (is (not (delta= Q nil)) "not delta= Q nil")
     (is (not (delta= Q 1)) "not delta= Q 1")
-    ,#+clj  (is (instance? clojure.lang.PersistentVector (conj Q 2)) "conj Q PersistentVector?")
-    ,#+cljs (is (instance? cljs.core.PersistentVector (conj Q 2)) "conj Q PersistentVector?"))
+    (is (instance? #?(:clj clojure.lang.PersistentVector :cljs cljs.core.PersistentVector) (conj Q 2)) "conj Q PersistentVector?"))
 #+END_SRC
+
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/core/test/core.cljx :noweb yes :mkdirp yes :padline no
+
+#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/core/test/core.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.test.core
-    ,#+cljs
-    (:require-macros
-     [cemerick.cljs.test :refer (is deftest with-test run-tests testing)])
+    #?(:cljs
+       (:require-macros
+        [cemerick.cljs.test :refer (is deftest with-test run-tests testing)]))
     (:require
-     [thi.ng.common.math.core :as m :refer [*eps* HALF_PI QUARTER_PI delta=]]
+     [thi.ng.math.core :as m :refer [*eps* HALF_PI QUARTER_PI delta=]]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V2 V3 V2X V2Y V3X V3Y V3Z]]
      [thi.ng.geom.core.matrix :as mat :refer [M32 M44 matrix32 matrix44]]
      [thi.ng.geom.core.quaternion :as q :refer [Q]]
-     ,#+clj [clojure.test :refer :all]
-     ,#+cljs [cemerick.cljs.test :as t]))
+     #?(:clj
+        [clojure.test :refer :all]
+        :cljs
+        [cemerick.cljs.test])))
 
   <<const>>
 
