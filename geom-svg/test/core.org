@@ -15,18 +15,20 @@
 #+END_SRC
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/test/cljx/thi/ng/geom/svg/test/core.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/svg/test/core.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.test.core
-    ,#+cljs
-    (:require-macros
-     [cemerick.cljs.test :refer (is deftest with-test run-tests testing)])
+    #?(:cljs
+       (:require-macros
+        [cemerick.cljs.test :refer (is deftest with-test run-tests testing)]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :refer [vec2 vec3]]
      [thi.ng.geom.svg.core :as svg]
-     [thi.ng.common.math.core :as m]
-     ,#+clj  [clojure.test :refer :all]
-     ,#+cljs [cemerick.cljs.test]))
+     [thi.ng.math.core :as m]
+     #?(:clj
+        [clojure.test :refer :all]
+        :cljs
+        [cemerick.cljs.test])))
 
   <<helpers>>
 
