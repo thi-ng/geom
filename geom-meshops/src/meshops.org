@@ -123,7 +123,7 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/ops.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.ops
     (:require
-     [thi.ng.common.math.core :as m]
+     [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.intersect :as isec]
@@ -134,7 +134,7 @@
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.spatialtree :as st]
      [thi.ng.geom.types.utils :as tu]
-     [thi.ng.common.data.core :as d]
+     [thi.ng.dstruct.core :as d]
      [clojure.set :as set]))
 
   <<ops>>

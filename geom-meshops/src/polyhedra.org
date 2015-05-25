@@ -161,14 +161,14 @@ returns either a =BasicMesh= or =GMesh= instance.
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/polyhedra.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.polyhedra
-    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
+    #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec3]]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.gmesh :as gm]
-     [thi.ng.common.math.core :as m :refer [PHI PI SQRT2 SQRT3]]
-     ,#+clj [thi.ng.macromath.core :as mm]))
+     [thi.ng.math.core :as m :refer [PHI PI SQRT2 SQRT3]]
+     #?(:clj [thi.ng.math.macros :as mm])))
 
   <<polyhedra>>
 #+END_SRC

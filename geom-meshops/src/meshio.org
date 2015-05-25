@@ -11,13 +11,16 @@
      - [[#complete-namespace-definition][Complete namespace definition]]
 
 * thi.ng.geom.mesh.io
-** TODO make CLJS compatible
 
+** TODO make CLJS compatible
 ** Configuration parameters
+
 #+BEGIN_SRC clojure :noweb-ref config
   (def ^:dynamic *precision* 5)
 #+END_SRC
+
 ** STL
+
 #+BEGIN_SRC clojure :noweb-ref stl
   (defn write-stl
     "Writes the given mesh as binary STL to output stream. Mesh is
@@ -25,7 +28,7 @@
     [^OutputStream stream mesh]
     (let [faces (g/faces mesh)
           fnormals (g/face-normals mesh true)]
-      (.write stream #+clj (byte-array 80) #+cljs (into-array (repeat 80 0)))
+      (.write stream #?(:clj (byte-array 80) :cljs (into-array (repeat 80 0))))
       (b/write-int32-le stream (count faces))
       (doseq [[a b c :as f] faces]
         (b/write-vec3-le stream (or (get fnormals f) (gu/ortho-normal f)))
@@ -34,24 +37,26 @@
         (b/write-vec3-le stream c)
         (b/write-int16-le stream 0))
       stream))
-  
+
   (defn read-stl
     "Reads faces from binary STL inputstream and adds them to given (or new) mesh."
     ([stream]
-       (read-stl stream (bm/basic-mesh)))
+     (read-stl stream (bm/basic-mesh)))
     ([^InputStream stream mesh]
-       (.read stream #+clj (byte-array 80) #+cljs (make-array 80))
-       (loop [mesh mesh, i (b/read-int32-le stream)]
-         (if (pos? i)
-           (let [_ (b/read-vec3-le stream)
-                 a (vec3 (b/read-vec3-le stream))
-                 b (vec3 (b/read-vec3-le stream))
-                 c (vec3 (b/read-vec3-le stream))
-                 _ (b/read-int16-le stream)]
-             (recur (g/add-face mesh [a b c]) (dec i)))
-           mesh))))
+     (.read stream #?(:clj (byte-array 80) :cljs (make-array 80)))
+     (loop [mesh mesh, i (b/read-int32-le stream)]
+       (if (pos? i)
+         (let [_ (b/read-vec3-le stream)
+               a (vec3 (b/read-vec3-le stream))
+               b (vec3 (b/read-vec3-le stream))
+               c (vec3 (b/read-vec3-le stream))
+               _ (b/read-int16-le stream)]
+           (recur (g/add-face mesh [a b c]) (dec i)))
+         mesh))))
 #+END_SRC
+
 ** PLY
+
 #+BEGIN_SRC clojure :noweb-ref ply
   (defn write-ply
     "Writes the given mesh as binary PLY to output stream. For
@@ -62,7 +67,7 @@
           vindex (zipmap vertices (range))
           vnormals (g/vertex-normals mesh false)
           faces (g/faces mesh)
-          fhead #+clj (byte-array 1) #+cljs (make-array 1)
+          ^bytes fhead #?(:clj (byte-array 1) :cljs (make-array 1))
           write-props (fn [props]
                         (doseq [p props]
                           (b/write-str-bytes
@@ -85,28 +90,32 @@
         (when (seq vnormals)
           (b/write-vec3-le stream (get vnormals v))))
       (doseq [f (g/faces mesh)]
-        (#+clj aset-byte #+cljs aset fhead 0 (byte (count f)))
+        (aset fhead 0 (byte (count f)))
         (.write stream fhead)
         (write-vindex f))
       stream))
 #+END_SRC
+
 ** TODO OBJ
    - Note taken on [2015-03-15 Sun 01:49] \\
      update to use protocols
+
 #+BEGIN_SRC clojure :noweb-ref obj
   (defn write-obj
     [^OutputStream stream {:keys [vertices vnormals faces]}]
     (let [vertices (keys vertices)
           has-vnormals? (not (nil? (seq vnormals)))
           fmt-fn (fn [prefix]
-                   ,#+clj (let [ff (str "%1." *precision* "f ")
-                               ff (str prefix " " ff ff ff "\n")]
-                           #(format ff (double %1) (double %2) (double %3)))
-                   ,#+cljs #(str
-                            prefix " "
-                            (.toFixed (js/Number. %1) *precision*) " "
-                            (.toFixed (js/Number. %2) *precision*) " "
-                            (.toFixed (js/Number. %3) *precision*) "\n"))
+                   #?(:clj
+                      (let [ff (str "%1." *precision* "f ")
+                            ff (str prefix " " ff ff ff "\n")]
+                        #(format ff (double %1) (double %2) (double %3)))
+                      :cljs
+                      #(str
+                        prefix " "
+                        (.toFixed (js/Number. %1) *precision*) " "
+                        (.toFixed (js/Number. %2) *precision*) " "
+                        (.toFixed (js/Number. %3) *precision*) "\n")))
           fmt-vertex (fmt-fn "v")
           fmt-vnormal (fmt-fn "vn")
           fmt-fvert (if has-vnormals? #(str % "//" %2 " ") #(str % " "))
@@ -133,19 +142,23 @@
            (fmt-face (map #(inc (get vindex %)) fverts)))))
       stream))
 #+END_SRC
+
 ** OFF
+
 #+BEGIN_SRC clojure :noweb-ref off
   (defn write-off
     [^OutputStream stream mesh]
     (let [vertices (g/vertices mesh)
           faces (g/faces mesh)
           fmt-vertex
-          ,#+clj (let [ff (str "%1." *precision* "f ")
-                      ff (str ff ff ff "\n")]
-                  #(format ff (double %1) (double %2) (double %3)))
-          ,#+cljs #(str (.toFixed (js/Number. %1) *precision*) " "
-                       (.toFixed (js/Number. %2) *precision*) " "
-                       (.toFixed (js/Number. %3) *precision*) "\n")
+          #?(:clj
+             (let [ff (str "%1." *precision* "f ")
+                   ff (str ff ff ff "\n")]
+               #(format ff (double %1) (double %2) (double %3)))
+             :cljs
+             #(str (.toFixed (js/Number. %1) *precision*) " "
+                   (.toFixed (js/Number. %2) *precision*) " "
+                   (.toFixed (js/Number. %3) *precision*) "\n"))
           vindex (zipmap vertices (range))]
       (b/write-str-bytes stream "OFF\n")
       (b/write-str-bytes stream (str (count vertices) " " (count faces) " 0\n"))
@@ -155,13 +168,12 @@
       (doseq [fverts faces]
         (b/write-str-bytes
          stream
-         (->> (concat [(count fverts)] " "
-                      (map #(str (vindex %) " ") fverts)
-                      "\n")
+         (->> (concat [(count fverts)] " " (map #(str (vindex %) " ") fverts) "\n")
               (apply str))))))
 #+END_SRC
 
 ** Complete namespace definition
+
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/io.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.io
     (:require
@@ -171,9 +183,9 @@
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.triangle :as t]
      [thi.ng.common.data.byteutils :as b])
-    ,#+clj
-    (:import
-     [java.io OutputStream InputStream]))
+    #?(:clj
+       (:import
+        [java.io OutputStream InputStream])))
 
   <<config>>
 

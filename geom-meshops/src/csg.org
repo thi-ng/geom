@@ -217,18 +217,18 @@ meshes.
 ** Complete namespace definition
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/csg.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.csg
-    ,#+cljs
-    (:require-macros
-     [thi.ng.macromath.core :as mm])
+    #?(:cljs
+       (:require-macros
+        [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec3 V3X V3Y]]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.plane :as p]
      [thi.ng.geom.types.utils :as tu]
-     [thi.ng.common.data.core :as d]
-     [thi.ng.common.math.core :as m :refer [PI TWO_PI *eps*]]
-     ,#+clj [thi.ng.macromath.core :as mm]))
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]]
+     #?(:clj [thi.ng.math.macros :as mm])))
 
   (declare csg-polygon)
 

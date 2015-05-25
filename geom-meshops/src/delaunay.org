@@ -81,15 +81,15 @@ is to add additional point(s) in the center.
 
 #+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/mesh/delaunay.cljx :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.delaunay
-    ,#+cljs (:require-macros [thi.ng.macromath.core :as mm])
+    #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.triangle :refer [circumcircle-raw triangle2]]
-     [thi.ng.common.math.core :as m :refer [*eps* delta=]]
-     ,#+clj [thi.ng.macromath.core :as mm])
-    #+clj
-    (:import
-     [thi.ng.geom.types Triangle2]))
+     [thi.ng.math.core :as m :refer [*eps* delta=]]
+     #?(:clj [thi.ng.math.macros :as mm]))
+    #?(:clj
+       (:import
+        [thi.ng.geom.types Triangle2])))
 
   <<delaunay>>
 #+END_SRC

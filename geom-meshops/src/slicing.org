@@ -170,10 +170,10 @@
      [thi.ng.geom.mesh.ops :as ops]
      [thi.ng.geom.types.utils :as tu]
      [clojure.java.io :as io]
-     [thi.ng.common.math.core :as m]
-     [thi.ng.common.data.core :as d]
+     [thi.ng.math.core :as m]
+     [thi.ng.dstruct.core :as d]
      [thi.ng.common.data.intervaltree :as it]
-     [thi.ng.macromath.core :as mm])
+     [thi.ng.math.macros :as mm])
     (:import
      (java.awt.image BufferedImage)
      (java.awt Graphics2D RenderingHints Color Font GradientPaint)
