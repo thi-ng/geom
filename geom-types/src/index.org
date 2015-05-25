@@ -122,9 +122,6 @@ target/geom-types-<<conf-version()>>.js
                    <<dep-cljs>>
                    [thi.ng/geom-core "<<conf-version()>>"]]
 
-    :source-paths ["src"]
-    :test-paths   ["test"]
-
     :profiles     {:dev {:dependencies [<<dep-criterium>>]
                          :plugins      [<<dep-cljsbuild>>
                                         <<dep-cljs-test>>]

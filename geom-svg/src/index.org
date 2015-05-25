@@ -70,11 +70,9 @@ target/geom-svg-<<conf-version()>>.js
                    [thi.ng/geom-core "<<conf-version()>>"]
                    [thi.ng/geom-types "<<conf-version()>>"]
                    [thi.ng/geom-meshops "<<conf-version()>>"]
+                   <<dep-strf>>
                    <<dep-color>>
                    <<dep-hiccup>>]
-
-    :source-paths ["src"]
-    :test-paths   ["test"]
 
     :profiles     {:dev {:dependencies [<<dep-criterium>>]
                          :plugins      [<<dep-cljsbuild>>

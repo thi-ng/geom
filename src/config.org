@@ -76,16 +76,10 @@ target/test-classes
 #+END_SRC
 
 *** Development
-**** [[https://github.com/lynaghk/cljx][Cljx]]
-#+NAME: dep-cljx
-#+BEGIN_SRC clojure
-[com.keminglabs/cljx "0.6.0"]
-#+END_SRC
-
 **** [[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]
 #+NAME: dep-cljsbuild
 #+BEGIN_SRC clojure
-[lein-cljsbuild "1.0.5"]
+[lein-cljsbuild "1.0.6"]
 #+END_SRC
 
 **** [[https://github.com/hugoduncan/criterium][Criterium]]
@@ -99,21 +93,25 @@ target/test-classes
 #+BEGIN_SRC clojure
 [com.cemerick/clojurescript.test "0.3.3"]
 #+END_SRC
+
 **** [[https://github.com/davidsantiago/perforate][perforate]]
 #+NAME: dep-perforate
 #+BEGIN_SRC clojure
 [perforate "0.3.4"]
 #+END_SRC
+
 **** [[https://github.com/postspectacular/perforate-x][perforate-x]]
 #+NAME: dep-perforate-x
 #+BEGIN_SRC clojure
 [perforate-x "0.1.0"]
 #+END_SRC
+
 **** [[https://github.com/RyanMcG/lein-npm][lein-npm]]
 #+NAME: dep-lein-npm
 #+BEGIN_SRC clojure
 [lein-npm "0.5.0"]
 #+END_SRC
+
 **** [[https://www.npmjs.com/package/benchmark][node benchmark]]
 #+NAME: dep-npm-benchmark
 #+BEGIN_SRC clojure

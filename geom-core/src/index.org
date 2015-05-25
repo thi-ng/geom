@@ -82,9 +82,6 @@ target/geom-core-<<conf-version()>>.js
                    <<dep-math>>
                    <<dep-dstruct>>]
 
-    :source-paths ["src"]
-    :test-paths   ["test"]
-
     :perforate {:environments [{:namespaces [thi.ng.geom.bench.core.vector]}]}
 
     :profiles     {:dev {:dependencies [<<dep-perforate-x>>]

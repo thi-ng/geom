@@ -55,37 +55,18 @@ target/geom-physics-<<conf-version()>>.js
     :min-lein-version "2.4.0"
 
     :dependencies [<<dep-clj>>
+                   <<dep-cljs>>
                    [thi.ng/geom-core "<<conf-version()>>"]
                    [thi.ng/geom-types "<<conf-version()>>"]]
 
-    :source-paths ["src/cljx"]
-    :test-paths   ["<<conf-gen-test-path>>"]
-
-    :profiles     {:dev {:dependencies [<<dep-cljs>>
-                                        <<dep-criterium>>]
-                         :plugins      [<<dep-cljx>>
-                                        <<dep-cljsbuild>>
+    :profiles     {:dev {:dependencies [<<dep-criterium>>]
+                         :plugins      [<<dep-cljsbuild>>
                                         <<dep-cljs-test>>]
                          :global-vars {*warn-on-reflection* true}
                          :jvm-opts ^:replace []
-                         :auto-clean false
-                         :prep-tasks [["cljx" "once"]]
-                         :aliases {"cleantest" ["do" "clean," "cljx" "once," "test," "cljsbuild" "test"]}}}
+                         :aliases {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]}}}
 
-    :cljx         {:builds [{:source-paths ["src/cljx"]
-                             :output-path "<<conf-gen-source-path>>"
-                             :rules :clj}
-                            {:source-paths ["src/cljx"]
-                             :output-path "<<conf-gen-source-path>>"
-                             :rules :cljs}
-                            {:source-paths ["test/cljx"]
-                             :output-path "<<conf-gen-test-path>>"
-                             :rules :clj}
-                            {:source-paths ["test/cljx"]
-                             :output-path "<<conf-gen-test-path>>"
-                             :rules :cljs}]}
-
-    :cljsbuild    {:builds [{:source-paths ["<<conf-gen-source-path>>" "<<conf-gen-test-path>>"]
+    :cljsbuild    {:builds [{:source-paths ["src" "test"]
                              :id "simple"
                              :compiler {:output-to "<<cljs-artefact-path>>"
                                         :optimizations :whitespace
@@ -126,7 +107,7 @@ symbol =version= holding the version string defined above:
 
 *** Version namespace                                              :noexport:
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/physics/version.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/physics/version.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.physics.version)
   (def version "<<conf-version()>>")
 #+END_SRC

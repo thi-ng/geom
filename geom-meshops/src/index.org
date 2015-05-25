@@ -64,9 +64,6 @@ target/geom-meshops-<<conf-version()>>.js
                    [thi.ng/geom-core "<<conf-version()>>"]
                    [thi.ng/geom-types "<<conf-version()>>"]]
 
-    :source-paths ["src"]
-    :test-paths   ["test"]
-
     :profiles     {:dev {:dependencies [<<dep-criterium>>]
                          :plugins      [<<dep-cljsbuild>>
                                         <<dep-cljs-test>>]
