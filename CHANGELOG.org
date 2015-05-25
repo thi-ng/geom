@@ -1,3 +1,25 @@
+** r803 - 2015-05-26
+
+| [[https://github.com/thi-ng/geom/commit/08cae049fe8384506c9851369a22f49d1333897a][08cae04]] | [all] update thi.ng/color dependency |
+| [[https://github.com/thi-ng/geom/commit/0de25ade0bf3484bc5b216ae199b8f8d1b67411c][0de25ad]] | [physics] bugfix typo in IMeta impl |
+| [[https://github.com/thi-ng/geom/commit/c8ca5e56a7f01eaba996a589199d25571f9a3d88][c8ca5e5]] | [meta] remove cljx step from install scripts |
+| [[https://github.com/thi-ng/geom/commit/35a68a3e7dc13180cdbee34918f497b7db84a2bb][35a68a3]] | [svg] bugfix all-as-svg for clj version, bugfix regression in example03 (needs GMesh) |
+| [[https://github.com/thi-ng/geom/commit/3ba44eaa9b11e337b4d21ac0960d9ff3f3da9909][3ba44ea]] | [meta] update tangle-module & tangle-all to clear babel/src & babel/test dirs |
+| [[https://github.com/thi-ng/geom/commit/765f6fe4cf50d9ef173d682b137c2ef5046bb4d5][765f6fe]] | [voxel] remove cljx dependency, switch to clj1.7 reader conditionals |
+| [[https://github.com/thi-ng/geom/commit/34c0418edb7c1f86c27c32ceca5a6b0f4013b241][34c0418]] | [physics] remove cljx dependency, switch to clj1.7 reader conditionals |
+| [[https://github.com/thi-ng/geom/commit/337e630ee0478f1c46b569a3bd610fe0b1e1ea14][337e630]] | [all] update cljsbuild dependency, update all lein project files |
+| [[https://github.com/thi-ng/geom/commit/698a9c393b2c5a2c0be60a855e0f7d08342645d2][698a9c3]] | [svg] bugfix tangle export paths |
+| [[https://github.com/thi-ng/geom/commit/f9e6a2ee225c2b3d2d9b02128a577238ff40933a][f9e6a2e]] | [webgl] update readme |
+| [[https://github.com/thi-ng/geom/commit/a0479b32255f2cbd3e19cf694272ad73d655513a][a0479b3]] | [webgl] update new thi.ng dependencies |
+| [[https://github.com/thi-ng/geom/commit/781783cc318f8e70df99e9b5d15b112604419a40][781783c]] | [svg] remove cljx dependency, switch to clj1.7 reader conditionals |
+| [[https://github.com/thi-ng/geom/commit/73c034c4e75413696fe467d40265dbee8ce75e3d][73c034c]] | [meshops] bugfix tangle export paths |
+| [[https://github.com/thi-ng/geom/commit/127d83bf72b6dce3d08150880e9d053bb81a4d90][127d83b]] | [meshops] remove cljx dependency, switch to clj1.7 reader conditionals |
+| [[https://github.com/thi-ng/geom/commit/2742d32b8e584076fa92ad44b83caa5e928ffd71][2742d32]] | [all] update new thi.ng deps |
+| [[https://github.com/thi-ng/geom/commit/5b5e952d0bbf099df19409ad39f150e359515cdd][5b5e952]] | [types] remove cljx dependency, switch to clj1.7 reader conditionals |
+| [[https://github.com/thi-ng/geom/commit/0d87f4686eaf324cf7f8ec27765550d14398c189][0d87f46]] | [all] update deps, add new deps in lieu of thi.ng/common (dstruct, math, strf) |
+| [[https://github.com/thi-ng/geom/commit/d32651ede3c048ba153625907bd6c7462f323ca0][d32651e]] | [core] remove cljx dependency, switch to clj1.7 reader conditionals |
+| [[https://github.com/thi-ng/geom/commit/661dccf7af8dcd0ea43a055c0f4f0da3ae93f185][661dccf]] | fixed #20, supply init value for transducer in gmesh/compute-vertex-normals, add single vertex/face-normal accessors for GMesh & BasicMesh |
+
 ** r783 - 2015-04-27
 
 | [[https://github.com/thi-ng/geom/commit/9276792827b8ac75c9569e3a4cae91db98d12f70][9276792]] | [meta] add geom-voxel module to meta geom project.clj |
