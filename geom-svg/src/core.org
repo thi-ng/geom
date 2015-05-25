@@ -73,13 +73,12 @@ libraries available and we don't want to be prescriptive here and
 introduce uneccessary dependencies.
 
 #+BEGIN_SRC clojure :noweb-ref svg
-  ,#+clj
-  (defn serialize
-    ^String [svg] (str xml-preamble (html {:mode :xml} svg)))
+  #?@(:clj
+      [(defn serialize
+         ^String [svg] (str xml-preamble (html {:mode :xml} svg)))
 
-  ,#+clj
-  (defn serialize-as-byte-array
-    ^bytes [svg] (.getBytes (serialize svg) "UTF-8"))
+       (defn serialize-as-byte-array
+         ^bytes [svg] (.getBytes (serialize svg) "UTF-8"))])
 #+END_SRC
 
 ** Attribute conversion
@@ -411,18 +410,17 @@ Btw. This example can be run from the REPL via this command:
   ;; CLJS walk differs to clojure's impl and doesn't work for defrecords
   ;; hence we provide a custom version here...
 
-  ,#+cljs
-  (defn walk
-    [inner outer form]
-    (cond
-     (seq? form) (outer (doall (map inner form)))
-     (vector? form) (outer (mapv inner form))
-     :else (outer form)))
+  #?@(:cljs
+      [(defn walk
+         [inner outer form]
+         (cond
+           (seq? form) (outer (doall (map inner form)))
+           (vector? form) (outer (mapv inner form))
+           :else (outer form)))
 
-  ,#+cljs
-  (defn postwalk
-    [f form]
-    (walk (partial postwalk f) f form))
+       (defn postwalk
+         [f form]
+         (walk (partial postwalk f) f form))])
 
   (defn all-as-svg
     [form]
@@ -433,18 +431,18 @@ Btw. This example can be run from the REPL via this command:
 
 ** Complete namespace: svg.core
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/core.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/svg/core.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.core
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :refer [vec2]]
      [thi.ng.geom.core.matrix :as mat :refer [M32]]
-     [thi.ng.common.data.core :as d]
-     [thi.ng.common.math.core :as m]
-     [thi.ng.common.stringformat :as f]
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.math.core :as m]
+     [thi.ng.strf.core :as f]
      [thi.ng.color.core :as col]
-     #+clj [hiccup.core :refer [html]]))
+     #?(:clj [hiccup.core :refer [html]])))
 
   <<const>>
 
@@ -461,16 +459,16 @@ Btw. This example can be run from the REPL via this command:
 
 ** Complete namespace: svg.adapter
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/adapter.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/svg/adapter.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.adapter
     (:require
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.types]
-     ,#+clj [clojure.walk :refer [postwalk]])
-    ,#+clj
-    (:import
-     [thi.ng.geom.types Circle2 Line2 LineStrip2 Polygon2 Rect2 Triangle2]))
+     #?(:clj [clojure.walk :refer [postwalk]]))
+    #?(:clj
+       (:import
+        [thi.ng.geom.types Circle2 Line2 LineStrip2 Polygon2 Rect2 Triangle2])))
 
   <<adapter>>
 #+END_SRC

@@ -59,7 +59,7 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/cljx/thi/ng/geom/svg/renderer.cljx :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/svg/renderer.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.renderer
     (:require
      [thi.ng.geom.core :as g]

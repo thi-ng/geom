@@ -30,7 +30,7 @@ is defined in its own namespace and can be loaded from the REPL via:
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.geom.svg.shaders :as shader]
      [thi.ng.geom.svg.renderer :as render]
-     [thi.ng.common.math.core :as m]
+     [thi.ng.math.core :as m]
      [clojure.java.io :as io]))
 
   (def width  640)
@@ -91,7 +91,7 @@ is defined in its own namespace and can be loaded from the REPL via:
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.geom.svg.shaders :as shader]
      [thi.ng.geom.svg.renderer :as render]
-     [thi.ng.common.math.core :as m]))
+     [thi.ng.math.core :as m]))
 
   (def width    640)
   (def height   480)
@@ -196,8 +196,8 @@ is defined in its own namespace and can be loaded from the REPL via:
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :refer [vec2]]
      [thi.ng.geom.svg.core :as svg]
-     [thi.ng.common.math.core :as m]
-     [thi.ng.macromath.core :as mm]))
+     [thi.ng.math.core :as m]
+     [thi.ng.math.macros :as mm]))
 
   (defn spiral
     [center start end r1 r2 steps]
@@ -232,8 +232,8 @@ is defined in its own namespace and can be loaded from the REPL via:
      [thi.ng.geom.core.vector :refer [vec2]]
      [thi.ng.geom.core.matrix :refer [M32]]
      [thi.ng.geom.svg.core :as svg]
-     [thi.ng.common.math.core :as m]
-     [thi.ng.macromath.core :as mm]))
+     [thi.ng.math.core :as m]
+     [thi.ng.math.macros :as mm]))
 
   (defn spiral
     [center start end r1 r2 steps]

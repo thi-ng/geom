@@ -172,7 +172,7 @@
      [clojure.java.io :as io]
      [thi.ng.math.core :as m]
      [thi.ng.dstruct.core :as d]
-     [thi.ng.common.data.intervaltree :as it]
+     [thi.ng.dstruct.intervaltree :as it]
      [thi.ng.math.macros :as mm])
     (:import
      (java.awt.image BufferedImage)
