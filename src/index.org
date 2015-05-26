@@ -30,6 +30,10 @@
 
 ** Overview
 
+*Note:* This library relies on the new
+conditional reader syntax of recent Clojure & Clojurescript versions
+and therefore is *not compatible with Clojure versions < 1.7.0*...
+
 This project is part of the [[https://github.com/thi-ng/][thi.ng]] collection of Clojure &
 Clojurescript libraries. It constitutes the current chapter-in-writing
 in a long, ongoing quest to create a comprehensive, cross-platform,
@@ -45,10 +49,11 @@ design in general. We attempt to realise this goal by defining almost
 all operations as [[file:core.org][polymorphic protocols]] (currently approx. 50 of
 them). These are implemented to different extends by the various basic
 [[file:types.org][entities/types]] and together form a small domain-specific language
-(whilst remaining fully extensible) to easily create, transform &
-export geometry. At the core of this DSL is an extensive (and still
-growing) set of vector, matrix & quaternion types/operations, which
-the rest of the library is built on, currently:
+(whilst remaining fully extensible) to easily create, transform,
+visualise & export geometry. At the core of this DSL is an extensive
+(and still growing) set of vector, matrix & quaternion
+types/operations, which the rest of the library is built on,
+currently:
 
 *** Geometric entities
 
@@ -106,11 +111,11 @@ operations:
 *** API scope
 
 Since the core lib does not provide any display & rendering
-functionality at all, a number of support libraries are being worked
-on, incl. WebGL & SVG support via Clojurescript and wrappers &
-GUI libraries for JOGL based desktop apps. Together with sister
-libraries like [[https://github.com/thi-ng/luxor][luxor]], it's also possible to generate complete 3D
-scenes for high quality & high resolution rendering using [[http://luxrender.net][Luxrender]].
+functionality at all, a number of support modules are being worked on,
+incl. WebGL & SVG support via Clojurescript and wrappers & GUI
+libraries for [[http://jogamp.org/jogl/www/][JOGL]] based desktop apps. Together with sister libraries
+like [[https://github.com/thi-ng/luxor][luxor]], it's also possible to generate complete 3D scenes for high
+quality & high resolution rendering using [[http://luxrender.net][Luxrender]].
 
 Furthermore, providing all functionality under a common API for both
 Clojure & Clojurescript, makes it trivial to offload heavy operations

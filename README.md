@@ -11,6 +11,10 @@ Currently BETA quality, pre-release software. The libraries have been
 used in production for several projects, but further breaking API
 changes are still forthcoming...
 
+**Note:** This library relies on the new
+conditional reader syntax of recent Clojure & Clojurescript versions
+and therefore is **not compatible with Clojure versions < 1.7.0**...
+
 ## Description & usage
 
 See [index.org](src/index.org) for details. Also please note, the
