@@ -93,11 +93,11 @@ Clojure & Clojurescript, makes it trivial to offload heavy operations
 
 ** Library module structure
 
-For the upcoming 0.3.0 release, the project has been restructured into
-a number of modules, each addressing a different level of abstraction
-and to group namespaces based on functionality. This reduces potential
-code bloat for CLJS applications, but should also make it less
-daunting for newcomers to navigate the project.
+The project has been structured into a number of modules, each
+addressing a different level of abstraction and to group namespaces
+based on functionality. This reduces potential code bloat for CLJS
+applications, but should also make it less daunting for newcomers to
+navigate this quite large project.
 
 *** [[../geom-core/src/index.org][geom-core]]
 
@@ -178,7 +178,7 @@ A full test suite, website & tutorials are actively being worked on.
 Demo repository for all thi.ng libraries:
 
 - [[https://github.com/thi-ng/demos][Demo repository]]
-- [[http://demo.thi.ng/geom/physics/strands.html][SVG physics strands]] (Clojurescript online demo)
+  - [[http://demo.thi.ng/geom/physics/strands.html][SVG physics strands]] (Clojurescript online demo)
 
 A preliminary list of other projects using this library:
 
