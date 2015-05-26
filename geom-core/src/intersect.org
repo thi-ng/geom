@@ -3,20 +3,37 @@
 * Contents                                                         :toc_3_gh:
  - [[#namespace-thinggeomcoreintersect][Namespace: thi.ng.geom.core.intersect]]
      - [[#circle][Circle]]
+         - [[#circle---circle][Circle - Circle]]
      - [[#rect][Rect]]
-     - [[#rect-circle][Rect-Circle]]
+         - [[#rect---rect][Rect - Rect]]
+         - [[#rect---circle][Rect - Circle]]
      - [[#aabb][AABB]]
-     - [[#aabb-sphere][AABB-Sphere]]
+         - [[#aabb---aabb][AABB - AABB]]
+         - [[#aabb---sphere][AABB - Sphere]]
      - [[#sphere][Sphere]]
+         - [[#sphere---sphere][Sphere - Sphere]]
+         - [[#sphere---ray][Sphere - Ray]]
      - [[#triangle3][Triangle3]]
+         - [[#triangle3---ray][Triangle3 - Ray]]
+         - [[#triangle3---aabb][Triangle3 - AABB]]
      - [[#line2][Line2]]
+         - [[#line2---line2][Line2 - Line2]]
+         - [[#line2---linestrip2][Line2 - Linestrip2]]
      - [[#plane][Plane]]
+         - [[#plane---plane][Plane - Plane]]
+         - [[#plane---ray][Plane - Ray]]
+         - [[#plane---aabb][Plane - AABB]]
+         - [[#plane---sphere][Plane - Sphere]]
      - [[#tetrahedron][Tetrahedron]]
+         - [[#helper-fns][Helper fns]]
+         - [[#tetrahedron---tetrahedron][Tetrahedron - Tetrahedron]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
 * Namespace: thi.ng.geom.core.intersect
 
 ** Circle
+
+*** Circle - Circle
 
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-circle-circle?
@@ -36,6 +53,8 @@
 
 ** Rect
 
+*** Rect - Rect
+
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-rect-rect?
     ([{[px py] :p [w h] :size} {[qx qy] :p [qw qh] :size}]
@@ -44,7 +63,7 @@
        (not (or (> px1 qx2) (> px2 qx1) (> py1 qy2) (> py2 qy1)))))
 #+END_SRC
 
-** Rect-Circle
+*** Rect - Circle
 
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-rect-circle?
@@ -58,6 +77,8 @@
 
 ** AABB
 
+*** AABB - AABB
+
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-aabb-aabb?
     ([{pa :p sa :size} {pb :p sb :size}]
@@ -68,7 +89,7 @@
            (and (<= (pa 2) (qb 2)) (<= (pb 2) (qa 2)))))))
 #+END_SRC
 
-** AABB-Sphere
+*** AABB - Sphere
 
 Source:
 Graphics Gems 2 / SO:
@@ -89,6 +110,8 @@ Also works for rect/circle...
 
 ** Sphere
 
+*** Sphere - Sphere
+
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-sphere-sphere?
     ([{p1 :p r1 :r} {p2 :p r2 :r}]
@@ -96,6 +119,8 @@ Also works for rect/circle...
     ([p1 r1 p2 r2]
        (<= (g/dist-squared p1 p2) (mm/addm r1 r2 r1 r2))))
 #+END_SRC
+
+*** Sphere - Ray
 
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-ray-sphere?
@@ -118,6 +143,8 @@ Also works for rect/circle...
 #+END_SRC
 
 ** Triangle3
+
+*** Triangle3 - Ray
 
 Source: http://geomalgorithms.com/a06-_intersect-2.html
 
@@ -146,7 +173,66 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
                     {:type :no-intersect :p i})))))))))
 #+END_SRC
 
+*** Triangle3 - AABB
+
+http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
+
+#+BEGIN_SRC clojure :noweb-ref isec
+  (defn- triaabb-axis-test
+    [pa1 pb1 pa2 pb2 a b fa fb sa sb]
+    (let [q (mm/madd a pa1 b pb1)
+          r (mm/madd a pa2 b pb2)
+          [min max] (if (< q r) [q r] [r q])
+          rad (mm/madd fa sa fb sb)]
+      (if (<= min rad) (>= max (- rad)))))
+
+  (defn- triaabb-edge-test-e0
+    [[ax ay az :as a] [bx by bz :as b] [cx cy cz] [ex ey ez :as e] [sx sy sz]]
+    (let [[fx fy fz] (g/abs e)]
+      (if (triaabb-axis-test ay az cy cz ez (- ey) fz fy sy sz)
+        (if (triaabb-axis-test ax az cx cz (- ez) ex fz fx sx sz)
+          (triaabb-axis-test bx by cx cy ey (- ex) fy fx sx sy)))))
+
+  (defn- triaabb-edge-test-e1
+    [[ax ay az] [bx by bz :as b] [cx cy cz :as c] [ex ey ez :as e] [sx sy sz]]
+    (let [[fx fy fz] (g/abs e)]
+      (if (triaabb-axis-test ay az cy cz ez ey fz fy sy sz)
+        (if (triaabb-axis-test ax az cx cz (- ez) ex fz fx sx sz)
+          (triaabb-axis-test ax ay bx by ey (- ex) fy fx sx sy)))))
+
+  (defn- triaabb-edge-test-e2
+    [[ax ay az :as a] [bx by bz] [cx cy cz :as c] [ex ey ez :as e] [sx sy sz]]
+    (let [[fx fy fz] (g/abs e)]
+      (if (triaabb-axis-test ay az by bz ez (- ey) fz fy sy sz)
+        (if (triaabb-axis-test ax az bx bz (- ez) ex fz fx sx sz)
+          (triaabb-axis-test bx by cx cy ey (- ex) fy fx sx sy)))))
+
+  (defn- triaabb-edge-minmax
+    [a b c s]
+    (if (< (min (min a b) c) s)
+      (>= (max (max a b) c) (- s))))
+
+  (defn intersect-triangle3-aabb?
+    [a b c p s]
+    (let [[sx sy sz :as s] (g/* s 0.5)
+          p (g/+ p s)
+          [ax ay az :as a] (g/- a p)
+          [bx by bz :as b] (g/- b p)
+          [cx cy cz :as c] (g/- c p)
+          e0 (g/- b a)
+          e1 (g/- c b)]
+      (if (triaabb-edge-test-e0 a b c e0 s)
+        (if (triaabb-edge-test-e1 a b c e1 s)
+          (if (triaabb-edge-test-e2 a b c (g/- a c) s)
+            (if (triaabb-edge-minmax ax bx cx sx)
+              (if (triaabb-edge-minmax ay by cy sy)
+                (if (triaabb-edge-minmax az bz cz sz)
+                  (intersect-plane-aabb? a (g/cross e0 e1) s)))))))))
+#+END_SRC
+
 ** Line2
+
+*** Line2 - Line2
 
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-line2-line2?
@@ -174,6 +260,8 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
             {:type :intersect-outside :p i :ua ua :ub ub})))))
 #+END_SRC
 
+*** Line2 - Linestrip2
+
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-line2-edges?
     [rp rq edges]
@@ -193,10 +281,11 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
   (defn intersect-ray2-edges?
     [rp rd edges]
     (intersect-line2-edges? rp (g/madd rd 1e29 rp) edges))
-
 #+END_SRC
 
 ** Plane
+
+*** Plane - Plane
 
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-plane-plane?
@@ -208,6 +297,8 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
             v (* (mm/madd aw od bw) det)]
         {:p (g/madd an u (g/* bn v)) :dir (gu/ortho-normal an bn)})))
 #+END_SRC
+
+*** Plane - Ray
 
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-ray-plane?
@@ -223,12 +314,33 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
             {:type :intersect-outside :p i})))))
 #+END_SRC
 
+*** Plane - AABB
+
+http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
+
+#+BEGIN_SRC clojure :noweb-ref isec
+  (defn intersect-plane-aabb?
+    ([p n q s]
+     (let [s2 (g/* s 0.5)]
+       (intersect-plane-aabb? (g/- p (g/+ q s2)) n s2)))
+    ([[px py pz] [nx ny nz :as n] [sx sy sz]]
+     (let [[vx1 vx2] (if (pos? nx) [(- (- sx) px) (- sx px)] [(- sx px) (- (- sx) px)])
+           [vy1 vy2] (if (pos? ny) [(- (- sy) py) (- sy py)] [(- sy py) (- (- sy) py)])
+           [vz1 vz2] (if (pos? nz) [(- (- sz) pz) (- sz pz)] [(- sz pz) (- (- sz) pz)])]
+       (if (<= (g/dot n (vec3 vx1 vy1 vz1)) 0.0)
+         (>= (g/dot n (vec3 vx2 vy2 vz2)) 0.0)))))
+#+END_SRC
+
+*** Plane - Sphere
+
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-plane-sphere?
     [n w p r] (let [r (+ r *eps*)] (m/in-range? (- r) r (+ (g/dot n p) w))))
 #+END_SRC
 
 ** Tetrahedron
+
+*** Helper fns
 
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn- subdot
@@ -318,7 +430,11 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
                     (face-b2? verts p (g/cross ea eb)))
             (recur edges (next s))))
         true)))
+#+END_SRC
 
+*** Tetrahedron - Tetrahedron
+
+#+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-tetrahedra?
     "Takes 2 seqs of 4 3D points, each defining a tetrahedron. Returns
       true if they intersect. Orientation of points is irrelevant (unlike
@@ -351,6 +467,8 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V2 V3]]
      [thi.ng.math.core :as m :refer [*eps*]]
      #?(:clj [thi.ng.math.macros :as mm])))
+
+  (declare intersect-plane-aabb?)
 
   (defn- sq [x] (* x x))
 
