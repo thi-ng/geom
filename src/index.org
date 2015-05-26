@@ -1,6 +1,31 @@
 #+SETUPFILE: setup.org
 #+TITLE: thi.ng/geom
 
+* Contents                                                         :toc_4_gh:
+ - [[#about-the-project][About the project]]
+     - [[#overview][Overview]]
+         - [[#geometric-entities][Geometric entities]]
+         - [[#geometry-operations][Geometry operations]]
+         - [[#api-scope][API scope]]
+     - [[#library-module-structure][Library module structure]]
+         - [[#geom-coresrcindexorggeom-core][[[../geom-core/src/index.org][geom-core]]]]
+         - [[#geom-typessrcindexorggeom-types][[[../geom-types/src/index.org][geom-types]]]]
+         - [[#geom-meshopssrcindexorggeom-meshops][[[../geom-meshops/src/index.org][geom-meshops]]]]
+         - [[#geom-physicssrcindexorggeom-physics][[[../geom-physics/src/index.org][geom-physics]]]]
+         - [[#geom-svgsrcindexorggeom-svg][[[../geom-svg/src/index.org][geom-svg]]]]
+         - [[#geom-voxelsrcindexorggeom-voxel][[[../geom-voxel/src/index.org][geom-voxel]]]]
+         - [[#geom-webglsrcindexorggeom-webgl][[[../geom-webgl/src/index.org][geom-webgl]]]]
+     - [[#status][Status]]
+     - [[#example-usage][Example usage]]
+     - [[#building--testing-this-project][Building & testing this project]]
+         - [[#testing][Testing]]
+         - [[#working-with-the-repl][Working with the REPL]]
+     - [[#injected-properties][Injected properties]]
+     - [[#leiningen-project-file][Leiningen project file]]
+     - [[#release-history--changelog][Release history & changelog]]
+     - [[#contributors][Contributors]]
+     - [[#license][License]]
+
 * About the project
 
 ** Overview
