@@ -333,7 +333,7 @@ rotation / transformation).
                                         :view     (mat/look-at (v/vec3 0 0 2) (v/vec3) v/V3Y)}
                          :mode         gl/triangles
                          :num-vertices (/ (count verts) 3)
-                         :shader       (->> (basic/make-shader-spec {:use-attrib true :3d true})
+                         :shader       (->> (basic/make-shader-spec-3d true)
                                             (sh/make-shader-from-spec gl))}
                         (buf/make-attribute-buffers-in-spec gl gl/static-draw))]
       (anim/animate
