@@ -37,7 +37,7 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/utils.cljs :noweb yes :mkdirp yes :padline no
 (ns thi.ng.geom.webgl.utils
   (:require
-    [thi.ng.geom.webgl.arrays :as arrays]
+    [thi.ng.typedarrays.core :as arrays]
     [thi.ng.common.error :as err])
   (:require-macros
     [thi.ng.math.macros :as mm]))

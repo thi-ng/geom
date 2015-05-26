@@ -205,8 +205,8 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/buffers.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.buffers
     (:require
+     [thi.ng.typedarrays.core :as arrays]
      [thi.ng.geom.webgl.core :as gl]
-     [thi.ng.geom.webgl.arrays :as arrays]
      [thi.ng.geom.webgl.shaders :as sh]
      [thi.ng.common.error :as err]))
 

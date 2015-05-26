@@ -18,7 +18,6 @@
 
 #+BEGIN_SRC clojure :noweb-ref default-requires
   [thi.ng.geom.webgl.core :as gl]
-  [thi.ng.geom.webgl.arrays :as arrays]
   [thi.ng.geom.webgl.animator :as anim]
   [thi.ng.geom.webgl.buffers :as buf]
   [thi.ng.geom.webgl.shaders :as sh]
@@ -27,6 +26,7 @@
   [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
   [thi.ng.geom.core.matrix :as mat :refer [M44]]
   [thi.ng.geom.types]
+  [thi.ng.typedarrays.core :as arrays]
   [thi.ng.math.core :as m :refer [PI HALF_PI TWO_PI]]
 #+END_SRC
 
@@ -305,11 +305,11 @@ rotation / transformation).
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.webgl.core :as gl]
-     [thi.ng.geom.webgl.arrays :as arrays]
      [thi.ng.geom.webgl.animator :as anim]
      [thi.ng.geom.webgl.buffers :as buf]
      [thi.ng.geom.webgl.shaders :as sh]
-     [thi.ng.geom.webgl.shaders.basic :as basic]))
+     [thi.ng.geom.webgl.shaders.basic :as basic]
+     [thi.ng.typedarrays.core :as arrays]))
 
   (defn colored-verts
     [faces col]

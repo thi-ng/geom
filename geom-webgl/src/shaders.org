@@ -348,8 +348,8 @@ Currently the following options are supported:
     [thi.ng.geom.core :as g]
     [thi.ng.geom.core.matrix]
     [thi.ng.geom.webgl.core :as gl]
-    [thi.ng.geom.webgl.arrays :as arrays]
     [thi.ng.geom.webgl.utils :as glu]
+    [thi.ng.typedarrays.core :as arrays]
     [thi.ng.color.core :as color]
     [thi.ng.common.error :as err]
     [clojure.string :as str]))
@@ -850,7 +850,7 @@ Currently the following options are supported:
      [thi.ng.geom.webgl.core :as gl]
      [thi.ng.geom.webgl.buffers :as buf]
      [thi.ng.geom.webgl.shaders :as sh]
-     [thi.ng.geom.webgl.arrays :as arrays]
+     [thi.ng.typedarrays.core :as arrays]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.math.core :as m]))
 

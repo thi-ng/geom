@@ -816,7 +816,7 @@ using the protocol.
   (ns thi.ng.geom.webgl.core
     (:refer-clojure :exclude [byte float int short keep repeat replace])
     (:require
-     [thi.ng.geom.webgl.arrays :as arrays]
+     [thi.ng.typedarrays.core :as arrays]
      [thi.ng.geom.webgl.utils :as glu]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
