@@ -27,7 +27,7 @@
                         (fn [[t dupes :as state] p]
                           (if (finder t p)
                             [t (conj! dupes p)]
-                            [(g/add-point t p) dupes]))
+                            [(g/add-point t p p) dupes]))
                         [(st/octree (tu/bounding-box (seq points))) (transient [])]
                         points)]
       [tree (persistent! dupes)]))

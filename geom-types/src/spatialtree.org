@@ -398,11 +398,11 @@
 ** Examples
 
 #+BEGIN_SRC clojure
-  (def q (time (reduce add-point (quadtree 0 0 100 100) [[55 10] [25 10] [55 11] [52 11]])))
-  (def o (time (reduce add-point (octree 0 0 0 100 100 100) [[55 10 25] [25 10 55] [55 11 25]])))
+  (def q (time (reduce #(g/add-point % %2 %2) (quadtree 0 0 100 100) [[55 10] [25 10] [55 11] [52 11]])))
+  (def o (time (reduce #(g/add-point % %2 %2) (octree 0 0 0 100 100 100) [[55 10 25] [25 10 55] [55 11 25]])))
 
   (let [points [[55 10] [55 11] [52 11] [25 10]]
-        q (reduce add-point (quadtree 0 0 100 100) points)]
+        q (reduce #(g/add-point % %2 %2) (quadtree 0 0 100 100) points)]
     (pprint q)
     (reduce
      (fn [q p]
@@ -414,5 +414,5 @@
 
   (dotimes [i 10] (time (def q (reduce #(g/add-point % %2 %2) (st/quadtree 0 0 100 100) (for [x (range 0 100 0.5) y (range 0 100 0.5)] [x y])))))
 
-  (dotimes [i 10] (time (def q (reduce add-point (octree 0 0 0 100 100 100) (for [x (range 0 100 2) y (range 0 100 2) z (range 0 100 2)] [x y z])))))
+  (dotimes [i 10] (time (def q (reduce #(g/add-point % %2 %2) (octree 0 0 0 100 100 100) (for [x (range 0 100 2) y (range 0 100 2) z (range 0 100 2)] [x y z])))))
 #+END_SRC
