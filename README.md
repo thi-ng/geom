@@ -7,9 +7,9 @@
 Comprehensive and modular geometry toolkit for Clojure/ClojureScript
 developed in a literate programming style.
 
-Currently BETA quality, pre-release software. The libraries have been
-used in production for several projects, but further breaking API
-changes are still forthcoming...
+Currently BETA quality, largely stable, but pre-release software. The
+libraries have been used in production for several projects, but
+further breaking API changes are still forthcoming...
 
 **Note:** This library relies on the new
 conditional reader syntax of recent Clojure & Clojurescript versions
@@ -26,7 +26,7 @@ at least weekly snapshots of all modules to
 ## Current Leiningen coordinates
 
 ```clj
-[thi.ng/geom "0.0.803"]
+[thi.ng/geom "0.0.815"]
 ```
 
 ## License
