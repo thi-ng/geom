@@ -784,9 +784,8 @@ ordering (row major).
 ** Override print methods
 
 #+BEGIN_SRC clojure :noweb-ref printers
-  #?@(:clj
-      [(defmethod print-method Matrix32 [^Matrix32 o ^java.io.Writer w] (.write w (.toString o)))
-       (defmethod print-method Matrix44 [^Matrix44 o ^java.io.Writer w] (.write w (.toString o)))])
+  #?(:clj (defmethod print-method Matrix32 [^Matrix32 o ^java.io.Writer w] (.write w (.toString o))))
+  #?(:clj (defmethod print-method Matrix44 [^Matrix44 o ^java.io.Writer w] (.write w (.toString o))))
 #+END_SRC
 
 ** Constants

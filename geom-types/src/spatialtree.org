@@ -325,10 +325,13 @@
 *** Override print methods
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  #?@(:clj
-      [(require 'clojure.pprint)
-       (defmethod print-method MutableQuadtreeNode [^MutableQuadtreeNode o ^java.io.Writer w] (.write w (.toString o)))
-       (defmethod print-method MutableOctreeNode [^MutableOctreeNode o ^java.io.Writer w] (.write w (.toString o)))])
+  #?(:clj
+     (do
+       (require 'clojure.pprint)
+       (defmethod print-method MutableQuadtreeNode
+         [^MutableQuadtreeNode o ^java.io.Writer w] (.write w (.toString o)))
+       (defmethod print-method MutableOctreeNode
+         [^MutableOctreeNode o ^java.io.Writer w] (.write w (.toString o)))))
 #+END_SRC
 
 ** Constructors

@@ -73,12 +73,13 @@ libraries available and we don't want to be prescriptive here and
 introduce uneccessary dependencies.
 
 #+BEGIN_SRC clojure :noweb-ref svg
-  #?@(:clj
-      [(defn serialize
-         ^String [svg] (str xml-preamble (html {:mode :xml} svg)))
+  #?(:clj
+     (defn serialize
+       ^String [svg] (str xml-preamble (html {:mode :xml} svg))))
 
-       (defn serialize-as-byte-array
-         ^bytes [svg] (.getBytes (serialize svg) "UTF-8"))])
+  #?(:clj
+     (defn serialize-as-byte-array
+       ^bytes [svg] (.getBytes (serialize svg) "UTF-8")))
 #+END_SRC
 
 ** Attribute conversion
