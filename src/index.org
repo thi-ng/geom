@@ -230,10 +230,10 @@ migrated to the demo repo soon):
 ** Building & testing this project
 
 This project is written in a literate programming format and requires
-[[https://www.gnu.org/software/emacs/][Emacs]] & [[http://orgmode.org][Org-mode]] to generate usable source code in [[https://github.com/lynaghk/cljx][CLJX]] form. Assuming
-both tools are installed, the easiest way to generate a working
-project is via command line (make sure =emacs= is on your path or else
-edit its path in =tangle.sh=):
+[[https://www.gnu.org/software/emacs/][Emacs]] & [[http://orgmode.org][Org-mode]] to generate usable source code. Assuming both tools
+are installed, the easiest way to generate a working project is via
+command line (make sure =emacs= is on your path or else edit its path
+in =tangle.sh=):
 
 #+BEGIN_SRC bash
   git clone https://github.com/thi-ng/geom.git
@@ -267,6 +267,16 @@ complete build & tests for both CLJ & CLJS versions.
   lein cleantest # some tests currently fail due to still missing protocol impls
 #+END_SRC
 
+*Important note:* Due to the newness of the conditional reader
+expressions and the CLJC file format introduced with Clojure 1.7, the
+=lein test= task does currently *not* find any of the Clojure tests
+automatically and you'll need to specify them manually as argument to
+this command. E.g. like this:
+
+#+BEGIN_SRC
+lein test thi.ng.geom.core.test.core
+#+END_SRC
+
 Afterwards, to build the Clojurescript version simply run =lein
 cljsbuild test= from the same directory. A small HTML harness for the
 resulting JS file is also located in that folder (=babel/index.html=),
@@ -274,11 +284,10 @@ allowing for further experimentation in the browser.
 
 *** Working with the REPL
 
-Since the generated =project.clj= files include REPL hooks
-for CLJX, editing files in Org-mode, then re-loading & testing changes
-is quite trivial. Simply launch a REPL (via lein or Emacs) as usual.
-Everytime you've made changes to an =.org= file, re-tangle it from
-Emacs or =tangle.sh=, then reload the namespace in the REPL via
+Editing code blocks / files in Org-mode, then re-loading & testing
+changes is quite trivial. Simply launch a REPL (via lein or Emacs) as
+usual. Everytime you've made changes to an =.org= file, re-tangle it
+from Emacs or =tangle.sh=, then reload the namespace in the REPL via
 =(require 'thi.ng.geom... :reload)= or similar.
 
 ** Injected properties                                             :noexport:

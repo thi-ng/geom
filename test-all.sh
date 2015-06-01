@@ -13,7 +13,7 @@ main() {
         echo "testing module $PREFIX$m..."
         echo "----------------------------------------"
         cd $PROGDIR/$PREFIX$m/babel
-        lein do clean, cljx once
+        lein do clean
         lein test
         lein cljsbuild test
     done
