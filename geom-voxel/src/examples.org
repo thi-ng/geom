@@ -2,20 +2,28 @@
 
 * geom.voxels examples
 
+** Namespaces used by all the examples
+
+#+BEGIN_SRC clojure :noweb-ref default-requires
+  [thi.ng.geom.core :as g]
+  [thi.ng.geom.core.vector :refer [vec3]]
+  [thi.ng.geom.voxel.svo :as svo]
+  [thi.ng.geom.voxel.isosurface :as iso]
+  [thi.ng.geom.mesh.io :as mio]
+  [thi.ng.math.core :as m]
+  [clojure.java.io :as io]
+#+END_SRC
+
+** Example: Gyroid function contained in two boxes
+
 This is a render of the voxel mesh generated with the code below:
 
 [[../../assets/svo-d7.jpg]]
 
-#+BEGIN_SRC clojure :tangle ../babel/examples/example01.clj :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../babel/examples/example01.clj :noweb yes :mkdirp yes :padline no
   (ns example01
     (:require
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :refer [vec3]]
-     [thi.ng.geom.voxel.svo :as svo]
-     [thi.ng.geom.voxel.isosurface :as iso]
-     [thi.ng.geom.mesh.io :as mio]
-     [thi.ng.math.core :as m]
-     [clojure.java.io :as io]))
+     <<default-requires>>))
 
   (def res (double 1/8))
   (def wall 0.25)
@@ -68,4 +76,65 @@ This is a render of the voxel mesh generated with the code below:
   (time
    (with-open [o (io/output-stream "voxel.stl")]
      (mio/write-stl o (g/tessellate (iso/surface-mesh v4 11 0.5)))))
+#+END_SRC
+
+** Example: Sphere erosion
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/example02.clj :noweb yes :mkdirp yes :padline no
+  (ns example02
+    (:require
+     <<default-requires>>))
+
+  (def res (double 1/2))
+  (def num-holes 30)
+
+  (defn voxel-sphere
+    ([tree op o r res]
+     (let [rg (range (- r) (+ r res) res)]
+       (->> (for [x rg y rg, z rg
+                  :let [v (vec3 x y z)]
+                  :when (<= (g/mag v) r)] (g/+ o v))
+            (svo/apply-voxels op tree)))))
+
+  (time
+   (def v
+     (reduce
+      (fn [tree [op o r]] (voxel-sphere tree op o r res))
+      (svo/voxeltree 32 res)
+      (concat
+       [[svo/set-at (vec3 15 15 15) 14]]
+       (repeatedly
+        num-holes
+        #(vector
+          svo/delete-at
+          (vec3 (m/random 32) (m/random 32) (m/random 32))
+          (m/random 4 8)))))))
+
+  (time
+     (with-open [o (io/output-stream "sphere.stl")]
+       (mio/write-stl o (g/tessellate (iso/surface-mesh v 10 0.5)))))
+#+END_SRC
+
+** Example: 3D Simplex Noise
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/example03.clj :noweb yes :mkdirp yes :padline no
+  (ns example03
+    (:require
+     <<default-requires>>
+     [thi.ng.math.simplexnoise :as n]))
+
+  (def res (double 1/2))
+  (def n-scale 0.1)
+  (def iso-val 0.5)
+
+  (def v
+    (let [r (range 1 31 res)]
+      (->> (for [x r y r z r
+                 :when (<= iso-val (m/abs (n/noise3 (* x n-scale) (* y n-scale) (* z n-scale))))]
+             (vec3 x y z))
+           (svo/apply-voxels svo/set-at (svo/voxeltree 32 res)))))
+
+  (time
+   (with-open [o (io/output-stream "noise.stl")]
+     (mio/write-stl o (g/tessellate (iso/surface-mesh v 10 iso-val)))))
 #+END_SRC
