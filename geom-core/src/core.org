@@ -33,7 +33,7 @@
     (abs [_]))
 #+END_SRC
 
-**** PMathOps
+**** PMutableMathOps
 
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PMutableMathOps
