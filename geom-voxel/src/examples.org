@@ -80,6 +80,8 @@ This is a render of the voxel mesh generated with the code below:
 
 ** Example: Sphere erosion
 
+[[../../assets/svo-sphere-erosion.jpg]]
+
 #+BEGIN_SRC clojure :tangle ../babel/examples/example02.clj :noweb yes :mkdirp yes :padline no
   (ns example02
     (:require
@@ -116,6 +118,8 @@ This is a render of the voxel mesh generated with the code below:
 #+END_SRC
 
 ** Example: 3D Simplex Noise
+
+[[../../assets/svo-simplexnoise.jpg]]
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/example03.clj :noweb yes :mkdirp yes :padline no
   (ns example03
