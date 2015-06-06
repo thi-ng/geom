@@ -1,6 +1,6 @@
 #!/bin/sh
 
-readonly MODULES="core types meshops physics svg voxel webgl"
+readonly MODULES="core types meshops physics svg viz voxel webgl"
 FILES="src/index.org"
 
 for m in $MODULES; do

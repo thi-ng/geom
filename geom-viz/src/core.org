@@ -1,0 +1,296 @@
+#+SETUPFILE: ../../src/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#namespace-thinggeomvizcore][Namespace: thi.ng.geom.viz.core]]
+     - [[#example-usage][Example usage]]
+         - [[#scatter-plot][Scatter plot]]
+         - [[#contour-plot][Contour plot]]
+     - [[#scales][Scales]]
+         - [[#linear-scale][Linear scale]]
+         - [[#logarithmic-scale][Logarithmic scale]]
+     - [[#axis--tick-generators][Axis & tick generators]]
+         - [[#svg-axis-generators][SVG axis generators]]
+         - [[#logarithmic][Logarithmic]]
+     - [[#2d-plotting-svg][2D Plotting (SVG)]]
+         - [[#generic-plotting-helpers][Generic plotting helpers]]
+         - [[#scatter-plot][Scatter plot]]
+         - [[#contour-lines][Contour lines]]
+         - [[#custom-shape-drawing][Custom shape drawing]]
+     - [[#todo-3d-plotting][TODO 3D Plotting]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
+* Namespace: thi.ng.geom.viz.core
+
+** Example usage
+
+*** Scatter plot
+
+[[http://media.thi.ng/geom/viz/scatter.svg]]
+
+#+BEGIN_SRC clojure :noweb-ref example1
+  (require '[thi.ng.geom.viz.core :as viz] :reload)
+  (require '[thi.ng.geom.svg.core :as svg])
+  (require '[thi.ng.math.core :as m])
+
+  (->> {:x-axis   (viz/log-axis 10 [0.1 201] [50 590] 550)
+        :y-axis   (viz/log-axis 10 [0.1 101] [550 20] 50)
+        :grid     {:attribs {:stroke "#caa"}
+                   :minor-x true
+                   :minor-y true}
+        :data     [{:values   (map (juxt identity #(Math/sqrt %)) (range 0 200 2))
+                    :attribs  {:fill "#0af" :stroke "none"}
+                    :layout   viz/svg-scatter-plot}
+                   {:values   (map (juxt identity #(m/random %)) (range 0 200 2))
+                    :attribs  {:fill "none" :stroke "#f60"}
+                    :shape    (viz/svg-triangle-down 3)
+                    :layout   viz/svg-scatter-plot}]}
+       (viz/svg-plot2d)
+       (svg/svg {:width 600 :height 600})
+       (svg/serialize)
+       (spit "scatter.svg"))
+#+END_SRC
+
+*** Contour plot
+
+| [[http://media.thi.ng/geom/viz/contours.svg]] | [[http://media.thi.ng/geom/viz/contours-outline.svg]] |
+
+#+BEGIN_SRC clojure :noweb-ref example2
+  (require '[thi.ng.geom.viz.core :as viz] :reload)
+  (require '[thi.ng.geom.svg.core :as svg])
+  (require '[thi.ng.math.core :as m])
+  (require '[thi.ng.math.simplexnoise :as n])
+
+  (->> {:x-axis   (viz/log-axis 2 [0 64] [50 550] 555)
+        :y-axis   (viz/log-axis 2 [0 64] [550 50] 45)
+        :data     [{:matrix  (->> (for [y (range 64) x (range 64)]
+                                     (+ 0.5 (* 0.5 (n/noise2 (* x 0.06) (* y 0.06)))))
+                                   (viz/contour-matrix 64 64))
+                    :levels  (range 0.1 1 0.1)
+                    :attribs {:fill "none" :stroke "#0af"}
+                    ;; :attribs {:fill "rgba(0,160,255,0.1)" :stroke "#0af"} ;; filled version
+                    :layout  viz/svg-contour-plot}]}
+       (viz/svg-plot2d)
+       (svg/svg {:width 600 :height 600})
+       (svg/serialize)
+       (spit "contours.svg"))
+#+END_SRC
+
+** Scales
+
+*** Linear scale
+
+#+BEGIN_SRC clojure :noweb-ref scale
+  (defn linear-scale
+    [domain range]
+    (fn [x] (m/map-interval x domain range)))
+#+END_SRC
+
+*** Logarithmic scale
+
+#+BEGIN_SRC clojure :noweb-ref scale
+  (defn log
+    [base]
+    (let [lb (Math/log base)]
+      #(/ (cond
+            (pos? %) (Math/log %)
+            (neg? %) (- (Math/log (- %)))
+            :else 0)
+          lb)))
+
+  (defn log-scale
+    [base [d1 d2 :as domain] [r1 r2 :as range]]
+    (let [log* (log base)
+          d1l  (log* d1)
+          dr   (- (log* d2) d1l)]
+      (fn [x] (m/mix r1 r2 (/ (- (log* x) d1l) dr)))))
+#+END_SRC
+
+** Axis & tick generators
+
+*** SVG axis generators
+
+#+BEGIN_SRC clojure :noweb-ref axis
+  (defn tick-value
+    [x] (m/roundto x (if (< (m/abs x) 1) 0.01 1)))
+
+  (defn svg-axis*
+    [{:keys [major minor]} a b align tick1-fn tick2-fn]
+    (svg/group
+     {:stroke "black"}
+     (svg/group
+      {:fill "black"
+       :font-family "Arial"
+       :font-size 10
+       :text-anchor align}
+      (mapcat tick1-fn major))
+     (svg/group
+      {:stroke "#333"}
+      (map minor))
+     (svg/line a b)))
+
+  (defn svg-x-axis
+    [{:keys [scale major minor pos] [r1 r2] :range :as spec}]
+    (svg-axis*
+     spec [r1 pos] [r2 pos] "start"
+     #(let [x (scale %)]
+        [(svg/line [x pos] [x (+ pos 10)]) (svg/text [x (+ pos 20)] (tick-value %))])
+     #(let [x (scale %)]
+        (svg/line [x pos] [x (+ pos 5)]))))
+
+  (defn svg-y-axis
+    [{:keys [scale major minor pos] [r1 r2] :range :as spec}]
+    (svg-axis*
+     spec [pos r1] [pos r2] "end"
+     #(let [y (scale %)]
+        [(svg/line [pos y] [(- pos 10) y]) (svg/text [(- pos 15) y] (tick-value %))])
+     #(let [y (scale %)]
+        (svg/line [pos y] [(- pos 5) y]))))
+#+END_SRC
+
+*** Logarithmic
+
+#+BEGIN_SRC clojure :noweb-ref axis
+  (defn log-ticks-domain
+    [base d1 d2]
+    (let [log* (log base)] [(m/floor (log* d1)) (m/ceil (log* d2))]))
+
+  (defn log-tick-marks-major
+    [base [d1 d2] n]
+    (let [[d1l d2l] (log-ticks-domain base d1 d2)]
+      (->> (for [i (range d1l (inc d2l))]
+             (if (>= i 0)
+               (* (/ 1 n) (Math/pow base i))
+               (* (/ 1 n) (- (Math/pow base (- i))))))
+           (filter #(m/in-range? d1 d2 %)))))
+
+  (defn log-tick-marks-minor
+    [base [d1 d2] n]
+    (let [[d1l d2l] (log-ticks-domain base d1 d2)
+          ticks (if (== 2 base) [0.75] (range 2 n))]
+      (->> (for [i (range d1l (inc d2l)) j ticks]
+             (if (>= i 0)
+               (* (/ j n) (Math/pow base i))
+               (* (/ j n) (- (Math/pow base (- i))))))
+           (filter #(m/in-range? d1 d2 %)))))
+
+  (defn log-axis
+    [base domain range pos]
+    {:scale (log-scale base domain range)
+     :major (log-tick-marks-major base domain base)
+     :minor (log-tick-marks-minor base domain base)
+     :domain domain
+     :range range
+     :pos pos})
+#+END_SRC
+
+** 2D Plotting (SVG)
+
+*** Generic plotting helpers
+
+#+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn svg-axis-grid2d
+    [x-axis y-axis {:keys [attribs minor-x minor-y]}]
+    (let [[x1 x2] (:range x-axis)
+          [y1 y2] (:range y-axis)
+          scale-x (:scale x-axis)
+          scale-y (:scale y-axis)]
+      (svg/group
+       (merge {:stroke "#ccc" :stroke-dasharray "1 1"} attribs)
+       (map #(let [x (scale-x %)] (svg/line [x y1] [x y2]))
+            (if minor-x (concat (:minor x-axis) (:major x-axis)) (:major x-axis)))
+       (map #(let [y (scale-y %)] (svg/line [x1 y] [x2 y]))
+            (if minor-y (concat (:minor y-axis) (:major y-axis)) (:major y-axis))))))
+
+  (defn svg-plot2d
+    [{:keys [x-axis y-axis grid data] :as opts}]
+    (svg/group
+     {}
+     (if grid   (svg-axis-grid2d x-axis y-axis grid))
+     (map (fn [spec] ((:layout spec) opts spec)) data)
+     (if x-axis (svg-x-axis x-axis))
+     (if y-axis (svg-y-axis y-axis))))
+#+END_SRC
+
+*** Scatter plot
+
+#+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn svg-scatter-plot
+    [{:keys [x-axis y-axis]}
+     {:keys [values attribs shape]
+      :or   {shape #(svg/circle % 3)}}]
+    (let [scale-x (:scale x-axis)
+          scale-y (:scale y-axis)
+          [r1 r2] (:range y-axis)
+          range'  (if (< r1 r2) [r1 r2] [r2 r1])]
+      (svg/group
+       attribs
+       (sequence
+        (comp
+         (filter #(m/in-range? (:domain x-axis) (first %)))
+         (map (fn [[x y]] [(scale-x x) (scale-y y)]))
+         (filter #(m/in-range? range' (second %)))
+         (map shape))
+        values))))
+#+END_SRC
+
+*** Contour lines
+
+#+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn contour-matrix
+    [w h values]
+    (let [mat (nd/ndarray :float32 values [h w])]
+      (contours/set-border2d mat 1e9)))
+
+  (defn contour->svg
+    [scale-x scale-y]
+    (fn [contour]
+      (-> (map (fn [[y x]] [(scale-x x) (scale-y y)]) contour)
+          (svg/polygon))))
+
+  (defn svg-contour-plot
+    [{:keys [x-axis y-axis]}
+     {:keys [matrix attribs levels]}]
+    (let [contour-fn (contour->svg (:scale x-axis) (:scale y-axis))]
+      (svg/group
+       attribs
+       (map
+        #(svg/group {} (map contour-fn (contours/find-contours2d matrix %)))
+        levels))))
+#+END_SRC
+
+*** Custom shape drawing
+
+#+BEGIN_SRC clojure :noweb-ref shapes
+  (defn svg-triangle-up
+    [r] (fn [[x y]] (svg/polygon [[(- x r) (+ y r)] [(+ x r) (+ y r)] [x (- y r)]])))
+
+  (defn svg-triangle-down
+    [r] (fn [[x y]] (svg/polygon [[(- x r) (- y r)] [(+ x r) (- y r)] [x (+ y r)]])))
+
+  (defn svg-square
+    [r] (let [d (* r 2.0)] (fn [[x y]] (svg/rect [(- x r) (- y r)] d d))))
+#+END_SRC
+
+** TODO 3D Plotting
+
+TBD
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/viz/core.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.viz.core
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.ndarray.core :as nd]
+     [thi.ng.ndarray.contours :as contours]
+     [thi.ng.math.core :as m]))
+
+  <<scale>>
+
+  <<axis>>
+
+  <<shapes>>
+
+  <<plot-2d>>
+#+END_SRC
