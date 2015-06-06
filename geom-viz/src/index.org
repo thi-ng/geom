@@ -10,7 +10,27 @@ visualizations using SVG or WebGL and is in early stage development.
 Examples are currently littered throughout the core namespace of this
 module, linked below....
 
-[[http://media.thi.ng/geom/viz/scatter.svg]]
+| [[http://media.thi.ng/geom/viz/scatter-log.svg]] | [[http://media.thi.ng/geom/viz/lineplot.svg]] | [[http://media.thi.ng/geom/viz/contours-outline.svg]] |
+
+** Scope
+
+The aim of this module is to define a largely declararitve and output
+format independent data visualization system. A visualization spec (a
+hashmap) is used to configure all aspects of the desired output and
+then passed to a single visualization handler to produce an image
+asset. The sole role of the visualization handler is to translate the
+spec into a concrete graphics format representation, though this
+translation is only occurring as the final step and the spec based
+approach allows creating multiple outputs, re-using visualization
+recipes and therefore building higher level tooling on top of this
+basic setup. Everything prior to translation is completely format
+independent and can also be processed further via 3rd party tooling.
+
+Having said this, since this module is still in its infancy, currently
+only SVG output is implemented as test bed. However, many (if not all)
+required parts to support other targets are already existing in
+isolation and once the core API has stabilized will be fairly trivial
+to add.
 
 ** Status
 

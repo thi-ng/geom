@@ -6,6 +6,10 @@
          - [[#scatter-plot][Scatter plot]]
          - [[#line-plot][Line plot]]
          - [[#contour-plot][Contour plot]]
+     - [[#visualization-spec-format][Visualization spec format]]
+         - [[#axis-definitions-x-axis--y-axis][Axis definitions (:x-axis / :y-axis)]]
+         - [[#axis-grid-definition-grid][Axis grid definition (:grid)]]
+         - [[#dataset-specs-data][Dataset specs (:data)]]
      - [[#scales][Scales]]
          - [[#linear-scale][Linear scale]]
          - [[#logarithmic-scale][Logarithmic scale]]
@@ -25,6 +29,10 @@
 * Namespace: thi.ng.geom.viz.core
 
 ** Example usage
+
+This section shows some basic example outputs and general usage
+patterns. See spec description in next section for further
+information.
 
 *** Scatter plot
 
@@ -107,6 +115,42 @@
        (svg/serialize)
        (spit "contours.svg"))
 #+END_SRC
+
+** Visualization spec format
+
+| *Key*     | *Value*                  | *Required* | *Description*                             |
+|-----------+--------------------------+------------+-------------------------------------------|
+| =:x-axis= | horizontal axis spec map | Y          | X-axis behavior & representation details  |
+| =:y-axis= | vertical axis spec map   | Y          | Y-axis behavior & representation details  |
+| =:grid=   | grid spec map            | N          | Optional background axis grid             |
+| =:data=   | vector of dataset specs  | Y          | Allows multiple datasets in visualization |
+
+*** Axis definitions (:x-axis / :y-axis)
+
+| *Key*     | *Value*              | *Required* | *Default* | *Description*                                                            |
+|-----------+----------------------+------------+-----------+--------------------------------------------------------------------------|
+| =:scale=  | scale function       | Y          | nil       | Scale function to translate domain values into visualization coordinates |
+| =:domain= | vec of domain bounds | Y          | nil       | Lower & upper bound of data source interval                              |
+| =:range=  | vec of range bounds  | Y          | nil       | Lower & upper bound of projected coordinates                             |
+| =:major=  | seq of domain values | N          | nil       | Seq of domain positions at which to draw labeled tick marks              |
+| =:minor=  | seq of domain values | N          | nil       | Seq of domain positions at which                                         |
+
+*** Axis grid definition (:grid)
+
+| *Key*      | *Value* | *Required* | *Default*     | *Description*                                            |
+|------------+---------+------------+---------------+----------------------------------------------------------|
+| =:attribs= | hashmap | N          | default style | allows extra attributes to be injected (e.g. for SVG)    |
+| =:minor-x= | boolean | N          | false         | if =false= only uses major tick mark positions on X axis |
+| =:minor-y= | boolean | N          | false         | if =false= only uses major tick mark positions on Y axis |
+
+*** Dataset specs (:data)
+
+The format of these maps is largely dependent on the concrete
+visualization methods used, but must state the following keys:
+
+| *Key*     | *Value*         | *Required* | *Default* | *Description*               |
+|-----------+-----------------+------------+-----------+-----------------------------|
+| =:layout= | layout function | Y          | none      | function to map data points |
 
 ** Scales
 
