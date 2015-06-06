@@ -13,7 +13,7 @@
          - [[#svg-axis-generators][SVG axis generators]]
          - [[#linear][Linear]]
          - [[#logarithmic][Logarithmic]]
-     - [[#2d-plotting-svg][2D Plotting (SVG)]]
+     - [[#2d-cartesian-plotting-svg][2D Cartesian Plotting (SVG)]]
          - [[#generic-plotting-helpers][Generic plotting helpers]]
          - [[#line-plot][Line plot]]
          - [[#scatter-plot][Scatter plot]]
@@ -48,7 +48,7 @@
                     :attribs  {:fill "none" :stroke "#f60"}
                     :shape    (viz/svg-triangle-down 3)
                     :layout   viz/svg-scatter-plot}]}
-       (viz/svg-plot2d)
+       (viz/svg-plot2d-cartesian)
        (svg/svg {:width 600 :height 600})
        (svg/serialize)
        (spit "scatter.svg"))
@@ -75,7 +75,7 @@
                               (m/norm-range 200))
                     :attribs {:fill "none" :stroke "#0af"}
                     :layout  viz/svg-line-plot}]}
-       (viz/svg-plot2d)
+       (viz/svg-plot2d-cartesian)
        (svg/svg {:width 600 :height 300})
        (svg/serialize)
        (spit "lineplot.svg"))
@@ -102,7 +102,7 @@
                     :attribs {:fill "none" :stroke "#0af"}
                     ;; :attribs {:fill "rgba(0,160,255,0.1)" :stroke "#0af"} ;; filled version
                     :layout  viz/svg-contour-plot}]}
-       (viz/svg-plot2d)
+       (viz/svg-plot2d-cartesian)
        (svg/svg {:width 600 :height 600})
        (svg/serialize)
        (spit "contours.svg"))
@@ -240,12 +240,12 @@
      :pos pos})
 #+END_SRC
 
-** 2D Plotting (SVG)
+** 2D Cartesian Plotting (SVG)
 
 *** Generic plotting helpers
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
-  (defn svg-axis-grid2d
+  (defn svg-axis-grid2d-cartesian
     [x-axis y-axis {:keys [attribs minor-x minor-y]}]
     (let [[x1 x2] (:range x-axis)
           [y1 y2] (:range y-axis)
@@ -258,11 +258,11 @@
        (map #(let [y (scale-y %)] (svg/line [x1 y] [x2 y]))
             (if minor-y (concat (:minor y-axis) (:major y-axis)) (:major y-axis))))))
 
-  (defn svg-plot2d
+  (defn svg-plot2d-cartesian
     [{:keys [x-axis y-axis grid data] :as opts}]
     (svg/group
      {}
-     (if grid   (svg-axis-grid2d x-axis y-axis grid))
+     (if grid   (svg-axis-grid2d-cartesian x-axis y-axis grid))
      (map (fn [spec] ((:layout spec) opts spec)) data)
      (if x-axis (svg-x-axis x-axis))
      (if y-axis (svg-y-axis y-axis))))
