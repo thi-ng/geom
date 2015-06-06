@@ -28,7 +28,7 @@
 
 *** Scatter plot
 
-[[http://media.thi.ng/geom/viz/scatter.svg]]
+| [[http://media.thi.ng/geom/viz/scatter-linear.svg]] | [[http://media.thi.ng/geom/viz/scatter-log.svg]] |
 
 #+BEGIN_SRC clojure :noweb-ref example1
   (require '[thi.ng.geom.viz.core :as viz] :reload)
@@ -63,18 +63,20 @@
   (require '[thi.ng.geom.svg.core :as svg])
   (require '[thi.ng.math.core :as m])
 
-  (->> {:x-axis   (viz/linear-axis [(- m/PI) m/PI] [50 590] 550 10 0)
-        :y-axis   (viz/linear-axis [-1.2 1.2] [550 20] 50 5 1)
+  (->> {:x-axis   (viz/linear-axis [(- m/PI) m/PI] [50 590] 250 10 0)
+        :y-axis   (viz/linear-axis [-1.1 1.1] [250 20] 50 5 1)
         :grid     {:attribs {:stroke "#caa"}
-                   :minor-x true
                    :minor-y true}
         :data     [{:values  (map
-                              (fn [t] (let [x (m/mix (- m/PI) m/PI t)] [x (Math/sin x)]))
-                              (m/norm-range 100))
+                              (fn [t]
+                                (let [x (m/mix (- m/PI) m/PI t)
+                                      y (* (Math/cos (* 0.5 x)) (Math/sin (* x x x)))]
+                                  [x y]))
+                              (m/norm-range 200))
                     :attribs {:fill "none" :stroke "#0af"}
                     :layout  viz/svg-line-plot}]}
        (viz/svg-plot2d)
-       (svg/svg {:width 600 :height 600})
+       (svg/svg {:width 600 :height 300})
        (svg/serialize)
        (spit "lineplot.svg"))
 #+END_SRC
@@ -91,8 +93,8 @@
 
   (->> {:x-axis   (viz/linear-axis [0 64] [50 550] 550 5 3)
         :y-axis   (viz/linear-axis [0 64] [550 50] 50 5 1)
-        ;;:x-axis   (viz/log-axis 2 [0 64] [50 550] 555)
-        ;;:y-axis   (viz/log-axis 2 [0 64] [550 50] 45)
+        ;; :x-axis   (viz/log-axis 2 [0 64] [50 550] 555)
+        ;; :y-axis   (viz/log-axis 2 [0 64] [550 50] 45)
         :data     [{:matrix  (->> (for [y (range 64) x (range 64)]
                                     (+ 0.5 (* 0.5 (n/noise2 (* x 0.06) (* y 0.06)))))
                                   (viz/contour-matrix 64 64))
