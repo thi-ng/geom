@@ -10,6 +10,7 @@
          - [[#logarithmic-scale][Logarithmic scale]]
      - [[#axis--tick-generators][Axis & tick generators]]
          - [[#svg-axis-generators][SVG axis generators]]
+         - [[#linear][Linear]]
          - [[#logarithmic][Logarithmic]]
      - [[#2d-plotting-svg][2D Plotting (SVG)]]
          - [[#generic-plotting-helpers][Generic plotting helpers]]
@@ -33,7 +34,8 @@
   (require '[thi.ng.math.core :as m])
 
   (->> {:x-axis   (viz/log-axis 10 [0.1 201] [50 590] 550)
-        :y-axis   (viz/log-axis 10 [0.1 101] [550 20] 50)
+        :y-axis   (viz/linear-axis [0 100] [550 20] 50 10 1)
+        ;;:y-axis   (viz/log-axis 10 [0.1 101] [550 20] 50) ;; Y log axis
         :grid     {:attribs {:stroke "#caa"}
                    :minor-x true
                    :minor-y true}
@@ -60,12 +62,14 @@
   (require '[thi.ng.math.core :as m])
   (require '[thi.ng.math.simplexnoise :as n])
 
-  (->> {:x-axis   (viz/log-axis 2 [0 64] [50 550] 555)
-        :y-axis   (viz/log-axis 2 [0 64] [550 50] 45)
+  (->> {:x-axis   (viz/linear-axis [0 64] [50 550] 550 5 3)
+        :y-axis   (viz/linear-axis [0 64] [550 50] 50 5 1)
+        ;;:x-axis   (viz/log-axis 2 [0 64] [50 550] 555)
+        ;;:y-axis   (viz/log-axis 2 [0 64] [550 50] 45)
         :data     [{:matrix  (->> (for [y (range 64) x (range 64)]
-                                     (+ 0.5 (* 0.5 (n/noise2 (* x 0.06) (* y 0.06)))))
-                                   (viz/contour-matrix 64 64))
-                    :levels  (range 0.1 1 0.1)
+                                    (+ 0.5 (* 0.5 (n/noise2 (* x 0.06) (* y 0.06)))))
+                                  (viz/contour-matrix 64 64))
+                    :levels  (range 0.05 1 0.05)
                     :attribs {:fill "none" :stroke "#0af"}
                     ;; :attribs {:fill "rgba(0,160,255,0.1)" :stroke "#0af"} ;; filled version
                     :layout  viz/svg-contour-plot}]}
@@ -147,6 +151,30 @@
         (svg/line [pos y] [(- pos 5) y]))))
 #+END_SRC
 
+*** Linear
+
+#+BEGIN_SRC clojure :noweb-ref axis
+  (defn lin-tick-marks
+    [[d1 d2] n]
+    (let [dr (- d2 d1)
+          lr (Math/pow 10 (m/roundto (/ (Math/log dr) (Math/log 10)) 1))
+          delta (/ lr n)
+          d1' (m/roundto d1 delta)]
+      (filter #(m/in-range? d1 d2 %) (range d1' (+ d2 delta) delta))))
+
+  (defn linear-axis
+    [domain range pos major minor]
+    (let [major' (lin-tick-marks domain major)
+          minor' (lin-tick-marks domain (* major (inc minor)))
+          minor' (filter (complement (set major')) minor')]
+      {:scale  (linear-scale domain range)
+       :major  major'
+       :minor  minor'
+       :domain domain
+       :range  range
+       :pos    pos}))
+#+END_SRC
+
 *** Logarithmic
 
 #+BEGIN_SRC clojure :noweb-ref axis
@@ -155,29 +183,29 @@
     (let [log* (log base)] [(m/floor (log* d1)) (m/ceil (log* d2))]))
 
   (defn log-tick-marks-major
-    [base [d1 d2] n]
+    [base [d1 d2]]
     (let [[d1l d2l] (log-ticks-domain base d1 d2)]
       (->> (for [i (range d1l (inc d2l))]
              (if (>= i 0)
-               (* (/ 1 n) (Math/pow base i))
-               (* (/ 1 n) (- (Math/pow base (- i))))))
+               (* (/ 1 base) (Math/pow base i))
+               (* (/ 1 base) (- (Math/pow base (- i))))))
            (filter #(m/in-range? d1 d2 %)))))
 
   (defn log-tick-marks-minor
-    [base [d1 d2] n]
+    [base [d1 d2]]
     (let [[d1l d2l] (log-ticks-domain base d1 d2)
-          ticks (if (== 2 base) [0.75] (range 2 n))]
+          ticks (if (== 2 base) [0.75] (range 2 base))]
       (->> (for [i (range d1l (inc d2l)) j ticks]
              (if (>= i 0)
-               (* (/ j n) (Math/pow base i))
-               (* (/ j n) (- (Math/pow base (- i))))))
+               (* (/ j base) (Math/pow base i))
+               (* (/ j base) (- (Math/pow base (- i))))))
            (filter #(m/in-range? d1 d2 %)))))
 
   (defn log-axis
     [base domain range pos]
     {:scale (log-scale base domain range)
-     :major (log-tick-marks-major base domain base)
-     :minor (log-tick-marks-minor base domain base)
+     :major (log-tick-marks-major base domain)
+     :minor (log-tick-marks-minor base domain)
      :domain domain
      :range range
      :pos pos})
@@ -255,7 +283,7 @@
        attribs
        (map
         #(svg/group {} (map contour-fn (contours/find-contours2d matrix %)))
-        levels))))
+        (sort levels)))))
 #+END_SRC
 
 *** Custom shape drawing
