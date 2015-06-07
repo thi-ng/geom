@@ -5,6 +5,7 @@
      - [[#example-usage][Example usage]]
          - [[#scatter-plot][Scatter plot]]
          - [[#line-plot][Line plot]]
+         - [[#stacked-intervals][Stacked intervals]]
          - [[#contour-plot][Contour plot]]
      - [[#visualization-spec-format][Visualization spec format]]
          - [[#axis-definitions-x-axis--y-axis][Axis definitions (:x-axis / :y-axis)]]
@@ -22,7 +23,8 @@
          - [[#line-plot][Line plot]]
          - [[#scatter-plot][Scatter plot]]
          - [[#contour-lines][Contour lines]]
-         - [[#custom-shape-drawing][Custom shape drawing]]
+         - [[#stacked-intervals][Stacked intervals]]
+     - [[#custom-shape-drawing][Custom shape drawing]]
      - [[#todo-3d-plotting][TODO 3D Plotting]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
@@ -66,7 +68,7 @@ information.
 
 [[http://media.thi.ng/geom/viz/lineplot.svg]]
 
-#+BEGIN_SRC clojure :noweb-ref example1
+#+BEGIN_SRC clojure :noweb-ref example2
   (require '[thi.ng.geom.viz.core :as viz] :reload)
   (require '[thi.ng.geom.svg.core :as svg])
   (require '[thi.ng.math.core :as m])
@@ -89,18 +91,122 @@ information.
        (spit "lineplot.svg"))
 #+END_SRC
 
+*** Stacked intervals
+
+[[http://media.thi.ng/geom/viz/stacked-intervals.svg]]
+
+#+BEGIN_SRC clojure :noweb-ref example4
+  (require '[thi.ng.geom.viz.core :as viz] :reload)
+  (require '[thi.ng.geom.svg.core :as svg])
+  (require '[thi.ng.math.core :as m])
+
+  (->> {:x-axis   (viz/linear-axis [-10 310] [50 550] 150 10 4)
+        :y-axis   (viz/linear-axis [0 4] [50 150] 50 1 0)
+        :data     [{:values  [[0 100] [10 90] [80 200] [250 300] [150 170] [110 120]
+                              [210 280] [180 280] [160 240] [160 170]]
+                    :attribs {:stroke-width "14px" :stroke-linecap "round" :stroke "#0af"}
+                    ;; :attribs {:fill "rgba(0,160,255,0.1)" :stroke "#0af"} ;; filled version
+                    :layout  viz/svg-stacked-interval-plot}]}
+       (viz/svg-plot2d-cartesian)
+       (svg/svg
+        {:width 600 :height 200}
+        (svg/defs
+          (svg/linear-gradient-rgb "grad" [0 [0 2/3 1]] [1 [0.75 0.9 1]])))
+       (svg/serialize)
+       (spit "timeline.svg"))
+#+END_SRC
+
+[[http://media.thi.ng/geom/viz/timeline.svg]]
+
+#+BEGIN_SRC clojure :noweb-ref example41
+  (require '[thi.ng.geom.viz.core :as viz] :reload)
+  (require '[thi.ng.geom.svg.core :as svg])
+  (require '[thi.ng.math.core :as m])
+
+  (def ->epoch #(.getTime ^java.util.Date %))
+
+  (def item-cols
+    {:project  "#0af"
+     :oss      "#63f"
+     :workshop "#9f0"
+     :talk     "#f9f"})
+
+  (def items
+    [{:title "toxiclibs" :from #inst "2006-03" :to #inst "2013-06" :type :oss}
+     {:title "thi.ng/geom" :from #inst "2011-08" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/trio" :from #inst "2012-12" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/simplecl" :from #inst "2012-10" :to #inst "2013-05" :type :oss}
+     {:title "thi.ng/simplecl" :from #inst "2015-05" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/raymarchcl" :from #inst "2013-02" :to #inst "2013-05" :type :oss}
+     {:title "thi.ng/structgen" :from #inst "2012-10" :to #inst "2013-02" :type :oss}
+     {:title "thi.ng/luxor" :from #inst "2013-10" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/morphogen" :from #inst "2014-03" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/color" :from #inst "2014-09" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/validate" :from #inst "2014-05" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/ndarray" :from #inst "2015-05" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/tweeny" :from #inst "2013-10" :to #inst "2015-01" :type :oss}
+     {:title "Co(De)Factory" :from #inst "2013-12" :to #inst "2014-08" :type :project}
+     {:title "Chrome WebLab" :from #inst "2011-05" :to #inst "2012-11" :type :project}
+     {:title "ODI" :from #inst "2013-07" :to #inst "2013-10" :type :project}
+     {:title "LCOM" :from #inst "2012-06" :to #inst "2013-05" :type :project}
+     {:title "V&amp;A Ornamental" :from #inst "2010-12" :to #inst "2011-05" :type :project}
+     {:title "Engine26" :from #inst "2010-08" :to #inst "2010-12" :type :project}
+     {:title "Resonate" :from #inst "2012-04" :to #inst "2012-04" :type :workshop}
+     {:title "Resonate" :from #inst "2013-03" :to #inst "2013-03" :type :workshop}
+     {:title "Resonate" :from #inst "2014-04" :to #inst "2014-04" :type :workshop}
+     {:title "Resonate" :from #inst "2015-04" :to #inst "2015-04" :type :workshop}
+     {:title "Resonate" :from #inst "2012-04" :to #inst "2012-04" :type :talk}
+     {:title "Resonate" :from #inst "2013-03" :to #inst "2013-03" :type :talk}
+     {:title "Resonate" :from #inst "2014-04" :to #inst "2014-04" :type :talk}
+     {:title "Resonate" :from #inst "2015-04" :to #inst "2015-04" :type :talk}
+     {:title "Retune" :from #inst "2014-09" :to #inst "2014-09" :type :talk}
+     {:title "Bezalel" :from #inst "2011-04" :to #inst "2011-04" :type :workshop}
+     {:title "V&amp;A" :from #inst "2011-01" :to #inst "2011-03" :type :workshop}
+     {:title "HEAD" :from #inst "2010-10" :to #inst "2010-10" :type :workshop}
+     {:title "ETH" :from #inst "2010-11" :to #inst "2010-11" :type :workshop}
+     {:title "SAC" :from #inst "2012-11" :to #inst "2012-11" :type :workshop}
+     {:title "SAC" :from #inst "2014-12-02" :to #inst "2014-12-06" :type :workshop}
+     {:title "MSA" :from #inst "2013-04" :to #inst "2013-04" :type :workshop}
+     {:title "Young Creators" :from #inst "2014-06" :to #inst "2014-06" :type :workshop}
+     {:title "EYEO" :from #inst "2013-06" :to #inst "2013-06" :type :talk}
+     {:title "Reasons" :from #inst "2014-02" :to #inst "2014-02" :type :talk}
+     {:title "Reasons" :from #inst "2014-09" :to #inst "2014-09" :type :talk}])
+
+  (->> {:x-axis   (viz/linear-axis [(->epoch #inst "2010-09") (->epoch #inst "2015-06")] [50 950] 200 1 11)
+        :y-axis   (viz/linear-axis [0 9] [50 200] 50 1 0)
+        :grid     {:minor-x true}
+        :data     [{:values     items
+                    :item-range (fn [x] [(->epoch (:from x)) (->epoch (:to x))])
+                    :attribs    {:fill "white" :stroke-width "14px" :stroke-linecap "round"
+                                 :font-family "Arial" :font-size 10}
+                    :shape      (fn [[[ax ay :as a] [bx :as b] item]]
+                                  (svg/group
+                                   {}
+                                   (svg/line a b {:stroke (item-cols (:type item))})
+                                   (if (< 30 (- bx ax))
+                                     (svg/text [ax (+ 3 ay)] (:title item) {:stroke "none"}))))
+                    :layout  viz/svg-stacked-interval-plot}]}
+       (viz/svg-plot2d-cartesian)
+       (svg/svg
+        {:width 960 :height 250}
+        (svg/defs
+          (svg/linear-gradient-rgb "grad" [0 [0 2/3 1]] [1 [0.75 0.9 1]])))
+       (svg/serialize)
+       (spit "timeline.svg"))
+#+END_SRC
+
 *** Contour plot
 
 | [[http://media.thi.ng/geom/viz/contours.svg]] | [[http://media.thi.ng/geom/viz/contours-outline.svg]] |
 
-#+BEGIN_SRC clojure :noweb-ref example2
+#+BEGIN_SRC clojure :noweb-ref example3
   (require '[thi.ng.geom.viz.core :as viz] :reload)
   (require '[thi.ng.geom.svg.core :as svg])
   (require '[thi.ng.math.core :as m])
   (require '[thi.ng.math.simplexnoise :as n])
 
   (->> {:x-axis   (viz/linear-axis [0 64] [50 550] 550 5 3)
-        :y-axis   (viz/linear-axis [0 64] [550 50] 50 5 1)
+        :y-axis   (viz/linear-axis [0 64] [550 50] 50 5 3)
         ;; :x-axis   (viz/log-axis 2 [0 64] [50 550] 555)
         ;; :y-axis   (viz/log-axis 2 [0 64] [550 50] 45)
         :data     [{:matrix  (->> (for [y (range 64) x (range 64)]
@@ -108,7 +214,7 @@ information.
                                   (viz/contour-matrix 64 64))
                     :levels  (range 0.05 1 0.05)
                     :attribs {:fill "none" :stroke "#0af"}
-                    ;; :attribs {:fill "rgba(0,160,255,0.1)" :stroke "#0af"} ;; filled version
+                    ;; :attribs {:fill "rgba(0,160,255,0.05)" :stroke "#0af"} ;; filled version
                     :layout  viz/svg-contour-plot}]}
        (viz/svg-plot2d-cartesian)
        (svg/svg {:width 600 :height 600})
@@ -202,7 +308,7 @@ visualization methods used, but must state the following keys:
       (mapcat tick1-fn major))
      (svg/group
       {:stroke "#333"}
-      (map minor))
+      (map tick2-fn minor))
      (svg/line a b)))
 
   (defn svg-x-axis
@@ -210,7 +316,7 @@ visualization methods used, but must state the following keys:
     (svg-axis*
      spec [r1 pos] [r2 pos] "start"
      #(let [x (scale %)]
-        [(svg/line [x pos] [x (+ pos 10)]) (svg/text [x (+ pos 20)] (tick-value %))])
+        [(svg/line [x pos] [x (+ pos 10)]) (svg/text [x (+ pos 20)] (tick-value %) {:stroke "none"})])
      #(let [x (scale %)]
         (svg/line [x pos] [x (+ pos 5)]))))
 
@@ -219,7 +325,7 @@ visualization methods used, but must state the following keys:
     (svg-axis*
      spec [pos r1] [pos r2] "end"
      #(let [y (scale %)]
-        [(svg/line [pos y] [(- pos 10) y]) (svg/text [(- pos 15) y] (tick-value %))])
+        [(svg/line [pos y] [(- pos 10) y]) (svg/text [(- pos 15) y] (tick-value %) {:stroke "none"})])
      #(let [y (scale %)]
         (svg/line [pos y] [(- pos 5) y]))))
 #+END_SRC
@@ -302,6 +408,9 @@ visualization methods used, but must state the following keys:
        (map #(let [y (scale-y %)] (svg/line [x1 y] [x2 y]))
             (if minor-y (concat (:minor y-axis) (:major y-axis)) (:major y-axis))))))
 
+  (defn- value-projector
+    [scale-x scale-y] (fn [[x y]] [(scale-x x) (scale-y y)]))
+
   (defn svg-plot2d-cartesian
     [{:keys [x-axis y-axis grid data] :as opts}]
     (svg/group
@@ -325,7 +434,7 @@ visualization methods used, but must state the following keys:
        (sequence
         (comp
          (filter #(m/in-range? (:domain x-axis) (first %)))
-         (map (fn [[x y]] [(scale-x x) (scale-y y)]))
+         (map (value-projector scale-x scale-y))
          (filter #(m/in-range? range' (second %))))
         values)
        attribs)))
@@ -347,7 +456,7 @@ visualization methods used, but must state the following keys:
        (sequence
         (comp
          (filter #(m/in-range? (:domain x-axis) (first %)))
-         (map (fn [[x y]] [(scale-x x) (scale-y y)]))
+         (map (value-projector scale-x scale-y))
          (filter #(m/in-range? range' (second %)))
          (map shape))
         values))))
@@ -378,7 +487,49 @@ visualization methods used, but must state the following keys:
         (sort levels)))))
 #+END_SRC
 
-*** Custom shape drawing
+*** Stacked intervals
+
+#+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn overlap? [[a b] [c d]] (and (<= a d) (>= b c)))
+
+  (defn compute-row-stacking
+    [item-range coll]
+    (reduce
+     (fn [grid x]
+       (let [r (item-range x)]
+         (loop [[row & more] grid idx 0]
+           (if (or (nil? row) (not (some #(overlap? r (item-range %)) row)))
+             (update-in grid [idx] #(conj (or % []) x))
+             (recur more (inc idx))))))
+     [] coll))
+
+  (defn svg-stacked-interval-plot
+    [{:keys [x-axis y-axis]}
+     {:keys [values attribs shape item-range]
+      :or   {shape (fn [[a b]] (svg/line a b)) item-range identity}}]
+    (let [scale-x (:scale x-axis)
+          scale-y (:scale y-axis)
+          [d1 d2] (:domain x-axis)
+          project (value-projector scale-x scale-y)]
+      (->> values
+           (filter #(overlap? (:domain x-axis) (item-range %)))
+           (sort-by (comp first item-range))
+           (compute-row-stacking item-range)
+           (mapcat
+            (fn [i row]
+              (map
+               (fn [item]
+                 (let [[a b] (item-range item)
+                       a (max d1 a)
+                       b (min d2 b)]
+                   [(project [a i]) (project [b i]) item]))
+               row))
+            (range))
+           (map shape)
+           (svg/group attribs))))
+#+END_SRC
+
+** Custom shape drawing
 
 #+BEGIN_SRC clojure :noweb-ref shapes
   (defn svg-triangle-up
