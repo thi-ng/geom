@@ -172,27 +172,27 @@ and will be automatically converted.
       [:stop {:offset (*fmt-percent* pos) :stop-color col}]))
 
   (defn linear-gradient-rgb
-    [id & stops]
+    [id attribs & stops]
     [:linearGradient
-     {:id id}
+     (assoc attribs :id id)
      (map #(gradient-stop col/rgba->css %) stops)])
 
   (defn radial-gradient-rgb
-    [id & stops]
+    [id attribs & stops]
     [:radialGradient
-     {:id id}
+     (assoc attribs :id id)
      (map #(gradient-stop col/rgba->css %) stops)])
 
   (defn linear-gradient-hsv
-    [id & stops]
+    [id attribs & stops]
     [:linearGradient
-     {:id id}
+     (assoc attribs :id id)
      (map #(gradient-stop col/hsva->css %) stops)])
 
   (defn radial-gradient-hsv
-    [id & stops]
+    [id attribs & stops]
     [:radialGradient
-     {:id id}
+     (assoc attribs :id id)
      (map #(gradient-stop col/hsva->css %) stops)])
 
   (defn group
