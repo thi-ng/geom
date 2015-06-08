@@ -42,7 +42,7 @@ target/test-classes
 **** [[https://github.com/clojure/clojurescript][ClojureScript]]
 #+NAME: dep-cljs
 #+BEGIN_SRC clojure
-[org.clojure/clojurescript "0.0-3297"]
+[org.clojure/clojurescript "0.0-3308"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/common/][thi.ng/common]]
@@ -54,7 +54,7 @@ target/test-classes
 **** [[https://github.com/thi-ng/math][thi.ng/math]]
 #+NAME: dep-math
 #+BEGIN_SRC clojure
-[thi.ng/math "0.1.0"]
+[thi.ng/math "0.1.3"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/dstruct][thi.ng/dstruct]]
@@ -78,7 +78,12 @@ target/test-classes
 **** [[https://github.com/thi-ng/typedarrays/][thi.ng/typedarrays]]
 #+NAME: dep-arrays
 #+BEGIN_SRC clojure
-[thi.ng/typedarrays "0.1.1"]
+[thi.ng/typedarrays "0.1.2"]
+#+END_SRC
+**** [[https://github.com/thi-ng/ndarray/][thi.ng/ndarray]]
+#+NAME: dep-ndarray
+#+BEGIN_SRC clojure
+[thi.ng/ndaddray "0.2.0"]
 #+END_SRC
 
 *** Development
