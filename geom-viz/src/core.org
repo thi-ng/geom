@@ -369,6 +369,11 @@ focal point. If strength is positive, the lens is dilating. If
 negative, it is bundling (compressing). A strength of zero causes a
 normal/linear scaling behavior.
 
+The two animations below show the effect of individually adjusting the focus and lens strength:
+
+| [[http://media.thi.ng/geom/viz/lens-focus.gif]] | [[http://media.thi.ng/geom/viz/lens-strength.gif]] |
+| Focus shift, constant strength = 0.5        | Lens strength adjustment, constant focus = 0.0 |
+
 #+BEGIN_SRC clojure :noweb-ref scale
   (defn lens-scale
     [[d1 d2] [r1 r2] focus strength]
@@ -483,19 +488,32 @@ normal/linear scaling behavior.
 
 *** Lens axis
 
+The lens axis is a modified =linear-axis= with two additional required
+attributes to control the domain space deformation in order to
+compress or expand the space around a given focal point and therefore
+introduce a non-linear arrangement. See =lens-scale= above for further
+details.
+
+- =:focus= - the domain value acting as lens focus (by default the center of the domain is used)
+- =:strength= - the lens strength & direction (normalized values -1.0 ... + 1.0, default = 0.5)
+
 #+BEGIN_SRC clojure :noweb-ref axis
   (defn lens-axis
-    [{:keys [domain range focus strength major minor visible] :or {visible true} :as spec}]
+    [{:keys [domain range focus strength major minor visible]
+      :or {visible true, strength 0.5} :as spec}]
     (let [major' (if major (lin-tick-marks domain major))
           minor' (if minor (lin-tick-marks domain minor))
           minor' (if (and major' minor')
                    (filter (complement (set major')) minor')
-                   minor')]
+                   minor')
+          focus  (or focus (/ (apply + domain) 2.0))]
       (assoc spec
-             :scale   (lens-scale domain range focus strength)
-             :major   major'
-             :minor   minor'
-             :visible visible)))
+             :scale    (lens-scale domain range focus strength)
+             :major    major'
+             :minor    minor'
+             :focus    focus
+             :strength strength
+             :visible  visible)))
 #+END_SRC
 
 ** 2D Cartesian Plotting (SVG)
@@ -649,10 +667,10 @@ normal/linear scaling behavior.
 
 #+BEGIN_SRC clojure :noweb-ref shapes
   (defn svg-triangle-up
-    [r] (fn [[x y]] (svg/polygon [[(- x r) (+ y r)] [(+ x r) (+ y r)] [x (- y r)]])))
+    [r] (fn [[x y]] (svg/polygon [[(- x r) (+ y r)] [(+ x r) (+ y r)] [x y]])))
 
   (defn svg-triangle-down
-    [r] (fn [[x y]] (svg/polygon [[(- x r) (- y r)] [(+ x r) (- y r)] [x (+ y r)]])))
+    [r] (fn [[x y]] (svg/polygon [[(- x r) (- y r)] [(+ x r) (- y r)] [x y]])))
 
   (defn svg-square
     [r] (let [d (* r 2.0)] (fn [[x y]] (svg/rect [(- x r) (- y r)] d d))))
