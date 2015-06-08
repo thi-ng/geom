@@ -6,6 +6,8 @@
          - [[#scatter-plot][Scatter plot]]
          - [[#line-plot][Line plot]]
          - [[#stacked-intervals][Stacked intervals]]
+             - [[#plain-intervals][Plain intervals]]
+             - [[#categorized-timeline][Categorized timeline]]
          - [[#contour-plot][Contour plot]]
      - [[#visualization-spec-format][Visualization spec format]]
          - [[#axis-definitions-x-axis--y-axis][Axis definitions (:x-axis / :y-axis)]]
@@ -24,9 +26,10 @@
          - [[#scatter-plot][Scatter plot]]
          - [[#contour-lines][Contour lines]]
          - [[#stacked-intervals][Stacked intervals]]
+     - [[#helper-functions][Helper functions]]
      - [[#custom-shape-drawing][Custom shape drawing]]
      - [[#todo-3d-plotting][TODO 3D Plotting]]
-     - [[#complete-namespace-definition][Complete namespace definition]]
+     - [[#complete-namespace-definitions][Complete namespace definitions]]
 
 * Namespace: thi.ng.geom.viz.core
 
@@ -40,24 +43,24 @@ information.
 
 | [[http://media.thi.ng/geom/viz/scatter-linear.svg]] | [[http://media.thi.ng/geom/viz/scatter-log.svg]] |
 
-#+BEGIN_SRC clojure :noweb-ref example1
-  (require '[thi.ng.geom.viz.core :as viz] :reload)
+#+BEGIN_SRC clojure :tangle ../babel/examples/scatter.clj :mkdirp yes :padline no
+  (require '[thi.ng.geom.viz.core :as viz])
   (require '[thi.ng.geom.svg.core :as svg])
   (require '[thi.ng.math.core :as m])
 
-  (->> {:x-axis   (viz/log-axis 10 [0.1 201] [50 590] 550)
-        :y-axis   (viz/linear-axis [0 100] [550 20] 50 10 1)
-        ;;:y-axis   (viz/log-axis 10 [0.1 101] [550 20] 50) ;; Y log axis
-        :grid     {:attribs {:stroke "#caa"}
-                   :minor-x true
-                   :minor-y true}
-        :data     [{:values   (map (juxt identity #(Math/sqrt %)) (range 0 200 2))
-                    :attribs  {:fill "#0af" :stroke "none"}
-                    :layout   viz/svg-scatter-plot}
-                   {:values   (map (juxt identity #(m/random %)) (range 0 200 2))
-                    :attribs  {:fill "none" :stroke "#f60"}
-                    :shape    (viz/svg-triangle-down 3)
-                    :layout   viz/svg-scatter-plot}]}
+  (->> {:x-axis (viz/log-axis {:domain [1 201] :range [50 590] :base 10 :pos 550})
+        :y-axis (viz/linear-axis {:domain [0 100] :range [550 20] :major 10 :minor 5 :pos 50})
+        ;;:y-axis (viz/log-axis {:domain [0.1 101] :range [550 20] :base 10 :pos 50}) ;; Y log axis
+        :grid   {:attribs {:stroke "#caa"}
+                 :minor-x true
+                 :minor-y true}
+        :data   [{:values  (map (juxt identity #(Math/sqrt %)) (range 0 200 2))
+                  :attribs {:fill "#0af" :stroke "none"}
+                  :layout  viz/svg-scatter-plot}
+                 {:values  (map (juxt identity #(m/random %)) (range 0 200 2))
+                  :attribs {:fill "none" :stroke "#f60"}
+                  :shape   (viz/svg-triangle-down 3)
+                  :layout  viz/svg-scatter-plot}]}
        (viz/svg-plot2d-cartesian)
        (svg/svg {:width 600 :height 600})
        (svg/serialize)
@@ -68,23 +71,31 @@ information.
 
 [[http://media.thi.ng/geom/viz/lineplot.svg]]
 
-#+BEGIN_SRC clojure :noweb-ref example2
-  (require '[thi.ng.geom.viz.core :as viz] :reload)
+#+BEGIN_SRC clojure :tangle ../babel/examples/lineplot.clj :mkdirp yes :padline no
+  (require '[thi.ng.geom.viz.core :as viz])
   (require '[thi.ng.geom.svg.core :as svg])
-  (require '[thi.ng.math.core :as m])
+  (require '[thi.ng.math.core :as m :refer [PI HALF_PI QUARTER_PI]])
 
-  (->> {:x-axis   (viz/linear-axis [(- m/PI) m/PI] [50 590] 250 10 0)
-        :y-axis   (viz/linear-axis [-1.1 1.1] [250 20] 50 5 1)
-        :grid     {:attribs {:stroke "#caa"}
-                   :minor-y true}
-        :data     [{:values  (map
-                              (fn [t]
-                                (let [x (m/mix (- m/PI) m/PI t)
-                                      y (* (Math/cos (* 0.5 x)) (Math/sin (* x x x)))]
-                                  [x y]))
-                              (m/norm-range 200))
-                    :attribs {:fill "none" :stroke "#0af"}
-                    :layout  viz/svg-line-plot}]}
+  (defn test-equation
+    [t] (let [x (m/mix (- PI) PI t)] [x (* (Math/cos (* 0.5 x)) (Math/sin (* x x x)))]))
+
+  (->> {:x-axis (viz/linear-axis
+                 {:domain [(- PI) PI]
+                  :range  [50 580]
+                  :major  HALF_PI
+                  :minor  QUARTER_PI
+                  :pos    250})
+        :y-axis (viz/linear-axis
+                 {:domain [-1 1]
+                  :range  [250 20]
+                  :major  0.2
+                  :minor  0.1
+                  :pos    50})
+        :grid   {:attribs {:stroke "#caa"}
+                 :minor-y true}
+        :data   [{:values  (map test-equation (m/norm-range 200))
+                  :attribs {:fill "none" :stroke "#0af"}
+                  :layout  viz/svg-line-plot}]}
        (viz/svg-plot2d-cartesian)
        (svg/svg {:width 600 :height 300})
        (svg/serialize)
@@ -92,51 +103,47 @@ information.
 #+END_SRC
 
 *** Stacked intervals
+**** Plain intervals
 
 [[http://media.thi.ng/geom/viz/stacked-intervals.svg]]
 
-#+BEGIN_SRC clojure :noweb-ref example4
-  (require '[thi.ng.geom.viz.core :as viz] :reload)
+#+BEGIN_SRC clojure :tangle ../babel/examples/intervals.clj :mkdirp yes :padline no
+  (require '[thi.ng.geom.viz.core :as viz])
   (require '[thi.ng.geom.svg.core :as svg])
   (require '[thi.ng.math.core :as m])
 
-  (->> {:x-axis   (viz/linear-axis [-10 310] [50 550] 150 10 4)
-        :y-axis   (viz/linear-axis [0 4] [50 150] 50 1 0)
-        :data     [{:values  [[0 100] [10 90] [80 200] [250 300] [150 170] [110 120]
-                              [210 280] [180 280] [160 240] [160 170]]
-                    :attribs {:stroke-width "14px" :stroke-linecap "round" :stroke "#0af"}
-                    ;; :attribs {:fill "rgba(0,160,255,0.1)" :stroke "#0af"} ;; filled version
-                    :layout  viz/svg-stacked-interval-plot}]}
+  (->> {:x-axis (viz/linear-axis {:domain [-10 310] :range [50 550] :major 100 :minor 50 :pos 150})
+        :y-axis (viz/linear-axis {:domain [0 4] :range [50 150] :visible false})
+        :data   [{:values  [[0 100] [10 90] [80 200] [250 300] [150 170] [110 120]
+                            [210 280] [180 280] [160 240] [160 170]]
+                  :attribs {:stroke-width "10px" :stroke-linecap "round" :stroke "#0af"}
+                  :layout  viz/svg-stacked-interval-plot}]}
        (viz/svg-plot2d-cartesian)
-       (svg/svg
-        {:width 600 :height 200}
-        (svg/defs
-          (svg/linear-gradient-rgb "grad" [0 [0 2/3 1]] [1 [0.75 0.9 1]])))
+       (svg/svg {:width 600 :height 200})
        (svg/serialize)
-       (spit "timeline.svg"))
+       (spit "intervals.svg"))
 #+END_SRC
 
-[[http://media.thi.ng/geom/viz/timeline.svg]]
+**** Categorized timeline
 
-#+BEGIN_SRC clojure :noweb-ref example41
-  (require '[thi.ng.geom.viz.core :as viz] :reload)
+This more complex example shows how to use structured data (here
+project descriptions) to create a timeline and visualize each item
+using a custom shape function w/ linear gradients (based on item type).
+
+http://media.thi.ng/geom/viz/timeline.svg
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/timeline.clj :mkdirp yes :padline no
+  (require '[thi.ng.geom.viz.core :as viz])
   (require '[thi.ng.geom.svg.core :as svg])
   (require '[thi.ng.math.core :as m])
-
-  (def ->epoch #(.getTime ^java.util.Date %))
-
-  (def item-cols
-    {:project  "#0af"
-     :oss      "#63f"
-     :workshop "#9f0"
-     :talk     "#f9f"})
+  (require '[thi.ng.color.core :as col])
+  (import '[java.util Calendar GregorianCalendar])
 
   (def items
     [{:title "toxiclibs" :from #inst "2006-03" :to #inst "2013-06" :type :oss}
      {:title "thi.ng/geom" :from #inst "2011-08" :to #inst "2015-06" :type :oss}
      {:title "thi.ng/trio" :from #inst "2012-12" :to #inst "2015-06" :type :oss}
-     {:title "thi.ng/simplecl" :from #inst "2012-10" :to #inst "2013-05" :type :oss}
-     {:title "thi.ng/simplecl" :from #inst "2015-05" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/simplecl" :from #inst "2012-10" :to #inst "2013-06" :type :oss}
      {:title "thi.ng/raymarchcl" :from #inst "2013-02" :to #inst "2013-05" :type :oss}
      {:title "thi.ng/structgen" :from #inst "2012-10" :to #inst "2013-02" :type :oss}
      {:title "thi.ng/luxor" :from #inst "2013-10" :to #inst "2015-06" :type :oss}
@@ -172,54 +179,104 @@ information.
      {:title "Reasons" :from #inst "2014-02" :to #inst "2014-02" :type :talk}
      {:title "Reasons" :from #inst "2014-09" :to #inst "2014-09" :type :talk}])
 
-  (->> {:x-axis   (viz/linear-axis [(->epoch #inst "2010-09") (->epoch #inst "2015-06")] [50 950] 200 1 11)
-        :y-axis   (viz/linear-axis [0 9] [50 200] 50 1 0)
-        :grid     {:minor-x true}
-        :data     [{:values     items
-                    :item-range (fn [x] [(->epoch (:from x)) (->epoch (:to x))])
-                    :attribs    {:fill "white" :stroke-width "14px" :stroke-linecap "round"
-                                 :font-family "Arial" :font-size 10}
-                    :shape      (fn [[[ax ay :as a] [bx :as b] item]]
-                                  (svg/group
-                                   {}
-                                   (svg/line a b {:stroke (item-cols (:type item))})
-                                   (if (< 30 (- bx ax))
-                                     (svg/text [ax (+ 3 ay)] (:title item) {:stroke "none"}))))
-                    :layout  viz/svg-stacked-interval-plot}]}
+  (def month (* (/ (+ (* 3 365) 366) 4.0 12.0) 24 60 60 1000))
+  (def year (* month 12))
+
+  (defn ->epoch
+    [^java.util.Date d] (.getTime d))
+
+  ;; http://stackoverflow.com/questions/9001384/java-date-rounding
+  (defn round-to-year
+    [epoch]
+    (let [cal (GregorianCalendar.)]
+      (doto cal
+        (.setTimeInMillis (long epoch))
+        (.add Calendar/MONTH 6)
+        (.set Calendar/MONTH 0)
+        (.set Calendar/DAY_OF_MONTH 1)
+        (.set Calendar/HOUR 0)
+        (.set Calendar/MINUTE 0)
+        (.set Calendar/SECOND 0)
+        (.set Calendar/MILLISECOND 0))
+      (.get cal Calendar/YEAR)))
+
+  (defn make-gradient
+    [id base]
+    (let [base (col/hex->rgba base)]
+      (svg/linear-gradient-rgb
+       id {} [0 base] [1 (col/adjust-saturation-rgb base -0.66)])))
+
+  (defn timeline-item
+    [[[ax ay :as a] [bx :as b] item]]
+    (svg/group
+     {}
+     (svg/rect
+      [(- ax 7) (- ay 7)] (- bx ax -14) 14
+      {:fill (str "url(#" (name (:type item)) ")") :rx 7 :ry 7})
+     (if (< 30 (- bx ax))
+       (svg/text [ax (+ 3 ay)] (:title item) {:stroke "none"}))))
+
+  (->> {:x-axis (viz/linear-axis
+                 {:domain [(->epoch #inst "2010-09") (->epoch #inst "2015-06")]
+                  :range  [50 950]
+                  :pos    200
+                  :major  year
+                  :minor  month
+                  :format round-to-year})
+        :y-axis (viz/linear-axis
+                 {:domain  [0 9]
+                  :range   [50 200]
+                  :pos     50
+                  :visible false})
+        :grid   {:minor-x true
+                 :minor-y false}
+        :data   [{:values     items
+                  :item-range (fn [x] [(->epoch (:from x)) (->epoch (:to x))])
+                  :attribs    {:fill "white" :stroke "none" ;;:stroke-width "14px" :stroke-linecap "round"
+                               :font-family "Arial" :font-size 10}
+                  :shape      timeline-item
+                  :layout  viz/svg-stacked-interval-plot}]}
        (viz/svg-plot2d-cartesian)
        (svg/svg
         {:width 960 :height 250}
         (svg/defs
-          (svg/linear-gradient-rgb "grad" [0 [0 2/3 1]] [1 [0.75 0.9 1]])))
+          (make-gradient "project" "#0af")
+          (make-gradient "oss" "#63f")
+          (make-gradient "workshop" "#9f0")
+          (make-gradient "talk" "#f9f")))
        (svg/serialize)
        (spit "timeline.svg"))
 #+END_SRC
 
 *** Contour plot
 
-| [[http://media.thi.ng/geom/viz/contours.svg]] | [[http://media.thi.ng/geom/viz/contours-outline.svg]] |
+| [[http://media.thi.ng/geom/viz/contours.svg]]     | [[http://media.thi.ng/geom/viz/contours-outline.svg]]     |
+| linear X/Y filled                             | linear X/Y outline                                    |
+| [[http://media.thi.ng/geom/viz/contours-log.svg]] | [[http://media.thi.ng/geom/viz/contours-log-outline.svg]] |
+| log X/Y filled                                | log X/Y outline                                       |
 
-#+BEGIN_SRC clojure :noweb-ref example3
-  (require '[thi.ng.geom.viz.core :as viz] :reload)
+#+BEGIN_SRC clojure :tangle ../babel/examples/contours.clj :mkdirp yes :padline no
+  (require '[thi.ng.geom.viz.core :as viz])
   (require '[thi.ng.geom.svg.core :as svg])
   (require '[thi.ng.math.core :as m])
   (require '[thi.ng.math.simplexnoise :as n])
 
-  (->> {:x-axis   (viz/linear-axis [0 64] [50 550] 550 5 3)
-        :y-axis   (viz/linear-axis [0 64] [550 50] 50 5 3)
-        ;; :x-axis   (viz/log-axis 2 [0 64] [50 550] 555)
-        ;; :y-axis   (viz/log-axis 2 [0 64] [550 50] 45)
-        :data     [{:matrix  (->> (for [y (range 64) x (range 64)]
-                                    (+ 0.5 (* 0.5 (n/noise2 (* x 0.06) (* y 0.06)))))
-                                  (viz/contour-matrix 64 64))
-                    :levels  (range 0.05 1 0.05)
-                    :attribs {:fill "none" :stroke "#0af"}
-                    ;; :attribs {:fill "rgba(0,160,255,0.05)" :stroke "#0af"} ;; filled version
-                    :layout  viz/svg-contour-plot}]}
+  (->> {:x-axis (viz/linear-axis {:domain [0 63] :range [50 550] :major 8 :minor 2 :pos 550})
+        :y-axis (viz/linear-axis {:domain [0 63] :range [550 50] :major 8 :minor 2 :pos 50})
+        ;; :x-axis (viz/log-axis {:domain [0 64] :range [50 550] :base 2 :pos 555})
+        ;; :y-axis (viz/log-axis {:domain [0 64] :range [550 50] :base 2 :pos 45})
+        :data   [{:matrix  (->> (for [y (range 64) x (range 64)]
+                                  (+ 0.5 (* 0.5 (n/noise2 (* x 0.06) (* y 0.06)))))
+                                (viz/contour-matrix 64 64))
+                  :matrix-scale [10 10]
+                  :levels  (range 0.05 1 0.05)
+                  :attribs {:fill "none" :stroke "#0af"}
+                  ;; :attribs {:fill "rgba(0,160,255,0.05)" :stroke "#0af"} ;; filled version
+                  :layout  viz/svg-contour-plot}]}
        (viz/svg-plot2d-cartesian)
        (svg/svg {:width 600 :height 600})
        (svg/serialize)
-       (spit "contours.svg"))
+       (spit "contours-outline.svg"))
 #+END_SRC
 
 ** Visualization spec format
@@ -233,15 +290,28 @@ information.
 
 *** Axis definitions (:x-axis / :y-axis)
 
-| *Key*     | *Value*              | *Required* | *Default* | *Description*                                                            |
-|-----------+----------------------+------------+-----------+--------------------------------------------------------------------------|
-| =:scale=  | scale function       | Y          | nil       | Scale function to translate domain values into visualization coordinates |
-| =:domain= | vec of domain bounds | Y          | nil       | Lower & upper bound of data source interval                              |
-| =:range=  | vec of range bounds  | Y          | nil       | Lower & upper bound of projected coordinates                             |
-| =:major=  | seq of domain values | N          | nil       | Seq of domain positions at which to draw labeled tick marks              |
-| =:minor=  | seq of domain values | N          | nil       | Seq of domain positions at which                                         |
+Axis specs are usually created via one of the available axis generator
+functions (=linear-axis= & =log-axis=). These functions too take a map
+of the same keys, but =linear-axis= interpretes the =:major= and
+=:minor= values differently: In this context these values are the
+intended precision and ticks will be created at multiples of the given
+value. The =log-axis= generator auto-creates ticks based on the
+=:base= of the logarithm.
+
+| *Key*      | *Value*              | *Required* | *Default*          | *Description*                                                            |
+|------------+----------------------+------------+--------------------+--------------------------------------------------------------------------|
+| =:scale=   | scale function       | Y          | nil                | Scale function to translate domain values into visualization coordinates |
+| =:domain=  | vec of domain bounds | Y          | nil                | Lower & upper bound of data source interval                              |
+| =:range=   | vec of range bounds  | Y          | nil                | Lower & upper bound of projected coordinates                             |
+| =:major=   | seq of domain values | N          | nil                | Seq of domain positions at which to draw labeled tick marks              |
+| =:minor=   | seq of domain values | N          | nil                | Seq of domain positions at which                                         |
+| =:pos=     | number               | Y          | nil                | Draw position of the axis (ypos for X-axis, xpos for Y-axis)             |
+| =:format=  | function             | N          | =(value-format 2)= | Function to format tick labels                                           |
+| =:visible= | boolean              | N          | Y                  | Flag if axis will be visible in visualization                            |
 
 *** Axis grid definition (:grid)
+
+*Note:* If no =:grid= spec is given in the main spec, no background grid will be displayed...
 
 | *Key*      | *Value* | *Required* | *Default*     | *Description*                                            |
 |------------+---------+------------+---------------+----------------------------------------------------------|
@@ -293,8 +363,10 @@ visualization methods used, but must state the following keys:
 *** SVG axis generators
 
 #+BEGIN_SRC clojure :noweb-ref axis
-  (defn tick-value
-    [x] (m/roundto x (if (< (m/abs x) 1) 0.01 1)))
+  (defn format-value
+    [prec]
+    (let [fmt [(f/float prec)]]
+      (fn [x] (f/format fmt x))))
 
   (defn svg-axis*
     [{:keys [major minor]} a b align tick1-fn tick2-fn]
@@ -312,20 +384,22 @@ visualization methods used, but must state the following keys:
      (svg/line a b)))
 
   (defn svg-x-axis
-    [{:keys [scale major minor pos] [r1 r2] :range :as spec}]
+    [{:keys [scale major minor pos format] [r1 r2] :range
+      :or {format (format-value 2)} :as spec}]
     (svg-axis*
      spec [r1 pos] [r2 pos] "start"
      #(let [x (scale %)]
-        [(svg/line [x pos] [x (+ pos 10)]) (svg/text [x (+ pos 20)] (tick-value %) {:stroke "none"})])
+        [(svg/line [x pos] [x (+ pos 10)]) (svg/text [x (+ pos 20)] (format %) {:stroke "none"})])
      #(let [x (scale %)]
         (svg/line [x pos] [x (+ pos 5)]))))
 
   (defn svg-y-axis
-    [{:keys [scale major minor pos] [r1 r2] :range :as spec}]
+    [{:keys [scale major minor pos format] [r1 r2] :range
+      :or {format (format-value 2)} :as spec}]
     (svg-axis*
      spec [pos r1] [pos r2] "end"
      #(let [y (scale %)]
-        [(svg/line [pos y] [(- pos 10) y]) (svg/text [(- pos 15) y] (tick-value %) {:stroke "none"})])
+        [(svg/line [pos y] [(- pos 10) y]) (svg/text [(- pos 15) y] (format %) {:stroke "none"})])
      #(let [y (scale %)]
         (svg/line [pos y] [(- pos 5) y]))))
 #+END_SRC
@@ -334,24 +408,23 @@ visualization methods used, but must state the following keys:
 
 #+BEGIN_SRC clojure :noweb-ref axis
   (defn lin-tick-marks
-    [[d1 d2] n]
+    [[d1 d2] delta]
     (let [dr (- d2 d1)
-          lr (Math/pow 10 (m/roundto (/ (Math/log dr) (Math/log 10)) 1))
-          delta (/ lr n)
           d1' (m/roundto d1 delta)]
       (filter #(m/in-range? d1 d2 %) (range d1' (+ d2 delta) delta))))
 
   (defn linear-axis
-    [domain range pos major minor]
-    (let [major' (lin-tick-marks domain major)
-          minor' (lin-tick-marks domain (* major (inc minor)))
-          minor' (filter (complement (set major')) minor')]
-      {:scale  (linear-scale domain range)
-       :major  major'
-       :minor  minor'
-       :domain domain
-       :range  range
-       :pos    pos}))
+    [{:keys [domain range major minor visible] :or {visible true} :as spec}]
+    (let [major' (if major (lin-tick-marks domain major))
+          minor' (if minor (lin-tick-marks domain minor))
+          minor' (if (and major' minor')
+                   (filter (complement (set major')) minor')
+                   minor')]
+      (assoc spec
+             :scale   (linear-scale domain range)
+             :major   major'
+             :minor   minor'
+             :visible visible)))
 #+END_SRC
 
 *** Logarithmic
@@ -381,13 +454,12 @@ visualization methods used, but must state the following keys:
            (filter #(m/in-range? d1 d2 %)))))
 
   (defn log-axis
-    [base domain range pos]
-    {:scale (log-scale base domain range)
-     :major (log-tick-marks-major base domain)
-     :minor (log-tick-marks-minor base domain)
-     :domain domain
-     :range range
-     :pos pos})
+    [{:keys [base domain range visible] :or {visible true} :as spec}]
+    (assoc spec
+           :scale   (log-scale base domain range)
+           :major   (log-tick-marks-major base domain)
+           :minor   (log-tick-marks-minor base domain)
+           :visible visible))
 #+END_SRC
 
 ** 2D Cartesian Plotting (SVG)
@@ -403,10 +475,12 @@ visualization methods used, but must state the following keys:
           scale-y (:scale y-axis)]
       (svg/group
        (merge {:stroke "#ccc" :stroke-dasharray "1 1"} attribs)
-       (map #(let [x (scale-x %)] (svg/line [x y1] [x y2]))
-            (if minor-x (concat (:minor x-axis) (:major x-axis)) (:major x-axis)))
-       (map #(let [y (scale-y %)] (svg/line [x1 y] [x2 y]))
-            (if minor-y (concat (:minor y-axis) (:major y-axis)) (:major y-axis))))))
+       (if (:visible x-axis)
+         (map #(let [x (scale-x %)] (svg/line [x y1] [x y2]))
+              (if minor-x (concat (:minor x-axis) (:major x-axis)) (:major x-axis))))
+       (if (:visible y-axis)
+         (map #(let [y (scale-y %)] (svg/line [x1 y] [x2 y]))
+              (if minor-y (concat (:minor y-axis) (:major y-axis)) (:major y-axis)))))))
 
   (defn- value-projector
     [scale-x scale-y] (fn [[x y]] [(scale-x x) (scale-y y)]))
@@ -417,8 +491,8 @@ visualization methods used, but must state the following keys:
      {}
      (if grid   (svg-axis-grid2d-cartesian x-axis y-axis grid))
      (map (fn [spec] ((:layout spec) opts spec)) data)
-     (if x-axis (svg-x-axis x-axis))
-     (if y-axis (svg-y-axis y-axis))))
+     (if (:visible x-axis) (svg-x-axis x-axis))
+     (if (:visible y-axis) (svg-y-axis y-axis))))
 #+END_SRC
 
 *** Line plot
@@ -529,6 +603,12 @@ visualization methods used, but must state the following keys:
            (svg/group attribs))))
 #+END_SRC
 
+** Helper functions
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+
+#+END_SRC
+
 ** Custom shape drawing
 
 #+BEGIN_SRC clojure :noweb-ref shapes
@@ -546,7 +626,7 @@ visualization methods used, but must state the following keys:
 
 TBD
 
-** Complete namespace definition
+** Complete namespace definitions
 
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/viz/core.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.viz.core
@@ -555,7 +635,8 @@ TBD
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.ndarray.core :as nd]
      [thi.ng.ndarray.contours :as contours]
-     [thi.ng.math.core :as m]))
+     [thi.ng.math.core :as m]
+     [thi.ng.strf.core :as f]))
 
   <<scale>>
 
@@ -565,3 +646,4 @@ TBD
 
   <<plot-2d>>
 #+END_SRC
+
