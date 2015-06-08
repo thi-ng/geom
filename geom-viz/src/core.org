@@ -16,10 +16,12 @@
      - [[#scales][Scales]]
          - [[#linear-scale][Linear scale]]
          - [[#logarithmic-scale][Logarithmic scale]]
+         - [[#lens-scale-dilating--bundling][Lens scale (dilating / bundling)]]
      - [[#axis--tick-generators][Axis & tick generators]]
          - [[#svg-axis-generators][SVG axis generators]]
          - [[#linear][Linear]]
          - [[#logarithmic][Logarithmic]]
+         - [[#lens-axis][Lens axis]]
      - [[#2d-cartesian-plotting-svg][2D Cartesian Plotting (SVG)]]
          - [[#generic-plotting-helpers][Generic plotting helpers]]
          - [[#line-plot][Line plot]]
@@ -358,6 +360,23 @@ visualization methods used, but must state the following keys:
       (fn [x] (m/mix r1 r2 (/ (- (log* x) d1l) dr)))))
 #+END_SRC
 
+*** Lens scale (dilating / bundling)
+
+The =lens-scale= defines a non-linear mapping by specifying a focal
+position in the domain interval, as well as a lens strength which
+controls the compression or expansion of the domain space around this
+focal point. If strength is positive, the lens is dilating. If
+negative, it is bundling (compressing). A strength of zero causes a
+normal/linear scaling behavior.
+
+#+BEGIN_SRC clojure :noweb-ref scale
+  (defn lens-scale
+    [[d1 d2] [r1 r2] focus strength]
+    (let [dr (- d2 d1)
+          f  (/ (- focus d1) dr)]
+      (fn [x] (m/mix-lens r1 r2 (/ (- x d1) dr) f strength))))
+#+END_SRC
+
 ** Axis & tick generators
 
 *** SVG axis generators
@@ -460,6 +479,23 @@ visualization methods used, but must state the following keys:
            :major   (log-tick-marks-major base domain)
            :minor   (log-tick-marks-minor base domain)
            :visible visible))
+#+END_SRC
+
+*** Lens axis
+
+#+BEGIN_SRC clojure :noweb-ref axis
+  (defn lens-axis
+    [{:keys [domain range focus strength major minor visible] :or {visible true} :as spec}]
+    (let [major' (if major (lin-tick-marks domain major))
+          minor' (if minor (lin-tick-marks domain minor))
+          minor' (if (and major' minor')
+                   (filter (complement (set major')) minor')
+                   minor')]
+      (assoc spec
+             :scale   (lens-scale domain range focus strength)
+             :major   major'
+             :minor   minor'
+             :visible visible)))
 #+END_SRC
 
 ** 2D Cartesian Plotting (SVG)

@@ -63,10 +63,6 @@ thi.ng/geom-viz
 target/geom-viz-<<conf-version()>>.js
 #+END_SRC
 
-#+BEGIN_SRC clojure :noweb-ref dep-ndarray
-[thi.ng/ndarray "0.2.0-SNAPSHOT"]
-#+END_SRC
-
 ** Leiningen project file                                          :noexport:
 
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
