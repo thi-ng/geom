@@ -63,6 +63,18 @@
       (->> *fmt-vec*
            (repeat n)
            (interpose " "))))
+
+  (def path-segment-formats
+    {:M ["M" *fmt-vec* " "]
+     :m ["m" *fmt-vec* " "]
+     :L ["L" *fmt-vec* " "]
+     :l ["l" *fmt-vec* " "]
+     :C ["C" *fmt-vec* " " *fmt-vec* " " *fmt-vec* " "]
+     :c ["c" *fmt-vec* " " *fmt-vec* " " *fmt-vec* " "]
+     :A ["A" *fmt-vec* " " *ff* " " str " " str " " *fmt-vec* " "]
+     :a ["a" *fmt-vec* " " *ff* " " str " " str " " *fmt-vec* " "]
+     :Z ["Z"]
+     :z ["z"]})
 #+END_SRC
 
 Actual conversion to SVG XML strings is only directly supported for
@@ -199,6 +211,14 @@ and will be automatically converted.
     [attribs & body]
     [:g (svg-attribs attribs nil) body])
 
+  (defn path
+    [segments & [attribs]]
+    [:path
+     (svg-attribs
+      attribs
+      {:d (apply f/format
+                 (mapcat (comp path-segment-formats first) segments)
+                 (mapcat rest segments))})])
   (defn text
     [[x y] txt & [attribs]]
     [:text
@@ -210,24 +230,28 @@ and will be automatically converted.
     [:circle
      (svg-attribs
       attribs
-      {:cx (*ff* x) :cy (*ff* y)
-       :r radius})])
+      {:cx (*ff* x) :cy (*ff* y) :r radius})])
+
+  (defn arc
+    [center radius theta1 theta2 ccw? & [attribs]]
+    (let [radius (vec2 radius)
+          p (g/+ (vec2 center) (g/as-cartesian (vec2 (v/x radius) theta1)))
+          q (g/+ (vec2 center) (g/as-cartesian (vec2 (v/y radius) theta2)))]
+      (path [[:M p] [:A radius 0 0 (if ccw? 1 0) q]] attribs)))
 
   (defn rect
     [[x y] w h & [attribs]]
     [:rect
      (svg-attribs
       attribs
-      {:x (*ff* x) :y (*ff* y)
-       :width w :height h})])
+      {:x (*ff* x) :y (*ff* y) :width w :height h})])
 
   (defn line
     [[ax ay] [bx by] & [attribs]]
     [:line
      (svg-attribs
       attribs
-      {:x1 (*ff* ax) :y1 (*ff* ay)
-       :x2 (*ff* bx) :y2 (*ff* by)})])
+      {:x1 (*ff* ax) :y1 (*ff* ay) :x2 (*ff* bx) :y2 (*ff* by)})])
 
   (defn line-decorated
     [p q start end & [attribs]]
@@ -436,7 +460,7 @@ Btw. This example can be run from the REPL via this command:
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :refer [vec2]]
+     [thi.ng.geom.core.vector :as v :refer [vec2]]
      [thi.ng.geom.core.matrix :as mat :refer [M32]]
      [thi.ng.dstruct.core :as d]
      [thi.ng.math.core :as m]
