@@ -3,6 +3,7 @@
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeomvizcore][Namespace: thi.ng.geom.viz.core]]
      - [[#example-usage][Example usage]]
+         - [[#running-all-examples-from-repl][Running all examples from REPL]]
          - [[#scatter-plot][Scatter plot]]
          - [[#line-plot][Line plot]]
          - [[#polar-line-plot][Polar line plot]]
@@ -12,6 +13,8 @@
          - [[#contour-plot][Contour plot]]
      - [[#visualization-spec-format][Visualization spec format]]
          - [[#axis-definitions-x-axis--y-axis][Axis definitions (:x-axis / :y-axis)]]
+             - [[#notes-for-polar-projection][Notes for polar projection]]
+             - [[#default-axis-label-styling][Default axis label styling]]
          - [[#axis-grid-definition-grid][Axis grid definition (:grid)]]
          - [[#dataset-specs-data][Dataset specs (:data)]]
      - [[#scales][Scales]]
@@ -19,6 +22,7 @@
          - [[#logarithmic-scale][Logarithmic scale]]
          - [[#lens-scale-dilating--bundling][Lens scale (dilating / bundling)]]
      - [[#axis--tick-generators][Axis & tick generators]]
+         - [[#common-axis-factory][Common axis factory]]
          - [[#linear][Linear]]
          - [[#logarithmic][Logarithmic]]
          - [[#lens-axis][Lens axis]]
@@ -45,6 +49,14 @@ This section shows some basic example outputs and general usage
 patterns. See spec description in next section for further
 information.
 
+*** Running all examples from REPL
+
+#+BEGIN_SRC clojure
+  (->> ["scatter" "lineplot" "lineplot-polar" "intervals" "timeline" "contours"]
+       (map #(load-file (str "examples/" % ".clj")))
+       dorun)
+#+END_SRC
+
 *** Scatter plot
 
 | [[http://media.thi.ng/geom/viz/scatter-linear-2.svg]] | [[http://media.thi.ng/geom/viz/scatter-log-2.svg]] |
@@ -54,10 +66,12 @@ information.
   (require '[thi.ng.geom.svg.core :as svg])
   (require '[thi.ng.math.core :as m])
 
-  (->> {:x-axis (viz/log-axis {:domain [1 201] :range [50 590] :base 10 :pos 550})
-        :y-axis (viz/linear-axis {:domain [0 100] :range [550 20] :major 10 :minor 5 :pos 50})
-        ;;:y-axis (viz/log-axis {:domain [0.1 101] :range [550 20] :base 10 :pos 50}) ;; Y log axis
-        :grid   {:attribs {:stroke "#caa"}
+  (->> {:x-axis (viz/log-axis {:domain [1 201] :range [50 590] :pos 550})
+        :y-axis (viz/linear-axis
+                 {:domain [0.1 101] :range [550 20] :major 10 :minor 5 :pos 50
+                  :label {:text-anchor "end"}})
+        ;;:y-axis (viz/log-axis {:domain [0.1 101] :range [550 20] :pos 50}) ;; Y log axis
+        :grid   {:style {:stroke "#caa"}
                  :minor-x true
                  :minor-y true}
         :data   [{:values  (map (juxt identity #(Math/sqrt %)) (range 0 200 2))
@@ -88,8 +102,9 @@ information.
   (->> {:x-axis (viz/linear-axis
                  {:domain [(- PI) PI] :range [50 580] :major (/ PI 2) :minor (/ PI 4) :pos 250})
         :y-axis (viz/linear-axis
-                 {:domain [-1 1] :range [250 20] :major 0.2 :minor 0.1 :pos 50})
-        :grid   {:attribs {:stroke "#caa"}
+                 {:domain [-1 1] :range [250 20] :major 0.2 :minor 0.1 :pos 50
+                  :label {:text-anchor "end"}})
+        :grid   {:style {:stroke "#caa"}
                  :minor-y true}
         :data   [{:values  (map test-equation (m/norm-range 200))
                   :attribs {:fill "none" :stroke "#0af"}
@@ -102,11 +117,15 @@ information.
 
 *** Polar line plot
 
+Same overall visualization setup, only using polar coordinate transform...
+
+[[http://media.thi.ng/geom/viz/lineplot-polar.svg]]
+
 #+BEGIN_SRC clojure :tangle ../babel/examples/lineplot-polar.clj :mkdirp yes :padline no
   (require '[thi.ng.geom.viz.core :as viz] :reload)
   (require '[thi.ng.geom.svg.core :as svg])
   (require '[thi.ng.geom.core.vector :as v])
-  (require '[thi.ng.math.core :as m :refer [PI HALF_PI QUARTER_PI]])
+  (require '[thi.ng.math.core :as m :refer [PI]])
 
   (defn test-equation
     [t] (let [x (m/mix (- PI) PI t)] [x (* (Math/cos (* 0.5 x)) (Math/sin (* x x x)))]))
@@ -114,14 +133,14 @@ information.
   (->> {:x-axis (viz/linear-axis
                  {:domain [(- PI) PI] :range [(* 1.1 PI) (* 1.9 PI)]
                   :major (/ PI 2) :minor (/ PI 16)
-                  :major-size -10 :minor-size -5
+                  :major-size -10 :minor-size -5 :label-dist -15
                   :pos 280})
         :y-axis (viz/linear-axis
-                 {:domain [-1 1] :range [60 280] :major 0.5 :minor 0.25
-                  :major-size 0.05
-                  :minor-size 0.025
+                 {:domain [-1 1] :range [60 280]
+                  :major 0.5 :minor 0.25
+                  :major-size 0.05 :minor-size 0.025 :label-dist 0.1
                   :pos (* 1.1 PI)})
-        :origin (v/vec2 300 300)
+        :origin (v/vec2 300 310)
         :grid   {:attribs {:stroke "#caa" :fill "none"}
                  :minor-x true
                  :minor-y true}
@@ -129,9 +148,9 @@ information.
                   :attribs {:fill "none" :stroke "#0af"}
                   :layout  viz/svg-line-plot}]}
        (viz/svg-plot2d-polar)
-       (svg/svg {:width 600 :height 600})
+       (svg/svg {:width 600 :height 320})
        (svg/serialize)
-       (spit "polar.svg"))
+       (spit "lineplot-polar.svg"))
 #+END_SRC
 
 *** Stacked intervals
@@ -330,18 +349,39 @@ intended precision and ticks will be created at multiples of the given
 value. The =log-axis= generator auto-creates ticks based on the
 =:base= of the logarithm.
 
-| *Key*         | *Value*              | *Required* | *Default*          | *Description*                                                            |
-|---------------+----------------------+------------+--------------------+--------------------------------------------------------------------------|
-| =:scale=      | scale function       | Y          | nil                | Scale function to translate domain values into visualization coordinates |
-| =:domain=     | vec of domain bounds | Y          | nil                | Lower & upper bound of data source interval                              |
-| =:range=      | vec of range bounds  | Y          | nil                | Lower & upper bound of projected coordinates                             |
-| =:major=      | seq of domain values | N          | nil                | Seq of domain positions at which to draw labeled tick marks              |
-| =:minor=      | seq of domain values | N          | nil                | Seq of domain positions at which                                         |
-| =:major-size= | number               | N          | 10                 | Length of major tick marks                                               |
-| =:minor-size= | number               | N          | 5                  | Length of minor tick marks                                               |
-| =:pos=        | number               | Y          | nil                | Draw position of the axis (ypos for X-axis, xpos for Y-axis)             |
-| =:format=     | function             | N          | =(value-format 2)= | Function to format tick labels                                           |
-| =:visible=    | boolean              | N          | true               | Flag if axis will be visible in visualization                            |
+| *Key*         | *Value*              | *Required* | *Default*           | *Description*                                                            |
+|---------------+----------------------+------------+---------------------+--------------------------------------------------------------------------|
+| =:scale=      | scale function       | Y          | nil                 | Scale function to translate domain values into visualization coordinates |
+| =:domain=     | vec of domain bounds | Y          | nil                 | Lower & upper bound of data source interval                              |
+| =:range=      | vec of range bounds  | Y          | nil                 | Lower & upper bound of projected coordinates                             |
+| =:major=      | seq of domain values | N          | nil                 | Seq of domain positions at which to draw labeled tick marks              |
+| =:minor=      | seq of domain values | N          | nil                 | Seq of domain positions at which                                         |
+| =:major-size= | number               | N          | 10                  | Length of major tick marks                                               |
+| =:minor-size= | number               | N          | 5                   | Length of minor tick marks                                               |
+| =:label-dist= | number               | N          | 10 + major-size     | Distance of value labels from axis                                       |
+| =:pos=        | number               | Y          | nil                 | Draw position of the axis (ypos for X-axis, xpos for Y-axis)             |
+| =:format=     | function             | N          | =(value-format 2)=  | Function to format tick labels                                           |
+| =:label=      | map                  | N          | see next section    | Style attribute map for value labels                                     |
+| =:style=      | map                  | N          | ={:stroke "black"}= | Axis line style attributes                                               |
+| =:visible=    | boolean              | N          | true                | Flag if axis will be visible in visualization                            |
+| =:origin=     | 2d point             | Y/N        | [0 0]               | Only needed for polar projections, center of visualization               |
+
+**** Notes for polar projection
+
+- the =:range= interval of the x-axis must be an angle interval in radians (see above example)
+- the =:range= interval of the y-axis must be a radius interval
+
+Same goes for =:pos= values: The =:pos= for x-axis is a radius, the =:pos= for y-axis is an angle in radians
+
+**** Default axis label styling
+
+#+BEGIN_SRC clojure :noweb-ref default-label-style
+  {:fill "black"
+   :stroke "none"
+   :font-family "Arial"
+   :font-size 10
+   :text-anchor "middle"}
+#+END_SRC
 
 *** Axis grid definition (:grid)
 
@@ -349,7 +389,7 @@ value. The =log-axis= generator auto-creates ticks based on the
 
 | *Key*      | *Value* | *Required* | *Default*     | *Description*                                            |
 |------------+---------+------------+---------------+----------------------------------------------------------|
-| =:attribs= | hashmap | N          | default style | allows extra attributes to be injected (e.g. for SVG)    |
+| =:style=   | hashmap | N          | default style | allows extra attributes to be injected (e.g. for SVG)    |
 | =:minor-x= | boolean | N          | false         | if =false= only uses major tick mark positions on X axis |
 | =:minor-y= | boolean | N          | false         | if =false= only uses major tick mark positions on Y axis |
 
@@ -427,6 +467,28 @@ The two animations below show the effect of individually adjusting the focus and
 
 ** Axis & tick generators
 
+*** Common axis factory
+
+#+BEGIN_SRC clojure :noweb-ref axis
+  (defn axis-common*
+    [{:keys [visible major-size minor-size format style label label-dist]
+      :or {format (value-formatter 2), visible true
+           major-size 10, minor-size 5}
+      :as spec}]
+    (assoc spec
+           :visible    visible
+           :major-size major-size
+           :minor-size minor-size
+           :format     format
+           :style      (merge
+                        {:stroke "black"}
+                        style)
+           :label      (merge
+                        <<default-label-style>>
+                        label)
+           :label-dist (or label-dist (+ 10 major-size))))
+#+END_SRC
+
 *** Linear
 
 #+BEGIN_SRC clojure :noweb-ref axis
@@ -437,20 +499,18 @@ The two animations below show the effect of individually adjusting the focus and
       (filter #(m/in-range? d1 d2 %) (range d1' (+ d2 delta) delta))))
 
   (defn linear-axis
-    [{:keys [domain range major minor major-size minor-size visible]
-      :or {visible true, major-size 10, minor-size 5} :as spec}]
+    [{:keys [domain range major minor] :as spec}]
     (let [major' (if major (lin-tick-marks domain major))
           minor' (if minor (lin-tick-marks domain minor))
           minor' (if (and major' minor')
                    (filter (complement (set major')) minor')
                    minor')]
-      (assoc spec
-             :scale   (linear-scale domain range)
-             :major   major'
-             :minor   minor'
-             :major-size major-size
-             :minor-size minor-size
-             :visible visible)))
+      (-> spec
+          (assoc
+           :scale (linear-scale domain range)
+           :major major'
+           :minor minor')
+          (axis-common*))))
 #+END_SRC
 
 *** Logarithmic
@@ -480,15 +540,13 @@ The two animations below show the effect of individually adjusting the focus and
            (filter #(m/in-range? d1 d2 %)))))
 
   (defn log-axis
-    [{:keys [base domain range major-size minor-size visible]
-      :or {visible true, major-size 10, minor-size 5} :as spec}]
-    (assoc spec
-           :scale   (log-scale base domain range)
-           :major   (log-tick-marks-major base domain)
-           :minor   (log-tick-marks-minor base domain)
-           :major-size major-size
-           :minor-size minor-size
-           :visible visible))
+    [{:keys [base domain range] :or {base 10} :as spec}]
+    (-> spec
+        (assoc
+         :scale (log-scale base domain range)
+         :major (log-tick-marks-major base domain)
+         :minor (log-tick-marks-minor base domain))
+        (axis-common*)))
 #+END_SRC
 
 *** Lens axis
@@ -504,23 +562,21 @@ details.
 
 #+BEGIN_SRC clojure :noweb-ref axis
   (defn lens-axis
-    [{:keys [domain range focus strength major minor major-size minor-size visible]
-      :or {visible true, strength 0.5, major-size 10, minor-size 5} :as spec}]
+    [{:keys [domain range focus strength major minor]
+      :or {strength 0.5} :as spec}]
     (let [major' (if major (lin-tick-marks domain major))
           minor' (if minor (lin-tick-marks domain minor))
           minor' (if (and major' minor')
                    (filter (complement (set major')) minor')
-                   minor')
-          focus  (or focus (/ (apply + domain) 2.0))]
-      (assoc spec
-             :scale    (lens-scale domain range focus strength)
-             :major    major'
-             :minor    minor'
-             :major-size major-size
-             :minor-size minor-size
-             :focus    focus
-             :strength strength
-             :visible  visible)))
+                   minor')]
+      (-> spec
+          (assoc
+           :scale    (lens-scale domain range focus strength)
+           :major    major'
+           :minor    minor'
+           :focus    (or focus (/ (apply + domain) 2.0))
+           :strength strength)
+          (axis-common*))))
 #+END_SRC
 
 ** 2D Cartesian Plotting (SVG)
@@ -529,52 +585,44 @@ details.
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-axis*
-    [{:keys [major minor]} axis align tick1-fn tick2-fn]
+    [{:keys [major minor style label]} axis tick1-fn tick2-fn label-fn]
     (svg/group
-     {:stroke "black"}
-     (svg/group
-      {:fill "black"
-       :font-family "Arial"
-       :font-size 10
-       :text-anchor align}
-      (mapcat tick1-fn major))
-     (svg/group
-      {:stroke "#333"}
-      (map tick2-fn minor))
+     style
+     (map tick1-fn major)
+     (map tick2-fn minor)
+     (svg/group label (map label-fn major))
      axis))
 
   (defn svg-x-axis-cartesian
-    [{:keys [scale major minor major-size minor-size pos format] [r1 r2] :range
-      :or {format (value-formatter 2)} :as spec}]
+    [{:keys [scale major minor major-size minor-size label-dist pos format] [r1 r2] :range
+      :as spec}]
     (svg-axis*
-     spec (svg/line [r1 pos] [r2 pos]) "start"
-     #(let [x (scale %)]
-        [(svg/line [x pos] [x (+ pos major-size)]) (svg/text [x (+ pos 20)] (format %) {:stroke "none"})])
-     #(let [x (scale %)]
-        (svg/line [x pos] [x (+ pos minor-size)]))))
+     spec (svg/line [r1 pos] [r2 pos])
+     #(let [x (scale %)] (svg/line [x pos] [x (+ pos major-size)]))
+     #(let [x (scale %)] (svg/line [x pos] [x (+ pos minor-size)]))
+     #(let [x (scale %)] (svg/text [x (+ pos label-dist)] (format %)))))
 
   (defn svg-y-axis-cartesian
-    [{:keys [scale major minor major-size minor-size pos format] [r1 r2] :range
-      :or {format (value-formatter 2)} :as spec}]
+    [{:keys [scale major minor major-size minor-size label-dist pos format] [r1 r2] :range
+      :as spec}]
     (svg-axis*
-     spec (svg/line [pos r1] [pos r2]) "end"
-     #(let [y (scale %)]
-        [(svg/line [pos y] [(- pos major-size) y]) (svg/text [(- pos 15) y] (format %) {:stroke "none"})])
-     #(let [y (scale %)]
-        (svg/line [pos y] [(- pos minor-size) y]))))
+     spec (svg/line [pos r1] [pos r2])
+     #(let [y (scale %)] (svg/line [pos y] [(- pos major-size) y]))
+     #(let [y (scale %)] (svg/line [pos y] [(- pos minor-size) y]))
+     #(let [y (scale %)] (svg/text [(- pos label-dist) y] (format %)))))
 #+END_SRC
 
 *** Generic plotting helpers
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-axis-grid2d-cartesian
-    [x-axis y-axis {:keys [attribs minor-x minor-y]}]
+    [x-axis y-axis {:keys [style minor-x minor-y]}]
     (let [[x1 x2] (:range x-axis)
           [y1 y2] (:range y-axis)
           scale-x (:scale x-axis)
           scale-y (:scale y-axis)]
       (svg/group
-       (merge {:stroke "#ccc" :stroke-dasharray "1 1"} attribs)
+       (merge {:stroke "#ccc" :stroke-dasharray "1 1"} style)
        (if (:visible x-axis)
          (map #(let [x (scale-x %)] (svg/line [x y1] [x y2]))
               (if minor-x (concat (:minor x-axis) (:major x-axis)) (:major x-axis))))
@@ -703,29 +751,31 @@ details.
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-x-axis-polar
-    [{{:keys [scale major minor major-size minor-size pos format]
+    [{{:keys [scale major minor major-size minor-size label-dist pos format]
        [r1 r2] :range
        :or {format (value-formatter 2)}} :x-axis
        project :project o :origin :as spec}]
     (svg-axis*
-     (:x-axis spec) (svg/arc o pos r1 r2 true {:fill "none"}) "start"
+     (:x-axis spec) (svg/arc o pos r1 r2 true {:fill "none"})
      #(let [x (scale %)]
-        [(svg/line (project [x pos]) (project [x (- pos major-size)]))
-         (svg/text (project [x (- pos major-size)]) (format %) {:stroke "none"})])
+        (svg/line (project [x pos]) (project [x (- pos major-size)])))
      #(let [x (scale %)]
-        (svg/line (project [x pos]) (project [x (- pos minor-size)])))))
+        (svg/line (project [x pos]) (project [x (- pos minor-size)])))
+     #(let [x (scale %)]
+        (svg/text (project [x (- pos label-dist)]) (format %) {:stroke "none"}))))
 
   (defn svg-y-axis-polar
-    [{{:keys [scale major minor major-size minor-size pos format] [r1 r2] :range
+    [{{:keys [scale major minor major-size minor-size label-dist pos format] [r1 r2] :range
        :or {format (value-formatter 2)}} :y-axis
        project :project :as spec}]
     (svg-axis*
-     (:y-axis spec) (svg/line (project [pos r1]) (project [pos r2])) "end"
+     (:y-axis spec) (svg/line (project [pos r1]) (project [pos r2]))
      #(let [y (scale %)]
-        [(svg/line (project [pos y]) (project [(- pos major-size) y]))
-         (svg/text (project [(- pos major-size) y]) (format %) {:stroke "none"})])
+        (svg/line (project [pos y]) (project [(- pos major-size) y])))
      #(let [y (scale %)]
-        (svg/line (project [pos y]) (project [(- pos minor-size) y])))))
+        (svg/line (project [pos y]) (project [(- pos minor-size) y])))
+     #(let [y (scale %)]
+        (svg/text (project [(- pos label-dist) y]) (format %) {:stroke "none"}))))
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
