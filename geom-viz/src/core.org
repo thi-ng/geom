@@ -28,6 +28,7 @@
          - [[#lens-axis][Lens axis]]
      - [[#visualization-methods][Visualization methods]]
          - [[#line-plot][Line plot]]
+         - [[#area-graph][Area graph]]
          - [[#scatter-plot][Scatter plot]]
          - [[#contour-lines][Contour lines]]
          - [[#stacked-intervals][Stacked intervals]]
@@ -73,7 +74,7 @@ information.
                  {:domain [0.1 101] :range [550 20] :major 10 :minor 5 :pos 50
                   :label-dist 15 :label {:text-anchor "end"}})
         ;;:y-axis (viz/log-axis {:domain [0.1 101] :range [550 20] :pos 50}) ;; Y log axis
-        :grid   {:style {:stroke "#caa"}
+        :grid   {:attribs {:stroke "#caa"}
                  :minor-x true
                  :minor-y true}
         :data   [{:values  (map (juxt identity #(Math/sqrt %)) (range 0 200 2))
@@ -106,7 +107,7 @@ information.
         :y-axis (viz/linear-axis
                  {:domain [-1 1] :range [250 20] :major 0.2 :minor 0.1 :pos 50
                   :label-dist 15 :label {:text-anchor "end"}})
-        :grid   {:style {:stroke "#caa"}
+        :grid   {:attribs {:stroke "#caa"}
                  :minor-y true}
         :data   [{:values  (map test-equation (m/norm-range 200))
                   :attribs {:fill "none" :stroke "#0af"}
@@ -385,7 +386,7 @@ value. The =log-axis= generator auto-creates ticks based on the
 | =:pos=        | number               | Y          | nil                 | Draw position of the axis (ypos for X-axis, xpos for Y-axis)             |
 | =:format=     | function             | N          | =(value-format 2)=  | Function to format tick labels                                           |
 | =:label=      | map                  | N          | see next section    | Style attribute map for value labels                                     |
-| =:style=      | map                  | N          | ={:stroke "black"}= | Axis line style attributes                                               |
+| =:attribs=    | map                  | N          | ={:stroke "black"}= | Axis line attribs attributes                                             |
 | =:visible=    | boolean              | N          | true                | Flag if axis will be visible in visualization                            |
 | =:origin=     | 2d point             | Y/N        | [0 0]               | Only needed for polar projections, center of visualization               |
 
@@ -410,11 +411,11 @@ Same goes for =:pos= values: The =:pos= for x-axis is a radius, the =:pos= for y
 
 *Note:* If no =:grid= spec is given in the main spec, no background grid will be displayed...
 
-| *Key*      | *Value* | *Required* | *Default*     | *Description*                                            |
-|------------+---------+------------+---------------+----------------------------------------------------------|
-| =:style=   | hashmap | N          | default style | allows extra attributes to be injected (e.g. for SVG)    |
-| =:minor-x= | boolean | N          | false         | if =false= only uses major tick mark positions on X axis |
-| =:minor-y= | boolean | N          | false         | if =false= only uses major tick mark positions on Y axis |
+| *Key*      | *Value* | *Required* | *Default*       | *Description*                                            |
+|------------+---------+------------+-----------------+----------------------------------------------------------|
+| =:attribs= | hashmap | N          | default attribs | allows extra attributes to be injected (e.g. for SVG)    |
+| =:minor-x= | boolean | N          | false           | if =false= only uses major tick mark positions on X axis |
+| =:minor-y= | boolean | N          | false           | if =false= only uses major tick mark positions on Y axis |
 
 *** Dataset specs (:data)
 
@@ -494,7 +495,7 @@ The two animations below show the effect of individually adjusting the focus and
 
 #+BEGIN_SRC clojure :noweb-ref axis
   (defn axis-common*
-    [{:keys [visible major-size minor-size format style label label-dist]
+    [{:keys [visible major-size minor-size format attribs label label-dist]
       :or {format (value-formatter 2), visible true
            major-size 10, minor-size 5}
       :as spec}]
@@ -503,9 +504,9 @@ The two animations below show the effect of individually adjusting the focus and
            :major-size major-size
            :minor-size minor-size
            :format     format
-           :style      (merge
+           :attribs      (merge
                         {:stroke "black"}
-                        style)
+                        attribs)
            :label      (merge
                         <<default-label-style>>
                         label)
@@ -607,19 +608,35 @@ details.
 *** Line plot
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
-  (defn svg-line-plot
+  (defn line-plot-points
     [{:keys [x-axis y-axis project]} {:keys [values attribs]}]
-    (let [[r1 r2] (:range y-axis)]
-      (svg/line-strip
-       (->> values
-            (sequence
-             (value-transducer
-              {:cull-domain (:domain x-axis)
-               :cull-range  (if (< r1 r2) [r1 r2] [r2 r1])
-               :scale-x     (:scale x-axis)
-               :scale-y     (:scale y-axis)
-               :project     project})))
-       attribs)))
+    (let [[ry1 ry2] (:range y-axis)]
+      (->> values
+           (sequence
+            (value-transducer
+             {:cull-domain (:domain x-axis)
+              :cull-range  (if (< ry1 ry2) [ry1 ry2] [ry2 ry1])
+              :scale-x     (:scale x-axis)
+              :scale-y     (:scale y-axis)
+              :project     project})))))
+
+  (defn svg-line-plot
+    [v-spec d-spec]
+    (svg/line-strip (line-plot-points v-spec d-spec) (:attribs d-spec)))
+#+END_SRC
+
+*** Area graph
+
+#+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn svg-area-plot
+    [v-spec d-spec]
+    (let [project (:project v-spec)
+          ry1     (first (:range (:y-axis v-spec)))
+          points  (line-plot-points (assoc v-spec :project identity) d-spec)
+          p       (v/vec2 (first (last points)) ry1)
+          q       (v/vec2 (ffirst points) ry1)
+          points  (concat points (map (partial g/mix p q) (m/norm-range 20)))]
+      (svg/polygon (map project points) (:attribs d-spec))))
 #+END_SRC
 
 *** Scatter plot
@@ -654,9 +671,7 @@ details.
     [scale-x scale-y project]
     (fn [contour]
       (let [contour (map (fn [[y x]] [(scale-x x) (scale-y y)]) contour)]
-        (if project
-          (svg/polygon (map project contour))
-          (svg/polygon contour)))))
+        (svg/polygon (map project contour)))))
 
   (defn svg-contour-plot
     [{:keys [x-axis y-axis project]}
@@ -720,9 +735,9 @@ details.
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-axis*
-    [{:keys [major minor style label]} axis tick1-fn tick2-fn label-fn]
+    [{:keys [major minor attribs label]} axis tick1-fn tick2-fn label-fn]
     (svg/group
-     style
+     attribs
      (map tick1-fn major)
      (map tick2-fn minor)
      (svg/group label (map label-fn major))
@@ -751,13 +766,13 @@ details.
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-axis-grid2d-cartesian
-    [x-axis y-axis {:keys [style minor-x minor-y]}]
+    [x-axis y-axis {:keys [attribs minor-x minor-y]}]
     (let [[x1 x2] (:range x-axis)
           [y1 y2] (:range y-axis)
           scale-x (:scale x-axis)
           scale-y (:scale y-axis)]
       (svg/group
-       (merge {:stroke "#ccc" :stroke-dasharray "1 1"} style)
+       (merge {:stroke "#ccc" :stroke-dasharray "1 1"} attribs)
        (if (:visible x-axis)
          (map #(let [x (scale-x %)] (svg/line [x y1] [x y2]))
               (if minor-x (concat (:minor x-axis) (:major x-axis)) (:major x-axis))))
@@ -767,12 +782,13 @@ details.
 
   (defn svg-plot2d-cartesian
     [{:keys [x-axis y-axis grid data] :as opts}]
-    (svg/group
-     {}
-     (if grid (svg-axis-grid2d-cartesian x-axis y-axis grid))
-     (map (fn [spec] ((:layout spec) opts spec)) data)
-     (if (:visible x-axis) (svg-x-axis-cartesian x-axis))
-     (if (:visible y-axis) (svg-y-axis-cartesian y-axis))))
+    (let [opts (assoc opts :project identity)]
+      (svg/group
+       {}
+       (if grid (svg-axis-grid2d-cartesian x-axis y-axis grid))
+       (map (fn [spec] ((:layout spec) opts spec)) data)
+       (if (:visible x-axis) (svg-x-axis-cartesian x-axis))
+       (if (:visible y-axis) (svg-y-axis-cartesian y-axis)))))
 #+END_SRC
 
 ** 2D Polar Plotting (SVG)
