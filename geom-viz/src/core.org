@@ -26,18 +26,20 @@
          - [[#linear][Linear]]
          - [[#logarithmic][Logarithmic]]
          - [[#lens-axis][Lens axis]]
-     - [[#2d-cartesian-plotting-svg][2D Cartesian Plotting (SVG)]]
-         - [[#svg-axis-generators][SVG axis generators]]
-         - [[#generic-plotting-helpers][Generic plotting helpers]]
+     - [[#visualization-methods][Visualization methods]]
          - [[#line-plot][Line plot]]
          - [[#scatter-plot][Scatter plot]]
          - [[#contour-lines][Contour lines]]
          - [[#stacked-intervals][Stacked intervals]]
+     - [[#2d-cartesian-plotting-svg][2D Cartesian Plotting (SVG)]]
+         - [[#svg-axis-generators][SVG axis generators]]
+         - [[#generic-plotting-helpers][Generic plotting helpers]]
      - [[#2d-polar-plotting-svg][2D Polar Plotting (SVG)]]
          - [[#svg-axis-generators][SVG axis generators]]
      - [[#projections][Projections]]
-     - [[#helper-functions][Helper functions]]
-     - [[#custom-shape-drawing][Custom shape drawing]]
+     - [[#value-transformations][Value transformations]]
+     - [[#value-formatting][Value formatting]]
+     - [[#custom-shapes][Custom shapes]]
      - [[#todo-3d-plotting][TODO 3D Plotting]]
      - [[#complete-namespace-definitions][Complete namespace definitions]]
 
@@ -59,7 +61,7 @@ information.
 
 *** Scatter plot
 
-| [[http://media.thi.ng/geom/viz/scatter-linear-2.svg]] | [[http://media.thi.ng/geom/viz/scatter-log-2.svg]] |
+| [[http://media.thi.ng/geom/viz/scatter-linear-3.svg]] | [[http://media.thi.ng/geom/viz/scatter-log-3.svg]] |
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/scatter.clj :mkdirp yes :padline no
   (require '[thi.ng.geom.viz.core :as viz] :reload)
@@ -69,7 +71,7 @@ information.
   (->> {:x-axis (viz/log-axis {:domain [1 201] :range [50 590] :pos 550})
         :y-axis (viz/linear-axis
                  {:domain [0.1 101] :range [550 20] :major 10 :minor 5 :pos 50
-                  :label {:text-anchor "end"}})
+                  :label-dist 15 :label {:text-anchor "end"}})
         ;;:y-axis (viz/log-axis {:domain [0.1 101] :range [550 20] :pos 50}) ;; Y log axis
         :grid   {:style {:stroke "#caa"}
                  :minor-x true
@@ -89,7 +91,7 @@ information.
 
 *** Line plot
 
-[[http://media.thi.ng/geom/viz/lineplot-2.svg]]
+[[http://media.thi.ng/geom/viz/lineplot-3.svg]]
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/lineplot.clj :mkdirp yes :padline no
   (require '[thi.ng.geom.viz.core :as viz] :reload)
@@ -103,7 +105,7 @@ information.
                  {:domain [(- PI) PI] :range [50 580] :major (/ PI 2) :minor (/ PI 4) :pos 250})
         :y-axis (viz/linear-axis
                  {:domain [-1 1] :range [250 20] :major 0.2 :minor 0.1 :pos 50
-                  :label {:text-anchor "end"}})
+                  :label-dist 15 :label {:text-anchor "end"}})
         :grid   {:style {:stroke "#caa"}
                  :minor-y true}
         :data   [{:values  (map test-equation (m/norm-range 200))
@@ -119,7 +121,7 @@ information.
 
 Same overall visualization setup, only using polar coordinate transform...
 
-[[http://media.thi.ng/geom/viz/lineplot-polar.svg]]
+[[http://media.thi.ng/geom/viz/lineplot-polar-3.svg]]
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/lineplot-polar.clj :mkdirp yes :padline no
   (require '[thi.ng.geom.viz.core :as viz] :reload)
@@ -156,7 +158,7 @@ Same overall visualization setup, only using polar coordinate transform...
 *** Stacked intervals
 **** Plain intervals
 
-[[http://media.thi.ng/geom/viz/intervals-2.svg]]
+[[http://media.thi.ng/geom/viz/intervals-3.svg]]
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/intervals.clj :mkdirp yes :padline no
   (require '[thi.ng.geom.viz.core :as viz] :reload)
@@ -181,7 +183,7 @@ This more complex example shows how to use structured data (here
 project descriptions) to create a timeline and visualize each item
 using a custom shape function w/ linear gradients (based on item type).
 
-[[http://media.thi.ng/geom/viz/timeline-2.svg]]
+[[http://media.thi.ng/geom/viz/timeline-3.svg]]
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/timeline.clj :mkdirp yes :padline no
   (require '[thi.ng.geom.viz.core :as viz] :reload)
@@ -191,50 +193,51 @@ using a custom shape function w/ linear gradients (based on item type).
   (import '[java.util Calendar GregorianCalendar])
 
   (def items
-    [{:title "toxiclibs" :from #inst "2006-03" :to #inst "2013-06" :type :oss}
-     {:title "thi.ng/geom" :from #inst "2011-08" :to #inst "2015-06" :type :oss}
-     {:title "thi.ng/trio" :from #inst "2012-12" :to #inst "2015-06" :type :oss}
-     {:title "thi.ng/simplecl" :from #inst "2012-10" :to #inst "2013-06" :type :oss}
-     {:title "thi.ng/raymarchcl" :from #inst "2013-02" :to #inst "2013-05" :type :oss}
-     {:title "thi.ng/structgen" :from #inst "2012-10" :to #inst "2013-02" :type :oss}
-     {:title "thi.ng/luxor" :from #inst "2013-10" :to #inst "2015-06" :type :oss}
-     {:title "thi.ng/morphogen" :from #inst "2014-03" :to #inst "2015-06" :type :oss}
-     {:title "thi.ng/color" :from #inst "2014-09" :to #inst "2015-06" :type :oss}
-     {:title "thi.ng/validate" :from #inst "2014-05" :to #inst "2015-06" :type :oss}
-     {:title "thi.ng/ndarray" :from #inst "2015-05" :to #inst "2015-06" :type :oss}
-     {:title "thi.ng/tweeny" :from #inst "2013-10" :to #inst "2015-01" :type :oss}
-     {:title "Co(De)Factory" :from #inst "2013-12" :to #inst "2014-08" :type :project}
-     {:title "Chrome WebLab" :from #inst "2011-05" :to #inst "2012-11" :type :project}
-     {:title "ODI" :from #inst "2013-07" :to #inst "2013-10" :type :project}
-     {:title "LCOM" :from #inst "2012-06" :to #inst "2013-05" :type :project}
+    [{:title "toxiclibs"          :from #inst "2006-03" :to #inst "2013-06" :type :oss}
+     {:title "thi.ng/geom"        :from #inst "2011-08" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/trio"        :from #inst "2012-12" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/simplecl"    :from #inst "2012-10" :to #inst "2013-06" :type :oss}
+     {:title "thi.ng/raymarchcl"  :from #inst "2013-02" :to #inst "2013-05" :type :oss}
+     {:title "thi.ng/structgen"   :from #inst "2012-10" :to #inst "2013-02" :type :oss}
+     {:title "thi.ng/luxor"       :from #inst "2013-10" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/morphogen"   :from #inst "2014-03" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/color"       :from #inst "2014-09" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/validate"    :from #inst "2014-05" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/ndarray"     :from #inst "2015-05" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/tweeny"      :from #inst "2013-10" :to #inst "2015-01" :type :oss}
+     {:title "Co(De)Factory"      :from #inst "2013-12" :to #inst "2014-08" :type :project}
+     {:title "Chrome WebLab"      :from #inst "2011-05" :to #inst "2012-11" :type :project}
+     {:title "ODI"                :from #inst "2013-07" :to #inst "2013-10" :type :project}
+     {:title "LCOM"               :from #inst "2012-06" :to #inst "2013-05" :type :project}
      {:title "V&amp;A Ornamental" :from #inst "2010-12" :to #inst "2011-05" :type :project}
-     {:title "Engine26" :from #inst "2010-08" :to #inst "2010-12" :type :project}
-     {:title "Resonate" :from #inst "2012-04" :to #inst "2012-04" :type :workshop}
-     {:title "Resonate" :from #inst "2013-03" :to #inst "2013-03" :type :workshop}
-     {:title "Resonate" :from #inst "2014-04" :to #inst "2014-04" :type :workshop}
-     {:title "Resonate" :from #inst "2015-04" :to #inst "2015-04" :type :workshop}
-     {:title "Resonate" :from #inst "2012-04" :to #inst "2012-04" :type :talk}
-     {:title "Resonate" :from #inst "2013-03" :to #inst "2013-03" :type :talk}
-     {:title "Resonate" :from #inst "2014-04" :to #inst "2014-04" :type :talk}
-     {:title "Resonate" :from #inst "2015-04" :to #inst "2015-04" :type :talk}
-     {:title "Retune" :from #inst "2014-09" :to #inst "2014-09" :type :talk}
-     {:title "Bezalel" :from #inst "2011-04" :to #inst "2011-04" :type :workshop}
-     {:title "V&amp;A" :from #inst "2011-01" :to #inst "2011-03" :type :workshop}
-     {:title "HEAD" :from #inst "2010-10" :to #inst "2010-10" :type :workshop}
-     {:title "ETH" :from #inst "2010-11" :to #inst "2010-11" :type :workshop}
-     {:title "SAC" :from #inst "2012-11" :to #inst "2012-11" :type :workshop}
-     {:title "SAC" :from #inst "2014-12-02" :to #inst "2014-12-06" :type :workshop}
-     {:title "MSA" :from #inst "2013-04" :to #inst "2013-04" :type :workshop}
-     {:title "Young Creators" :from #inst "2014-06" :to #inst "2014-06" :type :workshop}
-     {:title "EYEO" :from #inst "2013-06" :to #inst "2013-06" :type :talk}
-     {:title "Reasons" :from #inst "2014-02" :to #inst "2014-02" :type :talk}
-     {:title "Reasons" :from #inst "2014-09" :to #inst "2014-09" :type :talk}])
+     {:title "Engine26"           :from #inst "2010-08" :to #inst "2010-12" :type :project}
+     {:title "Resonate"           :from #inst "2012-04" :to #inst "2012-04" :type :workshop}
+     {:title "Resonate"           :from #inst "2013-03" :to #inst "2013-03" :type :workshop}
+     {:title "Resonate"           :from #inst "2014-04" :to #inst "2014-04" :type :workshop}
+     {:title "Resonate"           :from #inst "2015-04" :to #inst "2015-04" :type :workshop}
+     {:title "Resonate"           :from #inst "2012-04" :to #inst "2012-04" :type :talk}
+     {:title "Resonate"           :from #inst "2013-03" :to #inst "2013-03" :type :talk}
+     {:title "Resonate"           :from #inst "2014-04" :to #inst "2014-04" :type :talk}
+     {:title "Resonate"           :from #inst "2015-04" :to #inst "2015-04" :type :talk}
+     {:title "Retune"             :from #inst "2014-09" :to #inst "2014-09" :type :talk}
+     {:title "Bezalel"            :from #inst "2011-04" :to #inst "2011-04" :type :workshop}
+     {:title "V&amp;A"            :from #inst "2011-01" :to #inst "2011-03" :type :workshop}
+     {:title "HEAD"               :from #inst "2010-10" :to #inst "2010-10" :type :workshop}
+     {:title "ETH"                :from #inst "2010-11" :to #inst "2010-11" :type :workshop}
+     {:title "SAC"                :from #inst "2012-11" :to #inst "2012-11" :type :workshop}
+     {:title "SAC"                :from #inst "2014-12" :to #inst "2014-12" :type :workshop}
+     {:title "MSA"                :from #inst "2013-04" :to #inst "2013-04" :type :workshop}
+     {:title "Young Creators"     :from #inst "2014-06" :to #inst "2014-06" :type :workshop}
+     {:title "EYEO"               :from #inst "2013-06" :to #inst "2013-06" :type :talk}
+     {:title "Reasons"            :from #inst "2014-02" :to #inst "2014-02" :type :talk}
+     {:title "Reasons"            :from #inst "2014-09" :to #inst "2014-09" :type :talk}])
+
+  (def item-type-colors {:project "#0af" :oss "#63f" :workshop "#9f0" :talk "#f9f"})
 
   (def month (* (/ (+ (* 3 365) 366) 4.0 12.0) 24 60 60 1000))
-  (def year (* month 12))
+  (def year  (* month 12))
 
-  (defn ->epoch
-    [^java.util.Date d] (.getTime d))
+  (defn ->epoch [^java.util.Date d] (.getTime d))
 
   ;; http://stackoverflow.com/questions/9001384/java-date-rounding
   (defn round-to-year
@@ -252,58 +255,71 @@ using a custom shape function w/ linear gradients (based on item type).
       (.get cal Calendar/YEAR)))
 
   (defn make-gradient
-    [id base]
+    [[id base]]
     (let [base (col/hex->rgba base)]
       (svg/linear-gradient-rgb
        id {} [0 base] [1 (col/adjust-saturation-rgb base -0.66)])))
 
-  (defn timeline-item
-    [[[ax ay :as a] [bx :as b] item]]
-    (svg/group
-     {}
-     (svg/rect
-      [(- ax 7) (- ay 7)] (- bx ax -14) 14
-      {:fill (str "url(#" (name (:type item)) ")") :rx 7 :ry 7})
-     (if (< 30 (- bx ax))
-       (svg/text [ax (+ 3 ay)] (:title item) {:stroke "none"}))))
+  (defn item-range [i] [(->epoch (:from i)) (->epoch (:to i))])
 
+  (defn timeline-spec
+    [type offset]
+    {:values     (if type (filter #(= type (:type %)) items) items)
+     :offset     offset
+     :item-range item-range
+     :attribs    {:fill "white" :stroke "none"
+                  :font-family "Arial" :font-size 10}
+     :shape      (viz/labeled-rect-horizontal
+                  {:h 14 :r 7 :min-width 30 :base-line 3 :label :title
+                   :fill #(str "url(#" (name (:type %)) ")")})
+     :layout     viz/svg-stacked-interval-plot})
+
+  ;; Create stacked timeline with *all* items
   (->> {:x-axis (viz/linear-axis
                  {:domain [(->epoch #inst "2010-09") (->epoch #inst "2015-06")]
-                  :range  [50 950]
-                  :pos    200
-                  :major  year
-                  :minor  month
-                  :format round-to-year})
-        :y-axis (viz/linear-axis
-                 {:domain  [0 9]
-                  :range   [50 200]
-                  :pos     50
-                  :visible false})
-        :grid   {:minor-x true
-                 :minor-y false}
-        :data   [{:values     items
-                  :item-range (fn [x] [(->epoch (:from x)) (->epoch (:to x))])
-                  :attribs    {:fill "white" :stroke "none" ;;:stroke-width "14px" :stroke-linecap "round"
-                               :font-family "Arial" :font-size 10}
-                  :shape      timeline-item
-                  :layout  viz/svg-stacked-interval-plot}]}
+                  :range [10 950] :pos 160 :major year :minor month :format round-to-year})
+        :y-axis (viz/linear-axis {:domain [0 9] :range [10 160] :visible false})
+        :grid   {:minor-x true}
+        :data   [(timeline-spec nil 0)]}
        (viz/svg-plot2d-cartesian)
        (svg/svg
-        {:width 960 :height 250}
-        (svg/defs
-          (make-gradient "project" "#0af")
-          (make-gradient "oss" "#63f")
-          (make-gradient "workshop" "#9f0")
-          (make-gradient "talk" "#f9f")))
+        {:width 960 :height 200}
+        (apply svg/defs (map make-gradient item-type-colors)))
        (svg/serialize)
        (spit "timeline.svg"))
 #+END_SRC
 
+We can also group items by their =:type= property and arrange them
+separately along the Y-axis. This creates a less compact result, but
+better legibility. The example also shows how to re-use visualization
+spec fragments (via the use of our =timeline-spec= fn).
+
+[[http://media.thi.ng/geom/viz/timeline-separate-3.svg]]
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/timeline.clj :mkdirp yes
+  ;; Create stacked timeline vertically grouped by item type
+  (->> {:x-axis (viz/linear-axis
+                 {:domain [(->epoch #inst "2010-09") (->epoch #inst "2015-06")]
+                  :range [10 950] :pos 205 :major year :minor month :format round-to-year})
+        :y-axis (viz/linear-axis {:domain [0 12] :range [10 205] :visible false})
+        :grid   {:minor-x true}
+        :data   [(timeline-spec :project 0)
+                 (timeline-spec :oss 2)
+                 (timeline-spec :workshop 9)
+                 (timeline-spec :talk 10)]}
+       (viz/svg-plot2d-cartesian)
+       (svg/svg
+        {:width 960 :height 230}
+        (apply svg/defs (map make-gradient item-type-colors)))
+       (svg/serialize)
+       (spit "timeline-separate.svg"))
+#+END_SRC
+
 *** Contour plot
 
-| [[http://media.thi.ng/geom/viz/contours-2.svg]]     | [[http://media.thi.ng/geom/viz/contours-outline-2.svg]]     |
+| [[http://media.thi.ng/geom/viz/contours-3.svg]]     | [[http://media.thi.ng/geom/viz/contours-outline-3.svg]]     |
 | linear X/Y filled                               | linear X/Y outline                                      |
-| [[http://media.thi.ng/geom/viz/contours-log-2.svg]] | [[http://media.thi.ng/geom/viz/contours-log-outline-2.svg]] |
+| [[http://media.thi.ng/geom/viz/contours-log-3.svg]] | [[http://media.thi.ng/geom/viz/contours-log-outline-3.svg]] |
 | log X/Y filled                                  | log X/Y outline                                         |
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/contours.clj :mkdirp yes :padline no
@@ -312,8 +328,11 @@ using a custom shape function w/ linear gradients (based on item type).
   (require '[thi.ng.math.core :as m])
   (require '[thi.ng.math.simplexnoise :as n])
 
-  (->> {:x-axis (viz/linear-axis {:domain [0 63] :range [50 550] :major 8 :minor 2 :pos 550})
-        :y-axis (viz/linear-axis {:domain [0 63] :range [550 50] :major 8 :minor 2 :pos 50})
+  (->> {:x-axis (viz/linear-axis
+                 {:domain [0 63] :range [50 550] :major 8 :minor 2 :pos 550})
+        :y-axis (viz/linear-axis
+                 {:domain [0 63] :range [550 50] :major 8 :minor 2 :pos 50
+                  :label-dist 15 :label {:text-anchor "end"}})
         ;; :x-axis (viz/log-axis {:domain [0 64] :range [50 550] :base 2 :pos 555})
         ;; :y-axis (viz/log-axis {:domain [0 64] :range [550 50] :base 2 :pos 45})
         :data   [{:matrix  (->> (for [y (range 64) x (range 64)]
@@ -329,6 +348,10 @@ using a custom shape function w/ linear gradients (based on item type).
        (svg/serialize)
        (spit "contours-outline.svg"))
 #+END_SRC
+
+Another variation of the above with polar coordinates:
+
+[[http://media.thi.ng/geom/viz/contours-polar.gif]]
 
 ** Visualization spec format
 
@@ -454,7 +477,7 @@ normal/linear scaling behavior.
 
 The two animations below show the effect of individually adjusting the focus and lens strength:
 
-| [[http://media.thi.ng/geom/viz/lens-focus-2.gif]] | [[http://media.thi.ng/geom/viz/lens-strength-3.gif]] |
+| [[http://media.thi.ng/geom/viz/lens-focus-2.gif]] | [[http://media.thi.ng/geom/viz/lens-strength-4.gif]] |
 | Focus shift, constant strength = 0.5          | Lens strength adjustment, constant focus = 0.0   |
 
 #+BEGIN_SRC clojure :noweb-ref scale
@@ -568,15 +591,127 @@ details.
           minor' (if minor (lin-tick-marks domain minor))
           minor' (if (and major' minor')
                    (filter (complement (set major')) minor')
-                   minor')]
+                   minor')
+          focus  (or focus (/ (apply + domain) 2.0))]
       (-> spec
           (assoc
            :scale    (lens-scale domain range focus strength)
            :major    major'
            :minor    minor'
-           :focus    (or focus (/ (apply + domain) 2.0))
+           :focus    focus
            :strength strength)
           (axis-common*))))
+#+END_SRC
+
+** Visualization methods
+*** Line plot
+
+#+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn svg-line-plot
+    [{:keys [x-axis y-axis project]} {:keys [values attribs]}]
+    (let [[r1 r2] (:range y-axis)]
+      (svg/line-strip
+       (->> values
+            (sequence
+             (value-transducer
+              {:cull-domain (:domain x-axis)
+               :cull-range  (if (< r1 r2) [r1 r2] [r2 r1])
+               :scale-x     (:scale x-axis)
+               :scale-y     (:scale y-axis)
+               :project     project})))
+       attribs)))
+#+END_SRC
+
+*** Scatter plot
+
+#+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn svg-scatter-plot
+    [{:keys [x-axis y-axis project]}
+     {:keys [values attribs shape]
+      :or   {shape #(svg/circle % 3)}}]
+    (let [[r1 r2] (:range y-axis)]
+      (->> values
+           (sequence
+            (value-transducer
+             {:cull-domain (:domain x-axis)
+              :cull-range  (if (< r1 r2) [r1 r2] [r2 r1])
+              :scale-x     (:scale x-axis)
+              :scale-y     (:scale y-axis)
+              :project     project
+              :shape       shape}))
+           (svg/group attribs))))
+#+END_SRC
+
+*** Contour lines
+
+#+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn contour-matrix
+    [w h values]
+    (let [mat (nd/ndarray :float32 values [h w])]
+      (contours/set-border2d mat 1e9)))
+
+  (defn contour->svg
+    [scale-x scale-y project]
+    (fn [contour]
+      (let [contour (map (fn [[y x]] [(scale-x x) (scale-y y)]) contour)]
+        (if project
+          (svg/polygon (map project contour))
+          (svg/polygon contour)))))
+
+  (defn svg-contour-plot
+    [{:keys [x-axis y-axis project]}
+     {:keys [matrix attribs levels]}]
+    (let [contour-fn (contour->svg (:scale x-axis) (:scale y-axis) project)]
+      (svg/group
+       attribs
+       (map
+        #(svg/group {} (map contour-fn (contours/find-contours2d matrix %)))
+        (sort levels)))))
+#+END_SRC
+
+*** Stacked intervals
+
+#+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn overlap? [[a b] [c d]] (and (<= a d) (>= b c)))
+
+  (defn compute-row-stacking
+    [item-range coll]
+    (reduce
+     (fn [grid x]
+       (let [r (item-range x)]
+         (loop [[row & more] grid idx 0]
+           (if (or (nil? row) (not (some #(overlap? r (item-range %)) row)))
+             (update-in grid [idx] #(conj (or % []) x))
+             (recur more (inc idx))))))
+     [] coll))
+
+  (defn svg-stacked-interval-plot
+    [{:keys [x-axis y-axis]}
+     {:keys [values attribs shape item-range offset]
+      :or   {shape (fn [[a b]] (svg/line a b))
+             item-range identity
+             offset 0}}]
+    (let [scale-x (:scale x-axis)
+          scale-y (:scale y-axis)
+          [d1 d2] (:domain x-axis)
+          map-val (value-mapper scale-x scale-y)]
+      (->> values
+           (filter #(overlap? (:domain x-axis) (item-range %)))
+           (sort-by (comp first item-range))
+           (compute-row-stacking item-range)
+           (mapcat
+            (fn [i row]
+              (let [i (+ i offset)]
+                (map
+                 (fn [item]
+                   (let [[a b] (item-range item)
+                         a (max d1 a)
+                         b (min d2 b)]
+                     [(map-val [a i]) (map-val [b i]) item]))
+                 row)))
+            (range))
+           (map shape)
+           (svg/group attribs))))
 #+END_SRC
 
 ** 2D Cartesian Plotting (SVG)
@@ -594,7 +729,7 @@ details.
      axis))
 
   (defn svg-x-axis-cartesian
-    [{:keys [scale major minor major-size minor-size label-dist pos format] [r1 r2] :range
+    [{:keys [scale major-size minor-size label-dist pos format] [r1 r2] :range
       :as spec}]
     (svg-axis*
      spec (svg/line [r1 pos] [r2 pos])
@@ -603,7 +738,7 @@ details.
      #(let [x (scale %)] (svg/text [x (+ pos label-dist)] (format %)))))
 
   (defn svg-y-axis-cartesian
-    [{:keys [scale major minor major-size minor-size label-dist pos format] [r1 r2] :range
+    [{:keys [scale major-size minor-size label-dist pos format] [r1 r2] :range
       :as spec}]
     (svg-axis*
      spec (svg/line [pos r1] [pos r2])
@@ -640,120 +775,14 @@ details.
      (if (:visible y-axis) (svg-y-axis-cartesian y-axis))))
 #+END_SRC
 
-*** Line plot
-
-#+BEGIN_SRC clojure :noweb-ref plot-2d
-  (defn svg-line-plot
-    [{:keys [x-axis y-axis project]} {:keys [values attribs]}]
-    (let [[r1 r2] (:range y-axis)]
-      (svg/line-strip
-       (->> values
-            (sequence
-             (point-transducer
-              {:cull-domain (:domain x-axis)
-               :cull-range  (if (< r1 r2) [r1 r2] [r2 r1])
-               :scale-x     (:scale x-axis)
-               :scale-y     (:scale y-axis)
-               :project     project})))
-       attribs)))
-#+END_SRC
-
-*** Scatter plot
-
-#+BEGIN_SRC clojure :noweb-ref plot-2d
-  (defn svg-scatter-plot
-    [{:keys [x-axis y-axis project]}
-     {:keys [values attribs shape]
-      :or   {shape #(svg/circle % 3)}}]
-    (let [[r1 r2] (:range y-axis)]
-      (->> values
-           (sequence
-            (point-transducer
-             {:cull-domain (:domain x-axis)
-              :cull-range  (if (< r1 r2) [r1 r2] [r2 r1])
-              :scale-x     (:scale x-axis)
-              :scale-y     (:scale y-axis)
-              :project     project
-              :shape       shape}))
-           (svg/group attribs))))
-#+END_SRC
-
-*** Contour lines
-
-#+BEGIN_SRC clojure :noweb-ref plot-2d
-  (defn contour-matrix
-    [w h values]
-    (let [mat (nd/ndarray :float32 values [h w])]
-      (contours/set-border2d mat 1e9)))
-
-  (defn contour->svg
-    [scale-x scale-y]
-    (fn [contour]
-      (-> (map (fn [[y x]] [(scale-x x) (scale-y y)]) contour)
-          (svg/polygon))))
-
-  (defn svg-contour-plot
-    [{:keys [x-axis y-axis]}
-     {:keys [matrix attribs levels]}]
-    (let [contour-fn (contour->svg (:scale x-axis) (:scale y-axis))]
-      (svg/group
-       attribs
-       (map
-        #(svg/group {} (map contour-fn (contours/find-contours2d matrix %)))
-        (sort levels)))))
-#+END_SRC
-
-*** Stacked intervals
-
-#+BEGIN_SRC clojure :noweb-ref plot-2d
-  (defn overlap? [[a b] [c d]] (and (<= a d) (>= b c)))
-
-  (defn compute-row-stacking
-    [item-range coll]
-    (reduce
-     (fn [grid x]
-       (let [r (item-range x)]
-         (loop [[row & more] grid idx 0]
-           (if (or (nil? row) (not (some #(overlap? r (item-range %)) row)))
-             (update-in grid [idx] #(conj (or % []) x))
-             (recur more (inc idx))))))
-     [] coll))
-
-  (defn svg-stacked-interval-plot
-    [{:keys [x-axis y-axis]}
-     {:keys [values attribs shape item-range]
-      :or   {shape (fn [[a b]] (svg/line a b)) item-range identity}}]
-    (let [scale-x (:scale x-axis)
-          scale-y (:scale y-axis)
-          [d1 d2] (:domain x-axis)
-          project (value-projector scale-x scale-y)]
-      (->> values
-           (filter #(overlap? (:domain x-axis) (item-range %)))
-           (sort-by (comp first item-range))
-           (compute-row-stacking item-range)
-           (mapcat
-            (fn [i row]
-              (map
-               (fn [item]
-                 (let [[a b] (item-range item)
-                       a (max d1 a)
-                       b (min d2 b)]
-                   [(project [a i]) (project [b i]) item]))
-               row))
-            (range))
-           (map shape)
-           (svg/group attribs))))
-#+END_SRC
-
 ** 2D Polar Plotting (SVG)
 
 *** SVG axis generators
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-x-axis-polar
-    [{{:keys [scale major minor major-size minor-size label-dist pos format]
-       [r1 r2] :range
-       :or {format (value-formatter 2)}} :x-axis
+    [{{:keys [scale major-size minor-size label-dist pos format]
+       [r1 r2] :range :or {format (value-formatter 2)}} :x-axis
        project :project o :origin :as spec}]
     (svg-axis*
      (:x-axis spec) (svg/arc o pos r1 r2 true {:fill "none"})
@@ -765,8 +794,8 @@ details.
         (svg/text (project [x (- pos label-dist)]) (format %) {:stroke "none"}))))
 
   (defn svg-y-axis-polar
-    [{{:keys [scale major minor major-size minor-size label-dist pos format] [r1 r2] :range
-       :or {format (value-formatter 2)}} :y-axis
+    [{{:keys [scale major-size minor-size label-dist pos format]
+       [r1 r2] :range :or {format (value-formatter 2)}} :y-axis
        project :project :as spec}]
     (svg-axis*
      (:y-axis spec) (svg/line (project [pos r1]) (project [pos r2]))
@@ -818,28 +847,36 @@ details.
       (fn [[x y]] (g/+ o (g/as-cartesian (v/vec2 y x))))))
 #+END_SRC
 
-** Helper functions
+** Value transformations
 
-#+BEGIN_SRC clojure :noweb-ref helpers
-  (defn value-projector
+#+BEGIN_SRC clojure :noweb-ref transformers
+  (defn value-mapper
     [scale-x scale-y] (fn [[x y]] [(scale-x x) (scale-y y)]))
 
-  (defn value-formatter
-    [prec]
-    (let [fmt [(f/float prec)]]
-      (fn [x] (f/format fmt x))))
-
-  (defn point-transducer
+  (defn value-transducer
     [{:keys [cull-domain cull-range scale-x scale-y project shape]}]
     (cond->      (comp
                   (filter #(m/in-range? cull-domain (first %)))
-                  (map (value-projector scale-x scale-y)))
+                  (map (value-mapper scale-x scale-y)))
       cull-range (comp (filter #(m/in-range? cull-range (second %))))
       project    (comp (map project))
       shape      (comp (map shape))))
 #+END_SRC
 
-** Custom shape drawing
+** Value formatting
+
+#+BEGIN_SRC clojure :noweb-ref formatters
+  (defn value-formatter
+    [prec]
+    (let [fmt [(f/float prec)]]
+      (fn [x] (f/format fmt x))))
+#+END_SRC
+
+** Custom shapes
+
+This section provides some preset shape functions for use with scatter
+plots or stacked interval plots (see examples at beginning of this
+file).
 
 #+BEGIN_SRC clojure :noweb-ref shapes
   (defn svg-triangle-up
@@ -856,6 +893,19 @@ details.
 
   (defn svg-square
     [r] (let [d (* r 2.0)] (fn [[x y]] (svg/rect [(- x r) (- y r)] d d))))
+
+  (defn labeled-rect-horizontal
+    [{:keys [h r label fill min-width base-line]}]
+    (let [r2 (* -2 r)
+          h2 (* 0.5 h)]
+      (fn [[[ax ay :as a] [bx :as b] item]]
+        (svg/group
+         {}
+         (svg/rect
+          [(- ax r) (- ay h2)] (- bx ax r2) h
+          {:fill (fill item) :rx r :ry r})
+         (if (< min-width (- bx ax))
+           (svg/text [ax (+ base-line ay)] (label item)))))))
 #+END_SRC
 
 ** TODO 3D Plotting
@@ -875,9 +925,11 @@ TBD
      [thi.ng.math.core :as m]
      [thi.ng.strf.core :as f]))
 
-  <<helpers>>
+  <<transformers>>
 
   <<projections>>
+
+  <<formatters>>
 
   <<scale>>
 
