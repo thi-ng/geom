@@ -233,11 +233,11 @@ and will be automatically converted.
       {:cx (*ff* x) :cy (*ff* y) :r radius})])
 
   (defn arc
-    [center radius theta1 theta2 ccw? & [attribs]]
+    [center radius theta1 theta2 great? ccw? & [attribs]]
     (let [radius (vec2 radius)
           p (g/+ (vec2 center) (g/as-cartesian (vec2 (v/x radius) theta1)))
           q (g/+ (vec2 center) (g/as-cartesian (vec2 (v/y radius) theta2)))]
-      (path [[:M p] [:A radius 0 0 (if ccw? 1 0) q]] attribs)))
+      (path [[:M p] [:A radius 0 (if great? 1 0) (if ccw? 1 0) q]] attribs)))
 
   (defn rect
     [[x y] w h & [attribs]]
