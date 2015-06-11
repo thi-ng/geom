@@ -4,9 +4,10 @@
  - [[#namespace-thinggeomvizcore][Namespace: thi.ng.geom.viz.core]]
      - [[#example-usage][Example usage]]
          - [[#running-all-examples-from-repl][Running all examples from REPL]]
+         - [[#namespaces-required-by-all-examples][Namespaces required by all examples]]
          - [[#scatter-plot][Scatter plot]]
-         - [[#line-plot][Line plot]]
-         - [[#polar-line-plot][Polar line plot]]
+         - [[#line--area-plot][Line & area plot]]
+         - [[#radar-plot][Radar plot]]
          - [[#stacked-intervals][Stacked intervals]]
              - [[#plain-intervals][Plain intervals]]
              - [[#categorized-timeline][Categorized timeline]]
@@ -29,6 +30,7 @@
      - [[#visualization-methods][Visualization methods]]
          - [[#line-plot][Line plot]]
          - [[#area-graph][Area graph]]
+         - [[#radar-plot][Radar plot]]
          - [[#scatter-plot][Scatter plot]]
          - [[#contour-lines][Contour lines]]
          - [[#stacked-intervals][Stacked intervals]]
@@ -55,105 +57,160 @@ information.
 *** Running all examples from REPL
 
 #+BEGIN_SRC clojure
-  (->> ["scatter" "lineplot" "lineplot-polar" "intervals" "timeline" "contours"]
+  (->> ["scatter" "lineplot" "radar" "intervals" "timeline" "contours"]
        (map #(load-file (str "examples/" % ".clj")))
        dorun)
+#+END_SRC
+
+*** Namespaces required by all examples
+
+#+BEGIN_SRC clojure :noweb-ref example-imports
+  (require '[thi.ng.geom.viz.core :as viz] :reload)
+  (require '[thi.ng.geom.svg.core :as svg])
+  (require '[thi.ng.geom.core.vector :as v])
+  (require '[thi.ng.math.core :as m :refer [PI]])
 #+END_SRC
 
 *** Scatter plot
 
 | [[http://media.thi.ng/geom/viz/scatter-linear-3.svg]] | [[http://media.thi.ng/geom/viz/scatter-log-3.svg]] |
 
-#+BEGIN_SRC clojure :tangle ../babel/examples/scatter.clj :mkdirp yes :padline no
-  (require '[thi.ng.geom.viz.core :as viz] :reload)
-  (require '[thi.ng.geom.svg.core :as svg])
-  (require '[thi.ng.math.core :as m])
+#+BEGIN_SRC clojure :tangle ../babel/examples/scatter.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
 
-  (->> {:x-axis (viz/log-axis {:domain [1 201] :range [50 590] :pos 550})
-        :y-axis (viz/linear-axis
-                 {:domain [0.1 101] :range [550 20] :major 10 :minor 5 :pos 50
-                  :label-dist 15 :label {:text-anchor "end"}})
-        ;;:y-axis (viz/log-axis {:domain [0.1 101] :range [550 20] :pos 50}) ;; Y log axis
-        :grid   {:attribs {:stroke "#caa"}
-                 :minor-x true
-                 :minor-y true}
-        :data   [{:values  (map (juxt identity #(Math/sqrt %)) (range 0 200 2))
-                  :attribs {:fill "#0af" :stroke "none"}
-                  :layout  viz/svg-scatter-plot}
-                 {:values  (map (juxt identity #(m/random %)) (range 0 200 2))
-                  :attribs {:fill "none" :stroke "#f60"}
-                  :shape   (viz/svg-triangle-down 6)
-                  :layout  viz/svg-scatter-plot}]}
-       (viz/svg-plot2d-cartesian)
-       (svg/svg {:width 600 :height 600})
-       (svg/serialize)
-       (spit "scatter.svg"))
+  (defn export-viz
+    [spec path]
+    (->> spec
+         (viz/svg-plot2d-cartesian)
+         (svg/svg {:width 600 :height 600})
+         (svg/serialize)
+         (spit path)))
+
+  (def spec
+    {:x-axis (viz/log-axis
+              {:domain [1 201] :range [50 590] :pos 550})
+     :y-axis (viz/linear-axis
+              {:domain [0.1 100] :range [550 20] :major 10 :minor 5 :pos 50
+               :label-dist 15 :label {:text-anchor "end"}})
+     :grid   {:attribs {:stroke "#caa"}
+              :minor-x true
+              :minor-y true}
+     :data   [{:values  (map (juxt identity #(Math/sqrt %)) (range 0 200 2))
+               :attribs {:fill "#0af" :stroke "none"}
+               :layout  viz/svg-scatter-plot}
+              {:values  (map (juxt identity #(m/random %)) (range 0 200 2))
+               :attribs {:fill "none" :stroke "#f60"}
+               :shape   (viz/svg-triangle-down 6)
+               :layout  viz/svg-scatter-plot}]})
+
+  (export-viz spec "scatter.svg")
+
+  (-> spec
+      (assoc :y-axis (viz/log-axis
+                      {:domain [0.1 101] :range [550 20] :pos 50
+                       :label-dist 15 :label {:text-anchor "end"}}))
+      (export-viz "scatter-log.svg"))
 #+END_SRC
 
-*** Line plot
+*** Line & area plot
 
-[[http://media.thi.ng/geom/viz/lineplot-3.svg]]
+| [[http://media.thi.ng/geom/viz/lineplot-3.svg]] | [[http://media.thi.ng/geom/viz/areaplot-3.svg]] |
+| Line plot (cartesian)                       | Line plot (polar)                           |
 
-#+BEGIN_SRC clojure :tangle ../babel/examples/lineplot.clj :mkdirp yes :padline no
-  (require '[thi.ng.geom.viz.core :as viz] :reload)
-  (require '[thi.ng.geom.svg.core :as svg])
-  (require '[thi.ng.math.core :as m :refer [PI]])
+#+BEGIN_SRC clojure :tangle ../babel/examples/lineplot.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
 
   (defn test-equation
     [t] (let [x (m/mix (- PI) PI t)] [x (* (Math/cos (* 0.5 x)) (Math/sin (* x x x)))]))
 
-  (->> {:x-axis (viz/linear-axis
-                 {:domain [(- PI) PI] :range [50 580] :major (/ PI 2) :minor (/ PI 4) :pos 250})
-        :y-axis (viz/linear-axis
-                 {:domain [-1 1] :range [250 20] :major 0.2 :minor 0.1 :pos 50
-                  :label-dist 15 :label {:text-anchor "end"}})
-        :grid   {:attribs {:stroke "#caa"}
-                 :minor-y true}
-        :data   [{:values  (map test-equation (m/norm-range 200))
-                  :attribs {:fill "none" :stroke "#0af"}
-                  :layout  viz/svg-line-plot}]}
-       (viz/svg-plot2d-cartesian)
-       (svg/svg {:width 600 :height 300})
-       (svg/serialize)
-       (spit "lineplot.svg"))
+  (defn export-viz
+    [viz path] (->> viz (svg/svg {:width 600 :height 320}) (svg/serialize) (spit path)))
+
+  (def viz-spec
+    {:x-axis (viz/linear-axis
+              {:domain [(- PI) PI] :range [50 580] :major (/ PI 2) :minor (/ PI 4) :pos 250})
+     :y-axis (viz/linear-axis
+              {:domain [-1 1] :range [250 20] :major 0.2 :minor 0.1 :pos 50
+               :label-dist 15 :label {:text-anchor "end"}})
+     :grid   {:attribs {:stroke "#caa"}
+              :minor-y true}
+     :data   [{:values  (map test-equation (m/norm-range 200))
+               :attribs {:fill "none" :stroke "#0af"}
+               :layout  viz/svg-line-plot}]})
+
+  (-> viz-spec
+      (viz/svg-plot2d-cartesian)
+      (export-viz "lineplot.svg"))
+
+  ;; same spec, just update style attribs & layout method
+  (-> viz-spec
+      (update-in [:data 0] merge {:attribs {:fill "#0af"} :layout viz/svg-area-plot})
+      (viz/svg-plot2d-cartesian)
+      (export-viz "areaplot.svg"))
 #+END_SRC
 
-*** Polar line plot
+Same overall visualization setup, only using polar coordinate transform and redefined axis ranges (in radians)...
 
-Same overall visualization setup, only using polar coordinate transform...
+| [[http://media.thi.ng/geom/viz/lineplot-polar-3.svg]] | [[http://media.thi.ng/geom/viz/areaplot-polar-3.svg]] |
+| Area plot (cartesian)                             | Area plot (polar)                                 |
 
-[[http://media.thi.ng/geom/viz/lineplot-polar-3.svg]]
+#+BEGIN_SRC clojure :tangle ../babel/examples/lineplot.clj :padline yes
+  (def viz-spec-polar
+    {:x-axis (viz/linear-axis
+              {:domain [(- PI) PI] :range [(* 1.1 PI) (* 1.9 PI)]
+               :major (/ PI 2) :minor (/ PI 16) :pos 280})
+     :y-axis (viz/linear-axis
+              {:domain [-1 1] :range [60 280]
+               :major 0.5 :minor 0.25 :pos (* 1.1 PI)})
+     :origin (v/vec2 300 310)
+     :grid   {:attribs {:stroke "#caa" :fill "none"}
+              :minor-x true
+              :minor-y true}
+     :data   [{:values  (map test-equation (m/norm-range 200))
+               :attribs {:fill "none" :stroke "#0af"}
+               :layout  viz/svg-line-plot}]})
 
-#+BEGIN_SRC clojure :tangle ../babel/examples/lineplot-polar.clj :mkdirp yes :padline no
-  (require '[thi.ng.geom.viz.core :as viz] :reload)
-  (require '[thi.ng.geom.svg.core :as svg])
-  (require '[thi.ng.geom.core.vector :as v])
-  (require '[thi.ng.math.core :as m :refer [PI]])
+  (-> viz-spec-polar (viz/svg-plot2d-polar) (export-viz "lineplot-polar.svg"))
 
-  (defn test-equation
-    [t] (let [x (m/mix (- PI) PI t)] [x (* (Math/cos (* 0.5 x)) (Math/sin (* x x x)))]))
+  ;; same spec, just update style attribs & layout method
+  (-> viz-spec-polar
+      (update-in [:data 0] merge {:attribs {:fill "#0af"} :res 20 :layout viz/svg-area-plot})
+      (viz/svg-plot2d-polar)
+      (export-viz "areaplot-polar.svg"))
+#+END_SRC
+
+*** Radar plot
+
+http://media.thi.ng/geom/viz/radarplot-3.svg
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/radar.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
+
+  (defn radar-spec
+    [[vals col]] {:values vals :attribs {:fill col} :layout viz/svg-radar-plot})
 
   (->> {:x-axis (viz/linear-axis
-                 {:domain [(- PI) PI] :range [(* 1.1 PI) (* 1.9 PI)]
-                  :major (/ PI 2) :minor (/ PI 16)
-                  :major-size -10 :minor-size -5 :label-dist -15
-                  :pos 280})
+                 {:domain [0 5] :range [0 (* 1.66 PI)] :major 1
+                  :label-dist 20 :pos 260
+                  :format ["C1" "C2" "C3" "C4" "C5" "C6"]})
         :y-axis (viz/linear-axis
-                 {:domain [-1 1] :range [60 280]
-                  :major 0.5 :minor 0.25
-                  :major-size 0.05 :minor-size 0.025 :label-dist 0.1
-                  :pos (* 1.1 PI)})
-        :origin (v/vec2 300 310)
+                 {:domain [0 1.05] :range [0 260] :major 0.5 :minor 0.1 :pos (/ PI 2)
+                  :label {:text-anchor "start"}
+                  :format #(str (int (* % 100)) "%")})
+        :origin (v/vec2 300 300)
+        :circle true
         :grid   {:attribs {:stroke "#caa" :fill "none"}
                  :minor-x true
                  :minor-y true}
-        :data   [{:values  (map test-equation (m/norm-range 200))
-                  :attribs {:fill "none" :stroke "#0af"}
-                  :layout  viz/svg-line-plot}]}
+        :data   (mapv
+                 radar-spec
+                 [[[[0 0.9] [1 0.333] [2 1] [3 0.8] [4 0.75] [5 0.2]] [0 0.66 1 0.33]]
+                  [[[0 0.5] [1 0.2] [2 0.8] [3 0.8] [4 0.5] [5 0.9]] [1 0.5 0 0.33]]
+                  [[[0 0.6] [1 0.25] [2 0.7] [3 0.2] [4 0.8] [5 0.7]] [1 0 0.8 0.33]]])}
        (viz/svg-plot2d-polar)
-       (svg/svg {:width 600 :height 320})
+       (svg/svg {:width 600 :height 600})
        (svg/serialize)
-       (spit "lineplot-polar.svg"))
+       (spit "radarplot.svg"))
 #+END_SRC
 
 *** Stacked intervals
@@ -161,10 +218,8 @@ Same overall visualization setup, only using polar coordinate transform...
 
 [[http://media.thi.ng/geom/viz/intervals-3.svg]]
 
-#+BEGIN_SRC clojure :tangle ../babel/examples/intervals.clj :mkdirp yes :padline no
-  (require '[thi.ng.geom.viz.core :as viz] :reload)
-  (require '[thi.ng.geom.svg.core :as svg])
-  (require '[thi.ng.math.core :as m])
+#+BEGIN_SRC clojure :tangle ../babel/examples/intervals.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
 
   (->> {:x-axis (viz/linear-axis {:domain [-10 310] :range [50 550] :major 100 :minor 50 :pos 150})
         :y-axis (viz/linear-axis {:domain [0 4] :range [50 150] :visible false})
@@ -186,10 +241,8 @@ using a custom shape function w/ linear gradients (based on item type).
 
 [[http://media.thi.ng/geom/viz/timeline-3.svg]]
 
-#+BEGIN_SRC clojure :tangle ../babel/examples/timeline.clj :mkdirp yes :padline no
-  (require '[thi.ng.geom.viz.core :as viz] :reload)
-  (require '[thi.ng.geom.svg.core :as svg])
-  (require '[thi.ng.math.core :as m])
+#+BEGIN_SRC clojure :tangle ../babel/examples/timeline.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
   (require '[thi.ng.color.core :as col])
   (import '[java.util Calendar GregorianCalendar])
 
@@ -323,31 +376,45 @@ spec fragments (via the use of our =timeline-spec= fn).
 | [[http://media.thi.ng/geom/viz/contours-log-3.svg]] | [[http://media.thi.ng/geom/viz/contours-log-outline-3.svg]] |
 | log X/Y filled                                  | log X/Y outline                                         |
 
-#+BEGIN_SRC clojure :tangle ../babel/examples/contours.clj :mkdirp yes :padline no
-  (require '[thi.ng.geom.viz.core :as viz])
-  (require '[thi.ng.geom.svg.core :as svg])
-  (require '[thi.ng.math.core :as m])
+#+BEGIN_SRC clojure :tangle ../babel/examples/contours.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
   (require '[thi.ng.math.simplexnoise :as n])
 
-  (->> {:x-axis (viz/linear-axis
-                 {:domain [0 63] :range [50 550] :major 8 :minor 2 :pos 550})
-        :y-axis (viz/linear-axis
-                 {:domain [0 63] :range [550 50] :major 8 :minor 2 :pos 50
-                  :label-dist 15 :label {:text-anchor "end"}})
-        ;; :x-axis (viz/log-axis {:domain [0 64] :range [50 550] :base 2 :pos 555})
-        ;; :y-axis (viz/log-axis {:domain [0 64] :range [550 50] :base 2 :pos 45})
-        :data   [{:matrix  (->> (for [y (range 64) x (range 64)]
-                                  (+ 0.5 (* 0.5 (n/noise2 (* x 0.06) (* y 0.06)))))
-                                (viz/contour-matrix 64 64))
-                  :matrix-scale [10 10]
-                  :levels  (range 0.05 1 0.05)
-                  :attribs {:fill "none" :stroke "#0af"}
-                  ;; :attribs {:fill "rgba(0,160,255,0.05)" :stroke "#0af"} ;; filled version
-                  :layout  viz/svg-contour-plot}]}
-       (viz/svg-plot2d-cartesian)
-       (svg/svg {:width 600 :height 600})
-       (svg/serialize)
-       (spit "contours-outline.svg"))
+  (def viz-spec
+    {:x-axis (viz/linear-axis
+              {:domain [0 63] :range [50 550] :major 8 :minor 2 :pos 550})
+     :y-axis (viz/linear-axis
+              {:domain [0 63] :range [550 50] :major 8 :minor 2 :pos 50
+               :label-dist 15 :label {:text-anchor "end"}})
+     :data   [{:matrix  (->> (for [y (range 64) x (range 64)]
+                               (+ 0.5 (* 0.5 (n/noise2 (* x 0.06) (* y 0.06)))))
+                             (viz/contour-matrix 64 64))
+               :levels  (range 0.05 1 0.05)
+               :attribs {:fill "none" :stroke "#0af"}
+               :layout  viz/svg-contour-plot}]})
+
+  (def viz-spec-log
+    (merge viz-spec
+           {:x-axis (viz/log-axis
+                     {:domain [0 64] :range [50 550] :base 2 :pos 555})
+            :y-axis (viz/log-axis
+                     {:domain [0 64] :range [550 50] :base 2 :pos 45
+                      :label-dist 15 :label {:text-anchor "end"}})}))
+
+  (def fill-attribs {:fill [0.0 0.66 1.0 0.05] :stroke "#0af"})
+
+  (defn export-viz
+    [viz path] (->> viz (svg/svg {:width 600 :height 600}) (svg/serialize) (spit path)))
+
+  (->> {"contours-outline.svg"     [viz-spec false]
+        "contours.svg"             [viz-spec true]
+        "contours-log-outline.svg" [viz-spec-log false]
+        "contours-log.svg"         [viz-spec-log true]}
+       (run!
+        (fn [[path [spec fill?]]]
+          (-> (if fill? (assoc-in spec [:data 0 :attribs] fill-attribs) spec)
+              (viz/svg-plot2d-cartesian)
+              (export-viz path)))))
 #+END_SRC
 
 Another variation of the above with polar coordinates:
@@ -607,9 +674,14 @@ details.
 ** Visualization methods
 *** Line plot
 
+| *Key*      | *Required* | *Default* | *Description*                                           |
+|------------+------------+-----------+---------------------------------------------------------|
+| =:values=  | Y          | nil       | Data points to be mapped                                |
+| =:attribs= | N          | nil       | Styling & other attributes to be attached to line strip |
+
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn line-plot-points
-    [{:keys [x-axis y-axis project]} {:keys [values attribs]}]
+    [{:keys [x-axis y-axis project]} {:keys [values]}]
     (let [[ry1 ry2] (:range y-axis)]
       (->> values
            (sequence
@@ -627,19 +699,36 @@ details.
 
 *** Area graph
 
+| *Key*  | *Required* | *Default* | *Description*                                       |
+|--------+------------+-----------+-----------------------------------------------------|
+| =:res= | N          |         1 | Number of points used to close polygon along X-axis |
+
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-area-plot
-    [v-spec d-spec]
-    (let [project (:project v-spec)
-          ry1     (first (:range (:y-axis v-spec)))
+    [{:keys [y-axis project] :as v-spec} {:keys [res] :as d-spec}]
+    (let [ry1     (first (:range y-axis))
           points  (line-plot-points (assoc v-spec :project identity) d-spec)
           p       (v/vec2 (first (last points)) ry1)
           q       (v/vec2 (ffirst points) ry1)
-          points  (concat points (map (partial g/mix p q) (m/norm-range 20)))]
+          points  (concat points (map (partial g/mix p q) (m/norm-range (or res 1))))]
       (svg/polygon (map project points) (:attribs d-spec))))
 #+END_SRC
 
+*** Radar plot
+
+| *Key*  | *Required* | *Default* | *Description*                                       |
+|--------+------------+-----------+-----------------------------------------------------|
+
+#+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn svg-radar-plot
+    [v-spec d-spec]
+    (svg/polygon (line-plot-points v-spec d-spec) (:attribs d-spec)))
+#+END_SRC
+
 *** Scatter plot
+
+| *Key*  | *Required* | *Default* | *Description*                                       |
+|--------+------------+-----------+-----------------------------------------------------|
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-scatter-plot
@@ -660,6 +749,9 @@ details.
 #+END_SRC
 
 *** Contour lines
+
+| *Key*  | *Required* | *Default* | *Description*                                       |
+|--------+------------+-----------+-----------------------------------------------------|
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn contour-matrix
@@ -708,10 +800,10 @@ details.
              offset 0}}]
     (let [scale-x (:scale x-axis)
           scale-y (:scale y-axis)
-          [d1 d2] (:domain x-axis)
+          [d1 d2 :as domain] (:domain x-axis)
           map-val (value-mapper scale-x scale-y)]
       (->> values
-           (filter #(overlap? (:domain x-axis) (item-range %)))
+           (filter #(overlap? domain (item-range %)))
            (sort-by (comp first item-range))
            (compute-row-stacking item-range)
            (mapcat
@@ -797,39 +889,48 @@ details.
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-x-axis-polar
-    [{{:keys [scale major-size minor-size label-dist pos format]
-       [r1 r2] :range :or {format (value-formatter 2)}} :x-axis
+    [{{:keys [scale major-size minor-size label-dist pos format] [r1 r2] :range
+       :or {format (value-formatter 2)}} :x-axis
        project :project o :origin :as spec}]
     (svg-axis*
-     (:x-axis spec) (svg/arc o pos r1 r2 true {:fill "none"})
+     (:x-axis spec)
+     (if (:circle spec)
+       (svg/circle o pos {:fill "none"})
+       (svg/arc o pos r1 r2 (> (m/abs-diff r1 r2) m/PI) true {:fill "none"}))
      #(let [x (scale %)]
-        (svg/line (project [x pos]) (project [x (- pos major-size)])))
+        (svg/line (project [x pos]) (project [x (+ pos major-size)])))
      #(let [x (scale %)]
-        (svg/line (project [x pos]) (project [x (- pos minor-size)])))
+        (svg/line (project [x pos]) (project [x (+ pos minor-size)])))
      #(let [x (scale %)]
-        (svg/text (project [x (- pos label-dist)]) (format %) {:stroke "none"}))))
+        (svg/text (project [x (+ pos label-dist)]) (format %) {:stroke "none"}))))
 
   (defn svg-y-axis-polar
     [{{:keys [scale major-size minor-size label-dist pos format]
        [r1 r2] :range :or {format (value-formatter 2)}} :y-axis
        project :project :as spec}]
-    (svg-axis*
-     (:y-axis spec) (svg/line (project [pos r1]) (project [pos r2]))
-     #(let [y (scale %)]
-        (svg/line (project [pos y]) (project [(- pos major-size) y])))
-     #(let [y (scale %)]
-        (svg/line (project [pos y]) (project [(- pos minor-size) y])))
-     #(let [y (scale %)]
-        (svg/text (project [(- pos label-dist) y]) (format %) {:stroke "none"}))))
+    (let [a (project [pos r1])
+          b (project [pos r2])
+          nl (g/normalize (g/normal (g/- a b)) label-dist)
+          n1 (g/normalize nl major-size)
+          n2 (g/normalize nl minor-size)]
+      (svg-axis*
+       (:y-axis spec) (svg/line a b)
+       #(let [y (scale %) p (project [pos y])]
+          (svg/line p (g/+ p n1)))
+       #(let [y (scale %) p (project [pos y])]
+          (svg/line p (g/+ p n2)))
+       #(let [y (scale %) p (project [pos y])]
+          (svg/text (g/+ p nl) (format %) {:stroke "none"})))))
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-axis-grid2d-polar
-    [{:keys [x-axis y-axis origin project] {:keys [attribs minor-x minor-y]} :grid}]
+    [{:keys [x-axis y-axis origin circle project] {:keys [attribs minor-x minor-y]} :grid}]
     (let [[x1 x2] (:range x-axis)
           [y1 y2] (:range y-axis)
           scale-x (:scale x-axis)
-          scale-y (:scale y-axis)]
+          scale-y (:scale y-axis)
+          great?  (> (m/abs-diff x1 x2) m/PI)]
       (svg/group
        (merge {:stroke "#ccc" :stroke-dasharray "1 1"} attribs)
        (if (:visible x-axis)
@@ -840,7 +941,9 @@ details.
        (if (:visible y-axis)
          (map
           #(let [y (scale-y %)]
-             (svg/arc origin y x1 x2 true))
+             (if circle
+               (svg/circle origin y {:fill "none"})
+               (svg/arc origin y x1 x2 great? true)))
           (if minor-y (concat (:minor y-axis) (:major y-axis)) (:major y-axis)))))))
 
   (defn svg-plot2d-polar
