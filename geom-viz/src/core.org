@@ -185,14 +185,23 @@ http://media.thi.ng/geom/viz/radarplot-3.svg
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/radar.clj :noweb yes :mkdirp yes :padline no
   <<example-imports>>
+  (require '[clojure.set :as set])
+  (require '[clojure.string :as str])
+
+  (def category->domain (zipmap [:c1 :c2 :c3 :c4 :c5 :c6] (range)))
+  (def domain->category (set/map-invert category->domain))
 
   (defn radar-spec
-    [[vals col]] {:values vals :attribs {:fill col} :layout viz/svg-radar-plot})
+    [[vals color]]
+    {:values vals
+     :item-pos (fn [[k v]] [(category->domain k) v])
+     :attribs {:fill color}
+     :layout viz/svg-radar-plot})
 
   (->> {:x-axis (viz/linear-axis
-                 {:domain [0 5] :range [0 (* 1.66 PI)] :major 1
+                 {:domain [0 5] :range [0 (* 2 (- 1.0 (/ 1 6)) PI)] :major 1
                   :label-dist 20 :pos 260
-                  :format ["C1" "C2" "C3" "C4" "C5" "C6"]})
+                  :format (comp str/capitalize name domain->category)})
         :y-axis (viz/linear-axis
                  {:domain [0 1.05] :range [0 260] :major 0.5 :minor 0.1 :pos (/ PI 2)
                   :label {:text-anchor "start"}
@@ -202,11 +211,10 @@ http://media.thi.ng/geom/viz/radarplot-3.svg
         :grid   {:attribs {:stroke "#caa" :fill "none"}
                  :minor-x true
                  :minor-y true}
-        :data   (mapv
-                 radar-spec
-                 [[[[0 0.9] [1 0.333] [2 1] [3 0.8] [4 0.75] [5 0.2]] [0 0.66 1 0.33]]
-                  [[[0 0.5] [1 0.2] [2 0.8] [3 0.8] [4 0.5] [5 0.9]] [1 0.5 0 0.33]]
-                  [[[0 0.6] [1 0.25] [2 0.7] [3 0.2] [4 0.8] [5 0.7]] [1 0 0.8 0.33]]])}
+        :data   (mapv radar-spec
+                      [[{:c1 0.9 :c2 0.333 :c3 1 :c4 0.8 :c5 0.75 :c6 0.2} [0 0.66 1 0.33]]
+                       [{:c1 0.5 :c2 0.2 :c3 0.8 :c4 0.8 :c5 0.5 :c6 0.9}  [1 0.5 0 0.33]]
+                       [{:c1 0.6 :c2 0.25 :c3 0.7 :c4 0.2 :c5 0.8 :c6 0.7} [1 0 0.8 0.33]]])}
        (viz/svg-plot2d-polar)
        (svg/svg {:width 600 :height 600})
        (svg/serialize)
@@ -680,21 +688,9 @@ details.
 | =:attribs= | N          | nil       | Styling & other attributes to be attached to line strip |
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
-  (defn line-plot-points
-    [{:keys [x-axis y-axis project]} {:keys [values]}]
-    (let [[ry1 ry2] (:range y-axis)]
-      (->> values
-           (sequence
-            (value-transducer
-             {:cull-domain (:domain x-axis)
-              :cull-range  (if (< ry1 ry2) [ry1 ry2] [ry2 ry1])
-              :scale-x     (:scale x-axis)
-              :scale-y     (:scale y-axis)
-              :project     project})))))
-
   (defn svg-line-plot
     [v-spec d-spec]
-    (svg/line-strip (line-plot-points v-spec d-spec) (:attribs d-spec)))
+    (svg/line-strip (map first (process-points v-spec d-spec)) (:attribs d-spec)))
 #+END_SRC
 
 *** Area graph
@@ -707,7 +703,7 @@ details.
   (defn svg-area-plot
     [{:keys [y-axis project] :as v-spec} {:keys [res] :as d-spec}]
     (let [ry1     (first (:range y-axis))
-          points  (line-plot-points (assoc v-spec :project identity) d-spec)
+          points  (map first (process-points (assoc v-spec :project identity) d-spec))
           p       (v/vec2 (first (last points)) ry1)
           q       (v/vec2 (ffirst points) ry1)
           points  (concat points (map (partial g/mix p q) (m/norm-range (or res 1))))]
@@ -722,7 +718,7 @@ details.
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-radar-plot
     [v-spec d-spec]
-    (svg/polygon (line-plot-points v-spec d-spec) (:attribs d-spec)))
+    (svg/polygon (map first (process-points v-spec d-spec)) (:attribs d-spec)))
 #+END_SRC
 
 *** Scatter plot
@@ -732,20 +728,10 @@ details.
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-scatter-plot
-    [{:keys [x-axis y-axis project]}
-     {:keys [values attribs shape]
-      :or   {shape #(svg/circle % 3)}}]
-    (let [[r1 r2] (:range y-axis)]
-      (->> values
-           (sequence
-            (value-transducer
-             {:cull-domain (:domain x-axis)
-              :cull-range  (if (< r1 r2) [r1 r2] [r2 r1])
-              :scale-x     (:scale x-axis)
-              :scale-y     (:scale y-axis)
-              :project     project
-              :shape       shape}))
-           (svg/group attribs))))
+    [v-spec {:keys [attribs shape] :as d-spec}]
+    (->> (assoc d-spec :shape (or shape (fn [[p]] (svg/circle p 3))))
+         (process-points v-spec)
+         (apply svg/group attribs)))
 #+END_SRC
 
 *** Contour lines
@@ -857,6 +843,9 @@ details.
 *** Generic plotting helpers
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn select-ticks
+    [axis minor?] (if minor? (concat (:minor axis) (:major axis)) (:major axis)))
+
   (defn svg-axis-grid2d-cartesian
     [x-axis y-axis {:keys [attribs minor-x minor-y]}]
     (let [[x1 x2] (:range x-axis)
@@ -866,11 +855,9 @@ details.
       (svg/group
        (merge {:stroke "#ccc" :stroke-dasharray "1 1"} attribs)
        (if (:visible x-axis)
-         (map #(let [x (scale-x %)] (svg/line [x y1] [x y2]))
-              (if minor-x (concat (:minor x-axis) (:major x-axis)) (:major x-axis))))
+         (map #(let [x (scale-x %)] (svg/line [x y1] [x y2])) (select-ticks x-axis minor-x)))
        (if (:visible y-axis)
-         (map #(let [y (scale-y %)] (svg/line [x1 y] [x2 y]))
-              (if minor-y (concat (:minor y-axis) (:major y-axis)) (:major y-axis)))))))
+         (map #(let [y (scale-y %)] (svg/line [x1 y] [x2 y])) (select-ticks y-axis minor-y))))))
 
   (defn svg-plot2d-cartesian
     [{:keys [x-axis y-axis grid data] :as opts}]
@@ -935,16 +922,15 @@ details.
        (merge {:stroke "#ccc" :stroke-dasharray "1 1"} attribs)
        (if (:visible x-axis)
          (map
-          #(let [x (scale-x %)]
-             (svg/line (project [x y1]) (project [x y2])))
-          (if minor-x (concat (:minor x-axis) (:major x-axis)) (:major x-axis))))
+          #(let [x (scale-x %)] (svg/line (project [x y1]) (project [x y2])))
+          (select-ticks x-axis minor-x)))
        (if (:visible y-axis)
          (map
           #(let [y (scale-y %)]
              (if circle
                (svg/circle origin y {:fill "none"})
-               (svg/arc origin y x1 x2 great? true)))
-          (if minor-y (concat (:minor y-axis) (:major y-axis)) (:major y-axis)))))))
+               (svg/arc origin y x1 x2 great? true {:fill "none"})))
+          (select-ticks y-axis minor-y))))))
 
   (defn svg-plot2d-polar
     [{:keys [x-axis y-axis grid data origin] :as opts}]
@@ -973,13 +959,31 @@ details.
     [scale-x scale-y] (fn [[x y]] [(scale-x x) (scale-y y)]))
 
   (defn value-transducer
-    [{:keys [cull-domain cull-range scale-x scale-y project shape]}]
-    (cond->      (comp
-                  (filter #(m/in-range? cull-domain (first %)))
-                  (map (value-mapper scale-x scale-y)))
-      cull-range (comp (filter #(m/in-range? cull-range (second %))))
-      project    (comp (map project))
-      shape      (comp (map shape))))
+    [{:keys [cull-domain cull-range scale-x scale-y project shape item-pos]}]
+    (let [mapper   (value-mapper scale-x scale-y)
+          item-pos (or item-pos identity)]
+      (cond->       (map (juxt item-pos identity))
+        cull-domain (comp (filter #(m/in-range? cull-domain (ffirst %))))
+        :always     (comp (map (fn [[p i]] [(mapper p) i])))
+        cull-range  (comp (filter #(m/in-range? cull-range (peek (first %)))))
+        project     (comp (map (fn [[p i]] [(project p) i])))
+        shape       (comp (map shape)))))
+
+  (defn process-points
+    [{:keys [x-axis y-axis project]} {:keys [values item-pos shape]}]
+    (let [[ry1 ry2] (:range y-axis)]
+      (->> (if item-pos
+             (sort-by (comp first item-pos) values)
+             (sort-by first values))
+           (sequence
+            (value-transducer
+             {:cull-domain (:domain x-axis)
+              :cull-range  (if (< ry1 ry2) [ry1 ry2] [ry2 ry1])
+              :item-pos    item-pos
+              :scale-x     (:scale x-axis)
+              :scale-y     (:scale y-axis)
+              :project     project
+              :shape       shape})))))
 #+END_SRC
 
 ** Value formatting
@@ -1002,16 +1006,16 @@ file).
     [w]
     (let [h (* w (Math/sin m/THIRD_PI))
           w (* 0.5 w)]
-      (fn [[x y]] (svg/polygon [[(- x w) (+ y h)] [(+ x w) (+ y h)] [x y]]))))
+      (fn [[[x y]]] (svg/polygon [[(- x w) (+ y h)] [(+ x w) (+ y h)] [x y]]))))
 
   (defn svg-triangle-down
     [w]
     (let [h (* w (Math/sin m/THIRD_PI))
           w (* 0.5 w)]
-      (fn [[x y]] (svg/polygon [[(- x w) (- y h)] [(+ x w) (- y h)] [x y]]))))
+      (fn [[[x y]]] (svg/polygon [[(- x w) (- y h)] [(+ x w) (- y h)] [x y]]))))
 
   (defn svg-square
-    [r] (let [d (* r 2.0)] (fn [[x y]] (svg/rect [(- x r) (- y r)] d d))))
+    [r] (let [d (* r 2.0)] (fn [[[x y]]] (svg/rect [(- x r) (- y r)] d d))))
 
   (defn labeled-rect-horizontal
     [{:keys [h r label fill min-width base-line]}]
