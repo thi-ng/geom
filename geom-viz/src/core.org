@@ -103,7 +103,7 @@ information.
                :shape   (viz/svg-triangle-down 6)
                :layout  viz/svg-scatter-plot}]})
 
-  (export-viz spec "scatter.svg")
+  (export-viz spec "scatter-linear.svg")
 
   (-> spec
       (assoc :y-axis (viz/log-axis
@@ -181,7 +181,7 @@ Same overall visualization setup, only using polar coordinate transform and rede
 
 *** Radar plot
 
-http://media.thi.ng/geom/viz/radarplot-3.svg
+[[http://media.thi.ng/geom/viz/radarplot-3.svg]]
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/radar.clj :noweb yes :mkdirp yes :padline no
   <<example-imports>>
