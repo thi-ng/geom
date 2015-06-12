@@ -7,6 +7,7 @@
          - [[#namespaces-required-by-all-examples][Namespaces required by all examples]]
          - [[#scatter-plot][Scatter plot]]
          - [[#line--area-plot][Line & area plot]]
+         - [[#bar-graph][Bar graph]]
          - [[#radar-plot][Radar plot]]
          - [[#stacked-intervals][Stacked intervals]]
              - [[#plain-intervals][Plain intervals]]
@@ -14,6 +15,7 @@
          - [[#contour-plot][Contour plot]]
      - [[#visualization-spec-format][Visualization spec format]]
          - [[#axis-definitions-x-axis--y-axis][Axis definitions (:x-axis / :y-axis)]]
+             - [[#about-tick-marks][About tick marks]]
              - [[#notes-for-polar-projection][Notes for polar projection]]
              - [[#default-axis-label-styling][Default axis label styling]]
          - [[#axis-grid-definition-grid][Axis grid definition (:grid)]]
@@ -32,6 +34,7 @@
          - [[#area-graph][Area graph]]
          - [[#radar-plot][Radar plot]]
          - [[#scatter-plot][Scatter plot]]
+         - [[#bar-plot][Bar plot]]
          - [[#contour-lines][Contour lines]]
          - [[#stacked-intervals][Stacked intervals]]
      - [[#2d-cartesian-plotting-svg][2D Cartesian Plotting (SVG)]]
@@ -48,16 +51,49 @@
 
 * Namespace: thi.ng.geom.viz.core
 
+This module currently consists of this single namespace dedicated to
+creating 2D (and soon 3D too) data visualizations in an output format
+agnostic way. To achieve that, an overall declarative and pipelined
+approach has been taken to create these visualizations:
+
+1. We first define a configuration map, supplying all data points,
+   axis definitions, layout arguments/handlers, styling options etc.
+2. This map is then transformed into a tree/scenegraph of geometric
+   primitives (shapes & groups) representing the visualization.
+3. This tree of still pure data is then further converted into the
+   final output format, e.g. for SVG first into [[https://github.com/weavejester/hiccup][hiccup]] and then actual
+   SVG/XML...
+
+The declarative nature has several benefits:
+
+- place multiple data series w/ potentially different layout methods
+  into same visualization
+- create template/preset specs (e.g. pre-styled, only inject new data
+  points)
+- easy to integrate in central state atom pattern, compatible w/
+  Om/Reagent based setups
+- support multiple output targets from the same visualization spec
+
+Apart from SVG (the only target supported at the moment), this module
+also aims to support [[../../geom-webgl/src/index.org][WebGL]] scenegraph generation and [[http://thi.ng/luxor][thi.ng/luxor]]
+scene exports for rendering visualizations w/ [[http://luxrender.net][Luxrender]].
+
 ** Example usage
 
 This section shows some basic example outputs and general usage
-patterns. See spec description in next section for further
-information.
+patterns for all implemented visualization methods. The section after
+then describes the various options in more detail.
 
 *** Running all examples from REPL
 
+Once you've tangled this document (see [[../../src/index.org#building--testing-this-project][index.org]]), the following
+examples can be found in the =/babel/examples= folder of this module.
+Launching a REPL from within the =babel= directory, all examples can
+be run with this command and will create a number of SVG files in the
+same directory.
+
 #+BEGIN_SRC clojure
-  (->> ["scatter" "lineplot" "radar" "intervals" "timeline" "contours"]
+  (->> ["scatter" "lineplot" "bars" "radar" "intervals" "timeline" "contours"]
        (map #(load-file (str "examples/" % ".clj")))
        dorun)
 #+END_SRC
@@ -177,6 +213,48 @@ Same overall visualization setup, only using polar coordinate transform and rede
       (update-in [:data 0] merge {:attribs {:fill "#0af"} :res 20 :layout viz/svg-area-plot})
       (viz/svg-plot2d-polar)
       (export-viz "areaplot-polar.svg"))
+#+END_SRC
+
+*** Bar graph
+
+| [[http://media.thi.ng/geom/viz/bars.svg]] | [[http://media.thi.ng/geom/viz/bars-interleave.svg]] |
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/bars.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
+
+  (defn export-viz
+    [viz path] (->> viz (svg/svg {:width 600 :height 320}) (svg/serialize) (spit path)))
+
+  (defn bar-spec
+    [num width]
+    (fn [idx col]
+      {:values     (map (fn [i] [i (m/random 100)]) (range 2000 2016))
+       :attribs    {:fill "none" :stroke col :stroke-width (str (dec width) "px")}
+       :layout     viz/svg-bar-plot
+       :interleave num
+       :bar-width  width
+       :offset     idx}))
+
+  (def viz-spec
+    {:x-axis (viz/linear-axis
+              {:domain [1999 2016] :range [50 580] :major 1 :pos 280
+               :format int})
+     :y-axis (viz/linear-axis
+              {:domain [0 100] :range [280 20] :major 10 :minor 5 :pos 50
+               :label-dist 15 :label {:text-anchor "end"}})
+     :grid   {:minor-y true}})
+
+  (-> viz-spec
+      (assoc :data [((bar-spec 1 20) 0 "#0af")])
+      (viz/svg-plot2d-cartesian)
+      (export-viz "bars.svg"))
+
+  (-> viz-spec
+      (assoc :data (map-indexed (bar-spec 3 6) ["#0af" "#fa0" "#f0a"]))
+      (viz/svg-plot2d-cartesian)
+      (export-viz "bars-interleave.svg"))
+
+
 #+END_SRC
 
 *** Radar plot
@@ -431,39 +509,59 @@ Another variation of the above with polar coordinates:
 
 ** Visualization spec format
 
-| *Key*     | *Value*                  | *Required* | *Description*                             |
-|-----------+--------------------------+------------+-------------------------------------------|
-| =:x-axis= | horizontal axis spec map | Y          | X-axis behavior & representation details  |
-| =:y-axis= | vertical axis spec map   | Y          | Y-axis behavior & representation details  |
-| =:grid=   | grid spec map            | N          | Optional background axis grid             |
-| =:data=   | vector of dataset specs  | Y          | Allows multiple datasets in visualization |
+The main configuration map should have at least the following keys,
+common to all supported visualization methods. Visualizations are
+created by taking a series of data points and mapping them from their
+source =:domain= into new coordinate system (=:range=). Furthermore,
+this target coordinate system itself can be transformed via
+projections, e.g. to translate from cartesian into polar coordinates
+(e.g. see Radar plot and other polar examples above).
+
+| *Key*     | *Value*                  | *Required* | *Description*                                                                        |
+|-----------+--------------------------+------------+--------------------------------------------------------------------------------------|
+| =:x-axis= | horizontal axis spec map | Y          | X-axis behavior & representation details                                             |
+| =:y-axis= | vertical axis spec map   | Y          | Y-axis behavior & representation details                                             |
+| =:grid=   | grid spec map            | N          | Optional background axis grid                                                        |
+| =:data=   | vector of dataset specs  | Y          | Allows multiple datasets in visualization                                            |
+
+The following options are only used for visualizations using =svg-plot2d-polar=:
+
+| *Key*     | *Value*                 | *Required* | *Description*                                                                        |
+|-----------+-------------------------+------------+--------------------------------------------------------------------------------------|
+| =:origin= | 2D vector, e.g. =[x y]= | Y          | Center pos of radial layout, only required for polar projection                      |
+| =:circle= | boolean                 | N          | true if axis & grid should be using full circles, only required for polar projection |
 
 *** Axis definitions (:x-axis / :y-axis)
 
 Axis specs are usually created via one of the available axis generator
-functions (=linear-axis= & =log-axis=). These functions too take a map
-of the same keys, but =linear-axis= interpretes the =:major= and
-=:minor= values differently: In this context these values are the
-intended precision and ticks will be created at multiples of the given
-value. The =log-axis= generator auto-creates ticks based on the
-=:base= of the logarithm.
+functions (=linear-axis=, =log-axis=, =lens-axis=). These functions
+too take a map w/ some of the same keys, but replace some vals with
+transformed data and autofill default values for others.
 
 | *Key*         | *Value*              | *Required* | *Default*           | *Description*                                                            |
 |---------------+----------------------+------------+---------------------+--------------------------------------------------------------------------|
 | =:scale=      | scale function       | Y          | nil                 | Scale function to translate domain values into visualization coordinates |
 | =:domain=     | vec of domain bounds | Y          | nil                 | Lower & upper bound of data source interval                              |
 | =:range=      | vec of range bounds  | Y          | nil                 | Lower & upper bound of projected coordinates                             |
+| =:pos=        | number               | Y          | nil                 | Draw position of the axis (ypos for X-axis, xpos for Y-axis)             |
 | =:major=      | seq of domain values | N          | nil                 | Seq of domain positions at which to draw labeled tick marks              |
 | =:minor=      | seq of domain values | N          | nil                 | Seq of domain positions at which                                         |
 | =:major-size= | number               | N          | 10                  | Length of major tick marks                                               |
 | =:minor-size= | number               | N          | 5                   | Length of minor tick marks                                               |
 | =:label-dist= | number               | N          | 10 + major-size     | Distance of value labels from axis                                       |
-| =:pos=        | number               | Y          | nil                 | Draw position of the axis (ypos for X-axis, xpos for Y-axis)             |
 | =:format=     | function             | N          | =(value-format 2)=  | Function to format tick labels                                           |
 | =:label=      | map                  | N          | see next section    | Style attribute map for value labels                                     |
 | =:attribs=    | map                  | N          | ={:stroke "black"}= | Axis line attribs attributes                                             |
 | =:visible=    | boolean              | N          | true                | Flag if axis will be visible in visualization                            |
-| =:origin=     | 2d point             | Y/N        | [0 0]               | Only needed for polar projections, center of visualization               |
+
+**** About tick marks
+
+The =linear-axis= & =lens-axis= interprete the given =:major= and
+=:minor= values as the intended step distance between ticks and
+generate ticks at multiples of the given value.
+
+The =log-axis= generator auto-creates ticks based on the =:base= of
+the logarithm.
 
 **** Notes for polar projection
 
@@ -734,6 +832,39 @@ details.
          (apply svg/group attribs)))
 #+END_SRC
 
+*** Bar plot
+
+| *Key*  | *Required* | *Default* | *Description*                                       |
+|--------+------------+-----------+-----------------------------------------------------|
+
+#+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn svg-bar-plot
+    [{:keys [x-axis y-axis project] :or {project  identity}}
+     {:keys [values attribs shape item-pos interleave offset bar-width]
+      :or   {shape (fn [a b _] (svg/line a b))
+             item-pos identity
+             interleave 0
+             bar-width 0
+             offset 0}}]
+    (let [domain  (:domain x-axis)
+          ;;base-y  (first (:domain y-axis))
+          base-y  ((:scale y-axis) (first (:domain y-axis)))
+          mapper  (value-mapper (:scale x-axis) (:scale y-axis))
+          offset  (+ (* -0.5 (* interleave bar-width)) (* (+ offset 0.5) bar-width))]
+      (svg/group
+       attribs
+       (sequence
+        (comp
+         (map (juxt item-pos identity))
+         (filter #(m/in-range? domain (ffirst %)))
+         (map
+          (fn [[p i]]
+            (let [[ax ay] (mapper p)
+                  ax (+ ax offset)]
+              (shape (project [ax ay]) (project [ax base-y]) i)))))
+        values))))
+#+END_SRC
+
 *** Contour lines
 
 | *Key*  | *Required* | *Default* | *Description*                                       |
@@ -778,6 +909,15 @@ details.
              (recur more (inc idx))))))
      [] coll))
 
+  (defn process-interval-row
+    [item-range mapper [d1 d2]]
+    (fn [i row]
+      (map
+       (fn [item]
+         (let [[a b] (item-range item)]
+           [(mapper [(max d1 a) i]) (mapper [(min d2 b) i]) item]))
+       row)))
+
   (defn svg-stacked-interval-plot
     [{:keys [x-axis y-axis]}
      {:keys [values attribs shape item-range offset]
@@ -786,23 +926,13 @@ details.
              offset 0}}]
     (let [scale-x (:scale x-axis)
           scale-y (:scale y-axis)
-          [d1 d2 :as domain] (:domain x-axis)
-          map-val (value-mapper scale-x scale-y)]
+          domain  (:domain x-axis)
+          mapper  (value-mapper scale-x scale-y)]
       (->> values
            (filter #(overlap? domain (item-range %)))
            (sort-by (comp first item-range))
            (compute-row-stacking item-range)
-           (mapcat
-            (fn [i row]
-              (let [i (+ i offset)]
-                (map
-                 (fn [item]
-                   (let [[a b] (item-range item)
-                         a (max d1 a)
-                         b (min d2 b)]
-                     [(map-val [a i]) (map-val [b i]) item]))
-                 row)))
-            (range))
+           (mapcat (process-interval-row item-range mapper domain) (range offset 1e6))
            (map shape)
            (svg/group attribs))))
 #+END_SRC
@@ -815,10 +945,10 @@ details.
   (defn svg-axis*
     [{:keys [major minor attribs label]} axis tick1-fn tick2-fn label-fn]
     (svg/group
-     attribs
+     (merge {:stroke "#000"} attribs)
      (map tick1-fn major)
      (map tick2-fn minor)
-     (svg/group label (map label-fn major))
+     (svg/group (merge {:stroke "none"} label) (map label-fn major))
      axis))
 
   (defn svg-x-axis-cartesian
