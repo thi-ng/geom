@@ -958,7 +958,7 @@ emphasize this difference...
   (defn contour-matrix
     [w h values]
     (let [mat (nd/ndarray :float32 values [h w])]
-      (contours/set-border2d mat 1e9)))
+      (contours/set-border-2d mat 1e9)))
 
   (defn contour->svg
     [scale-x scale-y project]
@@ -973,7 +973,7 @@ emphasize this difference...
       (svg/group
        attribs
        (map
-        #(svg/group {} (map contour-fn (contours/find-contours2d matrix %)))
+        #(svg/group {} (map contour-fn (contours/find-contours-2d matrix %)))
         (sort levels)))))
 #+END_SRC
 
