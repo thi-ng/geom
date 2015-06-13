@@ -1,3 +1,27 @@
+** r856 - 2015-06-14
+
+| [[https://github.com/thi-ng/geom/commit/0dd06cc199d6d852d73af7d3fb67cbdf3af6673a][0dd06cc]] | [viz] update docs & param table descriptions, refactor radar example |
+| [[https://github.com/thi-ng/geom/commit/efbdf5482cce530a1d637761565c13c139db279a][efbdf54]] | [viz] add radar-plot-minmax, update radar example, add points->path-segments, add format-percent, update docs |
+| [[https://github.com/thi-ng/geom/commit/04ce2dd4a76205cbdac3af8846c607d78529d6b5][04ce2dd]] | [viz] add bar plot, add docs, refactor svg-stacked-interval-plot |
+| [[https://github.com/thi-ng/geom/commit/baca637a6ad596577829ed1515d1a328bd46672a][baca637]] | [viz] update value-transducer to support :item-pos lookup fns (to extract domain values from data items), also pass original data item to all :shape fns, refactor line/area/scatter-plot fns, extract select-ticks & refactor axis fns, update radar example using maps as data items |
+| [[https://github.com/thi-ng/geom/commit/04f272231a1b72fa165e62062e02afad4e537d43][04f2722]] | [viz] add radar plot, update polar grid & axis to support full arcs (circles), update polar axis label positioning using axis normal, update all examples to produce all included example images |
+| [[https://github.com/thi-ng/geom/commit/babb6a80f4abc583a86bedb28b141c1e076c3d12][babb6a8]] | [svg] update arc fn, add great circle flag as arg |
+| [[https://github.com/thi-ng/geom/commit/72247ec1995a4ed804f3aa89d28251af26759c79][72247ec]] | [viz] add area plot, rename :style spec keys to :attribs, refactor svg-line-plot, extract line-plot-points (also used for svg-area-plot) |
+| [[https://github.com/thi-ng/geom/commit/255a4ee63fdd999102f6b5dd65ae6f6d4b542712][255a4ee]] | [viz] add polar support for contour plot, refactor org-structure, renmae various internal helper fns, add clustered timeline & polar contours examples, update y-axis styles in other examples, bugfix default focus in lens-axis |
+| [[https://github.com/thi-ng/geom/commit/8e3842047b34d44e8cf5e1d43db4b675cd106918][8e38420]] | [viz] more axis spec & creation refactoring, add more options, add docs, update examples |
+| [[https://github.com/thi-ng/geom/commit/c37823c74f636a444c1682c9dd78160db32e44df][c37823c]] | [viz] add polar projection support, update axis/tick opts & handling, add point-transducer, update/simplify layout fns, update org structure |
+| [[https://github.com/thi-ng/geom/commit/4e4e05303cdaecdbe13fae3c3e6791800b4f49e5][4e4e053]] | [svg] add path & arc primitives, add path-segment-formats map for different segment type presets |
+| [[https://github.com/thi-ng/geom/commit/c98335c1834b77be3934a5cf2dc5895190bd9a2b][c98335c]] | [viz] add lens-scale & lens-axis |
+| [[https://github.com/thi-ng/geom/commit/14ef5078a224e2187239e222e82d77be6f6750b0][14ef507]] | [all] update deps (cljs, math, typedarrays, ndarray) |
+| [[https://github.com/thi-ng/geom/commit/f581d718e88daa2c5d7e589916a06f13a70fe6f8][f581d71]] | [viz] refactor axis spec, tick handling/formatting & axis generators, update & tangle all examples, add docs |
+| [[https://github.com/thi-ng/geom/commit/e124cf95762e2b91f6bfeab4f251624b91bba980][e124cf9]] | [svg] update linear-gradient-* & radial-gradient-* to require attrib map |
+| [[https://github.com/thi-ng/geom/commit/4754320ee9c7492e9560a9ae8c41c08e724d71b9][4754320]] | [viz] add stacked interval plot & timeline example, add value-projector fn, bugfix minor tick mark handling, disable text stroke for tick labels |
+| [[https://github.com/thi-ng/geom/commit/caffca821603e32b0be6e5db89a7d6a53afac984][caffca8]] | [viz] rename svg-plot2d to svg-plot2d-cartesian |
+| [[https://github.com/thi-ng/geom/commit/14324944d187f31119338ea272b311fc010e3f3f][1432494]] | [viz] add line plot & example |
+| [[https://github.com/thi-ng/geom/commit/505c908d5b12d38bacf3e7790719b5ca702ac285][505c908]] | [viz] add linear-axis & tick support, minor refactor log-tick-marks, ensure contour levels are sorted |
+| [[https://github.com/thi-ng/geom/commit/45a86f51d0e82b2e9a2e6a6b817410c073daf33e][45a86f5]] | [viz] add visualization module & initial implementations of SVG scatter and contour plots, linear and log scales, update build scripts |
+| [[https://github.com/thi-ng/geom/commit/ce760ad3daefe9b4b45dfa95d692b8a412517306][ce760ad]] | [voxel] add sphere & simplex noise examples |
+
 ** r815 - 2015-06-01
 
 | [[https://github.com/thi-ng/geom/commit/2000f142ec41f4c682d59056cd361f69a27f540c][2000f14]] | [types] [meshops] bugfix spatialtree examples & refs in geom.mesh.ops ns |
