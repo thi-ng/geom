@@ -153,7 +153,7 @@ same directory.
 *** Line & area plot
 
 | [[http://media.thi.ng/geom/viz/lineplot-3.svg]] | [[http://media.thi.ng/geom/viz/areaplot-3.svg]] |
-| Line plot (cartesian)                       | Line plot (polar)                           |
+| Line plot (cartesian)                       | Area plot (cartesian)                       |
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/lineplot.clj :noweb yes :mkdirp yes :padline no
   <<example-imports>>
@@ -190,7 +190,7 @@ same directory.
 Same overall visualization setup, only using polar coordinate transform and redefined axis ranges (in radians)...
 
 | [[http://media.thi.ng/geom/viz/lineplot-polar-3.svg]] | [[http://media.thi.ng/geom/viz/areaplot-polar-3.svg]] |
-| Area plot (cartesian)                             | Area plot (polar)                                 |
+| Line plot (polar)                                 | Area plot (polar)                                 |
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/lineplot.clj :padline yes
   (def viz-spec-polar
@@ -219,8 +219,8 @@ Same overall visualization setup, only using polar coordinate transform and rede
 
 *** Bar graph
 
-| [[http://media.thi.ng/geom/viz/bars-3.svg]] | [[http://media.thi.ng/geom/viz/bars-interleave-3.svg]] |
-| Single value per domain position        | 3 interleaved values                               |
+| [[http://media.thi.ng/geom/viz/bars-3.svg]] | [[http://media.thi.ng/geom/viz/bars-interleave-3.svg]]  |
+| Single value per domain position        | 3 interleaved values (datasets) per domain position |
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/bars.clj :noweb yes :mkdirp yes :padline no
   <<example-imports>>
@@ -261,7 +261,7 @@ Same overall visualization setup, only using polar coordinate transform and rede
 *** Radar plot
 
 | [[http://media.thi.ng/geom/viz/radarplot-3.svg]] | [[http://media.thi.ng/geom/viz/radarplot-minmax.svg]] |
-| 6 categories, 3 data sets                    | 6 categories, 3 data sets, min-max intervals      |
+| 6 categories, 3 data sets, single values     | 6 categories, 3 data sets, min-max intervals      |
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/radar.clj :noweb yes :mkdirp yes :padline no
   <<example-imports>>
