@@ -31,7 +31,7 @@
          - [[#lens-axis][Lens axis]]
      - [[#visualization-methods][Visualization methods]]
          - [[#line-plot][Line plot]]
-         - [[#area-graph][Area graph]]
+         - [[#area-plot][Area plot]]
          - [[#radar-plot][Radar plot]]
              - [[#min-max-radar-plot][Min-Max radar plot]]
          - [[#scatter-plot][Scatter plot]]
@@ -111,6 +111,7 @@ same directory.
 *** Scatter plot
 
 | [[http://media.thi.ng/geom/viz/scatter-linear-3.svg]] | [[http://media.thi.ng/geom/viz/scatter-log-3.svg]] |
+| Logarithmic X-axis, linear Y                      | Log X, Log Y                                   |
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/scatter.clj :noweb yes :mkdirp yes :padline no
   <<example-imports>>
@@ -219,6 +220,7 @@ Same overall visualization setup, only using polar coordinate transform and rede
 *** Bar graph
 
 | [[http://media.thi.ng/geom/viz/bars-3.svg]] | [[http://media.thi.ng/geom/viz/bars-interleave-3.svg]] |
+| Single value per domain position        | 3 interleaved values                               |
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/bars.clj :noweb yes :mkdirp yes :padline no
   <<example-imports>>
@@ -230,7 +232,7 @@ Same overall visualization setup, only using polar coordinate transform and rede
     [num width]
     (fn [idx col]
       {:values     (map (fn [i] [i (m/random 100)]) (range 2000 2016))
-       :attribs    {:fill "none" :stroke col :stroke-width (str (dec width) "px")}
+       :attribs    {:stroke col :stroke-width (str (dec width) "px")}
        :layout     viz/svg-bar-plot
        :interleave num
        :bar-width  width
@@ -254,25 +256,22 @@ Same overall visualization setup, only using polar coordinate transform and rede
       (assoc :data (map-indexed (bar-spec 3 6) ["#0af" "#fa0" "#f0a"]))
       (viz/svg-plot2d-cartesian)
       (export-viz "bars-interleave.svg"))
-
-
 #+END_SRC
 
 *** Radar plot
 
 | [[http://media.thi.ng/geom/viz/radarplot-3.svg]] | [[http://media.thi.ng/geom/viz/radarplot-minmax.svg]] |
+| 6 categories, 3 data sets                    | 6 categories, 3 data sets, min-max intervals      |
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/radar.clj :noweb yes :mkdirp yes :padline no
   <<example-imports>>
-  (require '[clojure.set :as set])
-  (require '[clojure.string :as str])
 
-  (def category->domain (zipmap [:c1 :c2 :c3 :c4 :c5 :c6] (range)))
-  (def domain->category (set/map-invert category->domain))
+  (def category->domain (zipmap [:C1 :C2 :C3 :C4 :C5 :C6] (range)))
+  (def domain->category (reduce-kv #(assoc % %3 %2) {} category->domain))
 
   (defn random-radar-spec
     "Generates radar plot data spec w/ random values for each category in the form:
-     {:c1 0.8 :c2 0.2 ...}"
+     {:C1 0.8 :C2 0.2 ...}"
     [color]
     {:values   (zipmap (keys category->domain) (repeatedly #(m/random 0.25 1)))
      :item-pos (fn [[k v]] [(category->domain k) v])
@@ -281,7 +280,7 @@ Same overall visualization setup, only using polar coordinate transform and rede
 
   (defn random-radar-spec-minmax
     "Generates radar plot data spec w/ random value intervals for each category in the form:
-     {:c1 [0.5 0.8] :c2 [0.12 0.2] ...}"
+     {:C1 [0.5 0.8] :C2 [0.12 0.2] ...}"
     [color]
     {:values       (zipmap
                     (keys category->domain)
@@ -295,7 +294,7 @@ Same overall visualization setup, only using polar coordinate transform and rede
     {:x-axis (viz/linear-axis
               {:domain [0 5] :range [0 (* 2 (- 1.0 (/ 1 6)) PI)] :major 1
                :label-dist 20 :pos 260
-               :format (comp str/capitalize name domain->category)})
+               :format (comp name domain->category)})
      :y-axis (viz/linear-axis
               {:domain [0 1.05] :range [0 260] :major 0.5 :minor 0.1 :pos (/ PI 2)
                :label {:text-anchor "start"}
@@ -613,9 +612,18 @@ Same goes for =:pos= values: The =:pos= for x-axis is a radius, the =:pos= for y
 The format of these maps is largely dependent on the concrete
 visualization methods used, but must state the following keys:
 
-| *Key*     | *Value*         | *Required* | *Default* | *Description*               |
-|-----------+-----------------+------------+-----------+-----------------------------|
-| =:layout= | layout function | Y          | none      | function to map data points |
+| *Key*       | *Required* | *Default*  | *Description*                                                  |
+|-------------+------------+------------+----------------------------------------------------------------|
+| =:layout=   | Y          | nil        | Layout function to map data points                             |
+| =:values=   | Y          | nil        | Data points to be mapped                                       |
+| =:attribs=  | N          | nil        | Styling & other attributes to attach to surrounding group node |
+| =:item-pos= | N          | =identity= | Function returning domain position of single data point        |
+
+The =:item-pos= key is only needed if the data items are in a
+non-standard format. By the default most layout functions expect the
+data points to be a 2-element vector =[domain-pos value]=. Using an
+=:item-pos= lookup fn however, data items can be supplied in other
+form (eg. as maps). Also see examples above...
 
 ** Scales
 
@@ -796,12 +804,17 @@ details.
 #+END_SRC
 
 ** Visualization methods
+
+This section defines the various layout/plotting methods, each with a
+brief description and lists of custom =:data= spec options. See the
+"Dataset specs" section and examples above for details about other
+(required) keys...
+
 *** Line plot
 
-| *Key*      | *Required* | *Default* | *Description*                                           |
-|------------+------------+-----------+---------------------------------------------------------|
-| =:values=  | Y          | nil       | Data points to be mapped                                |
-| =:attribs= | N          | nil       | Styling & other attributes to be attached to line strip |
+This method simply represents the mapped values as a single line-strip
+(polyline). Values are automatically sorted by domain position, so can
+be initially unordered.
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-line-plot
@@ -809,7 +822,15 @@ details.
     (svg/line-strip (map first (process-points v-spec d-spec)) (:attribs d-spec)))
 #+END_SRC
 
-*** Area graph
+*** Area plot
+
+Similar to the line plot method above, however resulting points are
+represented as closed polygon (and hence an =:attribs= key should be
+supplied w/ a =:fill= color).
+
+*Note:* When using polar coordinate mapping (via =svg-plot2d-polar=),
+a =:res= option should be given too in order to create an arc
+approximation closing the polygon along the X-axis (e.g. =:res 20=).
 
 | *Key*  | *Required* | *Default* | *Description*                                       |
 |--------+------------+-----------+-----------------------------------------------------|
@@ -828,8 +849,10 @@ details.
 
 *** Radar plot
 
-| *Key*  | *Required* | *Default* | *Description*                                       |
-|--------+------------+-----------+-----------------------------------------------------|
+This plot method is intended to be only used with =svg-plot2d-polar=.
+
+| *Key*   | *Required* | *Default* | *Description*           |
+|---------+------------+-----------+-------------------------|
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-radar-plot
@@ -868,8 +891,9 @@ assumed for each data point.
 
 *** Scatter plot
 
-| *Key*  | *Required* | *Default* | *Description*                                       |
-|--------+------------+-----------+-----------------------------------------------------|
+| *Key*    | *Required* | *Default* | *Description*                                          |
+|----------+------------+-----------+--------------------------------------------------------|
+| =:shape= | N          | =circle=  | Function returning shape primitive for each data point |
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-scatter-plot
@@ -881,41 +905,54 @@ assumed for each data point.
 
 *** Bar plot
 
-| *Key*  | *Required* | *Default* | *Description*                                       |
-|--------+------------+-----------+-----------------------------------------------------|
+| *Key*         | *Required* |  *Default* | *Description*                                           |
+|---------------+------------+------------+---------------------------------------------------------|
+| =:item-pos=   | N          | =identity= | Function returning domain position of single data point |
+| =:shape=      | N          |     =line= | Function returning shape primitive for each data point  |
+| =:interleave= | N          |          1 | Number of bars per domain position                      |
+| =:offset=     | N          |          0 | Only used for interleaved bars, index position          |
+| =:bar-width=  | N          |          0 | Only used for interleaved bars, width of single bar     |
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-bar-plot
     [{:keys [x-axis y-axis project] :or {project  identity}}
      {:keys [values attribs shape item-pos interleave offset bar-width]
-      :or   {shape (fn [a b _] (svg/line a b))
-             item-pos identity
-             interleave 0
-             bar-width 0
-             offset 0}}]
+      :or   {shape      (fn [a b _] (svg/line a b))
+             item-pos   identity
+             interleave 1
+             bar-width  0
+             offset     0}}]
     (let [domain  (:domain x-axis)
-          ;;base-y  (first (:domain y-axis))
           base-y  ((:scale y-axis) (first (:domain y-axis)))
           mapper  (value-mapper (:scale x-axis) (:scale y-axis))
           offset  (+ (* -0.5 (* interleave bar-width)) (* (+ offset 0.5) bar-width))]
-      (svg/group
-       attribs
-       (sequence
-        (comp
-         (map (juxt item-pos identity))
-         (filter #(m/in-range? domain (ffirst %)))
-         (map
-          (fn [[p i]]
-            (let [[ax ay] (mapper p)
-                  ax (+ ax offset)]
-              (shape (project [ax ay]) (project [ax base-y]) i)))))
-        values))))
+      (->> values
+           (sequence
+            (comp
+             (map (juxt item-pos identity))
+             (filter #(m/in-range? domain (ffirst %)))
+             (map
+              (fn [[p i]]
+                (let [[ax ay] (mapper p)
+                      ax (+ ax offset)]
+                  (shape (project [ax ay]) (project [ax base-y]) i))))))
+           (svg/group attribs))))
 #+END_SRC
 
 *** Contour lines
 
-| *Key*  | *Required* | *Default* | *Description*                                       |
-|--------+------------+-----------+-----------------------------------------------------|
+Given a 2D matrix (a =thi.ng.ndarray.core.NDArray= instance) of data
+values and a seq of thresholds, this function computes number of
+polygons for each threshold level.
+
+*Note:* Since the data format for this method is different to the
+other layouts, we're using the =:matrix= key instead of =:values= to
+emphasize this difference...
+
+| *Key*     | *Required* | *Default* | *Description*                                |
+|-----------+------------+-----------+----------------------------------------------|
+| =:matrix= | Y          | nil       | NDArray instance of data grid                |
+| =:levels= | Y          | nil       | Seq of threshold values to find contours for |
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn contour-matrix
@@ -941,6 +978,12 @@ assumed for each data point.
 #+END_SRC
 
 *** Stacked intervals
+
+| *Key*         | *Required* | *Default*  | *Description*                                         |
+|---------------+------------+------------+-------------------------------------------------------|
+| =:item-range= | N          | =identity= | Function returning domain interval for each data item |
+| =:offset=     | N          | 0          | Y-axis offset for this data series                    |
+| =:shape=      | N          | =svg/line= | Function returning shape primitive for each data item |
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn overlap? [[a b] [c d]] (and (<= a d) (>= b c)))
