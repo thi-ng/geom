@@ -33,6 +33,7 @@
          - [[#line-plot][Line plot]]
          - [[#area-graph][Area graph]]
          - [[#radar-plot][Radar plot]]
+             - [[#min-max-radar-plot][Min-Max radar plot]]
          - [[#scatter-plot][Scatter plot]]
          - [[#bar-plot][Bar plot]]
          - [[#contour-lines][Contour lines]]
@@ -259,7 +260,7 @@ Same overall visualization setup, only using polar coordinate transform and rede
 
 *** Radar plot
 
-[[http://media.thi.ng/geom/viz/radarplot-3.svg]]
+| [[http://media.thi.ng/geom/viz/radarplot-3.svg]] | [[http://media.thi.ng/geom/viz/radarplot-minmax.svg]] |
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/radar.clj :noweb yes :mkdirp yes :padline no
   <<example-imports>>
@@ -269,34 +270,51 @@ Same overall visualization setup, only using polar coordinate transform and rede
   (def category->domain (zipmap [:c1 :c2 :c3 :c4 :c5 :c6] (range)))
   (def domain->category (set/map-invert category->domain))
 
-  (defn radar-spec
-    [[vals color]]
-    {:values vals
+  (defn random-radar-spec
+    "Generates radar plot data spec w/ random values for each category in the form:
+     {:c1 0.8 :c2 0.2 ...}"
+    [color]
+    {:values   (zipmap (keys category->domain) (repeatedly #(m/random 0.25 1)))
      :item-pos (fn [[k v]] [(category->domain k) v])
-     :attribs {:fill color}
-     :layout viz/svg-radar-plot})
+     :attribs  {:fill color}
+     :layout   viz/svg-radar-plot})
 
-  (->> {:x-axis (viz/linear-axis
-                 {:domain [0 5] :range [0 (* 2 (- 1.0 (/ 1 6)) PI)] :major 1
-                  :label-dist 20 :pos 260
-                  :format (comp str/capitalize name domain->category)})
-        :y-axis (viz/linear-axis
-                 {:domain [0 1.05] :range [0 260] :major 0.5 :minor 0.1 :pos (/ PI 2)
-                  :label {:text-anchor "start"}
-                  :format #(str (int (* % 100)) "%")})
-        :origin (v/vec2 300 300)
-        :circle true
-        :grid   {:attribs {:stroke "#caa" :fill "none"}
-                 :minor-x true
-                 :minor-y true}
-        :data   (mapv radar-spec
-                      [[{:c1 0.9 :c2 0.333 :c3 1 :c4 0.8 :c5 0.75 :c6 0.2} [0 0.66 1 0.33]]
-                       [{:c1 0.5 :c2 0.2 :c3 0.8 :c4 0.8 :c5 0.5 :c6 0.9}  [1 0.5 0 0.33]]
-                       [{:c1 0.6 :c2 0.25 :c3 0.7 :c4 0.2 :c5 0.8 :c6 0.7} [1 0 0.8 0.33]]])}
+  (defn random-radar-spec-minmax
+    "Generates radar plot data spec w/ random value intervals for each category in the form:
+     {:c1 [0.5 0.8] :c2 [0.12 0.2] ...}"
+    [color]
+    {:values       (zipmap
+                    (keys category->domain)
+                    (repeatedly #(let [x (m/random 0.5 1)] [(* x (m/random 0.25 0.75)) x])))
+     :item-pos-min (fn [[k v]] [(category->domain k) (first v)])
+     :item-pos-max (fn [[k v]] [(category->domain k) (peek v)])
+     :attribs      {:fill color}
+     :layout       viz/svg-radar-plot-minmax})
+
+  (def viz-spec
+    {:x-axis (viz/linear-axis
+              {:domain [0 5] :range [0 (* 2 (- 1.0 (/ 1 6)) PI)] :major 1
+               :label-dist 20 :pos 260
+               :format (comp str/capitalize name domain->category)})
+     :y-axis (viz/linear-axis
+              {:domain [0 1.05] :range [0 260] :major 0.5 :minor 0.1 :pos (/ PI 2)
+               :label {:text-anchor "start"}
+               :format viz/format-percent})
+     :grid   {:minor-x true :minor-y true}
+     :origin (v/vec2 300 300)
+     :circle true})
+
+  (->> (assoc viz-spec :data (mapv random-radar-spec [[0 0.66 1 0.33] [1 0.5 0 0.33] [1 0 0.8 0.33]]))
        (viz/svg-plot2d-polar)
        (svg/svg {:width 600 :height 600})
        (svg/serialize)
        (spit "radarplot.svg"))
+
+  (->> (assoc viz-spec :data (mapv random-radar-spec-minmax [[0 0.66 1 0.33] [1 0.5 0 0.33] [1 0 0.8 0.33]]))
+       (viz/svg-plot2d-polar)
+       (svg/svg {:width 600 :height 600})
+       (svg/serialize)
+       (spit "radarplot-minmax.svg"))
 #+END_SRC
 
 *** Stacked intervals
@@ -819,6 +837,35 @@ details.
     (svg/polygon (map first (process-points v-spec d-spec)) (:attribs d-spec)))
 #+END_SRC
 
+**** Min-Max radar plot
+
+This version of the radar plot expects a min/max interval for each
+data item. For example a single data point of =[2 0.25 0.75]= would
+define a domain position at x=2 and an interval of 0.25-0.75. If no
+=:item-pos-*= options are supplied this 3-element vector format is
+assumed for each data point.
+
+| *Key*           | *Required* | *Default*  | *Description*                       |
+|-----------------+------------+------------+-------------------------------------|
+| =:item-pos-min= | N          | =[x min]=  | Function to provide min. data point |
+| =:item-pos-max= | N          | =[x max]=  | Function to provide max. data point |
+
+#+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn svg-radar-plot-minmax
+    [v-spec {:keys [item-pos-min item-pos-max] :as d-spec}]
+    (let [min-points (->> (assoc d-spec :item-pos (or item-pos-min (fn [i] (take 2 i))))
+                          (process-points v-spec)
+                          (map first)
+                          (points->path-segments))
+          max-points (->> (assoc d-spec :item-pos (or item-pos-max (fn [i] [(first i) (nth i 2)])))
+                          (process-points v-spec)
+                          (map first)
+                          (points->path-segments))]
+      (svg/path
+       (concat max-points [[:Z]] min-points [[:Z]])
+       (assoc (:attribs d-spec) :fill-rule "evenodd"))))
+#+END_SRC
+
 *** Scatter plot
 
 | *Key*  | *Required* | *Default* | *Description*                                       |
@@ -1116,6 +1163,11 @@ details.
               :shape       shape})))))
 #+END_SRC
 
+#+BEGIN_SRC clojure :noweb-ref transformers
+  (defn points->path-segments
+    [[p & more]] (reduce #(conj % [:L %2]) [[:M p]] more))
+#+END_SRC
+
 ** Value formatting
 
 #+BEGIN_SRC clojure :noweb-ref formatters
@@ -1123,6 +1175,9 @@ details.
     [prec]
     (let [fmt [(f/float prec)]]
       (fn [x] (f/format fmt x))))
+
+  (defn format-percent
+    [x] (str (int (* x 100)) "%"))
 #+END_SRC
 
 ** Custom shapes
