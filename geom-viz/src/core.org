@@ -29,6 +29,9 @@
          - [[#linear][Linear]]
          - [[#logarithmic][Logarithmic]]
          - [[#lens-axis][Lens axis]]
+     - [[#domain-analysis-ops][Domain analysis ops]]
+	 - [[#raw-values-to-domain-point-conversion][Raw values to domain point conversion]]
+	 - [[#domain-bounds][Domain bounds]]
      - [[#visualization-methods][Visualization methods]]
          - [[#line-plot][Line plot]]
          - [[#area-plot][Area plot]]
@@ -803,6 +806,44 @@ details.
           (axis-common*))))
 #+END_SRC
 
+** Domain analysis ops
+*** Raw values to domain point conversion
+
+Most of the visualization methods in this module expect a seq of data
+points in the format: =[domain-position value]=. The function
+=->uniform-domain-points= is useful to convert a sequence of pure
+values into a uniformly spaced data points along the full breadth of
+the given domain:
+
+#+BEGIN_SRC clojure :noweb-ref analysis
+  (defn ->uniform-domain-points
+    "Given a vector of domain bounds and a collection of data values
+    (without domain position), produces a lazy-seq of 2-element vectors
+    representing the values of the original coll uniformly spread over
+    the full domain range, with each of the form: [domain-pos value]."
+    [[d1 d2] values]
+    (map
+     (fn [t v] [(m/mix d1 d2 t) v])
+     (m/norm-range (dec (count values)))
+     values))
+#+END_SRC
+
+*** Domain bounds
+#+BEGIN_SRC clojure :noweb-ref analysis
+  (def domain-bounds-x #(gu/axis-bounds 0 %))
+
+  (def domain-bounds-y #(gu/axis-bounds 1 %))
+
+  (def domain-bounds-z #(gu/axis-bounds 2 %))
+
+  (defn total-domain-bounds
+    [f & colls]
+    (transduce
+     (map f)
+     (completing (fn [[aa ab] [xa xb]] [(min aa xa) (max ab xb)]))
+     [m/INF+ m/INF-] colls))
+#+END_SRC
+
 ** Visualization methods
 
 This section defines the various layout/plotting methods, each with a
@@ -1270,6 +1311,7 @@ TBD
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v]
+     [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.ndarray.core :as nd]
      [thi.ng.ndarray.contours :as contours]
@@ -1281,6 +1323,8 @@ TBD
   <<projections>>
 
   <<formatters>>
+
+  <<analysis>>
 
   <<scale>>
 
