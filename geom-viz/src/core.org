@@ -479,14 +479,14 @@ spec fragments (via the use of our =timeline-spec= fn).
 
 *** Heatmap
 
-| [[http://media.thi.ng/geom/viz/heatmap-rainbow2.svg]]                  | [[http://media.thi.ng/geom/viz/heatmap-orange-blue.svg]]         |
-| :rainbow2 gradient preset                                          | :orange-blue gradient preset                                 |
-| [[http://media.thi.ng/geom/viz/heatmap-polar-yellow-magenta-cyan.svg]] | [[http://media.thi.ng/geom/viz/heatmap-polar-green-magenta.svg]] |
-| :yellow-magenta-cyan, polar projection                             | :green-magenta, polar projection                             |
+| [[http://media.thi.ng/geom/viz/hm-rainbow2.svg]]             | [[http://media.thi.ng/geom/viz/hm-orange-blue.svg]]       |
+| :rainbow2 gradient preset                                | :orange-blue gradient preset                                 |
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/heatmap.clj :noweb yes :mkdirp yes :padline no
   <<example-imports>>
   (require '[thi.ng.color.gradients :as grad])
+  (require '[thi.ng.geom.core :as g])
+  (require '[thi.ng.geom.core.utils :as gu])
   (require '[thi.ng.math.simplexnoise :as n])
 
   (def test-matrix
@@ -502,36 +502,54 @@ spec fragments (via the use of our =timeline-spec= fn).
      :layout        viz/svg-heatmap})
 
   (defn cartesian-viz
-    [id]
+    [prefix id & [opts]]
     (->> {:x-axis (viz/linear-axis
                    {:domain [0 50] :range [50 550] :major 10 :minor 5 :pos 280})
           :y-axis (viz/linear-axis
                    {:domain [0 10] :range [280 20] :major 1 :pos 50
                     :label-dist 15 :label {:text-anchor "end"}})
-          :data   [(heatmap-spec id)]}
+          :data   [(merge (heatmap-spec id) opts)]}
          (viz/svg-plot2d-cartesian)
          (svg/svg {:width 600 :height 300})
          (svg/serialize)
-         (spit (str "heatmap-" (name id) ".svg"))))
+         (spit (str prefix "-" (name id) ".svg"))))
 
+  (cartesian-viz "hm" :rainbow2)
+  (cartesian-viz "hm" :orange-blue)
+#+END_SRC
+
+| [[http://media.thi.ng/geom/viz/hmp-yellow-magenta-cyan.svg]] | [[http://media.thi.ng/geom/viz/hmp-green-magenta.svg]] |
+| :yellow-magenta-cyan, polar projection                   | :green-magenta, polar projection                             |
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/heatmap.clj :noweb yes :mkdirp yes :padline no
   (defn polar-viz
-    [id]
+    [prefix id & [opts]]
     (->> {:x-axis (viz/linear-axis
                    {:domain [0 50] :range [(* 1.1 PI) (* 1.9 PI)] :major 10 :minor 5 :pos 280})
           :y-axis (viz/linear-axis
                    {:domain [0 10] :range [90 280] :major 5 :pos (* 1.1 PI)
                     :major-size 10 :label-dist 20})
           :origin (v/vec2 300)
-          :data   [(heatmap-spec id)]}
+          :data   [(merge (heatmap-spec id) opts)]}
          (viz/svg-plot2d-polar)
          (svg/svg {:width 600 :height 320})
          (svg/serialize)
-         (spit (str "heatmap-polar-" (name id) ".svg"))))
+         (spit (str prefix "-" (name id) ".svg"))))
 
-  (cartesian-viz :rainbow2)
-  (cartesian-viz :orange-blue)
-  (polar-viz :yellow-magenta-cyan)
-  (polar-viz :green-magenta)
+  (polar-viz "hmp" :yellow-magenta-cyan)
+  (polar-viz "hmp" :green-magenta)
+#+END_SRC
+
+| [[http://media.thi.ng/geom/viz/hms-rainbow2.svg]] | [[http://media.thi.ng/geom/viz/hmsp-rainbow2.svg]] |
+| :rainbow2 w/ custom shape fn                  | :rainbow2, polar projection, custom shape fn   |
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/heatmap.clj :noweb yes :mkdirp yes :padline no
+  ;; custom shape function applied for each matrix cell
+  (defn circle-cell
+    [a b c d col] (svg/circle (gu/centroid [a b c d]) (* 0.5 (g/dist a b)) {:fill col}))
+
+  (cartesian-viz "hms" :rainbow2 {:shape circle-cell})
+  (polar-viz "hmsp" :rainbow2 {:shape circle-cell})
 #+END_SRC
 
 *** Contour plot
@@ -949,9 +967,9 @@ approximation closing the polygon along the X-axis (e.g. =:res 20=).
   (defn svg-area-plot
     [{:keys [y-axis project] :as v-spec} {:keys [res] :as d-spec}]
     (let [ry1     (first (:range y-axis))
-          points  (map first (process-points (assoc v-spec :project identity) d-spec))
-          p       (v/vec2 (first (last points)) ry1)
-          q       (v/vec2 (ffirst points) ry1)
+          points  (map first (process-points (assoc v-spec :project vec2) d-spec))
+          p       (vec2 (first (last points)) ry1)
+          q       (vec2 (ffirst points) ry1)
           points  (concat points (map (partial g/mix p q) (m/norm-range (or res 1))))]
       (svg/polygon (map project points) (:attribs d-spec))))
 #+END_SRC
@@ -1024,7 +1042,7 @@ assumed for each data point.
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-bar-plot
-    [{:keys [x-axis y-axis project] :or {project  identity}}
+    [{:keys [x-axis y-axis project] :or {project vec2}}
      {:keys [values attribs shape item-pos interleave offset bar-width]
       :or   {shape      (fn [a b _] (svg/line a b))
              item-pos   identity
@@ -1234,7 +1252,7 @@ compression function.
 
   (defn svg-plot2d-cartesian
     [{:keys [x-axis y-axis grid data] :as opts}]
-    (let [opts (assoc opts :project identity)]
+    (let [opts (assoc opts :project vec2)]
       (svg/group
        {}
        (if grid (svg-axis-grid2d-cartesian x-axis y-axis grid))
@@ -1321,8 +1339,8 @@ compression function.
 #+BEGIN_SRC clojure :noweb-ref projections
   (defn polar-projection
     [origin]
-    (let [o (v/vec2 origin)]
-      (fn [[x y]] (g/+ o (g/as-cartesian (v/vec2 y x))))))
+    (let [o (vec2 origin)]
+      (fn [[x y]] (g/+ o (g/as-cartesian (vec2 y x))))))
 #+END_SRC
 
 ** Value transformations
@@ -1422,7 +1440,7 @@ TBD
   (ns thi.ng.geom.viz.core
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.ndarray.core :as nd]
