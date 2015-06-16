@@ -12,6 +12,7 @@
          - [[#stacked-intervals][Stacked intervals]]
              - [[#plain-intervals][Plain intervals]]
              - [[#categorized-timeline][Categorized timeline]]
+         - [[#heatmap][Heatmap]]
          - [[#contour-plot][Contour plot]]
      - [[#visualization-spec-format][Visualization spec format]]
          - [[#axis-definitions-x-axis--y-axis][Axis definitions (:x-axis / :y-axis)]]
@@ -30,8 +31,9 @@
          - [[#logarithmic][Logarithmic]]
          - [[#lens-axis][Lens axis]]
      - [[#domain-analysis-ops][Domain analysis ops]]
-	 - [[#raw-values-to-domain-point-conversion][Raw values to domain point conversion]]
-	 - [[#domain-bounds][Domain bounds]]
+         - [[#raw-values-to-domain-point-conversion][Raw values to domain point conversion]]
+         - [[#domain-bounds][Domain bounds]]
+         - [[#matrix-value-domain][Matrix value domain]]
      - [[#visualization-methods][Visualization methods]]
          - [[#line-plot][Line plot]]
          - [[#area-plot][Area plot]]
@@ -41,6 +43,7 @@
          - [[#bar-plot][Bar plot]]
          - [[#contour-lines][Contour lines]]
          - [[#stacked-intervals][Stacked intervals]]
+         - [[#heatmap][Heatmap]]
      - [[#2d-cartesian-plotting-svg][2D Cartesian Plotting (SVG)]]
          - [[#svg-axis-generators][SVG axis generators]]
          - [[#generic-plotting-helpers][Generic plotting helpers]]
@@ -97,9 +100,8 @@ be run with this command and will create a number of SVG files in the
 same directory.
 
 #+BEGIN_SRC clojure
-  (->> ["scatter" "lineplot" "bars" "radar" "intervals" "timeline" "contours"]
-       (map #(load-file (str "examples/" % ".clj")))
-       dorun)
+  (doseq [f (rest (file-seq (java.io.File. "examples")))]
+    (load-file (.getAbsolutePath f)))
 #+END_SRC
 
 *** Namespaces required by all examples
@@ -475,6 +477,63 @@ spec fragments (via the use of our =timeline-spec= fn).
        (spit "timeline-separate.svg"))
 #+END_SRC
 
+*** Heatmap
+
+| [[http://media.thi.ng/geom/viz/heatmap-rainbow2.svg]]                  | [[http://media.thi.ng/geom/viz/heatmap-orange-blue.svg]]         |
+| :rainbow2 gradient preset                                          | :orange-blue gradient preset                                 |
+| [[http://media.thi.ng/geom/viz/heatmap-polar-yellow-magenta-cyan.svg]] | [[http://media.thi.ng/geom/viz/heatmap-polar-green-magenta.svg]] |
+| :yellow-magenta-cyan, polar projection                             | :green-magenta, polar projection                             |
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/heatmap.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
+  (require '[thi.ng.color.gradients :as grad])
+  (require '[thi.ng.math.simplexnoise :as n])
+
+  (def test-matrix
+    (->> (for [y (range 10) x (range 50)] (n/noise2 (* x 0.1) (* y 0.25)))
+         (viz/matrix-2d 50 10)))
+
+  (defn heatmap-spec
+    [id]
+    {:matrix        test-matrix
+     :value-domain  (viz/value-domain-bounds test-matrix)
+     :palette       (->> id (grad/cosine-schemes) (apply grad/cosine-gradient 100))
+     :palette-scale viz/linear-scale
+     :layout        viz/svg-heatmap})
+
+  (defn cartesian-viz
+    [id]
+    (->> {:x-axis (viz/linear-axis
+                   {:domain [0 50] :range [50 550] :major 10 :minor 5 :pos 280})
+          :y-axis (viz/linear-axis
+                   {:domain [0 10] :range [280 20] :major 1 :pos 50
+                    :label-dist 15 :label {:text-anchor "end"}})
+          :data   [(heatmap-spec id)]}
+         (viz/svg-plot2d-cartesian)
+         (svg/svg {:width 600 :height 300})
+         (svg/serialize)
+         (spit (str "heatmap-" (name id) ".svg"))))
+
+  (defn polar-viz
+    [id]
+    (->> {:x-axis (viz/linear-axis
+                   {:domain [0 50] :range [(* 1.1 PI) (* 1.9 PI)] :major 10 :minor 5 :pos 280})
+          :y-axis (viz/linear-axis
+                   {:domain [0 10] :range [90 280] :major 5 :pos (* 1.1 PI)
+                    :major-size 10 :label-dist 20})
+          :origin (v/vec2 300)
+          :data   [(heatmap-spec id)]}
+         (viz/svg-plot2d-polar)
+         (svg/svg {:width 600 :height 320})
+         (svg/serialize)
+         (spit (str "heatmap-polar-" (name id) ".svg"))))
+
+  (cartesian-viz :rainbow2)
+  (cartesian-viz :orange-blue)
+  (polar-viz :yellow-magenta-cyan)
+  (polar-viz :green-magenta)
+#+END_SRC
+
 *** Contour plot
 
 | [[http://media.thi.ng/geom/viz/contours-3.svg]]     | [[http://media.thi.ng/geom/viz/contours-outline-3.svg]]     |
@@ -685,7 +744,7 @@ The two animations below show the effect of individually adjusting the focus and
 
 #+BEGIN_SRC clojure :noweb-ref scale
   (defn lens-scale
-    [[d1 d2] [r1 r2] focus strength]
+    [focus strength [d1 d2] [r1 r2]]
     (let [dr (- d2 d1)
           f  (/ (- focus d1) dr)]
       (fn [x] (m/mix-lens r1 r2 (/ (- x d1) dr) f strength))))
@@ -798,7 +857,7 @@ details.
           focus  (or focus (/ (apply + domain) 2.0))]
       (-> spec
           (assoc
-           :scale    (lens-scale domain range focus strength)
+           :scale    (lens-scale focus strength domain range)
            :major    major'
            :minor    minor'
            :focus    focus
@@ -811,12 +870,12 @@ details.
 
 Most of the visualization methods in this module expect a seq of data
 points in the format: =[domain-position value]=. The function
-=->uniform-domain-points= is useful to convert a sequence of pure
-values into a uniformly spaced data points along the full breadth of
-the given domain:
+=uniform-domain-points= is useful to convert a sequence of pure
+values (without position) into a seq of uniformly spaced data points
+along the full breadth of the given domain:
 
 #+BEGIN_SRC clojure :noweb-ref analysis
-  (defn ->uniform-domain-points
+  (defn uniform-domain-points
     "Given a vector of domain bounds and a collection of data values
     (without domain position), produces a lazy-seq of 2-element vectors
     representing the values of the original coll uniformly spread over
@@ -842,6 +901,15 @@ the given domain:
      (map f)
      (completing (fn [[aa ab] [xa xb]] [(min aa xa) (max ab xb)]))
      [m/INF+ m/INF-] colls))
+#+END_SRC
+
+*** Matrix value domain
+
+#+BEGIN_SRC clojure :noweb-ref analysis
+  (defn value-domain-bounds
+    [mat]
+    (let [vals (seq mat)]
+      [(reduce min vals) (reduce max vals)]))
 #+END_SRC
 
 ** Visualization methods
@@ -996,10 +1064,12 @@ emphasize this difference...
 | =:levels= | Y          | nil       | Seq of threshold values to find contours for |
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn matrix-2d
+    [w h values] (nd/ndarray :float32 values [h w]))
+
   (defn contour-matrix
     [w h values]
-    (let [mat (nd/ndarray :float32 values [h w])]
-      (contours/set-border-2d mat 1e9)))
+    (contours/set-border-2d (matrix-2d w h values) 1e10))
 
   (defn contour->svg
     [scale-x scale-y project]
@@ -1066,6 +1136,48 @@ emphasize this difference...
            (mapcat (process-interval-row item-range mapper domain) (range offset 1e6))
            (map shape)
            (svg/group attribs))))
+#+END_SRC
+
+*** Heatmap
+
+| *Key*            | *Required* | *Default*    | *Description*                                      |
+|------------------+------------+--------------+----------------------------------------------------|
+| =:matrix=        | Y          | nil          | NDArray instance of data grid                      |
+| =:palette=       | Y          | nil          | Color list                                         |
+| =:palette-scale= | N          | linear-scale | Mapping function of matrix values to palette index |
+| =:value-domain=  | N          | [0 1]        | Domain interval of matrix values                   |
+| =:clamp=         | N          | false        | If true, matrix values are clamped to value domain |
+
+*Note:* If =:clamp= is not enabled, the =:value-domain= acts as filter
+and will not include cells with values outside the domain, resulting
+in holes in the visualization. On the other hand, if =:clamp= is
+enabled, the =:value-domain= acts as a kind of amplification or
+compression function.
+
+#+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn svg-heatmap
+    [{:keys [x-axis y-axis project]}
+     {:keys [matrix value-domain clamp palette palette-scale attribs shape]
+      :or {value-domain [0.0 1.0]
+           palette-scale linear-scale
+           shape #(svg/polygon [%1 %2 %3 %4] {:fill %5})}
+      :as d-spec}]
+    (let [scale-x   (:scale x-axis)
+          scale-y   (:scale y-axis)
+          pmax      (dec (count palette))
+          scale-v   (palette-scale value-domain [0 pmax])]
+      (svg/group
+       attribs
+       (for [p (nd/position-seq matrix)
+             :let [[y x] p
+                   v (nd/get-at matrix y x)]
+             :when (or clamp (m/in-range? value-domain v))]
+         (shape
+          (project [(scale-x x) (scale-y y)])
+          (project [(scale-x (inc x)) (scale-y y)])
+          (project [(scale-x (inc x)) (scale-y (inc y))])
+          (project [(scale-x x) (scale-y (inc y))])
+          (palette (m/clamp (int (scale-v v)) 0 pmax)))))))
 #+END_SRC
 
 ** 2D Cartesian Plotting (SVG)
