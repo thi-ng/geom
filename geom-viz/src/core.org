@@ -14,6 +14,7 @@
              - [[#categorized-timeline][Categorized timeline]]
          - [[#heatmap][Heatmap]]
          - [[#contour-plot][Contour plot]]
+         - [[#gis-terrain-contours-w-elevation-color-gradient][GIS terrain contours w/ elevation color gradient]]
      - [[#visualization-spec-format][Visualization spec format]]
          - [[#axis-definitions-x-axis--y-axis][Axis definitions (:x-axis / :y-axis)]]
              - [[#about-tick-marks][About tick marks]]
@@ -554,9 +555,9 @@ spec fragments (via the use of our =timeline-spec= fn).
 
 *** Contour plot
 
-| [[http://media.thi.ng/geom/viz/contours-3.svg]]     | [[http://media.thi.ng/geom/viz/contours-outline-3.svg]]     |
+| [[http://media.thi.ng/geom/viz/contours-4.svg]]     | [[http://media.thi.ng/geom/viz/contours-outline-4.svg]]     |
 | linear X/Y filled                               | linear X/Y outline                                      |
-| [[http://media.thi.ng/geom/viz/contours-log-3.svg]] | [[http://media.thi.ng/geom/viz/contours-log-outline-3.svg]] |
+| [[http://media.thi.ng/geom/viz/contours-log-4.svg]] | [[http://media.thi.ng/geom/viz/contours-log-outline-4.svg]] |
 | log X/Y filled                                  | log X/Y outline                                         |
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/contours.clj :noweb yes :mkdirp yes :padline no
@@ -569,12 +570,12 @@ spec fragments (via the use of our =timeline-spec= fn).
      :y-axis (viz/linear-axis
               {:domain [0 63] :range [550 50] :major 8 :minor 2 :pos 50
                :label-dist 15 :label {:text-anchor "end"}})
-     :data   [{:matrix  (->> (for [y (range 64) x (range 64)]
-                               (+ 0.5 (* 0.5 (n/noise2 (* x 0.06) (* y 0.06)))))
-                             (viz/contour-matrix 64 64))
-               :levels  (range 0.05 1 0.05)
-               :attribs {:fill "none" :stroke "#0af"}
-               :layout  viz/svg-contour-plot}]})
+     :data   [{:matrix       (->> (for [y (range 64) x (range 64)] (n/noise2 (* x 0.06) (* y 0.06)))
+                                  (viz/contour-matrix 64 64))
+               :levels       (range -1 1 0.05)
+               :value-domain [-1.0 1.0]
+               :attribs      {:fill "none" :stroke "#0af"}
+               :layout       viz/svg-contour-plot}]})
 
   (def viz-spec-log
     (merge viz-spec
@@ -584,7 +585,7 @@ spec fragments (via the use of our =timeline-spec= fn).
                      {:domain [0 64] :range [550 50] :base 2 :pos 45
                       :label-dist 15 :label {:text-anchor "end"}})}))
 
-  (def fill-attribs {:fill [0.0 0.66 1.0 0.05] :stroke "#0af"})
+  (def fill-attribs {:fill [0.0 0.66 1.0 0.05] :stroke "#fff"})
 
   (defn export-viz
     [viz path] (->> viz (svg/svg {:width 600 :height 600}) (svg/serialize) (spit path)))
@@ -600,9 +601,49 @@ spec fragments (via the use of our =timeline-spec= fn).
               (export-viz path)))))
 #+END_SRC
 
-Another variation of the above with polar coordinates:
+An animated variation with polar coordinates:
 
 [[http://media.thi.ng/geom/viz/contours-polar.gif]]
+
+*** GIS terrain contours w/ elevation color gradient
+
+| [[http://media.thi.ng/geom/viz/terrain-24.svg]] | [[http://media.thi.ng/geom/viz/terrain-18.svg]] |
+| contour delta = 24                          | contour delta = 18                          |
+| [[http://media.thi.ng/geom/viz/terrain-12.svg]] | [[http://media.thi.ng/geom/viz/terrain-6.svg]]  |
+| contour delta = 12                          | contour delta = 6                           |
+
+#+BEGIN_SRC clojure :tangle ../babel/examples/terrain.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
+  (require '[thi.ng.color.gradients :as grad])
+
+  (defn load-image
+    [path]
+    (let [img  (javax.imageio.ImageIO/read (java.io.File. path))
+          w    (.getWidth img)
+          h    (.getHeight img)
+          rgb  (.getRGB img 0 0 w h (int-array (* w h)) 0 w)]
+      (viz/contour-matrix w h (map #(bit-and % 0xff) rgb))))
+
+  (def viz-spec
+    {:x-axis (viz/linear-axis
+              {:domain [0 79] :range [50 550] :major 8 :minor 2 :pos 550})
+     :y-axis (viz/linear-axis
+              {:domain [0 79] :range [50 550] :major 8 :minor 2 :pos 50
+               :label-dist 15 :label {:text-anchor "end"}})
+     :data   [{:matrix          (load-image "../../assets/california-detail-gis.png")
+               :value-domain    [0.0 255.0]
+               :attribs         {:fill "none"}
+               :palette         (->> :orange-blue (grad/cosine-schemes) (apply grad/cosine-gradient 100))
+               :contour-attribs (fn [col] {:stroke col})
+               :layout          viz/svg-contour-plot}]})
+
+  (doseq [res [6 12 18 24]]
+   (->> (assoc-in viz-spec [:data 0 :levels] (range 0 255 res))
+        (viz/svg-plot2d-cartesian)
+        (svg/svg {:width 600 :height 600})
+        (svg/serialize)
+        (spit (str "terrain-" res ".svg"))))
+#+END_SRC
 
 ** Visualization spec format
 
@@ -1076,10 +1117,14 @@ polygons for each threshold level.
 other layouts, we're using the =:matrix= key instead of =:values= to
 emphasize this difference...
 
-| *Key*     | *Required* | *Default* | *Description*                                |
-|-----------+------------+-----------+----------------------------------------------|
-| =:matrix= | Y          | nil       | NDArray instance of data grid                |
-| =:levels= | Y          | nil       | Seq of threshold values to find contours for |
+| *Key*              | *Required* | *Default*    | *Description*                                                  |
+|--------------------+------------+--------------+----------------------------------------------------------------|
+| =:matrix=          | Y          | nil          | NDArray instance of data grid                                  |
+| =:levels=          | Y          | nil          | Seq of threshold values to find contours for                   |
+| =:palette=         | Y          | nil          | Color list                                                     |
+| =:palette-scale=   | N          | linear-scale | Mapping function of matrix values to palette index             |
+| =:value-domain=    | N          | [0 1]        | Domain interval of matrix values                               |
+| =:contour-attribs= | N          | nil          | Function to produce shape attribs map for each threshold level |
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn matrix-2d
@@ -1087,22 +1132,34 @@ emphasize this difference...
 
   (defn contour-matrix
     [w h values]
-    (contours/set-border-2d (matrix-2d w h values) 1e10))
+    (contours/set-border-2d (matrix-2d w h values) -1e9))
 
   (defn contour->svg
     [scale-x scale-y project]
-    (fn [contour]
+    (fn [attribs contour]
       (let [contour (map (fn [[y x]] [(scale-x x) (scale-y y)]) contour)]
-        (svg/polygon (map project contour)))))
+        (svg/polygon (map project contour) attribs))))
 
   (defn svg-contour-plot
     [{:keys [x-axis y-axis project]}
-     {:keys [matrix attribs levels]}]
-    (let [contour-fn (contour->svg (:scale x-axis) (:scale y-axis) project)]
+     {:keys [matrix attribs levels palette palette-scale value-domain contour-attribs]
+      :or   {value-domain    [0.0 1.0]
+             palette         [[1 1 1]]
+             palette-scale   linear-scale
+             contour-attribs (constantly nil)}}]
+    (let [pmax       (dec (count palette))
+          scale-v    (palette-scale value-domain [0 pmax])
+          contour-fn (contour->svg (:scale x-axis) (:scale y-axis) project)]
       (svg/group
        attribs
        (map
-        #(svg/group {} (map contour-fn (contours/find-contours-2d matrix %)))
+        (fn [iso]
+          (let [c-attribs (contour-attribs (palette (m/clamp (int (scale-v iso)) 0 pmax)))]
+            (svg/group
+             {}
+             (map
+              (partial contour-fn c-attribs)
+              (contours/find-contours-2d matrix iso)))))
         (sort levels)))))
 #+END_SRC
 
