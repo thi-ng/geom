@@ -953,18 +953,24 @@ ordering (row major).
       (conj (g/transform-vector vtx (g/div (vec2 x y) w)) (/ z w))))
 
   (defn unproject-point
-    "Takes a vec3 in screenspace, model-view matrix, projection matrix
-    and screen rect. Returns vector in model space or nil if matrix is
-    not invertible."
-    ([p model-view proj screen-rect]
-     (if-let [inv-mat (g/invert (g/* proj model-view))]
+    "Takes a vec3 in screenspace, view matrix, projection matrix and
+    screen rect. A second arity exists accepting an already inverted
+    view-projection matrix instead of having to supply view & proj
+    separately. Returns vector in object space or nil if matrix is not
+    invertible."
+    ([p view proj screen-rect]
+     (if-let [inv-mat (g/invert (g/* proj view))]
        (unproject-point p inv-mat screen-rect)))
     ([[x y z] inv-mat {[vx vy] :p [w h] :size}]
-     (g/transform-vector
-      inv-mat
-      (vec3 (m/map-interval x vx (+ vx w) -1 1)
-            (m/map-interval y vy (+ vy h) -1 1)
-            (- (* z 2) 1)))))
+     (let [x' (- (/ (* 2.0 (- x vx)) w) 1)
+           y' (- (/ (* 2.0 (- (- h y 1) vy)) h) 1)
+           z' (- (* z 2.0) 1)
+           p' (g/transform-vector inv-mat [x' y' z'])]
+       (g/* p' (/ (mm/madd
+                   x' (nth inv-mat 3)
+                   y' (nth inv-mat 7)
+                   z' (nth inv-mat 11)
+                   (nth inv-mat 15)))))))
 #+END_SRC
 
 ** Complete namespace definition
