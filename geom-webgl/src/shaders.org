@@ -443,7 +443,7 @@ Currently the following options are supported:
     [vs-src]
     {:vs (->> vs-src
               (glsl/glsl-spec-plain
-               [vertex/mvp vertex/normal light/lambert-abs])
+               [vertex/mvp vertex/normal light/lambert light/lambert-abs])
               (glsl/assemble))
      :fs "void main(){gl_FragColor=vCol;}"
      :uniforms {:model      [:mat4 M44]
