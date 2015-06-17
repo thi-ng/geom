@@ -146,7 +146,7 @@ rotation / transformation).
           teeth      20
           model      (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
                          (g/extrude-shell {:mesh (basic-mesh) :depth 0.1 :inset 0.025 :wall 0.015 :bottom? true})
-                         (gl/as-webgl-buffer-spec {:tessellate true :fnormals true})
+                         (gl/as-webgl-buffer-spec {})
                          (buf/make-attribute-buffers-in-spec gl gl/static-draw)
                          (assoc :shader (sh/make-shader-from-spec gl phong/shader-spec))
                          (update-in [:uniforms] merge
@@ -234,7 +234,7 @@ rotation / transformation).
                            (g/flip))
           mesh         (g/into mesh room)
           model        (-> mesh
-                           (gl/as-webgl-buffer-spec {:tessellate true :fnormals true})
+                           (gl/as-webgl-buffer-spec {})
                            (buf/make-attribute-buffers-in-spec gl gl/static-draw))
           ov-quad      (overlay/overlay-spec-from-rect gl)
           view-rect    (gl/get-viewport-rect gl)
@@ -346,15 +346,14 @@ rotation / transformation).
           gl (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2)))))
          true))))
 #+END_SRC
+
 ** Example 5: Unproject & scene raycasting
 
 #+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example05.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.example05
-    (:require-macros
-     [thi.ng.math.macros :as mm])
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [vec3]]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.core.matrix :as mat :refer [M44]]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.plane :as pl]
@@ -364,14 +363,6 @@ rotation / transformation).
      [thi.ng.geom.webgl.buffers :as buf]
      [thi.ng.geom.webgl.shaders :as sh]
      [thi.ng.geom.webgl.shaders.phong :as phong]))
-
-  (defn unproject-point
-    [[x y z] imat {[vx vy] :p [w h] :size}]
-    (let [x' (- (/ (* 2.0 (- x vx)) w) 1)
-          y' (- (/ (* 2.0 (- (- h y 1) vy)) h) 1)
-          z' (- (* z 2.0) 1)
-          p' (g/transform-vector imat [x' y' z'])]
-      (g/scale p' (/ (mm/madd x' (nth imat 3) y' (nth imat 7) z' (nth imat 11) (nth imat 15))))))
 
   (defn ^:export demo
     []
@@ -390,7 +381,7 @@ rotation / transformation).
           box       (-> (a/aabb 1)
                         (g/center)
                         (g/as-mesh)
-                        (gl/as-webgl-buffer-spec {:tessellate true :fnormals true})
+                        (gl/as-webgl-buffer-spec {})
                         (buf/make-attribute-buffers-in-spec gl gl/static-draw)
                         (assoc :shader shader :uniforms (assoc uniforms :diffuseCol [1 0 1])))
           ground    (pl/plane-with-point (vec3 0 ground-y 0) v/V3Y)
@@ -398,19 +389,25 @@ rotation / transformation).
           planes    (-> (g/as-mesh back {:size size})
                         (g/translate (vec3 0 (+ (* 0.5 size) ground-y) 0))
                         (g/into (g/as-mesh ground {:size size}))
-                        (gl/as-webgl-buffer-spec {:tessellate true :fnormals true})
+                        (gl/as-webgl-buffer-spec {})
                         (buf/make-attribute-buffers-in-spec gl gl/static-draw)
                         (assoc :shader shader :uniforms uniforms))
           state     (atom {:mpos (g/centroid view-rect)})]
       (.addEventListener
        js/window "mousemove"
-       (fn [e] (swap! state assoc :mpos (v/vec2 (.-clientX e) (.-clientY e)))))
+       (fn [e] (swap! state assoc :mpos (vec2 (.-clientX e) (.-clientY e)))))
+      (.addEventListener
+       js/window "touchmove"
+       (fn [e]
+         (let [t (aget (.-touches e) 0)]
+           (.preventDefault e)
+           (swap! state assoc :mpos (vec2 (.-clientX t) (.-clientY t))))))
       (anim/animate
        (fn [[t frame]]
          (let [eye     (g/rotate-y eye (Math/sin t))
                view    (mat/look-at eye target up)
                inv-mat (g/invert (g/* (:proj uniforms) view))
-               p       (unproject-point (vec3 (:mpos @state) 0) inv-mat view-rect)
+               p       (mat/unproject-point (vec3 (:mpos @state) 0) inv-mat view-rect)
                dir     (g/- p eye)
                i1      (:p (g/intersect-ray ground eye dir))
                i2      (:p (g/intersect-ray back eye dir))
