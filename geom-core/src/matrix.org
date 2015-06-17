@@ -865,6 +865,9 @@ ordering (row major).
        nil nil)))
 
   (defn frustum-bounds
+    "Given vertical FOV in degrees, aspect ratio and near plane
+    distance, computes map of left/right/top/bottom view frustum
+    bounds."
     [fovy aspect near]
     (let [top (* near (Math/tan (* 0.5 (m/radians fovy))))
           right (* top aspect)]
@@ -874,9 +877,9 @@ ordering (row major).
        :bottom (- top)}))
 
   (defn ortho
-    "Returns an orthographic projection matrix, in which objects are the same size no
-    matter how far away or nearby they are.
-    This emulates the OpenGL function glOrtho()."
+    "Returns an orthographic projection matrix, in which objects are the
+    same size no matter how far away or nearby they are. This emulates
+    the OpenGL function glOrtho()."
     [l t r b n f]
     (let[dx (/ (- l r))
          dy (/ (- b t))
@@ -909,6 +912,8 @@ ordering (row major).
       (frustum left top right bottom near far)))
 
   (defn look-at-vectors
+    "Takes 6 numbers representing eye & target positions, computes up
+    vector and returns vector of all three vec3's."
     [ex ey ez tx ty tz]
     (let [eye    (vec3 ex ey ez)
           target (vec3 tx ty tz)
@@ -933,6 +938,9 @@ ordering (row major).
            nil nil)))))
 
   (defn viewport-matrix
+    "Given viewport width/height, computes a 2D transformation matrix
+    mapping normalized coordinates to screen space. If invert-y? is
+    true, the Y axis is flipped."
     ([width height]
      (viewport-matrix width height false))
     ([width height invert-y?]
@@ -943,14 +951,18 @@ ordering (row major).
            (g/* (g/scale M32 w2 (if invert-y? h2 (- h2))))))))
 
   (defn project-point
+    "Projects 3D point p using MVP matrix into 2D and the applies
+    viewport matrix to produce screen coordinate."
     [p mvp vtx]
     (let [[x y _ w] (g/transform-vector mvp (conj (vec3 p) 1))]
       (g/transform-vector vtx (g/div (vec2 x y) w))))
 
   (defn project-point-z
+    "Like project-point, but returns vec3 with z component representing
+    depth value."
     [p mvp vtx]
     (let [[x y z w] (g/transform-vector mvp (conj (vec3 p) 1))]
-      (conj (g/transform-vector vtx (g/div (vec2 x y) w)) (/ z w))))
+      (vec3 (g/transform-vector vtx (g/div (vec2 x y) w)) (/ z w))))
 
   (defn unproject-point
     "Takes a vec3 in screenspace, view matrix, projection matrix and
@@ -961,16 +973,18 @@ ordering (row major).
     ([p view proj screen-rect]
      (if-let [inv-mat (g/invert (g/* proj view))]
        (unproject-point p inv-mat screen-rect)))
-    ([[x y z] inv-mat {[vx vy] :p [w h] :size}]
+    ([p ^Matrix44 inv-mat {[vx vy] :p [w h] :size}]
+     (unproject-point p inv-mat vx vy w h))
+    ([[x y z] ^Matrix44 inv-mat vx vy w h]
      (let [x' (- (/ (* 2.0 (- x vx)) w) 1)
            y' (- (/ (* 2.0 (- (- h y 1) vy)) h) 1)
            z' (- (* z 2.0) 1)
            p' (g/transform-vector inv-mat [x' y' z'])]
        (g/* p' (/ (mm/madd
-                   x' (nth inv-mat 3)
-                   y' (nth inv-mat 7)
-                   z' (nth inv-mat 11)
-                   (nth inv-mat 15)))))))
+		   x' (.-m03 inv-mat)
+		   y' (.-m13 inv-mat)
+		   z' (.-m23 inv-mat)
+		   (.-m33 inv-mat)))))))
 #+END_SRC
 
 ** Complete namespace definition
