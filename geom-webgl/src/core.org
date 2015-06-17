@@ -636,7 +636,8 @@ using the protocol.
   (extend-type thi.ng.geom.types.BasicMesh
     PWebGLConvert
     (as-webgl-buffer-spec
-      [_ {:keys [fnormals tessellate stride] :or {stride 3, fnormals true} :as spec}]
+      [_ {:keys [fnormals tessellate stride]
+          :or   {fnormals true, tessellate true, stride 3} :as spec}]
       (let [m         (if tessellate (g/tessellate _) _)
             faces     (g/faces m)
             num-faces (count faces)
@@ -660,7 +661,8 @@ using the protocol.
   (extend-type thi.ng.geom.types.GMesh
     PWebGLConvert
     (as-webgl-buffer-spec
-      [_ {:keys [vnormals fnormals tessellate stride] :or {stride 3, fnormals true} :as spec}]
+      [_ {:keys [vnormals fnormals tessellate stride]
+          :or   {fnormals true, tessellate true, stride 3} :as spec}]
       (let [m         (if tessellate (g/tessellate _) _)
             faces     (g/faces m)
             num-faces (count faces)
