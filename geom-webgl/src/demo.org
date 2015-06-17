@@ -7,6 +7,7 @@
      - [[#example-2-extruded-2d-polygons-with-blinn-phong-shading][Example 2: Extruded 2D polygons with Blinn-Phong shading]]
      - [[#example-3-morphogen--shadow-mapping][Example 3: Morphogen & shadow mapping]]
      - [[#example-4-colored-mesh-manual-buffer-creation][Example 4: Colored mesh (manual buffer creation)]]
+     - [[#example-5-unproject--scene-raycasting][Example 5: Unproject & scene raycasting]]
 
 * WebGL examples & test scenes
 
@@ -344,4 +345,81 @@ rotation / transformation).
          (buf/draw-arrays-with-shader
           gl (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2)))))
          true))))
+#+END_SRC
+** Example 5: Unproject & scene raycasting
+
+#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example05.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.webgl.example05
+    (:require-macros
+     [thi.ng.math.macros :as mm])
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :as v :refer [vec3]]
+     [thi.ng.geom.core.matrix :as mat :refer [M44]]
+     [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.plane :as pl]
+     [thi.ng.geom.core.intersect :as intersect]
+     [thi.ng.geom.webgl.core :as gl]
+     [thi.ng.geom.webgl.animator :as anim]
+     [thi.ng.geom.webgl.buffers :as buf]
+     [thi.ng.geom.webgl.shaders :as sh]
+     [thi.ng.geom.webgl.shaders.phong :as phong]))
+
+  (defn unproject-point
+    [[x y z] imat {[vx vy] :p [w h] :size}]
+    (let [x' (- (/ (* 2.0 (- x vx)) w) 1)
+          y' (- (/ (* 2.0 (- (- h y 1) vy)) h) 1)
+          z' (- (* z 2.0) 1)
+          p' (g/transform-vector imat [x' y' z'])]
+      (g/scale p' (/ (mm/madd x' (nth imat 3) y' (nth imat 7) z' (nth imat 11) (nth imat 15))))))
+
+  (defn ^:export demo
+    []
+    (let [gl        (gl/gl-context "main")
+          view-rect (gl/get-viewport-rect gl)
+          shader    (sh/make-shader-from-spec gl phong/shader-spec)
+          eye       (vec3 1 2 6)
+          target    (vec3 0 0.6 0)
+          up        v/V3Y
+          size      3
+          ground-y  -0.55
+          uniforms  {:proj      (gl/perspective 45 view-rect 0.1 10.0)
+                     :model     M44
+                     :shininess 1000
+                     :lightPos  (vec3 -1 2 0)}
+          box       (-> (a/aabb 1)
+                        (g/center)
+                        (g/as-mesh)
+                        (gl/as-webgl-buffer-spec {:tessellate true :fnormals true})
+                        (buf/make-attribute-buffers-in-spec gl gl/static-draw)
+                        (assoc :shader shader :uniforms (assoc uniforms :diffuseCol [1 0 1])))
+          ground    (pl/plane-with-point (vec3 0 ground-y 0) v/V3Y)
+          back      (pl/plane-with-point (vec3 0 0 (* -0.5 size)) v/V3Z)
+          planes    (-> (g/as-mesh back {:size size})
+                        (g/translate (vec3 0 (+ (* 0.5 size) ground-y) 0))
+                        (g/into (g/as-mesh ground {:size size}))
+                        (gl/as-webgl-buffer-spec {:tessellate true :fnormals true})
+                        (buf/make-attribute-buffers-in-spec gl gl/static-draw)
+                        (assoc :shader shader :uniforms uniforms))
+          state     (atom {:mpos (g/centroid view-rect)})]
+      (.addEventListener
+       js/window "mousemove"
+       (fn [e] (swap! state assoc :mpos (v/vec2 (.-clientX e) (.-clientY e)))))
+      (anim/animate
+       (fn [[t frame]]
+         (let [eye     (g/rotate-y eye (Math/sin t))
+               view    (mat/look-at eye target up)
+               inv-mat (g/invert (g/* (:proj uniforms) view))
+               p       (unproject-point (vec3 (:mpos @state) 0) inv-mat view-rect)
+               dir     (g/- p eye)
+               i1      (:p (g/intersect-ray ground eye dir))
+               i2      (:p (g/intersect-ray back eye dir))
+               q       (if (< (g/dist-squared eye i1) (g/dist-squared eye i2)) i1 i2)]
+           (gl/set-viewport gl view-rect)
+           (gl/clear-color-buffer gl 0.52 0.5 0.5 1)
+           (gl/enable gl gl/depth-test)
+           (phong/draw gl (assoc-in planes [:uniforms :view] view))
+           (phong/draw gl (update box :uniforms merge {:model (g/translate M44 q) :view view})))
+         true))
+      state))
 #+END_SRC
