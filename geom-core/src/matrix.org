@@ -29,6 +29,10 @@
      - [[#constants][Constants]]
      - [[#constructors][Constructors]]
      - [[#matrix-functions][Matrix functions]]
+         - [[#frustum-helpers][Frustum helpers]]
+         - [[#projection-matrix-generation][Projection matrix generation]]
+         - [[#view-matrix-generation][View matrix generation]]
+         - [[#projection--un-projection][Projection & un-projection]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
 * Namespace: thi.ng.geom.core.matrix
@@ -846,6 +850,7 @@ ordering (row major).
 #+END_SRC
 
 ** Matrix functions
+*** Frustum helpers
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn frustum
@@ -877,28 +882,28 @@ ordering (row major).
        :bottom (- top)}))
 
   (defn frustum-planes
-    [view proj]
-    (let [^Matrix44 pv (g/transpose (g/* proj view))
-          m30 (.-m30 pv)
-          m31 (.-m31 pv)
-          m32 (.-m32 pv)
-          m33 (.-m33 pv)
-          l [(+ m30 (.-m00 pv)) (+ m31 (.-m01 pv))
-             (+ m32 (.-m02 pv)) (+ m33 (.-m03 pv))]
-          r [(- m30 (.-m00 pv)) (- m31 (.-m01 pv))
-             (- m32 (.-m02 pv)) (- m33 (.-m03 pv))]
-          t [(- m30 (.-m10 pv)) (- m31 (.-m11 pv))
-             (- m32 (.-m12 pv)) (- m33 (.-m13 pv))]
-          b [(+ m30 (.-m10 pv)) (+ m31 (.-m11 pv))
-             (+ m32 (.-m12 pv)) (+ m33 (.-m13 pv))]
-          n [(+ m30 (.-m20 pv)) (+ m31 (.-m21 pv))
-             (+ m32 (.-m22 pv)) (+ m33 (.-m23 pv))]
-          f [(- m30 (.-m20 pv)) (- m31 (.-m21 pv))
-             (- m32 (.-m22 pv)) (- m33 (.-m23 pv))]]
-      (zipmap
-       [:left :right :top :bottom :near :far]
-       (map (fn [p] [(g/normalize (vec3 p)) (peek p)]) [l r t b n f]))))
+    "Given a model-view matrix, projection matrix, returns vector of the
+    frustum's 6 plane parameters, each a 2-element vector: [normal w]
+    Planes are ordered: left, right, top, bottom, near, far. These
+    coefficients can then (for example) be used for AABB-frustum culling
+    with thi.nggeom.core.intersect/intersect-aabb-frustum?"
+    [mv proj near far]
+    (let [^Matrix44 pv (g/transpose (g/* proj mv))
+          m30 (- (.-m30 pv))
+          m31 (- (.-m31 pv))
+          m32 (- (.-m32 pv))
+          m33 (- (.-m33 pv))]
+      [[(vec3 (- m30 (.-m00 pv)) (- m31 (.-m01 pv)) (- m32 (.-m02 pv))) (- m33 (.-m03 pv))]
+       [(vec3 (+ m30 (.-m00 pv)) (+ m31 (.-m01 pv)) (+ m32 (.-m02 pv))) (+ m33 (.-m03 pv))]
+       [(vec3 (- m30 (.-m10 pv)) (- m31 (.-m11 pv)) (- m32 (.-m12 pv))) (- m33 (.-m13 pv))]
+       [(vec3 (+ m30 (.-m10 pv)) (+ m31 (.-m11 pv)) (+ m32 (.-m12 pv))) (+ m33 (.-m13 pv))]
+       [(vec3 (- m30 (.-m20 pv)) (- m31 (.-m21 pv)) (- m32 (.-m22 pv))) (- m33 (.-m23 pv))]
+       [(vec3 (+ m30 (.-m20 pv)) (+ m31 (.-m21 pv)) (+ m32 (.-m22 pv))) (+ m33 (.-m23 pv))]]))
+#+END_SRC
 
+*** Projection matrix generation
+
+#+BEGIN_SRC clojure :noweb-ref helpers
   (defn ortho
     "Returns an orthographic projection matrix, in which objects are the
     same size no matter how far away or nearby they are. This emulates
@@ -933,7 +938,11 @@ ordering (row major).
     [fov aspect near far]
     (let [{:keys [left right top bottom]} (frustum-bounds fov aspect near)]
       (frustum left top right bottom near far)))
+#+END_SRC
 
+*** View matrix generation
+
+#+BEGIN_SRC clojure :noweb-ref helpers
   (defn look-at-vectors
     "Takes 6 numbers representing eye & target positions, computes up
     vector and returns vector of all three vec3's."
@@ -972,7 +981,11 @@ ordering (row major).
        (-> M32
            (g/translate w2 h2)
            (g/* (g/scale M32 w2 (if invert-y? h2 (- h2))))))))
+#+END_SRC
 
+*** Projection & un-projection
+
+#+BEGIN_SRC clojure :noweb-ref helpers
   (defn project-point
     "Projects 3D point p using MVP matrix into 2D and the applies
     viewport matrix to produce screen coordinate."
@@ -991,7 +1004,7 @@ ordering (row major).
     "Takes a vec3 in screenspace, view matrix, projection matrix and
     screen rect. A second arity exists accepting an already inverted
     view-projection matrix instead of having to supply view & proj
-    separately. Returns vector in object space or nil if matrix is not
+    separately. Returns vector in world space or nil if matrix is not
     invertible."
     ([p view proj screen-rect]
      (if-let [inv-mat (g/invert (g/* proj view))]
