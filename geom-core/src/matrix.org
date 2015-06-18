@@ -876,6 +876,29 @@ ordering (row major).
        :top top
        :bottom (- top)}))
 
+  (defn frustum-planes
+    [view proj]
+    (let [^Matrix44 pv (g/transpose (g/* proj view))
+          m30 (.-m30 pv)
+          m31 (.-m31 pv)
+          m32 (.-m32 pv)
+          m33 (.-m33 pv)
+          l [(+ m30 (.-m00 pv)) (+ m31 (.-m01 pv))
+             (+ m32 (.-m02 pv)) (+ m33 (.-m03 pv))]
+          r [(- m30 (.-m00 pv)) (- m31 (.-m01 pv))
+             (- m32 (.-m02 pv)) (- m33 (.-m03 pv))]
+          t [(- m30 (.-m10 pv)) (- m31 (.-m11 pv))
+             (- m32 (.-m12 pv)) (- m33 (.-m13 pv))]
+          b [(+ m30 (.-m10 pv)) (+ m31 (.-m11 pv))
+             (+ m32 (.-m12 pv)) (+ m33 (.-m13 pv))]
+          n [(+ m30 (.-m20 pv)) (+ m31 (.-m21 pv))
+             (+ m32 (.-m22 pv)) (+ m33 (.-m23 pv))]
+          f [(- m30 (.-m20 pv)) (- m31 (.-m21 pv))
+             (- m32 (.-m22 pv)) (- m33 (.-m23 pv))]]
+      (zipmap
+       [:left :right :top :bottom :near :far]
+       (map (fn [p] [(g/normalize (vec3 p)) (peek p)]) [l r t b n f]))))
+
   (defn ortho
     "Returns an orthographic projection matrix, in which objects are the
     same size no matter how far away or nearby they are. This emulates
@@ -981,10 +1004,10 @@ ordering (row major).
            z' (- (* z 2.0) 1)
            p' (g/transform-vector inv-mat [x' y' z'])]
        (g/* p' (/ (mm/madd
-		   x' (.-m03 inv-mat)
-		   y' (.-m13 inv-mat)
-		   z' (.-m23 inv-mat)
-		   (.-m33 inv-mat)))))))
+                   x' (.-m03 inv-mat)
+                   y' (.-m13 inv-mat)
+                   z' (.-m23 inv-mat)
+                   (.-m33 inv-mat)))))))
 #+END_SRC
 
 ** Complete namespace definition
