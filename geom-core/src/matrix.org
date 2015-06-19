@@ -852,6 +852,8 @@ ordering (row major).
 ** Matrix functions
 *** Frustum helpers
 
+https://github.com/stefanmirea/view-frustum-culling/blob/master/lab_camera.hpp#L163
+
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn frustum
     "Sets up a viewing frustum, shaped like a truncated pyramid with the
