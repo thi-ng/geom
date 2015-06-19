@@ -10,6 +10,7 @@
      - [[#aabb][AABB]]
          - [[#aabb---aabb][AABB - AABB]]
          - [[#aabb---sphere][AABB - Sphere]]
+         - [[#aabb---frustum][AABB - Frustum]]
      - [[#sphere][Sphere]]
          - [[#sphere---sphere][Sphere - Sphere]]
          - [[#sphere---ray][Sphere - Ray]]
@@ -95,8 +96,6 @@ Source:
 Graphics Gems 2 / SO:
 http://stackoverflow.com/questions/4578967
 
-Also works for rect/circle...
-
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-aabb-sphere?
     ([{p :p sz :size} {s :p r :r}]
@@ -108,7 +107,7 @@ Also works for rect/circle...
          (<= ds (* r r)))))
 #+END_SRC
 
-**** AABB - Frustum
+*** AABB - Frustum
 
 #+BEGIN_SRC clojure
   ;; usage

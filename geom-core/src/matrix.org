@@ -884,13 +884,13 @@ https://github.com/stefanmirea/view-frustum-culling/blob/master/lab_camera.hpp#L
        :bottom (- top)}))
 
   (defn frustum-planes
-    "Given a model-view matrix, projection matrix, returns vector of the
+    "Given a view matrix & projection matrix, returns vector of the
     frustum's 6 plane parameters, each a 2-element vector: [normal w]
     Planes are ordered: left, right, top, bottom, near, far. These
     coefficients can then (for example) be used for AABB-frustum culling
     with thi.nggeom.core.intersect/intersect-aabb-frustum?"
-    [mv proj near far]
-    (let [^Matrix44 pv (g/transpose (g/* proj mv))
+    [view proj]
+    (let [^Matrix44 pv (g/transpose (g/* proj view))
           m30 (- (.-m30 pv))
           m31 (- (.-m31 pv))
           m32 (- (.-m32 pv))
