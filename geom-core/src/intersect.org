@@ -351,6 +351,8 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
 
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-plane-aabb?
+    "Takes a point & normal defining a plane and 2 vectors defining an
+    AABB (min-p & size). Returns true if plane intersects box."
     ([p n q s]
      (let [s2 (g/* s 0.5)]
        (intersect-plane-aabb? (g/- p (g/+ q s2)) n s2)))
@@ -358,8 +360,8 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
      (let [[vx1 vx2] (if (pos? nx) [(- (- sx) px) (- sx px)] [(- sx px) (- (- sx) px)])
            [vy1 vy2] (if (pos? ny) [(- (- sy) py) (- sy py)] [(- sy py) (- (- sy) py)])
            [vz1 vz2] (if (pos? nz) [(- (- sz) pz) (- sz pz)] [(- sz pz) (- (- sz) pz)])]
-       (if (<= (g/dot n (vec3 vx1 vy1 vz1)) 0.0)
-         (>= (g/dot n (vec3 vx2 vy2 vz2)) 0.0)))))
+       (if (<= (mm/madd nx vx1 ny vy1 nz vz1) 0.0)
+         (>= (mm/madd nx vx2 ny vy2 nz vz2) 0.0)))))
 #+END_SRC
 
 *** Plane - Sphere
