@@ -35,16 +35,19 @@
          - [[#raw-values-to-domain-point-conversion][Raw values to domain point conversion]]
          - [[#domain-bounds][Domain bounds]]
          - [[#matrix-value-domain][Matrix value domain]]
-     - [[#visualization-methods][Visualization methods]]
+     - [[#axial-visualization-methods][Axial visualization methods]]
          - [[#line-plot][Line plot]]
          - [[#area-plot][Area plot]]
          - [[#radar-plot][Radar plot]]
              - [[#min-max-radar-plot][Min-Max radar plot]]
          - [[#scatter-plot][Scatter plot]]
          - [[#bar-plot][Bar plot]]
+         - [[#heatmap][Heatmap]]
          - [[#contour-lines][Contour lines]]
          - [[#stacked-intervals][Stacked intervals]]
-         - [[#heatmap][Heatmap]]
+     - [[#todo-non-axial-visualization-methods][TODO Non-axial visualization methods]]
+         - [[#todo-bubble-chart][TODO Bubble chart]]
+         - [[#todo-force-directed-graph-layout][TODO Force directed graph layout]]
      - [[#2d-cartesian-plotting-svg][2D Cartesian Plotting (SVG)]]
          - [[#svg-axis-generators][SVG axis generators]]
          - [[#generic-plotting-helpers][Generic plotting helpers]]
@@ -731,7 +734,8 @@ Same goes for =:pos= values: The =:pos= for x-axis is a radius, the =:pos= for y
 *** Dataset specs (:data)
 
 The format of these maps is largely dependent on the concrete
-visualization methods used, but must state the following keys:
+visualization methods used, but most have the following keys in
+common:
 
 | *Key*       | *Required* | *Default*  | *Description*                                                  |
 |-------------+------------+------------+----------------------------------------------------------------|
@@ -971,7 +975,7 @@ along the full breadth of the given domain:
       [(reduce min vals) (reduce max vals)]))
 #+END_SRC
 
-** Visualization methods
+** Axial visualization methods
 
 This section defines the various layout/plotting methods, each with a
 brief description and lists of custom =:data= spec options. See the
@@ -1019,13 +1023,14 @@ approximation closing the polygon along the X-axis (e.g. =:res 20=).
 
 This plot method is intended to be only used with =svg-plot2d-polar=.
 
-| *Key*   | *Required* | *Default* | *Description*           |
-|---------+------------+-----------+-------------------------|
+| *Key*    | *Required* | *Default*   | *Description*                                        |
+|----------+------------+-------------+------------------------------------------------------|
+| =:shape= | N          | svg/polygon | Shape function receiving seq of all points & attribs |
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-radar-plot
-    [v-spec d-spec]
-    (svg/polygon (map first (process-points v-spec d-spec)) (:attribs d-spec)))
+    [v-spec {:keys [shape] :or {shape svg/polygon} :as d-spec}]
+    (shape (map first (process-points v-spec d-spec)) (:attribs d-spec)))
 #+END_SRC
 
 **** Min-Max radar plot
@@ -1036,14 +1041,18 @@ define a domain position at x=2 and an interval of 0.25-0.75. If no
 =:item-pos-*= options are supplied this 3-element vector format is
 assumed for each data point.
 
-| *Key*           | *Required* | *Default*  | *Description*                       |
-|-----------------+------------+------------+-------------------------------------|
-| =:item-pos-min= | N          | =[x min]=  | Function to provide min. data point |
-| =:item-pos-max= | N          | =[x max]=  | Function to provide max. data point |
+| *Key*           | *Required* | *Default* | *Description*                                                    |
+|-----------------+------------+-----------+------------------------------------------------------------------|
+| =:item-pos-min= | N          | =[x min]= | Function to provide min. data point                              |
+| =:item-pos-max= | N          | =[x max]= | Function to provide max. data point                              |
+| =:shape=        | N          | svg/path  | Shape function receiving seq of outer & inner points and attribs |
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-radar-plot-minmax
-    [v-spec {:keys [item-pos-min item-pos-max] :as d-spec}]
+    [v-spec
+     {:keys [item-pos-min item-pos-max shape]
+      :or   {shape #(svg/path (concat % [[:Z]] %2 [[:Z]]) %3)}
+      :as   d-spec}]
     (let [min-points (->> (assoc d-spec :item-pos (or item-pos-min (fn [i] (take 2 i))))
                           (process-points v-spec)
                           (map first)
@@ -1052,9 +1061,7 @@ assumed for each data point.
                           (process-points v-spec)
                           (map first)
                           (points->path-segments))]
-      (svg/path
-       (concat max-points [[:Z]] min-points [[:Z]])
-       (assoc (:attribs d-spec) :fill-rule "evenodd"))))
+      (shape max-points min-points (assoc (:attribs d-spec) :fill-rule "evenodd"))))
 #+END_SRC
 
 *** Scatter plot
@@ -1073,13 +1080,14 @@ assumed for each data point.
 
 *** Bar plot
 
-| *Key*         | *Required* |  *Default* | *Description*                                           |
+| *Key*         | *Required* | *Default*  | *Description*                                           |
 |---------------+------------+------------+---------------------------------------------------------|
 | =:item-pos=   | N          | =identity= | Function returning domain position of single data point |
-| =:shape=      | N          |     =line= | Function returning shape primitive for each data point  |
-| =:interleave= | N          |          1 | Number of bars per domain position                      |
-| =:offset=     | N          |          0 | Only used for interleaved bars, index position          |
-| =:bar-width=  | N          |          0 | Only used for interleaved bars, width of single bar     |
+| =:shape=      | N          | =line=     | Function returning shape primitive for each data point  |
+| =:interleave= | N          | 1          | Number of bars per domain position                      |
+| =:offset=     | N          | 0          | Only used for interleaved bars, index position          |
+| =:bar-width=  | N          | 0          | Only used for interleaved bars, width of single bar     |
+| =:shape=      | Y          | svg/line   | Function returning shape primitive for each data point  |
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-bar-plot
@@ -1105,6 +1113,48 @@ assumed for each data point.
                       ax (+ ax offset)]
                   (shape (project [ax ay]) (project [ax base-y]) i))))))
            (svg/group attribs))))
+#+END_SRC
+
+*** Heatmap
+
+| *Key*            | *Required* | *Default*    | *Description*                                      |
+|------------------+------------+--------------+----------------------------------------------------|
+| =:matrix=        | Y          | nil          | NDArray instance of data grid                      |
+| =:palette=       | Y          | nil          | Color list                                         |
+| =:palette-scale= | N          | linear-scale | Mapping function of matrix values to palette index |
+| =:value-domain=  | N          | [0 1]        | Domain interval of matrix values                   |
+| =:clamp=         | N          | false        | If true, matrix values are clamped to value domain |
+
+*Note:* If =:clamp= is not enabled, the =:value-domain= acts as filter
+and will not include cells with values outside the domain, resulting
+in holes in the visualization. On the other hand, if =:clamp= is
+enabled, the =:value-domain= acts as a kind of amplification or
+compression function.
+
+#+BEGIN_SRC clojure :noweb-ref plot-2d
+  (defn svg-heatmap
+    [{:keys [x-axis y-axis project]}
+     {:keys [matrix value-domain clamp palette palette-scale attribs shape]
+      :or {value-domain [0.0 1.0]
+           palette-scale linear-scale
+           shape #(svg/polygon [%1 %2 %3 %4] {:fill %5})}
+      :as d-spec}]
+    (let [scale-x   (:scale x-axis)
+          scale-y   (:scale y-axis)
+          pmax      (dec (count palette))
+          scale-v   (palette-scale value-domain [0 pmax])]
+      (svg/group
+       attribs
+       (for [p (nd/position-seq matrix)
+             :let [[y x] p
+                   v (nd/get-at matrix y x)]
+             :when (or clamp (m/in-range? value-domain v))]
+         (shape
+          (project [(scale-x x) (scale-y y)])
+          (project [(scale-x (inc x)) (scale-y y)])
+          (project [(scale-x (inc x)) (scale-y (inc y))])
+          (project [(scale-x x) (scale-y (inc y))])
+          (palette (m/clamp (int (scale-v v)) 0 pmax)))))))
 #+END_SRC
 
 *** Contour lines
@@ -1213,47 +1263,28 @@ emphasize this difference...
            (svg/group attribs))))
 #+END_SRC
 
-*** Heatmap
+** TODO Non-axial visualization methods
+*** TODO Bubble chart
 
-| *Key*            | *Required* | *Default*    | *Description*                                      |
-|------------------+------------+--------------+----------------------------------------------------|
-| =:matrix=        | Y          | nil          | NDArray instance of data grid                      |
-| =:palette=       | Y          | nil          | Color list                                         |
-| =:palette-scale= | N          | linear-scale | Mapping function of matrix values to palette index |
-| =:value-domain=  | N          | [0 1]        | Domain interval of matrix values                   |
-| =:clamp=         | N          | false        | If true, matrix values are clamped to value domain |
+| *Key*      | *Required* | *Default* | *Description*                                |
+|------------+------------+-----------+----------------------------------------------|
+| =:items=   | Y          | nil       |                                              |
+| =:bounds=  | Y          | nil       | Shape instance defining visualization bounds |
+| =:origin=  | N          | [0 0]     |                                              |
+| =:iter=    | N          | 50        |                                              |
+| =:attract= | N          | 0.25      |                                              |
+| =:repel=   | N          | -1.0      |                                              |
+| =:jitter=  | N          | 0         |                                              |
 
-*Note:* If =:clamp= is not enabled, the =:value-domain= acts as filter
-and will not include cells with values outside the domain, resulting
-in holes in the visualization. On the other hand, if =:clamp= is
-enabled, the =:value-domain= acts as a kind of amplification or
-compression function.
+TBD
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
-  (defn svg-heatmap
-    [{:keys [x-axis y-axis project]}
-     {:keys [matrix value-domain clamp palette palette-scale attribs shape]
-      :or {value-domain [0.0 1.0]
-           palette-scale linear-scale
-           shape #(svg/polygon [%1 %2 %3 %4] {:fill %5})}
-      :as d-spec}]
-    (let [scale-x   (:scale x-axis)
-          scale-y   (:scale y-axis)
-          pmax      (dec (count palette))
-          scale-v   (palette-scale value-domain [0 pmax])]
-      (svg/group
-       attribs
-       (for [p (nd/position-seq matrix)
-             :let [[y x] p
-                   v (nd/get-at matrix y x)]
-             :when (or clamp (m/in-range? value-domain v))]
-         (shape
-          (project [(scale-x x) (scale-y y)])
-          (project [(scale-x (inc x)) (scale-y y)])
-          (project [(scale-x (inc x)) (scale-y (inc y))])
-          (project [(scale-x x) (scale-y (inc y))])
-          (palette (m/clamp (int (scale-v v)) 0 pmax)))))))
+
 #+END_SRC
+
+*** TODO Force directed graph layout
+
+TBD
 
 ** 2D Cartesian Plotting (SVG)
 
@@ -1521,4 +1552,3 @@ TBD
 
   <<plot-2d>>
 #+END_SRC
-
