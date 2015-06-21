@@ -368,7 +368,7 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
 
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-plane-sphere?
-    [n w p r] (let [r (+ r *eps*)] (m/in-range? (- r) r (+ (g/dot n p) w))))
+    [n w p r] (<= (m/abs (+ (g/dot n p) w)) r))
 #+END_SRC
 
 ** Tetrahedron
