@@ -486,6 +486,9 @@ spec fragments (via the use of our =timeline-spec= fn).
 | [[http://media.thi.ng/geom/viz/hm-rainbow2.svg]]             | [[http://media.thi.ng/geom/viz/hm-orange-blue.svg]]       |
 | :rainbow2 gradient preset                                | :orange-blue gradient preset                                 |
 
+This demo uses procedural gradients provided by [[https://github.com/thi-ng/color/blob/master/src/gradients.org#cosine-based-gradient-generation][thi.ng/color]]. See link
+for list of available presets & how to define new gradients.
+
 #+BEGIN_SRC clojure :tangle ../babel/examples/heatmap.clj :noweb yes :mkdirp yes :padline no
   <<example-imports>>
   (require '[thi.ng.color.gradients :as grad])
