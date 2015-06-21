@@ -1,3 +1,23 @@
+** r881 - 2015-06-21
+
+| [[https://github.com/thi-ng/geom/commit/6997df95c22275631f3f0a819a8fdcb131df5fbd][6997df9]] | [viz] add :shape option key for more viz methods, update docs |
+| [[https://github.com/thi-ng/geom/commit/7cfab9424eef3661f7b32bcaffc056a1b3da0497][7cfab94]] | [core] simplify intersect-plane-sphere? |
+| [[https://github.com/thi-ng/geom/commit/af3858ff3780ae8ed0b864cbecf67629c5001142][af3858f]] | [webgl] update example05: extract raycast fn & refactor mouse state handling |
+| [[https://github.com/thi-ng/geom/commit/5aa2703320c43edcc10d1ac963cc8a693c7f4d36][5aa2703]] | [meta] update deps (clj1.7.0-rc2, ndarray 0.3.0) |
+| [[https://github.com/thi-ng/geom/commit/ddd8ad33e403a3f88560ed047187336417a4059c][ddd8ad3]] | [core] optimize intersect-plane-aabb?, add docs |
+| [[https://github.com/thi-ng/geom/commit/48134ef9c6a6fb0b0fb288e23a5334cf3c831a7b][48134ef]] | [core] optimize intersect-aabb-frustum?, add docs |
+| [[https://github.com/thi-ng/geom/commit/225dce207bff82cf8d8a1b6adddf48b80149ee5c][225dce2]] | [core] bugfix frustum-planes, add docs, org restructure helper section in matrix ns |
+| [[https://github.com/thi-ng/geom/commit/19c229293b419a751918a19766255418c3c71ec8][19c2292]] | [core] add frustum-planes fn and aabb-frustum intersection fn |
+| [[https://github.com/thi-ng/geom/commit/7ff25fdc3ffabd30981d20ffedfd22ca4904b20e][7ff25fd]] | [meta] update color & math deps |
+| [[https://github.com/thi-ng/geom/commit/52c351ac155b683a77526d9be311c5aa88ac35cc][52c351a]] | [webgl] update demos, add touchevents to example05, add mobile viewport meta to html harness |
+| [[https://github.com/thi-ng/geom/commit/1f447bc3b9e0841e7719d85a36b946df055c54e0][1f447bc]] | [webgl] enable :tessellate & :fnormals opts for as-webgl-buffer-spec (for mesh types) by default |
+| [[https://github.com/thi-ng/geom/commit/bdcec7a04b4921dcbf4aa6fc0a231c3aac22ca10][bdcec7a]] | [webgl] add unproject & scene raycasting example |
+| [[https://github.com/thi-ng/geom/commit/b705fb46832679ed0208d7edca02a56a0890d15d][b705fb4]] | [core] bugfix matrix/unproject-point |
+| [[https://github.com/thi-ng/geom/commit/cb53c2a0ed5665011fe0d328fa4e793820d2761c][cb53c2a]] | [webgl] fix lambert shader spec deps |
+| [[https://github.com/thi-ng/geom/commit/52786fd319eb48cf55ccdbcaabb09daa1b4f8c2a][52786fd]] | [viz] add palette support for contour viz, update contour-matrix to set border to -1e9, add GIS image contour example, refactor existing contour examples |
+| [[https://github.com/thi-ng/geom/commit/279eedf9c742448e89a58e968f8d265ec3018347][279eedf]] | [viz] extend heatmap examples w/ custom shapes, switch to vec2 as default projection fn (so that shape fns can rely on points being vec2) |
+| [[https://github.com/thi-ng/geom/commit/007549a8380ac88c39d914b4b54f9d0e54f0aa0c][007549a]] | [viz] add heatmap impl & examples, add matrix-2d NDArray factory, add value-domain-bounds, change arg order for lens-axis, rename uniform-domain-points |
+
 ** r859 - 2015-06-15
 
 | [[https://github.com/thi-ng/geom/commit/6f6e6abf1dcaadc06222e5777614420d30a0fcd1][6f6e6ab]] | [viz] add ->uniform-domain-points & domain-bounds-* fns |
