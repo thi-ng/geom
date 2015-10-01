@@ -116,7 +116,7 @@ polymorphic =as-css= protocol method of thi.ng/color).
     (if-let [att (attribs id)]
       (if (string? att)
         attribs
-        (assoc attribs id (col/unwrap (col/as-css att))))
+        (assoc attribs id @(col/as-css att)))
       attribs))
 #+END_SRC
 
@@ -180,7 +180,7 @@ and will be automatically converted.
 
   (defn gradient-stop
     [[pos col]]
-    (let [col (if (string? col) col (col/unwrap (col/as-css col)))]
+    (let [col (if (string? col) col @(col/as-css col))]
       [:stop {:offset (*fmt-percent* pos) :stop-color col}]))
 
   (defn linear-gradient
@@ -346,7 +346,8 @@ visualize the result in SVG:
      [thi.ng.geom.core :as g]
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.svg.core :as svg]
-     [thi.ng.geom.svg.adapter :as adapt]))
+     [thi.ng.geom.svg.adapter :as adapt]
+     [thi.ng.color.core :as col]))
 
   (defn labeled-dot
     [p label] (list (c/circle p 3) (svg/text (g/+ p 10 0) label)))
@@ -366,7 +367,7 @@ visualize the result in SVG:
         c1 c2
         ;; we can use metadata to override specific attribs per shape
         ;; here we also demonstrate automatic color attrib conversion
-        (with-meta c3 {:fill [0 1 1 0.25] :stroke-hsv [0 1 1]}))
+        (with-meta c3 {:fill (col/rgba 0 1 1 0.25) :stroke (col/hsva 0 1 1)}))
        (svg/group
         {:fill "#000"
          :font-family "Arial, sans-serif"
