@@ -41,8 +41,8 @@
       PShader
       (shade-facet [_ f f' z]
         (cond-> {}
-                fill   (assoc :fill   (if (fn? fill) (fill f f' z) fill))
-                stroke (assoc :stroke (if (fn? stroke) (stroke f f' z) stroke))))
+                fill   (assoc :fill   (col/rgba (if (fn? fill) (fill f f' z) fill)))
+                stroke (assoc :stroke (col/rgba (if (fn? stroke) (stroke f f' z) stroke)))))
       (uniforms [_] uniforms)
       (solid? [_] (:solid flags true))))
 
@@ -93,7 +93,8 @@
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :refer [vec3 V3Z]]
-     [thi.ng.geom.core.matrix :as mat :refer [M44]]))
+     [thi.ng.geom.core.matrix :as mat :refer [M44]]
+     [thi.ng.color.core :as col]))
 
   <<protos>>
 

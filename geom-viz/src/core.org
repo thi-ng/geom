@@ -59,6 +59,7 @@
      - [[#value-formatting][Value formatting]]
      - [[#custom-shapes][Custom shapes]]
      - [[#todo-3d-plotting][TODO 3D Plotting]]
+     - [[#date--time-helpers][Date & time helpers]]
      - [[#complete-namespace-definitions][Complete namespace definitions]]
 
 * Namespace: thi.ng.geom.viz.core
@@ -1605,6 +1606,68 @@ file).
 ** TODO 3D Plotting
 
 TBD
+
+** Date & time helpers
+
+#+BEGIN_SRC clojure :noweb-ref date-helpers
+  (defn epoch->cal
+    [epoch] (doto (GregorianCalendar.) (.setTimeInMillis (long epoch))))
+
+  (defn clear-millis [^GregorianCalendar cal] (.set cal Calendar/MILLISECOND 0) cal)
+  (defn clear-second [^GregorianCalendar cal] (.set Calendar/SECOND 0) (clear-millis cal))
+  (defn clear-minute [^GregorianCalendar cal] (.set Calendar/MINUTE 0) (clear-second cal))
+  (defn clear-hour [^GregorianCalendar cal] (.set cal Calendar/HOUR 0) (clear-minute cal))
+  (defn clear-day-of-month [^GregorianCalendar cal] (.set cal Calendar/DAY_OF_MONTH 1) (clear-hour cal))
+  (defn clear-day-of-week [^GregorianCalendar cal] (.set cal Calendar/DAY_OF_WEEK 1) (clear-hour cal))
+  (defn clear-month [^GregorianCalendar cal] (.set cal Calendar/MONTH 0) (clear-day-of-month cal))
+
+  (defn year [^GregorianCalendar cal] (.get cal Calendar/YEAR))
+  (defn month [^GregorianCalendar cal] (.get cal Calendar/MONTH))
+  (defn day-of-month [^GregorianCalendar cal] (.get cal Calendar/DAY_OF_MONTH))
+  (defn day-of-week [^GregorianCalendar cal] (.get cal Calendar/DAY_OF_WEEK))
+  (defn hour [^GregorianCalendar cal] (.get cal Calendar/HOUR))
+  (defn minute [^GregorianCalendar cal] (.get cal Calendar/MINUTE))
+  (defn second [^GregorianCalendar cal] (.get cal Calendar/SECOND))
+
+  (defn round-to-year
+    [epoch]
+    (let [cal (epoch->cal epoch)]
+      (doto cal
+        (.add Calendar/MONTH 6)
+        (clear-month))))
+
+  (defn round-to-month
+    [epoch]
+    (doto (epoch->cal epoch)
+      (.setTimeInMillis (long epoch))
+      (.add Calendar/DAY_OF_MONTH 16)
+      (clear-day-of-month)))
+
+  (defn round-to-week
+    [epoch]
+    (doto (epoch->cal epoch)
+      (.setTimeInMillis (long epoch))
+      (.add Calendar/DAY_OF_WEEK 4)
+      (clear-day-of-week)))
+
+  (defn round-to-day-of-month
+    [epoch]
+    (doto (epoch->cal epoch)
+      (.add Calendar/HOUR 12)
+      (clear-hour)))
+
+  (defn round-to-day-of-week
+    [epoch]
+    (doto (epoch->cal epoch)
+      (.add Calendar/HOUR 12)
+      (clear-hour)))
+
+  (defn round-to-hour
+    [epoch]
+    (doto (epoch->cal epoch)
+      (.add Calendar/MINUTE 30)
+      (clear-minute)))
+#+END_SRC
 
 ** Complete namespace definitions
 

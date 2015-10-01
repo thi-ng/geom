@@ -101,20 +101,22 @@ introduce uneccessary dependencies.
 Colors in SVG need to be defined as CSS color strings and hence are
 completely opaque to other parts of the code base and which might deal
 with the dynamic generation of color values. Therefore we allow the
-=:stroke= and =:fill= attributes to be defined as RGB(A) or HSV(A)
-vectors (e.g. in conjuction with the color utilities defined in the
-[[http://thi.ng/color][thi.ng/color]] library. If these attributes are present and *not*
-already a string value, they will be converted into a CSS color
-automatically (using the =rgba->css= or =hsva->css= fns). In order to
-specify HSV colors, use the =:stoke-hsv= or =:fill-hsv= attributes.
+=:stroke= and =:fill= attributes to be defined as any color type
+defined by the [[http://thi.ng/color][thi.ng/color]] library (RGB, HSV, HSL, CMYK, YUV etc.).
+If these attributes are present and *not* already a string value, they
+will be converted into a CSS color automatically (using the
+polymorphic =as-css= protocol method of thi.ng/color).
+
+*Note:* The same applies to specifying colors in gradients (see
+=linear-gradient= and =radial-gradient= functions below).
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn color-attrib
-    [attribs id id2 f]
+    [attribs id]
     (if-let [att (attribs id)]
       (if (string? att)
         attribs
-        (-> attribs (dissoc id) (assoc id2 (apply f att))))
+        (assoc attribs id (col/unwrap (col/as-css att))))
       attribs))
 #+END_SRC
 
@@ -152,10 +154,8 @@ and will be automatically converted.
     [attribs base]
     (if (seq attribs)
       (-> (filter-attribs attribs)
-          (color-attrib :stroke :stroke col/rgba->css)
-          (color-attrib :stroke-hsv :stroke col/hsva->css)
-          (color-attrib :fill :fill col/rgba->css)
-          (color-attrib :fill-hsv :fill col/hsva->css)
+          (color-attrib :stroke)
+          (color-attrib :fill)
           (matrix-attrib :transform)
           (into base))
       base))
@@ -179,33 +179,21 @@ and will be automatically converted.
     [:defs defs])
 
   (defn gradient-stop
-    [f [pos col]]
-    (let [col (if (string? col) col (apply f col))]
+    [[pos col]]
+    (let [col (if (string? col) col (col/unwrap (col/as-css col)))]
       [:stop {:offset (*fmt-percent* pos) :stop-color col}]))
 
-  (defn linear-gradient-rgb
+  (defn linear-gradient
     [id attribs & stops]
     [:linearGradient
      (assoc attribs :id id)
-     (map #(gradient-stop col/rgba->css %) stops)])
+     (map gradient-stop stops)])
 
-  (defn radial-gradient-rgb
+  (defn radial-gradient
     [id attribs & stops]
     [:radialGradient
      (assoc attribs :id id)
-     (map #(gradient-stop col/rgba->css %) stops)])
-
-  (defn linear-gradient-hsv
-    [id attribs & stops]
-    [:linearGradient
-     (assoc attribs :id id)
-     (map #(gradient-stop col/hsva->css %) stops)])
-
-  (defn radial-gradient-hsv
-    [id attribs & stops]
-    [:radialGradient
-     (assoc attribs :id id)
-     (map #(gradient-stop col/hsva->css %) stops)])
+     (map gradient-stop stops)])
 
   (defn group
     [attribs & body]
@@ -232,12 +220,16 @@ and will be automatically converted.
       attribs
       {:cx (*ff* x) :cy (*ff* y) :r radius})])
 
-  (defn arc
-    [center radius theta1 theta2 great? ccw? & [attribs]]
+  (defn arc-segment
+    [center radius theta1 theta2 great? ccw?]
     (let [radius (vec2 radius)
           p (g/+ (vec2 center) (g/as-cartesian (vec2 (v/x radius) theta1)))
           q (g/+ (vec2 center) (g/as-cartesian (vec2 (v/y radius) theta2)))]
-      (path [[:M p] [:A radius 0 (if great? 1 0) (if ccw? 1 0) q]] attribs)))
+      [[:M p] [:A radius 0 (if great? 1 0) (if ccw? 1 0) q]]))
+
+  (defn arc
+    [center radius theta1 theta2 great? ccw? & [attribs]]
+    (path (arc-segment center radius theta1 theta2 great? ccw?) attribs))
 
   (defn rect
     [[x y] w h & [attribs]]
