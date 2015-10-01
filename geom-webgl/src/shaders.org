@@ -104,7 +104,7 @@ Special cases:
                            (= :vec3 type)
                            (fn [x]
                              (if (number? x)
-                               (.call setter gl loc (u-cast (subvec (color/int->rgba x) 0 3)))
+                               (.call setter gl loc (-> x col/int24 col/as-rgba col/unwrap (subvec 0 3) u-cast))
                                (.call setter gl loc (if (arrays/typed-array? x) x (u-cast x)))))
                            :else
                            (fn [x]
@@ -350,7 +350,7 @@ Currently the following options are supported:
     [thi.ng.geom.webgl.core :as gl]
     [thi.ng.geom.webgl.utils :as glu]
     [thi.ng.typedarrays.core :as arrays]
-    [thi.ng.color.core :as color]
+    [thi.ng.color.core :as col]
     [thi.ng.common.error :as err]
     [clojure.string :as str]))
 

@@ -399,10 +399,10 @@ rotation / transformation).
                          (gl/as-webgl-buffer-spec {})
                          (buf/make-attribute-buffers-in-spec gl gl/static-draw)
                          (assoc :shader shader :uniforms uniforms))
-          state      (atom {:mpos (g/centroid view-rect) :update-ray true})
-          update-pos #(swap! state assoc
-                             :mpos (vec2 (.-clientX %) (.-clientY %))
-                             :update-ray true)]
+          state      (volatile! {:mpos (g/centroid view-rect) :update-ray true})
+          update-pos #(vswap! state assoc
+                              :mpos (vec2 (.-clientX %) (.-clientY %))
+                              :update-ray true)]
       (.addEventListener js/window "mousemove" update-pos)
       (.addEventListener js/window "touchmove" #(do (.preventDefault %) (update-pos (aget (.-touches %) 0))))
       (anim/animate
@@ -413,7 +413,7 @@ rotation / transformation).
                       (let [p (-> (vec3 (:mpos @state) 0)
                                   (mat/unproject-point (g/invert (g/* (:proj uniforms) view)) view-rect)
                                   (raycast eye ground back))]
-                        (swap! state assoc :isec p :update-ray false) p)
+                        (vswap! state assoc :isec p :update-ray false) p)
                       (:isec @state))]
            (gl/set-viewport gl view-rect)
            (gl/clear-color-buffer gl 0.52 0.5 0.5 1)
