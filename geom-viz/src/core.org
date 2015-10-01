@@ -115,6 +115,7 @@ same directory.
   (require '[thi.ng.geom.viz.core :as viz] :reload)
   (require '[thi.ng.geom.svg.core :as svg])
   (require '[thi.ng.geom.core.vector :as v])
+  (require '[thi.ng.color.core :as col])
   (require '[thi.ng.math.core :as m :refer [PI TWO_PI]])
 #+END_SRC
 
@@ -285,7 +286,7 @@ Same overall visualization setup, only using polar coordinate transform and rede
     [color]
     {:values   (zipmap (keys category->domain) (repeatedly #(m/random 0.25 1)))
      :item-pos (fn [[k v]] [(category->domain k) v])
-     :attribs  {:fill color}
+     :attribs  {:fill (col/rgba color)}
      :layout   viz/svg-radar-plot})
 
   (defn random-radar-spec-minmax
@@ -297,7 +298,7 @@ Same overall visualization setup, only using polar coordinate transform and rede
                     (repeatedly #(let [x (m/random 0.5 1)] [(* x (m/random 0.25 0.75)) x])))
      :item-pos-min (fn [[k v]] [(category->domain k) (first v)])
      :item-pos-max (fn [[k v]] [(category->domain k) (peek v)])
-     :attribs      {:fill color}
+     :attribs      {:fill (col/rgba color)}
      :layout       viz/svg-radar-plot-minmax})
 
   (def viz-spec
@@ -361,14 +362,15 @@ using a custom shape function w/ linear gradients (based on item type).
 
   (def items
     [{:title "toxiclibs"          :from #inst "2006-03" :to #inst "2013-06" :type :oss}
-     {:title "thi.ng/geom"        :from #inst "2011-08" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/geom"        :from #inst "2011-08" :to #inst "2015-10" :type :oss}
      {:title "thi.ng/trio"        :from #inst "2012-12" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/fabric"      :from #inst "2014-12" :to #inst "2015-09" :type :oss}
      {:title "thi.ng/simplecl"    :from #inst "2012-10" :to #inst "2013-06" :type :oss}
      {:title "thi.ng/raymarchcl"  :from #inst "2013-02" :to #inst "2013-05" :type :oss}
      {:title "thi.ng/structgen"   :from #inst "2012-10" :to #inst "2013-02" :type :oss}
      {:title "thi.ng/luxor"       :from #inst "2013-10" :to #inst "2015-06" :type :oss}
      {:title "thi.ng/morphogen"   :from #inst "2014-03" :to #inst "2015-06" :type :oss}
-     {:title "thi.ng/color"       :from #inst "2014-09" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/color"       :from #inst "2014-09" :to #inst "2015-10" :type :oss}
      {:title "thi.ng/validate"    :from #inst "2014-05" :to #inst "2015-06" :type :oss}
      {:title "thi.ng/ndarray"     :from #inst "2015-05" :to #inst "2015-06" :type :oss}
      {:title "thi.ng/tweeny"      :from #inst "2013-10" :to #inst "2015-01" :type :oss}
@@ -423,9 +425,9 @@ using a custom shape function w/ linear gradients (based on item type).
 
   (defn make-gradient
     [[id base]]
-    (let [base (col/hex->rgba base)]
-      (svg/linear-gradient-rgb
-       id {} [0 base] [1 (col/adjust-saturation-rgb base -0.66)])))
+    (let [base (col/as-hsva (col/css base))]
+      (svg/linear-gradient
+       id {} [0 base] [1 (col/adjust-saturation base -0.66)])))
 
   (defn item-range [i] [(->epoch (:from i)) (->epoch (:to i))])
 
@@ -467,16 +469,16 @@ spec fragments (via the use of our =timeline-spec= fn).
   ;; Create stacked timeline vertically grouped by item type
   (->> {:x-axis (viz/linear-axis
                  {:domain [(->epoch #inst "2010-09") (->epoch #inst "2015-06")]
-                  :range [10 950] :pos 205 :major year :minor month :format round-to-year})
-        :y-axis (viz/linear-axis {:domain [0 12] :range [10 205] :visible false})
+                  :range [10 950] :pos 220 :major year :minor month :format round-to-year})
+        :y-axis (viz/linear-axis {:domain [0 13] :range [10 220] :visible false})
         :grid   {:minor-x true}
         :data   [(timeline-spec :project 0)
                  (timeline-spec :oss 2)
-                 (timeline-spec :workshop 9)
-                 (timeline-spec :talk 10)]}
+                 (timeline-spec :workshop 10)
+                 (timeline-spec :talk 11)]}
        (viz/svg-plot2d-cartesian)
        (svg/svg
-        {:width 960 :height 230}
+        {:width 960 :height 245}
         (apply svg/defs (map make-gradient item-type-colors)))
        (svg/serialize)
        (spit "timeline-separate.svg"))
@@ -669,7 +671,7 @@ project in order to download the commit history of a given project.
                      {:domain [0 64] :range [550 50] :base 2 :pos 45
                       :label-dist 15 :label {:text-anchor "end"}})}))
 
-  (def fill-attribs {:fill [0.0 0.66 1.0 0.05] :stroke "#fff"})
+  (def fill-attribs {:fill (col/rgba 0.0 0.66 1.0 0.05) :stroke "#fff"})
 
   (defn export-viz
     [viz path] (->> viz (svg/svg {:width 600 :height 600}) (svg/serialize) (spit path)))
