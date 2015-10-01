@@ -104,7 +104,7 @@ Special cases:
                            (= :vec3 type)
                            (fn [x]
                              (if (number? x)
-                               (.call setter gl loc (-> x col/int24 col/as-rgba col/unwrap (subvec 0 3) u-cast))
+                               (.call setter gl loc (-> x col/int24 col/as-rgba deref (subvec 0 3) u-cast))
                                (.call setter gl loc (if (arrays/typed-array? x) x (u-cast x)))))
                            :else
                            (fn [x]
