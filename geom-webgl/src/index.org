@@ -80,6 +80,7 @@ target/geom-webgl-<<conf-version()>>.js
                    <<dep-arrays>>
                    <<dep-color>>
                    <<dep-shadergraph>>
+                   <<dep-xerror>>
                    <<dep-cljs-log>>]
 
     :profiles {:dev {:dependencies [<<dep-criterium>>]

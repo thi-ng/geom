@@ -57,7 +57,8 @@ target/geom-physics-<<conf-version()>>.js
     :dependencies [<<dep-clj>>
                    <<dep-cljs>>
                    [thi.ng/geom-core "<<conf-version()>>"]
-                   [thi.ng/geom-types "<<conf-version()>>"]]
+                   [thi.ng/geom-types "<<conf-version()>>"]
+                   <<dep-xerror>>]
 
     :profiles     {:dev {:dependencies [<<dep-criterium>>]
                          :plugins      [<<dep-cljsbuild>>

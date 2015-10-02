@@ -208,7 +208,7 @@
      [thi.ng.typedarrays.core :as arrays]
      [thi.ng.geom.webgl.core :as gl]
      [thi.ng.geom.webgl.shaders :as sh]
-     [thi.ng.common.error :as err]))
+     [thi.ng.xerror.core :as err]))
 
   (declare check-fbo)
 

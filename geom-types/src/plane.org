@@ -203,7 +203,7 @@
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
-     [thi.ng.common.error :as err]
+     [thi.ng.xerror.core :as err]
      [thi.ng.math.core :as m :refer [*eps* INF+]]
      #?(:clj [thi.ng.math.macros :as mm])))
 

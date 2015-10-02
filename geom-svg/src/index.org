@@ -72,6 +72,7 @@ target/geom-svg-<<conf-version()>>.js
                    [thi.ng/geom-meshops "<<conf-version()>>"]
                    <<dep-strf>>
                    <<dep-color>>
+                   <<dep-xerror>>
                    <<dep-hiccup>>]
 
     :profiles     {:dev {:dependencies [<<dep-criterium>>]

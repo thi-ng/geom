@@ -120,7 +120,8 @@ target/geom-types-<<conf-version()>>.js
 
     :dependencies [<<dep-clj>>
                    <<dep-cljs>>
-                   [thi.ng/geom-core "<<conf-version()>>"]]
+                   [thi.ng/geom-core "<<conf-version()>>"]
+                   <<dep-xerror>>]
 
     :profiles     {:dev {:dependencies [<<dep-criterium>>]
                          :plugins      [<<dep-cljsbuild>>

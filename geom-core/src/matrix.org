@@ -1038,7 +1038,7 @@ https://github.com/stefanmirea/view-frustum-culling/blob/master/lab_camera.hpp#L
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3 V3X]]
      [thi.ng.math.core :as m :refer [*eps* PI TWO_PI]]
-     [thi.ng.common.error :as err]
+     [thi.ng.xerror.core :as err]
      #?@(:clj
          [[thi.ng.math.macros :as mm]
           [thi.ng.geom.core.macros.matrix :as gmc]]))

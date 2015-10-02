@@ -351,7 +351,7 @@ Currently the following options are supported:
     [thi.ng.geom.webgl.utils :as glu]
     [thi.ng.typedarrays.core :as arrays]
     [thi.ng.color.core :as col]
-    [thi.ng.common.error :as err]
+    [thi.ng.xerror.core :as err]
     [clojure.string :as str]))
 
   <<uniforms>>

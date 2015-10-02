@@ -88,6 +88,7 @@ target/geom-viz-<<conf-version()>>.js
                    [thi.ng/geom-svg "<<conf-version()>>"]
                    <<dep-ndarray>>
                    <<dep-strf>>
+                   <<dep-xerror>>
                    <<dep-color>>]
 
     :profiles     {:dev {:dependencies [<<dep-criterium>>]

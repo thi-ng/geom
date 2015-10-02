@@ -2163,7 +2163,7 @@
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.math.core :as m :refer [*eps* PI TWO_PI INF- INF+]]
-     [thi.ng.common.error :as err]
+     [thi.ng.xerror.core :as err]
      #?@(:clj
          [[thi.ng.geom.core.macros.vector :as vm :refer [defswizzle]]
           [thi.ng.math.macros :as mm]
@@ -2187,7 +2187,7 @@
     (:require
      [clojure.walk :refer :all]
      [thi.ng.dstruct.core :as d]
-     [thi.ng.common.error :as err]))
+     [thi.ng.xerror.core :as err]))
 
   <<swizzle-macros>>
 

@@ -367,7 +367,7 @@ function returns a lazyseq of triangles of the subdivided quad.
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
-     [thi.ng.common.error :as err]
+     [thi.ng.xerror.core :as err]
      [thi.ng.math.core :as m :refer [*eps*]])
     #?(:clj
        (:import

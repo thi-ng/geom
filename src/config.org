@@ -80,10 +80,17 @@ target/test-classes
 #+BEGIN_SRC clojure
 [thi.ng/typedarrays "0.1.2"]
 #+END_SRC
+
 **** [[https://github.com/thi-ng/ndarray/][thi.ng/ndarray]]
 #+NAME: dep-ndarray
 #+BEGIN_SRC clojure
 [thi.ng/ndarray "0.3.0"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/xerror/][thi.ng/xerror]]
+#+NAME: dep-xerror
+#+BEGIN_SRC clojure
+[thi.ng/xerror "0.1.0"]
 #+END_SRC
 
 *** Development

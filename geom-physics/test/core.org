@@ -24,7 +24,7 @@
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :refer [vec2 vec3]]
      [thi.ng.geom.physics.core :as ph]
-     [thi.ng.common.math.core :as m]
+     [thi.ng.math.core :as m]
      #?(:clj
         [clojure.test :refer :all]
         :cljs

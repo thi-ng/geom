@@ -505,7 +505,7 @@ https://web.archive.org/web/20090320013931/http://amp.ece.cmu.edu/Publication/Ch
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
      [thi.ng.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
-     [thi.ng.common.error :as err]
+     [thi.ng.xerror.core :as err]
      #?(:clj [thi.ng.math.macros :as mm]))
     #?(:clj
        (:import

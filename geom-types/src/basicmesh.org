@@ -230,7 +230,7 @@
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
      [thi.ng.math.core :as m :refer [*eps*]]
-     [thi.ng.common.error :as err]
+     [thi.ng.xerror.core :as err]
      [clojure.core.reducers :as r]))
 
   (declare basic-mesh)

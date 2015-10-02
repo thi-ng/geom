@@ -258,7 +258,7 @@ If there's no intersection, the function returns =nil=.
      [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types :as types]
-     [thi.ng.common.error :as err]
+     [thi.ng.xerror.core :as err]
      [thi.ng.math.core :as m :refer [TWO_PI PI *eps*]]
      #?(:clj [thi.ng.math.macros :as mm]))
     #?(:clj

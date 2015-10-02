@@ -354,7 +354,7 @@ from the first vertex of the original with inner sorting over XYZ.
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
-     [thi.ng.common.error :as err]
+     [thi.ng.xerror.core :as err]
      [thi.ng.math.core :as m :refer [*eps*]]
      #?(:clj [thi.ng.math.macros :as mm]))
     #?(:clj

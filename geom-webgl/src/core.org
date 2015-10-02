@@ -827,7 +827,7 @@ using the protocol.
      [thi.ng.geom.types]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.rect :as r]
-     [thi.ng.common.error :as err]))
+     [thi.ng.xerror.core :as err]))
 
   (declare into-buffer-vec3)
 

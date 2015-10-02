@@ -238,7 +238,7 @@
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
-     [thi.ng.common.error :as err]
+     [thi.ng.xerror.core :as err]
      [thi.ng.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
      #?(:clj [thi.ng.math.macros :as mm])))
 
