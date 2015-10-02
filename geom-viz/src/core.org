@@ -562,8 +562,18 @@ for list of available presets & how to define new gradients.
 
 *** Github commit history
 
-This example requires [[https://github.com/Raynes/tentacles][raynes/tentacles 0.3.0]] to be added to your
-project in order to download the commit history of a given project.
+*Note:* This example requires [[https://github.com/Raynes/tentacles][raynes/tentacles 0.3.0]] to be added to
+your project in order to download the commit history of a given
+project.
+
+This example downloads the commit history for this project from GitHub
+and produces a similar activity heatmap as shown on GH user pages
+(each column = 1 week).
+
+Btw. You can use the local repo by switching the lines calling
+=load-commits-fs= and =load-commits-gh=...
+
+[[http://media.thi.ng/geom/viz/commit-history.svg]]
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/hm-github.clj :mkdirp yes :padline no
   (require '[tentacles.repos :as repos])
@@ -615,8 +625,8 @@ project in order to download the commit history of a given project.
       (doseq [[[w d] n] commits] (nd/set-at mat d w n))
       mat))
 
-  (let [commits   (load-commits-fs ".")
-        ;;commits   (load-commits-gh "thi-ng" "geom")
+  (let [;;commits   (load-commits-fs ".")
+        commits   (load-commits-gh "thi-ng" "geom")
         [from to] (viz/value-domain-bounds commits)
         from      (* (long (/ from week)) week)
         to        (* (inc (long (/ to week))) week)

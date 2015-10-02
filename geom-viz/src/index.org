@@ -69,6 +69,18 @@ thi.ng/geom-viz
 target/geom-viz-<<conf-version()>>.js
 #+END_SRC
 
+** Extra module dependencies
+*** [[https://github.com/Raynes/tentacles][tentacles]]
+
+This library is only used in the =:dev= profile and needed to run the
+Github heatmap visualization example.
+
+#+NAME: dep-tentacles
+#+BEGIN_SRC clojure
+[tentacles "0.3.0"]
+#+END_SRC
+
+
 ** Leiningen project file                                          :noexport:
 
 #+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
@@ -91,7 +103,8 @@ target/geom-viz-<<conf-version()>>.js
                    <<dep-xerror>>
                    <<dep-color>>]
 
-    :profiles     {:dev {:dependencies [<<dep-criterium>>]
+    :profiles     {:dev {:dependencies [<<dep-criterium>>
+                                        <<dep-tentacles>>]
                          :plugins      [<<dep-cljsbuild>>
                                         <<dep-cljs-test>>]
                          :global-vars {*warn-on-reflection* true}
