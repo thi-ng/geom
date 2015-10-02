@@ -318,10 +318,10 @@
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn physics
     [{:keys [particles springs behaviors constraints drag listeners]
-      :or   {particles #{}, springs #{}, behaviors {}, constraints {}
+      :or   {particles [], springs [], behaviors {}, constraints {}
              listeners {}, drag 0.0}}]
     (VerletPhysics.
-     (set particles) (set springs) behaviors constraints listeners drag))
+     (vec particles) (vec springs) behaviors constraints listeners drag))
 
   (defn particle
     [pos & [weight lock?]]
