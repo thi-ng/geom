@@ -137,10 +137,17 @@ same directory.
 
   (def spec
     {:x-axis (viz/log-axis
-              {:domain [1 201] :range [50 590] :pos 550})
+              {:domain [1 201]
+               :range  [50 590]
+               :pos    550})
      :y-axis (viz/linear-axis
-              {:domain [0.1 100] :range [550 20] :major 10 :minor 5 :pos 50
-               :label-dist 15 :label {:text-anchor "end"}})
+              {:domain      [0.1 100]
+               :range       [550 20]
+               :major       10
+               :minor       5
+               :pos         50
+               :label-dist  15
+               :label-style {:text-anchor "end"}})
      :grid   {:attribs {:stroke "#caa"}
               :minor-x true
               :minor-y true}
@@ -156,8 +163,11 @@ same directory.
 
   (-> spec
       (assoc :y-axis (viz/log-axis
-                      {:domain [0.1 101] :range [550 20] :pos 50
-                       :label-dist 15 :label {:text-anchor "end"}}))
+                      {:domain      [0.1 101]
+                       :range       [550 20]
+                       :pos         50
+                       :label-dist  15
+                       :label-style {:text-anchor "end"}}))
       (export-viz "scatter-log.svg"))
 #+END_SRC
 
@@ -177,10 +187,19 @@ same directory.
 
   (def viz-spec
     {:x-axis (viz/linear-axis
-              {:domain [(- PI) PI] :range [50 580] :major (/ PI 2) :minor (/ PI 4) :pos 250})
+              {:domain [(- PI) PI]
+               :range  [50 580]
+               :major  (/ PI 2)
+               :minor  (/ PI 4)
+               :pos    250})
      :y-axis (viz/linear-axis
-              {:domain [-1 1] :range [250 20] :major 0.2 :minor 0.1 :pos 50
-               :label-dist 15 :label {:text-anchor "end"}})
+              {:domain      [-1 1]
+               :range       [250 20]
+               :major       0.2
+               :minor       0.1
+               :pos         50
+               :label-dist  15
+               :label-style {:text-anchor "end"}})
      :grid   {:attribs {:stroke "#caa"}
               :minor-y true}
      :data   [{:values  (map test-equation (m/norm-range 200))
@@ -206,11 +225,17 @@ Same overall visualization setup, only using polar coordinate transform and rede
 #+BEGIN_SRC clojure :tangle ../babel/examples/lineplot.clj :padline yes
   (def viz-spec-polar
     {:x-axis (viz/linear-axis
-              {:domain [(- PI) PI] :range [(* 1.1 PI) (* 1.9 PI)]
-               :major (/ PI 2) :minor (/ PI 16) :pos 280})
+              {:domain [(- PI) PI]
+               :range  [(* 1.1 PI) (* 1.9 PI)]
+               :major  (/ PI 2)
+               :minor  (/ PI 16)
+               :pos    280})
      :y-axis (viz/linear-axis
-              {:domain [-1 1] :range [60 280]
-               :major 0.5 :minor 0.25 :pos (* 1.1 PI)})
+              {:domain [-1 1]
+               :range  [60 280]
+               :major  0.5
+               :minor  0.25
+               :pos    (* 1.1 PI)})
      :origin (v/vec2 300 310)
      :grid   {:attribs {:stroke "#caa" :fill "none"}
               :minor-x true
@@ -243,7 +268,8 @@ Same overall visualization setup, only using polar coordinate transform and rede
     [num width]
     (fn [idx col]
       {:values     (map (fn [i] [i (m/random 100)]) (range 2000 2016))
-       :attribs    {:stroke col :stroke-width (str (dec width) "px")}
+       :attribs    {:stroke       col
+                    :stroke-width (str (dec width) "px")}
        :layout     viz/svg-bar-plot
        :interleave num
        :bar-width  width
@@ -251,11 +277,19 @@ Same overall visualization setup, only using polar coordinate transform and rede
 
   (def viz-spec
     {:x-axis (viz/linear-axis
-              {:domain [1999 2016] :range [50 580] :major 1 :pos 280
-               :format int})
+              {:domain [1999 2016]
+               :range  [50 580]
+               :major  1
+               :pos    280
+               :label  (viz/default-svg-label int)})
      :y-axis (viz/linear-axis
-              {:domain [0 100] :range [280 20] :major 10 :minor 5 :pos 50
-               :label-dist 15 :label {:text-anchor "end"}})
+              {:domain      [0 100]
+               :range       [280 20]
+               :major       10
+               :minor       5
+               :pos         50
+               :label-dist  15
+               :label-style {:text-anchor "end"}})
      :grid   {:minor-y true}})
 
   (-> viz-spec
@@ -303,13 +337,20 @@ Same overall visualization setup, only using polar coordinate transform and rede
 
   (def viz-spec
     {:x-axis (viz/linear-axis
-              {:domain [0 5] :range [0 (* (/ 5 6) TWO_PI)] :major 1
-               :label-dist 20 :pos 260
-               :format (comp name domain->category)})
+              {:domain     [0 5]
+               :range      [0 (* (/ 5 6) TWO_PI)]
+               :major      1
+               :label-dist 20
+               :pos        260
+               :label      (viz/default-svg-label (comp name domain->category))})
      :y-axis (viz/linear-axis
-              {:domain [0 1.05] :range [0 260] :major 0.5 :minor 0.1 :pos (/ PI 2)
-               :label {:text-anchor "start"}
-               :format viz/format-percent})
+              {:domain      [0 1.05]
+               :range       [0 260]
+               :major       0.5
+               :minor       0.1
+               :pos         (/ PI 2)
+               :label-style {:text-anchor "start"}
+               :label       (viz/default-svg-label viz/format-percent)})
      :grid   {:minor-x true :minor-y true}
      :origin (v/vec2 300 300)
      :circle true})
@@ -335,8 +376,16 @@ Same overall visualization setup, only using polar coordinate transform and rede
 #+BEGIN_SRC clojure :tangle ../babel/examples/intervals.clj :noweb yes :mkdirp yes :padline no
   <<example-imports>>
 
-  (->> {:x-axis (viz/linear-axis {:domain [-10 310] :range [50 550] :major 100 :minor 50 :pos 150})
-        :y-axis (viz/linear-axis {:domain [0 4] :range [50 150] :visible false})
+  (->> {:x-axis (viz/linear-axis
+                 {:domain [-10 310]
+                  :range  [50 550]
+                  :major  100
+                  :minor  50
+                  :pos    150})
+        :y-axis (viz/linear-axis
+                 {:domain  [0 4]
+                  :range   [50 150]
+                  :visible false})
         :data   [{:values  [[0 100] [10 90] [80 200] [250 300] [150 170] [110 120]
                             [210 280] [180 280] [160 240] [160 170]]
                   :attribs {:stroke-width "10px" :stroke-linecap "round" :stroke "#0af"}
@@ -436,18 +485,31 @@ using a custom shape function w/ linear gradients (based on item type).
     {:values     (if type (filter #(= type (:type %)) items) items)
      :offset     offset
      :item-range item-range
-     :attribs    {:fill "white" :stroke "none"
-                  :font-family "Arial" :font-size 10}
+     :attribs    {:fill "white"
+                  :stroke "none"
+                  :font-family "Arial"
+                  :font-size 10}
      :shape      (viz/labeled-rect-horizontal
-                  {:h 14 :r 7 :min-width 30 :base-line 3 :label :title
-                   :fill #(str "url(#" (name (:type %)) ")")})
+                  {:h         14
+                   :r         7
+                   :min-width 30
+                   :base-line 3
+                   :label     :title
+                   :fill      #(str "url(#" (name (:type %)) ")")})
      :layout     viz/svg-stacked-interval-plot})
 
   ;; Create stacked timeline with *all* items
   (->> {:x-axis (viz/linear-axis
                  {:domain [(->epoch #inst "2010-09") (->epoch #inst "2015-06")]
-                  :range [10 950] :pos 160 :major year :minor month :format round-to-year})
-        :y-axis (viz/linear-axis {:domain [0 9] :range [10 160] :visible false})
+                  :range  [10 950]
+                  :pos    160
+                  :major  year
+                  :minor  month
+                  :label  (viz/default-svg-label round-to-year)})
+        :y-axis (viz/linear-axis
+                 {:domain  [0 9]
+                  :range   [10 160]
+                  :visible false})
         :grid   {:minor-x true}
         :data   [(timeline-spec nil 0)]}
        (viz/svg-plot2d-cartesian)
@@ -469,8 +531,15 @@ spec fragments (via the use of our =timeline-spec= fn).
   ;; Create stacked timeline vertically grouped by item type
   (->> {:x-axis (viz/linear-axis
                  {:domain [(->epoch #inst "2010-09") (->epoch #inst "2015-06")]
-                  :range [10 950] :pos 220 :major year :minor month :format round-to-year})
-        :y-axis (viz/linear-axis {:domain [0 13] :range [10 220] :visible false})
+                  :range  [10 950]
+                  :pos    220
+                  :major  year
+                  :minor  month
+                  :label  (viz/default-svg-label round-to-year)})
+        :y-axis (viz/linear-axis
+                 {:domain  [0 13]
+                  :range   [10 220]
+                  :visible false})
         :grid   {:minor-x true}
         :data   [(timeline-spec :project 0)
                  (timeline-spec :oss 2)
@@ -514,10 +583,18 @@ for list of available presets & how to define new gradients.
   (defn cartesian-viz
     [prefix id & [opts]]
     (->> {:x-axis (viz/linear-axis
-                   {:domain [0 50] :range [50 550] :major 10 :minor 5 :pos 280})
+                   {:domain [0 50]
+                    :range [50 550]
+                    :major 10
+                    :minor 5
+                    :pos 280})
           :y-axis (viz/linear-axis
-                   {:domain [0 10] :range [280 20] :major 1 :pos 50
-                    :label-dist 15 :label {:text-anchor "end"}})
+                   {:domain      [0 10]
+                    :range       [280 20]
+                    :major       1
+                    :pos         50
+                    :label-dist  15
+                    :label-style {:text-anchor "end"}})
           :data   [(merge (heatmap-spec id) opts)]}
          (viz/svg-plot2d-cartesian)
          (svg/svg {:width 600 :height 300})
@@ -535,10 +612,18 @@ for list of available presets & how to define new gradients.
   (defn polar-viz
     [prefix id & [opts]]
     (->> {:x-axis (viz/linear-axis
-                   {:domain [0 50] :range [(* 1.1 PI) (* 1.9 PI)] :major 10 :minor 5 :pos 280})
+                   {:domain [0 50]
+                    :range [(* 1.1 PI) (* 1.9 PI)]
+                    :major 10
+                    :minor 5
+                    :pos 280})
           :y-axis (viz/linear-axis
-                   {:domain [0 10] :range [90 280] :major 5 :pos (* 1.1 PI)
-                    :major-size 10 :label-dist 20})
+                   {:domain     [0 10]
+                    :range      [90 280]
+                    :major      5
+                    :pos        (* 1.1 PI)
+                    :major-size 10
+                    :label-dist 20})
           :origin (v/vec2 300)
           :data   [(merge (heatmap-spec id) opts)]}
          (viz/svg-plot2d-polar)
@@ -625,8 +710,8 @@ Btw. You can use the local repo by switching the lines calling
       (doseq [[[w d] n] commits] (nd/set-at mat d w n))
       mat))
 
-  (let [;;commits   (load-commits-fs ".")
-        commits   (load-commits-gh "thi-ng" "geom")
+  (let [commits   (load-commits-fs ".")
+        ;;commits   (load-commits-gh "thi-ng" "geom")
         [from to] (viz/value-domain-bounds commits)
         from      (* (long (/ from week)) week)
         to        (* (inc (long (/ to week))) week)
@@ -634,9 +719,16 @@ Btw. You can use the local repo by switching the lines calling
         weeks     (last (nd/shape mat))
         max-x     (+ 50 (* weeks 10))]
     (->> {:x-axis (viz/linear-axis
-                   {:domain [0 weeks] :range [50 max-x] :major 4 :minor 1 :pos 85
-                    :format (month-or-year from)})
-          :y-axis (viz/linear-axis {:domain [0 7] :range [10 80] :visible false})
+                   {:domain [0 weeks]
+                    :range  [50 max-x]
+                    :major  4
+                    :minor  1
+                    :pos    85
+                    :label  (viz/default-svg-label (month-or-year from))})
+          :y-axis (viz/linear-axis
+                   {:domain  [0 7]
+                    :range   [10 80]
+                    :visible false})
           :data   [{:matrix        mat
                     :value-domain  [1 (reduce max mat)]
                     :palette       (->> :yellow-red (grad/cosine-schemes) (apply grad/cosine-gradient 100))
@@ -662,10 +754,19 @@ Btw. You can use the local repo by switching the lines calling
 
   (def viz-spec
     {:x-axis (viz/linear-axis
-              {:domain [0 63] :range [50 550] :major 8 :minor 2 :pos 550})
+              {:domain [0 63]
+               :range  [50 550]
+               :major  8
+               :minor  2
+               :pos    550})
      :y-axis (viz/linear-axis
-              {:domain [0 63] :range [550 50] :major 8 :minor 2 :pos 50
-               :label-dist 15 :label {:text-anchor "end"}})
+              {:domain      [0 63]
+               :range       [550 50]
+               :major       8
+               :minor       2
+               :pos         50
+               :label-dist  15
+               :label-style {:text-anchor "end"}})
      :data   [{:matrix       (->> (for [y (range 64) x (range 64)] (n/noise2 (* x 0.06) (* y 0.06)))
                                   (viz/contour-matrix 64 64))
                :levels       (range -1 1 0.05)
@@ -676,10 +777,17 @@ Btw. You can use the local repo by switching the lines calling
   (def viz-spec-log
     (merge viz-spec
            {:x-axis (viz/log-axis
-                     {:domain [0 64] :range [50 550] :base 2 :pos 555})
+                     {:domain [0 64]
+                      :range [50 550]
+                      :base 2
+                      :pos 555})
             :y-axis (viz/log-axis
-                     {:domain [0 64] :range [550 50] :base 2 :pos 45
-                      :label-dist 15 :label {:text-anchor "end"}})}))
+                     {:domain      [0 64]
+                      :range       [550 50]
+                      :base        2
+                      :pos         45
+                      :label-dist  15
+                      :label-style {:text-anchor "end"}})}))
 
   (def fill-attribs {:fill (col/rgba 0.0 0.66 1.0 0.05) :stroke "#fff"})
 
@@ -714,18 +822,27 @@ An animated variation with polar coordinates:
 
   (defn load-image
     [path]
-    (let [img  (javax.imageio.ImageIO/read (java.io.File. path))
-          w    (.getWidth img)
-          h    (.getHeight img)
-          rgb  (.getRGB img 0 0 w h (int-array (* w h)) 0 w)]
+    (let [img (javax.imageio.ImageIO/read (java.io.File. path))
+          w   (.getWidth img)
+          h   (.getHeight img)
+          rgb (.getRGB img 0 0 w h (int-array (* w h)) 0 w)]
       (viz/contour-matrix w h (map #(bit-and % 0xff) rgb))))
 
   (def viz-spec
     {:x-axis (viz/linear-axis
-              {:domain [0 79] :range [50 550] :major 8 :minor 2 :pos 550})
+              {:domain [0 79]
+               :range [50 550]
+               :major 8
+               :minor 2
+               :pos 550})
      :y-axis (viz/linear-axis
-              {:domain [0 79] :range [50 550] :major 8 :minor 2 :pos 50
-               :label-dist 15 :label {:text-anchor "end"}})
+              {:domain      [0 79]
+               :range       [50 550]
+               :major       8
+               :minor       2
+               :pos         50
+               :label-dist  15
+               :label-style {:text-anchor "end"}})
      :data   [{:matrix          (load-image "../../assets/california-detail-gis.png")
                :value-domain    [0.0 255.0]
                :attribs         {:fill "none"}
@@ -772,21 +889,21 @@ functions (=linear-axis=, =log-axis=, =lens-axis=). These functions
 too take a map w/ some of the same keys, but replace some vals with
 transformed data and autofill default values for others.
 
-| *Key*         | *Value*              | *Required* | *Default*           | *Description*                                                            |
-|---------------+----------------------+------------+---------------------+--------------------------------------------------------------------------|
-| =:scale=      | scale function       | Y          | nil                 | Scale function to translate domain values into visualization coordinates |
-| =:domain=     | vec of domain bounds | Y          | nil                 | Lower & upper bound of data source interval                              |
-| =:range=      | vec of range bounds  | Y          | nil                 | Lower & upper bound of projected coordinates                             |
-| =:pos=        | number               | Y          | nil                 | Draw position of the axis (ypos for X-axis, xpos for Y-axis)             |
-| =:major=      | seq of domain values | N          | nil                 | Seq of domain positions at which to draw labeled tick marks              |
-| =:minor=      | seq of domain values | N          | nil                 | Seq of domain positions at which                                         |
-| =:major-size= | number               | N          | 10                  | Length of major tick marks                                               |
-| =:minor-size= | number               | N          | 5                   | Length of minor tick marks                                               |
-| =:label-dist= | number               | N          | 10 + major-size     | Distance of value labels from axis                                       |
-| =:format=     | function             | N          | =(value-format 2)=  | Function to format tick labels                                           |
-| =:label=      | map                  | N          | see next section    | Style attribute map for value labels                                     |
-| =:attribs=    | map                  | N          | ={:stroke "black"}= | Axis line attribs attributes                                             |
-| =:visible=    | boolean              | N          | true                | Flag if axis will be visible in visualization                            |
+| *Key*          | *Value*              | *Required* | *Default*                              | *Description*                                                            |
+|----------------+----------------------+------------+----------------------------------------+--------------------------------------------------------------------------|
+| =:scale=       | scale function       | Y          | nil                                    | Scale function to translate domain values into visualization coordinates |
+| =:domain=      | vec of domain bounds | Y          | nil                                    | Lower & upper bound of data source interval                              |
+| =:range=       | vec of range bounds  | Y          | nil                                    | Lower & upper bound of projected coordinates                             |
+| =:pos=         | number               | Y          | nil                                    | Draw position of the axis (ypos for X-axis, xpos for Y-axis)             |
+| =:major=       | seq of domain values | N          | nil                                    | Seq of domain positions at which to draw labeled tick marks              |
+| =:minor=       | seq of domain values | N          | nil                                    | Seq of domain positions at which                                         |
+| =:major-size=  | number               | N          | 10                                     | Length of major tick marks                                               |
+| =:minor-size=  | number               | N          | 5                                      | Length of minor tick marks                                               |
+| =:label=       | function             | N          | =(default-svg-label (value-format 2))= | Function to format & emit tick labels                                    |
+| =:label-dist=  | number               | N          | 10 + major-size                        | Distance of value labels from axis                                       |
+| =:label-style= | map                  | N          | see next section                       | Style attribute map for value labels                                     |
+| =:attribs=     | map                  | N          | ={:stroke "black"}=                    | Axis line attribs attributes                                             |
+| =:visible=     | boolean              | N          | true                                   | Flag if axis will be visible in visualization                            |
 
 **** About tick marks
 
@@ -806,11 +923,16 @@ Same goes for =:pos= values: The =:pos= for x-axis is a radius, the =:pos= for y
 
 **** Default axis label styling
 
+For SVG export, each axis is exported as its own group (incl. tick
+marks & labels). By default the following label style is applied to
+each group, however this can be overridden for individual labels by
+specifying a custom =:label= function.
+
 #+BEGIN_SRC clojure :noweb-ref default-label-style
-  {:fill "black"
-   :stroke "none"
-   :font-family "Arial"
-   :font-size 10
+  {:fill        "black"
+   :stroke      "none"
+   :font-family "Arial, sans-serif"
+   :font-size   10
    :text-anchor "middle"}
 #+END_SRC
 
@@ -912,22 +1034,21 @@ The two animations below show the effect of individually adjusting the focus and
 
 #+BEGIN_SRC clojure :noweb-ref axis
   (defn axis-common*
-    [{:keys [visible major-size minor-size format attribs label label-dist]
-      :or {format (value-formatter 2), visible true
-           major-size 10, minor-size 5}
+    [{:keys [visible major-size minor-size label attribs label-style label-dist]
+      :or {visible true major-size 10, minor-size 5}
       :as spec}]
     (assoc spec
-           :visible    visible
-           :major-size major-size
-           :minor-size minor-size
-           :format     format
-           :attribs      (merge
+           :visible     visible
+           :major-size  major-size
+           :minor-size  minor-size
+           :label       (or label (default-svg-label (value-formatter 2)))
+           :attribs     (merge
                         {:stroke "black"}
                         attribs)
-           :label      (merge
-                        <<default-label-style>>
-                        label)
-           :label-dist (or label-dist (+ 10 major-size))))
+           :label-style (merge
+                         <<default-label-style>>
+                         label-style)
+           :label-dist  (or label-dist (+ 10 major-size))))
 #+END_SRC
 
 *** Linear
@@ -1385,31 +1506,31 @@ TBD
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-axis*
-    [{:keys [major minor attribs label]} axis tick1-fn tick2-fn label-fn]
+    [{:keys [major minor attribs label-style]} axis tick1-fn tick2-fn label-fn]
     (svg/group
      (merge {:stroke "#000"} attribs)
      (map tick1-fn major)
      (map tick2-fn minor)
-     (svg/group (merge {:stroke "none"} label) (map label-fn major))
+     (svg/group (merge {:stroke "none"} label-style) (map label-fn major))
      axis))
 
   (defn svg-x-axis-cartesian
-    [{:keys [scale major-size minor-size label-dist pos format] [r1 r2] :range
+    [{:keys [scale major-size minor-size label-dist pos label] [r1 r2] :range
       :as spec}]
     (svg-axis*
      spec (svg/line [r1 pos] [r2 pos])
      #(let [x (scale %)] (svg/line [x pos] [x (+ pos major-size)]))
      #(let [x (scale %)] (svg/line [x pos] [x (+ pos minor-size)]))
-     #(let [x (scale %)] (svg/text [x (+ pos label-dist)] (format %)))))
+     #(let [x (scale %)] (label (vec2 x (+ pos label-dist)) %))))
 
   (defn svg-y-axis-cartesian
-    [{:keys [scale major-size minor-size label-dist pos format] [r1 r2] :range
+    [{:keys [scale major-size minor-size label-dist pos label] [r1 r2] :range
       :as spec}]
     (svg-axis*
      spec (svg/line [pos r1] [pos r2])
      #(let [y (scale %)] (svg/line [pos y] [(- pos major-size) y]))
      #(let [y (scale %)] (svg/line [pos y] [(- pos minor-size) y]))
-     #(let [y (scale %)] (svg/text [(- pos label-dist) y] (format %)))))
+     #(let [y (scale %)] (label (vec2 (- pos label-dist) y) %))))
 #+END_SRC
 
 *** Generic plotting helpers
@@ -1448,8 +1569,8 @@ TBD
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-x-axis-polar
-    [{{:keys [scale major-size minor-size label-dist pos format] [r1 r2] :range
-       :or {format (value-formatter 2)}} :x-axis
+    [{{:keys [scale major-size minor-size label-dist pos label] [r1 r2] :range
+       :or {label (default-svg-label (value-formatter 2))}} :x-axis
        project :project o :origin :as spec}]
     (svg-axis*
      (:x-axis spec)
@@ -1461,11 +1582,11 @@ TBD
      #(let [x (scale %)]
         (svg/line (project [x pos]) (project [x (+ pos minor-size)])))
      #(let [x (scale %)]
-        (svg/text (project [x (+ pos label-dist)]) (format %) {:stroke "none"}))))
+        (label (project [x (+ pos label-dist)]) %))))
 
   (defn svg-y-axis-polar
-    [{{:keys [scale major-size minor-size label-dist pos format]
-       [r1 r2] :range :or {format (value-formatter 2)}} :y-axis
+    [{{:keys [scale major-size minor-size label-dist pos label]
+       [r1 r2] :range :or {label (default-svg-label (value-formatter 2))}} :y-axis
        project :project :as spec}]
     (let [a (project [pos r1])
           b (project [pos r2])
@@ -1479,7 +1600,7 @@ TBD
        #(let [y (scale %) p (project [pos y])]
           (svg/line p (g/+ p n2)))
        #(let [y (scale %) p (project [pos y])]
-          (svg/text (g/+ p nl) (format %) {:stroke "none"})))))
+          (label (g/+ p nl) %)))))
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
@@ -1573,6 +1694,9 @@ TBD
 
   (defn format-percent
     [x] (str (int (* x 100)) "%"))
+
+  (defn default-svg-label
+    [f] (fn [p x] (svg/text p (f x))))
 #+END_SRC
 
 ** Custom shapes
