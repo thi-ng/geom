@@ -198,37 +198,40 @@
        (p/cog 50 10 [0.9 1 1 1 0.9])
        (g/center [50 50])
        (g/extrude-shell
-	{:depth 100 :wall 2 :inset 5 :top? false :bottom? true :mesh (bm/basic-mesh)})
+        {:depth 100 :wall 2 :inset 5 :top? false :bottom? true :mesh (bm/basic-mesh)})
        (g/tessellate)))
 
     (def box
       (-> (a/aabb 100)
-	  (g/as-mesh)
-	  (g/tessellate)))
+          (g/as-mesh)
+          (g/tessellate)))
 
     (def box
       (let [;;path "canopy-flat-12.stl"
-	    path "hexsphere.stl"]
-	(with-open [i (io/input-stream path)]
-	  (->> (mio/read-stl i)
-	       (vector)
-	       (tu/fit-all-into-bounds (a/aabb 100))
-	       (first)
-	       (#(ops/canonicalize-vertices % 1e-3))
-	       (first)))))
+            path "hexsphere.stl"]
+        (with-open [in (io/input-stream path)]
+          (->> in
+               (mio/wrapped-input-stream)
+               (mio/read-stl)
+               (vector)
+               (tu/fit-all-into-bounds (a/aabb 100))
+               (first)
+               (#(ops/canonicalize-vertices % 1e-3))
+               (first)))))
 
-    (def sphere (-> (s/sphere 50)
-		    (g/as-mesh {:res 15})
-		    (g/transform (-> M44 (g/translate 50 50 50) (g/rotate-x m/HALF_PI)))
-		    (g/tessellate)))
+    (def sphere
+      (-> (s/sphere 50)
+          (g/as-mesh {:res 15})
+          (g/transform (-> M44 (g/translate 50 50 50) (g/rotate-x m/HALF_PI)))
+          (g/tessellate)))
 
     (let [t (mesh->intervaltree :z box)
-	  [a b] (gu/axis-bounds 2 (seq (g/vertices box)))]
+          [a b] (gu/axis-bounds 2 (seq (g/vertices box)))]
       (prn a :-> b)
       (doseq [z (range a b 0.5)]
-	(prn z)
-	(-> (z-slice-tree t z 0.01)
-	    (find-loops2 z)
-	    (draw-slice-paths z))))
+        (prn z)
+        (-> (z-slice-tree t z 0.01)
+            (find-loops2 z)
+            (draw-slice-paths z))))
     )
 #+END_SRC
