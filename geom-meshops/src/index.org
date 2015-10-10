@@ -63,6 +63,8 @@ target/geom-meshops-<<conf-version()>>.js
                    <<dep-cljs>>
                    [thi.ng/geom-core "<<conf-version()>>"]
                    [thi.ng/geom-types "<<conf-version()>>"]
+                   <<dep-strf>>
+                   <<dep-dstruct>>
                    <<dep-xerror>>]
 
     :profiles     {:dev {:dependencies [<<dep-criterium>>]
