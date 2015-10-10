@@ -89,7 +89,7 @@
       (it/interval-tree median faces)))
 
   (defn save-mesh
-    [m] (with-open [o (io/output-stream "p.ply")] (mio/write-ply o m)))
+    [m] (with-open [o (io/output-stream "p.ply")] (mio/write-ply (mio/wrapped-output-stream o) m)))
 
 #+END_SRC
 

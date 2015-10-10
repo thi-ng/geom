@@ -22,11 +22,11 @@
 ** Stream wrappers
 
 #+BEGIN_SRC clojure :noweb-ref wrappers
-  (def output-stream
+  (def wrapped-output-stream
     "Alias for thi.ng.dstruct.streams/output-stream"
     streams/output-stream)
 
-  (def input-stream
+  (def wrapped-input-stream
     "Alias for thi.ng.dstruct.streams/input-stream"
     streams/input-stream)
 #+END_SRC

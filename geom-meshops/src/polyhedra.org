@@ -34,7 +34,7 @@ returns either a =BasicMesh= or =GMesh= instance.
   (with-open [o (io/output-stream "icosphere.stl")]
     (->> (poly/polyhedron-mesh poly/icosahedron sd/catmull-clark 1 3)
          (g/tessellate)
-         (mio/write-stl o)))
+         (mio/write-stl (mio/wrapped-output-stream o))))
 #+END_SRC
 
 [[http://media.thi.ng/geom/mesh/icosphere.svg]]

@@ -57,7 +57,11 @@ is defined in its own namespace and can be loaded from the REPL via:
 
   (def mesh
     (with-open [in (io/input-stream "../../assets/suzanne.stl")]
-      (-> (mio/read-stl in) (g/center) (g/scale 0.85))))
+      (-> in
+          (mio/wrapped-input-stream)
+          (mio/read-stl)
+          (g/center)
+          (g/scale 0.85))))
 
   (defn render-svg
     [path mesh mvp width height]

@@ -75,7 +75,9 @@ This is a render of the voxel mesh generated with the code below:
 
   (time
    (with-open [o (io/output-stream "voxel.stl")]
-     (mio/write-stl o (g/tessellate (iso/surface-mesh v4 11 0.5)))))
+     (mio/write-stl
+      (mio/wrapped-output-stream o)
+      (g/tessellate (iso/surface-mesh v4 11 0.5)))))
 #+END_SRC
 
 ** Example: Sphere erosion
@@ -114,7 +116,9 @@ This is a render of the voxel mesh generated with the code below:
 
   (time
      (with-open [o (io/output-stream "sphere.stl")]
-       (mio/write-stl o (g/tessellate (iso/surface-mesh v 10 0.5)))))
+       (mio/write-stl
+        (mio/wrapped-output-stream o)
+        (g/tessellate (iso/surface-mesh v 10 0.5)))))
 #+END_SRC
 
 ** Example: 3D Simplex Noise
@@ -140,5 +144,7 @@ This is a render of the voxel mesh generated with the code below:
 
   (time
    (with-open [o (io/output-stream "noise.stl")]
-     (mio/write-stl o (g/tessellate (iso/surface-mesh v 10 iso-val)))))
+     (mio/write-stl
+      (mio/wrapped-output-stream o)
+      (g/tessellate (iso/surface-mesh v 10 iso-val)))))
 #+END_SRC
