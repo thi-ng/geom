@@ -73,9 +73,9 @@ approach has been taken to create these visualizations:
    axis definitions, layout arguments/handlers, styling options etc.
 2. This map is then transformed into a tree/scenegraph of geometric
    primitives (shapes & groups) representing the visualization.
-3. This tree of still pure data is then further converted into the
-   final output format, e.g. for SVG first into [[https://github.com/weavejester/hiccup][hiccup]] and then actual
-   SVG/XML...
+3. This tree of still pure Clojure data is then further converted into
+   the final output format, e.g. for SVG first into [[https://github.com/weavejester/hiccup][hiccup]] and then
+   actual SVG/XML...
 
 The declarative nature has several benefits:
 
@@ -902,6 +902,7 @@ transformed data and autofill default values for others.
 | =:label=       | function             | N          | =(default-svg-label (value-format 2))= | Function to format & emit tick labels                                    |
 | =:label-dist=  | number               | N          | 10 + major-size                        | Distance of value labels from axis                                       |
 | =:label-style= | map                  | N          | see next section                       | Style attribute map for value labels                                     |
+| =:label-y=     | number               | N          | 0                                      | Vertical offset for Y-axis labels                                        |
 | =:attribs=     | map                  | N          | ={:stroke "black"}=                    | Axis line attribs attributes                                             |
 | =:visible=     | boolean              | N          | true                                   | Flag if axis will be visible in visualization                            |
 
@@ -1517,20 +1518,27 @@ TBD
   (defn svg-x-axis-cartesian
     [{:keys [scale major-size minor-size label-dist pos label] [r1 r2] :range
       :as spec}]
-    (svg-axis*
-     spec (svg/line [r1 pos] [r2 pos])
-     #(let [x (scale %)] (svg/line [x pos] [x (+ pos major-size)]))
-     #(let [x (scale %)] (svg/line [x pos] [x (+ pos minor-size)]))
-     #(let [x (scale %)] (label (vec2 x (+ pos label-dist)) %))))
+    (let [y-major (+ pos major-size)
+          y-minor (+ pos minor-size)
+          y-label (+ pos label-dist)]
+      (svg-axis*
+       spec (svg/line [r1 pos] [r2 pos])
+       #(let [x (scale %)] (svg/line [x pos] [x y-major]))
+       #(let [x (scale %)] (svg/line [x pos] [x y-minor]))
+       #(label (vec2 (scale %) y-label) %))))
 
   (defn svg-y-axis-cartesian
-    [{:keys [scale major-size minor-size label-dist pos label] [r1 r2] :range
+    [{:keys [scale major-size minor-size label-dist label-y pos label] [r1 r2] :range
+      :or {label-y 0}
       :as spec}]
-    (svg-axis*
-     spec (svg/line [pos r1] [pos r2])
-     #(let [y (scale %)] (svg/line [pos y] [(- pos major-size) y]))
-     #(let [y (scale %)] (svg/line [pos y] [(- pos minor-size) y]))
-     #(let [y (scale %)] (label (vec2 (- pos label-dist) y) %))))
+    (let [x-major (- pos major-size)
+          x-minor (- pos minor-size)
+          x-label (- pos label-dist)]
+      (svg-axis*
+       spec (svg/line [pos r1] [pos r2])
+       #(let [y (scale %)] (svg/line [pos y] [x-major y]))
+       #(let [y (scale %)] (svg/line [pos y] [x-minor y]))
+       #(label (vec2 x-label (+ (scale %) label-y)) %))))
 #+END_SRC
 
 *** Generic plotting helpers
@@ -1569,37 +1577,41 @@ TBD
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-x-axis-polar
-    [{{:keys [scale major-size minor-size label-dist pos label] [r1 r2] :range
-       :or {label (default-svg-label (value-formatter 2))}} :x-axis
-       project :project o :origin :as spec}]
-    (svg-axis*
-     (:x-axis spec)
-     (if (:circle spec)
-       (svg/circle o pos {:fill "none"})
-       (svg/arc o pos r1 r2 (> (m/abs-diff r1 r2) m/PI) true {:fill "none"}))
-     #(let [x (scale %)]
-        (svg/line (project [x pos]) (project [x (+ pos major-size)])))
-     #(let [x (scale %)]
-        (svg/line (project [x pos]) (project [x (+ pos minor-size)])))
-     #(let [x (scale %)]
-        (label (project [x (+ pos label-dist)]) %))))
+    [{:keys [x-axis project circle origin]}]
+    (let [{:keys [scale major-size minor-size label-dist pos]} x-axis
+          label   (or (:label x-axis) (default-svg-label (value-formatter 2)))
+          [r1 r2] (:range x-axis)
+          o       origin]
+      (svg-axis*
+       x-axis
+       (if circle
+         (svg/circle o pos {:fill "none"})
+         (svg/arc o pos r1 r2 (> (m/abs-diff r1 r2) m/PI) true {:fill "none"}))
+       #(let [x (scale %)]
+          (svg/line (project [x pos]) (project [x (+ pos major-size)])))
+       #(let [x (scale %)]
+          (svg/line (project [x pos]) (project [x (+ pos minor-size)])))
+       #(let [x (scale %)]
+          (label (project [x (+ pos label-dist)]) %)))))
 
   (defn svg-y-axis-polar
-    [{{:keys [scale major-size minor-size label-dist pos label]
-       [r1 r2] :range :or {label (default-svg-label (value-formatter 2))}} :y-axis
-       project :project :as spec}]
-    (let [a (project [pos r1])
-          b (project [pos r2])
-          nl (g/normalize (g/normal (g/- a b)) label-dist)
-          n1 (g/normalize nl major-size)
-          n2 (g/normalize nl minor-size)]
+    [{:keys [y-axis project]}]
+    (let [{:keys [scale label-y pos] :or {label-y 0}} y-axis
+          label   (or (:label y-axis) (default-svg-label (value-formatter 2)))
+          [r1 r2] (:range y-axis)
+          a       (project [pos r1])
+          b       (project [pos r2])
+          nl      (g/normalize (g/normal (g/- a b)) (:label-dist y-axis))
+          n1      (g/normalize nl (:major-size y-axis))
+          n2      (g/normalize nl (:minor-size y-axis))]
       (svg-axis*
-       (:y-axis spec) (svg/line a b)
-       #(let [y (scale %) p (project [pos y])]
+       y-axis
+       (svg/line a b)
+       #(let [p (project [pos (scale %)])]
           (svg/line p (g/+ p n1)))
-       #(let [y (scale %) p (project [pos y])]
+       #(let [p (project [pos (scale %)])]
           (svg/line p (g/+ p n2)))
-       #(let [y (scale %) p (project [pos y])]
+       #(let [p (project [pos (+ (scale %) label-y)])]
           (label (g/+ p nl) %)))))
 #+END_SRC
 
@@ -1626,14 +1638,14 @@ TBD
           (select-ticks y-axis minor-y))))))
 
   (defn svg-plot2d-polar
-    [{:keys [x-axis y-axis grid data origin] :as opts}]
-    (let [opts (assoc opts :project (polar-projection origin))]
+    [{:keys [x-axis y-axis grid data origin] :as spec}]
+    (let [spec (assoc spec :project (polar-projection origin))]
       (svg/group
        {}
-       (if grid (svg-axis-grid2d-polar opts))
-       (map (fn [spec] ((:layout spec) opts spec)) data)
-       (if (:visible x-axis) (svg-x-axis-polar opts))
-       (if (:visible y-axis) (svg-y-axis-polar opts)))))
+       (if grid (svg-axis-grid2d-polar spec))
+       (map (fn [spec'] ((:layout spec') spec spec')) data)
+       (if (:visible x-axis) (svg-x-axis-polar spec))
+       (if (:visible y-axis) (svg-y-axis-polar spec)))))
 #+END_SRC
 
 ** Projections
