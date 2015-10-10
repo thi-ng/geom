@@ -226,7 +226,8 @@ with different parameters:
      [thi.ng.math.core :as m]
      [thi.ng.luxor.core :as lux]
      [thi.ng.luxor.scenes :as scene]
-     [thi.ng.luxor.io :as lio]))
+     [thi.ng.luxor.io :as lio]
+     [thi.ng.color.core :as col]))
 
   (defn cinquefoil
     [t]
@@ -243,7 +244,7 @@ with different parameters:
        (fn [scene [i mesh]]
          (let [mat (str "matte-hue-" i)]
            (-> scene
-               (lux/material-matte mat {:diffuse-hsb [(* i hue) 1.0 0.9]})
+               (lux/material-matte mat {:diffuse (col/hsva (* i hue) 1.0 0.9)})
                (scene/add-mesh mesh (assoc opts :material mat :id (str "strand-" i))))))
        scene (zipmap (range) meshes))))
 
@@ -307,4 +308,3 @@ with different parameters:
 
   <<ptf>>
 #+END_SRC
-
