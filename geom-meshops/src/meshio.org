@@ -3,6 +3,7 @@
 * Contents                                                         :toc_4_gh:
  - [[#thinggeommeshio][thi.ng.geom.mesh.io]]
      - [[#configuration-parameters][Configuration parameters]]
+     - [[#stream-wrappers][Stream wrappers]]
      - [[#stl][STL]]
      - [[#ply][PLY]]
      - [[#obj][OBJ]]
@@ -17,12 +18,25 @@
   (def ^:dynamic *precision* 5)
 #+END_SRC
 
+
+** Stream wrappers
+
+#+BEGIN_SRC clojure :noweb-ref wrappers
+  (def output-stream
+    "Alias for thi.ng.dstruct.streams/output-stream"
+    streams/output-stream)
+
+  (def input-stream
+    "Alias for thi.ng.dstruct.streams/input-stream"
+    streams/input-stream)
+#+END_SRC
+
 ** STL
 
 #+BEGIN_SRC clojure :noweb-ref stl
   (defn write-stl
-    "Writes the given mesh as binary STL to output stream. Mesh is
-    automatically tessellated into triangles."
+    "Writes the given mesh as binary STL to output stream wrapper. Mesh
+    is automatically tessellated into triangles. Returns stream wrapper"
     [out mesh]
     (let [faces    (g/faces mesh)
           fnormals (g/face-normals mesh true)]
@@ -37,7 +51,8 @@
       out))
 
   (defn read-stl
-    "Reads faces from binary STL inputstream and adds them to given (or new) mesh."
+    "Reads faces from binary STL input stream wrapper and adds them to
+    given (or new) mesh."
     ([in]
      (read-stl in (bm/basic-mesh)))
     ([in mesh]
@@ -57,9 +72,9 @@
 
 #+BEGIN_SRC clojure :noweb-ref ply
   (defn write-ply
-    "Writes the given mesh as binary PLY to output stream. For
-    compatibility with external tools mesh should already have been
-    tessellated before calling this fn."
+    "Writes the given mesh as binary PLY to output stream wrapper.
+    For compatibility with some external tools, the mesh should already have been
+    tessellated before calling this fn. Returns stream wrapper."
     [out mesh]
     (let [vertices    (g/vertices mesh)
           vindex      (zipmap vertices (range))
@@ -98,6 +113,8 @@
 
 #+BEGIN_SRC clojure :noweb-ref obj
   (defn write-obj
+    "Writes mesh as Waveform OBJ format to output stream wrapper.
+    Returns stream wrapper."
     [out {:keys [vertices vnormals faces]}]
     (let [vertices    (keys vertices)
           vnorms?     (not (nil? (seq vnormals)))
@@ -136,6 +153,8 @@
 
 #+BEGIN_SRC clojure :noweb-ref off
   (defn write-off
+    "Writes mesh as OFF format to output stream wrapper.
+    Returns stream wrapper."
     [out mesh]
     (let [vertices   (g/vertices mesh)
           faces      (g/faces mesh)
@@ -152,7 +171,8 @@
          out
          (str (count fverts) " "
               (str/join " " (map vindex fverts))
-              "\n")))))
+              "\n")))
+      out))
 #+END_SRC
 
 ** Complete namespace definition
@@ -173,6 +193,8 @@
         [java.io OutputStream InputStream])))
 
   <<config>>
+
+  <<wrappers>>
 
   <<stl>>
 
