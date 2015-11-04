@@ -74,7 +74,7 @@
     [rf]
     (fn [c points]
       (->> points
-           (transduce (map #(g/dist-squared c %)) rf)
+           (transduce (map #(g/dist-squared c %)) rf 0)
            (Math/sqrt))))
 
   (def min-dist (dist* min))
