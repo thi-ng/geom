@@ -326,7 +326,7 @@
   (defn particle
     [pos & [weight lock?]]
     (let [w (double (or weight 1.0))]
-      (VerletParticle. pos pos (g/clear* pos) lock? nil nil (/ 1.0 w) nil)))
+      (VerletParticle. pos (g/clear* pos) (g/clear* pos) lock? nil nil (/ 1.0 w) nil)))
 
   (defn spring
     [a b rlen strength]
