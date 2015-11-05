@@ -45,12 +45,6 @@ target/test-classes
 [org.clojure/clojurescript "1.7.122"]
 #+END_SRC
 
-**** [[https://github.com/thi-ng/common/][thi.ng/common]]
-#+NAME: dep-common
-#+BEGIN_SRC clojure
-[thi.ng/common "0.3.2"]
-#+END_SRC
-
 **** [[https://github.com/thi-ng/math][thi.ng/math]]
 #+NAME: dep-math
 #+BEGIN_SRC clojure
@@ -60,7 +54,7 @@ target/test-classes
 **** [[https://github.com/thi-ng/dstruct][thi.ng/dstruct]]
 #+NAME: dep-dstruct
 #+BEGIN_SRC clojure
-[thi.ng/dstruct "0.1.2-SNAPSHOT"]
+[thi.ng/dstruct "0.1.2"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/strf][thi.ng/strf]]
