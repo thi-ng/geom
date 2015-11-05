@@ -115,9 +115,13 @@
   (defn write-obj
     "Writes mesh as Waveform OBJ format to output stream wrapper.
     Returns stream wrapper."
-    [out {:keys [vertices vnormals faces]}]
-    (let [vertices    (keys vertices)
+    [out mesh]
+    (let [vertices    (g/vertices mesh)
+          vindex      (zipmap vertices (range))
+          vnormals    (g/vertex-normals mesh false)
           vnorms?     (not (nil? (seq vnormals)))
+          nindex      (zipmap vnormals (range))
+          faces       (g/faces mesh)
           ff          (f/float *precision*)
           fmt-fn      (fn [prefix]
                         (let [fmt [prefix " " ff " " ff " " ff "\n"]]
@@ -128,9 +132,7 @@
                         (fn [verts normals]
                           (str "f " (str/join " " (map #(str % "//" %2) verts normals)) "\n"))
                         (fn [verts]
-                          (str "f " (str/join " " verts) "\n")))
-          vindex      (zipmap vertices (range))
-          nindex      (zipmap (vals vnormals) (range))]
+                          (str "f " (str/join " " verts) "\n")))]
       (doseq [[x y z] vertices]
         (streams/write-utf8-bytes
          out (fmt-vertex x y z)))
