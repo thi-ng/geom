@@ -16,6 +16,7 @@
      - [[#svg-conversions-for-geomtypes][SVG conversions for geom.types]]
          - [[#example-use-case][Example use case]]
          - [[#adapter-implementation][Adapter implementation]]
+         - [[#reactjs-key-prop-injection][React.js :key prop injection]]
      - [[#complete-namespace-svgcore][Complete namespace: svg.core]]
      - [[#complete-namespace-svgadapter][Complete namespace: svg.adapter]]
 
@@ -197,7 +198,7 @@ and will be automatically converted.
 
   (defn group
     [attribs & body]
-    [:g (svg-attribs attribs nil) body])
+    (into [:g (svg-attribs attribs nil)] body))
 
   (defn path
     [segments & [attribs]]
@@ -431,19 +432,39 @@ Btw. This example can be run from the REPL via this command:
   (defn walk
     [inner outer form]
     (cond
-      (seq? form) (outer (doall (map inner form)))
+      (seq? form)    (outer (doall (map inner form)))
       (vector? form) (outer (mapv inner form))
-      :else (outer form)))
+      :else          (outer form)))
 
   (defn postwalk
-    [f form]
-    (walk (partial postwalk f) f form))
+    [f form] (walk (partial postwalk f) f form))
 
   (defn all-as-svg
     [form]
     (postwalk
      (fn [x] (if (satisfies? svg/PSVGConvert x) (svg/as-svg x (meta x)) x))
      form))
+#+END_SRC
+
+*** React.js :key prop injection
+
+#+BEGIN_SRC clojure :noweb-ref adapter
+  (defn key-attrib-injector
+    [el attribs] (assoc attribs :key (name (gensym))))
+
+  (defn inject-element-attribs
+    ([root]
+     (inject-element-attribs key-attrib-injector root))
+    ([f root]
+     (postwalk
+      (fn [x]
+        (if (vector? x)
+          (let [y (nth x 1)]
+            (if (or (nil? y) (map? y))
+              (assoc x 1 (f x y))
+              x))
+          x))
+      root)))
 #+END_SRC
 
 ** Complete namespace: svg.core

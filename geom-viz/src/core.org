@@ -1227,11 +1227,11 @@ approximation closing the polygon along the X-axis (e.g. =:res 20=).
   (defn svg-area-plot
     [{:keys [y-axis project] :as v-spec} {:keys [res] :as d-spec}]
     (let [ry1     (first (:range y-axis))
-          points  (map first (process-points (assoc v-spec :project vec2) d-spec))
-          p       (vec2 (first (last points)) ry1)
+          points  (mapv first (process-points (assoc v-spec :project vec2) d-spec))
+          p       (vec2 (first (peek points)) ry1)
           q       (vec2 (ffirst points) ry1)
-          points  (concat points (map (partial g/mix p q) (m/norm-range (or res 1))))]
-      (svg/polygon (map project points) (:attribs d-spec))))
+          points  (concat points (mapv (partial g/mix p q) (m/norm-range (or res 1))))]
+      (svg/polygon (mapv project points) (:attribs d-spec))))
 #+END_SRC
 
 *** Radar plot
@@ -1245,7 +1245,7 @@ This plot method is intended to be only used with =svg-plot2d-polar=.
 #+BEGIN_SRC clojure :noweb-ref plot-2d
   (defn svg-radar-plot
     [v-spec {:keys [shape] :or {shape svg/polygon} :as d-spec}]
-    (shape (map first (process-points v-spec d-spec)) (:attribs d-spec)))
+    (shape (mapv first (process-points v-spec d-spec)) (:attribs d-spec)))
 #+END_SRC
 
 **** Min-Max radar plot
@@ -1270,11 +1270,11 @@ assumed for each data point.
       :as   d-spec}]
     (let [min-points (->> (assoc d-spec :item-pos (or item-pos-min (fn [i] (take 2 i))))
                           (process-points v-spec)
-                          (map first)
+                          (mapv first)
                           (points->path-segments))
           max-points (->> (assoc d-spec :item-pos (or item-pos-max (fn [i] [(first i) (nth i 2)])))
                           (process-points v-spec)
-                          (map first)
+                          (mapv first)
                           (points->path-segments))]
       (shape max-points min-points (assoc (:attribs d-spec) :fill-rule "evenodd"))))
 #+END_SRC
@@ -1327,7 +1327,7 @@ assumed for each data point.
                 (let [[ax ay] (mapper p)
                       ax (+ ax offset)]
                   (shape (project [ax ay]) (project [ax base-y]) i))))))
-           (svg/group attribs))))
+           (apply svg/group attribs))))
 #+END_SRC
 
 *** Heatmap
@@ -1350,19 +1350,19 @@ compression function.
   (defn svg-heatmap
     [{:keys [x-axis y-axis project]}
      {:keys [matrix value-domain clamp palette palette-scale attribs shape]
-      :or {value-domain [0.0 1.0]
+      :or {value-domain  [0.0 1.0]
            palette-scale linear-scale
-           shape #(svg/polygon [%1 %2 %3 %4] {:fill %5})}
+           shape         #(svg/polygon [%1 %2 %3 %4] {:fill %5})}
       :as d-spec}]
-    (let [scale-x   (:scale x-axis)
-          scale-y   (:scale y-axis)
-          pmax      (dec (count palette))
-          scale-v   (palette-scale value-domain [0 pmax])]
-      (svg/group
+    (let [scale-x (:scale x-axis)
+          scale-y (:scale y-axis)
+          pmax    (dec (count palette))
+          scale-v (palette-scale value-domain [0 pmax])]
+      (apply svg/group
        attribs
-       (for [p (nd/position-seq matrix)
-             :let [[y x] p
-                   v (nd/get-at matrix y x)]
+       (for [p     (nd/position-seq matrix)
+             :let  [[y x] p
+                    v     (nd/get-at matrix y x)]
              :when (or clamp (m/in-range? value-domain v))]
          (shape
           (project [(scale-x x) (scale-y y)])
@@ -1415,17 +1415,16 @@ emphasize this difference...
     (let [pmax       (dec (count palette))
           scale-v    (palette-scale value-domain [0 pmax])
           contour-fn (contour->svg (:scale x-axis) (:scale y-axis) project)]
-      (svg/group
-       attribs
-       (map
-        (fn [iso]
-          (let [c-attribs (contour-attribs (palette (m/clamp (int (scale-v iso)) 0 pmax)))]
-            (svg/group
-             {}
-             (map
-              (partial contour-fn c-attribs)
-              (contours/find-contours-2d matrix iso)))))
-        (sort levels)))))
+      (->> levels
+           (sort)
+           (mapv
+            (fn [iso]
+              (let [c-attribs (contour-attribs (palette (m/clamp (int (scale-v iso)) 0 pmax)))]
+                (apply svg/group
+                       {} (mapv
+                           (partial contour-fn c-attribs)
+                           (contours/find-contours-2d matrix iso))))))
+           (apply svg/group attribs))))
 #+END_SRC
 
 *** Stacked intervals
@@ -1474,8 +1473,8 @@ emphasize this difference...
            (sort-by (comp first item-range))
            (compute-row-stacking item-range)
            (mapcat (process-interval-row item-range mapper domain) (range offset 1e6))
-           (map shape)
-           (svg/group attribs))))
+           (mapv shape)
+           (apply svg/group attribs))))
 #+END_SRC
 
 ** TODO Non-axial visualization methods
@@ -1512,7 +1511,7 @@ TBD
      (merge {:stroke "#000"} attribs)
      (map tick1-fn major)
      (map tick2-fn minor)
-     (svg/group (merge {:stroke "none"} label-style) (map label-fn major))
+     (apply svg/group (merge {:stroke "none"} label-style) (mapv label-fn major))
      axis))
 
   (defn svg-x-axis-cartesian
