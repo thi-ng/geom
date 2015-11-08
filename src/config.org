@@ -42,7 +42,7 @@ target/test-classes
 **** [[https://github.com/clojure/clojurescript][ClojureScript]]
 #+NAME: dep-cljs
 #+BEGIN_SRC clojure
-[org.clojure/clojurescript "1.7.122"]
+[org.clojure/clojurescript "1.7.170"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/math][thi.ng/math]]
@@ -91,7 +91,7 @@ target/test-classes
 **** [[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]
 #+NAME: dep-cljsbuild
 #+BEGIN_SRC clojure
-[lein-cljsbuild "1.0.6"]
+[lein-cljsbuild "1.1.1"]
 #+END_SRC
 
 **** [[https://github.com/hugoduncan/criterium][Criterium]]
