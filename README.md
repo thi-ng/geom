@@ -26,7 +26,7 @@ at least weekly snapshots of all modules to
 ## Current Leiningen coordinates
 
 ```clj
-[thi.ng/geom "0.0.881"]
+[thi.ng/geom "0.0.908"]
 ```
 
 ## License

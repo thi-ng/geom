@@ -1,3 +1,28 @@
+** r908 - 2015-11-08
+
+| [[https://github.com/thi-ng/geom/commit/2d32596d1486872bd2307dd6e7f76e7354f3e1fc][2d32596]] | [all] update cljs & cljsbuild deps |
+| [[https://github.com/thi-ng/geom/commit/653b7f7f31a2f0498fead0f667fbcdf02252434e][653b7f7]] | [svg] [viz] address #26, add inject-element-attribs & key-attrib-injector to svg.adapter ns (for React.js compatibility), update svg/group to use c.c/into, update svg/group use in viz module |
+| [[https://github.com/thi-ng/geom/commit/9b0b3934f12171ed4bd3eb99d0a197a060439fa3][9b0b393]] | [all] update dstruct dep to 0.1.2 |
+| [[https://github.com/thi-ng/geom/commit/1e6bff5f025ca41bdc53d34de77f811d8c8b17ae][1e6bff5]] | [mesh] refactor write-obj to use protocols for mesh elements |
+| [[https://github.com/thi-ng/geom/commit/ff1ec64a912eb075a4044e75ed1cc340e2674f5a][ff1ec64]] | [core] bugfix transduce call in gu/dist* |
+| [[https://github.com/thi-ng/geom/commit/5a0e40ac6ce643bc1d8e6a8935ebb089cbd358ae][5a0e40a]] | [types] update PTF luxor example (color handling) |
+| [[https://github.com/thi-ng/geom/commit/45fff820f6dd3baea5502ad29276198a4d8a85e1][45fff82]] | [viz] refactor axis fns, add :label-y option to offset label position |
+| [[https://github.com/thi-ng/geom/commit/d467ec1f4692fa9d84a1baed13d727586a9a8451][d467ec1]] | [meshops] [svg] [voxel] update ref's to mesh.io ns in examples |
+| [[https://github.com/thi-ng/geom/commit/ea05fd74b17ce49624465ec088a41198d406707c][ea05fd7]] | [meshops] add stream wrapper ctor aliases, update doc strings |
+| [[https://github.com/thi-ng/geom/commit/265de8e867b5f26a97ca2c9a64d2839bcceeace0][265de8e]] | [meshops] update thi.ng/dstruct dependency w/ new streams, update mesh.io ns to support CLJS |
+| [[https://github.com/thi-ng/geom/commit/8bd0f2a96cee856966e9af2328337c0c80560dff][8bd0f2a]] | [viz] breaking change: refactor label handling in viz specs, :format now unused and replaced with :label key taking a function emitting label elements instead of just formatting label values, add default-svg-label fn, re-format examples |
+| [[https://github.com/thi-ng/geom/commit/5cf9425d4e83ff2a21aa9909a23f038b8180824c][5cf9425]] | [viz] add tentacles as :dev dependency, add commit history example image & docs |
+| [[https://github.com/thi-ng/geom/commit/67ff43df1ebaea654cbb90e4b6ba4ec801996c04][67ff43d]] | update color & dstruct deps |
+| [[https://github.com/thi-ng/geom/commit/976bb4ee43ea22932302b43784c35d972062848d][976bb4e]] | add thi.ng/xerror dependency (in lieu of thi.ng.common.error ns), update all refs |
+| [[https://github.com/thi-ng/geom/commit/15cf3d102817700ce1b4c9026b883ba544354ffd][15cf3d1]] | [physics] store particles and springs as vectors (was sets) in VerletPhysics |
+| [[https://github.com/thi-ng/geom/commit/1eeb0366d4fafe122a7fd0bc1c6ad7fc60993c10][1eeb036]] | [webgl] update color handling (deref) |
+| [[https://github.com/thi-ng/geom/commit/43784f39468408ffd7b94364206b6720f4f10739][43784f3]] | [svg] update color handling (deref instead of unwrap) |
+| [[https://github.com/thi-ng/geom/commit/94b495dc5413b97d569a94f0ed02276346057e0f][94b495d]] | [webgl] update color uniform handling and minor other refactoring |
+| [[https://github.com/thi-ng/geom/commit/e47ef629c1683706e6ae59c4adb02cbc2a7919ee][e47ef62]] | [viz] update examples to reflect changes in thi.ng/color |
+| [[https://github.com/thi-ng/geom/commit/f00550eef7b866a0b739f4e62475d698358046cc][f00550e]] | [svg] refactor color related functionality due to new architecture in thi.ng/color |
+| [[https://github.com/thi-ng/geom/commit/162b1e174b7894bd627106728e535e9402c0d42b][162b1e1]] | update clj, cljs, strf & color dependencies |
+| [[https://github.com/thi-ng/geom/commit/a5658cf4d6f7ef6fc33dbacdad6022923fc96cd2][a5658cf]] | [viz] add git commit history heatmap example, move circle-cell shape fn to main ns (previously example only) |
+
 ** r881 - 2015-06-21
 
 | [[https://github.com/thi-ng/geom/commit/6997df95c22275631f3f0a819a8fdcb131df5fbd][6997df9]] | [viz] add :shape option key for more viz methods, update docs |
