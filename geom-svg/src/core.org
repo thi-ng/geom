@@ -422,9 +422,7 @@ Btw. This example can be run from the REPL via this command:
 
     thi.ng.geom.types.Triangle2
     (as-svg
-      [_ opts] (svg/polygon (:points _) opts))
-
-    )
+      [_ opts] (svg/polygon (:points _) opts)))
 
   ;; CLJS walk differs to clojure's impl and doesn't work for defrecords
   ;; hence we provide a custom version here...
@@ -450,9 +448,15 @@ Btw. This example can be run from the REPL via this command:
 
 #+BEGIN_SRC clojure :noweb-ref adapter
   (defn key-attrib-injector
+    "To be used with inject-element-attribs, generates an unique :key
+    attrib for each SVG element."
     [el attribs] (assoc attribs :key (name (gensym))))
 
   (defn inject-element-attribs
+    "Walks SVG DOM tree with postwalk and applies given function to each
+    element node. The fn takes 2 args: the element itself and its
+    attribute map. The fn's return value will be used as the new
+    attribute map."
     ([root]
      (inject-element-attribs key-attrib-injector root))
     ([f root]
