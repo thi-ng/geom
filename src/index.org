@@ -13,6 +13,7 @@
          - [[#geom-meshops][geom-meshops]]
          - [[#geom-physics][geom-physics]]
          - [[#geom-svg][geom-svg]]
+         - [[#geom-viz][geom-viz]]
          - [[#geom-voxel][geom-voxel]]
          - [[#geom-webgl][geom-webgl]]
      - [[#status][Status]]
@@ -176,6 +177,14 @@ A module to help with building SVG based visualizations of geom
 entities using hiccup compatible syntax. Includes a customizable 3D
 mesh renderer w/ software shader support.
 
+*** geom-viz
+
+[[../geom-viz/src/index.org][module repo]] | [[http://crossclj.info/doc/thi.ng/geom-viz/latest/index.html][CrossCLJ info]]
+
+Declarative, highly customizable 2D data visualization module with ~10
+different layout methods, 3 axis types, cartesian and polar domain
+support. Currently SVG only, but planned to be format-independent.
+
 *** geom-voxel
 
 [[../geom-voxel/src/index.org][module repo]] | [[http://crossclj.info/doc/thi.ng/geom-voxel/latest/index.html][CrossCLJ info]]
@@ -223,8 +232,9 @@ A preliminary list of other projects using this library:
 Several small examples are still included in this repo (but will be
 migrated to the demo repo soon):
 
-- [[../geom-types/src/ptf.org][PTF examples]]
+- [[../geom-viz/src/core.org][Visualization examples]]
 - [[../geom-svg/src/examples.org][SVG examples]]
+- [[../geom-types/src/ptf.org][PTF examples]]
 - [[https://github.com/thi-ng/geom/blob/master/geom-voxel/src/examples.org][Voxel examples]]
 - [[../geom-webgl/src/demo.org][WebGL demos]]
 
