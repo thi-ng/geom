@@ -1,0 +1,202 @@
+digraph g {
+  rankdir=LR;
+  node[color="black",style="filled",fontname="Inconsolata",fontcolor="white",fontsize=9];
+
+  geom[label="thi.ng/geom"];
+  geomcore[label="thi.ng/geom-core",color="red"];
+  geomtypes[label="thi.ng/geom-types",color="blue"];
+  geommesh[label="thi.ng/geom-mesh",color="#00aa00"];
+  geomsvg[label="thi.ng/geom-svg",color="#ff7700"];
+  geomviz[label="thi.ng/geom-viz",color="#0077ff"];
+  geomphysics[label="thi.ng/geom-physics",color="#ff0077"];
+  geomvoxel[label="thi.ng/geom-voxel",color="#007733"];
+
+  node[color="red",style="filled",fontname="Inconsolata",fontcolor="white",fontsize=9];
+
+  geom -> geomcore;
+  core[label="thi.ng.geom.core"];
+  corevec[label="thi.ng.geom.core.vector"];
+  coremat[label="thi.ng.geom.core.matrix"];
+  coreisec[label="thi.ng.geom.core.intersect"];
+  corequat[label="thi.ng.geom.core.quaternion"];
+  coreutils[label="thi.ng.geom.core.utils"];
+
+  node[color="#ffffcc",fontcolor="black"];
+
+  corelabel[label="Core API (protocols only)"];
+  veclabel[label="2D/3D Vectors"];
+  matlabel[label="2x3, 4x4 Matrices"];
+  iseclabel[label="2D/3D Shape intersections"];
+  quatlabel[label="Quaternion"];
+  cutilslabel[label="2D/3D Point/shape helpers"];
+
+  geomcore -> core;
+  core -> corelabel[style="dashed"];
+  geomcore -> corevec;
+  corevec -> veclabel[style="dashed"];
+  geomcore -> coremat;
+  coremat -> matlabel[style="dashed"];
+  geomcore -> corequat;
+  corequat -> quatlabel[style="dashed"];
+  geomcore -> coreisec;
+  coreisec -> iseclabel[style="dashed"];
+  geomcore -> coreutils;
+  coreutils -> cutilslabel[style="dashed"];
+
+  node[color="#0000ff",fontcolor="white"];
+
+  geom -> geomtypes;
+  types[label="thi.ng.geom.types"];
+  typesaabb[label="thi.ng.geom.aabb"];
+  typescircle[label="thi.ng.geom.circle"];
+  typescuboid[label="thi.ng.geom.cuboid"];
+  typesbezier[label="thi.ng.geom.bezier"];
+  typesline[label="thi.ng.geom.line"];
+  typespoly[label="thi.ng.geom.polygon"];
+  typestri[label="thi.ng.geom.triangle"];
+  typesplane[label="thi.ng.geom.plane"];
+  typespath[label="thi.ng.geom.path"];
+  typestetra[label="thi.ng.geom.tetrahedron"];
+  typesquad[label="thi.ng.geom.quad"];
+  typesbmesh[label="thi.ng.geom.basicmesh"];
+  typesgmesh[label="thi.ng.geom.gmesh"];
+  typesstree[label="thi.ng.geom.spatialtree"];
+
+  node[color="#ffffcc",fontcolor="black"];
+
+  typeslab[label="Type definitions"];
+  aabblab[label="Axis-aligned bounding box"];
+  bezlab[label="2D/3D bezier & auto-splines"];
+  circlab[label="2D Circle"];
+  cublab[label="3D Cuboid"];
+  bmeshlab[label="2D/3D Mesh"];
+  gmeshlab[label="2D/3D Mesh (navigatable graph)"];
+  linelab[label="2D/3D Lines & Linestrips"];
+  pathlab[label="2D Path"];
+  polylab[label="2D Polygon"];
+  planelab[label="3D Plane"];
+  quadlab[label="3D Quad"];
+  tetralab[label="3D Tetrahedron"];
+  trilab[label="2D/3D Triangles"];
+  stlab[label="2D/3D Quadtree / Octree"];
+
+  geomtypes -> types;
+  types -> typeslab[style="dashed"];
+  geomtypes -> typesaabb;
+  typesaabb -> aabblab[style="dashed"];
+  geomtypes -> typesbezier;
+  typesbezier -> bezlab[style="dashed"];
+  geomtypes -> typesbmesh;
+  typesbmesh -> bmeshlab[style="dashed"];
+  geomtypes -> typescircle;
+  typescircle -> circlab[style="dashed"];
+  geomtypes -> typescuboid;
+  typescuboid -> cublab[style="dashed"];
+  geomtypes -> typesgmesh;
+  typesgmesh -> gmeshlab[style="dashed"];
+  geomtypes -> typesline;
+  typesline -> linelab[style="dashed"];
+  geomtypes -> typespath;
+  typespath -> pathlab[style="dashed"];
+  geomtypes -> typesplane;
+  typesplane -> planelab[style="dashed"];
+  geomtypes -> typespoly;
+  typespoly -> polylab[style="dashed"];
+  geomtypes -> typesquad;
+  typesquad -> quadlab[style="dashed"];
+  geomtypes -> typestetra;
+  typestetra -> tetralab[style="dashed"];
+  geomtypes -> typestri;
+  typestri -> trilab[style="dashed"];
+  geomtypes -> typesstree;
+  typesstree -> stlab[style="dashed"];
+
+  node[color="#00aa00",fontcolor="white"];
+
+  geom -> geommesh;
+
+  meshio[label="thi.ng.geom.mesh.io"];
+  meshops[label="thi.ng.geom.mesh.ops"];
+  meshsd[label="thi.ng.geom.mesh.subdivision"];
+  meshpoly[label="thi.ng.geom.mesh.polyhedra"];
+
+  node[color="#ffffcc",fontcolor="black"];
+  miolab[label="3D Mesh I/O (STL, PLY, OBJ, OFF)"];
+  mopslab[label="3D mesh manipulation/cleaning"];
+  sdlab[label="3D Subdivision mesh ops"];
+  mpolylab[label="3D Polyhedra"];
+
+  geommesh -> meshio;
+  meshio -> miolab[style="dashed"];
+  geommesh -> meshops;
+  meshops -> mopslab[style="dashed"];
+  geommesh -> meshsd;
+  meshsd -> sdlab[style="dashed"];
+  geommesh -> meshpoly;
+  meshpoly -> mpolylab[style="dashed"];
+
+  node[color="#ff7700",fontcolor="white"];
+
+  geom -> geomsvg;
+
+  svgcore[label="thi.ng.geom.svg.core"];
+  svgadapt[label="thi.ng.geom.svg.adapter"];
+  svgrender[label="thi.ng.geom.svg.renderer"];
+  svgshader[label="thi.ng.geom.svg.shaders"];
+
+  node[color="#ffffcc",fontcolor="black"];
+  svglab[label="SVG primitives & conversion"];
+  svgadaplab[label="SVG thi.ng/geom types adapter"];
+  svgrenderlab[label="3D SVG renderer"];
+  svgshaderlab[label="3D SVG facet shaders"];
+
+  geomsvg -> svgcore;
+  svgcore -> svglab[style="dashed"];
+  geomsvg -> svgadapt;
+  svgadapt -> svgadaplab[style="dashed"];
+  geomsvg -> svgrender;
+  svgrender -> svgrenderlab[style="dashed"];
+  geomsvg -> svgshader;
+  svgshader -> svgshaderlab[style="dashed"];
+
+  node[color="#0077ff",fontcolor="white"];
+
+  geom -> geomviz;
+
+  vizcore[label="thi.ng.geom.viz.core"];
+
+  node[color="#ffffcc",fontcolor="black"];
+  vizlab[label="2D visualization / charting"];
+
+  geomviz -> vizcore;
+  vizcore -> vizlab[style="dashed"];
+
+  node[color="#ff0077",fontcolor="white"];
+
+  geom -> geomphysics;
+
+  physcore[label="thi.ng.geom.physics.core"];
+
+  node[color="#ffffcc",fontcolor="black"];
+  physlab[label="2D/3D Verlet physics & behaviors"];
+
+  geomphysics -> physcore;
+  physcore -> physlab[style="dashed"];
+
+  node[color="#007733",fontcolor="white"];
+
+  geom -> geomvoxel;
+
+  voxsvo[label="thi.ng.geom.voxel.svo"];
+  voxiso[label="thi.ng.geom.voxel.isosurface"];
+
+  node[color="#ffffcc",fontcolor="black"];
+  svolab[label="3D Sparse Voxel Tree"];
+  isolab[label="3D Isosurface meshing"];
+
+  geomvoxel -> voxsvo;
+  voxsvo -> svolab[style="dashed"];
+  geomvoxel -> voxiso;
+  voxiso -> isolab[style="dashed"];
+
+}
