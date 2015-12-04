@@ -10,7 +10,10 @@ digraph g {
   geomviz[label="thi.ng/geom-viz",color="#0077ff"];
   geomphysics[label="thi.ng/geom-physics",color="#ff0077"];
   geomvoxel[label="thi.ng/geom-voxel",color="#007733"];
+  geomwebgl[label="thi.ng/geom-webgl",color="#7700ff"];
 
+  # core
+  
   node[color="red",style="filled",fontname="Inconsolata",fontcolor="white",fontsize=9];
 
   geom -> geomcore;
@@ -43,6 +46,8 @@ digraph g {
   geomcore -> coreutils;
   coreutils -> cutilslabel[style="dashed"];
 
+  # types
+  
   node[color="#0000ff",fontcolor="white"];
 
   geom -> geomtypes;
@@ -58,14 +63,18 @@ digraph g {
   typespath[label="thi.ng.geom.path"];
   typestetra[label="thi.ng.geom.tetrahedron"];
   typesquad[label="thi.ng.geom.quad"];
+  typesrect[label="thi.ng.geom.rect"];
   typesbmesh[label="thi.ng.geom.basicmesh"];
   typesgmesh[label="thi.ng.geom.gmesh"];
   typesstree[label="thi.ng.geom.spatialtree"];
+  typessphere[label="thi.ng.geom.sphere"];
+  typesptf[label="thi.ng.geom.types.ptf"];
+  typesutils[label="thi.ng.geom.types.utils"];
 
   node[color="#ffffcc",fontcolor="black"];
 
   typeslab[label="Type definitions"];
-  aabblab[label="Axis-aligned bounding box"];
+  aabblab[label="3D Axis-aligned bounding box"];
   bezlab[label="2D/3D bezier & auto-splines"];
   circlab[label="2D Circle"];
   cublab[label="3D Cuboid"];
@@ -79,7 +88,11 @@ digraph g {
   tetralab[label="3D Tetrahedron"];
   trilab[label="2D/3D Triangles"];
   stlab[label="2D/3D Quadtree / Octree"];
-
+  tutilslab[label="2D/3D type helpers"];
+  rectlab[label="2D Rectangle"];
+  spherelab[label="3D Sphere"];
+  ptflab[label="3D Parallel Transport Frames"];
+  
   geomtypes -> types;
   types -> typeslab[style="dashed"];
   geomtypes -> typesaabb;
@@ -108,24 +121,38 @@ digraph g {
   typestetra -> tetralab[style="dashed"];
   geomtypes -> typestri;
   typestri -> trilab[style="dashed"];
+  geomtypes -> typesrect;
+  typesrect -> rectlab[style="dashed"];
+  geomtypes -> typessphere;
+  typessphere -> spherelab[style="dashed"];
   geomtypes -> typesstree;
   typesstree -> stlab[style="dashed"];
+  geomtypes -> typesptf;
+  typesptf -> ptflab[style="dashed"];
+  geomtypes -> typesutils;
+  typesutils -> tutilslab[style="dashed"];
 
+  # meshops
+  
   node[color="#00aa00",fontcolor="white"];
 
   geom -> geommesh;
 
+  meshcsg[label="thi.ng.geom.mesh.csg"];
   meshio[label="thi.ng.geom.mesh.io"];
   meshops[label="thi.ng.geom.mesh.ops"];
   meshsd[label="thi.ng.geom.mesh.subdivision"];
   meshpoly[label="thi.ng.geom.mesh.polyhedra"];
 
   node[color="#ffffcc",fontcolor="black"];
+  csglab[label="3D CSG mesh ops"]
   miolab[label="3D Mesh I/O (STL, PLY, OBJ, OFF)"];
   mopslab[label="3D mesh manipulation/cleaning"];
   sdlab[label="3D Subdivision mesh ops"];
   mpolylab[label="3D Polyhedra"];
 
+  geommesh -> meshcsg;
+  meshcsg -> csglab[style="dashed"];
   geommesh -> meshio;
   meshio -> miolab[style="dashed"];
   geommesh -> meshops;
@@ -135,6 +162,8 @@ digraph g {
   geommesh -> meshpoly;
   meshpoly -> mpolylab[style="dashed"];
 
+  # svg
+  
   node[color="#ff7700",fontcolor="white"];
 
   geom -> geomsvg;
@@ -159,6 +188,8 @@ digraph g {
   geomsvg -> svgshader;
   svgshader -> svgshaderlab[style="dashed"];
 
+  # viz
+  
   node[color="#0077ff",fontcolor="white"];
 
   geom -> geomviz;
@@ -171,6 +202,8 @@ digraph g {
   geomviz -> vizcore;
   vizcore -> vizlab[style="dashed"];
 
+  # physics
+  
   node[color="#ff0077",fontcolor="white"];
 
   geom -> geomphysics;
@@ -183,6 +216,8 @@ digraph g {
   geomphysics -> physcore;
   physcore -> physlab[style="dashed"];
 
+  # voxel
+  
   node[color="#007733",fontcolor="white"];
 
   geom -> geomvoxel;
@@ -199,4 +234,33 @@ digraph g {
   geomvoxel -> voxiso;
   voxiso -> isolab[style="dashed"];
 
+  # webgl
+  
+  node[color="#7700ff",fontcolor="white"];
+
+  geom -> geomwebgl;
+
+  wglcore[label="thi.ng.geom.webgl.core"];
+  wglanim[label="thi.ng.geom.webgl.animator"];
+  wglbuf[label="thi.ng.geom.webgl.buffers"];
+  wglshader[label="thi.ng.geom.webgl.shaders"];
+  wglutils[label="thi.ng.geom.webgl.utils"];
+
+  node[color="#ffffcc",fontcolor="black"];
+  wcorelab[label="WebGL core API, types & conversion"];
+  wanimlab[label="Canvas animation helper"];
+  wbuflab[label="WebGL buffers, textures"];
+  wshadlab[label="WebGL shader handling & presets"];
+  wutillab[label="Utilities"];
+  
+  geomwebgl -> wglcore;
+  wglcore -> wcorelab;
+  geomwebgl -> wglanim;
+  wglanim -> wanimlab;
+  geomwebgl -> wglbuf;
+  wglbuf -> wbuflab;
+  geomwebgl -> wglshader;
+  wglshader -> wshadlab;
+  geomwebgl -> wglutils;
+  wglutils -> wutillab;
 }
