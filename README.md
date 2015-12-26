@@ -29,6 +29,10 @@ at least weekly snapshots of all modules to
 [thi.ng/geom "0.0.908"]
 ```
 
+## Project overview
+
+![project overview](assets/overview.png)
+
 ## License
 
 Copyright © 2013-2015 Karsten Schmidt

@@ -647,7 +647,7 @@
    [_ v]
    (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
      (vm/rewrite-v2-v buf v 0.0
-       (let [d (mm/madd x vx y vy 2)]
+       (let [d (* (+ (* x vx) (* y vy)) 2.0)]
          (aset b 0 (double (mm/msub vx d x)))
          (aset b 1 (double (mm/msub vy d y)))
          (Vec2. b nil _meta)))))

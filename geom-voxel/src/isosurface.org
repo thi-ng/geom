@@ -1,7 +1,7 @@
 #+SETUPFILE: setup.org
 
 * Contents                                                         :toc_3_gh:
- - [[#namespace-thinggeomisosurface][Namespace: thi.ng.geom.isosurface]]
+ - [[#namespace-thinggeomvoxelisosurface][Namespace: thi.ng.geom.voxel.isosurface]]
      - [[#marching-cube-lookup-tables][Marching cube lookup tables]]
          - [[#edge-offset-table][Edge offset table]]
          - [[#triangles-per-cube-index][Triangles per cube index]]
@@ -12,8 +12,7 @@
      - [[#isosurface-computation][Isosurface computation]]
      - [[#namespace-declaration][Namespace declaration]]
 
-* Namespace: thi.ng.geom.isosurface
-
+* Namespace: thi.ng.geom.voxel.isosurface
 ** Marching cube lookup tables
 *** Edge offset table
 
