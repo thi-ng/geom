@@ -411,8 +411,8 @@ Currently the following options are supported:
 
 #+BEGIN_SRC glsl :noweb-ref lambert-vs
   void main() {
-    float lambert = lambert(surfaceNormal(normal, normalMat), lightDir);
-    vCol = vec4(ambientCol + diffuseCol * lightCol * lambert, alpha);
+    float lam = lambert(surfaceNormal(normal, normalMat), lightDir);
+    vCol = vec4(ambientCol + diffuseCol * lightCol * lam, alpha);
     gl_Position = mvp(position, model, view, proj);
   }
 #+END_SRC
@@ -421,8 +421,8 @@ Currently the following options are supported:
 
 #+BEGIN_SRC glsl :noweb-ref lambert-vs-abs
   void main() {
-    float lambert = lambertAbs(surfaceNormal(normal, normalMat), lightDir);
-    vCol = vec4(ambientCol + diffuseCol * lightCol * lambert, alpha);
+    float lam = lambertAbs(surfaceNormal(normal, normalMat), lightDir);
+    vCol = vec4(ambientCol + diffuseCol * lightCol * lam, alpha);
     gl_Position = mvp(position, model, view, proj);
   }
 #+END_SRC
