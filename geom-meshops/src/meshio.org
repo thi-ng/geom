@@ -18,7 +18,6 @@
   (def ^:dynamic *precision* 5)
 #+END_SRC
 
-
 ** Stream wrappers
 
 #+BEGIN_SRC clojure :noweb-ref wrappers
@@ -35,8 +34,10 @@
 
 #+BEGIN_SRC clojure :noweb-ref stl
   (defn write-stl
-    "Writes the given mesh as binary STL to output stream wrapper. Mesh
-    is automatically tessellated into triangles. Returns stream wrapper"
+    "Writes the given mesh as binary STL to output stream wrapper.
+    Assumes mesh already has been tessellated into triangles (i.e. only
+    the first 3 vertices of each face are exported). Returns stream
+    wrapper."
     [out mesh]
     (let [faces    (g/faces mesh)
           fnormals (g/face-normals mesh true)]
