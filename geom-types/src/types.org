@@ -126,6 +126,10 @@ grouping a set of 8 vertices in a specific order (see
   (defrecord GMesh [vertices normals fnormals vnormals edges faces attribs])
 #+END_SRC
 
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord IndexedMesh [vertices faces attribs])
+#+END_SRC
+
 *** Line3 & LineStrip3
 
 #+BEGIN_SRC clojure :noweb-ref types3d
