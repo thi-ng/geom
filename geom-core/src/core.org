@@ -81,7 +81,7 @@
 
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol PDotProduct
-    (dot [_ a]))
+    (dot [_] [_ a]))
 #+END_SRC
 
 **** PHeading
@@ -302,10 +302,17 @@ access to entities in this context.
 
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol PFaceAccess
-    (add-face [_ f])
-    (faces [_])
-    (remove-face [_ f])
-    (vertex-faces [_ v]))
+    (add-face [_ face]
+      "Adds a new face to a mesh. The face arg is a 2-element vector
+      of [vertices attributes], where attributes is a map of arbitrary
+      vertex attributes. E.g. (g/add-face m [verts {:uv [[0 0] [1 0] [1 1]]}])")
+    (faces [_] [_ opts]
+      "Returns a mesh's face collection.")
+    (remove-face [_ fverts]
+      "Takes a vector of vertices defining a face in the mesh and
+      returns updated mesh without that face.")
+    (vertex-faces [_ v]
+      "Returns seq of faces the given vertex is part of."))
 #+END_SRC
 
 **** PNormalAccess
@@ -318,6 +325,20 @@ access to entities in this context.
     (face-normal [_ f])
     (vertex-normals [_ force?])
     (vertex-normal [_ v]))
+#+END_SRC
+
+**** PAttributeAccess
+
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol PAttributeAccess
+    (attribs [_ ctx] [_ ctx attr]))
+#+END_SRC
+
+**** PRawAccess
+
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol PRawAccess
+    (raw [_ ctx]))
 #+END_SRC
 
 *** Shape based & structural operations
