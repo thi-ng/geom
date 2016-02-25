@@ -136,10 +136,12 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
     (tessellating-transducer #(g/dot (% 0) (g/cross (% 1) (% 2)))))
 
   (defn total-area-3d
-    [faces] (transduce area-xf + faces))
+    ([faces] (transduce area-xf + faces))
+    ([xf faces] (transduce (comp xf area-xf) + faces)))
 
   (defn total-volume
-    [faces] (/ (transduce volume-xf + faces) 6.0))
+    ([faces] (/ (transduce volume-xf + faces) 6.0))
+    ([xf faces] (/ (transduce (comp xf volume-xf) + faces) 6.0)))
 #+END_SRC
 
 *** Bounds

@@ -199,15 +199,15 @@ front, back (see diagram below).
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([_ {:keys [mesh flags] :or {flags "nsewfb"}}]
+   ([_ {:keys [mesh flags attribs] :or {flags "nsewfb"}}]
       (let [[a b c d e f g h] (g/vertices _)
-            [tp bt rt lf fr bk] (d/demunge-flags-seq flags "nsewfb")]
-        (->> [(if fr [b c g f])
-              (if bk [a e h d])
-              (if lf [a b f e])
-              (if rt [c d h g])
-              (if tp [e f g h])
-              (if bt [a d c b])]
+            [north south east west front back] (d/demunge-flags-seq flags "nsewfb")]
+        (->> [(if east (attr/generate-face-attribs [c d h g] 0 attribs nil))
+              (if west (attr/generate-face-attribs [a b f e] 1 attribs nil))
+              (if north (attr/generate-face-attribs [e f g h] 2 attribs nil))
+              (if south (attr/generate-face-attribs [a d c b] 3 attribs nil))
+              (if front (attr/generate-face-attribs [b c g f] 4 attribs nil))
+              (if back (attr/generate-face-attribs [a e h d] 5 attribs nil))]
              (sequence (filter identity)) ;; FIXME eduction
              (g/into (or mesh (bm/basic-mesh)))))))
 #+END_SRC
@@ -412,6 +412,7 @@ of the original with inner sorting over XYZ.
      [thi.ng.geom.core.matrix :refer [M44]]
      [thi.ng.geom.cuboid :as cu]
      [thi.ng.geom.basicmesh :as bm]
+     [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]

@@ -26,13 +26,12 @@
 ** Helper functions
 
 #+BEGIN_SRC clojure :noweb-ref helpers
-  (defn add-face
-    [mesh f]
+  (defn- add-face*
+    [mesh [fverts]]
     (thi.ng.geom.types.BasicMesh.
-     (into (:vertices mesh) f)
-     (conj (:faces mesh) f)
-     (:fnormals mesh)
-     (:attribs mesh)))
+     (into (:vertices mesh) fverts)
+     (conj (:faces mesh) (thi.ng.geom.meshface.MeshFace. fverts))
+     (:fnormals mesh)))
 #+END_SRC
 
 ** Constructors
@@ -42,7 +41,7 @@
     "Builds a new 3d mesh data structure and (optionally) populates it with
     the given items (a seq of existing meshes and/or faces). Faces are defined
     as vectors of their vertices."
-    [] (thi.ng.geom.types.BasicMesh. #{} #{} {} {}))
+    [] (thi.ng.geom.types.BasicMesh. #{} #{} {}))
 #+END_SRC
 
 ** Protocol implementations
@@ -56,7 +55,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PArea
   (area
-   [_] (gu/total-area-3d (:faces _)))
+   [_] (gu/total-area-3d (mf/xf-face-verts _) (:faces _)))
 #+END_SRC
 
 *** TODO PBoundary
@@ -113,21 +112,28 @@
    (into
     #{}
     (comp
+     (map #(g/vertices % _))
      (mapcat #(d/successive-nth 2 (conj % (first %))))
      (map set))
     (:faces _)))
   g/PFaceAccess
   (faces
-   [_] (:faces _))
+   ([_] (g/faces _ true))
+   ([_ __] (map #(g/raw % _) (:faces _))))
   (add-face
-   [_ f] (add-face _ f))
+   [_ face] (add-face* _ face))
   (vertex-faces
-   [_ v] (filter
-          #(>= #?(:clj (.indexOf ^clojure.lang.PersistentVector % v) :cljs (d/index-of % v)) 0)
-          (:faces _)))
+   [_ v]
+   (sequence
+    (comp
+     (map #(g/vertices % _))
+     (filter
+      #(pos? #?(:clj (.indexOf ^clojure.lang.PersistentVector % v)
+                :cljs (d/index-of % v))))
+     (:faces _))))
   (remove-face
    [_ f]
-   (err/unsupported!))
+   (err/unsupported!)) ;; TODO implement
 #+END_SRC
 
 *** PNormalAccess
@@ -158,7 +164,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PGeomContainer
   (into
-   [_ faces] (tu/into-mesh _ add-face faces))
+   [_ faces] (tu/into-mesh _ add-face* faces))
   g/PClear
   (clear*
    [_] (basic-mesh))
@@ -188,20 +194,20 @@
   g/PScale
   (scale
    ([_ s]
-      (tu/transform-mesh _ add-face #(g/* % s)))
+      (tu/transform-mesh _ add-face* #(g/* % s)))
    ([_ sx sy sz]
-      (tu/transform-mesh _ add-face #(g/* % sx sy sz))))
+      (tu/transform-mesh _ add-face* #(g/* % sx sy sz))))
   (scale-size
    [_ s]
    (let [c (g/centroid _)]
-     (tu/transform-mesh _ add-face #(g/madd (g/- % c) s c))))
+     (tu/transform-mesh _ add-face* #(g/madd (g/- % c) s c))))
   g/PTranslate
   (translate
-   [_ t] (tu/transform-mesh _ add-face #(g/+ % t)))
+   [_ t] (tu/transform-mesh _ add-face* #(g/+ % t)))
   g/PTransform
   (transform
    [_ m]
-   (tu/transform-mesh _ add-face m))
+   (tu/transform-mesh _ add-face* m))
 #+END_SRC
 
 *** PVolume
@@ -209,7 +215,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PVolume
   (volume
-   [_] (gu/total-volume (:faces _)))
+   [_] (gu/total-volume (mf/xf-face-verts _) (:faces _)))
 #+END_SRC
 
 *** End of implementation                                          :noexport:
@@ -226,6 +232,7 @@
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.meshface :as mf]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]

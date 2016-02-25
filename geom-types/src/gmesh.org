@@ -11,7 +11,7 @@
          - [[#todo-pboundary][TODO PBoundary]]
          - [[#pbounds][PBounds]]
          - [[#pboundingsphere][PBoundingSphere]]
-         - [[#todo-pcenter][TODO PCenter]]
+         - [[#pcenter][PCenter]]
          - [[#pflip][PFlip]]
          - [[#todo-pgraph][TODO PGraph]]
          - [[#pvertexaccess-pedgeaccess--pfaceaccess][PVertexAccess, PEdgeAccess & PFaceAccess]]
@@ -29,8 +29,8 @@
 ** Helper functions
 
 #+BEGIN_SRC clojure :noweb-ref helpers
-  (defn add-face
-    [{:keys [vertices edges faces] :as mesh} verts]
+  (defn- add-face*
+    [{:keys [vertices edges faces] :as mesh} [verts]]
     (let [f (mapv #(get (find vertices %) 0 %) verts)]
       (if (and (nil? (get faces f))
                (= (count f) (count (set f))))
@@ -46,18 +46,18 @@
                           (fn [acc pair] (d/index-kv acc (set pair) f))
                           edges))]
           (assoc mesh
-            :vertices vertices
-            :edges edges
-            :faces (conj faces f)))
+                 :vertices vertices
+                 :edges edges
+                 :faces (conj faces (thi.ng.geom.meshface.MeshFace. f))))
         mesh)))
-  
+
   (defn vertices-planar?
     [[a b c :as verts]]
     (or (< (count verts) 4)
         (let [n (gu/ortho-normal a b c)]
           (every? #(m/delta= n (gu/ortho-normal %))
                   (d/successive-nth 3 (conj (rest verts) a))))))
-  
+
   (defn face-neighbors-shared-edges
     [{:keys [edges]} f]
     (->> (conj f (first f))
@@ -65,33 +65,33 @@
          (reduce
           (fn [acc pair] (into acc (-> pair set edges (disj f))))
           [])))
-  
+
   (defn vertex-neighbors*
     [{vertices :vertices} v]
     (set/union
      (d/value-set :next vertices v)
      (d/value-set :prev vertices v)))
-  
+
   (defn vertex-valence*
     [mesh v] (inc (count (get (:vertices mesh) v))))
-  
+
   (defn vertex-faces*
     [mesh v] (d/value-set :f (:vertices mesh) v))
-  
+
   (defn remove-vertex*
     [mesh v]
     (if (find (:vertices mesh) v)
       (reduce g/remove-face mesh (vertex-faces* mesh v))
       mesh))
-  
+
   (defn replace-vertex*
     ([mesh v v2]
-       (let [vfaces (vertex-faces* mesh v)]
-         (-> (reduce g/remove-face mesh vfaces)
-             (replace-vertex* v v2 vfaces))))
+     (let [vfaces (vertex-faces* mesh v)]
+       (-> (reduce g/remove-face mesh vfaces)
+           (replace-vertex* v v2 vfaces))))
     ([mesh v v2 faces]
-       (reduce #(add-face % (replace {v v2} %2)) mesh faces)))
-  
+     (reduce #(add-face* % (replace {v v2} %2)) mesh faces)))
+
   (defn merge-vertices*
     [mesh a b]
     (if ((vertex-neighbors* mesh a) b)
@@ -113,7 +113,7 @@
     "Builds a new 3d mesh data structure and (optionally) populates it with
     the given items (a seq of existing meshes and/or faces). Faces are defined
     as vectors of their vertices."
-    [] (thi.ng.geom.types.GMesh. {} #{} {} {} {} #{} {}))
+    [] (thi.ng.geom.types.GMesh. {} #{} {} {} {} #{}))
 #+END_SRC
 
 *** Creating a mesh from a lathe
@@ -177,14 +177,14 @@ located on the rotation axis.
                                (= a1 b1) [b1 b2 a2]
                                (= a2 b2) [b1 a2 a1]
                                :default [b1 b2 a2 a1])]
-                        (if (and f face-fn) (face-fn f) [f])))]
+                        [(if (and f face-fn) (face-fn f) [f])]))]
       (->> (d/successive-nth 2 strips)
            (mapcat ;; TODO transduce
             (fn [[sa sb]]
               (mapcat make-face
                    (d/successive-nth 2 sa)
                    (d/successive-nth 2 sb))))
-           (tu/into-mesh (gmesh) add-face))))
+           (tu/into-mesh (gmesh) add-face*))))
 #+END_SRC
 
 *** Predefined forms
@@ -195,7 +195,7 @@ located on the rotation axis.
     (let [sv (vec3 s)]
       (reduce
        (fn [m [p flags]]
-         (tu/into-mesh m add-face (g/as-mesh (thi.ng.geom.types.AABB p s) {:flags flags})))
+         (tu/into-mesh m add-face* (g/as-mesh (thi.ng.geom.types.AABB p s) {:flags flags})))
        (gmesh)
        [[(vec3) :ewsfb]
         [(vec3 0 s 0) :wfb]
@@ -213,12 +213,7 @@ located on the rotation axis.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PArea
   (area
-   [_]
-   (transduce
-    (comp
-     (mapcat gu/tessellate-with-first)
-     (map #(->> % (apply gu/tri-area3) m/abs)))
-    + (:faces _)))
+   [_] (gu/total-area-3d (mf/xf-face-verts _) (:faces _)))
 #+END_SRC
 
 *** TODO PBoundary
@@ -245,7 +240,7 @@ located on the rotation axis.
    [_] (tu/bounding-sphere (g/centroid _) (g/vertices _)))
 #+END_SRC
 
-*** TODO PCenter
+*** PCenter
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PCenter
@@ -292,9 +287,10 @@ located on the rotation axis.
    [_] (keys (:edges _)))
   g/PFaceAccess
   (faces
-   [_] (:faces _))
+   ([_] (g/faces _ true))
+   ([_ __] (map #(g/raw % _) (:faces _))))
   (add-face
-   [_ f] (add-face _ f))
+   [_ face] (add-face* _ face))
   (vertex-faces
    [_ v] (vertex-faces* _ v))
   (remove-face
@@ -374,7 +370,7 @@ located on the rotation axis.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PGeomContainer
   (into
-   [_ faces] (tu/into-mesh _ add-face faces))
+   [_ faces] (tu/into-mesh _ add-face* faces))
   g/PClear
   (clear*
    [_] (gmesh))
@@ -404,20 +400,20 @@ located on the rotation axis.
   g/PScale
   (scale
    ([_ s]
-      (tu/transform-mesh _ add-face #(g/* % s)))
+      (tu/transform-mesh _ add-face* #(g/* % s)))
    ([_ sx sy sz]
-      (tu/transform-mesh _ add-face #(g/* % sx sy sz))))
+      (tu/transform-mesh _ add-face* #(g/* % sx sy sz))))
   (scale-size
    [_ s]
    (let [c (g/centroid _)]
-     (tu/transform-mesh _ add-face #(g/madd (g/- % c) s c))))
+     (tu/transform-mesh _ add-face* #(g/madd (g/- % c) s c))))
   g/PTranslate
   (translate
-   [_ t] (tu/transform-mesh _ add-face #(g/+ % t)))
+   [_ t] (tu/transform-mesh _ add-face* #(g/+ % t)))
   g/PTransform
   (transform
    [_ tx]
-   (tu/transform-mesh _ add-face tx))
+   (tu/transform-mesh _ add-face* tx))
 #+END_SRC
 
 *** PVolume
@@ -425,7 +421,7 @@ located on the rotation axis.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PVolume
   (volume
-   [_] (gu/total-volume (:faces _)))
+   [_] (gu/total-volume (mf/xf-face-verts _) (:faces _)))
 #+END_SRC
 
 *** End of implementation                                          :noexport:
@@ -443,6 +439,7 @@ located on the rotation axis.
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.meshface :as mf]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]

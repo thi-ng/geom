@@ -1,0 +1,52 @@
+#+SETUPFILE: ../../src/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeomattribs][thi.ng.geom.attribs]]
+     - [[#attribute-application][Attribute application]]
+     - [[#attribute-generation][Attribute generation]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
+* thi.ng.geom.attribs
+
+** Attribute application
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn generate-face-attribs
+    "Takes a vector of face vertices, face id, a map of vertex attribute
+    generators and an options arg passed to the attribute generator
+    fns. Returns 2-elem vector of [verts vert-attribs]"
+    [verts face-id attribs opts]
+    [verts
+     (when (seq attribs)
+       (reduce-kv
+        (fn [acc k f] (assoc acc k (f verts face-id opts)))
+        {} attribs))])
+#+END_SRC
+
+** Attribute generation
+
+#+BEGIN_SRC clojure :noweb-ref attribs
+  (def default-uv-coords [(vec2) (vec2 1.0 0.0) (vec2 1.0) (vec2 0.0 1.0)])
+
+  (defn uv-faces
+    ([]
+     (constantly default-uv-coords))
+    ([uvrects]
+     (fn [_ face-id _] (uvrects face-id))))
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/attribs.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.attribs
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.math.core :as m :refer [*eps*]]))
+
+  <<helpers>>
+
+  <<attribs>>
+#+END_SRC

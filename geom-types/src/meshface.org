@@ -1,0 +1,71 @@
+#+SETUPFILE: ../../src/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#namespace-thinggeommeshface][Namespace: thi.ng.geom.meshface]]
+     - [[#meshface][MeshFace]]
+     - [[#indexedmeshface][IndexedMeshFace]]
+     - [[#helpers][Helpers]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
+* Namespace: thi.ng.geom.meshface
+
+** MeshFace
+
+#+BEGIN_SRC clojure :noweb-ref plain
+  (deftype MeshFace [vertices]
+    g/PVertexAccess
+    (vertices [_ _] vertices)
+    g/PAttributeAccess
+    (attribs [_ _] nil)
+    g/PRawAccess
+    (raw [_ _] [vertices]))
+#+END_SRC
+
+** IndexedMeshFace
+
+#+BEGIN_SRC clojure :noweb-ref plain
+  (deftype IndexedMeshFace [vertices attribs]
+    g/PVertexAccess
+    (vertices [_ mesh]
+      (let [idx (-> mesh :vertices :items)]
+        (mapv #(nth idx %) vertices)))
+    g/PAttributeAccess
+    (attribs [_ mesh]
+      (let [mattr (:attribs mesh)]
+        (reduce-kv
+         (fn [acc k v]
+           (let [idx (-> mattr k :items)]
+             (assoc acc k (mapv idx v))))
+         {} attribs)))
+    (attribs [_ mesh attr]
+      (let [idx (-> mesh :attribs attr :items)]
+        (mapv idx attribs)))
+    g/PRawAccess
+    (raw [_ mesh]
+      [(g/vertices _ mesh) (g/attribs _ mesh)])
+    Object
+    (toString [_]
+      (str \[ vertices \space attribs \])))
+#+END_SRC
+
+** Helpers
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn xf-face-verts
+    [mesh] (map #(first (g/raw % mesh))))
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/meshface.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.meshface
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]))
+
+  <<helpers>>
+
+  <<plain>>
+
+  <<indexed>>
+#+END_SRC
