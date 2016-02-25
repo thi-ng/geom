@@ -14,6 +14,8 @@
          - [[#pflip][PFlip]]
          - [[#pgeomcontainer][PGeomContainer]]
          - [[#pvertexaccess-pedgeaccess--pfaceaccess][PVertexAccess, PEdgeAccess & PFaceAccess]]
+         - [[#ptransform][PTransform]]
+         - [[#pvolume][PVolume]]
          - [[#end-of-implementation][End of implementation]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
@@ -88,14 +90,15 @@
 *** Attributes
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  (defn- add-face
+  (defn- add-face*
     [mesh [verts attribs]]
+    #_(prn :add-face verts :attr attribs)
     (let [[vindex vids] (index-items (:vertices mesh) verts)
           [aindex aids] (index-attribs (:attribs mesh) attribs)]
-      (assoc mesh
-             :vertices vindex
-             :attribs aindex
-             :faces (conj (:faces mesh) [vids aids]))))
+      (thi.ng.geom.types.IndexedMesh.
+       vindex
+       (conj (:faces mesh) (thi.ng.geom.meshface.IndexedMeshFace. vids aids))
+       aindex)))
 
   (defn- flip-face
     [[verts attribs]]
@@ -113,13 +116,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PArea
   (area
-   [{:keys [vertices faces]}]
-   (transduce
-    (comp
-     (map #(attrib-values vertices (first %)))
-     (mapcat gu/tessellate-with-first)
-     (map #(->> % (apply gu/tri-area3) m/abs)))
-    + faces))
+   [_] (gu/total-area-3d (mf/xf-face-verts _) (:faces _)))
 #+END_SRC
 
 *** PBounds
@@ -157,8 +154,10 @@
   g/PFlip
   (flip
    [_]
-   (-> (update _ :attribs assoc :fnormals nil :vnormals nil)
-       (update :faces #(mapv flip-face %))))
+   (thi.ng.geom.types.IndexedMesh.
+    (:vertices _)
+    (mapv flip-face (:faces _))
+    (dissoc (:attribs _) :fnormals :vnormals)))
 #+END_SRC
 
 *** PGeomContainer
@@ -166,7 +165,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PGeomContainer
   (into
-   [_ faces] (tu/into-mesh _ add-face faces))
+   [_ faces] (tu/into-mesh _ add-face* faces))
   g/PClear
   (clear*
    [_] (indexed-mesh))
@@ -177,15 +176,16 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PVertexAccess
   (vertices
-   [_] (-> _ :vertices :index keys))
+   [_] (-> _ :vertices :items))
   g/PEdgeAccess
   (edges
    [_] (err/unsupported!))
   g/PFaceAccess
   (faces
-   [_] (:faces _))
+   ([_] (g/faces _ true))
+   ([_ __] (map #(g/raw % _) (:faces _)))) ;; TODO also allow for indexed face repr
   (add-face
-   [_ f] (add-face _ f))
+   [_ f] (add-face* _ f))
   #_(vertex-faces
    [_ v] (vertex-faces* _ v))
   #_(remove-face
@@ -215,6 +215,36 @@
      _))
 #+END_SRC
 
+*** PTransform
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PScale
+  (scale
+   ([_ s]
+      (tu/transform-mesh _ add-face* #(g/* % s)))
+   ([_ sx sy sz]
+      (tu/transform-mesh _ add-face* #(g/* % sx sy sz))))
+  (scale-size
+   [_ s]
+   (let [c (g/centroid _)]
+     (tu/transform-mesh _ add-face* #(g/madd (g/- % c) s c))))
+  g/PTranslate
+  (translate
+   [_ t] (tu/transform-mesh _ add-face* #(g/+ % t)))
+  g/PTransform
+  (transform
+   [_ tx]
+   (tu/transform-mesh _ add-face* tx))
+#+END_SRC
+
+*** PVolume
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/PVolume
+  (volume
+   [_] (gu/total-volume (mf/xf-face-verts _) (:faces _)))
+#+END_SRC
+
 *** End of implementation                                          :noexport:
 
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -230,6 +260,7 @@
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.meshface :as mf]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
