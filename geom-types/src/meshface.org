@@ -18,7 +18,10 @@
     g/PAttributeAccess
     (attribs [_ _] nil)
     g/PRawAccess
-    (raw [_ _] [vertices]))
+    (raw [_ _] [vertices])
+    Object
+    (toString [_]
+      (str \[ vertices \])))
 #+END_SRC
 
 ** IndexedMeshFace
@@ -35,11 +38,12 @@
         (reduce-kv
          (fn [acc k v]
            (let [idx (-> mattr k :items)]
-             (assoc acc k (mapv idx v))))
+             (assoc acc k (if (sequential? v) (mapv idx v) (idx v)))))
          {} attribs)))
     (attribs [_ mesh attr]
-      (let [idx (-> mesh :attribs attr :items)]
-        (mapv idx attribs)))
+      (let [idx (-> mesh :attribs attr :items)
+            aval (attribs attr)]
+        (if (sequential? aval) (mapv idx attribs) (idx aval))))
     g/PRawAccess
     (raw [_ mesh]
       [(g/vertices _ mesh) (g/attribs _ mesh)])

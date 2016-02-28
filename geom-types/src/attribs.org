@@ -19,20 +19,20 @@
     [verts
      (when (seq attribs)
        (reduce-kv
-        (fn [acc k f] (assoc acc k (f verts face-id opts)))
+        (fn [acc k f] (assoc acc k (map-indexed #(f face-id % %2 opts) verts)))
         {} attribs))])
 #+END_SRC
 
 ** Attribute generation
 
 #+BEGIN_SRC clojure :noweb-ref attribs
-  (def default-uv-coords [(vec2) (vec2 1.0 0.0) (vec2 1.0) (vec2 0.0 1.0)])
+  (def default-uv-rect [(vec2) (vec2 1.0 0.0) (vec2 1.0) (vec2 0.0 1.0)])
 
   (defn uv-faces
     ([]
-     (constantly default-uv-coords))
+     (uv-faces (repeat default-uv-rect)))
     ([uvrects]
-     (fn [_ face-id _] (uvrects face-id))))
+     (fn [fid vid _ _] ((nth uvrects fid) vid))))
 #+END_SRC
 
 ** Complete namespace definition
