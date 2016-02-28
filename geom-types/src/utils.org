@@ -73,7 +73,8 @@
 
   (defn map-mesh
     "Applies f to all faces of given mesh and adds resulting faces to
-    new mesh. Thus f should return a seq of faces. Returns new mesh."
+    new mesh. Thus f should return a seq of raw faces (i.e. each face as
+    2-elem vector of [verts attribs]. Returns new mesh."
     [f mesh] (g/into (g/clear* mesh) (mapcat f (g/faces mesh true))))
 
   ;; TODO how to use this w/ IndexedMesh? Faces only store vertex IDs
