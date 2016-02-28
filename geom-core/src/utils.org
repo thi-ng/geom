@@ -285,10 +285,10 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
   (defn tessellate-with-point
     ([points] (tessellate-with-point (centroid points) points))
     ([c points]
-       (->> [(first points)]
-            (concat points)
-            (d/successive-nth 2)
-            (mapv #(vector c (% 0) (% 1))))))
+     (->> [(first points)]
+          (concat points)
+          (d/successive-nth 2)
+          (mapv #(vector c (% 0) (% 1))))))
 
   (defn tessellate-with-first
     [points]
@@ -316,6 +316,18 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
     (if (<= (count points) 4)
       [points]
       (tessellate-with-point points)))
+
+  (defn tessellate-face
+    [tess-fn]
+    (fn [[verts attribs]]
+      (let [verts (tess-fn verts)
+            attribs (reduce-kv
+                     (fn [acc k v] (assoc acc k (tess-fn v)))
+                     {} attribs)]
+        (map-indexed
+         (fn [i verts]
+           [verts (reduce-kv (fn [acc k v] (assoc acc k (nth v i))) {} attribs)])
+         verts))))
 #+END_SRC
 
 ** Normals

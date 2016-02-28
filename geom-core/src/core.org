@@ -307,7 +307,11 @@ access to entities in this context.
       of [vertices attributes], where attributes is a map of arbitrary
       vertex attributes. E.g. (g/add-face m [verts {:uv [[0 0] [1 0] [1 1]]}])")
     (faces [_] [_ opts]
-      "Returns a mesh's face collection.")
+      "Returns a mesh's face collection. If called without opts arg,
+      returns faces directly as used internally by the mesh. If opts is
+      truthy, returns each face as vector with a vector of face vertices
+      as its first element. If the mesh supports vertex attributes,
+      they're returned as the 2nd element in each face vector.")
     (remove-face [_ fverts]
       "Takes a vector of vertices defining a face in the mesh and
       returns updated mesh without that face.")
