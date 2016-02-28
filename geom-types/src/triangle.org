@@ -40,11 +40,12 @@
              - [[#pboundingsphere][PBoundingSphere]]
              - [[#pcenter][PCenter]]
              - [[#pcircumference][PCircumference]]
-             - [[#todo-pclassify][TODO PClassify]]
+             - [[#pclassify][PClassify]]
+             - [[#todo-pextrude][TODO PExtrude]]
              - [[#pflip][PFlip]]
              - [[#pgraph][PGraph]]
              - [[#todo-pintersect][TODO PIntersect]]
-             - [[#todo-pmeshconvert][TODO PMeshConvert]]
+             - [[#pmeshconvert][PMeshConvert]]
              - [[#todo-pproximity][TODO PProximity]]
              - [[#psample][PSample]]
              - [[#pslice][PSlice]]
@@ -56,7 +57,6 @@
      - [[#namespace-declaration][Namespace declaration]]
 
 * thi.ng.geom.triangle
-
 ** Constructors
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn triangle2
@@ -338,7 +338,10 @@
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([_ opts] (g/add-face (or (:mesh opts) (bm/basic-mesh)) (mapv vec3 (:points _)))))
+   ([_ opts]
+    (g/add-face
+     (or (:mesh opts) (bm/basic-mesh))
+     (attr/generate-face-attribs (mapv vec3 (:points _)) 0 (:attribs opts) opts))))
 #+END_SRC
 **** PPolygonConvert                                            :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
@@ -410,10 +413,21 @@
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<tpl-circum>>
 #+END_SRC
-**** TODO PClassify
+**** PClassify                                                       :verify:
 #+BEGIN_SRC clojure :noweb-ref impl3
   g/PClassify
-  (classify-point [_ p] nil) ; TODO
+  (classify-point
+   [_ p]
+   (let [a (first (:points _))
+         n (gu/ortho-normal (:points _))
+         w (- (g/dot n a))]
+     (-> n (g/dot p) (+ w) (m/signum *eps*))))
+#+END_SRC
+**** TODO PExtrude
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/PExtrude
+  (extrude [_ opts] (err/unsupported!)) ; TODO
+  (extrude-shell [_ opts] (err/unsupported!)) ; TODO
 #+END_SRC
 **** PFlip                                                      :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
@@ -435,17 +449,17 @@
    ([{[a b c] :points} p dir]
       (isec/intersect-ray-triangle3? p dir a b c)))
 #+END_SRC
-**** TODO PMeshConvert                                                  :fix:
-
-Because of Clojure's restriction on circular namespace references it's
-currently not possible to turn triangles into meshes.
-
+**** PMeshConvert
 #+BEGIN_SRC clojure :noweb-ref impl3
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([_ opts] (g/add-face (or (:mesh opts) (bm/basic-mesh)) (:points _))))
+   ([_ opts]
+    (g/add-face
+     (or (:mesh opts) (bm/basic-mesh))
+     (attr/generate-face-attribs (:points _) 0 (:attribs opts) opts))))
 #+END_SRC
+
 **** TODO PProximity
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<lob-geom-proxi>>
@@ -500,6 +514,7 @@ https://web.archive.org/web/20090320013931/http://amp.ece.cmu.edu/Publication/Ch
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3Z]]
+     [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
