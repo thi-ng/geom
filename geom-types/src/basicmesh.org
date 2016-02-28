@@ -118,8 +118,11 @@
     (:faces _)))
   g/PFaceAccess
   (faces
-   ([_] (g/faces _ true))
-   ([_ __] (map #(g/raw % _) (:faces _))))
+   ([_] (:faces _))
+   ([_ opts]
+    (if opts
+      (map #(g/raw % _) (:faces _))
+      (:faces _))))
   (add-face
    [_ face] (add-face* _ face))
   (vertex-faces
@@ -185,7 +188,7 @@
   g/PTessellate
   (tessellate
    ([_]      (g/tessellate _ {}))
-   ([_ opts] (tu/map-mesh (or (:fn opts) gu/tessellate-with-first) _)))
+   ([_ opts] (tu/map-mesh (or (:fn opts) (gu/tessellate-face gu/tessellate-with-first)) _)))
 #+END_SRC
 
 *** PTransform

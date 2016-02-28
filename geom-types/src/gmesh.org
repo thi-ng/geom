@@ -34,21 +34,22 @@
     (let [f (mapv #(get (find vertices %) 0 %) verts)]
       (if (and (nil? (get faces f))
                (= (count f) (count (set f))))
-        (let [vertices (->> (d/wrap-seq f [(peek f)] [(first f)])
+        (let [mf       (thi.ng.geom.meshface.MeshFace. f)
+              vertices (->> (d/wrap-seq f [(peek f)] [(first f)])
                             (d/successive-nth 3)
                             (reduce
                              (fn [acc [p c n]]
-                               (d/index-kv acc c {:next n :prev p :f f}))
+                               (d/index-kv acc c {:next n :prev p :f mf}))
                              vertices))
-              edges (->> (conj f (first f))
-                         (d/successive-nth 2)
-                         (reduce
-                          (fn [acc pair] (d/index-kv acc (set pair) f))
-                          edges))]
+              edges    (->> (conj f (first f))
+                            (d/successive-nth 2)
+                            (reduce
+                             (fn [acc pair] (d/index-kv acc (set pair) mf))
+                             edges))]
           (assoc mesh
                  :vertices vertices
                  :edges edges
-                 :faces (conj faces (thi.ng.geom.meshface.MeshFace. f))))
+                 :faces (conj faces mf)))
         mesh)))
 
   (defn vertices-planar?
@@ -287,8 +288,11 @@ located on the rotation axis.
    [_] (keys (:edges _)))
   g/PFaceAccess
   (faces
-   ([_] (g/faces _ true))
-   ([_ __] (map #(g/raw % _) (:faces _))))
+   ([_] (:faces _))
+   ([_ opts]
+    (if opts
+      (map #(g/raw % _) (:faces _))
+      (:faces _))))
   (add-face
    [_ face] (add-face* _ face))
   (vertex-faces
@@ -312,11 +316,11 @@ located on the rotation axis.
              (recur (assoc verts a (into #{} ve)) vnorms edges (next fedges))
              (recur (dissoc verts a) (dissoc vnorms a) edges (next fedges))))
          (assoc _
-           :vertices verts
-           :vnormals vnorms
-           :edges edges
-           :faces (disj faces f)
-           :fnormals (dissoc fnormals f))))
+                :vertices verts
+                :vnormals vnorms
+                :edges edges
+                :faces (disj faces f)
+                :fnormals (dissoc fnormals f))))
      _))
 #+END_SRC
 
@@ -340,17 +344,18 @@ located on the rotation axis.
    [_ v] ((:vnormals _) v))
   (compute-face-normals
    [_]
-   (loop [norms (transient #{}), fnorms (transient {}), faces (:faces _)]
+   (loop [norms (transient #{}), fnorms (transient (hash-map)), faces (:faces _)]
      (if faces
-       (let [f (first faces)
-             [norms n] (d/index! norms (apply gu/ortho-normal f))]
+       (let [^thi.ng.geom.meshface.MeshFace f (first faces)
+             [norms n] (d/index! norms (gu/ortho-normal (.-vertices f)))]
          (recur norms (assoc! fnorms f n) (next faces)))
        (assoc _
               :normals  (persistent! norms)
               :fnormals (persistent! fnorms)))))
   (compute-vertex-normals
    [_]
-   (let [{:keys [vertices normals fnormals] :as this} (if (seq (:fnormals _)) _ (g/compute-face-normals _))
+   (let [this (if (seq (:fnormals _)) _ (g/compute-face-normals _))
+         {:keys [vertices normals fnormals]} this
          ntx (map #(get fnormals %))]
      (loop [norms (transient normals), vnorms (transient (hash-map)), verts (keys vertices)]
        (if verts
@@ -391,7 +396,7 @@ located on the rotation axis.
   g/PTessellate
   (tessellate
    ([_]      (g/tessellate _ {}))
-   ([_ opts] (tu/map-mesh (or (:fn opts) gu/tessellate-with-first) _)))
+   ([_ opts] (tu/map-mesh (or (:fn opts) (gu/tessellate-face gu/tessellate-with-first)) _)))
 #+END_SRC
 
 *** PTransform
