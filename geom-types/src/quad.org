@@ -169,7 +169,7 @@ than 1.0.
                               (g/vertices)
                               (mapv #(g/+ offset %))))
          [n s e w f b'] (d/demunge-flags-seq flags "nsewfb")]
-     (->> [(if n [d2 c2 c d])
+     (->> [(if n [d2 c2 c d]) ;; TODO attribs
            (if s [b2 a2 a b])
            (if e [c2 b2 b c])
            (if w [a2 d2 d a])
@@ -236,7 +236,10 @@ A quad's mesh representation is simply a quad mesh with a single face.
   g/PMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([_ opts] (g/add-face (or (:mesh opts) (bm/basic-mesh)) (:points _))))
+   ([_ opts]
+    (g/add-face
+     (or (:mesh opts) (bm/basic-mesh))
+     (attr/generate-face-attribs (:points _) 0 (:attribs opts) opts))))
 #+END_SRC
 
 *** TODO PPointMap
@@ -361,10 +364,11 @@ function returns a lazyseq of triangles of the subdivided quad.
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     [thi.ng.geom.line :as l]
+     [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.basicmesh :as bm]
+     [thi.ng.geom.line :as l]
      [thi.ng.geom.triangle :as t]
-     [thi.ng.geom.types :as types]
+     [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
      [thi.ng.xerror.core :as err]

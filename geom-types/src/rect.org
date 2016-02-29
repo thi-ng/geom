@@ -29,7 +29,6 @@
      - [[#namespace-declaration][Namespace declaration]]
 
 * thi.ng.geom.rect
-
 ** Constructor
 
 #+BEGIN_SRC clojure :noweb-ref ctors
@@ -226,9 +225,9 @@ than 1.0.
   (as-mesh
    ([_] (g/as-mesh _ {}))
    ([_ opts]
-      (g/add-face
-       (or (:mesh opts) (bm/basic-mesh))
-       (mapv vec3 (g/vertices _)))))
+    (g/add-face
+     (or (:mesh opts) (bm/basic-mesh))
+     (attr/generate-face-attribs (mapv vec3 (g/vertices _)) 0 (:attribs opts) opts))))
 #+END_SRC
 
 *** PPointMap
@@ -426,6 +425,7 @@ of triangles of the subdivided rects.
      [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]

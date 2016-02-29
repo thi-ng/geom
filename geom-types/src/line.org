@@ -97,7 +97,6 @@
      - [[#namespace-declaration][Namespace declaration]]
 
 * Namespace: thi.ng.geom.line
-
 ** Constructors
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn line2
@@ -174,14 +173,17 @@ further below.
   g/PExtrude
   (extrude
    [{points :points :as _}
-    {:keys [mesh depth scale offset] :or {depth 1.0 scale 1.0}}]
+    {:keys [mesh depth scale offset attribs]
+     :or {depth 1.0 scale 1.0} :as opts}]
    (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
          off     (or offset (vec3 0 0 depth))
          a       (vec3 (points 0))
          b       (vec3 (points 1))
          ta      (g/+ off (tpoints 0))
          tb      (g/+ off (tpoints 1))]
-     (g/add-face (or mesh (bm/basic-mesh)) [a b tb ta])))
+     (g/add-face
+      (or mesh (bm/basic-mesh))
+      (attr/generate-face-attribs [a b tb ta] 0 attribs opts))))
 #+END_SRC
 *** PGraph
 #+BEGIN_SRC clojure :noweb-ref tpl-graph
@@ -529,17 +531,20 @@ further below.
   g/PExtrude
   (extrude
    [{:keys [points] :as _}
-    {:keys [mesh depth offset scale] :or {depth 1.0 scale 1.0}}]
+    {:keys [mesh depth offset scale attribs]
+     :or {depth 1.0 scale 1.0} :as opts}]
    (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
          off     (or offset (vec3 0 0 depth))
          bottom  (mapv vec3 points)
          top     (mapv #(g/+ off %) tpoints)]
-     (g/into
-      (or mesh (bm/basic-mesh))
-      (mapcat
-       (fn [[a1 a2] [b1 b2]] [[a1 b1 b2 a2]])
-       (d/successive-nth 2 bottom)
-       (d/successive-nth 2 top)))))
+     (->> (interleave
+           (d/successive-nth 2 bottom)
+           (d/successive-nth 2 top))
+          (partition 2)
+          (map-indexed
+           (fn [i [[a1 a2] [b1 b2]]]
+             (attr/generate-face-attribs [a1 b1 b2 a2] i attribs opts)))
+          (g/into (or mesh (bm/basic-mesh))))))
 #+END_SRC
 **** TODO PGraph                                                     :verify:
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
@@ -663,16 +668,19 @@ further below.
   g/PExtrude
   (extrude
    [{:keys [points] :as _}
-    {:keys [mesh depth offset scale] :or {depth 1.0 scale 1.0}}]
+    {:keys [mesh depth offset scale attribs]
+     :or {depth 1.0 scale 1.0} :as opts}]
    (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
          off     (or offset (vec3 0 0 depth))
          top     (mapv #(g/+ off %) tpoints)]
-     (g/into
-      (or mesh (bm/basic-mesh))
-      (mapcat
-       (fn [[a1 a2] [b1 b2]] [[a1 b1 b2 a2]])
-       (d/successive-nth 2 points)
-       (d/successive-nth 2 top)))))
+     (->> (interleave
+           (d/successive-nth 2 points)
+           (d/successive-nth 2 top))
+          (partition 2)
+          (map-indexed
+           (fn [i [[a1 a2] [b1 b2]]]
+             (attr/generate-face-attribs [a1 b1 b2 a2] i attribs opts)))
+          (g/into (or mesh (bm/basic-mesh))))))
 #+END_SRC
 **** TODO PGraph                                                     :verify:
 #+BEGIN_SRC clojure :noweb-ref impl-ls3
@@ -765,6 +773,7 @@ further below.
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
