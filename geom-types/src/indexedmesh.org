@@ -28,7 +28,7 @@
 
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn indexed-mesh
-    [] (thi.ng.geom.types.IndexedMesh. (idx/bidir-index) [] {}))
+    [] (thi.ng.geom.types.IndexedMesh. (idx/monotonic-index) [] {}))
 #+END_SRC
 
 *** Attributes
@@ -37,7 +37,7 @@
   (defn- add-face*
     [mesh [verts attribs]]
     #_(prn :add-face verts :attr attribs)
-    (let [[vindex vids] (idx/index-items (:vertices mesh) verts)
+    (let [[vindex vids] (idx/index-coll (:vertices mesh) verts)
           [aindex aids] (idx/index-attribs (:attribs mesh) attribs)]
       (thi.ng.geom.types.IndexedMesh.
        vindex
@@ -182,11 +182,11 @@
   (compute-face-normals
    [_]
    (let [vertices (:vertices _)]
-     (loop [fnorms (idx/bidir-index), faces' (transient []), faces (:faces _)]
+     (loop [fnorms (idx/monotonic-index), faces' (transient []), faces (:faces _)]
        (if faces
          (let [^thi.ng.geom.meshface.IndexedMeshFace f (first faces)
                fverts     (idx/attrib-values vertices (.-vertices f))
-               [fnorms n] (idx/index-item fnorms (gu/ortho-normal fverts))
+               [fnorms n] (idx/index fnorms (gu/ortho-normal fverts))
                fattr      (assoc (.-attribs f) :fnorm n)]
            (recur
             fnorms
