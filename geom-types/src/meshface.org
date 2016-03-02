@@ -30,18 +30,18 @@
   (deftype IndexedMeshFace [vertices attribs]
     g/PVertexAccess
     (vertices [_ mesh]
-      (let [idx (-> mesh :vertices :items)]
-        (mapv #(nth idx %) vertices)))
+      (let [idx (-> mesh :vertices :id->v)]
+        (mapv #(get idx %) vertices)))
     g/PAttributeAccess
     (attribs [_ mesh]
       (let [mattr (:attribs mesh)]
         (reduce-kv
          (fn [acc k v]
-           (let [idx (-> mattr k :items)]
+           (let [idx (-> mattr k :id->v)]
              (assoc acc k (if (sequential? v) (mapv idx v) (idx v)))))
          {} attribs)))
     (attribs [_ mesh attr]
-      (let [idx (-> mesh :attribs attr :items)
+      (let [idx (-> mesh :attribs attr :id->v)
             aval (attribs attr)]
         (if (sequential? aval) (mapv idx attribs) (idx aval))))
     g/PRawAccess

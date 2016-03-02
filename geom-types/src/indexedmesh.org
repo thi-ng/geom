@@ -3,7 +3,6 @@
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomindexmesh][thi.ng.geom.indexmesh]]
      - [[#helpers][Helpers]]
-         - [[#indexing][Indexing]]
          - [[#constructors][Constructors]]
          - [[#attributes][Attributes]]
      - [[#protocol-implementations][Protocol implementations]]
@@ -15,7 +14,7 @@
          - [[#pgeomcontainer][PGeomContainer]]
          - [[#pvertexaccess-pedgeaccess--pfaceaccess][PVertexAccess, PEdgeAccess & PFaceAccess]]
          - [[#pnormalaccess][PNormalAccess]]
-         - [[#ptessellate][PTessellate]]
+         - [[#todo-ptessellate][TODO PTessellate]]
          - [[#ptransform][PTransform]]
          - [[#pvolume][PVolume]]
          - [[#end-of-implementation][End of implementation]]
@@ -24,71 +23,12 @@
 * thi.ng.geom.indexmesh
 
 ** Helpers
-*** Indexing
-
-#+BEGIN_SRC clojure :noweb-ref index
-  (defn index-item
-    [index item]
-    (let [id (get (:index index) item)]
-      (if-not id
-        (let [id (:next index)]
-          [{:index (assoc (:index index) item id)
-            :items (conj (:items index) item)
-            :next  (inc id)}
-           id])
-        [index id])))
-
-  (defn make-index
-    ([] {:index {} :items [] :next 0})
-    ([items] (reduce #(first (index-item %1 %2)) (make-index) items))
-    ([index items] {:index index :items items :next (count items)}))
-
-
-  (defn unindex-item
-    [index item]
-    (let [id (get (:index index) item)]
-      (if id
-        {:index (dissoc (:index index) item)
-         :items (into (subvec (:items index) 0 id) (subvec (:items index) (inc id)))
-         :next  (:next index)}
-        index)))
-
-  (defn reindex-item
-    [index item newitem]
-    (let [id (get (:index index) item)]
-      (if id
-        {:index (assoc (dissoc (:index index) item) newitem id)
-         :items (into
-                 (conj (subvec (:items index) 0 id) newitem)
-                 (subvec (:items index) (inc id))) ;; FIXME ID != vector index after 1st reindex, use map?
-         :next  (:next index)}
-        index)))
-
-  (defn index-items
-    [index verts]
-    (reduce
-     (fn [[idx ids] v]
-       (let [[idx id] (index-item idx v)]
-         [idx (conj ids id)]))
-     [index []] verts))
-
-  (defn index-attribs
-    [aindex attribs]
-    (reduce
-     (fn [[attr aids] [id v]]
-       (let [[idx ids] (index-items (or (get attr id) (make-index)) v)]
-         [(assoc attr id idx) (assoc aids id ids)]))
-     [aindex {}] attribs))
-
-  (defn attrib-values
-    [{:keys [items]} ids] (mapv items ids))
-#+END_SRC
 
 *** Constructors
 
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn indexed-mesh
-    [] (thi.ng.geom.types.IndexedMesh. (make-index) [] {}))
+    [] (thi.ng.geom.types.IndexedMesh. (idx/bidir-index) [] {}))
 #+END_SRC
 
 *** Attributes
@@ -97,8 +37,8 @@
   (defn- add-face*
     [mesh [verts attribs]]
     #_(prn :add-face verts :attr attribs)
-    (let [[vindex vids] (index-items (:vertices mesh) verts)
-          [aindex aids] (index-attribs (:attribs mesh) attribs)]
+    (let [[vindex vids] (idx/index-items (:vertices mesh) verts)
+          [aindex aids] (idx/index-attribs (:attribs mesh) attribs)]
       (thi.ng.geom.types.IndexedMesh.
        vindex
        (conj (:faces mesh) (thi.ng.geom.meshface.IndexedMeshFace. vids aids))
@@ -180,7 +120,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PVertexAccess
   (vertices
-   [_] (-> _ :vertices :items))
+   [_] (-> _ :vertices :id->v))
   g/PEdgeAccess
   (edges
    [_] (err/unsupported!))
@@ -229,11 +169,11 @@
   (face-normals
    [_ force?]
    (if-let [fns (-> _ :attribs :fnorm)]
-     (:items fns)
-     (if force? (-> (g/compute-face-normals _) :attribs :fnorm :items))))
+     (:id->v fns)
+     (if force? (-> (g/compute-face-normals _) :attribs :fnorm :id->v))))
   (face-normal
    [_ f]
-   ((-> _ :attribs :fnorm :items)
+   ((-> _ :attribs :fnorm :id->v)
     ((.-attribs ^thi.ng.geom.meshface.IndexedMeshFace f) :fnorm)))
   (vertex-normals
    [_ force?] (if force? (err/unsupported!)))
@@ -242,11 +182,11 @@
   (compute-face-normals
    [_]
    (let [vertices (:vertices _)]
-     (loop [fnorms (make-index), faces' (transient []), faces (:faces _)]
+     (loop [fnorms (idx/bidir-index), faces' (transient []), faces (:faces _)]
        (if faces
          (let [^thi.ng.geom.meshface.IndexedMeshFace f (first faces)
-               fverts     (attrib-values vertices (.-vertices f))
-               [fnorms n] (index-item fnorms (gu/ortho-normal fverts))
+               fverts     (idx/attrib-values vertices (.-vertices f))
+               [fnorms n] (idx/index-item fnorms (gu/ortho-normal fverts))
                fattr      (assoc (.-attribs f) :fnorm n)]
            (recur
             fnorms
@@ -260,12 +200,14 @@
    [_] (err/unsupported!))
 #+END_SRC
 
-*** PTessellate
+*** TODO PTessellate
+
+Provide a map of attribute interpolators
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/PTessellate
   (tessellate
-   ([_]      (g/tessellate _ {}))
+   ([_]      (g/tessellate _ {:attribs (zipmap (keys (:attribs _)) (repeat g/mix))}))
    ([_ opts] (tu/map-mesh (or (:fn opts) (gu/tessellate-face gu/tessellate-with-first)) _)))
 #+END_SRC
 
@@ -318,6 +260,7 @@
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
+     [thi.ng.dstruct.bidirindex :as idx]
      [thi.ng.math.core :as m :refer [*eps*]]
      [thi.ng.xerror.core :as err]
      [clojure.core.reducers :as r]
