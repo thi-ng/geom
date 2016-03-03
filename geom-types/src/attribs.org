@@ -26,13 +26,37 @@
 ** Attribute generation
 
 #+BEGIN_SRC clojure :noweb-ref attribs
-  (def default-uv-rect [(vec2) (vec2 1.0 0.0) (vec2 1.0) (vec2 0.0 1.0)])
+  (def uv-default-rect [(vec2) (vec2 1.0 0.0) (vec2 1.0) (vec2 0.0 1.0)])
+
+  (defn uv-rect-for-size
+    ([w] (uv-rect-for-size w w))
+    ([w h] (uv-rect-for-size w w 0.0 0.0 1.0 1.0))
+    ([w h x y uw vh]
+     (let [u  (* 0.5 (/ uw w))
+           v  (* 0.5 (/ vh h))
+           iu (- uw u)
+           iv (- vh v)]
+       (mapv #(g/+ % x y) [(vec2 u v) (vec2 iu v) (vec2 iu iv) (vec2 u iv)]))))
+
+  (defn uv-cube-map-h
+    ([h] (uv-cube-map-h h false))
+    ([h pow2?]
+     (let [w  (* h 6)
+           tw (if pow2? (m/ceil-pow2 w) w)
+           fw (/ w tw 6.0)]
+       (mapv #(uv-rect-for-size h h (* % fw) 0.0 fw 1.0) (range 6)))))
+
+  (defn uv-cube-map-v
+    ([h] (uv-cube-map-v h false))
+    ([w pow2?]
+     (let [h  (* w 6)
+           th (if pow2? (m/ceil-pow2 h) h)
+           fh (/ h th 6.0)]
+       (mapv #(uv-rect-for-size w w 0.0 (* % fh) 1.0 fh) (range 6)))))
 
   (defn uv-faces
-    ([]
-     (uv-faces (repeat default-uv-rect)))
-    ([uvrects]
-     (fn [fid vid _ _] ((nth uvrects fid) vid))))
+    ([] (uv-faces (repeat uv-default-rect)))
+    ([uvrects] (fn [fid vid _ _] ((nth uvrects fid) vid))))
 #+END_SRC
 
 ** Complete namespace definition
@@ -44,7 +68,7 @@
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.core.matrix :refer [M44]]
-     [thi.ng.math.core :as m :refer [*eps*]]))
+     [thi.ng.math.core :as m]))
 
   <<helpers>>
 
