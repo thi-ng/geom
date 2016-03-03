@@ -1,7 +1,7 @@
 #+SETUPFILE: ../../src/setup.org
 
 * Contents                                                         :toc_4_gh:
- - [[#thinggeomindexmesh][thi.ng.geom.indexmesh]]
+ - [[#thinggeomindexedmesh][thi.ng.geom.indexedmesh]]
      - [[#helpers][Helpers]]
          - [[#constructors][Constructors]]
          - [[#attributes][Attributes]]
@@ -20,7 +20,7 @@
          - [[#end-of-implementation][End of implementation]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
-* thi.ng.geom.indexmesh
+* thi.ng.geom.indexedmesh
 
 ** Helpers
 
@@ -249,8 +249,8 @@ Provide a map of attribute interpolators
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/indexmesh.cljc :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.indexmesh
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/indexedmesh.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.indexedmesh
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
