@@ -204,10 +204,10 @@ front, back (see diagram below).
             [north south east west front back] (d/demunge-flags-seq flags "nsewfb")]
         (->> [(if east (attr/generate-face-attribs [c d h g] 0 attribs nil))
               (if west (attr/generate-face-attribs [a b f e] 1 attribs nil))
-              (if north (attr/generate-face-attribs [e f g h] 2 attribs nil))
+              (if north (attr/generate-face-attribs [f g h e] 2 attribs nil))
               (if south (attr/generate-face-attribs [a d c b] 3 attribs nil))
               (if front (attr/generate-face-attribs [b c g f] 4 attribs nil))
-              (if back (attr/generate-face-attribs [a e h d] 5 attribs nil))]
+              (if back (attr/generate-face-attribs [d a e h] 5 attribs nil))]
              (sequence (filter identity)) ;; FIXME eduction
              (g/into (or mesh (bm/basic-mesh)))))))
 #+END_SRC
