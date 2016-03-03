@@ -177,10 +177,10 @@
     ([out mesh]
      (write-obj-indexed out mesh {}))
     ([out mesh opts]
-     (let [vertices    (-> mesh :vertices :items)
-           vindex      (-> mesh :vertices :index)
-           uvs         (-> mesh :attribs :uv :items)
-           vnormals    (-> mesh :attribs :vnormals :items)
+     (let [vertices    (-> mesh :vertices :id->v)
+           vindex      (-> mesh :vertices :v->id)
+           uvs         (-> mesh :attribs :uv :id->v)
+           vnormals    (-> mesh :attribs :vnormals :id->v)
            faces       (-> mesh :faces)
            fmt-vertex  (obj-fmt3 "v")
            fmt-vnormal (obj-fmt3 "vn")
@@ -188,11 +188,11 @@
        (when-let [mtl (:mtl-lib opts)]
          (streams/write-utf8-bytes
           out (str "mtllib " mtl "\nusemtl " (or (:mtl opts) "default") "\n\n")))
-       (doseq [[x y z] vertices]
+       (doseq [[x y z] (vals vertices)]
          (streams/write-utf8-bytes out (fmt-vertex x y z)))
        (doseq [[x y z] (vals vnormals)]
          (streams/write-utf8-bytes out (fmt-vnormal x y z)))
-       (doseq [[u v] uvs]
+       (doseq [[u v] (vals uvs)]
          (streams/write-utf8-bytes out (fmt-uv u v)))
        (streams/write-utf8-bytes out "g\n")
        (if vnormals
