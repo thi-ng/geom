@@ -30,7 +30,7 @@
     [mesh [fverts]]
     (thi.ng.geom.types.BasicMesh.
      (into (:vertices mesh) fverts)
-     (conj (:faces mesh) (thi.ng.geom.meshface.MeshFace. fverts))
+     (conj (:faces mesh) (thi.ng.geom.meshface.MeshFace. fverts nil))
      (:fnormals mesh)))
 #+END_SRC
 

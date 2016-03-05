@@ -41,7 +41,7 @@
           [aindex aids] (idx/index-attribs (:attribs mesh) attribs)]
       (thi.ng.geom.types.IndexedMesh.
        vindex
-       (conj (:faces mesh) (thi.ng.geom.meshface.IndexedMeshFace. vids aids))
+       (conj (:faces mesh) (thi.ng.geom.meshface.IndexedMeshFace. vids aids nil))
        aindex)))
 
   (defn- flip-face*
@@ -190,7 +190,7 @@
                fattr      (assoc (.-attribs f) :fnorm n)]
            (recur
             fnorms
-            (conj! faces' (thi.ng.geom.meshface.IndexedMeshFace. (.-vertices f) fattr))
+            (conj! faces' (thi.ng.geom.meshface.IndexedMeshFace. (.-vertices f) fattr nil))
             (next faces)))
          (thi.ng.geom.types.IndexedMesh.
           vertices

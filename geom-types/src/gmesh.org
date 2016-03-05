@@ -34,15 +34,15 @@
     (let [f (mapv #(get (find vertices %) 0 %) verts)]
       (if (and (nil? (get faces f))
                (= (count f) (count (set f))))
-        (let [mf       (thi.ng.geom.meshface.MeshFace. f)
+        (let [mf       (thi.ng.geom.meshface.MeshFace. f nil)
               vertices (->> (d/wrap-seq f [(peek f)] [(first f)])
-                            (d/successive-nth 3)
+                            (partition 3 1)
                             (reduce
                              (fn [acc [p c n]]
                                (d/index-kv acc c {:next n :prev p :f mf}))
                              vertices))
               edges    (->> (conj f (first f))
-                            (d/successive-nth 2)
+                            (partition 2 1)
                             (reduce
                              (fn [acc pair] (d/index-kv acc (set pair) mf))
                              edges))]
@@ -57,12 +57,12 @@
     (or (< (count verts) 4)
         (let [n (gu/ortho-normal a b c)]
           (every? #(m/delta= n (gu/ortho-normal %))
-                  (d/successive-nth 3 (conj (rest verts) a))))))
+                  (partition 3 1 (conj (rest verts) a))))))
 
   (defn face-neighbors-shared-edges
     [{:keys [edges]} f]
     (->> (conj f (first f))
-         (d/successive-nth 2)
+         (partition 2 1)
          (reduce
           (fn [acc pair] (into acc (-> pair set edges (disj f))))
           [])))
@@ -179,12 +179,12 @@ located on the rotation axis.
                                (= a2 b2) [b1 a2 a1]
                                :default [b1 b2 a2 a1])]
                         [(if (and f face-fn) (face-fn f) [f])]))]
-      (->> (d/successive-nth 2 strips)
+      (->> (partition 2 1 strips)
            (mapcat ;; TODO transduce
             (fn [[sa sb]]
               (mapcat make-face
-                   (d/successive-nth 2 sa)
-                   (d/successive-nth 2 sb))))
+                   (partition 2 1 sa)
+                   (partition 2 1 sb))))
            (tu/into-mesh (gmesh) add-face*))))
 #+END_SRC
 
@@ -300,27 +300,28 @@ located on the rotation axis.
   (remove-face
    [{:keys [vertices edges faces fnormals vnormals] :as _} f]
    (if (get faces f)
-     (loop [verts vertices
-            vnorms vnormals
-            edges edges
-            fedges (d/successive-nth 2 (conj f (first f)))]
-       (if fedges
-         (let [[a b] (first fedges)
-               e #{a b}
-               efaces (disj (get edges e) f)
-               edges (if (seq efaces)
-                       (assoc edges e efaces)
-                       (dissoc edges e))
-               ve (filter #(not= (:f %) f) (get verts a))]
-           (if (seq ve)
-             (recur (assoc verts a (into #{} ve)) vnorms edges (next fedges))
-             (recur (dissoc verts a) (dissoc vnorms a) edges (next fedges))))
-         (assoc _
-                :vertices verts
-                :vnormals vnorms
-                :edges edges
-                :faces (disj faces f)
-                :fnormals (dissoc fnormals f))))
+     (let [fv (g/vertices f _)]
+       (loop [verts  vertices
+              vnorms vnormals
+              edges  edges
+              fedges (partition 2 1 (conj fv (first fv)))]
+         (if fedges
+           (let [[a b]  (first fedges)
+                 e      #{a b}
+                 efaces (disj (get edges e) f)
+                 edges  (if (seq efaces)
+                          (assoc edges e efaces)
+                          (dissoc edges e))
+                 ve     (filter #(not= (:f %) f) (get verts a))]
+             (if (seq ve)
+               (recur (assoc verts a (into #{} ve)) vnorms edges (next fedges))
+               (recur (dissoc verts a) (dissoc vnorms a) edges (next fedges))))
+           (assoc _
+                  :vertices verts
+                  :vnormals vnorms
+                  :edges edges
+                  :faces (disj faces f)
+                  :fnormals (dissoc fnormals f)))))
      _))
 #+END_SRC
 
