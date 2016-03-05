@@ -36,36 +36,35 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
 #+BEGIN_SRC clojure :noweb-ref catmull
   (defn cc-face-points
     "Takes a seq of faces and returns map with faces as keys and their
-    centroids as values."
+      centroids as values."
     [faces]
     (->> faces
-         #?(:cljs (seq))
          (r/map (fn [f] [f (gu/centroid f)]))
          (fold-into-map)))
-  
+
   (defn cc-subdiv-face
     [face fp e-points]
     (->> (face-loop-triples face)
          (r/map (fn [[p c n]] [(e-points #{p c}) c (e-points #{c n}) fp]))
          (r/foldcat)))
-  
+
   (defn cc-edge-points
-    [edges f-points]
+    [mesh edges f-points]
     (->> edges
          (r/map
           (fn [e e-faces]
-            [e (-> (mapv f-points e-faces)
+            [e (-> (mapv #(f-points (g/vertices % mesh)) e-faces)
                    (conj (first e))
                    (conj (second e))
                    (gu/centroid))]))
          (fold-into-map)))
-  
+
   (defn cc-subdiv-faces
     [f-points e-points]
     (->> f-points
          (r/mapcat (fn [f fp] (cc-subdiv-face f fp e-points)))
          (r/foldcat)))
-  
+
   (defn cc-replace-vertices
     [mesh f-points e-points sd-faces]
     (let [new-verts (->> mesh
@@ -73,18 +72,21 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
                          (keys)
                          (r/map
                           (fn [v]
-                            (let [f (gu/centroid (mapv f-points (gm/vertex-faces* mesh v)))
+                            (let [f  (->> (gm/vertex-faces* mesh v)
+                                          (mapv #(f-points (g/vertices % mesh)))
+                                          gu/centroid)
                                   vn (gm/vertex-neighbors* mesh v)
-                                  n (count vn)
-                                  r (gu/centroid (mapv #(g/mix v %) vn))]
+                                  n  (count vn)
+                                  r  (gu/centroid (mapv #(g/mix v %) vn))]
                               [v (g/addm (g/madd r 2.0 f) (g/* v (- n 3)) (/ 1.0 n))])))
                          (fold-into-map))]
-      (map (fn [f] (replace new-verts f)) sd-faces)))
-  
+      (map (fn [f] [(replace new-verts f)]) sd-faces)))
+
   (defn catmull-clark
-    [{:keys [faces edges] :as mesh}]
-    (let [f-points (cc-face-points faces)
-          e-points (cc-edge-points edges f-points)]
+    [{:keys [edges] :as mesh}]
+    (let [faces    (map #(g/vertices % mesh) (g/faces mesh))
+          f-points (cc-face-points faces)
+          e-points (cc-edge-points mesh edges f-points)]
       (->> (cc-subdiv-faces f-points e-points)
            (cc-replace-vertices mesh f-points e-points)
            (g/into (g/clear* mesh)))))
