@@ -33,37 +33,37 @@
   (defgoal :vec2-ops "vec2-ops")
 
   (defcase :vec2-ops :add-v
-    [] #(g/+ A2 B2))
+    [] #(m/+ A2 B2))
 
   (defcase :vec2-ops :add-vv
-    [] #(g/+ A2 B2 C2))
+    [] #(m/+ A2 B2 C2))
 
   (defcase :vec2-ops :add-n
-    [] #(g/+ A2 N))
+    [] #(m/+ A2 N))
 
   (defcase :vec2-ops :add-nn
-    [] #(g/+ A2 N M))
+    [] #(m/+ A2 N M))
 
   (defcase :vec2-ops :add-s
-    [] #(g/+ A2 [N M]))
+    [] #(m/+ A2 [N M]))
 
   (defcase :vec2-ops :scale-v
-    [] #(g/* A2 B2))
+    [] #(m/* A2 B2))
 
   (defcase :vec2-ops :scale-n
-    [] #(g/* A2 N))
+    [] #(m/* A2 N))
 
   (defcase :vec2-ops :madd
-    [] #(g/madd A2 N B2))
+    [] #(m/madd A2 N B2))
 
   (defcase :vec2-ops :madd-op2
-    [] #(g/* (g/+ A2 N) B2))
+    [] #(m/* (m/+ A2 N) B2))
 
   (defcase :vec2-ops :dot
     [] #(g/dot A2 B2))
 
   (defcase :vec2-ops :normalize
-    [] #(g/normalize A2))
+    [] #(m/normalize A2))
 
   (defcase :vec2-ops :mag
     [] #(g/mag A2))
@@ -72,10 +72,10 @@
     [] #(g/mag-squared A2))
 
   (defcase :vec2-ops :mix
-    [] #(g/mix A2 B2 0.5))
+    [] #(m/mix A2 B2 0.5))
 
   (defcase :vec2-ops :mix-bi
-    [] #(g/mix A2 B2 C2 D2 0.5 0.5))
+    [] #(m/mix A2 B2 C2 D2 0.5 0.5))
 
   (defcase :vec2-ops :rotate
     [] #(g/rotate A2 HALF_PI))
@@ -85,16 +85,16 @@
   (defgoal :vec2-ops-mut "vec2-ops-mutable")
 
   (defcase :vec2-ops-mut :add-v-ctor
-    [] #(g/+ (vec2 1 2) B2))
+    [] #(m/+ (vec2 1 2) B2))
 
   (defcase :vec2-ops-mut :add-v!
-    [] #(g/+! (vec2 1 2) B2))
+    [] #(m/+! (vec2 1 2) B2))
 
   (defcase :vec2-ops-mut :madd-v-ctor
-    [] #(g/madd (vec2 1 2) N B2))
+    [] #(m/madd (vec2 1 2) N B2))
 
   (defcase :vec2-ops-mut :madd-v!
-    [] #(g/madd! (vec2 1 2) N B2))
+    [] #(m/madd! (vec2 1 2) N B2))
 #+END_SRC
 
 ** Vec3
@@ -103,31 +103,31 @@
   (defgoal :vec3-ops "vec3-ops")
 
   (defcase :vec3-ops :add-v
-    [] #(g/+ A3 B3))
+    [] #(m/+ A3 B3))
 
   (defcase :vec3-ops :add-vv
-    [] #(g/+ A3 B3 C3))
+    [] #(m/+ A3 B3 C3))
 
   (defcase :vec3-ops :add-n
-    [] #(g/+ A3 N))
+    [] #(m/+ A3 N))
 
   (defcase :vec3-ops :add-nnn
-    [] #(g/+ A3 N M O))
+    [] #(m/+ A3 N M O))
 
   (defcase :vec3-ops :add-s
-    [] #(g/+ A3 [N M O]))
+    [] #(m/+ A3 [N M O]))
 
   (defcase :vec3-ops :scale-v
-    [] #(g/* A3 B3))
+    [] #(m/* A3 B3))
 
   (defcase :vec3-ops :scale-n
-    [] #(g/* A3 N))
+    [] #(m/* A3 N))
 
   (defcase :vec3-ops :madd
-    [] #(g/madd A3 N B3))
+    [] #(m/madd A3 N B3))
 
   (defcase :vec3-ops :madd-op2
-    [] #(g/* (g/+ A3 N) B3))
+    [] #(m/* (m/+ A3 N) B3))
 
   (defcase :vec3-ops :dot
     [] #(g/dot A3 B3))
@@ -139,7 +139,7 @@
     [] #(gu/ortho-normal A3 B3 C3))
 
   (defcase :vec3-ops :normalize
-    [] #(g/normalize A3))
+    [] #(m/normalize A3))
 
   (defcase :vec3-ops :mag
     [] #(g/mag A3))
@@ -148,10 +148,10 @@
     [] #(g/mag-squared A3))
 
   (defcase :vec3-ops :mix
-    [] #(g/mix A3 B3 0.5))
+    [] #(m/mix A3 B3 0.5))
 
   (defcase :vec3-ops :mix-bi
-    [] #(g/mix A3 B3 C3 D3 0.5 0.5))
+    [] #(m/mix A3 B3 C3 D3 0.5 0.5))
 
   (defcase :vec3-ops :rotate-x
     [] #(g/rotate-x A3 HALF_PI))

@@ -5,21 +5,21 @@
      - [[#constructor][Constructor]]
      - [[#type-specific-functions][Type specific functions]]
      - [[#protocol-implementations][Protocol implementations]]
-         - [[#parea][PArea]]
-         - [[#pboundary][PBoundary]]
-         - [[#pbounds][PBounds]]
-         - [[#pboundingsphere][PBoundingSphere]]
-         - [[#pcenter][PCenter]]
-         - [[#pclassify][PClassify]]
-         - [[#todo-pgraph][TODO PGraph]]
-         - [[#pintersect][PIntersect]]
-         - [[#todo-pmeshconvert][TODO PMeshConvert]]
-         - [[#pproximity][PProximity]]
-         - [[#psample][PSample]]
-         - [[#ptessellate][PTessellate]]
+         - [[#iarea][IArea]]
+         - [[#iboundary][IBoundary]]
+         - [[#ibounds][IBounds]]
+         - [[#iboundingsphere][IBoundingSphere]]
+         - [[#icenter][ICenter]]
+         - [[#iclassify][IClassify]]
+         - [[#todo-igraph][TODO IGraph]]
+         - [[#iintersect][IIntersect]]
+         - [[#todo-imeshconvert][TODO IMeshConvert]]
+         - [[#iproximity][IProximity]]
+         - [[#isample][ISample]]
+         - [[#itessellate][ITessellate]]
          - [[#todo-transformations][TODO Transformations]]
              - [[#todo-scale-with-non-uniform-values-should-return-ellipsoid][TODO scale with non-uniform values should return Ellipsoid]]
-         - [[#pvolume][PVolume]]
+         - [[#ivolume][IVolume]]
          - [[#end-of-implementation][End of implementation]]
      - [[#namespace-declaration][Namespace declaration]]
 
@@ -46,66 +46,66 @@
   (extend-type thi.ng.geom.types.Sphere
 #+END_SRC
 
-*** PArea
+*** IArea
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PArea
+  g/IArea
   (area
    [{r :r}] (* 4.0 PI r r))
 #+END_SRC
 
-*** PBoundary
+*** IBoundary
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundary
+  g/IBoundary
   (contains-point?
    [{p :p r :r} q] (<= (g/dist-squared p q) (* r r)))
 #+END_SRC
 
-*** PBounds
+*** IBounds
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBounds
+  g/IBounds
   (bounds
-   [_] (thi.ng.geom.types.AABB. (g/- (:p _) (:r _)) (vec3 (* 2 (:r _)))))
+   [_] (thi.ng.geom.types.AABB. (m/- (:p _) (:r _)) (vec3 (* 2 (:r _)))))
   (width  [_] (* 2.0 (:r _)))
   (height [_] (* 2.0 (:r _)))
   (depth  [_] (* 2.0 (:r _)))
 #+END_SRC
 
-*** PBoundingSphere
+*** IBoundingSphere
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundingSphere
+  g/IBoundingSphere
   (bounding-sphere [_] _)
 #+END_SRC
 
-*** PCenter
+*** ICenter
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PCenter
+  g/ICenter
   (center
    ([_] (thi.ng.geom.types.Sphere. (vec3) (:r _)))
    ([_ p] (thi.ng.geom.types.Sphere. (vec3 p) (:r _))))
   (centroid [_] (:p _))
 #+END_SRC
 
-*** PClassify
+*** IClassify
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PClassify
+  g/IClassify
   (classify-point
    [{p :p r :r} q]
    (m/signum (- (* r r) (g/dist-squared p q)) *eps*))
 #+END_SRC
 
-*** TODO PGraph
+*** TODO IGraph
 
 #+BEGIN_SRC clojure :noweb-ref impl
 
 #+END_SRC
 
-*** PIntersect
+*** IIntersect
 
 If ray intersects sphere, the function will return a 2-element vector
 of distances from the ray's start point to the sphere surface. If
@@ -117,13 +117,13 @@ computed by passing the distances into the following form:
   ;; dir = ray direction
   ;; p = ray start point
   ;; t = distance
-  (g/madd dir t p)
+  (m/madd dir t p)
 #+END_SRC
 
 If there's no intersection, the function returns =nil=.
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PIntersect
+  g/IIntersect
   (intersect-ray
    [{p :p r :r} ray]
    (let [[rp dir] (if (map? ray) [(:p ray) (:dir ray)] ray)]
@@ -140,10 +140,10 @@ If there's no intersection, the function returns =nil=.
     :default (err/type-error! "Sphere" s)))
 #+END_SRC
 
-*** TODO PMeshConvert
+*** TODO IMeshConvert
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PMeshConvert
+  g/IMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
    ([{[x y z] :p r :r} {:keys [mesh res slices stacks] :or {res *resolution*}}]
@@ -175,31 +175,31 @@ If there's no intersection, the function returns =nil=.
              (g/into (or mesh (bm/basic-mesh)))))))
 #+END_SRC
 
-*** PProximity
+*** IProximity
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PProximity
+  g/IProximity
   (closest-point
    [{p :p r :r} q]
-   (g/+! (g/normalize (g/- q p) r) p))
+   (m/+! (m/normalize (m/- q p) r) p))
 #+END_SRC
 
-*** PSample
+*** ISample
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PSample
+  g/ISample
   (random-point-inside
    [_]
-   (g/+ (:p _) (v/randvec3 (m/random (:r _)))))
+   (m/+ (:p _) (v/randvec3 (m/random (:r _)))))
   (random-point
    [_]
-   (g/+ (:p _) (v/randvec3 (:r _))))
+   (m/+ (:p _) (v/randvec3 (:r _))))
 #+END_SRC
 
-*** PTessellate
+*** ITessellate
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PTessellate
+  g/ITessellate
   (tessellate
    [_] (g/tessellate _ {}))
   (tessellate
@@ -210,10 +210,10 @@ If there's no intersection, the function returns =nil=.
 **** TODO scale with non-uniform values should return Ellipsoid
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PRotate
+  g/IRotate
   (rotate
    [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-z (:p _) theta) (:r _)))
-  g/PRotate3D
+  g/IRotate3D
   (rotate-x
    [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-x (:p _) theta) (:r _)))
   (rotate-y
@@ -225,18 +225,18 @@ If there's no intersection, the function returns =nil=.
    (thi.ng.geom.types.Sphere.
     (g/rotate-around-axis (:p _) axis theta) (:r _)))
   
-  g/PScale
-  (scale [_ s] (thi.ng.geom.types.Sphere. (g/* (:p _) s) (* (:r _) s)))
+  g/IScale
+  (scale [_ s] (thi.ng.geom.types.Sphere. (m/* (:p _) s) (* (:r _) s)))
   (scale-size [_ s] (thi.ng.geom.types.Sphere. (:p _) (* (:r _) s)))
 
-  g/PTranslate
-  (translate [_ t] (thi.ng.geom.types.Sphere. (g/+ (:p _) t) (:r _)))
+  g/ITranslate
+  (translate [_ t] (thi.ng.geom.types.Sphere. (m/+ (:p _) t) (:r _)))
 #+END_SRC
 
-*** PVolume
+*** IVolume
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVolume
+  g/IVolume
   (volume [{r :r}] (mm/mul (/ 4.0 3.0) PI r r r))
 #+END_SRC
 

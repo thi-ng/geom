@@ -16,11 +16,11 @@
       [vertices
        #?@(:clj [^:unsynchronized-mutable _hash]
            :cljs [^:mutable _hash])]
-    g/PVertexAccess
+    g/IVertexAccess
     (vertices [_ _] vertices)
-    g/PAttributeAccess
+    g/IAttributeAccess
     (attribs [_ _] nil)
-    g/PRawAccess
+    g/IRawAccess
     (raw [_ _] [vertices])
     Object
     (toString [_] (str \[ vertices \]))
@@ -48,11 +48,11 @@
       [vertices attribs
        #?@(:clj [^:unsynchronized-mutable _hash]
            :cljs [^:mutable _hash])]
-    g/PVertexAccess
+    g/IVertexAccess
     (vertices [_ mesh]
       (let [idx (-> mesh :vertices :id->v)]
         (mapv #(get idx %) vertices)))
-    g/PAttributeAccess
+    g/IAttributeAccess
     (attribs [_ mesh]
       (let [mattr (:attribs mesh)]
         (reduce-kv
@@ -64,7 +64,7 @@
       (let [idx (-> mesh :attribs attr :id->v)
             aval (attribs attr)]
         (if (sequential? aval) (mapv idx attribs) (idx aval))))
-    g/PRawAccess
+    g/IRawAccess
     (raw [_ mesh]
       [(g/vertices _ mesh) (g/attribs _ mesh)])
     Object

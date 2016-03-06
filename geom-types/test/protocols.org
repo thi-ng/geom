@@ -6,53 +6,53 @@
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   (def proto-ids
-    {:area      g/PArea
-     :bcircle   g/PBoundingCircle
-     :boundary  g/PBoundary
-     :bounds    g/PBounds
-     :bsphere   g/PBoundingSphere
-     :center    g/PCenter
-     :chull     g/PConvexHull
-     :circum    g/PCircumference
-     :class     g/PClassify
-     :clip      g/PClip
-     :conj      g/PConjugate
-     :cross     g/PCrossProduct
-     :det       g/PDeterminant
-     :dist      g/PDistance
-     :dot       g/PDotProduct
-     :edge      g/PEdgeAccess
-     :ext       g/PExtrude
-     :face      g/PFaceAccess
-     :flip      g/PFlip
-     :graph     g/PGraph
-     :head      g/PHeading
-     :inv       g/PInvert
-     :isec      g/PIntersect
-     :limit     g/PLimit
-     :mag       g/PMagnitude
-     :mat       g/PMatrixConvert
-     :math      g/PMathOps
-     :mesh      g/PMeshConvert
-     :mimax     g/PMinMax
-     :mix       g/PInterpolate
-     :norm      g/PNormalize
-     :polar     g/PPolar
-     :poly      g/PPolygonConvert
-     :prox      g/PProximity
-     :refl      g/PReflect
-     :rot3d     g/PRotate3D
-     :rotate    g/PRotate
-     :sample    g/PSample
-     :scale     g/PScale
-     :shear     g/PShear
-     :subdiv    g/PSubdivide
-     :tess      g/PTessellate
-     :translate g/PTranslate
-     :tx        g/PTransform
-     :vert      g/PVertexAccess
-     :vol       g/PVolume
-     :vtx       g/PVectorTransform
+    {:area      g/IArea
+     :bcircle   g/IBoundingCircle
+     :boundary  g/IBoundary
+     :bounds    g/IBounds
+     :bsphere   g/IBoundingSphere
+     :center    g/ICenter
+     :chull     g/IConvexHull
+     :circum    g/ICircumference
+     :class     g/IClassify
+     :clip      g/IClip
+     :conj      m/IConjugate
+     :cross     g/ICrossProduct
+     :det       m/IDeterminant
+     :dist      g/IDistance
+     :dot       g/IDotProduct
+     :edge      g/IEdgeAccess
+     :ext       g/IExtrude
+     :face      g/IFaceAccess
+     :flip      g/IFlip
+     :graph     g/IGraph
+     :head      g/IHeading
+     :inv       m/IInvert
+     :isec      g/IIntersect
+     :limit     m/ILimit
+     :mag       g/IMagnitude
+     :mat       g/IMatrixConvert
+     :math      m/IMathOps
+     :mesh      g/IMeshConvert
+     :mimax     m/IMinMax
+     :mix       m/IInterpolate
+     :norm      m/INormalize
+     :polar     g/IPolar
+     :poly      g/IPolygonConvert
+     :prox      g/IProximity
+     :refl      g/IReflect
+     :rot3d     g/IRotate3D
+     :rotate    g/IRotate
+     :sample    g/ISample
+     :scale     g/IScale
+     :shear     g/IShear
+     :subdiv    g/ISubdivide
+     :tess      g/ITessellate
+     :translate g/ITranslate
+     :tx        g/ITransform
+     :vert      g/IVertexAccess
+     :vol       g/IVolume
+     :vtx       g/IVectorTransform
      })
 
   (def shape-common
@@ -140,6 +140,7 @@
        (:require-macros
         [cemerick.cljs.test :refer (is deftest with-test run-tests testing)]))
     (:require
+     [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.types]
      [thi.ng.geom.aabb]

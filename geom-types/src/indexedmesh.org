@@ -6,17 +6,17 @@
          - [[#constructors][Constructors]]
          - [[#attributes][Attributes]]
      - [[#protocol-implementations][Protocol implementations]]
-         - [[#parea][PArea]]
-         - [[#pbounds][PBounds]]
-         - [[#pboundingsphere][PBoundingSphere]]
-         - [[#pcenter][PCenter]]
-         - [[#pflip][PFlip]]
-         - [[#pgeomcontainer][PGeomContainer]]
-         - [[#pvertexaccess-pedgeaccess--pfaceaccess][PVertexAccess, PEdgeAccess & PFaceAccess]]
-         - [[#pnormalaccess][PNormalAccess]]
-         - [[#todo-ptessellate][TODO PTessellate]]
-         - [[#ptransform][PTransform]]
-         - [[#pvolume][PVolume]]
+         - [[#iarea][IArea]]
+         - [[#ibounds][IBounds]]
+         - [[#iboundingsphere][IBoundingSphere]]
+         - [[#icenter][ICenter]]
+         - [[#iflip][IFlip]]
+         - [[#igeomcontainer][IGeomContainer]]
+         - [[#ivertexaccess-iedgeaccess--ifaceaccess][IVertexAccess, IEdgeAccess & IFaceAccess]]
+         - [[#inormalaccess][INormalAccess]]
+         - [[#todo-itessellate][TODO ITessellate]]
+         - [[#itransform][ITransform]]
+         - [[#ivolume][IVolume]]
          - [[#end-of-implementation][End of implementation]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
@@ -56,46 +56,46 @@
   (extend-type thi.ng.geom.types.IndexedMesh
 #+END_SRC
 
-*** PArea
+*** IArea
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PArea
+  g/IArea
   (area
    [_] (gu/total-area-3d (mf/xf-face-verts _) (:faces _)))
 #+END_SRC
 
-*** PBounds
+*** IBounds
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBounds
+  g/IBounds
   (bounds [_] (tu/bounding-box (g/vertices _)))
   (width [_] (gu/axis-range 0 (g/vertices _)))
   (height [_] (gu/axis-range 1 (g/vertices _)))
   (depth [_] (gu/axis-range 2 (g/vertices _)))
 #+END_SRC
 
-*** PBoundingSphere
+*** IBoundingSphere
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundingSphere
+  g/IBoundingSphere
   (bounding-sphere
    [_] (tu/bounding-sphere (g/centroid _) (g/vertices _)))
 #+END_SRC
 
-*** PCenter
+*** ICenter
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PCenter
+  g/ICenter
   (center
    ([_] (g/center _ (vec3)))
-   ([_ o] (g/transform _ (g/translate M44 (g/- o (g/centroid _))))))
+   ([_ o] (g/transform _ (g/translate M44 (m/- o (g/centroid _))))))
   (centroid
    [_] (gu/centroid (g/vertices _)))
 #+END_SRC
 
-*** PFlip
+*** IFlip
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PFlip
+  g/IFlip
   (flip
    [_]
    (thi.ng.geom.types.IndexedMesh.
@@ -104,27 +104,27 @@
     (dissoc (:attribs _) :fnormals :vnormals)))
 #+END_SRC
 
-*** PGeomContainer
+*** IGeomContainer
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PGeomContainer
+  g/IGeomContainer
   (into
    [_ faces] (tu/into-mesh _ add-face* faces))
-  g/PClear
+  g/IClear
   (clear*
    [_] (indexed-mesh))
 #+END_SRC
 
-*** PVertexAccess, PEdgeAccess & PFaceAccess
+*** IVertexAccess, IEdgeAccess & IFaceAccess
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVertexAccess
+  g/IVertexAccess
   (vertices
    [_] (-> _ :vertices :id->v))
-  g/PEdgeAccess
+  g/IEdgeAccess
   (edges
    [_] (err/unsupported!))
-  g/PFaceAccess
+  g/IFaceAccess
   (faces
    ([_] (:faces _))
    ([_ opts]
@@ -162,10 +162,10 @@
      _))
 #+END_SRC
 
-*** PNormalAccess
+*** INormalAccess
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PNormalAccess
+  g/INormalAccess
   (face-normals
    [_ force?]
    (if-let [fns (-> _ :attribs :fnorm)]
@@ -200,43 +200,43 @@
    [_] (err/unsupported!))
 #+END_SRC
 
-*** TODO PTessellate
+*** TODO ITessellate
 
 Provide a map of attribute interpolators
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PTessellate
+  g/ITessellate
   (tessellate
-   ([_]      (g/tessellate _ {:attribs (zipmap (keys (:attribs _)) (repeat g/mix))}))
+   ([_]      (g/tessellate _ {:attribs (zipmap (keys (:attribs _)) (repeat m/mix))}))
    ([_ opts] (tu/map-mesh (or (:fn opts) (gu/tessellate-face gu/tessellate-with-first)) _)))
 #+END_SRC
 
-*** PTransform
+*** ITransform
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PScale
+  g/IScale
   (scale
    ([_ s]
-    (tu/transform-mesh _ add-face* #(g/* % s)))
+    (tu/transform-mesh _ add-face* #(m/* % s)))
    ([_ sx sy sz]
-    (tu/transform-mesh _ add-face* #(g/* % sx sy sz))))
+    (tu/transform-mesh _ add-face* #(m/* % sx sy sz))))
   (scale-size
    [_ s]
    (let [c (g/centroid _)]
-     (tu/transform-mesh _ add-face* #(g/madd (g/- % c) s c))))
-  g/PTranslate
+     (tu/transform-mesh _ add-face* #(m/madd (m/- % c) s c))))
+  g/ITranslate
   (translate
-   [_ t] (tu/transform-mesh _ add-face* #(g/+ % t)))
-  g/PTransform
+   [_ t] (tu/transform-mesh _ add-face* #(m/+ % t)))
+  g/ITransform
   (transform
    [_ tx]
    (tu/transform-mesh _ add-face* tx))
 #+END_SRC
 
-*** PVolume
+*** IVolume
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVolume
+  g/IVolume
   (volume
    [_] (gu/total-volume (mf/xf-face-verts _) (:faces _)))
 #+END_SRC

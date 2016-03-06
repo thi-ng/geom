@@ -23,17 +23,17 @@
 #+BEGIN_SRC clojure :noweb-ref dist
   (defn closest-point-coeff
     [p a b]
-    (let [d (g/- b a)]
-      (/ (g/dot (g/- p a) d) (g/mag-squared d))))
+    (let [d (m/- b a)]
+      (/ (g/dot (m/- p a) d) (g/mag-squared d))))
 
   (defn closest-point-on-line
     [p a b]
-    (g/mix a b (closest-point-coeff p a b)))
+    (m/mix a b (closest-point-coeff p a b)))
 
   (defn closest-point-on-segment
     [p a b]
     (let [t (closest-point-coeff p a b)]
-      (if (<= t 0.0) a (if (>= t 1.0) b (g/mix a b t)))))
+      (if (<= t 0.0) a (if (>= t 1.0) b (m/mix a b t)))))
 
   (defn closest-point-on-segments
     [p segments]
@@ -48,11 +48,11 @@
 
   (defn closest-line-between
     [a1 b1 a2 b2]
-    (let [p43 (g/- b2 a2)]
+    (let [p43 (m/- b2 a2)]
       (if-not (m/delta= V3 p43 *eps*)
-        (let [p21 (g/- b1 a1)]
+        (let [p21 (m/- b1 a1)]
           (if-not (m/delta= V3 p21 *eps*)
-            (let [p13   (g/- a1 a2)
+            (let [p13   (m/- a1 a2)
                   d1343 (g/dot p13 p43)
                   d4321 (g/dot p43 p21)
                   d1321 (g/dot p13 p21)
@@ -65,8 +65,8 @@
                       ua (/ n d)
                       ub (/ (mm/madd d4321 ua d1343) d4343)]
                   {:type :intersect
-                   :a    (g/madd p21 ua a1)
-                   :b    (g/madd p43 ub a2)
+                   :a    (m/madd p21 ua a1)
+                   :b    (m/madd p43 ub a2)
                    :ua   ua
                    :ub   ub}))))))))
 
@@ -102,7 +102,7 @@
     (case (count coll)
       0 nil
       1 x
-      2 (g/mix x (first xs))
+      2 (m/mix x (first xs))
       (let [s (/ 1.0 (count coll))
             f (fn [x _] (* x s))]
         (g/reduce-vector x + f xs))))
@@ -111,11 +111,11 @@
     ([c' coll]
        (center (centroid coll) c' coll))
     ([c c' coll]
-       (let [d (g/- c' c)] (mapv #(g/+ % d) coll))))
+       (let [d (m/- c' c)] (mapv #(m/+ % d) coll))))
 
   (defn scale-size
     ([s coll] (scale-size (centroid coll) s coll))
-    ([c s coll] (mapv #(g/madd (g/- % c) s c) coll)))
+    ([c s coll] (mapv #(m/madd (m/- % c) s c) coll)))
 #+END_SRC
 
 *** Area & volume
@@ -130,7 +130,7 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
      (map f)))
 
   (def ^:private area-xf
-    (tessellating-transducer #(->> % (apply tri-area3) m/abs)))
+    (tessellating-transducer #(->> % (apply tri-area3) m/abs*)))
 
   (def ^:private volume-xf
     (tessellating-transducer #(g/dot (% 0) (g/cross (% 1) (% 2)))))
@@ -153,7 +153,7 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
       (cond
        (> c 1) (let [p (g/reduce-vector x min xs)
                      q (g/reduce-vector x max xs)]
-                 [p (g/- q p)])
+                 [p (m/- q p)])
        (= c 1) [x zero]
        :default nil)))
   
@@ -191,7 +191,7 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
 #+BEGIN_SRC clojure :noweb-ref sample
   (defn from-barycentric
     [points weights]
-    (reduce g/+ (map g/* points weights)))
+    (reduce m/+ (map m/* points weights)))
 
   (defn point-at*
     [points idx total t i]
@@ -199,7 +199,7 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
           i (int (loop [i i] (if (>= ct (idx i)) (recur (inc i)) i)))
           i1 (dec i)
           pi (idx i1)]
-      [(g/mix (nth points i1) (nth points i)
+      [(m/mix (nth points i1) (nth points i)
               (mm/subdiv ct pi (idx i) pi))
        i]))
 
@@ -241,7 +241,7 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
 
   (defn sample-segment-with-res
     [a b res include-b?]
-    (let [ls (for [t (m/norm-range res)] (g/mix a b t))]
+    (let [ls (for [t (m/norm-range res)] (m/mix a b t))]
       (if include-b? ls (butlast ls))))
 #+END_SRC
 
@@ -258,7 +258,7 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
     coordinates. Applies bilinear interpolation to compute point within
     the rect: U is coord along AB/DC edge, V along BC/AD"
     [[a b c d] [u v]]
-    (g/mix a b d c u v))
+    (m/mix a b d c u v))
 #+END_SRC
 
   : e +----+ h
@@ -276,7 +276,7 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
     within the cuboid: U is coord along AD/BC edge, V along AE/BF, W
     along AB/DC (see above diagram)"
     [[a b c d e f g h] [u v w]]
-    (g/mix (g/mix a d e h u v) (g/mix b c f g u v) w))
+    (m/mix (m/mix a d e h u v) (m/mix b c f g u v) w))
 #+END_SRC
 
 *** Tessellation
@@ -299,9 +299,9 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
 
   (defn tessellate-tri-with-midpoints
     [[a b c]]
-    (let [ab (g/mix a b)
-          bc (g/mix b c)
-          ca (g/mix c a)]
+    (let [ab (m/mix a b)
+          bc (m/mix b c)
+          ca (m/mix c a)]
       [[a ab ca] [ab b bc] [bc c ca] [ab bc ca]]))
 
   (defn tessellate-3
@@ -334,9 +334,9 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
 
 #+BEGIN_SRC clojure :noweb-ref normals
   (defn ortho-normal
-    ([[a b c]] (g/normalize (g/cross (g/- b a) (g/- c a))))
-    ([a b] (g/normalize (g/cross a b)))
-    ([a b c] (g/normalize (g/cross (g/- b a) (g/- c a)))))
+    ([[a b c]] (m/normalize (g/cross (m/- b a) (m/- c a))))
+    ([a b] (m/normalize (g/cross a b)))
+    ([a b c] (m/normalize (g/cross (m/- b a) (m/- c a)))))
 #+END_SRC
 
 ** Triangles
@@ -347,7 +347,7 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
     (- (mm/subm bx ax cy ay) (mm/subm cx ax by ay)))
 
   (defn norm-sign3
-    [a b c] (g/mag (g/cross (g/- b a) (g/- c a))))
+    [a b c] (g/mag (g/cross (m/- b a) (m/- c a))))
 
   (defn tri-area2
     [a b c] (* 0.5 (norm-sign2 a b c)))
@@ -359,15 +359,15 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
     [a b c] (neg? (norm-sign2 a b c)))
 
   (defn clockwise3?
-    [a b c n] (pos? (g/dot (g/cross (g/- b a) (g/- c a)) n)))
+    [a b c n] (pos? (g/dot (g/cross (m/- b a) (m/- c a)) n)))
 
   (defn triangle-barycentric-coords
     ([[a b c] p]
-       (triangle-barycentric-coords a b c p (g/- b a) (g/- c a)))
+       (triangle-barycentric-coords a b c p (m/- b a) (m/- c a)))
     ([a b c p]
-       (triangle-barycentric-coords a b c p (g/- b a) (g/- c a)))
+       (triangle-barycentric-coords a b c p (m/- b a) (m/- c a)))
     ([a b c p u v]
-       (let [w (g/- p a)
+       (let [w (m/- p a)
              uu (g/mag-squared u)
              vv (g/mag-squared v)
              uv (g/dot u v)
@@ -390,8 +390,8 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
 
   (defn point-in-triangle3?
     [p a b c]
-    (let [u (g/- b a)
-          v (g/- c a)
+    (let [u (m/- b a)
+          v (m/- c a)
           n (ortho-normal u v)
           cl (- (g/dot n p) (g/dot n a))]
       (if (m/delta= 0.0 cl)

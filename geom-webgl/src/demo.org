@@ -166,11 +166,11 @@ rotation / transformation).
                       model [:uniforms :view]
                       (mat/look-at (vec3 0 0 2) (vec3) (vec3 0 1 0)))
                rot   (g/rotate-y M44 (* t 0.5))
-               tx1   (g/* rot (-> M44
+               tx1   (m/* rot (-> M44
                                   (g/translate -0.46 0 0)
                                   (g/rotate-y 0.3)
                                   (g/rotate-z t)))
-               tx2   (g/* rot (-> M44
+               tx2   (m/* rot (-> M44
                                   (g/translate 0.46 0 0)
                                   (g/rotate-y -0.3)
                                   (g/rotate-z (- (+ t (/ HALF_PI teeth))))))]
@@ -366,7 +366,7 @@ rotation / transformation).
 
   (defn raycast
     [p eye ground back]
-    (let [dir (g/- p eye)
+    (let [dir (m/- p eye)
           i1  (:p (g/intersect-ray ground eye dir))
           i2  (:p (g/intersect-ray back eye dir))]
       (if (< (g/dist-squared eye i1) (g/dist-squared eye i2)) i1 i2)))
@@ -411,7 +411,7 @@ rotation / transformation).
                view (mat/look-at eye target up)
                isec (if (:update-ray @state)
                       (let [p (-> (vec3 (:mpos @state) 0)
-                                  (mat/unproject-point (g/invert (g/* (:proj uniforms) view)) view-rect)
+                                  (mat/unproject-point (m/invert (m/* (:proj uniforms) view)) view-rect)
                                   (raycast eye ground back))]
                         (vswap! state assoc :isec p :update-ray false) p)
                       (:isec @state))]

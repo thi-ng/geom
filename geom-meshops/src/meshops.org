@@ -79,7 +79,7 @@
                         ef (set ef)
                         acc (reduce
                              (fn [acc [f n]]
-                               (let [ni (g/- n)
+                               (let [ni (m/- n)
                                      dup (filter #(m/delta= ni (efn %)) (disj ef f))]
                                  (if (seq dup) (apply disj acc dup) acc)))
                              acc efn)]
@@ -106,7 +106,7 @@
                coeff #(gu/closest-point-coeff v % %2)
                v-on-edge? (fn [a b]
                             (let [t (coeff a b)
-                                  p (if (m/in-range? 0.01 0.99 t) (g/mix a b t))]
+                                  p (if (m/in-range? 0.01 0.99 t) (m/mix a b t))]
                               (if (and p (< (g/dist-squared v p) eps*)) p)))]
            (loop [edges (set/difference (into #{} (keys (:edges m))) vedges)]
              (if-let [e (first edges)]

@@ -21,12 +21,12 @@ meshes.
   (defrecord CSGNode [plane polygons front back])
 
   (deftype CSGPolygon [plane vertices shared ^:unsynchronized-mutable bsphere]
-    g/PBoundingSphere
+    g/IBoundingSphere
     (bounding-sphere [_]
       (if bsphere
         bsphere
         (set! bsphere (tu/bounding-sphere vertices))))
-    g/PFlip
+    g/IFlip
     (flip [_]
       (CSGPolygon. (g/flip plane) (reverse vertices) shared bsphere)))
 #+END_SRC
@@ -55,7 +55,7 @@ meshes.
                 b  (if (== ti 1) b (conj b vi))]
             (if (== 3 (bit-or ti (types j)))
               (let [vj (nth vertices j)
-                    v  (g/mix vi vj (/ (- (- w) (g/dot n vi)) (g/dot n (g/- vj vi))))]
+                    v  (m/mix vi vj (/ (- (- w) (g/dot n vi)) (g/dot n (m/- vj vi))))]
                 (recur (conj f v) (conj b v) (inc i)))
               (recur f b (inc i))))
           [f b]))))
@@ -198,16 +198,16 @@ meshes.
   (defn csg-cone
     ([s e radius res] (csg-cone s e radius radius res))
     ([s e r-south r-north res]
-     (let [dir (g/- e s)
-           az  (g/normalize dir)
-           ax  (-> (if (> (m/abs (az 1)) 0.5) V3X V3Y)
+     (let [dir (m/- e s)
+           az  (m/normalize dir)
+           ax  (-> (if (> (m/abs* (az 1)) 0.5) V3X V3Y)
                    (g/cross az)
-                   (g/normalize))
-           ay  (-> ax (g/cross az) g/normalize)
+                   (m/normalize))
+           ay  (-> ax (g/cross az) m/normalize)
            f   (fn [stack i r]
                  (let [theta (* m/TWO_PI i)
-                       out   (g/madd ax (Math/cos theta) (g/* ay (Math/sin theta)))
-                       pos   (g/+ s (g/* dir stack) (g/* out r))]
+                       out   (m/madd ax (Math/cos theta) (m/* ay (Math/sin theta)))
+                       pos   (m/+ s (m/* dir stack) (m/* out r))]
                    pos))
            res (/ 1.0 res)]
        (mapcat

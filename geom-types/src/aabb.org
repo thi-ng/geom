@@ -5,24 +5,24 @@
      - [[#constructors][Constructors]]
      - [[#type-specific-functions][Type specific functions]]
      - [[#protocol-implementations][Protocol implementations]]
-         - [[#parea][PArea]]
-         - [[#pbounds][PBounds]]
-         - [[#pboundingsphere][PBoundingSphere]]
-         - [[#pboundary][PBoundary]]
-         - [[#pcenter][PCenter]]
-         - [[#pclassify][PClassify]]
-         - [[#pedgeaccess-pfaceaccess--pvertexaccess][PEdgeAccess, PFaceAccess & PVertexAccess]]
-         - [[#pintersect][PIntersect]]
-         - [[#pmeshconvert][PMeshConvert]]
-         - [[#ppointmap][PPointMap]]
-         - [[#todo-pproximity][TODO PProximity]]
-         - [[#todo-psample][TODO PSample]]
-         - [[#todo-psetops][TODO PSetOps]]
-         - [[#psubdivide][PSubdivide]]
-         - [[#todo-ptessellate][TODO PTessellate]]
+         - [[#iarea][IArea]]
+         - [[#ibounds][IBounds]]
+         - [[#iboundingsphere][IBoundingSphere]]
+         - [[#iboundary][IBoundary]]
+         - [[#icenter][ICenter]]
+         - [[#iclassify][IClassify]]
+         - [[#iedgeaccess-ifaceaccess--ivertexaccess][IEdgeAccess, IFaceAccess & IVertexAccess]]
+         - [[#iintersect][IIntersect]]
+         - [[#imeshconvert][IMeshConvert]]
+         - [[#ipointmap][IPointMap]]
+         - [[#todo-iproximity][TODO IProximity]]
+         - [[#todo-isample][TODO ISample]]
+         - [[#todo-isetops][TODO ISetOps]]
+         - [[#isubdivide][ISubdivide]]
+         - [[#todo-itessellate][TODO ITessellate]]
              - [[#todo-only-keep-faces-on-the-surface-of-the-original-box-no-inside-walls][TODO Only keep faces on the surface of the original box (no inside walls)]]
          - [[#transformations][Transformations]]
-         - [[#pvolume][PVolume]]
+         - [[#ivolume][IVolume]]
          - [[#end-of-implementation][End of implementation]]
      - [[#complete-namespace-definition][Complete namespace definition]]
      - [[#tests][Tests]]
@@ -44,8 +44,8 @@
     [p q]
     (let [p (vec3 p)
           q (vec3 q)
-          p (g/min p q)]
-      (thi.ng.geom.types.AABB. p (g/- (g/max p q) p))))
+          p (m/min p q)]
+      (thi.ng.geom.types.AABB. p (m/- (m/max p q) p))))
 #+END_SRC
 
 ** Type specific functions
@@ -60,37 +60,37 @@
   (extend-type thi.ng.geom.types.AABB
 #+END_SRC
 
-*** PArea
+*** IArea
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PArea
+  g/IArea
   (area [{[w h d] :size}] (* 2.0 (mm/madd w h d h w d)))
 #+END_SRC
 
-*** PBounds
+*** IBounds
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBounds
+  g/IBounds
   (bounds [_] _)
   (width  [_] (nth (:size _) 0))
   (height [_] (nth (:size _) 1))
   (depth  [_] (nth (:size _) 2))
 #+END_SRC
 
-*** PBoundingSphere
+*** IBoundingSphere
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundingSphere
+  g/IBoundingSphere
   (bounding-sphere
    [{p :p size :size}]
-   (let [ext (g/* size 0.5)]
-     (tu/bounding-sphere (g/+ p ext) (g/mag ext))))
+   (let [ext (m/* size 0.5)]
+     (tu/bounding-sphere (m/+ p ext) (g/mag ext))))
 #+END_SRC
 
-*** PBoundary
+*** IBoundary
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundary
+  g/IBoundary
   (contains-point?
    [{p :p s :size} q]
    (and (m/in-range? (p 0) (+ (p 0) (s 0)) (q 0))
@@ -98,27 +98,27 @@
         (m/in-range? (p 2) (+ (p 2) (s 2)) (q 2))))
 #+END_SRC
 
-*** PCenter
+*** ICenter
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PCenter
+  g/ICenter
   (center
    ([{p :p size :size}]
-      (thi.ng.geom.types.AABB. (g/* size -0.5) size))
+      (thi.ng.geom.types.AABB. (m/* size -0.5) size))
    ([{size :size} q]
-      (thi.ng.geom.types.AABB. (g/madd size -0.5 q) size)))
+      (thi.ng.geom.types.AABB. (m/madd size -0.5 q) size)))
   (centroid
-   [_] (g/madd (:size _) 0.5 (:p _)))
+   [_] (m/madd (:size _) 0.5 (:p _)))
 #+END_SRC
 
-*** PClassify
+*** IClassify
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PClassify
+  g/IClassify
   (classify-point
    [{p :p size :size} [x y z :as q]]
    (let [[x1 y1 z1] p
-         [x2 y2 z2] (g/+ p size)
+         [x2 y2 z2] (m/+ p size)
          on-plane? (fn [[minp maxp p min1 max1 min2 max2 c1 c2]]
                      (and (or (m/delta= minp p *eps*)
                               (m/delta= maxp p *eps*))
@@ -135,7 +135,7 @@
          1 -1))))
 #+END_SRC
 
-*** PEdgeAccess, PFaceAccess & PVertexAccess                         :verify:
+*** IEdgeAccess, IFaceAccess & IVertexAccess                         :verify:
 
   : e +----+ h
   :   |\   :\
@@ -149,16 +149,16 @@ Faces are always returned in this order: east, west, north, south,
 front, back (see diagram below).
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVertexAccess
+  g/IVertexAccess
   (vertices
    [{a :p size :size}]
    (let [[x1 y1 z1] a
-         [x2 y2 z2 :as g] (g/+ a size)
+         [x2 y2 z2 :as g] (m/+ a size)
          b (vec3 x1 y1 z2) c (vec3 x2 y1 z2)
          d (vec3 x2 y1 z1) e (vec3 x1 y2 z1)
          f (vec3 x1 y2 z2) h (vec3 x2 y2 z1)]
      [a b c d e f g h]))
-  g/PEdgeAccess
+  g/IEdgeAccess
   (edges
    [_]
    (let [[a b c d e f g h] (g/vertices _)]
@@ -167,7 +167,7 @@ front, back (see diagram below).
       [a e] [b f]             ;; left
       [c g] [d h]             ;; right
       ]))
-  g/PFaceAccess
+  g/IFaceAccess
   (faces
    [_]
    (let [[a b c d e f g h] (g/vertices _)]
@@ -179,10 +179,10 @@ front, back (see diagram below).
       [a e h d]]))
 #+END_SRC
 
-*** PIntersect                                                       :verify:
+*** IIntersect                                                       :verify:
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PIntersect
+  g/IIntersect
   (intersect-shape
    [_ s]
    (cond
@@ -193,10 +193,10 @@ front, back (see diagram below).
     :default (err/type-error! "AABB" s)))
 #+END_SRC
 
-*** PMeshConvert
+*** IMeshConvert
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PMeshConvert
+  g/IMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
    ([_ {:keys [mesh flags attribs] :or {flags "nsewfb"}}]
@@ -212,7 +212,7 @@ front, back (see diagram below).
              (g/into (or mesh (bm/basic-mesh)))))))
 #+END_SRC
 
-*** PPointMap
+*** IPointMap
 
 - =map-point= takes an AABB and 3D point, returns the point in
   normalized UVW coords in local box space, where [0,0,0] is
@@ -224,7 +224,7 @@ front, back (see diagram below).
   point in local UVW coordinates to its world position.
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PPointMap
+  g/IPointMap
   (map-point
    [{:keys [p size]} q]
    (vec3
@@ -232,29 +232,29 @@ front, back (see diagram below).
     (mm/subdiv (q 1) (p 1) (size 1))
     (mm/subdiv (q 2) (p 2) (size 2))))
   (unmap-point
-   [_ q] (g/madd q (:size _) (:p _)))
+   [_ q] (m/madd q (:size _) (:p _)))
 #+END_SRC
 
-*** TODO PProximity
+*** TODO IProximity
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PProximity
+  g/IProximity
   (closest-point [_ p] nil)
 #+END_SRC
 
-*** TODO PSample
+*** TODO ISample
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PSample
+  g/ISample
   (random-point-inside
    [{p :p size :size}]
    (let [[x1 y1 z1] p
-         [x2 y2 z2] (g/+ p size)]
+         [x2 y2 z2] (m/+ p size)]
      (vec3 (m/random x1 x2) (m/random y1 y2) (m/random z1 z2))))
   (random-point
    [{p :p size :size}]
    (let [[x1 y1 z1] p
-         [x2 y2 z2] (g/+ p size)
+         [x2 y2 z2] (m/+ p size)
          id (int (m/random 6))]
      (cond
       (< id 2) (vec3 (if (zero? id) x1 x2) (m/random y1 y2) (m/random z1 z2))
@@ -262,7 +262,7 @@ front, back (see diagram below).
       :default (vec3 (m/random x1 x2) (m/random y1 y2) (if (= 4 id) z1 z2)))))
 #+END_SRC
 
-*** TODO PSetOps
+*** TODO ISetOps
     - Note taken on [2015-03-15 Sun 00:50] \\
       Maybe `difference` isn't suitable here and should only implement ops which retain AABB type. Difference already implemented in csg ns
 
@@ -279,23 +279,23 @@ other AABBs and no type checking is done.
   =nil= in case of no overlap)
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PSetOps
+  m/ISetOps
   (union
    [{pa :p sa :size} {pb :p sb :size}]
-   (let [p (g/min pa pb)]
-     (thi.ng.geom.types.AABB. p (g/- (g/max (g/+ pa sa) (g/+ pb sb)) p))))
+   (let [p (m/min pa pb)]
+     (thi.ng.geom.types.AABB. p (m/- (m/max (m/+ pa sa) (m/+ pb sb)) p))))
   (intersection
    [_ b]
-   (let [pa (:p _) qa (g/+ pa (:size _))
-         pb (:p b) qb (g/+ pb (:size b))
-         p' (g/max pa pb)
-         q' (g/min qa qb)
-         s' (g/- q' p')]
+   (let [pa (:p _) qa (m/+ pa (:size _))
+         pb (:p b) qb (m/+ pb (:size b))
+         p' (m/max pa pb)
+         q' (m/min qa qb)
+         s' (m/- q' p')]
      (if (every? #(>= % 0) s')
        (thi.ng.geom.types.AABB. p' s'))))
 #+END_SRC
   
-*** PSubdivide
+*** ISubdivide
 
 An AABB can be subdivided into smaller ones, i.e. to create a seq of
 uniform grid cells. The following options can be given as a 2nd
@@ -315,27 +315,27 @@ for missing args. AABBs are returned as a lazyseq starting from =:p=
 of the original with inner sorting over XYZ.
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PSubdivide
+  g/ISubdivide
   (subdivide
    ([_] (g/subdivide _ {}))
    ([{p :p size :size} {:keys [num cols rows slices] :or {num 1}}]
       (let [sx (or cols num)
             sy (or rows num)
             sz (or slices num)
-            s (g/div size sx sy sz)]
+            s (m/div size sx sy sz)]
         (for [z (butlast (m/norm-range sz))
               y (butlast (m/norm-range sy))
               x (butlast (m/norm-range sx))]
-          (thi.ng.geom.types.AABB. (g/madd (vec3 x y z) size p) s)))))
+          (thi.ng.geom.types.AABB. (m/madd (vec3 x y z) size p) s)))))
 #+END_SRC
 
-*** TODO PTessellate
+*** TODO ITessellate
 **** TODO Only keep faces on the surface of the original box (no inside walls)
     - Note taken on [2015-03-15 Sun 00:55] \\
       could use Quad3 face tessellation, but would require moving Q3's subdivision into utils ns to avoid circular dependency.
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PTessellate
+  g/ITessellate
   (tessellate
    ([_] (g/tessellate _ {}))
    ([_ {f :fn :or {f gu/tessellate-3} :as opts}]
@@ -351,11 +351,11 @@ of the original with inner sorting over XYZ.
 *** Transformations                                                  :verify:
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PRotate
+  g/IRotate
   (rotate
    [_ theta] (g/rotate-z (cu/cuboid (:p _) (:size _)) theta))
   
-  g/PRotate3D
+  g/IRotate3D
   (rotate-x
    [_ theta] (g/rotate-x (cu/cuboid (:p _) (:size _)) theta))
   (rotate-y
@@ -365,29 +365,29 @@ of the original with inner sorting over XYZ.
   (rotate-around-axis
    [_ axis theta] (g/rotate-around-axis (cu/cuboid (:p _) (:size _)) axis theta))
   
-  g/PScale
+  g/IScale
   (scale
-   ([_ s] (thi.ng.geom.types.AABB. (g/* (:p _) s) (g/* (:size _) s)))
-   ([_ sx sy] (thi.ng.geom.types.AABB. (g/* (:p _) sx sy) (g/* (:size _) sx sy)))
-   ([_ sx sy sz] (thi.ng.geom.types.AABB. (g/* (:p _) sx sy sz) (g/* (:size _) sx sy sz))))
+   ([_ s] (thi.ng.geom.types.AABB. (m/* (:p _) s) (m/* (:size _) s)))
+   ([_ sx sy] (thi.ng.geom.types.AABB. (m/* (:p _) sx sy) (m/* (:size _) sx sy)))
+   ([_ sx sy sz] (thi.ng.geom.types.AABB. (m/* (:p _) sx sy sz) (m/* (:size _) sx sy sz))))
   (scale-size
    [_ s]
-   (let [s' (g/* (:size _) s)]
-     (thi.ng.geom.types.AABB. (g/madd (g/- s' (:size _)) -0.5 (:p _)) s')))
+   (let [s' (m/* (:size _) s)]
+     (thi.ng.geom.types.AABB. (m/madd (m/- s' (:size _)) -0.5 (:p _)) s')))
   
-  g/PTranslate
+  g/ITranslate
   (translate
-   [_ t] (thi.ng.geom.types.AABB. (g/+ (:p _) t) (:size _)))
+   [_ t] (thi.ng.geom.types.AABB. (m/+ (:p _) t) (:size _)))
   
-  g/PTransform
+  g/ITransform
   (transform
    [_ m] (g/transform (cu/cuboid (:p _) (:size _)) m))
 #+END_SRC
 
-*** PVolume
+*** IVolume
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVolume
+  g/IVolume
   (volume [{[w h d] :size}] (mm/mul w h d))
 #+END_SRC
 
@@ -437,6 +437,7 @@ of the original with inner sorting over XYZ.
        (:require-macros
         [cemerick.cljs.test :refer (is deftest with-test run-tests testing)]))
     (:require
+     [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :refer [vec3]]
      [thi.ng.geom.core.matrix :refer [M44]]
@@ -465,8 +466,8 @@ of the original with inner sorting over XYZ.
   (deftest test-impls
     (let [[px py pz :as p] (vec3 100 200 300)
           [w h d :as s]    (vec3 10 20 30)
-          [qx qy qz :as q] (g/+ p s)
-          c (g/madd s 0.5 p)
+          [qx qy qz :as q] (m/+ p s)
+          c (m/madd s 0.5 p)
           a (a/aabb p s)]
       (is (== (* 2 (+ (* w h) (* w d) (* h d))) (g/area a)) "area")
       (is (== (* w h d) (g/volume a)) "volume")
@@ -474,7 +475,7 @@ of the original with inner sorting over XYZ.
       (is (= w (g/width a)) "width")
       (is (= h (g/height a)) "height")
       (is (= d (g/depth a)) "depth")
-      (is (= (s/sphere c (g/dist c (g/+ p s))) (g/bounding-sphere a)) "bounding sphere")
+      (is (= (s/sphere c (g/dist c (m/+ p s))) (g/bounding-sphere a)) "bounding sphere")
       (is (= c (g/centroid a)) "centroid")
       (is (= (vec3) (g/centroid (g/center a))) "center + centroid")
       (is (= (vec3 -1 -2 -3) (g/centroid (g/center a (vec3 -1 -2 -3)))) "center p + centroid")
@@ -502,15 +503,15 @@ of the original with inner sorting over XYZ.
       (is (= 6 (count (g/subdivide a {:cols 3 :rows 2}))) "subdiv :cols :rows")
       (is (= 12 (count (g/subdivide a {:cols 3 :rows 2 :slices 2}))) "subdiv :cols :rows :slices")
       (is (= 12 (count (g/tessellate a))) "tessellate")
-      (is (= (a/aabb s) (g/translate a (g/- p))) "translate")
-      (is (= (a/aabb (g/* p 2) (g/* s 2)) (g/scale a 2)) "scale")
-      (is (= (a/aabb (g/madd s -0.5 p) (g/* s 2)) (g/scale-size a 2)) "scale-size")
-      (is (= (cu/cuboid (vec3) s) (g/transform a (g/translate M44 (g/- p)))) "translate via mat")
-      (is (= (cu/cuboid (g/* p 2) (g/* s 2)) (g/transform a (g/scale M44 2))) "scale via mat")
-      (is (= (a/aabb [-1 -2 -3] [3 5 7]) (g/union (a/aabb [-1 -2 -3] 1) (a/aabb [1 2 3] 1))) "union")
-      (is (= (a/aabb) (g/union (a/aabb) (a/aabb))) "union self")
-      (is (= (a/aabb 0.5 0.5) (g/intersection (a/aabb) (a/aabb 0.5 1))) "intersection aabb 1")
-      (is (= (a/aabb 1 0) (g/intersection (a/aabb) (a/aabb 1 1))) "intersection aabb 2")
+      (is (= (a/aabb s) (g/translate a (m/- p))) "translate")
+      (is (= (a/aabb (m/* p 2) (m/* s 2)) (g/scale a 2)) "scale")
+      (is (= (a/aabb (m/madd s -0.5 p) (m/* s 2)) (g/scale-size a 2)) "scale-size")
+      (is (= (cu/cuboid (vec3) s) (g/transform a (g/translate M44 (m/- p)))) "translate via mat")
+      (is (= (cu/cuboid (m/* p 2) (m/* s 2)) (g/transform a (g/scale M44 2))) "scale via mat")
+      (is (= (a/aabb [-1 -2 -3] [3 5 7]) (m/union (a/aabb [-1 -2 -3] 1) (a/aabb [1 2 3] 1))) "union")
+      (is (= (a/aabb) (m/union (a/aabb) (a/aabb))) "union self")
+      (is (= (a/aabb 0.5 0.5) (m/intersection (a/aabb) (a/aabb 0.5 1))) "intersection aabb 1")
+      (is (= (a/aabb 1 0) (m/intersection (a/aabb) (a/aabb 1 1))) "intersection aabb 2")
       (is (= (vec3) (g/map-point a p)) "map-point 1")
       (is (= (vec3 1) (g/map-point a q)) "map-point 2")
       (is (= (vec3 0 1 1) (g/map-point a (vec3 px qy qz))) "map-point 3")

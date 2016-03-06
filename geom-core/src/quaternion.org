@@ -14,18 +14,18 @@
          - [[#rseq][rseq]]
      - [[#implementation][Implementation]]
          - [[#clojure-protocols][Clojure protocols]]
-         - [[#pscale][PScale]]
-         - [[#protate3d][PRotate3D]]
-         - [[#pmathops][PMathOps]]
-         - [[#pdeltaequals][PDeltaEquals]]
-         - [[#pdotproduct][PDotProduct]]
-         - [[#pmagnitude][PMagnitude]]
-         - [[#pnormalize][PNormalize]]
-         - [[#pconjugate][PConjugate]]
-         - [[#pinvert][PInvert]]
-         - [[#pinterpolate][PInterpolate]]
-         - [[#pmatrixconvert][PMatrixConvert]]
-         - [[#pvectortransform][PVectorTransform]]
+         - [[#iscale][IScale]]
+         - [[#irotate3d][IRotate3D]]
+         - [[#imathops][IMathOps]]
+         - [[#ideltaequals][IDeltaEquals]]
+         - [[#idotproduct][IDotProduct]]
+         - [[#imagnitude][IMagnitude]]
+         - [[#inormalize][INormalize]]
+         - [[#iconjugate][IConjugate]]
+         - [[#iinvert][IInvert]]
+         - [[#iinterpolate][IInterpolate]]
+         - [[#imatrixconvert][IMatrixConvert]]
+         - [[#ivectortransform][IVectorTransform]]
          - [[#end-of-implementation][End of implementation]]
          - [[#override-print-methods][Override print methods]]
      - [[#constants][Constants]]
@@ -339,19 +339,19 @@ of the code.
    [_] (str "[" x " " y " " z " " w "]"))
 #+END_SRC
 
-*** PScale
+*** IScale
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PScale
+  g/IScale
   (scale
    [_ s]
    (Quat4. (* x s) (* y s) (* z s) (* w s) -1 #?(:clj -1)))
 #+END_SRC
 
-*** PRotate3D
+*** IRotate3D
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PRotate3D
+  g/IRotate3D
   (rotate-x
    [_ theta]
    (let [t (/ theta 2.0)
@@ -384,10 +384,10 @@ of the code.
       -1 #?(:clj -1))))
 #+END_SRC
 
-*** PMathOps
+*** IMathOps
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PMathOps
+  m/IMathOps
   (+
    [_ q]
    (let [q ^Quat4 q]
@@ -433,10 +433,10 @@ of the code.
       -1 #?(:clj -1))))
 #+END_SRC
 
-*** PDeltaEquals
+*** IDeltaEquals
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  m/PDeltaEquals
+  m/IDeltaEquals
   (delta=
    [_ q] (m/delta= _ q *eps*))
   (delta=
@@ -449,30 +449,30 @@ of the code.
         (m/delta= w (nth q 3) eps)))
 #+END_SRC
 
-*** PDotProduct
+*** IDotProduct
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PDotProduct
+  g/IDotProduct
   (dot
    [_ q]
    (let [q ^Quat4 q]
      (mm/madd x (.-x q) y (.-y q) z (.-z q) w (.-w q))))
 #+END_SRC
 
-*** PMagnitude
+*** IMagnitude
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PMagnitude
+  g/IMagnitude
   (mag
    [_] (Math/sqrt (mm/madd x x y y z z w w)))
   (mag-squared
    [_] (mm/madd x x y y z z w w))
 #+END_SRC
 
-*** PNormalize
+*** INormalize
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PNormalize
+  m/INormalize
   (normalize [_]
     (let [m (Math/sqrt (mm/madd x x y y z z w w))]
       (if (> m *eps*)
@@ -480,18 +480,18 @@ of the code.
         _)))
 #+END_SRC
 
-*** PConjugate
+*** IConjugate
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PConjugate
+  m/IConjugate
   (conjugate [_]
     (Quat4. (- x) (- y) (- z) w -1 #?(:clj -1)))
 #+END_SRC
 
-*** PInvert
+*** IInvert
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PInvert
+  m/IInvert
   (invert [_]
     (let [d (g/mag-squared _)
           d (if (zero? d) 0.0 (/ d))
@@ -499,17 +499,17 @@ of the code.
       (Quat4. (* x id) (* y id) (* z id) (* w d) -1 #?(:clj -1))))
 #+END_SRC
 
-*** PInterpolate
+*** IInterpolate
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PInterpolate
-  (mix [_ q] (g/mix _ q 0.5))
+  m/IInterpolate
+  (mix [_ q] (m/mix _ q 0.5))
   (mix [_ q t]
     (let [d (g/dot _ q)]
-      (if (< (m/abs d) 1.0)
+      (if (< (m/abs* d) 1.0)
         (let [theta (Math/acos d)
               stheta (Math/sqrt (mm/madd d (- d) 1.0))
-              [a b] (if (< (m/abs stheta) 0.001)
+              [a b] (if (< (m/abs* stheta) 0.001)
                       [0.5 0.5]
                       [(/ (Math/sin (mm/subm 1.0 t theta)) stheta)
                        (/ (Math/sin (* t theta)) stheta)])
@@ -523,10 +523,10 @@ of the code.
         _)))
 #+END_SRC
 
-*** PMatrixConvert
+*** IMatrixConvert
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PMatrixConvert
+  g/IMatrixConvert
   (as-matrix
    [_] (g/as-matrix _ nil))
   (as-matrix
@@ -552,10 +552,10 @@ of the code.
       nil nil)))
 #+END_SRC
 
-*** PVectorTransform
+*** IVectorTransform
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVectorTransform
+  g/IVectorTransform
   (transform-vector
    [_ [vx vy vz :as v]]
    (let [ix (mm/maddsub w vx y vz z vy)
@@ -600,11 +600,11 @@ of the code.
   (defn quat-from-axis-angle
     [axis theta]
     (let [theta (/ theta 2.0)]
-      (quat (g/normalize (vec3 axis) (Math/sin theta)) (Math/cos theta))))
+      (quat (m/normalize (vec3 axis) (Math/sin theta)) (Math/cos theta))))
 
   (defn as-axis-angle
     [q]
-    (let [[x y z w] (g/normalize q)
+    (let [[x y z w] (m/normalize q)
           theta (* 2.0 (Math/acos w))
           mag (Math/sqrt (- 1.0 (* w w)))]
       (if (< mag 0.0005)
@@ -621,7 +621,7 @@ of the code.
                     :yzx [V3Y V3Z V3X]
                     :zyx [V3Z V3Y V3X]
                     (err/illegal-arg! order))]
-      (g/* (quat-from-axis-angle a alpha)
+      (m/* (quat-from-axis-angle a alpha)
            (quat-from-axis-angle b beta)
            (quat-from-axis-angle c gamma))))
 
@@ -669,8 +669,8 @@ of the code.
 
   (defn alignment-quat
     [from to]
-    (let [from  (g/normalize from)
-          to    (g/normalize to)
+    (let [from  (m/normalize from)
+          to    (m/normalize to)
           axis  (g/cross from to)
           theta (Math/atan2 (g/mag axis) (g/dot from to))]
       (quat-from-axis-angle axis theta)))

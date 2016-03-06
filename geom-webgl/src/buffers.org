@@ -65,15 +65,15 @@
 
 #+BEGIN_SRC clojure :noweb-ref fbo
   (defrecord FBO [^WebGLRenderingContext gl id]
-    gl/PBind
+    gl/IBind
     (bind [_] (.bindFramebuffer gl gl/framebuffer id) _)
     (bind [_ _] (err/unsupported!))
     (unbind [_] (.bindFramebuffer gl gl/framebuffer nil) _)
 
-    gl/PRelease
+    gl/IRelease
     (release [_] (.deleteFramebuffer gl id) _)
 
-    gl/PFramebuffer
+    gl/IFramebuffer
     (set-fbo-color-texture
       [_ {:keys [target id]}]
       (.framebufferTexture2D gl gl/framebuffer gl/color-attachment0 target id 0)
@@ -107,15 +107,15 @@
 
 #+BEGIN_SRC clojure :noweb-ref r-buffer
   (defrecord RenderBuffer [^WebGLRenderingContext gl id format width height]
-    gl/PBind
+    gl/IBind
     (bind [_] (.bindRenderbuffer gl gl/renderbuffer id) _)
     (bind [_ _] (err/unsupported!))
     (unbind [_] (.bindRenderbuffer gl gl/renderbuffer nil) _)
 
-    gl/PRelease
+    gl/IRelease
     (release [_] (.deleteRenderbuffer gl id) _)
 
-    gl/PConfigure
+    gl/IConfigure
     (configure [_ {:keys [format width height]}]
       (gl/bind _)
       (.renderbufferStorage gl gl/renderbuffer format width height)
@@ -136,7 +136,7 @@
 
 #+BEGIN_SRC clojure :noweb-ref tex
   (defrecord Texture2D [^WebGLRenderingContext gl id channels type target width height]
-    gl/PBind
+    gl/IBind
     (bind [_] (err/unsupported! "must specify texture unit"))
     (bind
       [_ unit]
@@ -149,10 +149,10 @@
       (.bindTexture gl target -1)
       _)
 
-    gl/PRelease
+    gl/IRelease
     (release [_] (.deleteTexture gl id) _)
 
-    gl/PConfigure
+    gl/IConfigure
     (configure
       [_ {:keys [width height filter wrap]}]
       (.texImage2D gl target 0 channels width height 0 channels type nil)
@@ -160,7 +160,7 @@
       (when wrap   (gl/set-texture-wrap _ wrap))
       (Texture2D. gl id channels type target width height))
 
-    gl/PTexture
+    gl/ITexture
     (set-texture-filter
       [_ type]
       (.texParameteri gl target gl/texture-min-filter type)

@@ -8,18 +8,18 @@
          - [[#automatic-curve-generation][Automatic curve generation]]
      - [[#constructors][Constructors]]
      - [[#todo-bezier2][TODO Bezier2]]
-         - [[#pedgeaccess-pvertexaccess][PEdgeAccess, PVertexAccess]]
-         - [[#pgraph][PGraph]]
-         - [[#pmeshconvert][PMeshConvert]]
-         - [[#pproximity][PProximity]]
-         - [[#psample][PSample]]
+         - [[#iedgeaccess-ivertexaccess][IEdgeAccess, IVertexAccess]]
+         - [[#igraph][IGraph]]
+         - [[#imeshconvert][IMeshConvert]]
+         - [[#iproximity][IProximity]]
+         - [[#isample][ISample]]
          - [[#end-of-implementations][End of implementations]]
      - [[#todo-bezier3][TODO Bezier3]]
-         - [[#pedgeaccess-pvertexaccess][PEdgeAccess, PVertexAccess]]
-         - [[#pgraph][PGraph]]
-         - [[#pmeshconvert][PMeshConvert]]
-         - [[#pproximity][PProximity]]
-         - [[#psample][PSample]]
+         - [[#iedgeaccess-ivertexaccess][IEdgeAccess, IVertexAccess]]
+         - [[#igraph][IGraph]]
+         - [[#imeshconvert][IMeshConvert]]
+         - [[#iproximity][IProximity]]
+         - [[#isample][ISample]]
          - [[#end-of-implementations][End of implementations]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
@@ -41,10 +41,10 @@
   (defn interpolate
     [[a b c d] t]
     (let [it (- 1.0 t), it2 (* it it), t2 (* t t)]
-      (->> (g/* a (* it it2))
-           (g/madd b (* 3 (* t it2)))
-           (g/madd c (* 3 (* it t2)))
-           (g/madd d (* t t2)))))
+      (->> (m/* a (* it it2))
+           (m/madd b (* 3 (* t it2)))
+           (m/madd c (* 3 (* it t2)))
+           (m/madd d (* t t2)))))
   
   (defn sample-segment
     [seg res]
@@ -73,7 +73,7 @@ required control points. This only works for non-closed curves, though.
     (let [np (count points)
           invt (/ 1.0 tight)
           points (vec points)
-          c1 (g/subm (points 2) (first points) tight)
+          c1 (m/subm (points 2) (first points) tight)
           [bi coeff] (reduce
                       (fn [[bi coeff] i]
                         (let [b (/ -1.0 (+ invt (peek bi)))
@@ -81,12 +81,12 @@ required control points. This only works for non-closed curves, though.
                               p (get points (dec i))
                               q (get points (inc i))]
                           [(conj bi b)
-                           (conj coeff (g/* (g/- q p c) (- b)))]))
+                           (conj coeff (m/* (m/- q p c) (- b)))]))
                       [[0 (- tight)] [(ctor) c1]]
                       (range 2 (dec np)))]
       (reduce
        (fn [delta i]
-         (assoc delta i (g/madd (delta (inc i)) (bi i) (coeff i))))
+         (assoc delta i (m/madd (delta (inc i)) (bi i) (coeff i))))
        (vec (repeatedly np ctor))
        (range (- np 2) 0 -1))))
   
@@ -97,7 +97,7 @@ required control points. This only works for non-closed curves, though.
           (d/successive-nth 2)
           (interleave (d/successive-nth 2 points))
           (partition 2)
-          (mapcat (fn [[[p q] [dp dq]]] [p (g/+ p dp) (g/- q dq)])))
+          (mapcat (fn [[[p q] [dp dq]]] [p (m/+ p dp) (m/- q dq)])))
      [(last points)]))
 #+END_SRC
 
@@ -140,21 +140,21 @@ required control points. This only works for non-closed curves, though.
   (extend-type thi.ng.geom.types.Bezier2
 #+END_SRC
 
-*** PEdgeAccess, PVertexAccess
+*** IEdgeAccess, IVertexAccess
 #+BEGIN_SRC clojure :noweb-ref impl2
-  g/PVertexAccess
+  g/IVertexAccess
   (vertices
    ([_] (g/vertices _ *resolution*))
    ([_ res] (sample-with-res res true (:points _))))
-  g/PEdgeAccess
+  g/IEdgeAccess
   (edges
    ([_] (d/successive-nth 2 (g/vertices _ *resolution*)))
    ([_ res] (d/successive-nth 2 (g/vertices _ res))))
 #+END_SRC
 
-*** PGraph
+*** IGraph
 #+BEGIN_SRC clojure :noweb-ref impl2
-  g/PGraph
+  g/IGraph
   (vertex-neighbors
    [_ v] (d/neighbors v (g/vertices _)))
   (vertex-valence
@@ -166,10 +166,10 @@ required control points. This only works for non-closed curves, though.
        0)))
 #+END_SRC
 
-*** PMeshConvert
+*** IMeshConvert
 
 #+BEGIN_SRC clojure :noweb-ref impl2
-  g/PMeshConvert
+  g/IMeshConvert
   (as-mesh
    [_ {:keys [res dist profile] :as opts}]
    (let [points (if dist
@@ -178,14 +178,14 @@ required control points. This only works for non-closed curves, though.
      (ptf/sweep-mesh (map vec3 points) profile opts)))
 #+END_SRC
 
-*** PProximity
+*** IProximity
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   <<lob-geom-proxi>>
 #+END_SRC
 
-*** PSample
+*** ISample
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
-  g/PSample
+  g/ISample
   (point-at
    [_ t] (gu/point-at t (:points _) nil))
   (random-point
@@ -207,21 +207,21 @@ required control points. This only works for non-closed curves, though.
   (extend-type thi.ng.geom.types.Bezier3
 #+END_SRC
 
-*** PEdgeAccess, PVertexAccess
+*** IEdgeAccess, IVertexAccess
 #+BEGIN_SRC clojure :noweb-ref impl3
-  g/PVertexAccess
+  g/IVertexAccess
   (vertices
    ([_] (g/vertices _ *resolution*))
    ([_ res] (sample-with-res res true (:points _))))
-  g/PEdgeAccess
+  g/IEdgeAccess
   (edges
    ([_] (d/successive-nth 2 (g/vertices _ *resolution*)))
    ([_ res] (d/successive-nth 2 (g/vertices _ res))))
 #+END_SRC
 
-*** PGraph
+*** IGraph
 #+BEGIN_SRC clojure :noweb-ref impl3
-  g/PGraph
+  g/IGraph
   (vertex-neighbors
    [_ v] (d/neighbors v (g/vertices _)))
   (vertex-valence
@@ -233,10 +233,10 @@ required control points. This only works for non-closed curves, though.
        0)))
 #+END_SRC
 
-*** PMeshConvert
+*** IMeshConvert
 
 #+BEGIN_SRC clojure :noweb-ref impl3
-  g/PMeshConvert
+  g/IMeshConvert
   (as-mesh
    [_ {:keys [res dist profile] :as opts}]
    (let [points (if dist
@@ -245,14 +245,14 @@ required control points. This only works for non-closed curves, though.
      (ptf/sweep-mesh points profile opts)))
 #+END_SRC
 
-*** PProximity
+*** IProximity
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<lob-geom-proxi>>
 #+END_SRC
 
-*** PSample
+*** ISample
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
-  g/PSample
+  g/ISample
   (point-at
    [_ t] (gu/point-at t (:points _) nil))
   (random-point

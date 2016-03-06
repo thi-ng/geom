@@ -30,8 +30,8 @@ This is a render of the voxel mesh generated with the code below:
 
   (defn gyroid ^double [s t p]
     "Evaluates gyroid function at scaled point `p`."
-    (let [[x y z] (g/* p s)]
-      (- (m/abs
+    (let [[x y z] (m/* p s)]
+      (- (m/abs*
           (+ (* (Math/cos x) (Math/sin z))
              (* (Math/cos y) (Math/sin x))
              (* (Math/cos z) (Math/sin y))))
@@ -97,7 +97,7 @@ This is a render of the voxel mesh generated with the code below:
      (let [rg (range (- r) (+ r res) res)]
        (->> (for [x rg y rg, z rg
                   :let [v (vec3 x y z)]
-                  :when (<= (g/mag v) r)] (g/+ o v))
+                  :when (<= (g/mag v) r)] (m/+ o v))
             (svo/apply-voxels op tree)))))
 
   (time
@@ -138,7 +138,7 @@ This is a render of the voxel mesh generated with the code below:
   (def v
     (let [r (range 1 31 res)]
       (->> (for [x r y r z r
-                 :when (<= iso-val (m/abs (n/noise3 (* x n-scale) (* y n-scale) (* z n-scale))))]
+                 :when (<= iso-val (m/abs* (n/noise3 (* x n-scale) (* y n-scale) (* z n-scale))))]
              (vec3 x y z))
            (svo/apply-voxels svo/set-at (svo/voxeltree 32 res)))))
 

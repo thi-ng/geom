@@ -284,42 +284,42 @@
 
 #+BEGIN_SRC clojure :noweb-ref tests  
   (deftest vec2-math-ops
-   (is (delta= [(+ ax) (+ ay)] (g/+ a2)) "+ a2")
-   (is (delta= [(- ax) (- ay)] (g/- a2)) "- a2")
-   (is (delta= [(* ax) (* ay)] (g/* a2)) "* a2")
-   (is (delta= [(/ ax) (/ ay)] (g/div a2)) "/ a2")
-   (is (delta= [(m/abs ax) (m/abs ay)] (g/abs (g/- a2))) "abs a2")
+   (is (delta= [(+ ax) (+ ay)] (m/+ a2)) "+ a2")
+   (is (delta= [(- ax) (- ay)] (m/- a2)) "- a2")
+   (is (delta= [(* ax) (* ay)] (m/* a2)) "* a2")
+   (is (delta= [(/ ax) (/ ay)] (m/div a2)) "/ a2")
+   (is (delta= [(m/abs* ax) (m/abs* ay)] (m/abs (m/- a2))) "abs a2")
    (is (= V2 (g/clear* a2)) "clear a2")
-   (context-vec2-op "+" g/+ + 0.0)
-   (context-vec2-op "-" g/- - 0.0)
-   (context-vec2-op "*" g/* * 0.0)
-   (context-vec2-op "/" g/div / 0.0))
+   (context-vec2-op "+" m/+ + 0.0)
+   (context-vec2-op "-" m/- - 0.0)
+   (context-vec2-op "*" m/* * 0.0)
+   (context-vec2-op "/" m/div / 0.0))
 #+END_SRC
 
 *** 3D ops
 
 #+BEGIN_SRC clojure :noweb-ref tests    
   (deftest vec3-math-ops
-   (is (delta= [(+ ax) (+ ay) (+ az)] (g/+ a3))) "+ a3"
-   (is (delta= [(- ax) (- ay) (- az)] (g/- a3))) "- a3"
-   (is (delta= [(* ax) (* ay) (* az)] (g/* a3))) "* a3"
-   (is (delta= [(/ ax) (/ ay) (/ az)] (g/div a3))) "/ a3"
-   (is (delta= [(m/abs ax) (m/abs ay) (m/abs az)] (g/abs (g/- a3))) "abs a3")
+   (is (delta= [(+ ax) (+ ay) (+ az)] (m/+ a3))) "+ a3"
+   (is (delta= [(- ax) (- ay) (- az)] (m/- a3))) "- a3"
+   (is (delta= [(* ax) (* ay) (* az)] (m/* a3))) "* a3"
+   (is (delta= [(/ ax) (/ ay) (/ az)] (m/div a3))) "/ a3"
+   (is (delta= [(m/abs* ax) (m/abs* ay) (m/abs* az)] (m/abs (m/- a3))) "abs a3")
    (is (= V3 (g/clear* a3)) "clear a3")
-   (context-vec3-op "+" g/+ + 0.0)
-   (context-vec3-op "-" g/- - 0.0)
-   (context-vec3-op "*" g/* * 0.0)
-   (context-vec3-op "/" g/div / 0.0))
+   (context-vec3-op "+" m/+ + 0.0)
+   (context-vec3-op "-" m/- - 0.0)
+   (context-vec3-op "*" m/* * 0.0)
+   (context-vec3-op "/" m/div / 0.0))
 #+END_SRC
 
 *** Dual math ops
 
 #+BEGIN_SRC clojure :noweb-ref tests  
   (deftest dual-math-ops
-    (context-dual-op "madd" g/madd g/* g/+)
-    (context-dual-op "addm" g/addm g/+ g/*)
-    (context-dual-op "msub" g/msub g/* g/-)
-    (context-dual-op "subm" g/subm g/- g/*))
+    (context-dual-op "madd" m/madd m/* m/+)
+    (context-dual-op "addm" m/addm m/+ m/*)
+    (context-dual-op "msub" m/msub m/* m/-)
+    (context-dual-op "subm" m/subm m/- m/*))
 #+END_SRC
 
 *** Dot product
@@ -329,13 +329,13 @@
    (is (== (g/mag-squared a2) (g/dot a2 a2)) "dot a2 a2")
    (is (== 0 (g/dot a2 [(- ay) ax])) "dot 2d zero")
    (is (== (+ (* ax bx) (* ay by)) (g/dot a2 b2)) "dot a2 b2")
-   (is (== (+ (* (- ax) bx) (* (- ay) by)) (g/dot (g/- a2) b2)) "dot -a2 b2")
+   (is (== (+ (* (- ax) bx) (* (- ay) by)) (g/dot (m/- a2) b2)) "dot -a2 b2")
    (is (== (g/mag-squared a3) (g/dot a3 a3)) "dot a3 a3")
    (is (== 0 (g/dot (vec3 1 0 0) (vec3 0 1 0))) "dot 3d xy zero")
    (is (== 0 (g/dot (vec3 1 0 0) (vec3 0 0 1))) "dot 3d xz zero")
    (is (== 0 (g/dot (vec3 0 1 0) (vec3 0 0 1))) "dot 3d yz zero")
    (is (== (+ (* ax bx) (* ay by) (* az bz)) (g/dot a3 b3)) "dot a3 b3")
-   (is (== (+ (* (- ax) bx) (* (- ay) by) (* (- az) bz)) (g/dot (g/- a3) b3)) "dot -a3 b3"))
+   (is (== (+ (* (- ax) bx) (* (- ay) by) (* (- az) bz)) (g/dot (m/- a3) b3)) "dot -a3 b3"))
 #+END_SRC
 
 *** Cross product
@@ -354,38 +354,38 @@
 #+BEGIN_SRC clojure :noweb-ref tests  
   (deftest mag
     (is (== (Math/sqrt (+ (* ax ax) (* ay ay))) (g/mag a2)) "mag a2")
-    (is (== (Math/sqrt (+ (* ax ax) (* ay ay))) (g/mag (g/- a2))) "mag -a2")
+    (is (== (Math/sqrt (+ (* ax ax) (* ay ay))) (g/mag (m/- a2))) "mag -a2")
     (is (== (+ (* ax ax) (* ay ay)) (g/mag-squared a2)) "mag-squared a2")
-    (is (== (+ (* ax ax) (* ay ay)) (g/mag-squared (g/- a2))) "mag-squared -a2")
+    (is (== (+ (* ax ax) (* ay ay)) (g/mag-squared (m/- a2))) "mag-squared -a2")
     (is (== (Math/sqrt (+ (* ax ax) (* ay ay) (* az az))) (g/mag a3)) "mag a3")
-    (is (== (Math/sqrt (+ (* ax ax) (* ay ay) (* az az))) (g/mag (g/- a3))) "mag -a3")
+    (is (== (Math/sqrt (+ (* ax ax) (* ay ay) (* az az))) (g/mag (m/- a3))) "mag -a3")
     (is (== (+ (* ax ax) (* ay ay) (* az az)) (g/mag-squared a3)) "mag-squared a3")
-    (is (== (+ (* ax ax) (* ay ay) (* az az)) (g/mag-squared (g/- a3))) "mag-squared -a3"))
+    (is (== (+ (* ax ax) (* ay ay) (* az az)) (g/mag-squared (m/- a3))) "mag-squared -a3"))
 #+END_SRC
 
 *** Normalize
 
 #+BEGIN_SRC clojure :noweb-ref tests  
   (deftest normalize
-    (is (delta= (let [m (g/mag a2)] [(/ ax m) (/ ay m)]) (g/normalize a2)) "norm a2")
+    (is (delta= (let [m (g/mag a2)] [(/ ax m) (/ ay m)]) (m/normalize a2)) "norm a2")
     (is (delta= (let [m (/ s (g/mag a2))] [(* m ax) (* m ay)])
-            (g/normalize a2 s)) "norm a2 s")
-    (is (delta= s (g/mag (g/normalize a2 s))) "mag = norm a2 s")
+            (m/normalize a2 s)) "norm a2 s")
+    (is (delta= s (g/mag (m/normalize a2 s))) "mag = norm a2 s")
     (is (delta= (let [m (g/mag a3)] [(/ ax m) (/ ay m) (/ az m)])
-            (g/normalize a3)) "norm a3")
+            (m/normalize a3)) "norm a3")
     (is (delta= (let [m (/ s (g/mag a3))] [(* m ax) (* m ay) (* m az)])
-            (g/normalize a3 s)) "norm a3 s")
-    (is (delta= s (g/mag (g/normalize a3 s))) "mag = norm a3 s"))
+            (m/normalize a3 s)) "norm a3 s")
+    (is (delta= s (g/mag (m/normalize a3 s))) "mag = norm a3 s"))
 #+END_SRC
 
 *** Interpolation
 
 #+BEGIN_SRC clojure :noweb-ref tests  
   (deftest mix
-    (is (delta= (g/mix (g/mix a2 b2 0.25) (g/mix b2 a2 0.25) 0.5)
-                (g/mix a2 b2 b2 a2 0.25 0.5)) "mix bilinear2")
-    (is (delta= (g/mix (g/mix a3 b3 0.25) (g/mix b3 a3 0.25) 0.5)
-                (g/mix a3 b3 b3 a3 0.25 0.5)) "mix bilinear3"))
+    (is (delta= (m/mix (m/mix a2 b2 0.25) (m/mix b2 a2 0.25) 0.5)
+                (m/mix a2 b2 b2 a2 0.25 0.5)) "mix bilinear2")
+    (is (delta= (m/mix (m/mix a3 b3 0.25) (m/mix b3 a3 0.25) 0.5)
+                (m/mix a3 b3 b3 a3 0.25 0.5)) "mix bilinear3"))
 #+END_SRC
 
 *** Transformations
@@ -394,7 +394,7 @@
   (deftest vec-transforms
     (is (delta= V2Y (g/rotate V2X HALF_PI)) "rot2d(+x) = +y")
     (is (delta= V3Z (g/rotate-x V2Y HALF_PI)) "rot2d-x(+y) = +z 3d")
-    (is (delta= (g/- V3Z) (g/rotate-y V2X HALF_PI)) "rot2d-y(+x) = -z 3d")
+    (is (delta= (m/- V3Z) (g/rotate-y V2X HALF_PI)) "rot2d-y(+x) = -z 3d")
     (is (delta= V3Y (g/rotate-z V2X HALF_PI)) "rot2d-z(+x) = +y 3d")
     (is (delta= V3Z (g/rotate-x V3Y HALF_PI)) "rotx(+y) = +z")
     (is (delta= V3X (g/rotate-y V3Z HALF_PI)) "roty(+z) = +x")
@@ -430,37 +430,37 @@
       (is (delta= V3Y (-> M44 (g/rotate-z HALF_PI) (g/transform-vector V3X))) "rotz(+x) = +y")
       (is (delta= V3Y (-> M44 (g/rotate-around-axis V3Z HALF_PI) (g/transform-vector V3X))) "rot-axis-z(+x) = +y")
       (is (delta= b2 (-> M32 (g/scale s) (g/transform-vector a2))) " a2 scale s")
-      (is (delta= (g/* a2 b2) (-> M32 (g/scale bx by) (g/transform-vector a2))) " a2 scale bx by")
-      (is (delta= (g/* a2 b2) (-> M32 (g/scale b2) (g/transform-vector a2))) " a2 scale b2")
+      (is (delta= (m/* a2 b2) (-> M32 (g/scale bx by) (g/transform-vector a2))) " a2 scale bx by")
+      (is (delta= (m/* a2 b2) (-> M32 (g/scale b2) (g/transform-vector a2))) " a2 scale b2")
       (is (delta= b3 (-> M44 (g/scale s) (g/transform-vector a3))) " a3 scale s")
-      (is (delta= (g/* a3 b3) (-> M44 (g/scale bx by bz) (g/transform-vector a3))) " a3 scale bx by bz")
-      (is (delta= (g/* a3 b3) (-> M44 (g/scale b3) (g/transform-vector a3))) " a3 scale b3")
-      (is (delta= (g/+ a2 s) (-> M32 (g/translate s) (g/transform-vector a2))) " a2 trans s")
-      (is (delta= (g/+ a2 b2) (-> M32 (g/translate bx by) (g/transform-vector a2))) " a2 trans bx by")
-      (is (delta= (g/+ a2 b2) (-> M32 (g/translate b2) (g/transform-vector a2))) " a2 trans b2")
-      (is (delta= (g/+ a3 s) (-> M44 (g/translate s) (g/transform-vector a3))) " a3 trans s")
-      (is (delta= (g/+ a3 b3) (-> M44 (g/translate bx by bz) (g/transform-vector a3))) " a3 trans bx by bz")
-      (is (delta= (g/+ a3 b3) (-> M44 (g/translate b3) (g/transform-vector a3))) " a3 trans b3")
+      (is (delta= (m/* a3 b3) (-> M44 (g/scale bx by bz) (g/transform-vector a3))) " a3 scale bx by bz")
+      (is (delta= (m/* a3 b3) (-> M44 (g/scale b3) (g/transform-vector a3))) " a3 scale b3")
+      (is (delta= (m/+ a2 s) (-> M32 (g/translate s) (g/transform-vector a2))) " a2 trans s")
+      (is (delta= (m/+ a2 b2) (-> M32 (g/translate bx by) (g/transform-vector a2))) " a2 trans bx by")
+      (is (delta= (m/+ a2 b2) (-> M32 (g/translate b2) (g/transform-vector a2))) " a2 trans b2")
+      (is (delta= (m/+ a3 s) (-> M44 (g/translate s) (g/transform-vector a3))) " a3 trans s")
+      (is (delta= (m/+ a3 b3) (-> M44 (g/translate bx by bz) (g/transform-vector a3))) " a3 trans bx by bz")
+      (is (delta= (m/+ a3 b3) (-> M44 (g/translate b3) (g/transform-vector a3))) " a3 trans b3")
       (is (delta= (-> V2X (g/scale s) (g/rotate QUARTER_PI) (g/translate b2))
                   (-> M32 (g/translate b2) (g/rotate QUARTER_PI) (g/scale s) (g/transform-vector V2X)))
           "concat 2d")
       (is (delta= (-> V3X (g/scale s) (g/rotate-z QUARTER_PI) (g/translate b3))
                   (-> M44 (g/translate b3) (g/rotate QUARTER_PI) (g/scale s) (g/transform-vector V3X)))
           "concat 3d")
-      (is (delta= 1 (g/determinant M32)) "det M32 = 1")
-      (is (delta= 1 (g/determinant (g/rotate M32 HALF_PI))) "det M32 rot = 1")
-      (is (delta= 200 (g/determinant (g/scale M32 10 20))) "det M32 scaled")
-      (is (delta= 1 (g/determinant M44)) "det M44 = 1")
-      (is (delta= 1 (g/determinant (g/rotate-around-axis M44 (g/normalize (vec3 1)) HALF_PI))) "det M44 rot = 1")
-      (is (delta= 6000 (g/determinant (g/scale M44 10 20 30))) "det M44 scaled")
+      (is (delta= 1 (m/determinant M32)) "det M32 = 1")
+      (is (delta= 1 (m/determinant (g/rotate M32 HALF_PI))) "det M32 rot = 1")
+      (is (delta= 200 (m/determinant (g/scale M32 10 20))) "det M32 scaled")
+      (is (delta= 1 (m/determinant M44)) "det M44 = 1")
+      (is (delta= 1 (m/determinant (g/rotate-around-axis M44 (m/normalize (vec3 1)) HALF_PI))) "det M44 rot = 1")
+      (is (delta= 6000 (m/determinant (g/scale M44 10 20 30))) "det M44 scaled")
       (is (delta= a2 (let [mat (-> M32 (g/translate b2) (g/rotate QUARTER_PI) (g/scale s))]
-                       (-> mat (g/transform-vector a2) (g/transform (g/invert mat))))) "invert 2d")
+                       (-> mat (g/transform-vector a2) (g/transform (m/invert mat))))) "invert 2d")
       (is (delta= a3 (let [mat (-> M44 (g/translate b3) (g/rotate-z QUARTER_PI) (g/scale s))]
-                       (-> mat (g/transform-vector a3) (g/transform (g/invert mat))))) "invert 3d")
-      (is (delta= (g/+ m32a m32b) (range 11 77 11)) "+ M32")
-      (is (delta= (g/- m32b m32a) (range 9 60 9)) "- M32")
-      (is (delta= (g/+ m44a m44b) (range 11 180 11)) "+ M44")
-      (is (delta= (g/- m44b m44a) (range 9 150 9)) "- M44")
+                       (-> mat (g/transform-vector a3) (g/transform (m/invert mat))))) "invert 3d")
+      (is (delta= (m/+ m32a m32b) (range 11 77 11)) "+ M32")
+      (is (delta= (m/- m32b m32a) (range 9 60 9)) "- M32")
+      (is (delta= (m/+ m44a m44b) (range 11 180 11)) "+ M44")
+      (is (delta= (m/- m44b m44a) (range 9 150 9)) "- M44")
       (is (delta= M32 [1 0 0 0 1 0]) "delta= M32")
       (is (delta= M32 [1 0 0 0 1 0] 1e-3) "delta= M32 eps")
       (is (delta= M32 M32) "delta= M32 M32")
@@ -495,11 +495,11 @@
     (is (delta= a3 (-> (q/quat-from-axis-angle V3X 0.0) (g/transform-vector a3))))
     (is (delta= a3 (-> (q/quat-from-axis-angle V3Y 0.0) (g/transform-vector a3))))
     (is (delta= a3 (-> (q/quat-from-axis-angle V3Z 0.0) (g/transform-vector a3))))
-    (is (delta= (g/rotate-around-axis a3 (g/normalize (vec3 1)) HALF_PI)
-                (-> (q/quat-from-axis-angle (g/normalize (vec3 1)) HALF_PI) (g/transform-vector a3)))
+    (is (delta= (g/rotate-around-axis a3 (m/normalize (vec3 1)) HALF_PI)
+                (-> (q/quat-from-axis-angle (m/normalize (vec3 1)) HALF_PI) (g/transform-vector a3)))
         "rot a3 = rot quat a3")
-    (is (delta= (-> M44 (g/rotate-around-axis (g/normalize (vec3 1)) HALF_PI) (g/transform-vector a3))
-                (-> (q/quat-from-axis-angle (g/normalize (vec3 1)) HALF_PI) (g/transform-vector a3)))
+    (is (delta= (-> M44 (g/rotate-around-axis (m/normalize (vec3 1)) HALF_PI) (g/transform-vector a3))
+                (-> (q/quat-from-axis-angle (m/normalize (vec3 1)) HALF_PI) (g/transform-vector a3)))
         "rot m44 a3 = rot quat a3")
     (is (delta= (g/rotate-x a3 HALF_PI)
                 (-> (q/quat-from-euler :xyz HALF_PI 0.0 0.0) (g/transform-vector a3)))
@@ -510,9 +510,9 @@
     (is (delta= (g/rotate-z a3 HALF_PI)
                 (-> (q/quat-from-euler :xyz 0.0 0.0 HALF_PI) (g/transform-vector a3)))
         "rotz a3 = quat roll a3")
-    (is (delta= (g/rotate-around-axis a3 (g/normalize (vec3 1)) HALF_PI)
+    (is (delta= (g/rotate-around-axis a3 (m/normalize (vec3 1)) HALF_PI)
                 (-> M44
-                    (g/rotate-around-axis (g/normalize (vec3 1)) HALF_PI)
+                    (g/rotate-around-axis (m/normalize (vec3 1)) HALF_PI)
                     (q/quat-from-matrix)
                     (g/transform-vector a3))))
     (quat-matrix-roundtrip 1000)

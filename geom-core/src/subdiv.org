@@ -22,6 +22,7 @@ http://algorithmicbotany.org/papers/subgpu.sig2003.pdf
   (require '[thi.ng.geom.core.vector :refer [vec2]])
   (require '[thi.ng.geom.core.subdiv :as sd])
   (require '[thi.ng.geom.svg.core :as svg])
+  (require '[thi.ng.math.core :as m])
   (require '[thi.ng.dstruct.core :as d])
 
   (defn demo
@@ -29,7 +30,7 @@ http://algorithmicbotany.org/papers/subgpu.sig2003.pdf
     (->> (range 1 6)
          (map
           #(let [p (->> points
-                        (mapv #(g/+ % (* (dec %) 120) 0))
+                        (mapv #(m/+ % (* (dec %) 120) 0))
                         (d/iterate-n % (partial sd/subdivide-closed (id sd/schemes))))]
              (svg/group
               {:stroke col}
@@ -55,13 +56,13 @@ http://algorithmicbotany.org/papers/subgpu.sig2003.pdf
 #+BEGIN_SRC clojure :noweb-ref subdiv
   (defn subdiv-kernel3
     [u v [a b c]]
-    [(->> (g/* c (u 2)) (g/madd b (u 1)) (g/madd a (u 0)))
-     (->> (g/* c (v 2)) (g/madd b (v 1)) (g/madd a (v 0)))])
+    [(->> (m/* c (u 2)) (m/madd b (u 1)) (m/madd a (u 0)))
+     (->> (m/* c (v 2)) (m/madd b (v 1)) (m/madd a (v 0)))])
 
   (defn subdiv-kernel5
     [u v [a b c d e]]
-    [(->> (g/* e (u 4)) (g/madd d (u 3)) (g/madd c (u 2)) (g/madd b (u 1)) (g/madd a (u 0)))
-     (->> (g/* e (v 4)) (g/madd d (v 3)) (g/madd c (v 2)) (g/madd b (v 1)) (g/madd a (v 0)))])
+    [(->> (m/* e (u 4)) (m/madd d (u 3)) (m/madd c (u 2)) (m/madd b (u 1)) (m/madd a (u 0)))
+     (->> (m/* e (v 4)) (m/madd d (v 3)) (m/madd c (v 2)) (m/madd b (v 1)) (m/madd a (v 0)))])
 
   (defn subdivide-closed
     ([scheme points]
@@ -87,6 +88,7 @@ http://algorithmicbotany.org/papers/subgpu.sig2003.pdf
        (:require-macros
         [thi.ng.math.macros :as mm]))
     (:require
+     [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      #?(:clj [thi.ng.math.macros :as mm])))

@@ -36,7 +36,7 @@
            v  (* 0.5 (/ vh h))
            iu (- uw u)
            iv (- vh v)]
-       (mapv #(g/+ % x y) [(vec2 u v) (vec2 iu v) (vec2 iu iv) (vec2 u iv)]))))
+       (mapv #(m/+ % x y) [(vec2 u v) (vec2 iu v) (vec2 iu iv) (vec2 u iv)]))))
 
   (defn uv-cube-map-h
     ([h] (uv-cube-map-h h false))

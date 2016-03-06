@@ -323,7 +323,7 @@ Currently the following options are supported:
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn compute-normal-matrix
-    [m v] (-> v (g/* m) (g/invert) (g/transpose)))
+    [m v] (-> v (m/* m) (m/invert) (m/transpose)))
 
   (defn inject-normal-matrix
     [spec model-mat view-mat normal-mat-id]
@@ -345,6 +345,7 @@ Currently the following options are supported:
   (:require-macros
     [cljs-log.core :refer [info warn]])
   (:require
+    [thi.ng.math.core :as m]
     [thi.ng.geom.core :as g]
     [thi.ng.geom.core.matrix]
     [thi.ng.geom.webgl.core :as gl]
@@ -875,7 +876,7 @@ Currently the following options are supported:
     ([^WebGLRenderingContext gl r init-shader?]
        (let [vbuf (arrays/float32 8)
              [a b c d] (g/vertices r)
-             _ (g/copy-to-buffer [a b d c] vbuf 2 0)
+             _ (g/into-buffer [a b d c] vbuf 2 0)
              spec {:attribs  (buf/make-attribute-buffers
                               gl gl/static-draw
                               {:position {:data vbuf :size 2}

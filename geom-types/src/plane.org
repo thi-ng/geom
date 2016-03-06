@@ -5,19 +5,19 @@
      - [[#constructor][Constructor]]
      - [[#helper-functions][Helper functions]]
      - [[#todo-protocol-implementation][TODO Protocol implementation]]
-         - [[#parea][PArea]]
-         - [[#pbounds][PBounds]]
-         - [[#pboundingsphere][PBoundingSphere]]
-         - [[#pcenter][PCenter]]
-         - [[#pclassify][PClassify]]
-         - [[#pdistance][PDistance]]
-         - [[#todo-pextrude][TODO PExtrude]]
-         - [[#pflip][PFlip]]
-         - [[#pintersect][PIntersect]]
-         - [[#pmeshconvert][PMeshConvert]]
-         - [[#pproximity][PProximity]]
-         - [[#ptransform][PTransform]]
-         - [[#pvolume][PVolume]]
+         - [[#iarea][IArea]]
+         - [[#ibounds][IBounds]]
+         - [[#iboundingsphere][IBoundingSphere]]
+         - [[#icenter][ICenter]]
+         - [[#iclassify][IClassify]]
+         - [[#idistance][IDistance]]
+         - [[#todo-iextrude][TODO IExtrude]]
+         - [[#iflip][IFlip]]
+         - [[#iintersect][IIntersect]]
+         - [[#imeshconvert][IMeshConvert]]
+         - [[#iproximity][IProximity]]
+         - [[#itransform][ITransform]]
+         - [[#ivolume][IVolume]]
          - [[#end-implementation][End implementation]]
      - [[#namespace-declaration][Namespace declaration]]
 
@@ -26,11 +26,11 @@
 ** Constructor
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn plane
-    [n w] (thi.ng.geom.types.Plane. (g/normalize (vec3 n)) w))
+    [n w] (thi.ng.geom.types.Plane. (m/normalize (vec3 n)) w))
 
   (defn plane-with-point
     [p n]
-    (let [n (g/normalize (vec3 n))]
+    (let [n (m/normalize (vec3 n))]
       (thi.ng.geom.types.Plane. n (- (g/dot n p)))))
 
   (defn plane-from-points
@@ -47,75 +47,75 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.Plane
 #+END_SRC
-*** PArea
+*** IArea
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PArea
+  g/IArea
   (area [_] INF+)
 #+END_SRC
-*** PBounds
+*** IBounds
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBounds
+  g/IBounds
   (bounds
    [_]
    (let [s (vec3 (g/width _) (g/height _) (g/depth _))]
-     (thi.ng.geom.types.AABB. (g/madd s -0.5 (g/centroid _)) s)))
+     (thi.ng.geom.types.AABB. (m/madd s -0.5 (g/centroid _)) s)))
   (width
-   [_] (if (m/delta= (g/abs (:n _)) v/V3X *eps*) 0.0 INF+))
+   [_] (if (m/delta= (m/abs (:n _)) v/V3X *eps*) 0.0 INF+))
   (height
-   [_] (if (m/delta= (g/abs (:n _)) v/V3Y *eps*) 0.0 INF+))
+   [_] (if (m/delta= (m/abs (:n _)) v/V3Y *eps*) 0.0 INF+))
   (depth
-   [_] (if (m/delta= (g/abs (:n _)) v/V3Z *eps*) 0.0 INF+))
+   [_] (if (m/delta= (m/abs (:n _)) v/V3Z *eps*) 0.0 INF+))
 #+END_SRC
-*** PBoundingSphere
+*** IBoundingSphere
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundingSphere
+  g/IBoundingSphere
   (bounding-sphere
     [_] (thi.ng.geom.types.Sphere. (g/centroid _) INF+))
 #+END_SRC
-*** PCenter
+*** ICenter
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PCenter
+  g/ICenter
   (center
     ([_] (thi.ng.geom.types.Plane. (:n _) 0))
     ([_ o] (plane-with-point o (:n _))))
   (centroid
-    ([_] (g/* (:n _) (- (:w _)))))
+    ([_] (m/* (:n _) (- (:w _)))))
 #+END_SRC
-*** PClassify
+*** IClassify
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PClassify
+  g/IClassify
   (classify-point
     [_ p]
     (-> (:n _) (g/dot p) (+ (:w _)) (m/signum *eps*)))
 #+END_SRC
-*** PDistance
+*** IDistance
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PDistance
+  g/IDistance
   (dist
    [_ p] (+ (g/dot (:n _) p) (:w _)))
   (dist-squared
    [_ p] (let [d (g/dist _ p)] (* d d)))
 #+END_SRC
-*** TODO PExtrude
+*** TODO IExtrude
 #+BEGIN_SRC 
-  g/PExtrude
+  g/IExtrude
   (extrude [_] nil)
 #+END_SRC
-*** PFlip
+*** IFlip
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PFlip
+  g/IFlip
   (flip
-    [_] (thi.ng.geom.types.Plane. (g/- (:n _)) (- (:w _))))
+    [_] (thi.ng.geom.types.Plane. (m/- (:n _)) (- (:w _))))
 #+END_SRC
-*** PIntersect
+*** IIntersect
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PIntersect
+  g/IIntersect
   (intersect-line
    ([_ l]
       (let [[p q] (if (map? l) (:points l) l)]
-        (isec/intersect-ray-plane? p (g/- q p) (:n _) (:w _))))
+        (isec/intersect-ray-plane? p (m/- q p) (:n _) (:w _))))
    ([_ p q]
-      (isec/intersect-ray-plane? p (g/- q p) (:n _) (:w _))))
+      (isec/intersect-ray-plane? p (m/- q p) (:n _) (:w _))))
   (intersect-ray
    ([_ ray]
       (let [[p dir] (if (map? ray) [(:p ray) (:dir ray)] ray)]
@@ -131,9 +131,9 @@
     (isec/intersect-plane-sphere? (:n _) (:w _) (:p s) (:r s))
     :default (err/illegal-arg! s)))
 #+END_SRC
-*** PMeshConvert
+*** IMeshConvert
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PMeshConvert
+  g/IMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
    ([_ {:keys [p width height size mesh] :or {size 1.0}}]
@@ -145,43 +145,43 @@
                   (q/quat 0 0 0 1)
                   (q/alignment-quat v/V3Z (:n _)))
           face  (mapv
-                 #(g/+ p (g/transform-vector q %))
+                 #(m/+ p (g/transform-vector q %))
                  [(vec3 (- w) (- h) 0) (vec3 (- w) h 0)
                   (vec3 w h 0) (vec3 w (- h) 0)])]
       (g/into
        (or mesh (bm/basic-mesh))
        [(if flip? face (rseq face))]))))
 #+END_SRC
-*** PProximity
+*** IProximity
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PProximity
+  g/IProximity
   (closest-point
     [_ p]
     (->> p
          (g/dot (:n _))
          (+ (:w _))
-         (g/normalize (:n _))
-         (g/- p)))
+         (m/normalize (:n _))
+         (m/- p)))
 #+END_SRC
-*** PTransform
+*** ITransform
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PScale
+  g/IScale
   (scale
-   ([_ s] (plane-with-point (g/* (g/centroid _) s) (:n _)))
-   ([_ a b] (plane-with-point (g/* (g/centroid _) a b) (:n _)))
-   ([_ a b c] (plane-with-point (g/* (g/centroid _) a b c) (:n _))))
+   ([_ s] (plane-with-point (m/* (g/centroid _) s) (:n _)))
+   ([_ a b] (plane-with-point (m/* (g/centroid _) a b) (:n _)))
+   ([_ a b c] (plane-with-point (m/* (g/centroid _) a b c) (:n _))))
   (scale-size
    ([_ s] _))
-  g/PTranslate
+  g/ITranslate
   (translate
-   [_ t] (plane-with-point (g/+ (g/centroid _) t) (:n _)))
-  g/PTransform
+   [_ t] (plane-with-point (m/+ (g/centroid _) t) (:n _)))
+  g/ITransform
   (transform
    [_ m] (plane-with-point
           (g/transform-vector m (g/centroid _))
           (g/transform-vector m (:n _))))
 #+END_SRC
-*** PVolume
+*** IVolume
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-zerovol>>
 #+END_SRC

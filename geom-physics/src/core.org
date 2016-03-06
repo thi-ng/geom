@@ -18,22 +18,22 @@
 ** Protocols
 
 #+BEGIN_SRC clojure :noweb-ref protos
-  (defprotocol PTimeStep
+  (defprotocol ITimeStep
     (timestep [_ delta]))
 
-  (defprotocol PBehavioral
+  (defprotocol IBehavioral
     (add-behaviors [_ bmap])
     (remove-behavior [_ id])
     (clear-behaviors [_])
     (apply-behaviors [_ delta]))
 
-  (defprotocol PConstrained
+  (defprotocol IConstrained
     (add-constraints [_ cmap])
     (remove-constraint [_ id])
     (clear-constraints [_])
     (apply-constraints [_ delta]))
 
-  (defprotocol PParticle
+  (defprotocol IParticle
     (add-force [_ f])
     (add-velocity [_ v])
     (apply-force [_ delta])
@@ -47,7 +47,7 @@
     (unlock [_])
     (locked? [_]))
 
-  (defprotocol PPhysics
+  (defprotocol IPhysics
     (update-particles [_ delta])
     (update-springs [_ delta]))
 #+END_SRC
@@ -87,7 +87,7 @@
             (-with-meta
              [_ meta']
              (VerletParticle. pos prev force locked? behaviors constraints inv-weight meta'))])
-      PBehavioral
+      IBehavioral
       (add-behaviors
         [_ bmap] (set! behaviors (merge behaviors bmap)) _)
       (apply-behaviors
@@ -96,7 +96,7 @@
         [_ id] (set! behaviors (dissoc behaviors id)) _)
       (clear-behaviors
         [_] (set! behaviors {}) _)
-      PConstrained
+      IConstrained
       (add-constraints
         [_ cmap] (set! constraints (merge constraints cmap)) _)
       (apply-constraints
@@ -105,7 +105,7 @@
         [_ id] (set! constraints (dissoc constraints id)) _)
       (clear-constraints
         [_] (set! constraints {}) _)
-      PParticle
+      IParticle
       (lock
         [_] (set! locked? true) _)
       (unlock
@@ -117,21 +117,21 @@
       (set-position
         [_ p] (set! pos p) _)
       (velocity
-        [_] (g/- pos prev))
+        [_] (m/- pos prev))
       (add-force
-        [_ f] (g/+! force f) _)
+        [_ f] (m/+! force f) _)
       (clear-force
         [_] (g/clear! force) _)
       (apply-force
         [_ delta]
-        (let [pos' (g/madd! force (* inv-weight (* delta delta)) (g/msub pos 2.0 prev))]
+        (let [pos' (m/madd! force (* inv-weight (* delta delta)) (m/msub pos 2.0 prev))]
           (set! prev pos)
           (set! pos pos')
           (set! force (g/clear* force)))
         _)
       (scale-velocity
-        [_ s] (set! prev (g/mix prev pos s)) _)
-      PTimeStep
+        [_ s] (set! prev (m/mix prev pos s)) _)
+      ITimeStep
       (timestep
         [_ delta]
         (if-not locked?
@@ -160,20 +160,20 @@
        ^VerletParticle b
        ^double rest-len
        ^double strength]
-    PTimeStep
+    ITimeStep
     (timestep
       [_ delta]
       (let [aw   (.-inv-weight ^VerletParticle a)
             bw   (.-inv-weight ^VerletParticle b)
             pa   (position a)
             pb   (position b)
-            diff (g/- pb pa)
+            diff (m/- pb pa)
             dist (+ (g/mag diff) 1e-6)
             nd   (* (/ (- dist rest-len) (* dist (+ aw bw))) (* strength delta))]
         (if-not (locked? a)
-          (set-position a (g/madd diff (* nd aw) pa)))
+          (set-position a (m/madd diff (* nd aw) pa)))
         (if-not (locked? b)
-          (set-position b (g/madd! diff (* (- nd) bw) pb))))))
+          (set-position b (m/madd! diff (* (- nd) bw) pb))))))
 
   (defrecord PullbackSpring
       [^VerletParticle a
@@ -181,21 +181,21 @@
        ^double rest-len
        ^double min-len
        ^double strength]
-    PTimeStep
+    ITimeStep
     (timestep
       [_ delta]
       (let [pa   (position a)
             pb   (position b)
-            diff (g/- pb pa)
+            diff (m/- pb pa)
             dist (+ (g/mag diff) 1e-6)]
         (if (> dist min-len)
           (let [aw (.-inv-weight ^VerletParticle a)
                 bw (.-inv-weight ^VerletParticle b)
                 nd (* (/ (- dist rest-len) (* dist (+ aw bw))) (* strength delta))]
             (if-not (locked? a)
-              (set-position a (g/madd diff (* nd aw) pa)))
+              (set-position a (m/madd diff (* nd aw) pa)))
             (if-not (locked? b)
-              (set-position b (g/madd! diff (* (- nd) bw) pb))))))))
+              (set-position b (m/madd! diff (* (- nd) bw) pb))))))))
 #+END_SRC
 
 *** VerletPhysics
@@ -203,7 +203,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   (defrecord VerletPhysics
       [particles springs behaviors constraints listeners drag]
-    PBehavioral
+    IBehavioral
     (add-behaviors
       [_ bmap] (update-in _ [:behaviors] merge bmap))
     (apply-behaviors
@@ -212,7 +212,7 @@
       [_ id] (update-in _ [:behaviors] dissoc id))
     (clear-behaviors
       [_] (assoc _ behaviors {}))
-    PConstrained
+    IConstrained
     (add-constraints
       [_ cmap] (update-in _ [:constraints] merge cmap))
     (apply-constraints
@@ -221,7 +221,7 @@
       [_ id] (update-in _ [:constraints] dissoc id))
     (clear-constraints
       [_] (assoc _ constraints {}))
-    PPhysics
+    IPhysics
     (update-particles
       [_ delta]
       (let [drag' (* delta drag)]
@@ -235,7 +235,7 @@
       (loop [s (seq springs)]
         (when s (timestep (first s) delta) (recur (next s))))
       _)
-    PTimeStep
+    ITimeStep
     (timestep
       [_ iter]
       (let [delta (/ 1.0 iter)]
@@ -257,16 +257,16 @@
   (defn gravity
     [force]
     (fn [p delta]
-      (add-force p (g/* force delta))))
+      (add-force p (m/* force delta))))
 
   (defn attract
     [pos r strength]
     (let [rsq (* r r)]
       (fn [p delta]
-        (let [d (g/- pos (position p))
+        (let [d (m/- pos (position p))
               l (+ (g/mag-squared d) 1e-6)]
           (if (< l rsq)
-            (add-force p (g/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
+            (add-force p (m/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
                                    (Math/sqrt l)))))))))
 
   (defn attract-particle
@@ -274,16 +274,16 @@
     (let [rsq (* r r)]
       (fn [q delta]
         (if-not (= p q)
-          (let [d (g/- (position p) (position q))
+          (let [d (m/- (position p) (position q))
                 l (+ (g/mag-squared d) 1e-6)]
             (if (< l rsq)
-              (add-force q (g/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
+              (add-force q (m/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
                                      (Math/sqrt l))))))))))
 
   (defn align
     [vel strength]
     (fn [p delta]
-      (add-force p (g/subm vel (velocity p) (* strength delta)))))
+      (add-force p (m/subm vel (velocity p) (* strength delta)))))
 #+END_SRC
 
 ** Constraints
@@ -310,7 +310,7 @@
       (fn [q _]
         (let [pos (position q)]
           (if (pred (g/dist-squared p pos) rsq)
-            (set-position q (g/+! (g/normalize (g/- pos p) r) p)))))))
+            (set-position q (m/+! (m/normalize (m/- pos p) r) p)))))))
 #+END_SRC
 
 ** Constructors
@@ -355,6 +355,7 @@
   (ns thi.ng.geom.physics.core
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
+     [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.dstruct.core :as d]

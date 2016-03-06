@@ -7,23 +7,23 @@
      - [[#matrix-implementations][Matrix implementations]]
          - [[#3x2-matrix-affine-2d-transform][3x2 Matrix (Affine 2D transform)]]
              - [[#clojure-protocols][Clojure protocols]]
-             - [[#pmathops][PMathOps]]
-             - [[#pdeltaequals][PDeltaEquals]]
-             - [[#pdeterminant][PDeterminant]]
-             - [[#pinvert][PInvert]]
-             - [[#todo-ptranspose][TODO PTranspose]]
-             - [[#protate-pscale-ptranslate-ptransform][PRotate, PScale, PTranslate, PTransform]]
-             - [[#pvectortransform][PVectorTransform]]
+             - [[#imathops][IMathOps]]
+             - [[#ideltaequals][IDeltaEquals]]
+             - [[#ideterminant][IDeterminant]]
+             - [[#iinvert][IInvert]]
+             - [[#todo-itranspose][TODO ITranspose]]
+             - [[#irotate-iscale-itranslate-itransform][IRotate, IScale, ITranslate, ITransform]]
+             - [[#ivectortransform][IVectorTransform]]
              - [[#end-of-implementations][End of implementations]]
          - [[#4x4-matrix][4x4 Matrix]]
              - [[#clojure-protocols][Clojure protocols]]
-             - [[#pmathops][PMathOps]]
-             - [[#pdeltaequals][PDeltaEquals]]
-             - [[#pdeterminant][PDeterminant]]
-             - [[#pinvert][PInvert]]
-             - [[#ptranspose][PTranspose]]
+             - [[#imathops][IMathOps]]
+             - [[#ideltaequals][IDeltaEquals]]
+             - [[#ideterminant][IDeterminant]]
+             - [[#iinvert][IInvert]]
+             - [[#itranspose][ITranspose]]
              - [[#transformations][Transformations]]
-             - [[#pvectortransform][PVectorTransform]]
+             - [[#ivectortransform][IVectorTransform]]
              - [[#end-of-implementation][End of implementation]]
      - [[#override-print-methods][Override print methods]]
      - [[#constants][Constants]]
@@ -197,10 +197,10 @@ define some macros to simplify them.
    [_] (str "[" m00 " " m01 " " m02 " " m10 " " m11 " " m12 "]"))
 #+END_SRC
 
-**** PMathOps
+**** IMathOps
 
 #+BEGIN_SRC clojure :noweb-ref mat32
-  g/PMathOps
+  m/IMathOps
   (+
    [_ m]
    (let [m ^Matrix32 m]
@@ -228,10 +228,10 @@ define some macros to simplify them.
       nil _meta)))
 #+END_SRC
 
-**** PDeltaEquals
+**** IDeltaEquals
 
 #+BEGIN_SRC clojure :noweb-ref mat32
-  m/PDeltaEquals
+  m/IDeltaEquals
   (delta=
    [_ m] (m/delta= _ m *eps*))
   (delta=
@@ -246,21 +246,21 @@ define some macros to simplify them.
         (m/delta= m12 (nth m 5) eps)))
 #+END_SRC
 
-**** PDeterminant
+**** IDeterminant
 
 #+BEGIN_SRC clojure :noweb-ref mat32
-  g/PDeterminant
+  m/IDeterminant
   (determinant
    [_] (mm/msub m00 m11 m01 m10))
 #+END_SRC
 
-**** PInvert
+**** IInvert
 
 #+BEGIN_SRC clojure :noweb-ref mat32
-  g/PInvert
+  m/IInvert
   (invert
    [_]
-   (let [d (g/determinant _)]
+   (let [d (m/determinant _)]
      (when-not (zero? d)
        (Matrix32.
         (/ m11 d) (- (/ m01 d)) (/ (mm/msub m01 m12 m11 m02) d)
@@ -268,30 +268,30 @@ define some macros to simplify them.
         nil _meta))))
 #+END_SRC
 
-**** TODO PTranspose
+**** TODO ITranspose
 
 Check discrepancy with SVG transforms
 
 #+BEGIN_SRC clojure :noweb-ref mat32
-  g/PTranspose
+  m/ITranspose
   (transpose
    [_]
    (Matrix32. m00 m10 m01 m11 m02 m12 nil _meta))
 #+END_SRC
 
-**** PRotate, PScale, PTranslate, PTransform
+**** IRotate, IScale, ITranslate, ITransform
 
 #+BEGIN_SRC clojure :noweb-ref mat32
-  g/PRotate
+  g/IRotate
   (rotate
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
-     (g/* _ (Matrix32. c (- s) 0.0, s c 0.0 nil _meta))))
+     (m/* _ (Matrix32. c (- s) 0.0, s c 0.0 nil _meta))))
 
-  g/PScale
+  g/IScale
   (scale
    [_ s]
-   (g/* _ (Matrix32.
+   (m/* _ (Matrix32.
              (if (number? s) s (s 0)) 0.0 0.0
              0.0 (if (number? s) s (s 1)) 0.0
              nil _meta)))
@@ -299,27 +299,27 @@ Check discrepancy with SVG transforms
    [_ sx sy]
    (if (number? sx)
      (if (number? sy)
-       (g/* _ (Matrix32. sx 0.0 0.0, 0.0 sy 0.0 nil _meta))
-       (g/* _ (Matrix32. (* sx (sy 0)) 0.0 0.0, 0.0 (* sx (sy 1)) 0.0 nil _meta)))
+       (m/* _ (Matrix32. sx 0.0 0.0, 0.0 sy 0.0 nil _meta))
+       (m/* _ (Matrix32. (* sx (sy 0)) 0.0 0.0, 0.0 (* sx (sy 1)) 0.0 nil _meta)))
      (if (number? sy)
-       (g/* _ (Matrix32. (* sy (sx 0)) 0.0 0.0, 0.0 (* sy (sx 1)) 0.0 nil _meta))
-       (g/* _ (Matrix32. (* (sx 0) (sy 0)) 0.0 0.0, 0.0 (* (sx 1) (sy 1)) 0.0 nil _meta)))))
+       (m/* _ (Matrix32. (* sy (sx 0)) 0.0 0.0, 0.0 (* sy (sx 1)) 0.0 nil _meta))
+       (m/* _ (Matrix32. (* (sx 0) (sy 0)) 0.0 0.0, 0.0 (* (sx 1) (sy 1)) 0.0 nil _meta)))))
 
-  g/PShear
+  g/IShear
   (shear
    [_ s]
-   (g/* _ (Matrix32.
+   (m/* _ (Matrix32.
              1.0 (if (number? s) s (s 0)) 0.0,
              (if (number? s) s (s 1)) 1.0 0.0
              nil _meta)))
   (shear
    [_ sx sy]
-   (g/* _ (Matrix32. 1.0 sx 0.0, sy 1.0 0.0 nil _meta)))
+   (m/* _ (Matrix32. 1.0 sx 0.0, sy 1.0 0.0 nil _meta)))
 
-  g/PTranslate
+  g/ITranslate
   (translate
    [_ t]
-   (g/* _ (Matrix32.
+   (m/* _ (Matrix32.
              1.0 0.0 (if (number? t) t (t 0))
              0.0 1.0 (if (number? t) t (t 1))
              nil _meta)))
@@ -327,21 +327,21 @@ Check discrepancy with SVG transforms
    [_ tx ty]
    (if (number? tx)
      (if (number? ty)
-       (g/* _ (Matrix32. 1.0 0.0 tx, 0.0 1.0 ty nil _meta))
-       (g/* _ (Matrix32. 1.0 0.0 (* tx (ty 0)), 0.0 1.0 (* tx (ty 1)) nil _meta)))
+       (m/* _ (Matrix32. 1.0 0.0 tx, 0.0 1.0 ty nil _meta))
+       (m/* _ (Matrix32. 1.0 0.0 (* tx (ty 0)), 0.0 1.0 (* tx (ty 1)) nil _meta)))
      (if (number? ty)
-       (g/* _ (Matrix32. 1.0 0.0 (* ty (tx 0)), 0.0 1.0 (* ty (tx 1)) nil _meta))
-       (g/* _ (Matrix32. 1.0 0.0 (* (tx 0) (ty 0)), 0.0 1.0 (* (tx 1) (ty 1)) nil _meta)))))
+       (m/* _ (Matrix32. 1.0 0.0 (* ty (tx 0)), 0.0 1.0 (* ty (tx 1)) nil _meta))
+       (m/* _ (Matrix32. 1.0 0.0 (* (tx 0) (ty 0)), 0.0 1.0 (* (tx 1) (ty 1)) nil _meta)))))
 
-  g/PTransform
+  g/ITransform
   (transform
-   [_ matrix] (g/* _ matrix))
+   [_ matrix] (m/* _ matrix))
 #+END_SRC
 
-**** PVectorTransform
+**** IVectorTransform
 
 #+BEGIN_SRC clojure :noweb-ref mat32
-  g/PVectorTransform
+  g/IVectorTransform
   (transform-vector
    [_ [x y :as v]]
    (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
@@ -526,10 +526,10 @@ ordering (row major).
    [_] (apply str (concat "[" (interpose \space _) "]")))
 #+END_SRC
 
-**** PMathOps
+**** IMathOps
 
 #+BEGIN_SRC clojure :noweb-ref mat44
-  g/PMathOps
+  m/IMathOps
   (+
    [_ m]
    (let [m ^Matrix44 m]
@@ -574,10 +574,10 @@ ordering (row major).
       nil _meta)))
 #+END_SRC
 
-**** PDeltaEquals
+**** IDeltaEquals
 
 #+BEGIN_SRC clojure :noweb-ref mat44
-  m/PDeltaEquals
+  m/IDeltaEquals
   (delta=
    [_ m] (m/delta= _ m *eps*))
   (delta=
@@ -585,10 +585,10 @@ ordering (row major).
    (and (sequential? m) (== 16 (count m)) (m/delta= (into [] _) m eps)))
 #+END_SRC
 
-**** PDeterminant
+**** IDeterminant
 
 #+BEGIN_SRC clojure :noweb-ref mat44
-  g/PDeterminant
+  m/IDeterminant
   (determinant
    [_]
    (let [b00 (mm/msub m00 m11 m01 m10)
@@ -607,10 +607,10 @@ ordering (row major).
         (mm/madd b02 b09 b03 b08 b05 b06))))
 #+END_SRC
 
-**** PInvert
+**** IInvert
 
 #+BEGIN_SRC clojure :noweb-ref mat44
-  g/PInvert
+  m/IInvert
   (invert
    [_]
    (let [n00 (mm/msub m00 m11 m01 m10)
@@ -649,10 +649,10 @@ ordering (row major).
           nil _meta)))))
 #+END_SRC
 
-**** PTranspose
+**** ITranspose
 
 #+BEGIN_SRC clojure :noweb-ref mat44
-  g/PTranspose
+  m/ITranspose
   (transpose
    [_]
    (Matrix44.
@@ -666,7 +666,7 @@ ordering (row major).
 **** Transformations
 
 #+BEGIN_SRC clojure :noweb-ref mat44
-  g/PScale
+  g/IScale
   (scale
    [_ s]
    (let [[x y z] (if (number? s) [s s s] s)]
@@ -680,11 +680,11 @@ ordering (row major).
     m30 m31 m32 m33
     nil _meta))
 
-  g/PRotate
+  g/IRotate
   (rotate
    [_ theta] (g/rotate-z _ theta))
 
-  g/PRotate3D
+  g/IRotate3D
   (rotate-x
    [_ theta]
    (let [s (Math/sin theta), c (Math/cos theta)]
@@ -739,7 +739,7 @@ ordering (row major).
       m30 m31 m32 m33
       nil _meta)))
 
-  g/PTranslate
+  g/ITranslate
   (translate
    [_ t]
    (let [[x y z] (if (number? t) [t t t] t)]
@@ -756,15 +756,15 @@ ordering (row major).
     (mm/madd m03 x m13 y m23 z m33)
     nil _meta))
 
-  g/PTransform
+  g/ITransform
   (transform
-   [_ matrix] (g/* _ matrix))
+   [_ matrix] (m/* _ matrix))
 #+END_SRC
 
-**** PVectorTransform
+**** IVectorTransform
 
 #+BEGIN_SRC clojure :noweb-ref mat44
-  g/PVectorTransform
+  g/IVectorTransform
   (transform-vector
    [_ [x y z w :as v]]
    (if w
@@ -890,7 +890,7 @@ https://github.com/stefanmirea/view-frustum-culling/blob/master/lab_camera.hpp#L
     coefficients can then (for example) be used for AABB-frustum culling
     with thi.nggeom.core.intersect/intersect-aabb-frustum?"
     [view proj]
-    (let [^Matrix44 pv (g/transpose (g/* proj view))
+    (let [^Matrix44 pv (m/transpose (m/* proj view))
           m30 (- (.-m30 pv))
           m31 (- (.-m31 pv))
           m32 (- (.-m32 pv))
@@ -951,17 +951,17 @@ https://github.com/stefanmirea/view-frustum-culling/blob/master/lab_camera.hpp#L
     [ex ey ez tx ty tz]
     (let [eye    (vec3 ex ey ez)
           target (vec3 tx ty tz)
-          up     (gu/ortho-normal (g/- eye target) V3X)]
+          up     (gu/ortho-normal (m/- eye target) V3X)]
       [eye target up]))
 
   (defn look-at
     "Returns a matrix that puts the camera at the eye position looking
     toward the target point with the given up direction."
     [eye target up]
-    (let [dir (g/- eye target)]
+    (let [dir (m/- eye target)]
       (if (m/delta= V3 dir)
         M44
-        (let [[zx zy zz :as z] (g/normalize dir)
+        (let [[zx zy zz :as z] (m/normalize dir)
               [xx xy xz :as x] (gu/ortho-normal up z)
               [yx yy yz :as y] (gu/ortho-normal z x)]
           (Matrix44.
@@ -982,7 +982,7 @@ https://github.com/stefanmirea/view-frustum-culling/blob/master/lab_camera.hpp#L
            h2 (/ height 2.0)]
        (-> M32
            (g/translate w2 h2)
-           (g/* (g/scale M32 w2 (if invert-y? h2 (- h2))))))))
+           (m/* (g/scale M32 w2 (if invert-y? h2 (- h2))))))))
 #+END_SRC
 
 *** Projection & un-projection
@@ -993,14 +993,14 @@ https://github.com/stefanmirea/view-frustum-culling/blob/master/lab_camera.hpp#L
     viewport matrix to produce screen coordinate."
     [p mvp vtx]
     (let [[x y _ w] (g/transform-vector mvp (conj (vec3 p) 1))]
-      (g/transform-vector vtx (g/div (vec2 x y) w))))
+      (g/transform-vector vtx (m/div (vec2 x y) w))))
 
   (defn project-point-z
     "Like project-point, but returns vec3 with z component representing
     depth value."
     [p mvp vtx]
     (let [[x y z w] (g/transform-vector mvp (conj (vec3 p) 1))]
-      (vec3 (g/transform-vector vtx (g/div (vec2 x y) w)) (/ z w))))
+      (vec3 (g/transform-vector vtx (m/div (vec2 x y) w)) (/ z w))))
 
   (defn unproject-point
     "Takes a vec3 in screenspace, view matrix, projection matrix and
@@ -1009,7 +1009,7 @@ https://github.com/stefanmirea/view-frustum-culling/blob/master/lab_camera.hpp#L
     separately. Returns vector in world space or nil if matrix is not
     invertible."
     ([p view proj screen-rect]
-     (if-let [inv-mat (g/invert (g/* proj view))]
+     (if-let [inv-mat (m/invert (m/* proj view))]
        (unproject-point p inv-mat screen-rect)))
     ([p ^Matrix44 inv-mat {[vx vy] :p [w h] :size}]
      (unproject-point p inv-mat vx vy w h))
@@ -1018,7 +1018,7 @@ https://github.com/stefanmirea/view-frustum-culling/blob/master/lab_camera.hpp#L
            y' (- (/ (* 2.0 (- (- h y 1) vy)) h) 1)
            z' (- (* z 2.0) 1)
            p' (g/transform-vector inv-mat [x' y' z'])]
-       (g/* p' (/ (mm/madd
+       (m/* p' (/ (mm/madd
                    x' (.-m03 inv-mat)
                    y' (.-m13 inv-mat)
                    z' (.-m23 inv-mat)

@@ -16,7 +16,7 @@
 #+BEGIN_SRC clojure :noweb-ref ptf
   (defn compute-tangents
     [points]
-    (let [t (mapv (fn [[p q]] (g/normalize (g/- q p))) (d/successive-nth 2 points))]
+    (let [t (mapv (fn [[p q]] (m/normalize (m/- q p))) (d/successive-nth 2 points))]
       (conj t (peek t))))
 
   (defn compute-frame
@@ -27,16 +27,16 @@
           a  (g/cross p q)
           n  (if-not (m/delta= 0.0 (g/mag-squared a))
                (let [theta (Math/acos (m/clamp-normalized (g/dot p q)))]
-                 (g/transform-vector (g/rotate-around-axis M44 (g/normalize a) theta) (norms ii)))
+                 (g/transform-vector (g/rotate-around-axis M44 (m/normalize a) theta) (norms ii)))
                (norms ii))]
       [n (g/cross q n)]))
 
   (defn compute-first-frame
     [t]
-    (let [t' (g/abs t)
+    (let [t' (m/abs t)
           i  (if (< (t' 0) (t' 1)) 0 1)
           i  (if (< (t' 2) (t' i)) 2 i)
-          n  (g/cross t (g/normalize (g/cross t (assoc V3 i 1.0))))]
+          n  (g/cross t (m/normalize (g/cross t (assoc V3 i 1.0))))]
       [n (g/cross t n)]))
 
   (defn compute-frames

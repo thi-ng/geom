@@ -5,24 +5,24 @@
      - [[#constructors][Constructors]]
      - [[#type-specific-functions][Type specific functions]]
      - [[#protocol-implementations][Protocol implementations]]
-         - [[#parea][PArea]]
-         - [[#pbounds][PBounds]]
-         - [[#pboundingcircle][PBoundingCircle]]
-         - [[#pboundary][PBoundary]]
-         - [[#pcenter][PCenter]]
-         - [[#pcircumference][PCircumference]]
-         - [[#pclassify][PClassify]]
-         - [[#pextrude][PExtrude]]
-         - [[#pgraph][PGraph]]
-         - [[#pintersect][PIntersect]]
-         - [[#pmeshconvert][PMeshConvert]]
-         - [[#ppolygonconvert][PPolygonConvert]]
-         - [[#pproximity][PProximity]]
-         - [[#psample][PSample]]
-         - [[#ptessellate][PTessellate]]
-         - [[#todo-ptransform][TODO PTransform]]
+         - [[#iarea][IArea]]
+         - [[#ibounds][IBounds]]
+         - [[#iboundingcircle][IBoundingCircle]]
+         - [[#iboundary][IBoundary]]
+         - [[#icenter][ICenter]]
+         - [[#icircumference][ICircumference]]
+         - [[#iclassify][IClassify]]
+         - [[#iextrude][IExtrude]]
+         - [[#igraph][IGraph]]
+         - [[#iintersect][IIntersect]]
+         - [[#imeshconvert][IMeshConvert]]
+         - [[#ipolygonconvert][IPolygonConvert]]
+         - [[#iproximity][IProximity]]
+         - [[#isample][ISample]]
+         - [[#itessellate][ITessellate]]
+         - [[#todo-itransform][TODO ITransform]]
              - [[#todo-scale-with-non-uniform-values-should-return-ellipse][TODO scale with non-uniform values should return Ellipse]]
-         - [[#pvolume][PVolume]]
+         - [[#ivolume][IVolume]]
          - [[#end-of-implementations][End of implementations]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
@@ -43,7 +43,7 @@
 #+BEGIN_SRC clojure :noweb-ref helpers  
   (defn tangent-points
     [{p :p :as c} q]
-    (let [m (g/mix p q)]
+    (let [m (m/mix p q)]
       (isec/intersect-circle-circle? c (circle m (g/dist m p)))))
 #+END_SRC
 
@@ -53,71 +53,71 @@
   (extend-type thi.ng.geom.types.Circle2
 #+END_SRC
 
-*** PArea
+*** IArea
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PArea
+  g/IArea
   (area [{r :r}] (* PI (* r r)))
 #+END_SRC
 
-*** PBounds
+*** IBounds
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBounds
+  g/IBounds
   (bounds
    [{p :p r :r}]
-   (let [d (* 2 r)] (thi.ng.geom.types.Rect2. (g/- p r) (vec2 d))))
+   (let [d (* 2 r)] (thi.ng.geom.types.Rect2. (m/- p r) (vec2 d))))
   (width  [_] (* 2.0 (:r _)))
   (height [_] (* 2.0 (:r _)))
   (depth  [_] 0)
 #+END_SRC
 
-*** PBoundingCircle
+*** IBoundingCircle
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundingCircle
+  g/IBoundingCircle
   (bounding-circle [_] _)
 #+END_SRC
 
-*** PBoundary
+*** IBoundary
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundary
+  g/IBoundary
   (contains-point?
    [{p :p r :r} q]
    (<= (g/dist-squared p q) (* r r)))
 #+END_SRC
 
-*** PCenter
+*** ICenter
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PCenter
+  g/ICenter
   (center
    ([_] (thi.ng.geom.types.Circle2. (vec2) (:r _)))
    ([_ p] (thi.ng.geom.types.Circle2. (vec2 p) (:r _))))
   (centroid [_] (:p _))
 #+END_SRC
 
-*** PCircumference
+*** ICircumference
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PCircumference
+  g/ICircumference
   (circumference [_] (* TWO_PI (:r _)))
 #+END_SRC
 
-*** PClassify
+*** IClassify
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PClassify
+  g/IClassify
   (classify-point
    [_ q]
    (m/signum (- (:r _) (g/dist (:p _) q)) *eps*))
 #+END_SRC
 
-*** PExtrude
+*** IExtrude
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PExtrude
+  g/IExtrude
   (extrude
    [_ {:keys [mesh res depth offset scale top? bottom?]
        :or {res *resolution*, depth 1.0, scale 1.0, top? true, bottom? true}}]
@@ -127,7 +127,7 @@
                    (g/vertices (circle (:p _) (* scale (:r _))) res))
          off (or offset (vec3 0 0 depth))
          points3 (mapv vec3 points)
-         tpoints3 (mapv #(g/+ off %) tpoints)]
+         tpoints3 (mapv #(m/+ off %) tpoints)]
      (g/into
       (or mesh (bm/basic-mesh))
       (concat
@@ -141,20 +141,20 @@
        (when top?
          (->> tpoints
               (gu/tessellate-with-point (:p _))
-              (mapv (fn [[a b c]] [(g/+ off a) (g/+ off b) (g/+ off c)]))))))))
+              (mapv (fn [[a b c]] [(m/+ off a) (m/+ off b) (m/+ off c)]))))))))
   (extrude-shell
    [_ opts] (g/extrude-shell (g/as-polygon _) opts))
 #+END_SRC
 
-*** PGraph
+*** IGraph
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVertexAccess
+  g/IVertexAccess
   (vertices
    ([_] (g/vertices _ *resolution*))
    ([_ res]
       (mapv #(g/point-at _ %) (butlast (m/norm-range res)))))
-  g/PEdgeAccess
+  g/IEdgeAccess
   (edges
    ([_] (g/edges _ *resolution*))
    ([_ res]
@@ -162,10 +162,10 @@
         (d/successive-nth 2 (conj verts (first verts))))))
 #+END_SRC
 
-*** PIntersect
+*** IIntersect
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PIntersect
+  g/IIntersect
   (intersect-shape
    [_ s]
    (cond
@@ -174,10 +174,10 @@
     :default (err/type-error! "Circle2" s)))
 #+END_SRC
 
-*** PMeshConvert
+*** IMeshConvert
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PMeshConvert
+  g/IMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {:res *resolution*}))
    ([_ {:keys [mesh res]}]
@@ -188,43 +188,43 @@
            (g/into (or (bm/basic-mesh))))))
 #+END_SRC
 
-*** PPolygonConvert
+*** IPolygonConvert
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PPolygonConvert
+  g/IPolygonConvert
   (as-polygon
    ([_] (g/as-polygon _ *resolution*))
    ([_ res] (thi.ng.geom.types.Polygon2. (vec (g/vertices _ res)))))
 #+END_SRC
 
-*** PProximity
+*** IProximity
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PProximity
+  g/IProximity
   (closest-point
    [{p :p r :r} q]
-   (g/+! (g/normalize (g/- q p) r) p))
+   (m/+! (m/normalize (m/- q p) r) p))
 #+END_SRC
 
-*** PSample
+*** ISample
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PSample
+  g/ISample
   (point-at
    [_ t]
-   (g/+ (:p _) (g/as-cartesian (vec2 (:r _) (* t TWO_PI)))))
+   (m/+ (:p _) (g/as-cartesian (vec2 (:r _) (* t TWO_PI)))))
   (random-point
    [_] (g/point-at _ (m/random)))
   (random-point-inside
    [_]
-   (g/+ (:p _) (v/randvec2 (m/random (:r _)))))
+   (m/+ (:p _) (v/randvec2 (m/random (:r _)))))
   (sample-uniform
    [_ udist include-last?]
    (let [points (g/vertices _)]
      (gu/sample-uniform udist include-last? (conj (vec points) (first points)))))
 #+END_SRC
 
-*** PTessellate
+*** ITessellate
 
 A circle can be tessellated into a list of uniform triangles,
 each sharing the circle's centroid. If called without 2nd
@@ -232,7 +232,7 @@ argument the default =*resolution*= (a dynamic var defined
 in [[file:~/Documents/workspace.clj/thing/geom/geom-core/src/core.org][thi.ng.geom.core]]) will be used.
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PTessellate
+  g/ITessellate
   (tessellate
    ([_] (g/tessellate _ *resolution*))
    ([{p :p :as _} res]
@@ -242,28 +242,28 @@ in [[file:~/Documents/workspace.clj/thing/geom/geom-core/src/core.org][thi.ng.ge
            (map #(thi.ng.geom.types.Triangle2. %)))))
 #+END_SRC
 
-*** TODO PTransform
+*** TODO ITransform
 **** TODO scale with non-uniform values should return Ellipse
 
 Since transforming a circle with a matrix can produce non-circular
 results, the =transform= implementation returns a [[file:polygon.org][polygon]].
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PRotate
+  g/IRotate
   (rotate [_ theta] (thi.ng.geom.types.Circle2. (g/rotate (:p _) theta) (:r _)))
-  g/PScale
-  (scale [_ s] (thi.ng.geom.types.Circle2. (g/* (:p _) s) (* (:r _) s)))
+  g/IScale
+  (scale [_ s] (thi.ng.geom.types.Circle2. (m/* (:p _) s) (* (:r _) s)))
   (scale-size [_ s] (thi.ng.geom.types.Circle2. (:p _) (* (:r _) s)))
-  g/PTranslate
-  (translate [_ t] (thi.ng.geom.types.Circle2. (g/+ (:p _) t) (:r _)))
-  g/PTransform
+  g/ITranslate
+  (translate [_ t] (thi.ng.geom.types.Circle2. (m/+ (:p _) t) (:r _)))
+  g/ITransform
   (transform [_ m] (g/transform (g/as-polygon _) m))
 #+END_SRC
 
-*** PVolume
+*** IVolume
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVolume
+  g/IVolume
   (volume [_] 0)
 #+END_SRC
 

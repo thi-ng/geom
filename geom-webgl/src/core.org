@@ -329,24 +329,24 @@
 ** Protocols
 
 #+BEGIN_SRC clojure :noweb-ref protos
-  (defprotocol PWebGLConvert
+  (defprotocol IWebGLConvert
     (as-webgl-buffer-spec [_ opts]))
 
-  (defprotocol PRelease
+  (defprotocol IRelease
     (release [_]))
 
-  (defprotocol PBind
+  (defprotocol IBind
     (bind [_] [_ opts])
     (unbind [_] [_ opts]))
 
-  (defprotocol PConfigure
+  (defprotocol IConfigure
     (configure [_ opts]))
 
-  (defprotocol PTexture
+  (defprotocol ITexture
     (set-texture-filter [_ type])
     (set-texture-wrap [_ type]))
 
-  (defprotocol PFramebuffer
+  (defprotocol IFramebuffer
     (set-fbo-color-texture [_ tex])
     (set-fbo-depth-buffer [_ depth-buffer]))
 #+END_SRC
@@ -385,7 +385,7 @@
     [buf coll stride]
     (loop [i 0, coll (seq coll)]
       (if coll
-        (recur (g/copy-to-buffer (first coll) buf stride i) (next coll))
+        (recur (g/into-buffer (first coll) buf stride i) (next coll))
         buf)))
 
   (defn fill-vertex-buffer-3
@@ -433,9 +433,9 @@
       (loop [i 0, faces faces]
         (if faces
           (let [f (first faces)]
-            (recur (->> (g/copy-to-buffer (vnorms (f 0)) buf 3 i)
-                        (g/copy-to-buffer (vnorms (f 1)) buf 3)
-                        (g/copy-to-buffer (vnorms (f 2)) buf 3))
+            (recur (->> (g/into-buffer (vnorms (f 0)) buf 3 i)
+                        (g/into-buffer (vnorms (f 1)) buf 3)
+                        (g/into-buffer (vnorms (f 2)) buf 3))
                    (next faces)))
           buf))))
 #+END_SRC
@@ -517,13 +517,13 @@ using the protocol.
 *** PersistentVector
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type cljs.core.PersistentVector
-    g/PBuffered
-    (copy-to-buffer [_ buf stride idx]
+    g/IBuffered
+    (into-buffer [_ buf stride idx]
       (let [t     (type (first _))
             into* (case t
                    thi.ng.geom.core.vector.Vec2 into-buffer-vec2
                    thi.ng.geom.core.vector.Vec3 into-buffer-vec3
-                   g/copy-to-buffer)]
+                   g/into-buffer)]
         (case (count _)
           2 (let [idx (into* (first _) buf stride idx)]
               (into* (nth _ 1) buf stride idx))
@@ -540,7 +540,7 @@ using the protocol.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.LineStrip2
-    PWebGLConvert
+    IWebGLConvert
     (as-webgl-buffer-spec
       [{:keys [points]} {:keys [stride] :or {stride 2} :as spec}]
       (let [numv     (count points)]
@@ -559,7 +559,7 @@ using the protocol.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.LineStrip3
-    PWebGLConvert
+    IWebGLConvert
     (as-webgl-buffer-spec
       [{:keys [points]} {:keys [stride] :or {stride 3} :as spec}]
       (let [numv     (count points)]
@@ -578,7 +578,7 @@ using the protocol.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.Rect2
-    PWebGLConvert
+    IWebGLConvert
     (as-webgl-buffer-spec
       [r {:keys [stride normals] :or {stride 2} :as spec}]
       (let [[a b c d] (g/vertices r)]
@@ -599,7 +599,7 @@ using the protocol.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.Polygon2
-    PWebGLConvert
+    IWebGLConvert
     (as-webgl-buffer-spec
       [_ {:keys [normals stride mode] :or {stride 2, normals true, mode triangles} :as spec}]
       (if (= triangles mode)
@@ -634,7 +634,7 @@ using the protocol.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.BasicMesh
-    PWebGLConvert
+    IWebGLConvert
     (as-webgl-buffer-spec
       [_ {:keys [fnormals tessellate stride]
           :or   {fnormals true, tessellate true, stride 3} :as spec}]
@@ -659,7 +659,7 @@ using the protocol.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.GMesh
-    PWebGLConvert
+    IWebGLConvert
     (as-webgl-buffer-spec
       [_ {:keys [vnormals fnormals tessellate stride]
           :or   {fnormals true, tessellate true, stride 3} :as spec}]
@@ -818,6 +818,7 @@ using the protocol.
   (ns thi.ng.geom.webgl.core
     (:refer-clojure :exclude [byte float int short keep repeat replace])
     (:require
+     [thi.ng.math.core :as m]
      [thi.ng.typedarrays.core :as arrays]
      [thi.ng.geom.webgl.utils :as glu]
      [thi.ng.geom.core :as g]

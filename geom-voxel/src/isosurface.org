@@ -393,7 +393,7 @@
                 vid1     (inc vid)
                 vid2     (inc vid1)
                 delta    (if (zero? (bit-and voxel-id 1)) iso* iso)
-                [x y z]  (g/* cell size)
+                [x y z]  (m/* cell size)
                 vertices (if (> (bit-and eflags 0x01) 0)
                            (if (nil? (vertices vid))
                              (assoc! vertices vid
