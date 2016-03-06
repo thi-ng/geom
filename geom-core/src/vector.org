@@ -6,7 +6,7 @@
          - [[#templates][Templates]]
          - [[#clojure-protocols][Clojure protocols]]
          - [[#object-tostring][Object (toString)]]
-         - [[#ibuffered][IBuffered]]
+         - [[#ibuffer][IBuffer]]
          - [[#imathops][IMathOps]]
          - [[#iclear][IClear]]
          - [[#icrossproduct][ICrossProduct]]
@@ -30,7 +30,7 @@
          - [[#templates][Templates]]
          - [[#clojure-protocols][Clojure protocols]]
          - [[#object-tostring][Object (toString)]]
-         - [[#ibuffered][IBuffered]]
+         - [[#ibuffer][IBuffer]]
          - [[#imathops][IMathOps]]
          - [[#iclear][IClear]]
          - [[#icrossproduct][ICrossProduct]]
@@ -379,10 +379,10 @@
   (toString [_] (str "[" (aget buf 0) " " (aget buf 1) "]"))
 #+END_SRC
 
-*** IBuffered
+*** IBuffer
 
 #+BEGIN_SRC clojure :noweb-ref vec2
-  g/IBuffered
+  streams/IBuffer
   (get-buffer [_] buf)
   (into-buffer
    [_ dest stride idx]
@@ -1073,10 +1073,10 @@
    [_] (str "[" (aget buf 0) " " (aget buf 1) " " (aget buf 2) "]"))
 #+END_SRC
 
-*** IBuffered
+*** IBuffer
 
 #+BEGIN_SRC clojure :noweb-ref vec3
-  g/IBuffered
+  streams/IBuffer
   (get-buffer [_] buf)
   (into-buffer
    [_ dest stride idx]
@@ -2163,6 +2163,7 @@
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.math.core :as m :refer [*eps* PI TWO_PI INF- INF+]]
+     [thi.ng.dstruct.streams :as streams]
      [thi.ng.xerror.core :as err]
      #?@(:clj
          [[thi.ng.geom.core.macros.vector :as vm :refer [defswizzle]]

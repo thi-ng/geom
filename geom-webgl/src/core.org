@@ -385,7 +385,7 @@
     [buf coll stride]
     (loop [i 0, coll (seq coll)]
       (if coll
-        (recur (g/into-buffer (first coll) buf stride i) (next coll))
+        (recur (streams/into-buffer (first coll) buf stride i) (next coll))
         buf)))
 
   (defn fill-vertex-buffer-3
@@ -433,9 +433,9 @@
       (loop [i 0, faces faces]
         (if faces
           (let [f (first faces)]
-            (recur (->> (g/into-buffer (vnorms (f 0)) buf 3 i)
-                        (g/into-buffer (vnorms (f 1)) buf 3)
-                        (g/into-buffer (vnorms (f 2)) buf 3))
+            (recur (->> (streams/into-buffer (vnorms (f 0)) buf 3 i)
+                        (streams/into-buffer (vnorms (f 1)) buf 3)
+                        (streams/into-buffer (vnorms (f 2)) buf 3))
                    (next faces)))
           buf))))
 #+END_SRC
@@ -517,13 +517,13 @@ using the protocol.
 *** PersistentVector
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type cljs.core.PersistentVector
-    g/IBuffered
+    streams/IBuffer
     (into-buffer [_ buf stride idx]
       (let [t     (type (first _))
             into* (case t
                    thi.ng.geom.core.vector.Vec2 into-buffer-vec2
                    thi.ng.geom.core.vector.Vec3 into-buffer-vec3
-                   g/into-buffer)]
+                   streams/into-buffer)]
         (case (count _)
           2 (let [idx (into* (first _) buf stride idx)]
               (into* (nth _ 1) buf stride idx))
@@ -820,6 +820,7 @@ using the protocol.
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.typedarrays.core :as arrays]
+     [thi.ng.dstruct.streams :as streams]
      [thi.ng.geom.webgl.utils :as glu]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]

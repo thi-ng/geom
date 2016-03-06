@@ -852,6 +852,7 @@ Currently the following options are supported:
      [thi.ng.geom.webgl.buffers :as buf]
      [thi.ng.geom.webgl.shaders :as sh]
      [thi.ng.typedarrays.core :as arrays]
+     [thi.ng.dstruct.streams :as streams]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.math.core :as m]))
 
@@ -876,7 +877,7 @@ Currently the following options are supported:
     ([^WebGLRenderingContext gl r init-shader?]
        (let [vbuf (arrays/float32 8)
              [a b c d] (g/vertices r)
-             _ (g/into-buffer [a b d c] vbuf 2 0)
+             _ (streams/into-buffer [a b d c] vbuf 2 0)
              spec {:attribs  (buf/make-attribute-buffers
                               gl gl/static-draw
                               {:position {:data vbuf :size 2}

@@ -9,7 +9,6 @@
          - [[#sub-shape-accessors][Sub-shape accessors]]
          - [[#shape-based--structural-operations][Shape based & structural operations]]
          - [[#type-specific-operations][Type specific operations]]
-         - [[#buffered-instances][Buffered instances]]
      - [[#constants][Constants]]
          - [[#default-circle-resolution][Default circle resolution]]
      - [[#complete-namespace-definition][Complete namespace definition]]
@@ -161,21 +160,18 @@ access to entities in this context.
 
 *** Sub-shape accessors
 **** IVertexAccess
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IVertexAccess
     (vertices [_] [_ opts]))
 #+END_SRC
 
 **** IEdgeAccess
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IEdgeAccess
     (edges [_] [_ opts]))
 #+END_SRC
 
 **** IFaceAccess
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IFaceAccess
     (add-face [_ face]
@@ -196,7 +192,6 @@ access to entities in this context.
 #+END_SRC
 
 **** INormalAccess
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol INormalAccess
     (compute-face-normals [_])
@@ -208,14 +203,12 @@ access to entities in this context.
 #+END_SRC
 
 **** IAttributeAccess
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IAttributeAccess
     (attribs [_ ctx] [_ ctx attr]))
 #+END_SRC
 
 **** IRawAccess
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IRawAccess
     (raw [_ ctx]))
@@ -223,7 +216,6 @@ access to entities in this context.
 
 *** Shape based & structural operations
 **** IAlign
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IAlign
     (align-with [_ x opts]
@@ -231,7 +223,6 @@ access to entities in this context.
 #+END_SRC
 
 **** IArea
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IArea
     (area [_]
@@ -239,7 +230,6 @@ access to entities in this context.
 #+END_SRC
 
 **** IBoundary
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IBoundary
     (contains-entity? [_ s])
@@ -247,21 +237,18 @@ access to entities in this context.
 #+END_SRC
 
 **** IBoundingCircle
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IBoundingCircle
     (bounding-circle [_]))
 #+END_SRC
 
 **** IBoundingSphere
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IBoundingSphere
     (bounding-sphere [_]))
 #+END_SRC
 
 **** IBounds
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IBounds
     (bounds [_]
@@ -275,7 +262,6 @@ access to entities in this context.
 #+END_SRC
 
 **** ICenter
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol ICenter
     (center [_] [_ p]
@@ -285,7 +271,6 @@ access to entities in this context.
 #+END_SRC
 
 **** ICircumference
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol ICircumference
     (circumference [_]
@@ -293,14 +278,12 @@ access to entities in this context.
 #+END_SRC
 
 **** IClassify
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IClassify
     (classify-point [_ p]))
 #+END_SRC
 
 **** IClear
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IClear
     (clear* [_])
@@ -309,7 +292,6 @@ access to entities in this context.
 
 **** TODO IClip
 ***** TODO remove protocol, method is already part of ISetOps
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IClip
     (clip-with [_ s]))
@@ -317,14 +299,12 @@ access to entities in this context.
 
 **** TODO IConvexHull
 ***** TODO rename into IConvex, add convex? method
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IConvexHull
     (convex-hull [_]))
 #+END_SRC
 
 **** IExtrude
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IExtrude
     (extrude [_ opts])
@@ -332,28 +312,24 @@ access to entities in this context.
 #+END_SRC
 
 **** IFlip
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IFlip
     (flip [_]))
 #+END_SRC
 
 **** IGeomContainer
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IGeomContainer
     (into [_ m]))
 #+END_SRC
 
 **** IInset
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IInset
     (inset [_ inset]))
 #+END_SRC
 
 **** IIntersect
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IIntersect
     (intersect-line [_ l] [_ p q])
@@ -395,7 +371,6 @@ protocol consisting of just this one function:
 #+END_SRC
 
 **** IProximity
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IProximity
     (closest-point [_ p]))
@@ -403,7 +378,6 @@ protocol consisting of just this one function:
 
 **** ISample
 ***** TODO move random-point-inside into IBoundary
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol ISample
     (point-at [_ t] [_ u v])
@@ -414,14 +388,12 @@ protocol consisting of just this one function:
 #+END_SRC
 
 **** ISlice
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol ISlice
     (slice-with [_ e] [_ e classifier] [_ e classifier parts]))
 #+END_SRC
 
 **** ISubdivide
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol ISubdivide
     (subdivide [_] [_ opts])
@@ -430,14 +402,12 @@ protocol consisting of just this one function:
 #+END_SRC
 
 **** ITessellate
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol ITessellate
     (tessellate [_] [_ opts]))
 #+END_SRC
 
 **** IVolume
-
 #+BEGIN_SRC clojure :noweb-ref protos-shape
   (defprotocol IVolume
     (volume [_] "Returns an entity's inner volume.")
@@ -448,22 +418,12 @@ protocol consisting of just this one function:
 **** TODO ISpatialTree
 ***** TODO refactor to use conj & disj?
 ***** TODO extract more general tree protocol?
-
 #+BEGIN_SRC clojure :noweb-ref protos-types
   (defprotocol ISpatialTree
     (add-point [_ p d])
     (delete-point [_ p])
     (get-point [_])
     (get-point-data [_]))
-#+END_SRC
-
-*** Buffered instances
-**** IBuffered
-
-#+BEGIN_SRC clojure :noweb-ref protos-special
-  (defprotocol IBuffered
-    (get-buffer [_])
-    (into-buffer [_ dest stride idx]))
 #+END_SRC
 
 ** Constants

@@ -352,16 +352,10 @@ rotation / transformation).
 #+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example05.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.example05
     (:require
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     [thi.ng.geom.core.matrix :as mat :refer [M44]]
+     <<default-requires>>
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.plane :as pl]
      [thi.ng.geom.core.intersect :as intersect]
-     [thi.ng.geom.webgl.core :as gl]
-     [thi.ng.geom.webgl.animator :as anim]
-     [thi.ng.geom.webgl.buffers :as buf]
-     [thi.ng.geom.webgl.shaders :as sh]
      [thi.ng.geom.webgl.shaders.phong :as phong]))
 
   (defn raycast
