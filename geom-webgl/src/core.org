@@ -393,6 +393,7 @@
     (loop [i 0, coll (seq coll)]
       (if coll
         (let [[a b c] (first coll)]
+          ;;(prn :face (first coll))
           (recur (->> (f a buf stride i)
                       (f b buf stride)
                       (f c buf stride))
@@ -638,10 +639,12 @@ using the protocol.
     (as-webgl-buffer-spec
       [_ {:keys [fnormals tessellate stride]
           :or   {fnormals true, tessellate true, stride 3} :as spec}]
+      ;;(prn :mesh _)
       (let [m         (if tessellate (g/tessellate _) _)
-            faces     (g/faces m)
+            faces     (map #(g/vertices % m) (g/faces m))
             num-faces (count faces)
             num-verts (* num-faces 3)]
+        ;;(prn :faces faces)
         (common-attrib-buffer-specs
          {:attribs
           {:position    {:data (fill-vertex-buffer-3
@@ -664,7 +667,7 @@ using the protocol.
       [_ {:keys [vnormals fnormals tessellate stride]
           :or   {fnormals true, tessellate true, stride 3} :as spec}]
       (let [m         (if tessellate (g/tessellate _) _)
-            faces     (g/faces m)
+            faces     (map #(g/vertices % m) (g/faces m))
             num-faces (count faces)
             num-verts (* num-faces 3)
             normals   (cond
