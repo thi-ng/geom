@@ -136,7 +136,7 @@
   g/IMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([_ {:keys [p width height size mesh] :or {size 1.0}}]
+   ([_ {:keys [p width height size mesh attribs] :or {size 1.0}}]
     (let [w     (* (or width size) 0.5)
           h     (* (or height size) 0.5)
           flip? (m/delta= -1.0 (m/dot (:n _) v/V3Z))
@@ -147,10 +147,9 @@
           face  (mapv
                  #(m/+ p (g/transform-vector q %))
                  [(vec3 (- w) (- h) 0) (vec3 (- w) h 0)
-                  (vec3 w h 0) (vec3 w (- h) 0)])]
-      (g/into
-       (or mesh (bm/basic-mesh))
-       [(if flip? face (rseq face))]))))
+                  (vec3 w h 0) (vec3 w (- h) 0)])
+          face  (attr/generate-face-attribs (if flip? face (rseq face)) 0 attribs nil)]
+      (g/add-face (or mesh (bm/basic-mesh)) face))))
 #+END_SRC
 *** IProximity
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -201,6 +200,7 @@
      [thi.ng.geom.core.vector :as v :refer [vec3]]
      [thi.ng.geom.core.quaternion :as q]
      [thi.ng.geom.basicmesh :as bm]
+     [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.xerror.core :as err]
