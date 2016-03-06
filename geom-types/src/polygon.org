@@ -20,6 +20,7 @@
          - [[#iclip][IClip]]
          - [[#iconvexhull][IConvexHull]]
          - [[#iextrude][IExtrude]]
+             - [[#todo-add-attribute-support][TODO Add attribute support]]
          - [[#iflip][IFlip]]
          - [[#igraph][IGraph]]
          - [[#iinset][IInset]]
@@ -262,6 +263,7 @@
 #+END_SRC
 
 *** IExtrude
+**** TODO Add attribute support
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IExtrude
   (extrude
@@ -281,11 +283,11 @@
       (concat
        (when bottom?
          (if quad?
-           [(rseq (mapv vec3 points))]
+           [[(rseq (mapv vec3 points))]]
            (->> points
                 (tessellate*)
-                (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)])))))
-       (mapv (fn [[a1 b1] [a2 b2]] [a1 b1 b2 a2])
+                (map (fn [[a b c]] [[(vec3 b) (vec3 a) (vec3 c)]])))))
+       (mapv (fn [[a1 b1] [a2 b2]] [[a1 b1 b2 a2]])
              (d/successive-nth 2 (conj points3 (points3 0)))
              (d/successive-nth 2 (conj tpoints3 (tpoints3 0))))
        (when top?
@@ -293,7 +295,7 @@
            [tpoints3]
            (->> tpoints
                 (tessellate*)
-                (mapv (fn [[a b c]] [(m/+ off a) (m/+ off b) (m/+ off c)])))))))))
+                (mapv (fn [[a b c]] [[(m/+ off a) (m/+ off b) (m/+ off c)]])))))))))
   (extrude-shell
    [{points :points :as _}
     {:keys [mesh depth offset inset top? bottom? wall nump]
@@ -315,7 +317,7 @@
          quad-strip (fn [a b flip?]
                       (map
                        (fn [[a1 b1] [a2 b2]]
-                         (if flip? [a1 b1 b2 a2] [a1 a2 b2 b1]))
+                         [(if flip? [a1 b1 b2 a2] [a1 a2 b2 b1])])
                        (d/successive-nth 2 a) (d/successive-nth 2 b)))
          points3    (mapv #(vec3 %) points)
          ipoints3   (mapv #(m/+ ioff %) ipoints)
@@ -329,15 +331,15 @@
        (if bottom?
          (concat
           (if quad?
-            [(rseq (mapv vec3 points))]
+            [[(rseq (mapv vec3 points))]]
             (->> points
                  (tessellate*)
-                 (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)]))))
+                 (map (fn [[a b c]] [[(vec3 b) (vec3 a) (vec3 c)]]))))
           (if quad?
             [(mapv #(m/+ ioff %) ipoints)]
             (->> ipoints
                  (tessellate*)
-                 (map (fn [[a b c]] [(m/+ ioff a) (m/+ ioff b) (m/+ ioff c)]))))
+                 (map (fn [[a b c]] [[(m/+ ioff a) (m/+ ioff b) (m/+ ioff c)]]))))
           (when-not complete?
             (quad-strip (drop-wrap points3) (drop-wrap ipoints3) true)))
          (quad-strip (maybe-loop points3) (maybe-loop ipoints3) false))
@@ -346,19 +348,19 @@
        (when-not complete?
          (let [a (points3 0) b (ipoints3 0) c (itpoints3 0) d (tpoints3 0)
                e (points3 np1) f (ipoints3 np1) g (itpoints3 np1) h (tpoints3 np1)]
-           [[d c b a] [e f g h]]))
+           [[[d c b a]] [[e f g h]]]))
        (if top?
          (concat
           (if quad?
-            [(mapv #(m/+ off %) tpoints)]
+            [[(mapv #(m/+ off %) tpoints)]]
             (->> tpoints
                  (tessellate*)
-                 (map (fn [[a b c]] [(m/+ off a) (m/+ off b) (m/+ off c)]))))
+                 (map (fn [[a b c]] [[(m/+ off a) (m/+ off b) (m/+ off c)]]))))
           (if quad?
-            [(rseq (mapv #(m/+ itoff %) itpoints))]
+            [[(rseq (mapv #(m/+ itoff %) itpoints))]]
             (->> itpoints
                  (tessellate*)
-                 (map (fn [[a b c]] [(m/+ itoff b) (m/+ itoff a) (m/+ itoff c)]))))
+                 (map (fn [[a b c]] [[(m/+ itoff b) (m/+ itoff a) (m/+ itoff c)]]))))
           (when-not complete? (quad-strip (drop-wrap tpoints3) (drop-wrap itpoints3) false)))
          (quad-strip (maybe-loop tpoints3) (maybe-loop itpoints3) true))))))
 #+END_SRC
@@ -407,9 +409,11 @@
   g/IMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([_ opts]
+   ([_ {:keys [attribs] :as opts}]
       (->> (tessellate* _)
-           (map (fn [[a b c]] [(vec3 a) (vec3 b) (vec3 c)]))
+           (map-indexed
+            (fn [i [a b c]]
+              (attr/generate-face-attribs [(vec3 a) (vec3 b) (vec3 c)] i attribs nil)))
            (g/into (or (:mesh opts) (bm/basic-mesh))))))
 #+END_SRC
 
@@ -473,6 +477,7 @@
      [thi.ng.geom.line :as l]
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.basicmesh :as bm]
+     [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
