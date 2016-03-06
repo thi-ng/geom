@@ -156,7 +156,7 @@
    (loop [fnorms (transient {}), faces (:faces _)]
      (if faces
        (let [f (first faces)]
-         (recur (assoc! fnorms f (gu/ortho-normal f)) (next faces)))
+         (recur (assoc! fnorms f (gu/ortho-normal (g/vertices f _))) (next faces)))
        (assoc _ :fnormals (persistent! fnorms)))))
   (compute-vertex-normals
    [_] (err/unsupported!))
