@@ -150,7 +150,7 @@
     [prev curr next d]
     (let [[dx1 dy1 :as d1] (m/- curr prev)
           [dx2 dy2 :as d2] (m/- next curr)
-          d1 (g/mag d1) d2 (g/mag d2)]
+          d1 (m/mag d1) d2 (m/mag d2)]
       (if-not (or (m/delta= 0.0 d1) (m/delta= 0.0 d2))
         (let [i1 (m/* (m/* (vec2 dy1 (- dx1)) (/ d1)) d) ;; TODO avoid double multiply => (/ d d1)
               i2 (m/* (m/* (vec2 dy2 (- dx2)) (/ d2)) d) ;; TODO ditto => (/ d d2)
@@ -190,7 +190,7 @@
    [{points :points}]
    (->> points
         (d/rotate-left 1)
-        (reduce (fn [[a p] v] [(+ a (g/cross p v)) v]) [0.0 (first points)])
+        (reduce (fn [[a p] v] [(+ a (m/cross p v)) v]) [0.0 (first points)])
         first
         (* 0.5)))
 #+END_SRC
@@ -229,7 +229,7 @@
    (let [c (->> points
                 (d/rotate-left 1)
                 (reduce
-                 (fn [[c p] v] [(m/madd (m/+ p v) (g/cross p v) c) v])
+                 (fn [[c p] v] [(m/madd (m/+ p v) (m/cross p v) c) v])
                  [(vec2) (first points)])
                 (first))]
      (m/* c (/ 1.0 (* 6.0 (g/area _))))))
@@ -304,7 +304,7 @@
          itpoints   (inset-polygon points (- (- inset) wall))
          off        (or offset (vec3 0 0 depth))
          ioff       (if bottom? (m/normalize off wall) (vec3))
-         itoff      (if top? (m/normalize off (- (g/mag off) wall)) off)
+         itoff      (if top? (m/normalize off (- (m/mag off) wall)) off)
          maxp       (inc (count points))
          quad?      (== 4 (count points))
          nump       (if nump (m/clamp nump 2 maxp) maxp)

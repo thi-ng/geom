@@ -55,7 +55,7 @@
           nmat      (m/transpose (m/invert view))]
       (fn [f f' z]
         (let [n       (g/transform-vector nmat (gu/ortho-normal f))
-              lambert (max 0.0 (g/dot n light-dir))
+              lambert (max 0.0 (m/dot n light-dir))
               diffuse (if (fn? diffuse) (diffuse f f' z) diffuse)
               ambient (if (fn? ambient) (ambient f f' z) ambient)]
           (-> (m/* diffuse light-col)
@@ -76,10 +76,10 @@
               n       (m/normalize (g/transform-vector nmat (gu/ortho-normal f)))
               l       (m/normalize (m/- light-pos eye-pos))
               e       (m/normalize (m/- eye-pos))
-              lambert (max 0.0 (g/dot n l))
+              lambert (max 0.0 (m/dot n l))
               diffuse (if (fn? diffuse) (diffuse f f' z) diffuse)
               ambient (if (fn? ambient) (ambient f f' z) ambient)
-              spec    (max (Math/pow (g/dot (m/normalize (m/+ l e)) n) shininess) 0.0)]
+              spec    (max (Math/pow (m/dot (m/normalize (m/+ l e)) n) shininess) 0.0)]
           (-> (m/* diffuse light-col)
               (m/madd lambert (m/+ (m/* ambient light-col) (m/* specular spec)))
               (m/min [1.0 1.0 1.0]))))))

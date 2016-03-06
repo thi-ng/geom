@@ -445,7 +445,7 @@
 *** ICrossProduct
 
 #+BEGIN_SRC clojure :noweb-ref vec2
-  g/ICrossProduct
+  m/ICrossProduct
   (cross [_ v] (vm/rewrite-v2-v-no-let buf v 0.0 (mm/msub x vy y vx)))
 #+END_SRC
 
@@ -480,7 +480,7 @@
 *** IDotProduct
 
 #+BEGIN_SRC clojure :noweb-ref vec2
-  g/IDotProduct
+  m/IDotProduct
   (dot [_ v] (vm/rewrite-v2-v-no-let buf v 0.0 (mm/madd x vx y vy)))
 #+END_SRC
 
@@ -548,7 +548,7 @@
   m/ILimit
   (limit
    [_ len]
-   (if (> (g/mag-squared _) (* len len))
+   (if (> (m/mag-squared _) (* len len))
      (m/normalize _ len)
      _))
 #+END_SRC
@@ -556,7 +556,7 @@
 *** IMagnitude
 
 #+BEGIN_SRC clojure :noweb-ref vec2
-  g/IMagnitude
+  m/IMagnitude
   (mag
    [_] (vm/rewrite-v2 buf (Math/sqrt (mm/madd x x y y))))
   (mag-squared
@@ -617,7 +617,7 @@
           (Vec2. b nil _meta))
         _))))
   (normalized?
-   [_] (m/delta= 1.0 (g/mag-squared _)))
+   [_] (m/delta= 1.0 (m/mag-squared _)))
 #+END_SRC
 
 *** IPolar
@@ -627,7 +627,7 @@
   (as-polar
    [_]
    (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
-     (aset b 0 (double (g/mag _)))
+     (aset b 0 (double (m/mag _)))
      (aset b 1 (double (g/heading _)))
      (Vec2. b nil _meta)))
   (as-cartesian
@@ -1150,7 +1150,7 @@
 *** ICrossProduct
 
 #+BEGIN_SRC clojure :noweb-ref vec3
-  g/ICrossProduct
+  m/ICrossProduct
   (cross
    [_ v]
    (let [^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
@@ -1196,7 +1196,7 @@
 *** IDotProduct
 
 #+BEGIN_SRC clojure :noweb-ref vec3
-  g/IDotProduct
+  m/IDotProduct
   (dot [_ v] (vm/rewrite-v3-v-no-let buf v 0.0 (+ (+ (* x vx) (* y vy)) (* z vz))))
 #+END_SRC
 
@@ -1219,7 +1219,7 @@
   (angle-between
    [_ v]
    (let [v (if (instance? Vec3 v) v (vec3 v))]
-     (Math/acos (g/dot (m/normalize _) (m/normalize v)))))
+     (Math/acos (m/dot (m/normalize _) (m/normalize v)))))
   (slope-xy [_] (/ (aget buf 1) (aget buf 0)))
   (slope-xz [_] (/ (aget buf 2) (aget buf 0)))
   (slope-yz [_] (/ (aget buf 2) (aget buf 1)))
@@ -1279,7 +1279,7 @@
   m/ILimit
   (limit
    [_ len]
-   (if (> (g/mag-squared _) (* len len))
+   (if (> (m/mag-squared _) (* len len))
      (m/normalize _ len)
      _))
 #+END_SRC
@@ -1287,7 +1287,7 @@
 *** IMagnitude
 
 #+BEGIN_SRC clojure :noweb-ref vec3
-  g/IMagnitude
+  m/IMagnitude
   (mag
    [_] (vm/rewrite-v3 buf (Math/sqrt (mm/madd x x y y z z))))
   (mag-squared
@@ -1338,7 +1338,7 @@
           (Vec3. b nil _meta))
         _))))
   (normalized?
-   [_] (m/delta= 1.0 (g/mag-squared _)))
+   [_] (m/delta= 1.0 (m/mag-squared _)))
 #+END_SRC
 
 *** IPolar
@@ -1350,7 +1350,7 @@
   g/IPolar
   (as-polar
    [_]
-   (let [r (g/mag _)
+   (let [r (m/mag _)
          ^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
      (aset b 0 (double r))
      (aset b 1 (double (Math/asin (/ (aget buf 2) r))))

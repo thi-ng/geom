@@ -89,7 +89,7 @@
        (let [a (vec2 a) b (vec2 b)
              dir (m/- a b)
              n (g/normal dir)
-             c (-> n (m/normalize (mm/mul (g/mag dir) SQRT3 0.5)) (m/+ (m/mix a b)))]
+             c (-> n (m/normalize (mm/mul (m/mag dir) SQRT3 0.5)) (m/+ (m/mix a b)))]
          (triangle2 a b c)))
     ([x1 y1 x2 y2]
        (equilateral2 (vec2 x1 y1) (vec2 x2 y2))))
@@ -98,8 +98,8 @@
    [a b n]
    (let [a (vec3 a) b (vec3 b)
          dir (m/- b a)
-         n (m/normalize (g/cross dir n))
-         c (-> n (m/normalize (mm/mul (g/mag dir) SQRT3 0.5)) (m/+ (m/mix a b)))]
+         n (m/normalize (m/cross dir n))
+         c (-> n (m/normalize (mm/mul (m/mag dir) SQRT3 0.5)) (m/+ (m/mix a b)))]
       (thi.ng.geom.types.Triangle3. [a b c])))
 #+END_SRC
 
@@ -420,8 +420,8 @@
    [_ p]
    (let [a (first (:points _))
          n (gu/ortho-normal (:points _))
-         w (- (g/dot n a))]
-     (-> n (g/dot p) (+ w) (m/signum *eps*))))
+         w (- (m/dot n a))]
+     (-> n (m/dot p) (+ w) (m/signum *eps*))))
 #+END_SRC
 **** TODO IExtrude
 #+BEGIN_SRC clojure :noweb-ref impl3
@@ -497,7 +497,7 @@ https://web.archive.org/web/20090320013931/http://amp.ece.cmu.edu/Publication/Ch
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<lob-geom-zerovol>>
   (signed-volume
-   [{[a b c] :points}] (/ (g/dot a (g/cross b c)) 6.0))
+   [{[a b c] :points}] (/ (m/dot a (m/cross b c)) 6.0))
 #+END_SRC
 **** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :noweb-ref impl3

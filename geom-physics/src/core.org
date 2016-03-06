@@ -168,7 +168,7 @@
             pa   (position a)
             pb   (position b)
             diff (m/- pb pa)
-            dist (+ (g/mag diff) 1e-6)
+            dist (+ (m/mag diff) 1e-6)
             nd   (* (/ (- dist rest-len) (* dist (+ aw bw))) (* strength delta))]
         (if-not (locked? a)
           (set-position a (m/madd diff (* nd aw) pa)))
@@ -187,7 +187,7 @@
       (let [pa   (position a)
             pb   (position b)
             diff (m/- pb pa)
-            dist (+ (g/mag diff) 1e-6)]
+            dist (+ (m/mag diff) 1e-6)]
         (if (> dist min-len)
           (let [aw (.-inv-weight ^VerletParticle a)
                 bw (.-inv-weight ^VerletParticle b)
@@ -264,7 +264,7 @@
     (let [rsq (* r r)]
       (fn [p delta]
         (let [d (m/- pos (position p))
-              l (+ (g/mag-squared d) 1e-6)]
+              l (+ (m/mag-squared d) 1e-6)]
           (if (< l rsq)
             (add-force p (m/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
                                    (Math/sqrt l)))))))))
@@ -275,7 +275,7 @@
       (fn [q delta]
         (if-not (= p q)
           (let [d (m/- (position p) (position q))
-                l (+ (g/mag-squared d) 1e-6)]
+                l (+ (m/mag-squared d) 1e-6)]
             (if (< l rsq)
               (add-force q (m/* d (/ (* (- 1.0 (/ l rsq)) (* strength delta))
                                      (Math/sqrt l))))))))))

@@ -31,13 +31,13 @@
   (defn plane-with-point
     [p n]
     (let [n (m/normalize (vec3 n))]
-      (thi.ng.geom.types.Plane. n (- (g/dot n p)))))
+      (thi.ng.geom.types.Plane. n (- (m/dot n p)))))
 
   (defn plane-from-points
     ([[a b c]] (plane-from-points a b c))
     ([a b c]
        (let [n (gu/ortho-normal a b c)]
-         (thi.ng.geom.types.Plane. n (- (g/dot n a))))))
+         (thi.ng.geom.types.Plane. n (- (m/dot n a))))))
 #+END_SRC
 ** Helper functions
 #+BEGIN_SRC clojure :noweb-ref helpers
@@ -86,13 +86,13 @@
   g/IClassify
   (classify-point
     [_ p]
-    (-> (:n _) (g/dot p) (+ (:w _)) (m/signum *eps*)))
+    (-> (:n _) (m/dot p) (+ (:w _)) (m/signum *eps*)))
 #+END_SRC
 *** IDistance
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IDistance
   (dist
-   [_ p] (+ (g/dot (:n _) p) (:w _)))
+   [_ p] (+ (m/dot (:n _) p) (:w _)))
   (dist-squared
    [_ p] (let [d (g/dist _ p)] (* d d)))
 #+END_SRC
@@ -139,7 +139,7 @@
    ([_ {:keys [p width height size mesh] :or {size 1.0}}]
     (let [w     (* (or width size) 0.5)
           h     (* (or height size) 0.5)
-          flip? (m/delta= -1.0 (g/dot (:n _) v/V3Z))
+          flip? (m/delta= -1.0 (m/dot (:n _) v/V3Z))
           p     (g/closest-point _ (or p (vec3)))
           q     (if flip?
                   (q/quat 0 0 0 1)
@@ -158,7 +158,7 @@
   (closest-point
     [_ p]
     (->> p
-         (g/dot (:n _))
+         (m/dot (:n _))
          (+ (:w _))
          (m/normalize (:n _))
          (m/- p)))

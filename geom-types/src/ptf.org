@@ -24,20 +24,20 @@
     (let [ii (dec i)
           p  (tangents ii)
           q  (tangents i)
-          a  (g/cross p q)
-          n  (if-not (m/delta= 0.0 (g/mag-squared a))
-               (let [theta (Math/acos (m/clamp-normalized (g/dot p q)))]
+          a  (m/cross p q)
+          n  (if-not (m/delta= 0.0 (m/mag-squared a))
+               (let [theta (Math/acos (m/clamp-normalized (m/dot p q)))]
                  (g/transform-vector (g/rotate-around-axis M44 (m/normalize a) theta) (norms ii)))
                (norms ii))]
-      [n (g/cross q n)]))
+      [n (m/cross q n)]))
 
   (defn compute-first-frame
     [t]
     (let [t' (m/abs t)
           i  (if (< (t' 0) (t' 1)) 0 1)
           i  (if (< (t' 2) (t' i)) 2 i)
-          n  (g/cross t (m/normalize (g/cross t (assoc V3 i 1.0))))]
-      [n (g/cross t n)]))
+          n  (m/cross t (m/normalize (m/cross t (assoc V3 i 1.0))))]
+      [n (m/cross t n)]))
 
   (defn compute-frames
     [points]
@@ -55,15 +55,15 @@
     (let [num   (count tangents)
           a     (first norms)
           b     (peek norms)
-          theta (-> (g/dot a b) (m/clamp-normalized) (Math/acos) (/ (dec num)))
-          theta (if (> (g/dot (first tangents) (g/cross a b)) 0.0) (- theta) theta)]
+          theta (-> (m/dot a b) (m/clamp-normalized) (Math/acos) (/ (dec num)))
+          theta (if (> (m/dot (first tangents) (m/cross a b)) 0.0) (- theta) theta)]
       (loop [norms norms, bnorms bnorms, i 1]
         (if (< i num)
           (let [t (tangents i)
                 n (-> M44
                       (g/rotate-around-axis t (* theta i))
                       (g/transform-vector (norms i)))
-                b (g/cross t n)]
+                b (m/cross t n)]
             (recur (assoc norms i n) (assoc bnorms i b) (inc i)))
           [points tangents norms bnorms]))))
 

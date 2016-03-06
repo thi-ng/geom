@@ -32,7 +32,7 @@
     that the last point is on the opposite side of the plane defined by
     the first three points."
     [[a b c d :as t]]
-    (let [dp (-> d (m/- a) (m/normalize) (g/dot (gu/ortho-normal a b c)))]
+    (let [dp (-> d (m/- a) (m/normalize) (m/dot (gu/ortho-normal a b c)))]
       (if (neg? dp) [a b c d] [a c b d])))
 #+END_SRC
 
@@ -218,7 +218,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IVolume
   (volume [{[a b c d] :points}]
-    (/ (g/dot (m/- a d) (gu/ortho-normal d b c)) 6.0))
+    (/ (m/dot (m/- a d) (gu/ortho-normal d b c)) 6.0))
 #+END_SRC
 **** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :noweb-ref impl

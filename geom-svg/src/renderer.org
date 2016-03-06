@@ -26,7 +26,7 @@
 
   (defn cull-backfaces
     [norm-fn faces]
-    (filter (fn [f] (neg? (g/dot (norm-fn f) V3Z))) faces))
+    (filter (fn [f] (neg? (m/dot (norm-fn f) V3Z))) faces))
 
   (defn z-map-faces
     [faces]
@@ -62,6 +62,7 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/svg/renderer.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.renderer
     (:require
+     [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.geom.svg.shaders :as shader]

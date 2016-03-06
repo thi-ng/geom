@@ -84,7 +84,7 @@
   (bounding-sphere
    [{p :p size :size}]
    (let [ext (m/* size 0.5)]
-     (tu/bounding-sphere (m/+ p ext) (g/mag ext))))
+     (tu/bounding-sphere (m/+ p ext) (m/mag ext))))
 #+END_SRC
 
 *** IBoundary

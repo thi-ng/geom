@@ -38,7 +38,7 @@ meshes.
     (let [ieps (- *eps*)]
       (loop [ptype 0, types [], vertices vertices]
         (if vertices
-          (let [t  (+ (g/dot n (first vertices)) w)
+          (let [t  (+ (m/dot n (first vertices)) w)
                 pt (if (< t ieps) 2 (if (> t *eps*) 1 0))]
             (recur (bit-or ptype pt) (conj types pt) (next vertices)))
           [ptype types]))))
@@ -55,7 +55,7 @@ meshes.
                 b  (if (== ti 1) b (conj b vi))]
             (if (== 3 (bit-or ti (types j)))
               (let [vj (nth vertices j)
-                    v  (m/mix vi vj (/ (- (- w) (g/dot n vi)) (g/dot n (m/- vj vi))))]
+                    v  (m/mix vi vj (/ (- (- w) (m/dot n vi)) (m/dot n (m/- vj vi))))]
                 (recur (conj f v) (conj b v) (inc i)))
               (recur f b (inc i))))
           [f b]))))
@@ -66,7 +66,7 @@ meshes.
     [{:keys [n w]} ^CSGPolygon poly state]
     (let [s (g/bounding-sphere poly)
           r (+ (:r s) *eps*)
-          d (+ (g/dot n (:p s)) w)]
+          d (+ (m/dot n (:p s)) w)]
       (cond
         (> d r)     (assoc state 2 (conj (state 2) poly))
         (< d (- r)) (assoc state 3 (conj (state 3) poly))
@@ -74,7 +74,7 @@ meshes.
         (let [[ptype types] (compute-split-types n w (.-vertices poly))]
           (case (int ptype)
             ;; co-planar
-            0 (if (pos? (g/dot n (:n (.-plane poly))))
+            0 (if (pos? (m/dot n (:n (.-plane poly))))
                 (assoc state 0 (conj (state 0) poly))
                 (assoc state 1 (conj (state 1) poly)))
             ;; front
@@ -201,9 +201,9 @@ meshes.
      (let [dir (m/- e s)
            az  (m/normalize dir)
            ax  (-> (if (> (m/abs* (az 1)) 0.5) V3X V3Y)
-                   (g/cross az)
+                   (m/cross az)
                    (m/normalize))
-           ay  (-> ax (g/cross az) m/normalize)
+           ay  (-> ax (m/cross az) m/normalize)
            f   (fn [stack i r]
                  (let [theta (* m/TWO_PI i)
                        out   (m/madd ax (Math/cos theta) (m/* ay (Math/sin theta)))

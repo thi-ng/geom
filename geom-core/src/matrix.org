@@ -968,7 +968,7 @@ https://github.com/stefanmirea/view-frustum-culling/blob/master/lab_camera.hpp#L
            xx yx zx 0.0
            xy yy zy 0.0
            xz yz zz 0.0
-           (- (g/dot x eye)) (- (g/dot y eye)) (- (g/dot z eye)) 1.0
+           (- (m/dot x eye)) (- (m/dot y eye)) (- (m/dot z eye)) 1.0
            nil nil)))))
 
   (defn viewport-matrix

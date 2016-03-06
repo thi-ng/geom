@@ -326,56 +326,56 @@
 
 #+BEGIN_SRC clojure :noweb-ref tests  
   (deftest dotproduct
-   (is (== (g/mag-squared a2) (g/dot a2 a2)) "dot a2 a2")
-   (is (== 0 (g/dot a2 [(- ay) ax])) "dot 2d zero")
-   (is (== (+ (* ax bx) (* ay by)) (g/dot a2 b2)) "dot a2 b2")
-   (is (== (+ (* (- ax) bx) (* (- ay) by)) (g/dot (m/- a2) b2)) "dot -a2 b2")
-   (is (== (g/mag-squared a3) (g/dot a3 a3)) "dot a3 a3")
-   (is (== 0 (g/dot (vec3 1 0 0) (vec3 0 1 0))) "dot 3d xy zero")
-   (is (== 0 (g/dot (vec3 1 0 0) (vec3 0 0 1))) "dot 3d xz zero")
-   (is (== 0 (g/dot (vec3 0 1 0) (vec3 0 0 1))) "dot 3d yz zero")
-   (is (== (+ (* ax bx) (* ay by) (* az bz)) (g/dot a3 b3)) "dot a3 b3")
-   (is (== (+ (* (- ax) bx) (* (- ay) by) (* (- az) bz)) (g/dot (m/- a3) b3)) "dot -a3 b3"))
+   (is (== (m/mag-squared a2) (m/dot a2 a2)) "dot a2 a2")
+   (is (== 0 (m/dot a2 [(- ay) ax])) "dot 2d zero")
+   (is (== (+ (* ax bx) (* ay by)) (m/dot a2 b2)) "dot a2 b2")
+   (is (== (+ (* (- ax) bx) (* (- ay) by)) (m/dot (m/- a2) b2)) "dot -a2 b2")
+   (is (== (m/mag-squared a3) (m/dot a3 a3)) "dot a3 a3")
+   (is (== 0 (m/dot (vec3 1 0 0) (vec3 0 1 0))) "dot 3d xy zero")
+   (is (== 0 (m/dot (vec3 1 0 0) (vec3 0 0 1))) "dot 3d xz zero")
+   (is (== 0 (m/dot (vec3 0 1 0) (vec3 0 0 1))) "dot 3d yz zero")
+   (is (== (+ (* ax bx) (* ay by) (* az bz)) (m/dot a3 b3)) "dot a3 b3")
+   (is (== (+ (* (- ax) bx) (* (- ay) by) (* (- az) bz)) (m/dot (m/- a3) b3)) "dot -a3 b3"))
 #+END_SRC
 
 *** Cross product
 
 #+BEGIN_SRC clojure :noweb-ref tests  
    (deftest crossproduct
-    (is (== 0 (g/cross V2X V2X)) "x cross x = 0")
-    (is (== 1 (g/cross V2X V2Y)) "x cross y = 1")
-    (is (= V3Z (g/cross V3X V3Y)) "+x cross +y = +z")
-    (is (= V3Y (g/cross V3Z V3X)) "+z cross +x = +y")
-    (is (= V3X (g/cross V3Y V3Z)) "+y cross +z = +x"))
+    (is (== 0 (m/cross V2X V2X)) "x cross x = 0")
+    (is (== 1 (m/cross V2X V2Y)) "x cross y = 1")
+    (is (= V3Z (m/cross V3X V3Y)) "+x cross +y = +z")
+    (is (= V3Y (m/cross V3Z V3X)) "+z cross +x = +y")
+    (is (= V3X (m/cross V3Y V3Z)) "+y cross +z = +x"))
 #+END_SRC
 
 *** Magnitude
 
 #+BEGIN_SRC clojure :noweb-ref tests  
   (deftest mag
-    (is (== (Math/sqrt (+ (* ax ax) (* ay ay))) (g/mag a2)) "mag a2")
-    (is (== (Math/sqrt (+ (* ax ax) (* ay ay))) (g/mag (m/- a2))) "mag -a2")
-    (is (== (+ (* ax ax) (* ay ay)) (g/mag-squared a2)) "mag-squared a2")
-    (is (== (+ (* ax ax) (* ay ay)) (g/mag-squared (m/- a2))) "mag-squared -a2")
-    (is (== (Math/sqrt (+ (* ax ax) (* ay ay) (* az az))) (g/mag a3)) "mag a3")
-    (is (== (Math/sqrt (+ (* ax ax) (* ay ay) (* az az))) (g/mag (m/- a3))) "mag -a3")
-    (is (== (+ (* ax ax) (* ay ay) (* az az)) (g/mag-squared a3)) "mag-squared a3")
-    (is (== (+ (* ax ax) (* ay ay) (* az az)) (g/mag-squared (m/- a3))) "mag-squared -a3"))
+    (is (== (Math/sqrt (+ (* ax ax) (* ay ay))) (m/mag a2)) "mag a2")
+    (is (== (Math/sqrt (+ (* ax ax) (* ay ay))) (m/mag (m/- a2))) "mag -a2")
+    (is (== (+ (* ax ax) (* ay ay)) (m/mag-squared a2)) "mag-squared a2")
+    (is (== (+ (* ax ax) (* ay ay)) (m/mag-squared (m/- a2))) "mag-squared -a2")
+    (is (== (Math/sqrt (+ (* ax ax) (* ay ay) (* az az))) (m/mag a3)) "mag a3")
+    (is (== (Math/sqrt (+ (* ax ax) (* ay ay) (* az az))) (m/mag (m/- a3))) "mag -a3")
+    (is (== (+ (* ax ax) (* ay ay) (* az az)) (m/mag-squared a3)) "mag-squared a3")
+    (is (== (+ (* ax ax) (* ay ay) (* az az)) (m/mag-squared (m/- a3))) "mag-squared -a3"))
 #+END_SRC
 
 *** Normalize
 
 #+BEGIN_SRC clojure :noweb-ref tests  
   (deftest normalize
-    (is (delta= (let [m (g/mag a2)] [(/ ax m) (/ ay m)]) (m/normalize a2)) "norm a2")
-    (is (delta= (let [m (/ s (g/mag a2))] [(* m ax) (* m ay)])
+    (is (delta= (let [m (m/mag a2)] [(/ ax m) (/ ay m)]) (m/normalize a2)) "norm a2")
+    (is (delta= (let [m (/ s (m/mag a2))] [(* m ax) (* m ay)])
             (m/normalize a2 s)) "norm a2 s")
-    (is (delta= s (g/mag (m/normalize a2 s))) "mag = norm a2 s")
-    (is (delta= (let [m (g/mag a3)] [(/ ax m) (/ ay m) (/ az m)])
+    (is (delta= s (m/mag (m/normalize a2 s))) "mag = norm a2 s")
+    (is (delta= (let [m (m/mag a3)] [(/ ax m) (/ ay m) (/ az m)])
             (m/normalize a3)) "norm a3")
-    (is (delta= (let [m (/ s (g/mag a3))] [(* m ax) (* m ay) (* m az)])
+    (is (delta= (let [m (/ s (m/mag a3))] [(* m ax) (* m ay) (* m az)])
             (m/normalize a3 s)) "norm a3 s")
-    (is (delta= s (g/mag (m/normalize a3 s))) "mag = norm a3 s"))
+    (is (delta= s (m/mag (m/normalize a3 s))) "mag = norm a3 s"))
 #+END_SRC
 
 *** Interpolation

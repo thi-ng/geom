@@ -162,7 +162,7 @@ than 1.0.
    (let [[a b c d :as v] (g/vertices _)
          norm (gu/ortho-normal a b c)
          offset (or offset (m/* norm depth))
-         dp (g/dot norm (m/normalize offset))
+         dp (m/dot norm (m/normalize offset))
          [a2 b2 c2 d2] (if (== 1.0 scale)
                          (mapv #(m/+ offset %) v)
                          (->> (g/scale-size _ scale)

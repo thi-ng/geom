@@ -7,14 +7,14 @@
 #+BEGIN_SRC clojure :noweb-ref helpers
   (def proto-ids
     {:conj      m/IConjugate
-     :cross     g/ICrossProduct
+     :cross     m/ICrossProduct
      :det       m/IDeterminant
      :dist      g/IDistance
-     :dot       g/IDotProduct
+     :dot       m/IDotProduct
      :head      g/IHeading
      :inv       m/IInvert
      :limit     m/ILimit
-     :mag       g/IMagnitude
+     :mag       m/IMagnitude
      :mat       g/IMatrixConvert
      :math      m/IMathOps
      :mimax     m/IMinMax

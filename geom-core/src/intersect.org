@@ -42,7 +42,7 @@
        (intersect-circle-circle? p r1 q r2))
     ([p r1 q r2]
        (let [delta (m/- q p)
-             d (g/mag delta)]
+             d (m/mag delta)]
          (when (and (<= d (+ r1 r2)) (>= d (m/abs* (- r1 r2))))
            (let [a (/ (+ (- (* r1 r1) (* r2 r2)) (* d d)) (* 2.0 d))
                  invd (/ 1.0 d)
@@ -159,8 +159,8 @@ https://groups.google.com/forum/#!topic/comp.graphics.algorithms/M6lvyWC6PqU
        (intersect-ray-sphere? rp dir p r))
     ([rp dir p r]
      (let [q (m/- p rp)
-           ds (g/mag-squared q)
-           v (- (g/dot q dir))
+           ds (m/mag-squared q)
+           v (- (m/dot q dir))
            d (mm/msub r r (- ds (* v v)))]
        (if (>= d 0.0)
          (let [d (Math/sqrt d)
@@ -184,12 +184,12 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
     [p d a b c]
     (let [u (m/- b a)
           v (m/- c a)
-          n (g/cross u v)]
+          n (m/cross u v)]
       (if (m/delta= V3 n)
         {:type :degenerate}
         (let [w0 (m/- p a)
-              a' (- (g/dot n w0))
-              b' (g/dot n d)]
+              a' (- (m/dot n w0))
+              b' (m/dot n d)]
           (if (m/delta= 0.0 b')
             (if (m/delta= 0.0 a')
               {:type :same-plane}
@@ -258,7 +258,7 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
             (if (triaabb-edge-minmax ax bx cx sx)
               (if (triaabb-edge-minmax ay by cy sy)
                 (if (triaabb-edge-minmax az bz cz sz)
-                  (intersect-plane-aabb? a (g/cross e0 e1) s)))))))))
+                  (intersect-plane-aabb? a (m/cross e0 e1) s)))))))))
 #+END_SRC
 
 ** Line2
@@ -322,7 +322,7 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
   (defn intersect-plane-plane?
     [an aw bn bw]
     (when-not (or (m/delta= aw bw *eps*) (m/delta= an bn *eps*))
-      (let [od (g/dot an bn)
+      (let [od (m/dot an bn)
             det (/ (mm/madd od od -1))
             u (* (mm/madd bw od aw) det)
             v (* (mm/madd aw od bw) det)]
@@ -334,8 +334,8 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-ray-plane?
     [rp dir n w]
-    (let [dp (g/dot n dir)
-          dn (+ (g/dot n rp) w)]
+    (let [dp (m/dot n dir)
+          dn (+ (m/dot n rp) w)]
       (if (m/delta= 0.0 dp *eps*)
         {:type (if (zero? dn) :on-plane :parallel)}
         (let [du (- (/ dn dp))
@@ -368,7 +368,7 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
 
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-plane-sphere?
-    [n w p r] (<= (m/abs* (+ (g/dot n p) w)) r))
+    [n w p r] (<= (m/abs* (+ (m/dot n p) w)) r))
 #+END_SRC
 
 ** Tetrahedron
@@ -390,7 +390,7 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
   (defn- face-b1?
     "Takes the 4 delta vectors between tetra2/tetra1 and a normal.
       Returns true if all dot products are positive."
-    [deltas n] (every? #(pos? (g/dot % n)) deltas))
+    [deltas n] (every? #(pos? (m/dot % n)) deltas))
 
   (defn- face-b2?
     "Like face-b1?, but optimized for last face of tetrahedron."
@@ -439,9 +439,9 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
           (if (or (= :f f) (= :f* f))
             (let [[edges ea] (get-edge edges epoints a)
                   [edges eb] (get-edge edges epoints b)
-                  n (g/cross ea eb)
+                  n (m/cross ea eb)
                   [m a] (if (= :f f)
-                          (face-a #(g/dot % n) deltas)
+                          (face-a #(m/dot % n) deltas)
                           (face-a #(subdot % p n) verts))]
               (if (< m 15)
                 (recur (conj masks m) (conj affine a) edges (next s))))
@@ -459,8 +459,8 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
               [edges ea] (get-edge edges epoints a)
               [edges eb] (get-edge edges epoints b)]
           (if-not (if (= :f f)
-                    (face-b1? deltas (g/cross ea eb))
-                    (face-b2? verts p (g/cross ea eb)))
+                    (face-b1? deltas (m/cross ea eb))
+                    (face-b2? verts p (m/cross ea eb)))
             (recur edges (next s))))
         true)))
 #+END_SRC

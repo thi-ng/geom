@@ -203,7 +203,7 @@ further below.
 #+END_SRC
 *** IMagnitude
 #+BEGIN_SRC clojure :noweb-ref tpl-mag
-  g/IMagnitude
+  m/IMagnitude
   (mag [{p :points}] (g/dist (p 0) (p 1)))
   (mag-squared [{p :points}] (g/dist-squared (p 0) (p 1)))
 #+END_SRC
@@ -220,7 +220,7 @@ further below.
    ([{[p q] :points} n]
       (let [d (m/normalize (m/- q p) n)]
         ({{type}}. [p (m/+ p d)]))))
-  (normalized? [_] (m/delta= 1.0 (g/mag-squared _)))"))
+  (normalized? [_] (m/delta= 1.0 (m/mag-squared _)))"))
 #+END_SRC
 *** IReflect
 #+NAME: tpl-reflect
@@ -325,7 +325,7 @@ further below.
   g/IClassify
   (classify-point
    [{[p q] :points} v]
-   (m/signum (g/dot (m/- (vec2 v) p) (g/normal (m/- q p))) *eps*))
+   (m/signum (m/dot (m/- (vec2 v) p) (g/normal (m/- q p))) *eps*))
 #+END_SRC
 **** IExtrude                                                           :template:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
@@ -519,7 +519,7 @@ further below.
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
   g/ICircumference
   (circumference
-   [_] (g/mag _))
+   [_] (m/mag _))
 #+END_SRC
 **** TODO IClassify
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
@@ -576,7 +576,7 @@ further below.
 #+END_SRC
 **** IMagnitude
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
-  g/IMagnitude
+  m/IMagnitude
   (mag
    [_] (d/reduce-pairs + g/dist (:points _)))
   (mag-squared
@@ -656,7 +656,7 @@ further below.
 #+BEGIN_SRC clojure :noweb-ref impl-ls3
   g/ICircumference
   (circumference
-   [_] (g/mag _))
+   [_] (m/mag _))
 #+END_SRC
 **** TODO IClassify
 #+BEGIN_SRC clojure :noweb-ref impl-ls3
@@ -712,7 +712,7 @@ further below.
 #+END_SRC
 **** IMagnitude
 #+BEGIN_SRC clojure :noweb-ref impl-ls3
-  g/IMagnitude
+  m/IMagnitude
   (mag
    [_] (d/reduce-pairs + g/dist (:points _)))
   (mag-squared

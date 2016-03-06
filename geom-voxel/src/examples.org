@@ -97,7 +97,7 @@ This is a render of the voxel mesh generated with the code below:
      (let [rg (range (- r) (+ r res) res)]
        (->> (for [x rg y rg, z rg
                   :let [v (vec3 x y z)]
-                  :when (<= (g/mag v) r)] (m/+ o v))
+                  :when (<= (m/mag v) r)] (m/+ o v))
             (svo/apply-voxels op tree)))))
 
   (time

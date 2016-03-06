@@ -452,7 +452,7 @@ of the code.
 *** IDotProduct
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/IDotProduct
+  m/IDotProduct
   (dot
    [_ q]
    (let [q ^Quat4 q]
@@ -462,7 +462,7 @@ of the code.
 *** IMagnitude
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/IMagnitude
+  m/IMagnitude
   (mag
    [_] (Math/sqrt (mm/madd x x y y z z w w)))
   (mag-squared
@@ -493,7 +493,7 @@ of the code.
 #+BEGIN_SRC clojure :noweb-ref impl
   m/IInvert
   (invert [_]
-    (let [d (g/mag-squared _)
+    (let [d (m/mag-squared _)
           d (if (zero? d) 0.0 (/ d))
           id (- d)]
       (Quat4. (* x id) (* y id) (* z id) (* w d) -1 #?(:clj -1))))
@@ -505,7 +505,7 @@ of the code.
   m/IInterpolate
   (mix [_ q] (m/mix _ q 0.5))
   (mix [_ q t]
-    (let [d (g/dot _ q)]
+    (let [d (m/dot _ q)]
       (if (< (m/abs* d) 1.0)
         (let [theta (Math/acos d)
               stheta (Math/sqrt (mm/madd d (- d) 1.0))
@@ -671,8 +671,8 @@ of the code.
     [from to]
     (let [from  (m/normalize from)
           to    (m/normalize to)
-          axis  (g/cross from to)
-          theta (Math/atan2 (g/mag axis) (g/dot from to))]
+          axis  (m/cross from to)
+          theta (Math/atan2 (m/mag axis) (m/dot from to))]
       (quat-from-axis-angle axis theta)))
 #+END_SRC
 

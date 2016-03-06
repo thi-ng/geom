@@ -17,10 +17,10 @@
      :class     g/IClassify
      :clip      g/IClip
      :conj      m/IConjugate
-     :cross     g/ICrossProduct
+     :cross     m/ICrossProduct
      :det       m/IDeterminant
      :dist      g/IDistance
-     :dot       g/IDotProduct
+     :dot       m/IDotProduct
      :edge      g/IEdgeAccess
      :ext       g/IExtrude
      :face      g/IFaceAccess
@@ -30,7 +30,7 @@
      :inv       m/IInvert
      :isec      g/IIntersect
      :limit     m/ILimit
-     :mag       g/IMagnitude
+     :mag       m/IMagnitude
      :mat       g/IMatrixConvert
      :math      m/IMathOps
      :mesh      g/IMeshConvert

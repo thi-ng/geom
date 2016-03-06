@@ -60,16 +60,16 @@
     [] #(m/* (m/+ A2 N) B2))
 
   (defcase :vec2-ops :dot
-    [] #(g/dot A2 B2))
+    [] #(m/dot A2 B2))
 
   (defcase :vec2-ops :normalize
     [] #(m/normalize A2))
 
   (defcase :vec2-ops :mag
-    [] #(g/mag A2))
+    [] #(m/mag A2))
 
   (defcase :vec2-ops :mag-squared
-    [] #(g/mag-squared A2))
+    [] #(m/mag-squared A2))
 
   (defcase :vec2-ops :mix
     [] #(m/mix A2 B2 0.5))
@@ -130,10 +130,10 @@
     [] #(m/* (m/+ A3 N) B3))
 
   (defcase :vec3-ops :dot
-    [] #(g/dot A3 B3))
+    [] #(m/dot A3 B3))
 
   (defcase :vec3-ops :cross
-    [] #(g/cross A3 B3))
+    [] #(m/cross A3 B3))
 
   (defcase :vec3-ops :ortho-normal
     [] #(gu/ortho-normal A3 B3 C3))
@@ -142,10 +142,10 @@
     [] #(m/normalize A3))
 
   (defcase :vec3-ops :mag
-    [] #(g/mag A3))
+    [] #(m/mag A3))
 
   (defcase :vec3-ops :mag-squared
-    [] #(g/mag-squared A3))
+    [] #(m/mag-squared A3))
 
   (defcase :vec3-ops :mix
     [] #(m/mix A3 B3 0.5))

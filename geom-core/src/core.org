@@ -3,7 +3,7 @@
 * Contents                                                         :toc_3_gh:
  - [[#namespace-thinggeomcore][Namespace: thi.ng.geom.core]]
      - [[#protocols][Protocols]]
-         - [[#math-operations][Math operations]]
+         - [[#vector-operations][Vector operations]]
          - [[#spatial-transform-operations][Spatial transform operations]]
          - [[#graph-operations][Graph operations]]
          - [[#sub-shape-accessors][Sub-shape accessors]]
@@ -17,24 +17,12 @@
 * Namespace: thi.ng.geom.core
 
 ** Protocols
-*** Math operations
-**** ICrossProduct
-#+BEGIN_SRC clojure :noweb-ref protos-math
-  (defprotocol ICrossProduct
-    (cross [_ a]))
-#+END_SRC
-
+*** Vector operations
 **** IDistance
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol IDistance
     (dist [_ a])
     (dist-squared [_ a]))
-#+END_SRC
-
-**** IDotProduct
-#+BEGIN_SRC clojure :noweb-ref protos-math
-  (defprotocol IDotProduct
-    (dot [_] [_ a]))
 #+END_SRC
 
 **** IHeading
@@ -48,19 +36,6 @@
     (slope-xy [_])
     (slope-xz [_])
     (slope-yz [_]))
-#+END_SRC
-
-**** IMagnitude
-#+BEGIN_SRC clojure :noweb-ref protos-math
-  (defprotocol IMagnitude
-    (mag [_])
-    (mag-squared [_]))
-#+END_SRC
-
-**** IMatrixConvert
-#+BEGIN_SRC clojure :noweb-ref protos-math
-  (defprotocol IMatrixConvert
-    (as-matrix [_] [_ opts]))
 #+END_SRC
 
 **** INormal
@@ -80,6 +55,12 @@
 #+BEGIN_SRC clojure :noweb-ref protos-math
   (defprotocol IReflect
     (reflect [_ r]))
+#+END_SRC
+
+**** Vector reduction
+#+BEGIN_SRC clojure :noweb-ref protos-math
+  (defprotocol IVectorReduce
+    (reduce-vector [_ f xs] [_ f f2 xs]))
 #+END_SRC
 
 *** Spatial transform operations
@@ -136,6 +117,12 @@ implemented.
 #+BEGIN_SRC clojure :noweb-ref protos-tx
   (defprotocol IVectorTransform
     (transform-vector [_ v]))
+#+END_SRC
+
+**** IMatrixConvert
+#+BEGIN_SRC clojure :noweb-ref protos-tx
+  (defprotocol IMatrixConvert
+    (as-matrix [_] [_ opts]))
 #+END_SRC
 
 *** Graph operations
@@ -458,13 +445,6 @@ protocol consisting of just this one function:
 #+END_SRC
 
 *** Type specific operations
-**** Vector reduction
-
-#+BEGIN_SRC clojure :noweb-ref protos-types
-  (defprotocol IVectorReduce
-    (reduce-vector [_ f xs] [_ f f2 xs]))
-#+END_SRC
-
 **** TODO ISpatialTree
 ***** TODO refactor to use conj & disj?
 ***** TODO extract more general tree protocol?
