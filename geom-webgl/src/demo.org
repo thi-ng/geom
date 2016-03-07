@@ -2,6 +2,7 @@
 
 * Contents                                                         :toc_4_gh:
  - [[#webgl-examples--test-scenes][WebGL examples & test scenes]]
+     - [[#usage][Usage]]
      - [[#templates-for-namespace-setup][Templates for namespace setup]]
      - [[#example-1-2d-polygons][Example 1: 2D polygons]]
      - [[#example-2-colored-mesh][Example 2: Colored mesh]]
@@ -10,6 +11,24 @@
      - [[#todo-example-5-morphogen--shadow-mapping][TODO Example 5: Morphogen & shadow mapping]]
 
 * WebGL examples & test scenes
+
+** Usage
+
+These examples can be built by running the following commands in the geom root directory:
+
+#+BEGIN_SRC bash
+  ./tangle-all.sh
+  ./install-all.sh
+  cd geom-webgl/babel/
+  lein do clean, cljsbuild once
+  open index.html
+#+END_SRC
+
+Then in the browser, using the JS console, the demos can be individually launched like:
+
+#+BEGIN_SRC js
+  thi.ng.geom.webgl.example01.demo()
+#+END_SRC
 
 ** Templates for namespace setup
 #+BEGIN_SRC clojure :noweb-ref require-macros
