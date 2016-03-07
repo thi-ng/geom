@@ -2,19 +2,42 @@
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomattribs][thi.ng.geom.attribs]]
-     - [[#attribute-application][Attribute application]]
+     - [[#attribute-generation--application][Attribute generation & application]]
      - [[#attribute-generation][Attribute generation]]
+         - [[#uv-texture-coordinates][UV texture coordinates]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
 * thi.ng.geom.attribs
 
-** Attribute application
+This namespace provides vertex attribute generators and utilities used
+by various other geom namespaces to simplify the creation of
+attributed meshes.
 
-#+BEGIN_SRC clojure :noweb-ref helpers
+** Attribute generation & application
+
+#+BEGIN_SRC clojure :noweb-ref gen
+  (defn face-attribs
+    "Vertex attribute generator using given seq of attribs. The seq
+    should contain at least the same number of elements as there are
+    faces to be generated. Each item itself is a vector of attrib
+    values (in vertex order) to be assigned to each vertex. Returns
+    generator fn."
+    [fattribs] (fn [fid vid _ _] (-> fattribs (nth fid) (nth vid))))
+
+  (defn const-face-attribs
+    "Similar to face-attribs fn, but for attributes which are constant
+    for all vertices of a single face. Takes a seq of attrib values and
+    returns generator fn."
+    [fattribs] (fn [fid _ _ _] (nth fattribs fid)))
+#+END_SRC
+
+#+BEGIN_SRC clojure :noweb-ref gen
   (defn generate-face-attribs
     "Takes a vector of face vertices, face id, a map of vertex attribute
-    generators and an options arg passed to the attribute generator
-    fns. Returns 2-elem vector of [verts vert-attribs]"
+    generator fns and an options arg passed to the attribute generator
+    fns. Returns 2-elem vector of [verts vert-attribs]. The generator
+    fns themselves take these 4 args and should return the attribute for
+    a single vertex: face-id, vertex-id, vertex, opts (a map)."
     [verts face-id attribs opts]
     [verts
      (when (seq attribs)
@@ -24,10 +47,8 @@
 #+END_SRC
 
 ** Attribute generation
-
+*** UV texture coordinates
 #+BEGIN_SRC clojure :noweb-ref attribs
-  (def uv-default-rect [(vec2) (vec2 1.0 0.0) (vec2 1.0) (vec2 0.0 1.0)])
-
   (defn uv-rect-for-size
     ([w] (uv-rect-for-size w w))
     ([w h] (uv-rect-for-size w w 0.0 0.0 1.0 1.0))
@@ -54,9 +75,8 @@
            fh (/ h th 6.0)]
        (mapv #(uv-rect-for-size w w 0.0 (* % fh) 1.0 fh) (range 6)))))
 
-  (defn uv-faces
-    ([] (uv-faces (repeat uv-default-rect)))
-    ([uvrects] (fn [fid vid _ _] ((nth uvrects fid) vid))))
+  (def uv-default-rect [(vec2) (vec2 1.0 0.0) (vec2 1.0) (vec2 0.0 1.0)])
+  (def uv-faces (face-attribs (repeat uv-default-rect)))
 #+END_SRC
 
 ** Complete namespace definition
@@ -70,7 +90,7 @@
      [thi.ng.geom.core.matrix :refer [M44]]
      [thi.ng.math.core :as m]))
 
-  <<helpers>>
+  <<gen>>
 
   <<attribs>>
 #+END_SRC
