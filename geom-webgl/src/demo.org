@@ -120,6 +120,11 @@ link for more discussion about these options.
 
 ** Example 2: Colored mesh
 
+This example demonstrates the basic principle of adding vertex
+attributes. We define a box with different colors for each of its 6
+sides. The colors must be specified as RGBA using the [[http://thi.ng/color][thi.ng/color]]
+library.
+
 #+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example02.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.example02
     <<require-macros>>
