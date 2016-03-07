@@ -104,10 +104,8 @@ link for more discussion about these options.
      (enable-console-print!)
      (let [gl        (gl/gl-context "main")
            view-rect (gl/get-viewport-rect gl)
-           shader1   (sh/make-shader-from-spec
-                      gl (basic/make-shader-spec-2d false))
-           shader2   (sh/make-shader-from-spec
-                      gl (basic/make-shader-spec-2d true))
+           shader1   (sh/make-shader-from-spec gl (basic/make-shader-spec-2d false))
+           shader2   (sh/make-shader-from-spec gl (basic/make-shader-spec-2d true))
            teeth     20
            model     (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
                          (gl/as-webgl-buffer-spec {:normals false :single-color [1 0 0 1]})
@@ -139,10 +137,10 @@ link for more discussion about these options.
 
 ** Example 2: Colored mesh
 
-This example demonstrates the basic principle of adding vertex
-attributes. We define a box with different colors for each of its 6
-sides. The colors must be specified as RGBA using the [[http://thi.ng/color][thi.ng/color]]
-library.
+This example demonstrates the basic principle of displaying a mesh
+with vertex attributes. We define a box with different colors for each
+of its 6 sides. The colors must be specified as RGBA using the
+[[http://thi.ng/color][thi.ng/color]] library.
 
 #+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example02.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.example02
@@ -159,16 +157,16 @@ library.
           view-rect (gl/get-viewport-rect gl)
           model     (-> (a/aabb 1)
                         (g/center)
-                        (g/as-mesh {:mesh (glm/gl-mesh 12 #{:col})
-                                    :attribs {:col (->> [[1 0 0] [0 1 0] [0 0 1] [0 1 1] [1 0 1] [1 1 0]]
-                                                        (map #(vec (repeat 4 (col/rgba %))))
-                                                        (attr/uv-faces))}})
+                        (g/as-mesh
+                         {:mesh    (glm/gl-mesh 12 #{:col})
+                          :attribs {:col (->> [[1 0 0] [0 1 0] [0 0 1] [0 1 1] [1 0 1] [1 1 0]]
+                                              (map col/rgba)
+                                              (attr/const-face-attribs))}})
                         (gl/as-webgl-buffer-spec {})
                         (merge
                          {:uniforms {:proj (gl/perspective 45 view-rect 0.1 100.0)
                                      :view (mat/look-at (v/vec3 0 0 2) (v/vec3) v/V3Y)}
-                          :shader   (->> (basic/make-shader-spec-3d true)
-                                         (sh/make-shader-from-spec gl))})
+                          :shader   (sh/make-shader-from-spec gl (basic/make-shader-spec-3d true))})
                         (buf/make-attribute-buffers-in-spec gl gl/static-draw))]
       (anim/animate
        (fn [[t frame]]
@@ -176,6 +174,44 @@ library.
          (gl/clear-color-buffer gl 1 1 1 1)
          (gl/enable gl gl/depth-test)
          (buf/draw-arrays-with-shader
+          gl (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2)))))
+         true))))
+#+END_SRC
+
+Same example as above, only this time using basic lambert shading...
+
+#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example02a.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.webgl.example02a
+    <<require-macros>>
+    (:require
+     <<default-requires>>
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.webgl.shaders.lambert :as lambert]
+     [thi.ng.color.core :as col]))
+
+  (defn ^:export demo
+    []
+    (let [gl        (gl/gl-context "main")
+          view-rect (gl/get-viewport-rect gl)
+          model     (-> (a/aabb 1)
+                        (g/center)
+                        (g/as-mesh
+                         {:mesh    (glm/gl-mesh 12 #{:col :fnorm})
+                          :attribs {:col (->> [[1 0 0] [0 1 0] [0 0 1] [0 1 1] [1 0 1] [1 1 0]]
+                                              (map col/rgba)
+                                              (attr/const-face-attribs))}})
+                        (gl/as-webgl-buffer-spec {})
+                        (merge
+                         {:uniforms {:proj (gl/perspective 45 view-rect 0.1 100.0)
+                                     :view (mat/look-at (v/vec3 0 0 2) (v/vec3) v/V3Y)}
+                          :shader   (sh/make-shader-from-spec gl lambert/shader-spec-attrib)})
+                        (buf/make-attribute-buffers-in-spec gl gl/static-draw))]
+      (anim/animate
+       (fn [[t frame]]
+         (gl/set-viewport gl view-rect)
+         (gl/clear-color-buffer gl 1 1 1 1)
+         (gl/enable gl gl/depth-test)
+         (lambert/draw
           gl (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2)))))
          true))))
 #+END_SRC
