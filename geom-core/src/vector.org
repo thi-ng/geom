@@ -369,7 +369,12 @@
         <<tpl-reduce2>>)
        (-reduce
         [coll f start]
-        <<tpl-reduce2-start>>)])
+        <<tpl-reduce2-start>>)
+       IPrintWithWriter
+       (-pr-writer
+        [_ writer opts]
+        (pr-sequential-writer writer pr-writer "#vec2 [" " " "]" opts (seq _)))
+       ])
 #+END_SRC
 
 *** Object (toString)
@@ -1062,7 +1067,11 @@
         <<tpl-reduce3>>)
        (-reduce
         [coll f start]
-        <<tpl-reduce3-start>>)])
+        <<tpl-reduce3-start>>)
+       IPrintWithWriter
+       (-pr-writer
+        [_ writer opts]
+        (pr-sequential-writer writer pr-writer "#vec3 [" " " "]" opts (seq _)))])
 #+END_SRC
 
 *** Object (toString)
