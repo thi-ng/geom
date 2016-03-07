@@ -4,10 +4,10 @@
  - [[#webgl-examples--test-scenes][WebGL examples & test scenes]]
      - [[#templates-for-namespace-setup][Templates for namespace setup]]
      - [[#example-1-2d-polygons][Example 1: 2D polygons]]
-     - [[#example-2-extruded-2d-polygons-with-blinn-phong-shading][Example 2: Extruded 2D polygons with Blinn-Phong shading]]
-     - [[#example-3-morphogen--shadow-mapping][Example 3: Morphogen & shadow mapping]]
-     - [[#example-4-colored-mesh-manual-buffer-creation][Example 4: Colored mesh (manual buffer creation)]]
-     - [[#example-5-unproject--scene-raycasting][Example 5: Unproject & scene raycasting]]
+     - [[#example-2-colored-mesh][Example 2: Colored mesh]]
+     - [[#example-3-extruded-2d-polygons-with-blinn-phong-shading][Example 3: Extruded 2D polygons with Blinn-Phong shading]]
+     - [[#example-4-unproject--scene-raycasting][Example 4: Unproject & scene raycasting]]
+     - [[#todo-example-5-morphogen--shadow-mapping][TODO Example 5: Morphogen & shadow mapping]]
 
 * WebGL examples & test scenes
 
@@ -18,17 +18,19 @@
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref default-requires
+  [thi.ng.math.core :as m :refer [PI HALF_PI TWO_PI]]
   [thi.ng.geom.webgl.core :as gl]
   [thi.ng.geom.webgl.animator :as anim]
   [thi.ng.geom.webgl.buffers :as buf]
   [thi.ng.geom.webgl.shaders :as sh]
   [thi.ng.geom.webgl.utils :as glu]
+  [thi.ng.geom.webgl.glmesh :as glm]
   [thi.ng.geom.core :as g]
   [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
   [thi.ng.geom.core.matrix :as mat :refer [M44]]
-  [thi.ng.geom.types]
+  [thi.ng.geom.aabb :as a]
+  [thi.ng.geom.attribs :as attr]
   [thi.ng.typedarrays.core :as arrays]
-  [thi.ng.math.core :as m :refer [PI HALF_PI TWO_PI]]
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref stats
@@ -68,11 +70,108 @@ which has to be given for the 3d case though. Please see the above
 link for more discussion about these options.
 
 #+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example01.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.example01
+   (ns thi.ng.geom.webgl.example01
+     <<require-macros>>
+     (:require
+      <<default-requires>>
+      [thi.ng.geom.webgl.shaders.basic :as basic]
+      [thi.ng.geom.circle :as c]
+      [thi.ng.geom.polygon :as poly]))
+
+   <<stats>>
+
+   (defn ^:export demo
+     []
+     (enable-console-print!)
+     (let [gl        (gl/gl-context "main")
+           view-rect (gl/get-viewport-rect gl)
+           shader1   (sh/make-shader-from-spec
+                      gl (basic/make-shader-spec-2d false))
+           shader2   (sh/make-shader-from-spec
+                      gl (basic/make-shader-spec-2d true))
+           teeth     20
+           model     (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
+                         (gl/as-webgl-buffer-spec {:normals false :single-color [1 0 0 1]})
+                         (buf/make-attribute-buffers-in-spec gl gl/static-draw)
+                         (assoc-in [:uniforms :proj] (gl/ortho view-rect))
+                         (time))
+           stats     (init-stats)]
+       (anim/animate
+        (fn [[t frame]]
+          (gl/set-viewport gl view-rect)
+          (gl/clear-color-buffer gl 1 0.98 0.95 1.0)
+          ;; draw left polygon using color uniform (that's why we need to remove color attrib)
+          (buf/draw-arrays-with-shader
+           gl (-> model
+                  (assoc :shader  shader1)
+                  (update-in [:attribs] dissoc :color)
+                  (update-in [:uniforms] merge
+                             {:model (-> M44 (g/translate -0.48 0 0) (g/rotate t))
+                              :color [0 1 1 1]})))
+          ;; draw right polygon using color attribs
+          (buf/draw-arrays-with-shader
+           gl (-> model
+                  (assoc :shader shader2)
+                  (assoc-in [:uniforms :model]
+                            (-> M44 (g/translate 0.48 0 0) (g/rotate (- (+ t (/ HALF_PI teeth))))))))
+          (update-stats stats)
+          true))))
+#+END_SRC
+
+** Example 2: Colored mesh
+
+#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example02.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.webgl.example02
     <<require-macros>>
     (:require
      <<default-requires>>
+     [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.webgl.shaders.basic :as basic]
+     [thi.ng.color.core :as col]))
+
+  (defn ^:export demo
+    []
+    (let [gl        (gl/gl-context "main")
+          view-rect (gl/get-viewport-rect gl)
+          model     (-> (a/aabb 1)
+                        (g/center)
+                        (g/as-mesh {:mesh (glm/gl-mesh 12 #{:col})
+                                    :attribs {:col (->> [[1 0 0] [0 1 0] [0 0 1] [0 1 1] [1 0 1] [1 1 0]]
+                                                        (map #(vec (repeat 4 (col/rgba %))))
+                                                        (attr/uv-faces))}})
+                        (gl/as-webgl-buffer-spec {})
+                        (merge
+                         {:uniforms {:proj (gl/perspective 45 view-rect 0.1 100.0)
+                                     :view (mat/look-at (v/vec3 0 0 2) (v/vec3) v/V3Y)}
+                          :shader   (->> (basic/make-shader-spec-3d true)
+                                         (sh/make-shader-from-spec gl))})
+                        (buf/make-attribute-buffers-in-spec gl gl/static-draw))]
+      (anim/animate
+       (fn [[t frame]]
+         (gl/set-viewport gl view-rect)
+         (gl/clear-color-buffer gl 1 1 1 1)
+         (gl/enable gl gl/depth-test)
+         (buf/draw-arrays-with-shader
+          gl (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2)))))
+         true))))
+#+END_SRC
+
+** Example 3: Extruded 2D polygons with Blinn-Phong shading
+
+Using the same model setup as in example #1, this time we extrude the
+polygon and render the resulting 3D mesh. To better appreciate the
+mesh structure, we make use of the Phong shader and see how to combine
+transformation matrices: Each cog rotates around its own axis, but is
+then also rotated around the global Y axis. This is achieved with
+simple matrix multiplication (=rot= is the global rotation /
+transformation).
+
+#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example03.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.webgl.example03
+    <<require-macros>>
+    (:require
+     <<default-requires>>
+     [thi.ng.geom.webgl.shaders.phong :as phong]
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.polygon :as poly]))
 
@@ -83,69 +182,13 @@ link for more discussion about these options.
     (enable-console-print!)
     (let [gl         (gl/gl-context "main")
           view-rect  (gl/get-viewport-rect gl)
-          shader1    (sh/make-shader-from-spec
-                      gl (basic/make-shader-spec-2d false))
-          shader2    (sh/make-shader-from-spec
-                      gl (basic/make-shader-spec-2d true))
           teeth      20
           model      (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
-                         (gl/as-webgl-buffer-spec {:normals false :single-color [1 0 0 1]})
-                         (buf/make-attribute-buffers-in-spec gl gl/static-draw)
-                         (assoc-in [:uniforms :proj] (gl/ortho view-rect))
-                         (time))
-          stats      (init-stats)]
-      (anim/animate
-       (fn [[t frame]]
-         (gl/set-viewport gl view-rect)
-         (gl/clear-color-buffer gl 1 0.98 0.95 1.0)
-         ;; draw left polygon using color uniform (that's why we need to remove color attrib)
-         (buf/draw-arrays-with-shader
-          gl (-> model
-                 (assoc :shader  shader1)
-                 (update-in [:attribs] dissoc :color)
-                 (update-in [:uniforms] merge
-                            {:model (-> M44 (g/translate -0.48 0 0) (g/rotate t))
-                             :color [0 1 1 1]})))
-         ;; draw right polygon using color attribs
-         (buf/draw-arrays-with-shader
-          gl (-> model
-                 (assoc :shader shader2)
-                 (assoc-in [:uniforms :model]
-                           (-> M44 (g/translate 0.48 0 0) (g/rotate (- (+ t (/ HALF_PI teeth))))))))
-         (update-stats stats)
-         true))))
-#+END_SRC
-
-** Example 2: Extruded 2D polygons with Blinn-Phong shading
-
-Using the same model setup as in the previous example, this time we
-extrude the polygon and render the resulting 3D mesh. To better
-appreciate the mesh structure, we make use of the Phong shader and see
-how to combine transformation matrices: Each cog rotates around its
-own axis, but is then also rotated around the global Y axis. This is
-achieved with simple matrix multiplication (=rot= is the global
-rotation / transformation).
-
-#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example02.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.example02
-    <<require-macros>>
-    (:require
-     <<default-requires>>
-     [thi.ng.geom.webgl.shaders.phong :as phong]
-     [thi.ng.geom.circle :as c]
-     [thi.ng.geom.polygon :as poly]
-     [thi.ng.geom.basicmesh :refer [basic-mesh]]))
-
-  <<stats>>
-
-  (defn ^:export demo
-    []
-    (enable-console-print!)
-    (let [gl         (gl/gl-context "main")
-          view-rect  (gl/get-viewport-rect gl)
-          teeth      20
-          model      (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
-                         (g/extrude-shell {:mesh (basic-mesh) :depth 0.1 :inset 0.025 :wall 0.015 :bottom? true})
+                         (g/extrude-shell {:mesh    (glm/gl-mesh 1000 #{:fnorm})
+                                           :depth   0.1
+                                           :inset   0.025
+                                           :wall    0.015
+                                           :bottom? true})
                          (gl/as-webgl-buffer-spec {})
                          (buf/make-attribute-buffers-in-spec gl gl/static-draw)
                          (assoc :shader (sh/make-shader-from-spec gl phong/shader-spec))
@@ -189,11 +232,84 @@ rotation / transformation).
            true)))))
 #+END_SRC
 
-** Example 3: Morphogen & shadow mapping
+** Example 4: Unproject & scene raycasting
+
+#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example04.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.webgl.example04
+    <<require-macros>>
+    (:require
+     <<default-requires>>
+     [thi.ng.geom.plane :as pl]
+     [thi.ng.geom.core.intersect :as intersect]
+     [thi.ng.geom.webgl.shaders.phong :as phong]))
+
+  (enable-console-print!)
+
+  (defn raycast
+    [p eye ground back]
+    (let [dir (m/- p eye)
+          i1  (:p (g/intersect-ray ground eye dir))
+          i2  (:p (g/intersect-ray back eye dir))]
+      (if (< (g/dist-squared eye i1) (g/dist-squared eye i2)) i1 i2)))
+
+  (defn ^:export demo
+    []
+    (let [gl         (gl/gl-context "main")
+          view-rect  (gl/get-viewport-rect gl)
+          shader     (sh/make-shader-from-spec gl phong/shader-spec)
+          eye        (vec3 1 2 6)
+          target     (vec3 0 0.6 0)
+          up         v/V3Y
+          size       3
+          ground-y   -0.55
+          uniforms   {:proj      (gl/perspective 45 view-rect 0.1 10.0)
+                      :model     M44
+                      :shininess 1000
+                      :lightPos  (vec3 -1 2 0)}
+          box        (-> (a/aabb 1)
+                         (g/center)
+                         (g/as-mesh {:mesh (glm/gl-mesh 12 #{:fnorm})})
+                         (gl/as-webgl-buffer-spec {})
+                         (buf/make-attribute-buffers-in-spec gl gl/static-draw)
+                         (assoc :shader shader :uniforms (assoc uniforms :diffuseCol [1 0 1])))
+          ground     (pl/plane-with-point (vec3 0 ground-y 0) v/V3Y)
+          back       (pl/plane-with-point (vec3 0 0 (* -0.5 size)) v/V3Z)
+          planes     (-> (g/as-mesh back {:mesh (glm/gl-mesh 4 #{:fnorm}) :size size})
+                         (g/translate (vec3 0 (+ (* 0.5 size) ground-y) 0))
+                         (g/into (g/as-mesh ground {:size size}))
+                         (gl/as-webgl-buffer-spec {})
+                         (buf/make-attribute-buffers-in-spec gl gl/static-draw)
+                         (assoc :shader shader :uniforms uniforms))
+          state      (volatile! {:mpos (g/centroid view-rect) :update-ray true})
+          update-pos #(vswap! state assoc
+                              :mpos (vec2 (.-clientX %) (.-clientY %))
+                              :update-ray true)]
+      (.addEventListener js/window "mousemove" update-pos)
+      (.addEventListener js/window "touchmove" #(do (.preventDefault %) (update-pos (aget (.-touches %) 0))))
+      (anim/animate
+       (fn [[t frame]]
+         (let [eye  (g/rotate-y eye (Math/sin t))
+               view (mat/look-at eye target up)
+               isec (if (:update-ray @state)
+                      (let [p (-> (vec3 (:mpos @state) 0)
+                                  (mat/unproject-point (m/invert (m/* (:proj uniforms) view)) view-rect)
+                                  (raycast eye ground back))]
+                        (vswap! state assoc :isec p :update-ray false) p)
+                      (:isec @state))]
+           (gl/set-viewport gl view-rect)
+           (gl/clear-color-buffer gl 0.52 0.5 0.5 1)
+           (gl/enable gl gl/depth-test)
+           (phong/draw gl (assoc-in planes [:uniforms :view] view))
+           (phong/draw gl (update box :uniforms merge {:model (g/translate M44 isec) :view view})))
+         true))
+      state))
+#+END_SRC
+
+** TODO Example 5: Morphogen & shadow mapping
 
 #+BEGIN_SRC clojure
- ;;:tangle ../babel/test/thi/ng/geom/webgl/example03.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.example03
+ ;;:tangle ../babel/test/thi/ng/geom/webgl/example05.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.webgl.example05
     <<require-macros>>
     (:require
      <<default-requires>>
@@ -293,127 +409,4 @@ rotation / transformation).
            (update-stats stats)
            ;; keep animating...
            true)))))
-#+END_SRC
-
-** Example 4: Colored mesh (manual buffer creation)
-
-#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example04.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.example04
-    (:require
-     [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v]
-     [thi.ng.geom.core.matrix :as mat :refer [M44]]
-     [thi.ng.geom.aabb :as a]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.webgl.core :as gl]
-     [thi.ng.geom.webgl.animator :as anim]
-     [thi.ng.geom.webgl.buffers :as buf]
-     [thi.ng.geom.webgl.shaders :as sh]
-     [thi.ng.geom.webgl.shaders.basic :as basic]
-     [thi.ng.typedarrays.core :as arrays]))
-
-  (defn colored-verts
-    [faces col]
-    (let [verts (apply concat faces)]
-      [verts (repeat (count verts) col)]))
-
-  (defn flat-map
-    [f coll] (flatten (map f coll)))
-
-  (defn ^:export demo
-    []
-    (let [gl        (gl/gl-context "main")
-          view-rect (gl/get-viewport-rect gl)
-          sides     (->> (a/aabb 1) (g/center) (g/faces) (map gu/tessellate-3))
-          col-verts (map colored-verts sides [[1 0 0 1] [0 1 0 1] [0 0 1 1] [1 1 0 1] [1 0 1 1] [0 1 1 1]])
-          verts     (flat-map first col-verts)
-          cols      (flat-map second col-verts)
-          model     (-> {:attribs      {:position {:data (arrays/float32 verts) :size 3}
-                                        :color    {:data (arrays/float32 cols) :size 4}}
-                         :uniforms     {:proj     (gl/perspective 45 view-rect 0.1 100.0)
-                                        :view     (mat/look-at (v/vec3 0 0 2) (v/vec3) v/V3Y)}
-                         :mode         gl/triangles
-                         :num-vertices (/ (count verts) 3)
-                         :shader       (->> (basic/make-shader-spec-3d true)
-                                            (sh/make-shader-from-spec gl))}
-                        (buf/make-attribute-buffers-in-spec gl gl/static-draw))]
-      (anim/animate
-       (fn [[t frame]]
-         (gl/set-viewport gl view-rect)
-         (gl/clear-color-buffer gl 1 1 1 1)
-         (gl/enable gl gl/depth-test)
-         (buf/draw-arrays-with-shader
-          gl (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2)))))
-         true))))
-#+END_SRC
-
-** Example 5: Unproject & scene raycasting
-
-#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example05.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.example05
-    (:require
-     <<default-requires>>
-     [thi.ng.geom.aabb :as a]
-     [thi.ng.geom.plane :as pl]
-     [thi.ng.geom.core.intersect :as intersect]
-     [thi.ng.geom.webgl.shaders.phong :as phong]))
-
-  (defn raycast
-    [p eye ground back]
-    (let [dir (m/- p eye)
-          i1  (:p (g/intersect-ray ground eye dir))
-          i2  (:p (g/intersect-ray back eye dir))]
-      (if (< (g/dist-squared eye i1) (g/dist-squared eye i2)) i1 i2)))
-
-  (defn ^:export demo
-    []
-    (let [gl         (gl/gl-context "main")
-          view-rect  (gl/get-viewport-rect gl)
-          shader     (sh/make-shader-from-spec gl phong/shader-spec)
-          eye        (vec3 1 2 6)
-          target     (vec3 0 0.6 0)
-          up         v/V3Y
-          size       3
-          ground-y   -0.55
-          uniforms   {:proj      (gl/perspective 45 view-rect 0.1 10.0)
-                      :model     M44
-                      :shininess 1000
-                      :lightPos  (vec3 -1 2 0)}
-          box        (-> (a/aabb 1)
-                         (g/center)
-                         (g/as-mesh)
-                         (gl/as-webgl-buffer-spec {})
-                         (buf/make-attribute-buffers-in-spec gl gl/static-draw)
-                         (assoc :shader shader :uniforms (assoc uniforms :diffuseCol [1 0 1])))
-          ground     (pl/plane-with-point (vec3 0 ground-y 0) v/V3Y)
-          back       (pl/plane-with-point (vec3 0 0 (* -0.5 size)) v/V3Z)
-          planes     (-> (g/as-mesh back {:size size})
-                         (g/translate (vec3 0 (+ (* 0.5 size) ground-y) 0))
-                         (g/into (g/as-mesh ground {:size size}))
-                         (gl/as-webgl-buffer-spec {})
-                         (buf/make-attribute-buffers-in-spec gl gl/static-draw)
-                         (assoc :shader shader :uniforms uniforms))
-          state      (volatile! {:mpos (g/centroid view-rect) :update-ray true})
-          update-pos #(vswap! state assoc
-                              :mpos (vec2 (.-clientX %) (.-clientY %))
-                              :update-ray true)]
-      (.addEventListener js/window "mousemove" update-pos)
-      (.addEventListener js/window "touchmove" #(do (.preventDefault %) (update-pos (aget (.-touches %) 0))))
-      (anim/animate
-       (fn [[t frame]]
-         (let [eye  (g/rotate-y eye (Math/sin t))
-               view (mat/look-at eye target up)
-               isec (if (:update-ray @state)
-                      (let [p (-> (vec3 (:mpos @state) 0)
-                                  (mat/unproject-point (m/invert (m/* (:proj uniforms) view)) view-rect)
-                                  (raycast eye ground back))]
-                        (vswap! state assoc :isec p :update-ray false) p)
-                      (:isec @state))]
-           (gl/set-viewport gl view-rect)
-           (gl/clear-color-buffer gl 0.52 0.5 0.5 1)
-           (gl/enable gl gl/depth-test)
-           (phong/draw gl (assoc-in planes [:uniforms :view] view))
-           (phong/draw gl (update box :uniforms merge {:model (g/translate M44 isec) :view view})))
-         true))
-      state))
 #+END_SRC
