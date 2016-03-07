@@ -407,23 +407,50 @@ Currently the following options are supported:
 #+END_SRC
 
 *** Lambert
+**** Standard shading (uniform)
 
-**** Standard shading
-
-#+BEGIN_SRC glsl :noweb-ref lambert-vs
+#+BEGIN_SRC glsl :noweb-ref lambert-vs-uni
   void main() {
-    float lambert = lambert(surfaceNormal(normal, normalMat), lightDir);
-    vCol = vec4(ambientCol + diffuseCol * lightCol * lambert, alpha);
+    float lam = lambert(surfaceNormal(normal, normalMat), lightDir);
+    vCol = vec4(ambientCol + diffuseCol * lightCol * lam, alpha);
     gl_Position = mvp(position, model, view, proj);
   }
 #+END_SRC
 
-**** Two-sided shading
+**** Standard shading (attribute)
 
-#+BEGIN_SRC glsl :noweb-ref lambert-vs-abs
+This version requires a =color= attribute buffer, used in place of the
+=diffuseCol= shader uniform. The color buffer is assumed to contain
+RGBA colors, however the alpha component is discarded.
+
+#+BEGIN_SRC glsl :noweb-ref lambert-vs-attr
   void main() {
-    float lambert = lambertAbs(surfaceNormal(normal, normalMat), lightDir);
-    vCol = vec4(ambientCol + diffuseCol * lightCol * lambert, alpha);
+    float lam = lambert(surfaceNormal(normal, normalMat), lightDir);
+    vCol = vec4(ambientCol + color.xyz * lightCol * lam, alpha);
+    gl_Position = mvp(position, model, view, proj);
+  }
+#+END_SRC
+
+**** Two-sided shading (uniform)
+
+#+BEGIN_SRC glsl :noweb-ref lambert-vs-abs-uni
+  void main() {
+    float lam = lambertAbs(surfaceNormal(normal, normalMat), lightDir);
+    vCol = vec4(ambientCol + diffuseCol * lightCol * lam, alpha);
+    gl_Position = mvp(position, model, view, proj);
+  }
+#+END_SRC
+
+**** Two-sided shading (attribute)
+
+This version requires a =color= attribute buffer, used in place of the
+=diffuseCol= shader uniform. The color buffer is assumed to contain
+RGBA colors, however the alpha component is discarded.
+
+#+BEGIN_SRC glsl :noweb-ref lambert-vs-abs-attr
+  void main() {
+    float lam = lambertAbs(surfaceNormal(normal, normalMat), lightDir);
+    vCol = vec4(ambientCol + color.xyz * lightCol * lam, alpha);
     gl_Position = mvp(position, model, view, proj);
   }
 #+END_SRC
@@ -464,12 +491,24 @@ Currently the following options are supported:
   (def shader-spec
     (make-shader-spec
      (glsl/minified "
-  <<lambert-vs>>")))
+  <<lambert-vs-uni>>")))
+
+  (def shader-spec-attrib
+    (-> (make-shader-spec
+         (glsl/minified "
+  <<lambert-vs-attr>>"))
+        (assoc-in [:attribs :color] :vec4)))
 
   (def shader-spec-two-sided
     (make-shader-spec
      (glsl/minified "
-  <<lambert-vs-abs>>")))
+  <<lambert-vs-abs-uni>>")))
+
+  (def shader-spec-two-sided-attrib
+    (-> (make-shader-spec
+         (glsl/minified "
+  <<lambert-vs-abs-attr>>"))
+        (assoc-in [:attribs :color] :vec4)))
 
   (defn draw
     [^WebGLRenderingContext gl spec]
