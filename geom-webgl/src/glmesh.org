@@ -1,0 +1,93 @@
+#+SETUPFILE: ../../src/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#namespace-thinggeomwebglglmesh][Namespace: thi.ng.geom.webgl.glmesh]]
+     - [[#constructors][Constructors]]
+     - [[#helpers][Helpers]]
+     - [[#type-definition][Type definition]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
+* Namespace: thi.ng.geom.webgl.glmesh
+
+** Constructors
+
+#+BEGIN_SRC clojure :noweb-ref ctors
+  (defn glmesh
+    "Builds a fixed size mesh with given face count & attribs (a set of
+    #{:fnorm :vnorm :uv :col}). All attributes (incl. vertices) are
+    stored directly in typed array buffers."
+    [numf attribs]
+    (GLMesh.
+      (ta/float32 (* numf 9))
+      (if (:fnorm attribs) (ta/float32 (* numf 9)))
+      (if (:vnorm attribs) (ta/float32 (* numf 9)))
+      (if (:uv attribs) (ta/float32 (* numf 6)))
+      (if (:col attribs) (ta/float32 (* numf 12)))
+      0))
+#+END_SRC
+
+** Helpers
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+
+#+END_SRC
+
+** Type definition
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  (defrecord GLMesh
+      [^js/Float32Array vertices
+       ^js/Float32Array fnormals
+       ^js/Float32Array vnormals
+       ^js/Float32Array uvs
+       ^js/Float32Array cols
+       ^:mutable id]
+    g/IFaceAccess
+    (add-face
+        [_ [verts attribs]]
+      (let [[a b c] verts
+            idv     (* id 9)
+            iduv    (* id 6)
+            idcol   (* id 12)]
+        (.set vertices (.-buf ^thi.ng.geom.core.vector.Vec3 a) idv)
+        (.set vertices (.-buf ^thi.ng.geom.core.vector.Vec3 b) (+ idv 3))
+        (.set vertices (.-buf ^thi.ng.geom.core.vector.Vec3 c) (+ idv 6))
+        (when fnormals
+          (let [n  (or (:fnorm attribs) (gu/ortho-normal verts))
+                nb (.-buf ^thi.ng.geom.core.vector.Vec3 n)]
+            (.set fnormals nb idv)
+            (.set fnormals nb (+ idv 3))
+            (.set fnormals nb (+ idv 6))))
+        (when (and vnormals (:vnorm attribs))
+          (.set vnormals (.-buf ^thi.ng.geom.core.vector.Vec3 a) idv)
+          (.set vnormals (.-buf ^thi.ng.geom.core.vector.Vec3 b) (+ idv 3))
+          (.set vnormals (.-buf ^thi.ng.geom.core.vector.Vec3 c) (+ idv 6)))
+        (when-let [uv (and uvs (:uv attribs))]
+          (.set uvs (.-buf ^thi.ng.geom.core.vector.Vec2 (uv 0)) iduv)
+          (.set uvs (.-buf ^thi.ng.geom.core.vector.Vec2 (uv 1)) (+ iduv 2))
+          (.set uvs (.-buf ^thi.ng.geom.core.vector.Vec2 (uv 2)) (+ iduv 4)))
+        (when-let [col (and cols (:col attribs))]
+          (->> (streams/into-buffer (col 0) cols 4 idcol)
+               (streams/into-buffer (col 1) cols 4)
+               (streams/into-buffer (col 2) cols 4)))
+        (set! id (inc id))
+        _))
+    )
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/glmesh.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.webgl.glmesh
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.webgl.core :as gl]
+     [thi.ng.dstruct.streams :as streams]
+     [thi.ng.typedarrays.core :as ta]))
+
+  <<impl>>
+
+  <<ctors>>
+#+END_SRC
