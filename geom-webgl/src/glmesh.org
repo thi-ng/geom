@@ -113,7 +113,10 @@ The second arg given is an optional set of vertex attribute buffer IDs
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IGeomContainer
   (into
-   [_ faces] (tu/into-mesh _ add-face* faces))
+   [_ faces]
+   (if (instance? GLMesh faces)
+     (do (into-glmesh* _ faces) (set! id (+ id (:id faces))) _)
+     (tu/into-mesh _ add-face* faces)))
 #+END_SRC
 
 *** IClear
@@ -200,7 +203,7 @@ Furthermore, the options map also supports the following other keys:
 ** Helpers
 
 #+BEGIN_SRC clojure :noweb-ref helpers
-  (defn add-face*
+  (defn- add-face*
     [m [verts attribs :as f]]
     (if (> (count verts) 3)
       (->> f
@@ -243,6 +246,27 @@ Furthermore, the options map also supports the following other keys:
           (.set tb (.slice buf i (+ i 3)) 0)
           (.set buf (.-buf ^thi.ng.geom.core.vector.Vec3 (f tv)) i)
           (recur (+ i 3))))))
+
+  (defn- into-glmesh*
+    [dest src]
+    (let [s-id    (:id src)
+          d-id    (:id dest)
+          s-idv   (* s-id 9)
+          d-idv   (* d-id 9)
+          s-iduv  (* s-id 6)
+          d-iduv  (* d-id 6)
+          s-idcol (* s-id 12)
+          d-idcol (* d-id 12)]
+      (.set (:vertices dest) (.slice (:vertices src) 0 s-idv) d-idv)
+      (when (and (:fnormals dest) (:fnormals src))
+        (.set (:fnormals dest) (.slice (:fnormals src) 0 s-idv) d-idv))
+      (when (and (:vnormals dest) (:vnormals src))
+        (.set (:vnormals dest) (.slice (:vnormals src) 0 s-idv) d-idv))
+      (when (and (:uvs dest) (:uvs src))
+        (.set (:uvs dest) (.slice (:uvs src) 0 s-iduv) d-iduv))
+      (when (and (:cols dest) (:cols src))
+        (.set (:cols dest) (.slice (:cols src) 0 s-idcol) d-idcol))
+      dest))
 #+END_SRC
 
 ** Complete namespace definition
