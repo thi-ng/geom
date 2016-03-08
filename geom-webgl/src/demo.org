@@ -558,8 +558,6 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot2/
                            :model (-> M44 (g/rotate-x (* t 0.73)) (g/rotate-y (* t 2))))
                    (sh/inject-normal-matrix :model :view :normalMat))))
          true))))
-
-  (demo)
 #+END_SRC
 
 ** TODO Example 6: Morphogen & shadow mapping
