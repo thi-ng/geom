@@ -295,6 +295,8 @@ transformation).
 
 ** Example 4: Unproject & scene raycasting
 
+Live version: http://demo.thi.ng/geom/webgl/unproject/
+
 #+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example04.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.example04
     <<require-macros>>
@@ -368,6 +370,8 @@ transformation).
 
 ** Example 5: Texture mapping
 
+Live version: http://demo.thi.ng/geom/webgl/ptf-knot/
+
 #+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example05.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.example05
     <<require-macros>>
@@ -427,6 +431,8 @@ transformation).
                         :model (-> M44 (g/rotate-x (* t 0.73)) (g/rotate-y (* t 2)))})))
          true))))
 #+END_SRC
+
+Live version: http://demo.thi.ng/geom/webgl/ptf-knot2/
 
 #+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example05a.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.example05a
