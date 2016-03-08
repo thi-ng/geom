@@ -5,6 +5,8 @@
      - [[#attribute-generation--application][Attribute generation & application]]
      - [[#attribute-generation][Attribute generation]]
          - [[#uv-texture-coordinates][UV texture coordinates]]
+             - [[#cube][Cube]]
+             - [[#tube][Tube]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
 * thi.ng.geom.attribs
@@ -48,6 +50,7 @@ attributed meshes.
 
 ** Attribute generation
 *** UV texture coordinates
+**** Cube
 #+BEGIN_SRC clojure :noweb-ref attribs
   (defn uv-rect-for-size
     ([w] (uv-rect-for-size w w))
@@ -77,6 +80,22 @@ attributed meshes.
 
   (def uv-default-rect [(vec2) (vec2 1.0 0.0) (vec2 1.0) (vec2 0.0 1.0)])
   (def uv-faces (face-attribs (repeat uv-default-rect)))
+#+END_SRC
+
+**** Tube
+
+Tube UV mapping is currently only supported by the following implementations:
+
+- [[./ptf.org][PTF sweep-mesh]]
+
+#+BEGIN_SRC clojure :noweb-ref attribs
+  (defn uv-tube
+    [_ vid _ {:keys [u v du dv]}]
+    (case (int vid)
+      0 (v/vec2 u v)
+      1 (v/vec2 (+ u du) v)
+      2 (v/vec2 (+ u du) (+ v dv))
+      (v/vec2 u (+ v dv))))
 #+END_SRC
 
 ** Complete namespace definition
