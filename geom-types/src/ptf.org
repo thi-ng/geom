@@ -100,7 +100,7 @@
                                    [(nth a 0) (nth a 1) (nth b 1) (nth b 0)]
                                    (+ fid j)
                                    attribs
-                                   (assoc opts :u (double (/ j nprof))))))
+                                   (assoc atts :u (double (/ j nprof))))))
                                (concat faces))]
                 [faces curr (inc i) (+ fid nprof1)]))
             [nil (conj frame0 (first frame0)) 0 0])
