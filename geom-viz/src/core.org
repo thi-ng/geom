@@ -566,7 +566,7 @@ for list of available presets & how to define new gradients.
   (require '[thi.ng.color.gradients :as grad])
   (require '[thi.ng.geom.core :as g])
   (require '[thi.ng.geom.core.utils :as gu])
-  (require '[thi.ng.math.simplexnoise :as n])
+  (require '[thi.ng.math.noise :as n])
 
   (def test-matrix
     (->> (for [y (range 10) x (range 50)] (n/noise2 (* x 0.1) (* y 0.25)))
@@ -750,7 +750,7 @@ Btw. You can use the local repo by switching the lines calling
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/contours.clj :noweb yes :mkdirp yes :padline no
   <<example-imports>>
-  (require '[thi.ng.math.simplexnoise :as n])
+  (require '[thi.ng.math.noise :as n])
 
   (def viz-spec
     {:x-axis (viz/linear-axis

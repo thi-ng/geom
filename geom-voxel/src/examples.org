@@ -121,7 +121,7 @@ This is a render of the voxel mesh generated with the code below:
         (g/tessellate (iso/surface-mesh v 10 0.5)))))
 #+END_SRC
 
-** Example: 3D Simplex Noise
+** Example: 3D Gradient Noise
 
 [[../../assets/svo-simplexnoise.jpg]]
 
@@ -129,7 +129,7 @@ This is a render of the voxel mesh generated with the code below:
   (ns example03
     (:require
      <<default-requires>>
-     [thi.ng.math.simplexnoise :as n]))
+     [thi.ng.math.noise :as n]))
 
   (def res (double 1/2))
   (def n-scale 0.1)
