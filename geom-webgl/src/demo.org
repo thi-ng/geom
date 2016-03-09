@@ -148,7 +148,6 @@ of its 6 sides. The colors must be specified as RGBA using the
     <<require-macros>>
     (:require
      <<default-requires>>
-     [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.webgl.shaders.basic :as basic]
      [thi.ng.color.core :as col]))
 
@@ -186,7 +185,6 @@ Same example as above, only this time using basic lambert shading...
     <<require-macros>>
     (:require
      <<default-requires>>
-     [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.webgl.shaders.lambert :as lambert]
      [thi.ng.color.core :as col]))
 
@@ -370,31 +368,28 @@ Live version: http://demo.thi.ng/geom/webgl/unproject/
 
 ** Example 5: Texture mapping
 
-Live version: http://demo.thi.ng/geom/webgl/ptf-knot/
+Live version: http://demo.thi.ng/geom/webgl/texcube/
 
 #+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example05.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.example05
     <<require-macros>>
     (:require
-     <<default-requires>>
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.color.core :as col]))
+     <<default-requires>>))
 
   (enable-console-print!)
 
   (def shader-spec
     {:vs "void main() {
-    vUV = uv;
-    gl_Position = proj * view * model * vec4(position, 1.0);
-    }"
+      vUV = uv;
+      gl_Position = proj * view * model * vec4(position, 1.0);
+      }"
      :fs "void main() {
-    gl_FragColor = texture2D(tex, vUV);
-    }"
+      gl_FragColor = texture2D(tex, vUV);
+      }"
      :uniforms {:model    [:mat4 M44]
                 :view     :mat4
                 :proj     :mat4
-                :tex      :sampler2D
-                :time     :float}
+                :tex      :sampler2D}
      :attribs  {:position :vec3
                 :uv       :vec2}
      :varying  {:vUV      :vec2}
@@ -415,24 +410,25 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/
                                      :view (mat/look-at (v/vec3 0 0 0.5) (v/vec3) v/V3Y)}
                           :shader   (sh/make-shader-from-spec gl shader-spec)})
                         (buf/make-attribute-buffers-in-spec gl gl/static-draw))
-          tex-ready (volatile! false)
-          tex       (buf/load-texture gl {:src "dev/cubev.png" :flip true
-                                          :callback (fn [tex img] (vreset! tex-ready true))})]
+          tex-ready (volatile! true)
+          tex       (buf/load-texture
+                     gl {:callback (fn [tex img] (vreset! tex-ready true))
+                         :src      "dev/cubev.png"
+                         :flip     false})]
       (anim/animate
        (fn [[t frame]]
-         (gl/set-viewport gl view-rect)
-         (gl/clear-color-buffer gl 1 1 1 1)
-         (gl/enable gl gl/depth-test)
          (when @tex-ready
+           (gl/set-viewport gl view-rect)
+           (gl/clear-color-buffer gl 1 1 1 1)
+           (gl/enable gl gl/depth-test)
            (gl/bind tex 0)
            (buf/draw-arrays-with-shader
             gl (update model :uniforms merge
-                       {:time t
-                        :model (-> M44 (g/rotate-x (* t 0.73)) (g/rotate-y (* t 2)))})))
+                       {:model (-> M44 (g/rotate-x PI) (g/rotate-y (* t 2)))})))
          true))))
 #+END_SRC
 
-Live version: http://demo.thi.ng/geom/webgl/ptf-knot2/ & http://demo.thi.ng/geom/webgl/ptf-knot3/
+Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/webgl/ptf-knot3/
 
 #+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example05a.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.example05a
@@ -445,33 +441,35 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot2/ & http://demo.thi.ng/geom
      [thi.ng.glsl.vertex :as vertex]
      [thi.ng.glsl.lighting :as light]
      [thi.ng.glsl.fog :as fog]
+     [thi.ng.color.core :as col]
+     [thi.ng.color.gradients :as grad]
      ))
 
   (enable-console-print!)
 
   (def shader-spec
     {:vs (->> "void main() {
-                vUV = uv;
-                vPos = (view * model * vec4(position, 1.0)).xyz;
-                vNormal = surfaceNormal(normal, normalMat);
-                vLightDir = (view * vec4(lightPos, 1.0)).xyz - vPos;
-                gl_Position = proj * vec4(vPos, 1.0);
-              }"
+                  vUV = uv + vec2(0, time * 0.025);
+                  vPos = (view * model * vec4(position, 1.0)).xyz;
+                  vNormal = surfaceNormal(normal, normalMat);
+                  vLightDir = (view * vec4(lightPos, 1.0)).xyz - vPos;
+                  gl_Position = proj * vec4(vPos, 1.0);
+                }"
               (glsl/glsl-spec [vertex/normal])
               (glsl/assemble))
      :fs (->> "void main() {
-                vec3 n = normalize(vNormal);
-                vec3 v = normalize(-vPos);
-                vec3 l = normalize(vLightDir);
-                float NdotL = max(0.0, dot(n, l));
-                vec3 specular = Ks * beckmannSpecular(l, v, n, m);
-                vec3 att = lightCol / pow(length(vLightDir), lightAtt);
-                vec3 diff = texture2D(tex, vUV).xyz;
-                vec3 col = att * NdotL * ((1.0 - s) * diff + s * specular) + Ka * diff;
-                float fog = fogLinear(length(vPos), 1.0, 8.0);
-                col = mix(col, Kf, fog);
-                gl_FragColor = vec4(col, 1.0);
-              }"
+                  vec3 n = normalize(vNormal);
+                  vec3 v = normalize(-vPos);
+                  vec3 l = normalize(vLightDir);
+                  float NdotL = max(0.0, dot(n, l));
+                  vec3 specular = Ks * beckmannSpecular(l, v, n, m);
+                  vec3 att = lightCol / pow(length(vLightDir), lightAtt);
+                  vec3 diff = texture2D(tex, vUV).xyz;
+                  vec3 col = att * NdotL * ((1.0 - s) * diff + s * specular) + Ka * diff;
+                  float fog = fogLinear(length(vPos), 1.0, 7.5);
+                  col = mix(col, Kf, fog);
+                  gl_FragColor = vec4(col, 1.0);
+                }"
               (glsl/glsl-spec [fog/linear fog/exp light/beckmann-specular])
               (glsl/assemble))
      :uniforms {:model     :mat4
@@ -521,10 +519,29 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot2/ & http://demo.thi.ng/geom
         (ptf/align-frames)
         (ptf/sweep-strand-mesh
          #(+ 0.5 (* 0.5 (Math/sin (* 8 TWO_PI (/ % 399.0)))))
-         8 7 (g/vertices (c/circle 0.1) 8)
+         8 7 (g/vertices (c/circle 0.05) 8)
          {:mesh    (glm/gl-mesh 65536 #{:fnorm :uv})
           :attribs {:uv attr/uv-tube}
           :align?  true})))
+
+  (defn gradient-texture
+    [gl w h opts]
+    (let [canv (.createElement js/document "canvas")
+          ctx  (.getContext canv "2d")
+          cols (apply grad/cosine-gradient h (:rainbow1 grad/cosine-schemes))]
+      (set! (.-width canv) w)
+      (set! (.-height canv) h)
+      (set! (.-strokeStyle ctx) "none")
+      (loop [y 0, cols cols]
+        (if cols
+          (let [c (first cols)
+                c (if (< (mod y 16) 8)
+                    (col/adjust-brightness c -0.75)
+                    c)]
+            (set! (.-fillStyle ctx) @(col/as-css c))
+            (.fillRect ctx 0 y w 1)
+            (recur (inc y) (next cols)))
+          (buf/make-canvas-texture gl canv opts)))))
 
   (defn ^:export demo
     []
@@ -539,24 +556,20 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot2/ & http://demo.thi.ng/geom
                           :shader   (sh/make-shader-from-spec gl shader-spec)})
                         (buf/make-attribute-buffers-in-spec gl gl/static-draw)
                         (time))
-          tex-ready (volatile! false)
-          tex       (buf/load-texture
-                     gl {:callback (fn [tex img] (vreset! tex-ready true))
-                         :src "dev/cubev.png"
-                         :flip true})]
+          tex       (gradient-texture gl 4 1024 {:wrap [gl/clamp-to-edge gl/repeat]})]
       (anim/animate
        (fn [[t frame]]
          (gl/set-viewport gl view-rect)
          (gl/clear-color-buffer gl 0.0 0.0 0.1 1)
          (gl/enable gl gl/depth-test)
-         (when @tex-ready
-           (gl/bind tex 0)
-           (buf/draw-arrays-with-shader
-            gl (-> model
-                   (update :uniforms assoc
-                           :time t
-                           :model (-> M44 (g/rotate-x (* t 0.73)) (g/rotate-y (* t 2))))
-                   (sh/inject-normal-matrix :model :view :normalMat))))
+         (gl/bind tex 0)
+         (buf/draw-arrays-with-shader
+          gl (-> model
+                 (update :uniforms assoc
+                         :time t
+                         :m (+ 0.21 (* 0.2 (Math/sin (* t 0.5))))
+                         :model (-> M44 (g/rotate-x (* t 0.36)) (g/rotate-y t)))
+                 (sh/inject-normal-matrix :model :view :normalMat)))
          true))))
 #+END_SRC
 
