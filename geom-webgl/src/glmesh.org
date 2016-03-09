@@ -83,9 +83,10 @@ The second arg given is an optional set of vertex attribute buffer IDs
   g/ICenter
   (center
    [_] (g/center _ (vec3)))
-  (center [_ o] (g/translate _ (m/- o (g/centroid _))))
+  (center
+   [_ o] (g/translate _ (m/- o (g/centroid _))))
   (centroid
-   [_] (gu/centroid (set (g/vertices _))))
+   [_] (gu/centroid (g/vertices _)))
 #+END_SRC
 
 *** IVertexAccess
@@ -94,7 +95,7 @@ The second arg given is an optional set of vertex attribute buffer IDs
   (vertices
    [_]
    (let [num (* id 9)]
-     (loop [acc (transient []), i 0]
+     (loop [acc (transient #{}), i 0]
        (if (< i num)
          (recur
           (conj! acc (thi.ng.geom.core.vector.Vec3. (.slice vertices i (+ i 3)) nil nil))
