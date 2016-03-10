@@ -9,7 +9,8 @@
      - [[#example-3-extruded-2d-polygons-with-blinn-phong-shading][Example 3: Extruded 2D polygons with Blinn-Phong shading]]
      - [[#example-4-unproject--scene-raycasting][Example 4: Unproject & scene raycasting]]
      - [[#example-5-texture-mapping][Example 5: Texture mapping]]
-     - [[#todo-example-6-morphogen--shadow-mapping][TODO Example 6: Morphogen & shadow mapping]]
+     - [[#example-6-fbo--render-to-texture][Example 6: FBO & Render to texture]]
+     - [[#todo-example-morphogen--shadow-mapping][TODO Example: Morphogen & shadow mapping]]
 
 * WebGL examples & test scenes
 
@@ -573,7 +574,166 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/
          true))))
 #+END_SRC
 
-** TODO Example 6: Morphogen & shadow mapping
+** Example 6: FBO & Render to texture
+
+Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/webgl/fbo-rtt2/
+
+#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/webgl/example06.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.webgl.example06
+    <<require-macros>>
+    (:require
+     <<default-requires>>
+     [thi.ng.geom.sphere :as s]
+     [thi.ng.geom.webgl.shaders.lambert :as lambert]
+     [thi.ng.geom.webgl.shaders.overlay :as overlay]
+     [thi.ng.color.core :as col]
+     [thi.ng.glsl.core :as glsl :include-macros true]))
+
+  (def shader-spec
+    {:vs (glsl/minified
+          "vec3 rotateX(vec3 p, float theta) {
+            float s = sin(theta);
+            float c = cos(theta);
+            return vec3(p.x, p.y * c - p.z * s, p.z * c + p.y * s);
+           }
+
+           vec3 rotateY(vec3 p, float theta) {
+            float s = sin(theta);
+            float c = cos(theta);
+            return vec3(p.x * c + p.z * s, p.y, p.z * c - p.x * s);
+           }
+
+           vec3 rotateZ(vec3 p, float theta) {
+            float s = sin(theta);
+            float c = cos(theta);
+            return vec3(p.x * c - p.y * s, p.y * c + p.x * s, p.z);
+           }
+
+           void main() {
+            vUV = uv;
+            vec3 p = rotateZ(position, position.z * sin(time) + time);
+            gl_Position = proj * view * model * vec4(p, 1.0);
+           }")
+     :fs "void main() { gl_FragColor = texture2D(tex, vUV); }"
+     :uniforms {:model    [:mat4 M44]
+                :view     :mat4
+                :proj     :mat4
+                :tex      [:sampler2D 0]
+                :time     :float}
+     :attribs  {:position :vec3
+                :uv       :vec2}
+     :varying  {:vUV      :vec2}
+     :state    {:depth-test true}})
+
+  (defn cam-set-view
+    [cam opts]
+    (let [cam (merge cam (select-keys opts [:eye :target :up]))]
+      (assoc cam :view (mat/look-at (:eye cam) (:target cam) (:up cam)))))
+
+  (defn cam-set-projection
+    [cam opts]
+    (let [cam (merge cam (select-keys opts [:fov :aspect :near :far]))]
+      (assoc cam :proj (gl/perspective (:fov cam) (:aspect cam) (:near cam) (:far cam)))))
+
+  (defn cam-set-uniforms
+    [spec cam]
+    (update spec :uniforms merge {:view (:view cam) :proj (:proj cam)}))
+
+  (defn perspective-camera
+    [opts]
+    (-> (merge
+         {:eye    (vec3 0 0 2)
+          :target v/V3
+          :up     v/V3Y
+          :fov    45
+          :near   0.1
+          :far    100
+          :aspect (/ 16 9)}
+         opts)
+        (cam-set-view opts)
+        (cam-set-projection opts)))
+
+  (defn ^:export demo
+    []
+    (enable-console-print!)
+    (let [gl             (gl/gl-context "main")
+          view-rect      (gl/get-viewport-rect gl)
+          main-shader    (sh/make-shader-from-spec gl shader-spec)
+          lambert-shader (sh/make-shader-from-spec gl lambert/shader-spec-attrib)
+          fbo-size       512
+          fbo-tex        (buf/make-texture
+                          gl {:width  fbo-size
+                              :height fbo-size
+                              :filter gl/linear
+                              :wrap   gl/clamp-to-edge})
+          fbo            (-> (buf/make-fbo gl)
+                             (gl/bind)
+                             (gl/set-fbo-color-texture fbo-tex)
+                             (gl/set-fbo-depth-buffer (buf/make-depth-buffer gl fbo-size))
+                             (gl/unbind))
+          fbo-cam        (perspective-camera {:eye (vec3 0 0 3) :aspect 1.0})
+          main-cam       (perspective-camera {:eye (vec3 0 0 2) :fov 90 :aspect view-rect})
+          ov-quad        (overlay/overlay-spec-from-rect gl)
+          model1         (-> (s/sphere 1)
+                             (g/as-mesh
+                              {:mesh    (glm/gl-mesh 64 #{:col :fnorm})
+                               :attribs {:col (fn [_ _ v _] (col/rgba (m/madd (m/normalize v) 0.5 0.5)))}
+                               :res     6})
+                             (gl/as-webgl-buffer-spec {})
+                             (cam-set-uniforms fbo-cam)
+                             (assoc :shader lambert-shader)
+                             (buf/make-attribute-buffers-in-spec gl gl/static-draw))
+          model2         (-> (s/sphere 2.5)
+                             (g/as-mesh
+                              {:mesh    (glm/gl-mesh 2048 #{:uv})
+                               :attribs {:uv attr/uv-faces}
+                               :res     32})
+                             (gl/as-webgl-buffer-spec {})
+                             (cam-set-uniforms main-cam)
+                             (assoc :shader main-shader)
+                             (buf/make-attribute-buffers-in-spec gl gl/static-draw))]
+
+      (anim/animate
+       (fn [[t frame]]
+         ;; render pass #1: Render to FBO
+         (gl/bind fbo)
+         (doto gl
+           (gl/set-viewport 0 0 fbo-size fbo-size)
+           (gl/clear-color-buffer 0 0 0 1)
+           (gl/clear-depth-buffer 1)
+           (gl/enable gl/depth-test)
+           (lambert/draw
+            (assoc-in model1 [:uniforms :model]
+                      (-> M44 (g/rotate-x t) (g/rotate-y (* t 2))))))
+         (gl/unbind fbo)
+
+         ;; render pass #2: Render with FBO as texture
+         (gl/bind fbo-tex)
+         (doto gl
+           (gl/set-viewport view-rect)
+           (gl/clear-color-buffer 0.8 0.8 0.8 1)
+           (gl/clear-depth-buffer 1)
+           (gl/enable gl/depth-test)
+           (buf/draw-arrays-with-shader
+            (update model2 :uniforms merge
+                    {:model (-> M44 (g/rotate-x (* t -0.25)) (g/rotate-y (* t -0.45)))
+                     :time  t})))
+         (gl/unbind fbo-tex)
+
+         ;; render pass #3: Draw FBO texture as 2D overlay
+         (overlay/draw-overlay2d
+          gl (assoc
+              ov-quad
+              :tex fbo-tex
+              :viewport view-rect
+              :pos [0 0]
+              :width 128
+              :height 128))
+       
+         true))))
+#+END_SRC
+
+** TODO Example: Morphogen & shadow mapping
 
 #+BEGIN_SRC clojure
  ;;:tangle ../babel/test/thi/ng/geom/webgl/example06.cljs :noweb yes :mkdirp yes :padline no
