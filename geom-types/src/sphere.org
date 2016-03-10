@@ -146,33 +146,34 @@ If there's no intersection, the function returns =nil=.
   g/IMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([{[x y z] :p r :r} {:keys [mesh res slices stacks] :or {res *resolution*}}]
-      (let [slices (or slices res), stacks (or stacks res)
-            range-u (range slices), range-v (range stacks)]
-        (->> (for [i range-u, j range-v
-                   :let [u (/ i slices)
-                         v (/ j stacks)
-                         u1 (/ (inc i) slices)
-                         v1 (/ (inc j) stacks)
-                         verts [[u v]]
-                         verts (if (pos? j) (conj verts [u1 v]) verts)
-                         verts (if (< j (dec stacks)) (conj verts [u1 v1]) verts)]]
-               (conj verts [u v1]))
-             ;; TODO transduce
-             (map
-              (fn [verts]
-                (map
-                 (fn [[u v]]
-                   (let [theta (* TWO_PI u) ;; FIXME optimize trig
-                         phi (* PI v)
-                         st (Math/sin theta) ct (Math/cos theta)
-                         sp (Math/sin phi) cp (Math/cos phi)]
-                     (vec3
-                      (+ (mm/mul ct sp r) x)
-                      (mm/madd cp r y)
-                      (+ (mm/mul st sp r) z))))
-                 verts)))
-             (g/into (or mesh (bm/basic-mesh)))))))
+   ([{[x y z] :p r :r} {:keys [mesh res slices stacks attribs] :or {res *resolution*}}]
+    (let [slices (or slices res), stacks (or stacks res)
+          range-u (range slices), range-v (range stacks)]
+      (->> (for [i range-u, j range-v
+                 :let [u (/ i slices)
+                       v (/ j stacks)
+                       u1 (/ (inc i) slices)
+                       v1 (/ (inc j) stacks)
+                       verts [[u v]]
+                       verts (if (pos? j) (conj verts [u1 v]) verts)
+                       verts (if (< j (dec stacks)) (conj verts [u1 v1]) verts)]]
+             (conj verts [u v1]))
+           ;; TODO transduce
+           (map-indexed
+            (fn [i fuvs]
+              (let [fverts (mapv
+                            (fn [uv]
+                              (let [theta (* TWO_PI (uv 0)) ;; FIXME optimize trig
+                                    phi (* PI (uv 1))
+                                    st (Math/sin theta) ct (Math/cos theta)
+                                    sp (Math/sin phi) cp (Math/cos phi)]
+                                (vec3
+                                 (+ (mm/mul ct sp r) x)
+                                 (mm/madd cp r y)
+                                 (+ (mm/mul st sp r) z))))
+                            fuvs)]
+                (attr/generate-face-attribs fverts i attribs {:uv fuvs}))))
+           (g/into (or mesh (bm/basic-mesh)))))))
 #+END_SRC
 
 *** IProximity
@@ -201,9 +202,8 @@ If there's no intersection, the function returns =nil=.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/ITessellate
   (tessellate
-   [_] (g/tessellate _ {}))
-  (tessellate
-   [_ opts] (g/tessellate (g/as-mesh _ opts)))
+   ([_] (g/tessellate _ {}))
+   ([_ opts] (g/tessellate (g/as-mesh _ opts))))
 #+END_SRC
 
 *** TODO Transformations
@@ -257,6 +257,7 @@ If there's no intersection, the function returns =nil=.
      [thi.ng.geom.core.vector :as v :refer [vec3]]
      [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.basicmesh :as bm]
+     [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.types :as types]
      [thi.ng.xerror.core :as err]
      [thi.ng.math.core :as m :refer [TWO_PI PI *eps*]]
