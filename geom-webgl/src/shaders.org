@@ -26,9 +26,7 @@
 * thi.ng.geom.webgl.shaders
 
 ** TODO Shader specs
-
 ** Shader uniforms
-
 *** Supported types
 
 #+BEGIN_SRC clojure :noweb-ref uniforms
@@ -144,13 +142,13 @@ Special cases:
          (boolean normalized?)
          (or stride 0)
          (or offset 0)))
-      (err/illegal-arg! (str "Unknown shader attribute: " id))))
+      (warn (str "Unknown shader attribute: " id))))
 
   (defn disable-attribute
     [^WebGLRenderingContext gl shader id]
     (if-let [loc (get-in shader [:attribs id])]
       (do (.disableVertexAttribArray gl loc) gl)
-      (err/illegal-arg! (str "Unknown shader attribute: " id))))
+      (warn (str "Unknown shader attribute: " id))))
 #+END_SRC
 
 ** Shader creation
@@ -769,7 +767,7 @@ RGBA colors, however the alpha component is discarded.
 
     <<shadow-lerp2>>
 
-    vec3 excident = (0.4 + skylight(worldNormal.y) +
+    vec3 excident = vec3(0.4 + skylight(worldNormal.y) +
                      lambert(lightSurfaceNormal, -lightPosNormal) *
                      spotlightInfluence(lightPosNormal, coneAngle, 10.0) *
                      spotlightAttenuation(lightPos, 10.0) *
@@ -840,7 +838,7 @@ RGBA colors, however the alpha component is discarded.
        :fbo (-> (buf/make-fbo gl)
                 (gl/bind)
                 (gl/set-fbo-color-texture tex)
-                (gl/set-fbo-depth-buffer (buf/make-depth-buffer gl size size))
+                (gl/set-fbo-depth-buffer (buf/make-depth-buffer gl size))
                 (gl/unbind))}))
 
   (defn draw-light-pass

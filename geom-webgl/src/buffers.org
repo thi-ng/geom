@@ -75,8 +75,8 @@
 
     gl/IFramebuffer
     (set-fbo-color-texture
-      [_ {:keys [target id]}]
-      (.framebufferTexture2D gl gl/framebuffer gl/color-attachment0 target id 0)
+      [_ {:keys [id]}]
+      (.framebufferTexture2D gl gl/framebuffer gl/color-attachment0 gl/texture-2d id 0)
       (check-fbo gl)
       _)
     (set-fbo-depth-buffer
@@ -123,13 +123,17 @@
       (RenderBuffer. gl id format width height)))
 
   (defn make-render-buffer
-    [^WebGLRenderingContext gl & [opts]]
-    (let [buf (RenderBuffer. gl (.createRenderbuffer gl) nil nil nil)]
-      (if opts (gl/configure buf opts) buf)))
+    ([^WebGLRenderingContext gl]
+     (make-render-buffer gl nil))
+    ([^WebGLRenderingContext gl opts]
+     (let [buf (RenderBuffer. gl (.createRenderbuffer gl) nil nil nil)]
+       (if opts (gl/configure buf opts) buf))))
 
   (defn make-depth-buffer
-    [^WebGLRenderingContext gl width height]
-    (make-render-buffer gl {:format gl/depth-component16 :width width :height height}))
+    ([^WebGLRenderingContext gl size]
+     (make-depth-buffer gl size size))
+    ([^WebGLRenderingContext gl width height]
+     (make-render-buffer gl {:format gl/depth-component16 :width width :height height})))
 #+END_SRC
 
 ** Textures
@@ -158,9 +162,11 @@
       (.bindTexture gl target id)
       _)
     (unbind
+        [_] (gl/unbind _ 0))
+    (unbind
         [_ unit]
       (.activeTexture gl (+ gl/texture0 unit))
-      (.bindTexture gl target -1)
+      (.bindTexture gl target nil)
       _)
     gl/IRelease
     (release
@@ -184,7 +190,7 @@
       (cond
         image
         (.texImage2D gl target 0 format format type image)
-        (and pixels width height)
+        (and width height)
         (.texImage2D gl target 0 format width height 0 format type pixels))
       _))
 
