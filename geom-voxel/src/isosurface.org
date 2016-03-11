@@ -441,9 +441,9 @@
                (eduction
                 (map
                  (fn [t]
-                   [(vertices (+ eid (indexed-eo (t 0))))
+                   [[(vertices (+ eid (indexed-eo (t 0)))) ;; TODO add attrib support
                     (vertices (+ eid (indexed-eo (t 2))))
-                    (vertices (+ eid (indexed-eo (t 1))))]))
+                    (vertices (+ eid (indexed-eo (t 1))))]]))
                 (cell-triangles vid)))))
            (g/into (bm/basic-mesh)))))
 #+END_SRC

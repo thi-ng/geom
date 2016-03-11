@@ -131,9 +131,9 @@ This is a render of the voxel mesh generated with the code below:
      <<default-requires>>
      [thi.ng.math.noise :as n]))
 
-  (def res (double 1/2))
+  (def res (double 1/4))
   (def n-scale 0.1)
-  (def iso-val 0.5)
+  (def iso-val 0.33)
 
   (def v
     (let [r (range 1 31 res)]
