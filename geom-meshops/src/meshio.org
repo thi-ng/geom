@@ -65,7 +65,7 @@
                b (vec3 (streams/read-vec3f-le in))
                c (vec3 (streams/read-vec3f-le in))]
            (streams/skip in 2)
-           (recur (g/add-face mesh [a b c]) (dec i)))
+           (recur (g/add-face mesh [[a b c]]) (dec i)))
          mesh))))
 #+END_SRC
 
