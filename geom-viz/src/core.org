@@ -1692,7 +1692,10 @@ TBD
 
 #+BEGIN_SRC clojure :noweb-ref transformers
   (defn points->path-segments
-    [[p & more]] (reduce #(conj % [:L %2]) [[:M p]] more))
+    [[p & more]]
+    (->> more
+         (reduce #(conj! % [:L %2]) (transient [[:M p]]))
+         persistent!))
 #+END_SRC
 
 ** Value formatting
