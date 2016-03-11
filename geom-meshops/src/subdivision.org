@@ -170,7 +170,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
          (r/foldcat)))
   
   (defn custom-doo-sabin
-    [& {f* :faces, e* :edges, v* :vertices, :or {f* true, e* true, v* true}}]
+    [{f* :faces, e* :edges, v* :vertices, :or {f* true, e* true, v* true}}]
     (fn [mesh]
       (let [f-points (ds-face-points mesh)
             f-faces (ds-fp-faces f-points)
@@ -178,7 +178,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
             v-faces (if v* (ds-dual-faces mesh f-points))]
         (g/into (g/clear* mesh) (concat (if f* f-faces) e-faces v-faces)))))
   
-  (def doo-sabin (custom-doo-sabin))
+  (def doo-sabin (custom-doo-sabin nil))
 #+END_SRC
 
 ** Butterfly

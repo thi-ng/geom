@@ -98,14 +98,14 @@
 
 #+BEGIN_SRC clojure :noweb-ref center
   (defn centroid
-    [[x & xs :as coll]]
+    [coll]
     (case (count coll)
       0 nil
-      1 x
-      2 (m/mix x (first xs))
+      1 (first coll)
+      2 (m/mix (first coll) (nth coll 1))
       (let [s (/ 1.0 (count coll))
             f (fn [x _] (* x s))]
-        (g/reduce-vector x + f xs))))
+        (g/reduce-vector (first coll) + f (rest coll)))))
 
   (defn center
     ([c' coll]
@@ -148,39 +148,40 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
 
 #+BEGIN_SRC clojure :noweb-ref bounds
   (defn bounds*
-    [zero [x & xs :as coll]]
+    [zero coll]
     (let [c (count coll)]
       (cond
-       (> c 1) (let [p (g/reduce-vector x min xs)
-                     q (g/reduce-vector x max xs)]
-                 [p (m/- q p)])
-       (= c 1) [x zero]
-       :default nil)))
-  
+        (> c 1) (let [[x & xs] coll
+                      p (g/reduce-vector x min xs)
+                      q (g/reduce-vector x max xs)]
+                  [p (m/- q p)])
+        (== c 1) [(first coll) zero]
+        :default nil)))
+
   (defn bounding-rect
     [points]
     (bounds* V2 points))
-  
+
   (defn bounding-box
     [points]
     (bounds* V3 points))
-  
+
   (defn radial-bounds
     [ctor c r-or-points]
     [(ctor c)
      (if (coll? r-or-points)
        (max-dist c r-or-points)
        r-or-points)])
-  
+
   (defn axis-bounds
     [axis coll]
     (let [xs (mapv #(nth % axis) coll)]
       [(reduce min xs) (reduce max xs)]))
-  
+
   (defn axis-range
     [axis coll]
     (- (apply - (axis-bounds axis coll))))
-  
+
   (defn delta-contains
     [points p eps]
     (some #(m/delta= p % eps) points))
@@ -293,8 +294,8 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
   (defn tessellate-with-first
     [points]
     (if (> (count points) 3)
-      (let [[v0 & more] points]
-        (mapv (fn [[a b]] [v0 a b]) (partition 2 1 more)))
+      (let [v0 (first points)]
+        (mapv (fn [[a b]] [v0 a b]) (partition 2 1 (rest points))))
       [points]))
 
   (defn tessellate-tri-with-midpoints
@@ -306,7 +307,7 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
 
   (defn tessellate-3
     [points]
-    (condp = (count points)
+    (condp == (count points)
       3 [points]
       4 (let [[a b c d] points] [[a b c] [a c d]])
       (tessellate-with-point points)))

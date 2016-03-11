@@ -112,7 +112,11 @@
 
   (defn linestrip2
     ([points] (thi.ng.geom.types.LineStrip2. (mapv vec2 points)))
-    ([p & more] (thi.ng.geom.types.LineStrip2. (mapv vec2 (cons p more)))))
+    ([p q & more] (thi.ng.geom.types.LineStrip2. (mapv vec2 (cons p (cons q more))))))
+
+  (defn linestrip3
+    ([points] (thi.ng.geom.types.LineStrip3. (mapv vec3 points)))
+    ([p q & more] (thi.ng.geom.types.LineStrip3. (mapv vec3 (cons p (cons q more))))))
 #+END_SRC
 
 ** Shared helper functions

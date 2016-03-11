@@ -160,32 +160,34 @@ located on the rotation axis.
 
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn lathe-mesh
-    [points res phi rot-fn & [face-fn]]
-    (let [strips (mapv
-                  (fn [i]
-                    (let [theta (* i phi)]
-                      (mapv #(let [p (rot-fn % theta)]
-                               (if (m/delta= p % *eps*)
-                                 % p))
-                            points)))
-                  (butlast (m/norm-range res)))
-          strips (if (m/delta= phi m/TWO_PI)
-                   (conj strips (first strips))
-                   strips)
-          make-face (fn [[a1 a2] [b1 b2]]
-                      (let [f (cond
-                               (< (count (hash-set a1 a2 b1 b2)) 3) nil
-                               (= a1 b1) [b1 b2 a2]
-                               (= a2 b2) [b1 a2 a1]
-                               :default [b1 b2 a2 a1])]
-                        [(if (and f face-fn) (face-fn f) [f])]))]
-      (->> (partition 2 1 strips)
-           (mapcat ;; TODO transduce
-            (fn [[sa sb]]
-              (mapcat make-face
-                   (partition 2 1 sa)
-                   (partition 2 1 sb))))
-           (tu/into-mesh (gmesh) add-face*))))
+    ([points res phi rot-fn]
+     (lathe-mesh points res phi rot-fn nil))
+    ([points res phi rot-fn face-fn]
+     (let [strips    (mapv
+                      (fn [i]
+                        (let [theta (* i phi)]
+                          (mapv #(let [p (rot-fn % theta)]
+                                   (if (m/delta= p % *eps*)
+                                     % p))
+                                points)))
+                      (butlast (m/norm-range res)))
+           strips    (if (m/delta= phi m/TWO_PI)
+                       (conj strips (first strips))
+                       strips)
+           make-face (fn [[a1 a2] [b1 b2]] ;; TODO add attrib support
+                       (let [f (cond
+                                 (< (count (hash-set a1 a2 b1 b2)) 3) nil
+                                 (= a1 b1) [b1 b2 a2]
+                                 (= a2 b2) [b1 a2 a1]
+                                 :default [b1 b2 a2 a1])]
+                         [(if (and f face-fn) (face-fn f) [f])]))]
+       (->> (partition 2 1 strips)
+            (mapcat ;; TODO transduce
+             (fn [[sa sb]]
+               (mapcat make-face
+                       (partition 2 1 sa)
+                       (partition 2 1 sb))))
+            (tu/into-mesh (gmesh) add-face*)))))
 #+END_SRC
 
 *** Predefined forms

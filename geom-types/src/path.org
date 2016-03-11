@@ -37,8 +37,8 @@
   (defn path2
     ([segments]
        (thi.ng.geom.types.Path2. (vec segments)))
-    ([s & segments]
-       (thi.ng.geom.types.Path2. (vec (cons s segments)))))
+    ([s1 s2 & segments]
+       (thi.ng.geom.types.Path2. (vec (cons s1 (cons s2 segments))))))
 #+END_SRC
 
 ** Path segment processing

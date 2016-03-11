@@ -42,7 +42,7 @@
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn polygon2
     ([points] (thi.ng.geom.types.Polygon2. (mapv vec2 points)))
-    ([p & more] (thi.ng.geom.types.Polygon2. (mapv vec2 (cons p more)))))
+    ([p q & more] (thi.ng.geom.types.Polygon2. (mapv vec2 (cons p (cons q more))))))
 
   (defn cog
     [radius teeth profile]
