@@ -4,6 +4,7 @@
  - [[#namespace-thinggeomsvgrenderer][Namespace: thi.ng.geom.svg.renderer]]
      - [[#3d-to-2d-projection][3D to 2D projection]]
      - [[#render-functions][Render functions]]
+         - [[#todo-add-attribute-support-at-least-colors][TODO add attribute support (at least colors)]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
 * Namespace: thi.ng.geom.svg.renderer
@@ -40,11 +41,12 @@
 #+END_SRC
 
 ** Render functions
+*** TODO add attribute support (at least colors)
 
 #+BEGIN_SRC clojure :noweb-ref render
   (defn mesh
     [mesh mvp screen shader]
-    (let [faces (project-faces mvp screen (g/faces mesh))
+    (let [faces (project-faces mvp screen (map #(g/vertices % mesh) (g/faces mesh false)))
           faces (->> (if (shader/solid? shader)
                        (cull-backfaces peek faces)
                        faces)
