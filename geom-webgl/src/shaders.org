@@ -152,7 +152,6 @@ Special cases:
 #+END_SRC
 
 ** Shader creation
-
 *** Header injection
 
 These boilerplate =#define='s are prefixed by default to any given
@@ -349,6 +348,7 @@ Currently the following options are supported:
     [thi.ng.geom.webgl.core :as gl]
     [thi.ng.geom.webgl.utils :as glu]
     [thi.ng.typedarrays.core :as arrays]
+    [thi.ng.glsl.core :as glsl :include-macros true]
     [thi.ng.color.core :as col]
     [thi.ng.xerror.core :as err]
     [clojure.string :as str]))
@@ -375,27 +375,29 @@ Currently the following options are supported:
      [thi.ng.geom.core.matrix :refer [M44]]))
 
   (defn make-shader-spec
-    [& [{attr? :color-attrib? is3d? :3d :or {is3d? true}}]]
-    (let [spec {:vs       (str "void main(){"
-                               (if attr? "vCol=color;")
-                               "gl_Position=proj*"
-                               (if is3d?
-                                 "view*model*vec4(position,1.0)"
-                                 "view*model*vec4(position,0.0,1.0)")
-                               ";}")
-                :fs       (str "void main(){gl_FragColor="
-                               (if attr? "vCol" "color")
-                               ";}")
-                :uniforms {:proj  :mat4
-                           :model [:mat4 M44]
-                           :view  [:mat4 M44]}
-                :attribs  {:position (if is3d? :vec3 :vec2)}}
-          spec (if attr?
-                 (-> spec
-                     (assoc-in [:attribs :color] :vec4)
-                     (assoc :varying {:vCol :vec4}))
-                 (assoc-in spec [:uniforms :color] :vec4))]
-      spec))
+    ([]
+     (make-shader-spec nil))
+    ([{attr? :color-attrib? is3d? :3d :or {is3d? true}}]
+     (let [spec {:vs       (str "void main(){"
+                                (if attr? "vCol=color;")
+                                "gl_Position=proj*"
+                                (if is3d?
+                                  "view*model*vec4(position,1.0)"
+                                  "view*model*vec4(position,0.0,1.0)")
+                                ";}")
+                 :fs       (str "void main(){gl_FragColor="
+                                (if attr? "vCol" "color")
+                                ";}")
+                 :uniforms {:proj  :mat4
+                            :model [:mat4 M44]
+                            :view  [:mat4 M44]}
+                 :attribs  {:position (if is3d? :vec3 :vec2)}}
+           spec (if attr?
+                  (-> spec
+                      (assoc-in [:attribs :color] :vec4)
+                      (assoc :varying {:vCol :vec4}))
+                  (assoc-in spec [:uniforms :color] :vec4))]
+       spec)))
 
   (defn make-shader-spec-2d
     [color-attrib?] (make-shader-spec {:color-attrib? color-attrib? :3d false}))
