@@ -13,7 +13,7 @@
          - [[#icircumference][ICircumference]]
          - [[#iclassify][IClassify]]
          - [[#iextrude][IExtrude]]
-         - [[#igraph][IGraph]]
+         - [[#ivertexaccess--iedgeaccess][IVertexAccess & IEdgeAccess]]
          - [[#iintersect][IIntersect]]
          - [[#imeshconvert][IMeshConvert]]
          - [[#ipolygonconvert][IPolygonConvert]]
@@ -42,9 +42,9 @@
 
 #+BEGIN_SRC clojure :noweb-ref helpers  
   (defn tangent-points
-    [{p :p :as c} q]
+    [{p :p :as _} q]
     (let [m (m/mix p q)]
-      (isec/intersect-circle-circle? c (circle m (g/dist m p)))))
+      (isec/intersect-circle-circle? _ (circle m (g/dist m p)))))
 #+END_SRC
 
 ** Protocol implementations
@@ -65,10 +65,9 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IBounds
   (bounds
-   [{p :p r :r}]
-   (let [d (* 2 r)] (thi.ng.geom.types.Rect2. (m/- p r) (vec2 d))))
-  (width  [_] (* 2.0 (:r _)))
-  (height [_] (* 2.0 (:r _)))
+   [{p :p r :r}] (thi.ng.geom.types.Rect2. (m/- p r) (vec2 (* 2.0 r))))
+  (width  [_] (* 2.0 (get _ :r)))
+  (height [_] (* 2.0 (get _ :r)))
   (depth  [_] 0)
 #+END_SRC
 
@@ -93,16 +92,16 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/ICenter
   (center
-   ([_] (thi.ng.geom.types.Circle2. (vec2) (:r _)))
-   ([_ p] (thi.ng.geom.types.Circle2. (vec2 p) (:r _))))
-  (centroid [_] (:p _))
+   ([_] (thi.ng.geom.types.Circle2. (vec2) (get _ :r)))
+   ([_ p] (thi.ng.geom.types.Circle2. (vec2 p) (get _ :r))))
+  (centroid [_] (get _ :p))
 #+END_SRC
 
 *** ICircumference
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/ICircumference
-  (circumference [_] (* TWO_PI (:r _)))
+  (circumference [_] (* TWO_PI (get _ :r)))
 #+END_SRC
 
 *** IClassify
@@ -111,7 +110,7 @@
   g/IClassify
   (classify-point
    [_ q]
-   (m/signum (- (:r _) (g/dist (:p _) q)) *eps*))
+   (m/signum (- (get _ :r) (g/dist (get _ :p) q)) *eps*))
 #+END_SRC
 
 *** IExtrude
@@ -119,47 +118,50 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IExtrude
   (extrude
-   [_ {:keys [mesh res depth offset scale top? bottom?]
-       :or {res *resolution*, depth 1.0, scale 1.0, top? true, bottom? true}}]
-   (let [points (g/vertices _ res)
-         tpoints (if (= 1.0 scale)
-                   points
-                   (g/vertices (circle (:p _) (* scale (:r _))) res))
-         off (or offset (vec3 0 0 depth))
-         points3 (mapv vec3 points)
+   [{p :p :as _} {:keys [mesh res depth offset scale top? bottom?]
+          :or {res *resolution*, depth 1.0, scale 1.0, top? true, bottom? true}}]
+   (let [points   (g/vertices _ res)
+         tpoints  (if (== 1.0 scale)
+                    points
+                    (g/vertices (circle p (* scale (get _ :r))) res))
+         off      (or offset (vec3 0 0 depth))
+         points3  (mapv vec3 points)
          tpoints3 (mapv #(m/+ off %) tpoints)]
      (g/into
       (or mesh (bm/basic-mesh))
       (concat
        (when bottom?
          (->> points
-              (gu/tessellate-with-point (:p _))
-              (mapv (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)]))))
-       (mapcat (fn [[a1 b1] [a2 b2]] [[a1 b1 b2 a2]])
-               (d/successive-nth 2 (conj points3 (points3 0)))
-               (d/successive-nth 2 (conj tpoints3 (tpoints3 0))))
+              (gu/tessellate-with-point p)
+              (mapv (fn [[a b c]] [[(vec3 b) (vec3 a) (vec3 c)]])))) ;; TODO attribs support
+       (map
+        (fn [[a1 b1] [a2 b2]] [[a1 b1 b2 a2]])
+        (partition 2 1 (conj points3 (nth points3 0)))
+        (partition 2 1 (conj tpoints3 (nth tpoints3 0))))
        (when top?
-         (->> tpoints
-              (gu/tessellate-with-point (:p _))
-              (mapv (fn [[a b c]] [(m/+ off a) (m/+ off b) (m/+ off c)]))))))))
+         (->> tpoints3
+              (gu/tessellate-with-point (m/+ off p))
+              (mapv vector)))))))
   (extrude-shell
    [_ opts] (g/extrude-shell (g/as-polygon _) opts))
 #+END_SRC
 
-*** IGraph
+*** IVertexAccess & IEdgeAccess
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IVertexAccess
   (vertices
    ([_] (g/vertices _ *resolution*))
-   ([_ res]
-      (mapv #(g/point-at _ %) (butlast (m/norm-range res)))))
+   ([{:keys [p r]} res]
+    (->> (m/norm-range res)
+         butlast
+         (mapv #(m/+ p (g/as-cartesian (vec2 r (* % TWO_PI))))))))
   g/IEdgeAccess
   (edges
    ([_] (g/edges _ *resolution*))
    ([_ res]
       (let [verts (g/vertices _ res)]
-        (d/successive-nth 2 (conj verts (first verts))))))
+        (partition 2 1 (conj verts (first verts))))))
 #+END_SRC
 
 *** IIntersect
@@ -169,9 +171,9 @@
   (intersect-shape
    [_ s]
    (cond
-    (instance? thi.ng.geom.types.Circle2 s) (isec/intersect-circle-circle? _ s)
-    (instance? thi.ng.geom.types.Rect2 s) (isec/intersect-rect-circle? s _)
-    :default (err/type-error! "Circle2" s)))
+     (instance? thi.ng.geom.types.Circle2 s) (isec/intersect-circle-circle? _ s)
+     (instance? thi.ng.geom.types.Rect2 s)   (isec/intersect-rect-circle? s _)
+     :else                                   (err/type-error! "Circle2" s)))
 #+END_SRC
 
 *** IMeshConvert
@@ -184,7 +186,7 @@
       (->> res
            (g/vertices _)
            (mapv vec3)
-           (gu/tessellate-with-point (vec3 (:p _)))
+           (gu/tessellate-with-point (vec3 (get _ :p)))
            (g/into (or (bm/basic-mesh))))))
 #+END_SRC
 
@@ -202,8 +204,8 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IProximity
   (closest-point
-   [{p :p r :r} q]
-   (m/+! (m/normalize (m/- q p) r) p))
+   [{p :p :as _} q]
+   (m/+! (m/normalize (m/- q p) (get _ :r)) p))
 #+END_SRC
 
 *** ISample
@@ -212,12 +214,12 @@
   g/ISample
   (point-at
    [_ t]
-   (m/+ (:p _) (g/as-cartesian (vec2 (:r _) (* t TWO_PI)))))
+   (m/+ (get _ :p) (g/as-cartesian (vec2 (get _ :r) (* t TWO_PI)))))
   (random-point
    [_] (g/point-at _ (m/random)))
   (random-point-inside
    [_]
-   (m/+ (:p _) (v/randvec2 (m/random (:r _)))))
+   (m/+! (v/randvec2 (m/random (get _ :r))) (get _ :p)))
   (sample-uniform
    [_ udist include-last?]
    (let [points (g/vertices _)]
@@ -250,12 +252,12 @@ results, the =transform= implementation returns a [[file:polygon.org][polygon]].
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IRotate
-  (rotate [_ theta] (thi.ng.geom.types.Circle2. (g/rotate (:p _) theta) (:r _)))
+  (rotate [_ theta] (thi.ng.geom.types.Circle2. (g/rotate (get _ :p) theta) (get _ :r)))
   g/IScale
-  (scale [_ s] (thi.ng.geom.types.Circle2. (m/* (:p _) s) (* (:r _) s)))
-  (scale-size [_ s] (thi.ng.geom.types.Circle2. (:p _) (* (:r _) s)))
+  (scale [_ s] (thi.ng.geom.types.Circle2. (m/* (get _ :p) s) (* (get _ :r) s)))
+  (scale-size [_ s] (thi.ng.geom.types.Circle2. (get _ :p) (* (get _ :r) s)))
   g/ITranslate
-  (translate [_ t] (thi.ng.geom.types.Circle2. (m/+ (:p _) t) (:r _)))
+  (translate [_ t] (thi.ng.geom.types.Circle2. (m/+ (get _ :p) t) (get _ :r)))
   g/ITransform
   (transform [_ m] (g/transform (g/as-polygon _) m))
 #+END_SRC
@@ -283,7 +285,6 @@ results, the =transform= implementation returns a [[file:polygon.org][polygon]].
      [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types :as types]
-     [thi.ng.dstruct.core :as d]
      [thi.ng.xerror.core :as err]
      [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]])
     #?(:clj
