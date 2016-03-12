@@ -435,7 +435,7 @@ of triangles of the subdivided rects.
      #?(:clj [thi.ng.math.macros :as mm]))
     #?(:clj
        (:import
-        [thi.ng.geom.types Circle2 Polygon2 Rect2])))
+        [thi.ng.geom.types AABB Circle2 Polygon2 Rect2])))
 
   <<ctors>>
 
