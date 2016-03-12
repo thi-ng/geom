@@ -9,15 +9,15 @@
      - [[#svg-path-parser][SVG path parser]]
      - [[#svg-path-parser-clojure-only][SVG path parser (Clojure only)]]
      - [[#protocol-implementations][Protocol implementations]]
-         - [[#todo-parea][TODO PArea]]
-         - [[#todo-pboundary][TODO PBoundary]]
-         - [[#todo-pbounds][TODO PBounds]]
-         - [[#todo-pboundingcircle][TODO PBoundingCircle]]
-         - [[#todo-pcenter][TODO PCenter]]
-         - [[#todo-pcircumference][TODO PCircumference]]
-         - [[#todo-pgraph][TODO PGraph]]
-         - [[#todo-ppolygonconvert][TODO PPolygonConvert]]
-         - [[#todo-psample][TODO PSample]]
+         - [[#todo-iarea][TODO IArea]]
+         - [[#todo-iboundary][TODO IBoundary]]
+         - [[#todo-ibounds][TODO IBounds]]
+         - [[#todo-iboundingcircle][TODO IBoundingCircle]]
+         - [[#todo-icenter][TODO ICenter]]
+         - [[#todo-icircumference][TODO ICircumference]]
+         - [[#todo-igraph][TODO IGraph]]
+         - [[#todo-ipolygonconvert][TODO IPolygonConvert]]
+         - [[#todo-isample][TODO ISample]]
          - [[#end-of-implementation][End of implementation]]
      - [[#namespace-declaration][Namespace declaration]]
 
@@ -37,8 +37,8 @@
   (defn path2
     ([segments]
        (thi.ng.geom.types.Path2. (vec segments)))
-    ([s & segments]
-       (thi.ng.geom.types.Path2. (vec (cons s segments)))))
+    ([s1 s2 & segments]
+       (thi.ng.geom.types.Path2. (vec (cons s1 (cons s2 segments))))))
 #+END_SRC
 
 ** Path segment processing
@@ -135,70 +135,70 @@
   (extend-type thi.ng.geom.types.Path2
 #+END_SRC
 
-*** TODO PArea
+*** TODO IArea
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PArea
+  g/IArea
   (area [_])
 #+END_SRC
 
-*** TODO PBoundary
+*** TODO IBoundary
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PClassify
+  g/IClassify
   (classify-point [_ p])
-  g/PProximity
+  g/IProximity
   (closest-point [_ p])
-  g/PBoundary
+  g/IBoundary
   (contains-point? [_ p])
 #+END_SRC
 
-*** TODO PBounds
+*** TODO IBounds
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBounds
+  g/IBounds
   (bounds [_])
 #+END_SRC
 
-*** TODO PBoundingCircle
+*** TODO IBoundingCircle
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundingCircle
+  g/IBoundingCircle
   (bounding-circle [_] nil)
 #+END_SRC
 
-*** TODO PCenter
+*** TODO ICenter
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PCenter
+  g/ICenter
   (center
    ([_] nil)
    ([_ o] nil))
   (centroid [_])
 #+END_SRC
 
-*** TODO PCircumference
+*** TODO ICircumference
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PCircumference
+  g/ICircumference
   (circumference [_] nil)
 #+END_SRC
 
-*** TODO PGraph
+*** TODO IGraph
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVertexAccess
+  g/IVertexAccess
   (vertices
    [_ res]
    (first (sample-segments* res (:segments _))))
-  g/PEdgeAccess
+  g/IEdgeAccess
   (edges [_])
 #+END_SRC
 
-*** TODO PPolygonConvert
+*** TODO IPolygonConvert
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PPolygonConvert
+  g/IPolygonConvert
   (as-polygon
    ([_] nil)
    ([_ res] nil))
 #+END_SRC
 
-*** TODO PSample
+*** TODO ISample
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PSample
+  g/ISample
   (point-at [_ t])
   (random-point [_])
   (random-point-inside [_])
@@ -221,6 +221,7 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/path.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.path
     (:require
+     [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g :refer [*resolution*]]
      [thi.ng.geom.core.vector :as v :refer [vec2]]
      [thi.ng.geom.core.utils :as gu]

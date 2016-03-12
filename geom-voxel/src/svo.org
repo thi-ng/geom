@@ -47,7 +47,7 @@
     "Computes the position of a child node id"
     (^thi.ng.geom.core.vector.Vec3
      [[x y z :as p] d]
-     (let [[x' y' z'] (g/+ p d)]
+     (let [[x' y' z'] (m/+ p d)]
        (fn [b]
          (vec3
           (if (> (bit-and b 2) 0) x' x)
@@ -106,7 +106,7 @@
            tree (assoc tree :data
                        (assoc data idx
                               (bit-or (get data idx 0) (bit-shift-left 1 id))))]
-       ;; (prn :d depth :o offset :o2 (g/madd (vec3 dim) 2 offset) :dim dim :idx idx :val (get-in tree [:data idx]))
+       ;; (prn :d depth :o offset :o2 (m/madd (vec3 dim) 2 offset) :dim dim :idx idx :val (get-in tree [:data idx]))
        (if (< depth max-depth)
          (recur tree
                 (node-offset offset dim id)
@@ -128,7 +128,7 @@
      (let [id     (node-id offset dim v)
            n-val  (get (:data tree) idx 0)
            found? (and (> n-val 0) (> (bit-and n-val (bit-shift-left 1 id)) 0))]
-       ;; (prn :d depth :o offset :o2 (g/madd (vec3 dim) 2 offset) :dim dim :idx idx :id id :val n-val :found found?)
+       ;; (prn :d depth :o offset :o2 (m/madd (vec3 dim) 2 offset) :dim dim :idx idx :id id :val n-val :found found?)
        (if found?
          (if (< depth max-depth)
            (recur tree
@@ -167,7 +167,7 @@
                  [(assoc tree :data (assoc (dissoc (:data tree) c-idx) idx new-val)) true])
                result))
            (let [new-val (bit-and n-val (bit-xor 0xff bmask))]
-             ;; (prn :d depth :o offset :o2 (g/madd (vec3 dim) 2 offset) :dim dim :idx idx :id id :val n-val)
+             ;; (prn :d depth :o offset :o2 (m/madd (vec3 dim) 2 offset) :dim dim :idx idx :id id :val n-val)
              (if (== new-val n-val)
                [tree false]
                [(assoc tree :data (assoc (:data tree) idx new-val)) true])))
@@ -183,7 +183,7 @@
            c-depth (inc depth)
            c-dim   (* dim 0.5)
            noff    (node-offset offset dim)]
-       ;; (prn :d depth :o offset :o2 (g/madd (vec3 dim) 2 offset) :dim dim :idx idx :val n-val)
+       ;; (prn :d depth :o offset :o2 (m/madd (vec3 dim) 2 offset) :dim dim :idx idx :val n-val)
        (if (zero? n-val)
          acc
          (if (< depth min-depth)
@@ -200,7 +200,7 @@
             acc (used-bits n-val))
            ;; collect voxels
            (reduce
-            #(conj! % (g/+ (noff %2) c-dim))
+            #(conj! % (m/+ (noff %2) c-dim))
             acc (used-bits n-val)))))))
 
   (defn voxel-config-at-depth
@@ -235,7 +235,7 @@
     `voxel-config-at-depth`)."
     (^thi.ng.geom.core.vector.Vec3
      [config ^long idx]
-     (g/* (voxel-cell config idx) (:size config))))
+     (m/* (voxel-cell config idx) (:size config))))
 
   (defn cell-index
     "Returns the index for the cell at xyz with `stride` and `stride-z`."
@@ -254,7 +254,7 @@
            c-depth (inc depth)
            c-dim   (* dim 0.5)
            noff    (node-offset offset dim)]
-       ;; (prn :d depth :o offset :o2 (g/madd (vec3 dim) 2 offset) :dim dim :idx idx :val n-val)
+       ;; (prn :d depth :o offset :o2 (m/madd (vec3 dim) 2 offset) :dim dim :idx idx :val n-val)
        (if (zero? n-val)
          acc
          (if (< depth (:depth config))
@@ -297,6 +297,7 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/voxel/svo.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.voxel.svo
     (:require
+     [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.vector :as v :refer [vec3 V3]])
     #?(:clj (:import [thi.ng.geom.core.vector Vec3])))

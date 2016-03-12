@@ -143,7 +143,7 @@
       (clear-image img)
       (doseq [p paths]
 	;;(prn p)
-	(draw-poly img (map #(g/madd (:xy %) 4 [10 10]) p)))
+	(draw-poly img (map #(m/madd (:xy %) 4 [10 10]) p)))
       (save-image img (format "z-%3.3f.png" (double z)))))
 #+END_SRC
 

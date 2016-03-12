@@ -36,36 +36,35 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
 #+BEGIN_SRC clojure :noweb-ref catmull
   (defn cc-face-points
     "Takes a seq of faces and returns map with faces as keys and their
-    centroids as values."
+      centroids as values."
     [faces]
     (->> faces
-         #?(:cljs (seq))
          (r/map (fn [f] [f (gu/centroid f)]))
          (fold-into-map)))
-  
+
   (defn cc-subdiv-face
     [face fp e-points]
     (->> (face-loop-triples face)
          (r/map (fn [[p c n]] [(e-points #{p c}) c (e-points #{c n}) fp]))
          (r/foldcat)))
-  
+
   (defn cc-edge-points
-    [edges f-points]
+    [mesh edges f-points]
     (->> edges
          (r/map
           (fn [e e-faces]
-            [e (-> (mapv f-points e-faces)
+            [e (-> (mapv #(f-points (g/vertices % mesh)) e-faces)
                    (conj (first e))
                    (conj (second e))
                    (gu/centroid))]))
          (fold-into-map)))
-  
+
   (defn cc-subdiv-faces
     [f-points e-points]
     (->> f-points
          (r/mapcat (fn [f fp] (cc-subdiv-face f fp e-points)))
          (r/foldcat)))
-  
+
   (defn cc-replace-vertices
     [mesh f-points e-points sd-faces]
     (let [new-verts (->> mesh
@@ -73,18 +72,21 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
                          (keys)
                          (r/map
                           (fn [v]
-                            (let [f (gu/centroid (mapv f-points (gm/vertex-faces* mesh v)))
+                            (let [f  (->> (gm/vertex-faces* mesh v)
+                                          (mapv #(f-points (g/vertices % mesh)))
+                                          gu/centroid)
                                   vn (gm/vertex-neighbors* mesh v)
-                                  n (count vn)
-                                  r (gu/centroid (mapv #(g/mix v %) vn))]
-                              [v (g/addm (g/madd r 2.0 f) (g/* v (- n 3)) (/ 1.0 n))])))
+                                  n  (count vn)
+                                  r  (gu/centroid (mapv #(m/mix v %) vn))]
+                              [v (m/addm (m/madd r 2.0 f) (m/* v (- n 3)) (/ 1.0 n))])))
                          (fold-into-map))]
-      (map (fn [f] (replace new-verts f)) sd-faces)))
-  
+      (map (fn [f] [(replace new-verts f)]) sd-faces)))
+
   (defn catmull-clark
-    [{:keys [faces edges] :as mesh}]
-    (let [f-points (cc-face-points faces)
-          e-points (cc-edge-points edges f-points)]
+    [{:keys [edges] :as mesh}]
+    (let [faces    (map #(g/vertices % mesh) (g/faces mesh))
+          f-points (cc-face-points faces)
+          e-points (cc-edge-points mesh edges f-points)]
       (->> (cc-subdiv-faces f-points e-points)
            (cc-replace-vertices mesh f-points e-points)
            (g/into (g/clear* mesh)))))
@@ -96,7 +98,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
   (defn ds-edge-midpoints
     [edges]
     (->> edges
-         (r/map (fn [e] [e (g/mix (first e) (second e))]))
+         (r/map (fn [e] [e (m/mix (first e) (second e))]))
          (fold-into-map)))
   
   (defn ds-face-points*
@@ -105,8 +107,8 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
       (->> (face-loop-triples f)
            (r/map (fn [[p c n]]
                     [c (-> fp
-                           (g/+ (e-points #{p c}) (e-points #{c n}))
-                           (g/addm c 0.25))]))
+                           (m/+ (e-points #{p c}) (e-points #{c n}))
+                           (m/addm c 0.25))]))
            (fold-into-map))))
   
   (defn ds-face-points
@@ -168,7 +170,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
          (r/foldcat)))
   
   (defn custom-doo-sabin
-    [& {f* :faces, e* :edges, v* :vertices, :or {f* true, e* true, v* true}}]
+    [{f* :faces, e* :edges, v* :vertices, :or {f* true, e* true, v* true}}]
     (fn [mesh]
       (let [f-points (ds-face-points mesh)
             f-faces (ds-fp-faces f-points)
@@ -176,7 +178,7 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
             v-faces (if v* (ds-dual-faces mesh f-points))]
         (g/into (g/clear* mesh) (concat (if f* f-faces) e-faces v-faces)))))
   
-  (def doo-sabin (custom-doo-sabin))
+  (def doo-sabin (custom-doo-sabin nil))
 #+END_SRC
 
 ** Butterfly
@@ -202,7 +204,7 @@ you're not sure your mesh contains only triangles, pass it through
             (fn [e e-faces]
               (let [[a b] (seq e)
                     [efa efb] (seq e-faces)
-                    e1 (g/mix a b)
+                    e1 (m/mix a b)
                     d3 (t/other-point-in-tri efa a b)
                     d4 (t/other-point-in-tri efb a b)]
                 (if (and d3 d4)
@@ -211,9 +213,9 @@ you're not sure your mesh contains only triangles, pass it through
                         d8 (other-point-in-opp-tri edges a d4 efb)
                         d7 (other-point-in-opp-tri edges b d4 efb)]
                     (if (and d5 d6 d7 d8)
-                      [e (g/+ e1
-                              (g/addm d3 d4 omega)
-                              ;;(g/addm d5 [d6 d7 d8] om2)
+                      [e (m/+ e1
+                              (m/addm d3 d4 omega)
+                              ;;(m/addm d5 [d6 d7 d8] om2)
                               (g/reduce-vector d5 + (fn [x _] (* om2 x)) [d6 d7 d8]))]
                       [e e1]))
                   [e e1]))))
@@ -240,6 +242,7 @@ you're not sure your mesh contains only triangles, pass it through
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/mesh/subdivision.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.subdivision
     (:require
+     [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec3]]

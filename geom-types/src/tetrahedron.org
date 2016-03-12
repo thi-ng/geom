@@ -5,21 +5,21 @@
      - [[#typespecific-functions][Typespecific functions]]
      - [[#constructors][Constructors]]
      - [[#protocol-implementations][Protocol implementations]]
-             - [[#parea][PArea]]
-             - [[#todo-pboundary][TODO PBoundary]]
-             - [[#pbounds][PBounds]]
-             - [[#pboundingsphere][PBoundingSphere]]
-             - [[#pcenter][PCenter]]
-             - [[#pflip][PFlip]]
-             - [[#pgraph][PGraph]]
-             - [[#todo-pintersect][TODO PIntersect]]
-             - [[#pmeshconvert][PMeshConvert]]
-             - [[#todo-psample][TODO PSample]]
-             - [[#todo-pslice][TODO PSlice]]
-             - [[#psubdivide][PSubdivide]]
-             - [[#ptessellate][PTessellate]]
-             - [[#ptransform][PTransform]]
-             - [[#pvolume][PVolume]]
+             - [[#iarea][IArea]]
+             - [[#todo-iboundary][TODO IBoundary]]
+             - [[#ibounds][IBounds]]
+             - [[#iboundingsphere][IBoundingSphere]]
+             - [[#icenter][ICenter]]
+             - [[#iflip][IFlip]]
+             - [[#igraph][IGraph]]
+             - [[#todo-iintersect][TODO IIntersect]]
+             - [[#imeshconvert][IMeshConvert]]
+             - [[#todo-isample][TODO ISample]]
+             - [[#todo-islice][TODO ISlice]]
+             - [[#isubdivide][ISubdivide]]
+             - [[#itessellate][ITessellate]]
+             - [[#itransform][ITransform]]
+             - [[#ivolume][IVolume]]
              - [[#end-of-implementations][End of implementations]]
      - [[#namespace-declaration][Namespace declaration]]
 
@@ -32,7 +32,7 @@
     that the last point is on the opposite side of the plane defined by
     the first three points."
     [[a b c d :as t]]
-    (let [dp (-> d (g/- a) (g/normalize) (g/dot (gu/ortho-normal a b c)))]
+    (let [dp (-> d (m/- a) (m/normalize) (m/dot (gu/ortho-normal a b c)))]
       (if (neg? dp) [a b c d] [a c b d])))
 #+END_SRC
 
@@ -49,67 +49,67 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.Tetrahedron
 #+END_SRC
-**** PArea
+**** IArea
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PArea
+  g/IArea
   (area
-   [_] (transduce (map #(m/abs (apply gu/tri-area3 %))) + (g/faces _)))
+   [_] (transduce (map #(m/abs* (apply gu/tri-area3 %))) + (g/faces _)))
 #+END_SRC
-**** TODO PBoundary
+**** TODO IBoundary
 
 - use classify-point on all faces to check for containment (must be
   neg for all)
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PClassify
+  g/IClassify
   (classify-point [_ p] nil) ; TODO
-  g/PProximity
+  g/IProximity
   (closest-point [_ p] nil) ; TODO
-  g/PBoundary
+  g/IBoundary
   (contains-point? [_ p] nil) ; TODO
 #+END_SRC
-**** PBounds
+**** IBounds
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBounds
+  g/IBounds
   (bounds [_] (tu/bounding-box (g/vertices _)))
   (width [_] (gu/axis-range 0 (g/vertices _)))
   (height [_] (gu/axis-range 1 (g/vertices _)))
   (depth [_] (gu/axis-range 2 (g/vertices _)))
 #+END_SRC
-**** PBoundingSphere
+**** IBoundingSphere
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundingSphere
+  g/IBoundingSphere
   (bounding-sphere
    [_] (tu/bounding-sphere (g/centroid _) (g/vertices _)))
 #+END_SRC
-**** PCenter
+**** ICenter
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PCenter
+  g/ICenter
   (center
    ([_] (thi.ng.geom.types.Tetrahedron. (gu/center v/V3 (:points _))))
    ([_ o] (thi.ng.geom.types.Tetrahedron. (gu/center o (:points _)))))
   (centroid [_] (gu/centroid (:points _)))
 #+END_SRC
-**** PFlip
+**** IFlip
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PFlip
+  g/IFlip
   (flip
    [{[a b c d] :points}] (thi.ng.geom.types.Tetrahedron. [b a c d]))
 #+END_SRC
-**** PGraph
+**** IGraph
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVertexAccess
+  g/IVertexAccess
   (vertices
    [_] (:points _))
-  g/PEdgeAccess
+  g/IEdgeAccess
   (edges
    [{[a b c d] :points}]
    [[a b] [b c] [c a] [a d] [b d] [c d]])
-  g/PFaceAccess
+  g/IFaceAccess
   (faces
    [{[a b c d] :points}]
    [[a b c] [a d b] [b d c] [c d a]])
-  g/PGraph
+  g/IGraph
   (vertex-neighbors
    [{[a b c d] :points} v]
    (condp = v
@@ -121,9 +121,9 @@
   (vertex-valence
    [_ v] (if ((set (:points _)) v) 3 0))
 #+END_SRC
-**** TODO PIntersect                                                 :verify:
+**** TODO IIntersect                                                 :verify:
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PIntersect
+  g/IIntersect
   (intersect-shape
    [_ s]
    (cond
@@ -138,50 +138,50 @@
   (intersect-ray
    [_ {p :p dir :dir}] nil)
 #+END_SRC
-**** PMeshConvert
+**** IMeshConvert
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PMeshConvert
+  g/IMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
    ([_ opts]
       (let [[a b c d] (orient-tetra (:points _))]
         (g/into (or (:mesh opts) (bm/basic-mesh)) (g/faces _)))))
 #+END_SRC
-**** TODO PSample                                                    :verify:
+**** TODO ISample                                                    :verify:
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PSample
+  g/ISample
   (point-at [_ t] nil) ; TODO
   (random-point
    [_] (g/point-at _ (m/random)))
   (random-point-inside
    [_] (gu/from-barycentric (g/vertices _) (m/normdist-weights 4)))
 #+END_SRC
-**** TODO PSlice
+**** TODO ISlice
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PSlice
+  g/ISlice
   (slice-with
    ([_ e] nil)
    ([_ e classifier] nil))
 #+END_SRC
-**** PSubdivide
+**** ISubdivide
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PSubdivide
+  g/ISubdivide
   (subdivide
    [_]
    (let [cp (gu/centroid (:points _))]
      (map #(tetrahedron (conj % cp)) (g/faces _))))
 #+END_SRC
-**** PTessellate
+**** ITessellate
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PTessellate
+  g/ITessellate
   (tessellate
    [_] (g/faces _))
 #+END_SRC
-**** PTransform
+**** ITransform
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PRotate
+  g/IRotate
   (rotate [_ theta] (g/rotate-z _ theta))
-  g/PRotate3D
+  g/IRotate3D
   (rotate-x
    [_ theta]
    (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-x % theta) (:points _))))
@@ -195,30 +195,30 @@
    [_ axis theta]
    (thi.ng.geom.types.Tetrahedron.
     (mapv #(g/rotate-around-axis % axis theta) (:points _))))
-  g/PScale
+  g/IScale
   (scale
    ([_ s]
-      (thi.ng.geom.types.Tetrahedron. (mapv #(g/* % s) (:points _))))
+      (thi.ng.geom.types.Tetrahedron. (mapv #(m/* % s) (:points _))))
    ([_ sx sy]
-      (thi.ng.geom.types.Tetrahedron. (mapv #(g/* % sx sy) (:points _))))
+      (thi.ng.geom.types.Tetrahedron. (mapv #(m/* % sx sy) (:points _))))
    ([_ sx sy sz]
-      (thi.ng.geom.types.Tetrahedron. (mapv #(g/* % sx sy sz) (:points _)))))
+      (thi.ng.geom.types.Tetrahedron. (mapv #(m/* % sx sy sz) (:points _)))))
   (scale-size
    [_ s] (thi.ng.geom.types.Tetrahedron. (gu/scale-size s (:points _))))
-  g/PTranslate
+  g/ITranslate
   (translate
    [_ t]
-   (thi.ng.geom.types.Tetrahedron. (mapv #(g/+ % t) (:points _))))
-  g/PTransform
+   (thi.ng.geom.types.Tetrahedron. (mapv #(m/+ % t) (:points _))))
+  g/ITransform
   (transform
    [_ m]
    (thi.ng.geom.types.Tetrahedron. (mapv #(g/transform-vector m %) (:points _))))
 #+END_SRC
-**** PVolume                                                         :verify:
+**** IVolume                                                         :verify:
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVolume
+  g/IVolume
   (volume [{[a b c d] :points}]
-    (/ (g/dot (g/- a d) (gu/ortho-normal d b c)) 6.0))
+    (/ (m/dot (m/- a d) (gu/ortho-normal d b c)) 6.0))
 #+END_SRC
 **** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :noweb-ref impl

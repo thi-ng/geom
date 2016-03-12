@@ -119,11 +119,15 @@ grouping a set of 8 vertices in a specific order (see
 *** Meshes
 
 #+BEGIN_SRC clojure :noweb-ref types3d
-  (defrecord BasicMesh [vertices faces fnormals attribs])
+  (defrecord BasicMesh [vertices faces fnormals])
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref types3d
-  (defrecord GMesh [vertices normals fnormals vnormals edges faces attribs])
+  (defrecord GMesh [vertices normals fnormals vnormals edges faces])
+#+END_SRC
+
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord IndexedMesh [vertices faces attribs])
 #+END_SRC
 
 *** Line3 & LineStrip3

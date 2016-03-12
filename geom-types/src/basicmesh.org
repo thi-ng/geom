@@ -5,19 +5,19 @@
      - [[#helper-functions][Helper functions]]
      - [[#constructors][Constructors]]
      - [[#protocol-implementations][Protocol implementations]]
-         - [[#parea][PArea]]
-         - [[#todo-pboundary][TODO PBoundary]]
-         - [[#pbounds][PBounds]]
-         - [[#pboundingsphere][PBoundingSphere]]
-         - [[#pcenter][PCenter]]
-         - [[#pflip][PFlip]]
-         - [[#pvertexaccess-pedgeaccess--pfaceaccess][PVertexAccess, PEdgeAccess & PFaceAccess]]
-         - [[#pnormalaccess][PNormalAccess]]
-         - [[#pgeomcontainer][PGeomContainer]]
-         - [[#pmeshconvert][PMeshConvert]]
-         - [[#ptessellate][PTessellate]]
-         - [[#ptransform][PTransform]]
-         - [[#pvolume][PVolume]]
+         - [[#iarea][IArea]]
+         - [[#todo-iboundary][TODO IBoundary]]
+         - [[#ibounds][IBounds]]
+         - [[#iboundingsphere][IBoundingSphere]]
+         - [[#icenter][ICenter]]
+         - [[#iflip][IFlip]]
+         - [[#ivertexaccess-iedgeaccess--ifaceaccess][IVertexAccess, IEdgeAccess & IFaceAccess]]
+         - [[#inormalaccess][INormalAccess]]
+         - [[#igeomcontainer][IGeomContainer]]
+         - [[#imeshconvert][IMeshConvert]]
+         - [[#itessellate][ITessellate]]
+         - [[#itransform][ITransform]]
+         - [[#ivolume][IVolume]]
          - [[#end-of-implementation][End of implementation]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
@@ -26,13 +26,12 @@
 ** Helper functions
 
 #+BEGIN_SRC clojure :noweb-ref helpers
-  (defn add-face
-    [mesh f]
+  (defn- add-face*
+    [mesh [fverts]]
     (thi.ng.geom.types.BasicMesh.
-     (into (:vertices mesh) f)
-     (conj (:faces mesh) f)
-     (:fnormals mesh)
-     (:attribs mesh)))
+     (into (:vertices mesh) fverts)
+     (conj (:faces mesh) (thi.ng.geom.meshface.MeshFace. fverts nil))
+     (:fnormals mesh)))
 #+END_SRC
 
 ** Constructors
@@ -42,7 +41,7 @@
     "Builds a new 3d mesh data structure and (optionally) populates it with
     the given items (a seq of existing meshes and/or faces). Faces are defined
     as vectors of their vertices."
-    [] (thi.ng.geom.types.BasicMesh. #{} #{} {} {}))
+    [] (thi.ng.geom.types.BasicMesh. #{} #{} {}))
 #+END_SRC
 
 ** Protocol implementations
@@ -51,89 +50,99 @@
   (extend-type thi.ng.geom.types.BasicMesh
 #+END_SRC
 
-*** PArea
+*** IArea
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PArea
+  g/IArea
   (area
-   [_] (gu/total-area-3d (:faces _)))
+   [_] (gu/total-area-3d (mf/xf-face-verts _) (:faces _)))
 #+END_SRC
 
-*** TODO PBoundary
+*** TODO IBoundary
 
 #+BEGIN_SRC clojure :noweb-ref impl
 
 #+END_SRC
 
-*** PBounds
+*** IBounds
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBounds
+  g/IBounds
   (bounds [_] (tu/bounding-box (seq (:vertices _))))
   (width [_]  (gu/axis-range 0 (:vertices _)))
   (height [_] (gu/axis-range 1 (:vertices _)))
   (depth [_]  (gu/axis-range 2 (:vertices _)))
 #+END_SRC
 
-*** PBoundingSphere
+*** IBoundingSphere
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundingSphere
+  g/IBoundingSphere
   (bounding-sphere
    [_] (tu/bounding-sphere (g/centroid _) (:vertices _)))
 #+END_SRC
 
-*** PCenter
+*** ICenter
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PCenter
+  g/ICenter
   (center
    ([_]   (g/center _ (vec3)))
-   ([_ o] (g/transform _ (g/translate M44 (g/- o (g/centroid _))))))
+   ([_ o] (g/transform _ (g/translate M44 (m/- o (g/centroid _))))))
   (centroid
    [_]    (gu/centroid (seq (:vertices _))))
 #+END_SRC
 
-*** PFlip
+*** IFlip
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PFlip
+  g/IFlip
   (flip [_] (tu/map-mesh (fn [f] [(vec (rseq f))]) _))
 #+END_SRC
 
-*** PVertexAccess, PEdgeAccess & PFaceAccess
+*** IVertexAccess, IEdgeAccess & IFaceAccess
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVertexAccess
+  g/IVertexAccess
   (vertices
    [_] (:vertices _))
-  g/PEdgeAccess
+  g/IEdgeAccess
   (edges
    [_]
    (into
     #{}
     (comp
+     (map #(g/vertices % _))
      (mapcat #(d/successive-nth 2 (conj % (first %))))
      (map set))
     (:faces _)))
-  g/PFaceAccess
+  g/IFaceAccess
   (faces
-   [_] (:faces _))
+   ([_] (:faces _))
+   ([_ opts]
+    (if opts
+      (map #(g/raw % _) (:faces _))
+      (:faces _))))
   (add-face
-   [_ f] (add-face _ f))
+   [_ face] (add-face* _ face))
   (vertex-faces
-   [_ v] (filter
-          #(>= #?(:clj (.indexOf ^clojure.lang.PersistentVector % v) :cljs (d/index-of % v)) 0)
-          (:faces _)))
+   [_ v]
+   (sequence
+    (comp
+     (map #(g/vertices % _))
+     (filter
+      #(pos? #?(:clj (.indexOf ^clojure.lang.PersistentVector % v)
+                :cljs (d/index-of % v))))
+     (:faces _))))
   (remove-face
    [_ f]
-   (err/unsupported!))
+   (err/unsupported!)) ;; TODO implement
 #+END_SRC
 
-*** PNormalAccess
+*** INormalAccess
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PNormalAccess
+  g/INormalAccess
   (face-normals
    [_ force?] (if (seq (:fnormals _)) (:fnormals _) (if force? (:fnormals (g/compute-face-normals _)))))
   (face-normal
@@ -147,69 +156,69 @@
    (loop [fnorms (transient {}), faces (:faces _)]
      (if faces
        (let [f (first faces)]
-         (recur (assoc! fnorms f (gu/ortho-normal f)) (next faces)))
+         (recur (assoc! fnorms f (gu/ortho-normal (g/vertices f _))) (next faces)))
        (assoc _ :fnormals (persistent! fnorms)))))
   (compute-vertex-normals
    [_] (err/unsupported!))
 #+END_SRC
 
-*** PGeomContainer
+*** IGeomContainer
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PGeomContainer
+  g/IGeomContainer
   (into
-   [_ faces] (tu/into-mesh _ add-face faces))
-  g/PClear
+   [_ faces] (tu/into-mesh _ add-face* faces))
+  g/IClear
   (clear*
    [_] (basic-mesh))
 #+END_SRC
 
-*** PMeshConvert
+*** IMeshConvert
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PMeshConvert
+  g/IMeshConvert
   (as-mesh
    ([_] _)
    ([_ opts] (g/into (:mesh opts) (:faces _))))
 #+END_SRC
 
-*** PTessellate
+*** ITessellate
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PTessellate
+  g/ITessellate
   (tessellate
    ([_]      (g/tessellate _ {}))
-   ([_ opts] (tu/map-mesh (or (:fn opts) gu/tessellate-with-first) _)))
+   ([_ opts] (tu/map-mesh (or (:fn opts) (gu/tessellate-face gu/tessellate-with-first)) _)))
 #+END_SRC
 
-*** PTransform
+*** ITransform
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PScale
+  g/IScale
   (scale
    ([_ s]
-      (tu/transform-mesh _ add-face #(g/* % s)))
+      (tu/transform-mesh _ add-face* #(m/* % s)))
    ([_ sx sy sz]
-      (tu/transform-mesh _ add-face #(g/* % sx sy sz))))
+      (tu/transform-mesh _ add-face* #(m/* % sx sy sz))))
   (scale-size
    [_ s]
    (let [c (g/centroid _)]
-     (tu/transform-mesh _ add-face #(g/madd (g/- % c) s c))))
-  g/PTranslate
+     (tu/transform-mesh _ add-face* #(m/madd (m/- % c) s c))))
+  g/ITranslate
   (translate
-   [_ t] (tu/transform-mesh _ add-face #(g/+ % t)))
-  g/PTransform
+   [_ t] (tu/transform-mesh _ add-face* #(m/+ % t)))
+  g/ITransform
   (transform
    [_ m]
-   (tu/transform-mesh _ add-face m))
+   (tu/transform-mesh _ add-face* m))
 #+END_SRC
 
-*** PVolume
+*** IVolume
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVolume
+  g/IVolume
   (volume
-   [_] (gu/total-volume (:faces _)))
+   [_] (gu/total-volume (mf/xf-face-verts _) (:faces _)))
 #+END_SRC
 
 *** End of implementation                                          :noexport:
@@ -226,6 +235,7 @@
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.meshface :as mf]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]

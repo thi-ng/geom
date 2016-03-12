@@ -7,20 +7,20 @@
          - [[#creating-a-mesh-from-a-lathe][Creating a mesh from a lathe]]
          - [[#predefined-forms][Predefined forms]]
      - [[#protocol-implementations][Protocol implementations]]
-         - [[#parea][PArea]]
-         - [[#todo-pboundary][TODO PBoundary]]
-         - [[#pbounds][PBounds]]
-         - [[#pboundingsphere][PBoundingSphere]]
-         - [[#todo-pcenter][TODO PCenter]]
-         - [[#pflip][PFlip]]
-         - [[#todo-pgraph][TODO PGraph]]
-         - [[#pvertexaccess-pedgeaccess--pfaceaccess][PVertexAccess, PEdgeAccess & PFaceAccess]]
-         - [[#pnormalaccess][PNormalAccess]]
-         - [[#pgeomcontainer][PGeomContainer]]
-         - [[#pmeshconvert][PMeshConvert]]
-         - [[#ptessellate][PTessellate]]
-         - [[#ptransform][PTransform]]
-         - [[#pvolume][PVolume]]
+         - [[#iarea][IArea]]
+         - [[#todo-iboundary][TODO IBoundary]]
+         - [[#ibounds][IBounds]]
+         - [[#iboundingsphere][IBoundingSphere]]
+         - [[#icenter][ICenter]]
+         - [[#iflip][IFlip]]
+         - [[#todo-igraph][TODO IGraph]]
+         - [[#ivertexaccess-iedgeaccess--ifaceaccess][IVertexAccess, IEdgeAccess & IFaceAccess]]
+         - [[#inormalaccess][INormalAccess]]
+         - [[#igeomcontainer][IGeomContainer]]
+         - [[#imeshconvert][IMeshConvert]]
+         - [[#itessellate][ITessellate]]
+         - [[#itransform][ITransform]]
+         - [[#ivolume][IVolume]]
          - [[#end-of-implementation][End of implementation]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
@@ -29,69 +29,70 @@
 ** Helper functions
 
 #+BEGIN_SRC clojure :noweb-ref helpers
-  (defn add-face
-    [{:keys [vertices edges faces] :as mesh} verts]
+  (defn- add-face*
+    [{:keys [vertices edges faces] :as mesh} [verts]]
     (let [f (mapv #(get (find vertices %) 0 %) verts)]
       (if (and (nil? (get faces f))
                (= (count f) (count (set f))))
-        (let [vertices (->> (d/wrap-seq f [(peek f)] [(first f)])
-                            (d/successive-nth 3)
+        (let [mf       (thi.ng.geom.meshface.MeshFace. f nil)
+              vertices (->> (d/wrap-seq f [(peek f)] [(first f)])
+                            (partition 3 1)
                             (reduce
                              (fn [acc [p c n]]
-                               (d/index-kv acc c {:next n :prev p :f f}))
+                               (d/index-kv acc c {:next n :prev p :f mf}))
                              vertices))
-              edges (->> (conj f (first f))
-                         (d/successive-nth 2)
-                         (reduce
-                          (fn [acc pair] (d/index-kv acc (set pair) f))
-                          edges))]
+              edges    (->> (conj f (first f))
+                            (partition 2 1)
+                            (reduce
+                             (fn [acc pair] (d/index-kv acc (set pair) mf))
+                             edges))]
           (assoc mesh
-            :vertices vertices
-            :edges edges
-            :faces (conj faces f)))
+                 :vertices vertices
+                 :edges edges
+                 :faces (conj faces mf)))
         mesh)))
-  
+
   (defn vertices-planar?
     [[a b c :as verts]]
     (or (< (count verts) 4)
         (let [n (gu/ortho-normal a b c)]
           (every? #(m/delta= n (gu/ortho-normal %))
-                  (d/successive-nth 3 (conj (rest verts) a))))))
-  
+                  (partition 3 1 (conj (rest verts) a))))))
+
   (defn face-neighbors-shared-edges
     [{:keys [edges]} f]
     (->> (conj f (first f))
-         (d/successive-nth 2)
+         (partition 2 1)
          (reduce
           (fn [acc pair] (into acc (-> pair set edges (disj f))))
           [])))
-  
+
   (defn vertex-neighbors*
     [{vertices :vertices} v]
     (set/union
      (d/value-set :next vertices v)
      (d/value-set :prev vertices v)))
-  
+
   (defn vertex-valence*
     [mesh v] (inc (count (get (:vertices mesh) v))))
-  
+
   (defn vertex-faces*
     [mesh v] (d/value-set :f (:vertices mesh) v))
-  
+
   (defn remove-vertex*
     [mesh v]
     (if (find (:vertices mesh) v)
       (reduce g/remove-face mesh (vertex-faces* mesh v))
       mesh))
-  
+
   (defn replace-vertex*
     ([mesh v v2]
-       (let [vfaces (vertex-faces* mesh v)]
-         (-> (reduce g/remove-face mesh vfaces)
-             (replace-vertex* v v2 vfaces))))
+     (let [vfaces (vertex-faces* mesh v)]
+       (-> (reduce g/remove-face mesh vfaces)
+           (replace-vertex* v v2 vfaces))))
     ([mesh v v2 faces]
-       (reduce #(add-face % (replace {v v2} %2)) mesh faces)))
-  
+     (reduce #(add-face* % (replace {v v2} %2)) mesh faces)))
+
   (defn merge-vertices*
     [mesh a b]
     (if ((vertex-neighbors* mesh a) b)
@@ -99,7 +100,7 @@
             ab-isec (set/intersection fa fb)
             a-xor (set/difference fa ab-isec)
             b-xor (set/difference fb ab-isec)
-            mp (g/mix a b)]
+            mp (m/mix a b)]
         (-> (reduce g/remove-face mesh (set/union ab-isec a-xor b-xor))
             (replace-vertex* a mp a-xor)
             (replace-vertex* b mp b-xor)))
@@ -113,7 +114,7 @@
     "Builds a new 3d mesh data structure and (optionally) populates it with
     the given items (a seq of existing meshes and/or faces). Faces are defined
     as vectors of their vertices."
-    [] (thi.ng.geom.types.GMesh. {} #{} {} {} {} #{} {}))
+    [] (thi.ng.geom.types.GMesh. {} #{} {} {} {} #{}))
 #+END_SRC
 
 *** Creating a mesh from a lathe
@@ -150,7 +151,7 @@ a lathe defined in the XZ plane and centered around the Z-axis:
     (let [s (inc (* (Math/sin (* theta 6)) 0.25))]
       (-> p
           (g/rotate-z theta) ;; first rotate
-          (g/* s s 1.0))))   ;; then scale in XY plane only
+          (m/* s s 1.0))))   ;; then scale in XY plane only
 #+END_SRC
 
 Finally, in order to create a fully closed mesh, the revolution angle
@@ -159,32 +160,34 @@ located on the rotation axis.
 
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn lathe-mesh
-    [points res phi rot-fn & [face-fn]]
-    (let [strips (mapv
-                  (fn [i]
-                    (let [theta (* i phi)]
-                      (mapv #(let [p (rot-fn % theta)]
-                               (if (m/delta= p % *eps*)
-                                 % p))
-                            points)))
-                  (butlast (m/norm-range res)))
-          strips (if (m/delta= phi m/TWO_PI)
-                   (conj strips (first strips))
-                   strips)
-          make-face (fn [[a1 a2] [b1 b2]]
-                      (let [f (cond
-                               (< (count (hash-set a1 a2 b1 b2)) 3) nil
-                               (= a1 b1) [b1 b2 a2]
-                               (= a2 b2) [b1 a2 a1]
-                               :default [b1 b2 a2 a1])]
-                        (if (and f face-fn) (face-fn f) [f])))]
-      (->> (d/successive-nth 2 strips)
-           (mapcat ;; TODO transduce
-            (fn [[sa sb]]
-              (mapcat make-face
-                   (d/successive-nth 2 sa)
-                   (d/successive-nth 2 sb))))
-           (tu/into-mesh (gmesh) add-face))))
+    ([points res phi rot-fn]
+     (lathe-mesh points res phi rot-fn nil))
+    ([points res phi rot-fn face-fn]
+     (let [strips    (mapv
+                      (fn [i]
+                        (let [theta (* i phi)]
+                          (mapv #(let [p (rot-fn % theta)]
+                                   (if (m/delta= p % *eps*)
+                                     % p))
+                                points)))
+                      (butlast (m/norm-range res)))
+           strips    (if (m/delta= phi m/TWO_PI)
+                       (conj strips (first strips))
+                       strips)
+           make-face (fn [[a1 a2] [b1 b2]] ;; TODO add attrib support
+                       (let [f (cond
+                                 (< (count (hash-set a1 a2 b1 b2)) 3) nil
+                                 (= a1 b1) [b1 b2 a2]
+                                 (= a2 b2) [b1 a2 a1]
+                                 :default [b1 b2 a2 a1])]
+                         [(if (and f face-fn) (face-fn f) [f])]))]
+       (->> (partition 2 1 strips)
+            (mapcat ;; TODO transduce
+             (fn [[sa sb]]
+               (mapcat make-face
+                       (partition 2 1 sa)
+                       (partition 2 1 sb))))
+            (tu/into-mesh (gmesh) add-face*)))))
 #+END_SRC
 
 *** Predefined forms
@@ -195,7 +198,7 @@ located on the rotation axis.
     (let [sv (vec3 s)]
       (reduce
        (fn [m [p flags]]
-         (tu/into-mesh m add-face (g/as-mesh (thi.ng.geom.types.AABB p s) {:flags flags})))
+         (tu/into-mesh m add-face* (g/as-mesh (thi.ng.geom.types.AABB p s) {:flags flags})))
        (gmesh)
        [[(vec3) :ewsfb]
         [(vec3 0 s 0) :wfb]
@@ -209,64 +212,59 @@ located on the rotation axis.
   (extend-type thi.ng.geom.types.GMesh
 #+END_SRC
 
-*** PArea
+*** IArea
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PArea
+  g/IArea
   (area
-   [_]
-   (transduce
-    (comp
-     (mapcat gu/tessellate-with-first)
-     (map #(->> % (apply gu/tri-area3) m/abs)))
-    + (:faces _)))
+   [_] (gu/total-area-3d (mf/xf-face-verts _) (:faces _)))
 #+END_SRC
 
-*** TODO PBoundary
+*** TODO IBoundary
 
 #+BEGIN_SRC clojure :noweb-ref impl
 
 #+END_SRC
 
-*** PBounds
+*** IBounds
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBounds
+  g/IBounds
   (bounds [_] (tu/bounding-box (keys (:vertices _))))
   (width [_] (gu/axis-range 0 (keys (:vertices _))))
   (height [_] (gu/axis-range 1 (keys (:vertices _))))
   (depth [_] (gu/axis-range 2 (keys (:vertices _))))
 #+END_SRC
 
-*** PBoundingSphere
+*** IBoundingSphere
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundingSphere
+  g/IBoundingSphere
   (bounding-sphere
    [_] (tu/bounding-sphere (g/centroid _) (g/vertices _)))
 #+END_SRC
 
-*** TODO PCenter
+*** ICenter
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PCenter
+  g/ICenter
   (center
    ([_] (g/center _ (vec3)))
-   ([_ o] (g/transform _ (g/translate M44 (g/- o (g/centroid _))))))
+   ([_ o] (g/transform _ (g/translate M44 (m/- o (g/centroid _))))))
   (centroid
    [_] (gu/centroid (keys (:vertices _))))
 #+END_SRC
 
-*** PFlip
+*** IFlip
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PFlip
+  g/IFlip
   (flip [_] (tu/map-mesh (fn [f] [(vec (rseq f))]) _))
 #+END_SRC
 
-*** TODO PGraph
+*** TODO IGraph
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PGraph
+  g/IGraph
   (connected-components
    [_] [_]) ;; TODO
   (vertex-neighbors
@@ -281,53 +279,58 @@ located on the rotation axis.
    [_ a b] (merge-vertices* _ a b))
 #+END_SRC
 
-*** PVertexAccess, PEdgeAccess & PFaceAccess
+*** IVertexAccess, IEdgeAccess & IFaceAccess
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVertexAccess
+  g/IVertexAccess
   (vertices
    [_] (keys (:vertices _)))
-  g/PEdgeAccess
+  g/IEdgeAccess
   (edges
    [_] (keys (:edges _)))
-  g/PFaceAccess
+  g/IFaceAccess
   (faces
-   [_] (:faces _))
+   ([_] (:faces _))
+   ([_ opts]
+    (if opts
+      (map #(g/raw % _) (:faces _))
+      (:faces _))))
   (add-face
-   [_ f] (add-face _ f))
+   [_ face] (add-face* _ face))
   (vertex-faces
    [_ v] (vertex-faces* _ v))
   (remove-face
    [{:keys [vertices edges faces fnormals vnormals] :as _} f]
    (if (get faces f)
-     (loop [verts vertices
-            vnorms vnormals
-            edges edges
-            fedges (d/successive-nth 2 (conj f (first f)))]
-       (if fedges
-         (let [[a b] (first fedges)
-               e #{a b}
-               efaces (disj (get edges e) f)
-               edges (if (seq efaces)
-                       (assoc edges e efaces)
-                       (dissoc edges e))
-               ve (filter #(not= (:f %) f) (get verts a))]
-           (if (seq ve)
-             (recur (assoc verts a (into #{} ve)) vnorms edges (next fedges))
-             (recur (dissoc verts a) (dissoc vnorms a) edges (next fedges))))
-         (assoc _
-           :vertices verts
-           :vnormals vnorms
-           :edges edges
-           :faces (disj faces f)
-           :fnormals (dissoc fnormals f))))
+     (let [fv (g/vertices f _)]
+       (loop [verts  vertices
+              vnorms vnormals
+              edges  edges
+              fedges (partition 2 1 (conj fv (first fv)))]
+         (if fedges
+           (let [[a b]  (first fedges)
+                 e      #{a b}
+                 efaces (disj (get edges e) f)
+                 edges  (if (seq efaces)
+                          (assoc edges e efaces)
+                          (dissoc edges e))
+                 ve     (filter #(not= (:f %) f) (get verts a))]
+             (if (seq ve)
+               (recur (assoc verts a (into #{} ve)) vnorms edges (next fedges))
+               (recur (dissoc verts a) (dissoc vnorms a) edges (next fedges))))
+           (assoc _
+                  :vertices verts
+                  :vnormals vnorms
+                  :edges edges
+                  :faces (disj faces f)
+                  :fnormals (dissoc fnormals f)))))
      _))
 #+END_SRC
 
-*** PNormalAccess
+*** INormalAccess
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PNormalAccess
+  g/INormalAccess
   (face-normals
    [_ force?]
    (if (seq (:fnormals _))
@@ -344,24 +347,25 @@ located on the rotation axis.
    [_ v] ((:vnormals _) v))
   (compute-face-normals
    [_]
-   (loop [norms (transient #{}), fnorms (transient {}), faces (:faces _)]
+   (loop [norms (transient #{}), fnorms (transient (hash-map)), faces (:faces _)]
      (if faces
-       (let [f (first faces)
-             [norms n] (d/index! norms (apply gu/ortho-normal f))]
+       (let [^thi.ng.geom.meshface.MeshFace f (first faces)
+             [norms n] (d/index! norms (gu/ortho-normal (.-vertices f)))]
          (recur norms (assoc! fnorms f n) (next faces)))
        (assoc _
               :normals  (persistent! norms)
               :fnormals (persistent! fnorms)))))
   (compute-vertex-normals
    [_]
-   (let [{:keys [vertices normals fnormals] :as this} (if (seq (:fnormals _)) _ (g/compute-face-normals _))
+   (let [this (if (seq (:fnormals _)) _ (g/compute-face-normals _))
+         {:keys [vertices normals fnormals]} this
          ntx (map #(get fnormals %))]
      (loop [norms (transient normals), vnorms (transient (hash-map)), verts (keys vertices)]
        (if verts
          (let [v (first verts)
                [norms n] (->> (d/value-set :f vertices v)
-                              (transduce ntx g/+ v/V3)
-                              (g/normalize)
+                              (transduce ntx m/+ v/V3)
+                              (m/normalize)
                               (d/index! norms))]
            (recur norms (assoc! vnorms v n) (next verts)))
          (assoc this
@@ -369,63 +373,63 @@ located on the rotation axis.
                 :vnormals (persistent! vnorms))))))
 #+END_SRC
 
-*** PGeomContainer
+*** IGeomContainer
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PGeomContainer
+  g/IGeomContainer
   (into
-   [_ faces] (tu/into-mesh _ add-face faces))
-  g/PClear
+   [_ faces] (tu/into-mesh _ add-face* faces))
+  g/IClear
   (clear*
    [_] (gmesh))
 #+END_SRC
 
-*** PMeshConvert
+*** IMeshConvert
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PMeshConvert
+  g/IMeshConvert
   (as-mesh
    ([_] _)
    ([_ opts] (g/into (:mesh opts) (:faces _))))
 #+END_SRC
 
-*** PTessellate
+*** ITessellate
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PTessellate
+  g/ITessellate
   (tessellate
    ([_]      (g/tessellate _ {}))
-   ([_ opts] (tu/map-mesh (or (:fn opts) gu/tessellate-with-first) _)))
+   ([_ opts] (tu/map-mesh (or (:fn opts) (gu/tessellate-face gu/tessellate-with-first)) _)))
 #+END_SRC
 
-*** PTransform
+*** ITransform
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PScale
+  g/IScale
   (scale
    ([_ s]
-      (tu/transform-mesh _ add-face #(g/* % s)))
+      (tu/transform-mesh _ add-face* #(m/* % s)))
    ([_ sx sy sz]
-      (tu/transform-mesh _ add-face #(g/* % sx sy sz))))
+      (tu/transform-mesh _ add-face* #(m/* % sx sy sz))))
   (scale-size
    [_ s]
    (let [c (g/centroid _)]
-     (tu/transform-mesh _ add-face #(g/madd (g/- % c) s c))))
-  g/PTranslate
+     (tu/transform-mesh _ add-face* #(m/madd (m/- % c) s c))))
+  g/ITranslate
   (translate
-   [_ t] (tu/transform-mesh _ add-face #(g/+ % t)))
-  g/PTransform
+   [_ t] (tu/transform-mesh _ add-face* #(m/+ % t)))
+  g/ITransform
   (transform
    [_ tx]
-   (tu/transform-mesh _ add-face tx))
+   (tu/transform-mesh _ add-face* tx))
 #+END_SRC
 
-*** PVolume
+*** IVolume
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVolume
+  g/IVolume
   (volume
-   [_] (gu/total-volume (:faces _)))
+   [_] (gu/total-volume (mf/xf-face-verts _) (:faces _)))
 #+END_SRC
 
 *** End of implementation                                          :noexport:
@@ -443,6 +447,7 @@ located on the rotation axis.
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.meshface :as mf]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]

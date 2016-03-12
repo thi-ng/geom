@@ -57,13 +57,13 @@ is to add additional point(s) in the center.
   (defn triangulate
     [points]
     (let [points (sort-by #(% 0) points)
-          bmin (reduce g/min points)
-          bmax (reduce g/max points)
-          bext (g/- bmax bmin)
+          bmin (reduce m/min points)
+          bmax (reduce m/max points)
+          bext (m/- bmax bmin)
           dm (max (bext 0) (bext 1))
           d2 (* 2.0 dm)
-          m (g/mix bmin bmax)
-          [sa sb sc :as s] (triangle-spec (g/- m d2 dm) (g/+ m 0 d2) (g/+ m d2 (- dm)))]
+          m (m/mix bmin bmax)
+          [sa sb sc :as s] (triangle-spec (m/- m d2 dm) (m/+ m 0 d2) (m/+ m d2 (- dm)))]
       (loop [points points, tris [s], complete (transient #{})]
         (if-let [[px :as p] (first points)]
           (let [complete (reduce #(if (< (%2 6) px) (conj! % %2) %) complete tris)

@@ -18,7 +18,6 @@
   (def ^:dynamic *precision* 5)
 #+END_SRC
 
-
 ** Stream wrappers
 
 #+BEGIN_SRC clojure :noweb-ref wrappers
@@ -35,15 +34,17 @@
 
 #+BEGIN_SRC clojure :noweb-ref stl
   (defn write-stl
-    "Writes the given mesh as binary STL to output stream wrapper. Mesh
-    is automatically tessellated into triangles. Returns stream wrapper"
+    "Writes the given mesh as binary STL to output stream wrapper.
+    Assumes mesh already has been tessellated into triangles (i.e. only
+    the first 3 vertices of each face are exported). Returns stream
+    wrapper."
     [out mesh]
     (let [faces    (g/faces mesh)
-          fnormals (g/face-normals mesh true)]
+          fnormals (g/face-normals mesh false)]
       (streams/skip out 80)
       (streams/write-uint32-le out (count faces))
-      (doseq [[a b c :as f] faces]
-        (streams/write-vec3f-le out (or (get fnormals f) (gu/ortho-normal f)))
+      (doseq [f faces :let [[a b c :as fv] (g/vertices f mesh)]]
+        (streams/write-vec3f-le out (or (get fnormals f) (gu/ortho-normal fv)))
         (streams/write-vec3f-le out a)
         (streams/write-vec3f-le out b)
         (streams/write-vec3f-le out c)
@@ -64,7 +65,7 @@
                b (vec3 (streams/read-vec3f-le in))
                c (vec3 (streams/read-vec3f-le in))]
            (streams/skip in 2)
-           (recur (g/add-face mesh [a b c]) (dec i)))
+           (recur (g/add-face mesh [[a b c]]) (dec i)))
          mesh))))
 #+END_SRC
 
@@ -102,9 +103,9 @@
           (streams/write-vec3f-le out (get vnormals v)))
         (doseq [v vertices]
           (streams/write-vec3f-le out v)))
-      (doseq [f (g/faces mesh)]
-        (streams/write-uint8 out (unchecked-byte (count f)))
-        (doseq [v f]
+      (doseq [f faces :let [fverts (g/vertices f mesh)]]
+        (streams/write-uint8 out (unchecked-byte (count fverts)))
+        (doseq [v fverts]
           (streams/write-uint32-le out (get vindex v))))
       out))
 #+END_SRC
@@ -112,6 +113,34 @@
 ** OBJ
 
 #+BEGIN_SRC clojure :noweb-ref obj
+  (defn- obj-fmt2
+    [prefix]
+    (let [ff  (f/float *precision*)
+          fmt [prefix " " ff " " ff "\n"]]
+      #(f/format fmt (double %1) (double %2))))
+
+  (defn- obj-fmt3
+    [prefix]
+    (let [ff  (f/float *precision*)
+          fmt [prefix " " ff " " ff " " ff "\n"]]
+      #(f/format fmt (double %1) (double %2) (double %3))))
+
+  (defn- obj-fmt-face-v
+    [verts]
+    (str "f " (str/join " " verts) "\n"))
+
+  (defn- obj-fmt-face-v-uv
+    [verts uvs]
+    (str "f " (str/join " " (map #(str % "/" %2) verts uvs)) "\n"))
+
+  (defn- obj-fmt-face-v-vn
+    [verts normals]
+    (str "f " (str/join " " (map #(str % "//" %2) verts normals)) "\n"))
+
+  (defn- obj-fmt-face-v-uv-vn
+    [verts uvs normals]
+    (str "f " (str/join " " (map #(str % "/" %2 "/" %3) verts uvs normals)) "\n"))
+
   (defn write-obj
     "Writes mesh as Waveform OBJ format to output stream wrapper.
     Returns stream wrapper."
@@ -120,19 +149,10 @@
           vindex      (zipmap vertices (range))
           vnormals    (g/vertex-normals mesh false)
           vnorms?     (not (nil? (seq vnormals)))
-          nindex      (zipmap vnormals (range))
-          faces       (g/faces mesh)
-          ff          (f/float *precision*)
-          fmt-fn      (fn [prefix]
-                        (let [fmt [prefix " " ff " " ff " " ff "\n"]]
-                          #(f/format fmt (double %1) (double %2) (double %3))))
-          fmt-vertex  (fmt-fn "v")
-          fmt-vnormal (fmt-fn "vn")
-          fmt-face    (if vnorms?
-                        (fn [verts normals]
-                          (str "f " (str/join " " (map #(str % "//" %2) verts normals)) "\n"))
-                        (fn [verts]
-                          (str "f " (str/join " " verts) "\n")))]
+          nindex      (zipmap (vals vnormals) (range))
+          faces       (g/faces mesh true)
+          fmt-vertex  (obj-fmt3 "v")
+          fmt-vnormal (obj-fmt3 "vn")]
       (doseq [[x y z] vertices]
         (streams/write-utf8-bytes
          out (fmt-vertex x y z)))
@@ -140,15 +160,65 @@
         (streams/write-utf8-bytes out (fmt-vnormal x y z)))
       (streams/write-utf8-bytes out "g\n")
       (if vnorms?
-        (doseq [fverts faces]
+        (doseq [[fverts] faces]
           (streams/write-utf8-bytes
-           out (fmt-face
+           out (obj-fmt-face-v-vn
                 (map #(inc (get vindex %)) fverts)
                 (map #(inc (get nindex (get vnormals %))) fverts))))
-        (doseq [fverts faces]
+        (doseq [[fverts] faces]
           (streams/write-utf8-bytes
-           out (fmt-face (map #(inc (get vindex %)) fverts)))))
+           out (obj-fmt-face-v
+                (map #(inc (get vindex %)) fverts)))))
       out))
+
+  (defn write-obj-indexed
+    "Writes IndexedMesh as Waveform OBJ format to output stream wrapper.
+    Suports vertex normals & UV coordinates. Returns stream wrapper."
+    ([out mesh]
+     (write-obj-indexed out mesh {}))
+    ([out mesh opts]
+     (let [vertices    (-> mesh :vertices :id->v)
+           vindex      (-> mesh :vertices :v->id)
+           uvs         (-> mesh :attribs :uv :id->v)
+           vnormals    (-> mesh :attribs :vnormals :id->v)
+           faces       (-> mesh :faces)
+           fmt-vertex  (obj-fmt3 "v")
+           fmt-vnormal (obj-fmt3 "vn")
+           fmt-uv      (obj-fmt2 "vt")]
+       (when-let [mtl (:mtl-lib opts)]
+         (streams/write-utf8-bytes
+          out (str "mtllib " mtl "\nusemtl " (or (:mtl opts) "default") "\n\n")))
+       (doseq [[x y z] (vals vertices)]
+         (streams/write-utf8-bytes out (fmt-vertex x y z)))
+       (doseq [[x y z] (vals vnormals)]
+         (streams/write-utf8-bytes out (fmt-vnormal x y z)))
+       (doseq [[u v] (vals uvs)]
+         (streams/write-utf8-bytes out (fmt-uv u v)))
+       (streams/write-utf8-bytes out "g\n")
+       (if vnormals
+         (if uvs
+           (doseq [^thi.ng.geom.meshface.IndexedMeshFace f faces]
+             (streams/write-utf8-bytes
+              out (obj-fmt-face-v-uv-vn
+                   (mapv inc (.-vertices f))
+                   (mapv inc (:uv (.-attribs f)))
+                   (mapv inc (:vnormals (.-attribs f))))))
+           (doseq [^thi.ng.geom.meshface.IndexedMeshFace f faces]
+             (streams/write-utf8-bytes
+              out (obj-fmt-face-v-vn
+                   (mapv inc (.-vertices f))
+                   (mapv inc (:vnormals (.-attribs f)))))))
+         (if uvs
+           (doseq [^thi.ng.geom.meshface.IndexedMeshFace f faces]
+             (streams/write-utf8-bytes
+              out (obj-fmt-face-v-uv
+                   (mapv inc (.-vertices f))
+                   (mapv inc (:uv (.-attribs f))))))
+           (doseq [^thi.ng.geom.meshface.IndexedMeshFace f faces]
+             (streams/write-utf8-bytes
+              out (obj-fmt-face-v
+                   (mapv inc (.-vertices f)))))))
+       out)))
 #+END_SRC
 
 ** OFF
@@ -168,7 +238,7 @@
       (doseq [[x y z] vertices]
         (streams/write-utf8-bytes
          out (f/format fmt-vertex (double x) (double y) (double z))))
-      (doseq [fverts faces]
+      (doseq [f faces :let [fverts (g/vertices f mesh)]]
         (streams/write-utf8-bytes
          out
          (str (count fverts) " "

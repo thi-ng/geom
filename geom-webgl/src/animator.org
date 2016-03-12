@@ -28,15 +28,17 @@
      (.oNow js/performance)))
 
   (defn animate
-    [f & [element]]
-    (let [t0 (.getTime (js/Date.))
-          t  (volatile! [0 0])
-          f' (fn animate* []
-               (if (f (vreset! t [(* (- (.getTime (js/Date.)) t0) 0.001) (inc (@t 1))]))
-                 (if element
-                   (animframe-provider animate* element)
-                   (animframe-provider animate*))))]
-      (f')))
+    ([f]
+     (animate f nil))
+    ([f element]
+     (let [t0  (.getTime (js/Date.))
+           fid (volatile! 0)
+           f'  (fn animate* []
+                 (if (f (* (- (.getTime (js/Date.)) t0) 1e-3) (vswap! fid inc))
+                   (if element
+                     (animframe-provider animate* element)
+                     (animframe-provider animate*))))]
+       (f'))))
 #+END_SRC
 
 ** Complete namespace definition

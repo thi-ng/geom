@@ -7,6 +7,7 @@
          - [[#geometric-entities][Geometric entities]]
          - [[#geometry-operations][Geometry operations]]
          - [[#api-scope][API scope]]
+     - [[#example-usage][Example usage]]
      - [[#library-module-structure][Library module structure]]
          - [[#geom-core][geom-core]]
          - [[#geom-types][geom-types]]
@@ -16,7 +17,6 @@
          - [[#geom-voxel][geom-voxel]]
          - [[#geom-webgl][geom-webgl]]
      - [[#status][Status]]
-     - [[#example-usage][Example usage]]
      - [[#building--testing-this-project][Building & testing this project]]
          - [[#testing][Testing]]
          - [[#working-with-the-repl][Working with the REPL]]
@@ -121,6 +121,31 @@ Furthermore, providing all functionality under a common API for both
 Clojure & Clojurescript, makes it trivial to offload heavy operations
 (e.g. large mesh processing) to the server side.
 
+** Example usage
+
+Several small examples are still included in this repo (but will be
+migrated to the demo repo soon):
+
+- [[../geom-webgl/src/demo.org][WebGL demos]] (source + live versions)
+- [[../geom-svg/src/examples.org][SVG examples]]
+- [[../geom-types/src/ptf.org][PTF examples]]
+- [[https://github.com/thi-ng/geom/blob/master/geom-voxel/src/examples.org][Voxel examples]]
+
+Demo repository for all thi.ng libraries:
+
+- [[https://github.com/thi-ng/demos][Demo repository]]
+  - [[http://demo.thi.ng/geom/physics/strands.html][SVG physics strands]] (Clojurescript online demo)
+
+A preliminary list of other projects using this library:
+
+- [[https://github.com/postspectacular/devart-codefactory/][Google DevArt Co(de)Factory]]
+- [[https://github.com/jackrusher/geometer/][Geometer]] (by [[https://github.com/jackrusher][Jack Rusher]])
+- [[http://holiday2014.movingbrands.com][MB Home installation]]
+- [[http://github.com/learn-postspectacular/resonate-2014-workshop][Resonate 2014 workshop]]
+- [[http://github.com/thi-ng/luxor][Luxor]]
+- [[http://github.com/thi-ng/morphogen][Morphogen]]
+- [[http://thi.ng/][thi.ng website]]
+
 ** Library module structure
 
 The project has been structured into a number of modules, each
@@ -204,30 +229,6 @@ successfully in several commercial projects over the past 2 years and
 can be considered stable for most use cases.
 
 A full test suite, website & tutorials are actively being worked on.
-
-** Example usage
-
-Demo repository for all thi.ng libraries:
-
-- [[https://github.com/thi-ng/demos][Demo repository]]
-  - [[http://demo.thi.ng/geom/physics/strands.html][SVG physics strands]] (Clojurescript online demo)
-
-A preliminary list of other projects using this library:
-
-- [[https://github.com/postspectacular/devart-codefactory/][Google DevArt Co(de)Factory]]
-- [[http://holiday2014.movingbrands.com][MB Home installation]]
-- [[http://github.com/learn-postspectacular/resonate-2014-workshop][Resonate 2014 workshop]]
-- [[http://github.com/thi-ng/luxor][Luxor]]
-- [[http://github.com/thi-ng/morphogen][Morphogen]]
-- [[http://thi.ng/][thi.ng website]]
-
-Several small examples are still included in this repo (but will be
-migrated to the demo repo soon):
-
-- [[../geom-types/src/ptf.org][PTF examples]]
-- [[../geom-svg/src/examples.org][SVG examples]]
-- [[https://github.com/thi-ng/geom/blob/master/geom-voxel/src/examples.org][Voxel examples]]
-- [[../geom-webgl/src/demo.org][WebGL demos]]
 
 ** Building & testing this project
 

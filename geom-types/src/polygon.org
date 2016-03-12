@@ -10,27 +10,28 @@
              - [[#todo-move-delta-contains-into-core][TODO move delta-contains into core]]
          - [[#insetting][Insetting]]
      - [[#protocol-implementations][Protocol implementations]]
-         - [[#parea][PArea]]
-         - [[#pbounds][PBounds]]
-         - [[#pboundingcircle][PBoundingCircle]]
-         - [[#pboundary][PBoundary]]
-         - [[#pcenter][PCenter]]
-         - [[#pcircumference][PCircumference]]
-         - [[#todo-pclassify][TODO PClassify]]
-         - [[#pclip][PClip]]
-         - [[#pconvexhull][PConvexHull]]
-         - [[#pextrude][PExtrude]]
-         - [[#pflip][PFlip]]
-         - [[#pgraph][PGraph]]
-         - [[#pinset][PInset]]
-         - [[#todo-pintersect][TODO PIntersect]]
-         - [[#pmeshconvert][PMeshConvert]]
-         - [[#ppolygonconvert][PPolygonConvert]]
-         - [[#pproximity][PProximity]]
-         - [[#todo-psample][TODO PSample]]
-         - [[#ptessellate][PTessellate]]
-         - [[#ptransform][PTransform]]
-         - [[#pvolume][PVolume]]
+         - [[#iarea][IArea]]
+         - [[#ibounds][IBounds]]
+         - [[#iboundingcircle][IBoundingCircle]]
+         - [[#iboundary][IBoundary]]
+         - [[#icenter][ICenter]]
+         - [[#icircumference][ICircumference]]
+         - [[#todo-iclassify][TODO IClassify]]
+         - [[#iclip][IClip]]
+         - [[#iconvexhull][IConvexHull]]
+         - [[#iextrude][IExtrude]]
+             - [[#todo-add-attribute-support][TODO Add attribute support]]
+         - [[#iflip][IFlip]]
+         - [[#igraph][IGraph]]
+         - [[#iinset][IInset]]
+         - [[#todo-iintersect][TODO IIntersect]]
+         - [[#imeshconvert][IMeshConvert]]
+         - [[#ipolygonconvert][IPolygonConvert]]
+         - [[#iproximity][IProximity]]
+         - [[#todo-isample][TODO ISample]]
+         - [[#itessellate][ITessellate]]
+         - [[#itransform][ITransform]]
+         - [[#ivolume][IVolume]]
          - [[#end-of-implementations][End of implementations]]
      - [[#namespace-declaration][Namespace declaration]]
 
@@ -41,13 +42,13 @@
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn polygon2
     ([points] (thi.ng.geom.types.Polygon2. (mapv vec2 points)))
-    ([p & more] (thi.ng.geom.types.Polygon2. (mapv vec2 (cons p more)))))
+    ([p q & more] (thi.ng.geom.types.Polygon2. (mapv vec2 (cons p (cons q more))))))
 
   (defn cog
     [radius teeth profile]
     (-> (thi.ng.geom.types.Circle2. (vec2) radius)
         (g/vertices (* teeth (count profile)))
-        (->> (mapv (fn [p v] (g/* v p)) (cycle profile))
+        (->> (mapv (fn [p v] (m/* v p)) (cycle profile))
              (thi.ng.geom.types.Polygon2.))))
 #+END_SRC
 
@@ -148,14 +149,14 @@
   ;; http://alienryderflex.com/polygon_inset/
   (defn- inset-corner
     [prev curr next d]
-    (let [[dx1 dy1 :as d1] (g/- curr prev)
-          [dx2 dy2 :as d2] (g/- next curr)
-          d1 (g/mag d1) d2 (g/mag d2)]
+    (let [[dx1 dy1 :as d1] (m/- curr prev)
+          [dx2 dy2 :as d2] (m/- next curr)
+          d1 (m/mag d1) d2 (m/mag d2)]
       (if-not (or (m/delta= 0.0 d1) (m/delta= 0.0 d2))
-        (let [i1 (g/* (g/* (vec2 dy1 (- dx1)) (/ d1)) d) ;; TODO avoid double multiply => (/ d d1)
-              i2 (g/* (g/* (vec2 dy2 (- dx2)) (/ d2)) d) ;; TODO ditto => (/ d d2)
-              c1 (g/+ curr i1), c2 (g/+ curr i2)
-              prev (g/+ prev i1), next (g/+ next i2)]
+        (let [i1 (m/* (m/* (vec2 dy1 (- dx1)) (/ d1)) d) ;; TODO avoid double multiply => (/ d d1)
+              i2 (m/* (m/* (vec2 dy2 (- dx2)) (/ d2)) d) ;; TODO ditto => (/ d d2)
+              c1 (m/+ curr i1), c2 (m/+ curr i2)
+              prev (m/+ prev i1), next (m/+ next i2)]
           (if (m/delta= c1 c2)
             c1 (:p (isec/intersect-line2-line2? prev c1 c2 next))))
         curr)))
@@ -174,40 +175,40 @@
       (thi.ng.geom.types.Polygon2.
        (mapv
         (fn [[p c n]]
-          (let [d (g/+ (g/- p c) (g/- n c))
-                d (g/madd (g/- c pc) base-weight d)]
-            (g/madd d amp c)))
+          (let [d (m/+ (m/- p c) (m/- n c))
+                d (m/madd (m/- c pc) base-weight d)]
+            (m/madd d amp c)))
         (d/successive-nth 3 (d/wrap-seq points [(peek points)] [(first points)]))))))
 #+END_SRC
 ** Protocol implementations
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type thi.ng.geom.types.Polygon2
 #+END_SRC
-*** PArea
+*** IArea
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PArea
+  g/IArea
   (area
    [{points :points}]
    (->> points
         (d/rotate-left 1)
-        (reduce (fn [[a p] v] [(+ a (g/cross p v)) v]) [0.0 (first points)])
+        (reduce (fn [[a p] v] [(+ a (m/cross p v)) v]) [0.0 (first points)])
         first
         (* 0.5)))
 #+END_SRC
 
-*** PBounds                                                     :usetemplate:
+*** IBounds                                                     :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-bounds(fn="tu/bounding-rect")>>
 #+END_SRC
 
-*** PBoundingCircle                                             :usetemplate:
+*** IBoundingCircle                                             :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-bcircle>>
 #+END_SRC
 
-*** PBoundary
+*** IBoundary
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundary
+  g/IBoundary
   (contains-point?
    [{points :points} p]
    (if (some #{p} points) true
@@ -221,7 +222,7 @@
            [false (last points)] points)))))
 #+END_SRC
 
-*** PCenter                                                     :usetemplate:
+*** ICenter                                                     :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-center(type="thi.ng.geom.types.Polygon2",vtype="vec2")>>
   (centroid
@@ -229,41 +230,42 @@
    (let [c (->> points
                 (d/rotate-left 1)
                 (reduce
-                 (fn [[c p] v] [(g/madd (g/+ p v) (g/cross p v) c) v])
+                 (fn [[c p] v] [(m/madd (m/+ p v) (m/cross p v) c) v])
                  [(vec2) (first points)])
                 (first))]
-     (g/* c (/ 1.0 (* 6.0 (g/area _))))))
+     (m/* c (/ 1.0 (* 6.0 (g/area _))))))
 #+END_SRC
 
-*** PCircumference                                              :usetemplate:
+*** ICircumference                                              :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-circum>>
 #+END_SRC
 
-*** TODO PClassify
+*** TODO IClassify
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PClassify
+  g/IClassify
   (classify-point
    [_ p] nil)
 #+END_SRC
 
-*** PClip
+*** IClip
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PClip
+  g/IClip
   (clip-with
    [_ s] (polygon2 (clip-convex* (:points _) s)))
 #+END_SRC
 
-*** PConvexHull
+*** IConvexHull
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PConvexHull
+  g/IConvexHull
   (convex-hull
    [_] (polygon2 (convex-hull* (:points _))))
 #+END_SRC
 
-*** PExtrude
+*** IExtrude
+**** TODO Add attribute support
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PExtrude
+  g/IExtrude
   (extrude
    [{points :points :as _}
     {:keys [mesh depth offset scale top? bottom?]
@@ -274,18 +276,18 @@
                     (:points (g/scale-size (polygon2 points) scale)))
          off      (or offset (vec3 0 0 depth))
          points3  (mapv vec3 points)
-         tpoints3 (mapv #(g/+ off %) tpoints)
+         tpoints3 (mapv #(m/+ off %) tpoints)
          quad?    (== 4 (count points))]
      (g/into
       (or mesh (bm/basic-mesh))
       (concat
        (when bottom?
          (if quad?
-           [(rseq (mapv vec3 points))]
+           [[(rseq (mapv vec3 points))]]
            (->> points
                 (tessellate*)
-                (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)])))))
-       (mapv (fn [[a1 b1] [a2 b2]] [a1 b1 b2 a2])
+                (map (fn [[a b c]] [[(vec3 b) (vec3 a) (vec3 c)]])))))
+       (mapv (fn [[a1 b1] [a2 b2]] [[a1 b1 b2 a2]])
              (d/successive-nth 2 (conj points3 (points3 0)))
              (d/successive-nth 2 (conj tpoints3 (tpoints3 0))))
        (when top?
@@ -293,7 +295,7 @@
            [tpoints3]
            (->> tpoints
                 (tessellate*)
-                (mapv (fn [[a b c]] [(g/+ off a) (g/+ off b) (g/+ off c)])))))))))
+                (mapv (fn [[a b c]] [[(m/+ off a) (m/+ off b) (m/+ off c)]])))))))))
   (extrude-shell
    [{points :points :as _}
     {:keys [mesh depth offset inset top? bottom? wall nump]
@@ -303,8 +305,8 @@
          ipoints    (inset-polygon points (- wall))
          itpoints   (inset-polygon points (- (- inset) wall))
          off        (or offset (vec3 0 0 depth))
-         ioff       (if bottom? (g/normalize off wall) (vec3))
-         itoff      (if top? (g/normalize off (- (g/mag off) wall)) off)
+         ioff       (if bottom? (m/normalize off wall) (vec3))
+         itoff      (if top? (m/normalize off (- (m/mag off) wall)) off)
          maxp       (inc (count points))
          quad?      (== 4 (count points))
          nump       (if nump (m/clamp nump 2 maxp) maxp)
@@ -315,12 +317,12 @@
          quad-strip (fn [a b flip?]
                       (map
                        (fn [[a1 b1] [a2 b2]]
-                         (if flip? [a1 b1 b2 a2] [a1 a2 b2 b1]))
+                         [(if flip? [a1 b1 b2 a2] [a1 a2 b2 b1])])
                        (d/successive-nth 2 a) (d/successive-nth 2 b)))
          points3    (mapv #(vec3 %) points)
-         ipoints3   (mapv #(g/+ ioff %) ipoints)
-         tpoints3   (mapv #(g/+ off %) tpoints)
-         itpoints3  (mapv #(g/+ itoff %) itpoints)
+         ipoints3   (mapv #(m/+ ioff %) ipoints)
+         tpoints3   (mapv #(m/+ off %) tpoints)
+         itpoints3  (mapv #(m/+ itoff %) itpoints)
          outsides   (quad-strip (maybe-loop points3) (maybe-loop tpoints3) true)
          insides    (quad-strip (maybe-loop ipoints3) (maybe-loop itpoints3) false)]
      (g/into
@@ -329,15 +331,15 @@
        (if bottom?
          (concat
           (if quad?
-            [(rseq (mapv vec3 points))]
+            [[(rseq (mapv vec3 points))]]
             (->> points
                  (tessellate*)
-                 (map (fn [[a b c]] [(vec3 b) (vec3 a) (vec3 c)]))))
+                 (map (fn [[a b c]] [[(vec3 b) (vec3 a) (vec3 c)]]))))
           (if quad?
-            [(mapv #(g/+ ioff %) ipoints)]
+            [(mapv #(m/+ ioff %) ipoints)]
             (->> ipoints
                  (tessellate*)
-                 (map (fn [[a b c]] [(g/+ ioff a) (g/+ ioff b) (g/+ ioff c)]))))
+                 (map (fn [[a b c]] [[(m/+ ioff a) (m/+ ioff b) (m/+ ioff c)]]))))
           (when-not complete?
             (quad-strip (drop-wrap points3) (drop-wrap ipoints3) true)))
          (quad-strip (maybe-loop points3) (maybe-loop ipoints3) false))
@@ -346,54 +348,54 @@
        (when-not complete?
          (let [a (points3 0) b (ipoints3 0) c (itpoints3 0) d (tpoints3 0)
                e (points3 np1) f (ipoints3 np1) g (itpoints3 np1) h (tpoints3 np1)]
-           [[d c b a] [e f g h]]))
+           [[[d c b a]] [[e f g h]]]))
        (if top?
          (concat
           (if quad?
-            [(mapv #(g/+ off %) tpoints)]
+            [[(mapv #(m/+ off %) tpoints)]]
             (->> tpoints
                  (tessellate*)
-                 (map (fn [[a b c]] [(g/+ off a) (g/+ off b) (g/+ off c)]))))
+                 (map (fn [[a b c]] [[(m/+ off a) (m/+ off b) (m/+ off c)]]))))
           (if quad?
-            [(rseq (mapv #(g/+ itoff %) itpoints))]
+            [[(rseq (mapv #(m/+ itoff %) itpoints))]]
             (->> itpoints
                  (tessellate*)
-                 (map (fn [[a b c]] [(g/+ itoff b) (g/+ itoff a) (g/+ itoff c)]))))
+                 (map (fn [[a b c]] [[(m/+ itoff b) (m/+ itoff a) (m/+ itoff c)]]))))
           (when-not complete? (quad-strip (drop-wrap tpoints3) (drop-wrap itpoints3) false)))
          (quad-strip (maybe-loop tpoints3) (maybe-loop itpoints3) true))))))
 #+END_SRC
 
-*** PFlip                                                       :usetemplate:
+*** IFlip                                                       :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-flip(type="thi.ng.geom.types.Polygon2")>>
 #+END_SRC
 
-*** PGraph
+*** IGraph
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVertexAccess
+  g/IVertexAccess
   (vertices
    [_] (:points _))
-  g/PEdgeAccess
+  g/IEdgeAccess
   (edges
    [{points :points}]
    (d/successive-nth 2 (conj points (first points))))
-  g/PGraph
+  g/IGraph
   (vertex-neighbors
    [_ v] (d/neighbors v (g/vertices _)))
   (vertex-valence
    [_ v] (if ((set (g/vertices _)) v) 2 0))
 #+END_SRC
 
-*** PInset
+*** IInset
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/quad.cljc
-  g/PInset
+  g/IInset
   (inset
    [_ inset] (th.ng.geom.types.Polygon2. (inset-polygon (:points _) inset)))
 #+END_SRC
 
-*** TODO PIntersect
+*** TODO IIntersect
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PIntersect
+  g/IIntersect
   (intersect-line
    [_ l])
   (intersect-ray
@@ -402,31 +404,33 @@
    [_ s])
 #+END_SRC
 
-*** PMeshConvert
+*** IMeshConvert
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PMeshConvert
+  g/IMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([_ opts]
+   ([_ {:keys [attribs] :as opts}]
       (->> (tessellate* _)
-           (map (fn [[a b c]] [(vec3 a) (vec3 b) (vec3 c)]))
+           (map-indexed
+            (fn [i [a b c]]
+              (attr/generate-face-attribs [(vec3 a) (vec3 b) (vec3 c)] i attribs nil)))
            (g/into (or (:mesh opts) (bm/basic-mesh))))))
 #+END_SRC
 
-*** PPolygonConvert
+*** IPolygonConvert
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PPolygonConvert
+  g/IPolygonConvert
   (as-polygon [_] _)
 #+END_SRC
 
-*** PProximity                                                  :usetemplate:
+*** IProximity                                                  :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-proxi>>
 #+END_SRC
 
-*** TODO PSample
+*** TODO ISample
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PSample
+  g/ISample
   (point-at
    [{points :points} t] (gu/point-at t (conj points (first points))))
   (random-point
@@ -437,14 +441,14 @@
    (gu/sample-uniform udist include-last? (conj points (first points))))
 #+END_SRC
 
-*** PTessellate
+*** ITessellate
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PTessellate
+  g/ITessellate
   (tessellate
    [_] (tessellate* _))
 #+END_SRC
 
-*** PTransform                                                  :usetemplate:
+*** ITransform                                                  :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-rotate(type="thi.ng.geom.types.Polygon2")>>
   <<lob-geom-scale(type="thi.ng.geom.types.Polygon2")>>
@@ -452,7 +456,7 @@
   <<lob-geom-tx(type="thi.ng.geom.types.Polygon2")>>
 #+END_SRC
 
-*** PVolume                                                     :usetemplate:
+*** IVolume                                                     :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-zerovol>>
 #+END_SRC
@@ -473,6 +477,7 @@
      [thi.ng.geom.line :as l]
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.basicmesh :as bm]
+     [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]

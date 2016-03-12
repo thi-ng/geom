@@ -117,7 +117,7 @@
   (defn- do-with-radius
     [f f2 q c r]
     (let [rsq (* r r)]
-      (f q #(f2 (:p %) (g/+ (:p %) (:size %)) c r) #(< (g/dist-squared c %) rsq))))
+      (f q #(f2 (:p %) (m/+ (:p %) (:size %)) c r) #(< (g/dist-squared c %) rsq))))
 
   (defn points-in-circle?
     [q c r] (do-with-radius check-with isec/intersect-rect-circle? q c r))
@@ -173,13 +173,13 @@
            ^:mutable data
            ^:mutable bounds])
 
-      g/PSpatialTree
+      g/ISpatialTree
       (add-point [_ p d] (add-point* _ p d) _)
       (delete-point [_ p] (delete-point* _ p))
       (get-point [_] point)
       (get-point-data [_] data)
 
-      g/PClear
+      g/IClear
       (clear*
         [_] (MutableQuadtreeNode. x y w h nil nil nil bounds))
       (clear!
@@ -218,7 +218,7 @@
       (set-children [_ c] (set! children c) _)
       (set-point [_ p d] (set! point p) (set! data d) _)
 
-      g/PBounds
+      g/IBounds
       (bounds
         [_]
         (if bounds
@@ -255,13 +255,13 @@
            ^:mutable data
            ^:mutable bounds])
 
-      g/PSpatialTree
+      g/ISpatialTree
       (add-point [_ p d] (add-point* _ p d) _)
       (delete-point [_ p] (delete-point* _ p))
       (get-point [_] point)
       (get-point-data [_] data)
 
-      g/PClear
+      g/IClear
       (clear*
         [_] (MutableOctreeNode. x y z w h d nil nil nil bounds))
       (clear!
@@ -302,7 +302,7 @@
       (set-children [_ c] (set! children c) _)
       (set-point [_ p d] (set! point p) (set! data d) _)
 
-      g/PBounds
+      g/IBounds
       (bounds
         [_]
         (if bounds
@@ -381,7 +381,7 @@
      [thi.ng.geom.rect :as r]
      [thi.ng.geom.types]
      [thi.ng.geom.types.utils :as tu]
-     [thi.ng.math.core :refer [*eps* delta=]])
+     [thi.ng.math.core :as m :refer [*eps* delta=]])
     #?(:clj (:import [thi.ng.geom.types AABB Rect2])))
 
   <<protos>>

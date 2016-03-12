@@ -77,9 +77,8 @@ Github heatmap visualization example.
 
 #+NAME: dep-tentacles
 #+BEGIN_SRC clojure
-[tentacles "0.3.0"]
+[tentacles "0.5.1"]
 #+END_SRC
-
 
 ** Leiningen project file                                          :noexport:
 
@@ -98,6 +97,7 @@ Github heatmap visualization example.
     :dependencies [<<dep-clj>>
                    <<dep-cljs>>
                    [thi.ng/geom-svg "<<conf-version()>>"]
+                   <<dep-math>>
                    <<dep-ndarray>>
                    <<dep-strf>>
                    <<dep-xerror>>

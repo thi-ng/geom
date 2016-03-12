@@ -180,7 +180,7 @@ same directory.
   <<example-imports>>
 
   (defn test-equation
-    [t] (let [x (m/mix (- PI) PI t)] [x (* (Math/cos (* 0.5 x)) (Math/sin (* x x x)))]))
+    [t] (let [x (m/mix* (- PI) PI t)] [x (* (Math/cos (* 0.5 x)) (Math/sin (* x x x)))]))
 
   (defn export-viz
     [viz path] (->> viz (svg/svg {:width 600 :height 320}) (svg/serialize) (spit path)))
@@ -566,7 +566,7 @@ for list of available presets & how to define new gradients.
   (require '[thi.ng.color.gradients :as grad])
   (require '[thi.ng.geom.core :as g])
   (require '[thi.ng.geom.core.utils :as gu])
-  (require '[thi.ng.math.simplexnoise :as n])
+  (require '[thi.ng.math.noise :as n])
 
   (def test-matrix
     (->> (for [y (range 10) x (range 50)] (n/noise2 (* x 0.1) (* y 0.25)))
@@ -750,7 +750,7 @@ Btw. You can use the local repo by switching the lines calling
 
 #+BEGIN_SRC clojure :tangle ../babel/examples/contours.clj :noweb yes :mkdirp yes :padline no
   <<example-imports>>
-  (require '[thi.ng.math.simplexnoise :as n])
+  (require '[thi.ng.math.noise :as n])
 
   (def viz-spec
     {:x-axis (viz/linear-axis
@@ -1004,7 +1004,7 @@ them implicitly via our defined axis specs.
     (let [log* (log base)
           d1l  (log* d1)
           dr   (- (log* d2) d1l)]
-      (fn [x] (m/mix r1 r2 (/ (- (log* x) d1l) dr)))))
+      (fn [x] (m/mix* r1 r2 (/ (- (log* x) d1l) dr)))))
 #+END_SRC
 
 *** Lens scale (dilating / bundling)
@@ -1160,7 +1160,7 @@ along the full breadth of the given domain:
     the full domain range, with each of the form: [domain-pos value]."
     [[d1 d2] values]
     (map
-     (fn [t v] [(m/mix d1 d2 t) v])
+     (fn [t v] [(m/mix* d1 d2 t) v])
      (m/norm-range (dec (count values)))
      values))
 #+END_SRC
@@ -1230,7 +1230,7 @@ approximation closing the polygon along the X-axis (e.g. =:res 20=).
           points  (mapv first (process-points (assoc v-spec :project vec2) d-spec))
           p       (vec2 (first (peek points)) ry1)
           q       (vec2 (ffirst points) ry1)
-          points  (concat points (mapv (partial g/mix p q) (m/norm-range (or res 1))))]
+          points  (concat points (mapv (partial m/mix p q) (m/norm-range (or res 1))))]
       (svg/polygon (mapv project points) (:attribs d-spec))))
 #+END_SRC
 
@@ -1600,18 +1600,18 @@ TBD
           [r1 r2] (:range y-axis)
           a       (project [pos r1])
           b       (project [pos r2])
-          nl      (g/normalize (g/normal (g/- a b)) (:label-dist y-axis))
-          n1      (g/normalize nl (:major-size y-axis))
-          n2      (g/normalize nl (:minor-size y-axis))]
+          nl      (m/normalize (g/normal (m/- a b)) (:label-dist y-axis))
+          n1      (m/normalize nl (:major-size y-axis))
+          n2      (m/normalize nl (:minor-size y-axis))]
       (svg-axis*
        y-axis
        (svg/line a b)
        #(let [p (project [pos (scale %)])]
-          (svg/line p (g/+ p n1)))
+          (svg/line p (m/+ p n1)))
        #(let [p (project [pos (scale %)])]
-          (svg/line p (g/+ p n2)))
+          (svg/line p (m/+ p n2)))
        #(let [p (project [pos (+ (scale %) label-y)])]
-          (label (g/+ p nl) %)))))
+          (label (m/+ p nl) %)))))
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
@@ -1653,7 +1653,7 @@ TBD
   (defn polar-projection
     [origin]
     (let [o (vec2 origin)]
-      (fn [[x y]] (g/+ o (g/as-cartesian (vec2 y x))))))
+      (fn [[x y]] (m/+ o (g/as-cartesian (vec2 y x))))))
 #+END_SRC
 
 ** Value transformations
@@ -1692,7 +1692,10 @@ TBD
 
 #+BEGIN_SRC clojure :noweb-ref transformers
   (defn points->path-segments
-    [[p & more]] (reduce #(conj % [:L %2]) [[:M p]] more))
+    [[p & more]]
+    (->> more
+         (reduce #(conj! % [:L %2]) (transient [[:M p]]))
+         persistent!))
 #+END_SRC
 
 ** Value formatting

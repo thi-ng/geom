@@ -41,15 +41,15 @@
     ([{p :p r1 :r} {q :p r2 :r}]
        (intersect-circle-circle? p r1 q r2))
     ([p r1 q r2]
-       (let [delta (g/- q p)
-             d (g/mag delta)]
-         (when (and (<= d (+ r1 r2)) (>= d (m/abs (- r1 r2))))
+       (let [delta (m/- q p)
+             d (m/mag delta)]
+         (when (and (<= d (+ r1 r2)) (>= d (m/abs* (- r1 r2))))
            (let [a (/ (+ (- (* r1 r1) (* r2 r2)) (* d d)) (* 2.0 d))
                  invd (/ 1.0 d)
-                 p (g/madd delta (* a invd) p)
+                 p (m/madd delta (* a invd) p)
                  h (Math/sqrt (- (* r1 r1) (* a a)))
-                 perp (g/* (g/normal delta) (* h invd))]
-             [(g/+ p perp) (g/- p perp)])))))
+                 perp (m/* (g/normal delta) (* h invd))]
+             [(m/+ p perp) (m/- p perp)])))))
 #+END_SRC
 
 ** Rect
@@ -69,7 +69,7 @@
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-rect-circle?
     ([{p :p sz :size} {s :p r :r}]
-       (intersect-rect-circle? p (g/+ p sz) s r))
+       (intersect-rect-circle? p (m/+ p sz) s r))
     ([[px py] [qx qy] [cx cy] r]
        (let [ds (if (< cx px) (sq (- cx px)) (if (> cx qx) (sq (- cx qx)) 0.0))
              ds (+ ds (if (< cy py) (sq (- cy py)) (if (> cy qy) (sq (- cy qy)) 0.0)))]
@@ -83,7 +83,7 @@
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-aabb-aabb?
     ([{pa :p sa :size} {pb :p sb :size}]
-       (intersect-aabb-aabb? pa pb (g/+ pa sa) (g/+ pb sb)))
+       (intersect-aabb-aabb? pa pb (m/+ pa sa) (m/+ pb sb)))
     ([pa pb qa qb]
        (if (and (<= (pa 0) (qb 0)) (<= (pb 0) (qa 0)))
          (if (and (<= (pa 1) (qb 1)) (<= (pb 1) (qa 1)))
@@ -99,7 +99,7 @@ http://stackoverflow.com/questions/4578967
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-aabb-sphere?
     ([{p :p sz :size} {s :p r :r}]
-       (intersect-aabb-sphere? p (g/+ p sz) s r))
+       (intersect-aabb-sphere? p (m/+ p sz) s r))
     ([[px py pz] [qx qy qz] [cx cy cz] r]
        (let [ds (if (< cx px) (sq (- cx px)) (if (> cx qx) (sq (- cx qx)) 0.0))
              ds (+ ds (if (< cy py) (sq (- cy py)) (if (> cy qy) (sq (- cy qy)) 0.0)))
@@ -122,7 +122,7 @@ https://groups.google.com/forum/#!topic/comp.graphics.algorithms/M6lvyWC6PqU
     parameters (each element [normal w]). The plane normals must be
     pointing *inwards*. Returns :inside, :intersect or :outside"
     [[px py pz :as p] size planes]
-    (let [[qx qy qz] (g/+ p size)]
+    (let [[qx qy qz] (m/+ p size)]
       (reduce
        (fn [res [[nx ny nz] w]]
          (let [vx (if (pos? nx) px qx)
@@ -158,9 +158,9 @@ https://groups.google.com/forum/#!topic/comp.graphics.algorithms/M6lvyWC6PqU
     ([{rp :p dir :dir} {p :p r :r}]
        (intersect-ray-sphere? rp dir p r))
     ([rp dir p r]
-     (let [q (g/- p rp)
-           ds (g/mag-squared q)
-           v (- (g/dot q dir))
+     (let [q (m/- p rp)
+           ds (m/mag-squared q)
+           v (- (m/dot q dir))
            d (mm/msub r r (- ds (* v v)))]
        (if (>= d 0.0)
          (let [d (Math/sqrt d)
@@ -182,14 +182,14 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
 #+BEGIN_SRC clojure :noweb-ref isec 
   (defn intersect-ray-triangle3?
     [p d a b c]
-    (let [u (g/- b a)
-          v (g/- c a)
-          n (g/cross u v)]
+    (let [u (m/- b a)
+          v (m/- c a)
+          n (m/cross u v)]
       (if (m/delta= V3 n)
         {:type :degenerate}
-        (let [w0 (g/- p a)
-              a' (- (g/dot n w0))
-              b' (g/dot n d)]
+        (let [w0 (m/- p a)
+              a' (- (m/dot n w0))
+              b' (m/dot n d)]
           (if (m/delta= 0.0 b')
             (if (m/delta= 0.0 a')
               {:type :same-plane}
@@ -197,7 +197,7 @@ Source: http://geomalgorithms.com/a06-_intersect-2.html
             (let [r (/ a' b')]
               (if (< r 0.0)
                 {:type :no-intersect}
-                (let [i (g/madd d r p)
+                (let [i (m/madd d r p)
                       [u v w] (gu/triangle-barycentric-coords a b c i u v)]
                   (if (and (>= u 0.0) (>= w 0.0) (m/in-range? 0.0 1.0 v))
                     {:type :intersect :p i}
@@ -219,21 +219,21 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
 
   (defn- triaabb-edge-test-e0
     [[ax ay az :as a] [bx by bz :as b] [cx cy cz] [ex ey ez :as e] [sx sy sz]]
-    (let [[fx fy fz] (g/abs e)]
+    (let [[fx fy fz] (m/abs e)]
       (if (triaabb-axis-test ay az cy cz ez (- ey) fz fy sy sz)
         (if (triaabb-axis-test ax az cx cz (- ez) ex fz fx sx sz)
           (triaabb-axis-test bx by cx cy ey (- ex) fy fx sx sy)))))
 
   (defn- triaabb-edge-test-e1
     [[ax ay az] [bx by bz :as b] [cx cy cz :as c] [ex ey ez :as e] [sx sy sz]]
-    (let [[fx fy fz] (g/abs e)]
+    (let [[fx fy fz] (m/abs e)]
       (if (triaabb-axis-test ay az cy cz ez ey fz fy sy sz)
         (if (triaabb-axis-test ax az cx cz (- ez) ex fz fx sx sz)
           (triaabb-axis-test ax ay bx by ey (- ex) fy fx sx sy)))))
 
   (defn- triaabb-edge-test-e2
     [[ax ay az :as a] [bx by bz] [cx cy cz :as c] [ex ey ez :as e] [sx sy sz]]
-    (let [[fx fy fz] (g/abs e)]
+    (let [[fx fy fz] (m/abs e)]
       (if (triaabb-axis-test ay az by bz ez (- ey) fz fy sy sz)
         (if (triaabb-axis-test ax az bx bz (- ez) ex fz fx sx sz)
           (triaabb-axis-test bx by cx cy ey (- ex) fy fx sx sy)))))
@@ -245,20 +245,20 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
 
   (defn intersect-triangle3-aabb?
     [a b c p s]
-    (let [[sx sy sz :as s] (g/* s 0.5)
-          p (g/+ p s)
-          [ax ay az :as a] (g/- a p)
-          [bx by bz :as b] (g/- b p)
-          [cx cy cz :as c] (g/- c p)
-          e0 (g/- b a)
-          e1 (g/- c b)]
+    (let [[sx sy sz :as s] (m/* s 0.5)
+          p (m/+ p s)
+          [ax ay az :as a] (m/- a p)
+          [bx by bz :as b] (m/- b p)
+          [cx cy cz :as c] (m/- c p)
+          e0 (m/- b a)
+          e1 (m/- c b)]
       (if (triaabb-edge-test-e0 a b c e0 s)
         (if (triaabb-edge-test-e1 a b c e1 s)
-          (if (triaabb-edge-test-e2 a b c (g/- a c) s)
+          (if (triaabb-edge-test-e2 a b c (m/- a c) s)
             (if (triaabb-edge-minmax ax bx cx sx)
               (if (triaabb-edge-minmax ay by cy sy)
                 (if (triaabb-edge-minmax az bz cz sz)
-                  (intersect-plane-aabb? a (g/cross e0 e1) s)))))))))
+                  (intersect-plane-aabb? a (m/cross e0 e1) s)))))))))
 #+END_SRC
 
 ** Line2
@@ -285,7 +285,7 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
           {:type :parallel})
         (let [ua (/ na denom)
               ub (/ nb denom)
-              i (g/mix p q ua)]
+              i (m/mix p q ua)]
           (if (and (>= ua 0.0) (<= ua 1.0) (>= ub 0.0) (<= ub 1.0))
             {:type :intersect :p i :ua ua :ub ub}
             {:type :intersect-outside :p i :ua ua :ub ub})))))
@@ -311,7 +311,7 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
 
   (defn intersect-ray2-edges?
     [rp rd edges]
-    (intersect-line2-edges? rp (g/madd rd 1e29 rp) edges))
+    (intersect-line2-edges? rp (m/madd rd 1e29 rp) edges))
 #+END_SRC
 
 ** Plane
@@ -322,11 +322,11 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
   (defn intersect-plane-plane?
     [an aw bn bw]
     (when-not (or (m/delta= aw bw *eps*) (m/delta= an bn *eps*))
-      (let [od (g/dot an bn)
+      (let [od (m/dot an bn)
             det (/ (mm/madd od od -1))
             u (* (mm/madd bw od aw) det)
             v (* (mm/madd aw od bw) det)]
-        {:p (g/madd an u (g/* bn v)) :dir (gu/ortho-normal an bn)})))
+        {:p (m/madd an u (m/* bn v)) :dir (gu/ortho-normal an bn)})))
 #+END_SRC
 
 *** Plane - Ray
@@ -334,12 +334,12 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-ray-plane?
     [rp dir n w]
-    (let [dp (g/dot n dir)
-          dn (+ (g/dot n rp) w)]
+    (let [dp (m/dot n dir)
+          dn (+ (m/dot n rp) w)]
       (if (m/delta= 0.0 dp *eps*)
         {:type (if (zero? dn) :on-plane :parallel)}
         (let [du (- (/ dn dp))
-              i (g/madd dir du rp)]
+              i (m/madd dir du rp)]
           (if (m/in-range? 0.0 1.0 du)
             {:type :intersect :p i}
             {:type :intersect-outside :p i})))))
@@ -354,8 +354,8 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
     "Takes a point & normal defining a plane and 2 vectors defining an
     AABB (min-p & size). Returns true if plane intersects box."
     ([p n q s]
-     (let [s2 (g/* s 0.5)]
-       (intersect-plane-aabb? (g/- p (g/+ q s2)) n s2)))
+     (let [s2 (m/* s 0.5)]
+       (intersect-plane-aabb? (m/- p (m/+ q s2)) n s2)))
     ([[px py pz] [nx ny nz :as n] [sx sy sz]]
      (let [[vx1 vx2] (if (pos? nx) [(- (- sx) px) (- sx px)] [(- sx px) (- (- sx) px)])
            [vy1 vy2] (if (pos? ny) [(- (- sy) py) (- sy py)] [(- sy py) (- (- sy) py)])
@@ -368,7 +368,7 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
 
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn intersect-plane-sphere?
-    [n w p r] (<= (m/abs (+ (g/dot n p) w)) r))
+    [n w p r] (<= (m/abs* (+ (m/dot n p) w)) r))
 #+END_SRC
 
 ** Tetrahedron
@@ -378,7 +378,7 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
 #+BEGIN_SRC clojure :noweb-ref isec
   (defn- subdot
     "Computes sum((a-b)*c), where a, b, c are 3D vectors."
-    [a b c] (let [d (g/subm a b c)] (mm/add (d 0) (d 1) (d 2))))
+    [a b c] (let [d (m/subm a b c)] (mm/add (d 0) (d 1) (d 2))))
 
   (defn- face-a
     "Takes a transformation fn and the 4 delta vectors between tetra1/tetra2.
@@ -390,7 +390,7 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
   (defn- face-b1?
     "Takes the 4 delta vectors between tetra2/tetra1 and a normal.
       Returns true if all dot products are positive."
-    [deltas n] (every? #(pos? (g/dot % n)) deltas))
+    [deltas n] (every? #(pos? (m/dot % n)) deltas))
 
   (defn- face-b2?
     "Like face-b1?, but optimized for last face of tetrahedron."
@@ -424,7 +424,7 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
     (let [e (edges id)]
       (if e
         [edges e]
-        (let [ep (epoints id), e (g/- (ep 0) (ep 1))]
+        (let [ep (epoints id), e (m/- (ep 0) (ep 1))]
           [(assoc edges id e) e]))))
 
   (defn- check-faces-a
@@ -439,9 +439,9 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
           (if (or (= :f f) (= :f* f))
             (let [[edges ea] (get-edge edges epoints a)
                   [edges eb] (get-edge edges epoints b)
-                  n (g/cross ea eb)
+                  n (m/cross ea eb)
                   [m a] (if (= :f f)
-                          (face-a #(g/dot % n) deltas)
+                          (face-a #(m/dot % n) deltas)
                           (face-a #(subdot % p n) verts))]
               (if (< m 15)
                 (recur (conj masks m) (conj affine a) edges (next s))))
@@ -459,8 +459,8 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
               [edges ea] (get-edge edges epoints a)
               [edges eb] (get-edge edges epoints b)]
           (if-not (if (= :f f)
-                    (face-b1? deltas (g/cross ea eb))
-                    (face-b2? verts p (g/cross ea eb)))
+                    (face-b1? deltas (m/cross ea eb))
+                    (face-b2? verts p (m/cross ea eb)))
             (recur edges (next s))))
         true)))
 #+END_SRC
@@ -474,7 +474,7 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
       in the original algorithm this implementation is based on)."
     [[pa pb pc pd :as p] [qa qb qc qd :as q]]
     (let [masks (check-faces-a
-                 (map #(g/- % pa) q)
+                 (map #(m/- % pa) q)
                  [[pb pa] [pc pa] [pd pa] [pc pb] [pd pb]]
                  q pb [[:f 0 1] [:f 2 0] [:e 0 1] [:f 1 2]
                        [:e 0 2] [:e 1 2] [:f* 4 3] [:e 0 3]
@@ -482,7 +482,7 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
       (if masks
         (or (not= 15 (reduce bit-or masks))
             (check-faces-b
-             (map #(g/- % qa) p)
+             (map #(m/- % qa) p)
              [[qb qa] [qc qa] [qd qa] [qc qb] [qd qb]]
              p qb [[:f 0 1] [:f 2 0] [:f 1 2] [:f* 4 3]])))))
 #+END_SRC

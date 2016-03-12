@@ -65,18 +65,18 @@
 
 #+BEGIN_SRC clojure :noweb-ref fbo
   (defrecord FBO [^WebGLRenderingContext gl id]
-    gl/PBind
+    gl/IBind
     (bind [_] (.bindFramebuffer gl gl/framebuffer id) _)
     (bind [_ _] (err/unsupported!))
     (unbind [_] (.bindFramebuffer gl gl/framebuffer nil) _)
 
-    gl/PRelease
+    gl/IRelease
     (release [_] (.deleteFramebuffer gl id) _)
 
-    gl/PFramebuffer
+    gl/IFramebuffer
     (set-fbo-color-texture
-      [_ {:keys [target id]}]
-      (.framebufferTexture2D gl gl/framebuffer gl/color-attachment0 target id 0)
+      [_ {:keys [id]}]
+      (.framebufferTexture2D gl gl/framebuffer gl/color-attachment0 gl/texture-2d id 0)
       (check-fbo gl)
       _)
     (set-fbo-depth-buffer
@@ -107,15 +107,15 @@
 
 #+BEGIN_SRC clojure :noweb-ref r-buffer
   (defrecord RenderBuffer [^WebGLRenderingContext gl id format width height]
-    gl/PBind
+    gl/IBind
     (bind [_] (.bindRenderbuffer gl gl/renderbuffer id) _)
     (bind [_ _] (err/unsupported!))
     (unbind [_] (.bindRenderbuffer gl gl/renderbuffer nil) _)
 
-    gl/PRelease
+    gl/IRelease
     (release [_] (.deleteRenderbuffer gl id) _)
 
-    gl/PConfigure
+    gl/IConfigure
     (configure [_ {:keys [format width height]}]
       (gl/bind _)
       (.renderbufferStorage gl gl/renderbuffer format width height)
@@ -123,80 +123,112 @@
       (RenderBuffer. gl id format width height)))
 
   (defn make-render-buffer
-    [^WebGLRenderingContext gl & [opts]]
-    (let [buf (RenderBuffer. gl (.createRenderbuffer gl) nil nil nil)]
-      (if opts (gl/configure buf opts) buf)))
+    ([^WebGLRenderingContext gl]
+     (make-render-buffer gl nil))
+    ([^WebGLRenderingContext gl opts]
+     (let [buf (RenderBuffer. gl (.createRenderbuffer gl) nil nil nil)]
+       (if opts (gl/configure buf opts) buf))))
 
   (defn make-depth-buffer
-    [^WebGLRenderingContext gl width height]
-    (make-render-buffer gl {:format gl/depth-component16 :width width :height height}))
+    ([^WebGLRenderingContext gl size]
+     (make-depth-buffer gl size size))
+    ([^WebGLRenderingContext gl width height]
+     (make-render-buffer gl {:format gl/depth-component16 :width width :height height})))
 #+END_SRC
 
 ** Textures
 
+| *Key*          | *Default*          | *Description*           |
+|----------------+--------------------+-------------------------|
+| =:image=       | nil                | HTML image or canvas    |
+| =:pixels=      | nil                | Image data array        |
+| =:format=      | =gl/rgba=          | Texture color format    |
+| =:type=        | =gl/unsigned-byte= | Encoding                |
+| =:filter=      | nil                | Interpolation [min mag] |
+| =:wrap=        | nil                | Texture wrap mode [s t] |
+| =:filp=        | nil                | Vertical flip?          |
+| =:premultiply= | nil                | Premultiplied alpha?    |
+| =:width=       | nil                | Texture width           |
+| =:height=      | nil                | Texture height          |
+
 #+BEGIN_SRC clojure :noweb-ref tex
-  (defrecord Texture2D [^WebGLRenderingContext gl id channels type target width height]
-    gl/PBind
-    (bind [_] (err/unsupported! "must specify texture unit"))
+  (defrecord Texture2D [^WebGLRenderingContext gl id target]
+    gl/IBind
     (bind
-      [_ unit]
+        [_] (gl/bind _ 0))
+    (bind
+        [_ unit]
       (.activeTexture gl (+ gl/texture0 unit))
       (.bindTexture gl target id)
       _)
     (unbind
-      [_ unit]
+        [_] (gl/unbind _ 0))
+    (unbind
+        [_ unit]
       (.activeTexture gl (+ gl/texture0 unit))
-      (.bindTexture gl target -1)
+      (.bindTexture gl target nil)
       _)
-
-    gl/PRelease
-    (release [_] (.deleteTexture gl id) _)
-
-    gl/PConfigure
+    gl/IRelease
+    (release
+        [_] (.deleteTexture gl id) _)
+    gl/IConfigure
     (configure
-      [_ {:keys [width height filter wrap]}]
-      (.texImage2D gl target 0 channels width height 0 channels type nil)
-      (when filter (gl/set-texture-filter _ filter))
-      (when wrap   (gl/set-texture-wrap _ wrap))
-      (Texture2D. gl id channels type target width height))
-
-    gl/PTexture
-    (set-texture-filter
-      [_ type]
-      (.texParameteri gl target gl/texture-min-filter type)
-      (.texParameteri gl target gl/texture-mag-filter type)
-      _)
-    (set-texture-wrap
-      [_ type]
-      (.texParameteri gl target gl/texture-wrap-s type)
-      (.texParameteri gl target gl/texture-wrap-t type)
+        [_ {:keys [width height image pixels format type filter wrap flip premultiply]
+            :or   {type gl/unsigned-byte format gl/rgb} :as config}]
+      (when filter
+        (let [[min mag] (if (sequential? filter) filter [filter filter])]
+          (.texParameteri gl target gl/texture-min-filter min)
+          (.texParameteri gl target gl/texture-mag-filter mag)))
+      (when wrap
+        (let [[ws wt] (if (sequential? wrap) wrap [wrap wrap])]
+          (.texParameteri gl target gl/texture-wrap-s ws)
+          (.texParameteri gl target gl/texture-wrap-t wt)))
+      (when (not (nil? flip))
+        (.pixelStorei gl gl/unpack-flip-y-webgl flip))
+      (when (not (nil? premultiply))
+        (.pixelStorei gl gl/unpack-premultiply-alpha-webgl premultiply))
+      (cond
+        image
+        (.texImage2D gl target 0 format format type image)
+        (and width height)
+        (.texImage2D gl target 0 format width height 0 format type pixels))
       _))
 
   (defn make-texture
-    [^WebGLRenderingContext gl {:keys [channels type target width height] :as opts}]
-    (let [tex (Texture2D.
-               gl (.createTexture gl)
-               (or channels gl/rgb)
-               (or type gl/unsigned-byte)
-               (or target gl/texture-2d)
-               nil nil)]
-      (if (and width height)
-        (do (gl/bind tex 0)
-            (gl/configure tex opts))
-        tex)))
+    [^WebGLRenderingContext gl opts]
+    (let [tex  (Texture2D. gl (.createTexture gl) (opts :target gl/texture-2d))
+          opts (merge {:format gl/rgba :type gl/unsigned-byte} opts)]
+      (gl/bind tex)
+      (gl/configure tex opts)))
 
   (defn make-canvas-texture
-    [^WebGLRenderingContext gl canvas & [opts]]
+    ([^WebGLRenderingContext gl canvas]
+     (make-canvas-texture gl canvas {}))
+    ([^WebGLRenderingContext gl canvas opts]
+     (->> opts
+          (merge {:image       canvas
+                  :format      gl/rgba
+                  :filter      [gl/linear gl/linear]
+                  :wrap        [gl/clamp-to-edge gl/clamp-to-edge]
+                  :flip        false
+                  :premultiply true})
+          (make-texture gl))))
+
+  (defn load-texture
+    [^WebGLRenderingcontext gl opts]
     (let [tex (->> opts
-                   (merge {:channels gl/rgba
-                           :width    (.-width canvas)
-                           :height   (.-height canvas)
-                           :filter   gl/linear
-                           :wrap     gl/clamp-to-edge})
-                   (make-texture gl))]
-      (.pixelStorei gl gl/unpack-flip-y-webgl 0)
-      (.pixelStorei gl gl/unpack-premultiply-alpha-webgl 1)
-      (.texImage2D gl gl/texture-2d 0 gl/rgba gl/rgba gl/unsigned-byte canvas)
+                   (merge {:format gl/rgba
+                           :filter [gl/linear gl/linear]
+                           :wrap   gl/clamp-to-edge})
+                   (make-texture gl))
+          img (js/Image.)]
+      (set! (.-onload img)
+            (fn []
+              (doto tex
+                (gl/bind)
+                (gl/configure (merge {:flip false :image img} opts)))
+              (when-let [cb (:callback opts)] (cb tex img))))
+      (set! (.-src img) (:src opts))
       tex))
 #+END_SRC
 

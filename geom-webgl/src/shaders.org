@@ -26,9 +26,7 @@
 * thi.ng.geom.webgl.shaders
 
 ** TODO Shader specs
-
 ** Shader uniforms
-
 *** Supported types
 
 #+BEGIN_SRC clojure :noweb-ref uniforms
@@ -144,17 +142,16 @@ Special cases:
          (boolean normalized?)
          (or stride 0)
          (or offset 0)))
-      (err/illegal-arg! (str "Unknown shader attribute: " id))))
+      (warn (str "Unknown shader attribute: " id))))
 
   (defn disable-attribute
     [^WebGLRenderingContext gl shader id]
     (if-let [loc (get-in shader [:attribs id])]
       (do (.disableVertexAttribArray gl loc) gl)
-      (err/illegal-arg! (str "Unknown shader attribute: " id))))
+      (warn (str "Unknown shader attribute: " id))))
 #+END_SRC
 
 ** Shader creation
-
 *** Header injection
 
 These boilerplate =#define='s are prefixed by default to any given
@@ -323,7 +320,7 @@ Currently the following options are supported:
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn compute-normal-matrix
-    [m v] (-> v (g/* m) (g/invert) (g/transpose)))
+    [m v] (-> v (m/* m) (m/invert) (m/transpose)))
 
   (defn inject-normal-matrix
     [spec model-mat view-mat normal-mat-id]
@@ -345,11 +342,13 @@ Currently the following options are supported:
   (:require-macros
     [cljs-log.core :refer [info warn]])
   (:require
+    [thi.ng.math.core :as m]
     [thi.ng.geom.core :as g]
     [thi.ng.geom.core.matrix]
     [thi.ng.geom.webgl.core :as gl]
     [thi.ng.geom.webgl.utils :as glu]
     [thi.ng.typedarrays.core :as arrays]
+    [thi.ng.glsl.core :as glsl :include-macros true]
     [thi.ng.color.core :as col]
     [thi.ng.xerror.core :as err]
     [clojure.string :as str]))
@@ -376,27 +375,29 @@ Currently the following options are supported:
      [thi.ng.geom.core.matrix :refer [M44]]))
 
   (defn make-shader-spec
-    [& [{attr? :color-attrib? is3d? :3d :or {is3d? true}}]]
-    (let [spec {:vs       (str "void main(){"
-                               (if attr? "vCol=color;")
-                               "gl_Position=proj*"
-                               (if is3d?
-                                 "view*model*vec4(position,1.0)"
-                                 "view*model*vec4(position,0.0,1.0)")
-                               ";}")
-                :fs       (str "void main(){gl_FragColor="
-                               (if attr? "vCol" "color")
-                               ";}")
-                :uniforms {:proj  :mat4
-                           :model [:mat4 M44]
-                           :view  [:mat4 M44]}
-                :attribs  {:position (if is3d? :vec3 :vec2)}}
-          spec (if attr?
-                 (-> spec
-                     (assoc-in [:attribs :color] :vec4)
-                     (assoc :varying {:vCol :vec4}))
-                 (assoc-in spec [:uniforms :color] :vec4))]
-      spec))
+    ([]
+     (make-shader-spec nil))
+    ([{attr? :color-attrib? is3d? :3d :or {is3d? true}}]
+     (let [spec {:vs       (str "void main(){"
+                                (if attr? "vCol=color;")
+                                "gl_Position=proj*"
+                                (if is3d?
+                                  "view*model*vec4(position,1.0)"
+                                  "view*model*vec4(position,0.0,1.0)")
+                                ";}")
+                 :fs       (str "void main(){gl_FragColor="
+                                (if attr? "vCol" "color")
+                                ";}")
+                 :uniforms {:proj  :mat4
+                            :model [:mat4 M44]
+                            :view  [:mat4 M44]}
+                 :attribs  {:position (if is3d? :vec3 :vec2)}}
+           spec (if attr?
+                  (-> spec
+                      (assoc-in [:attribs :color] :vec4)
+                      (assoc :varying {:vCol :vec4}))
+                  (assoc-in spec [:uniforms :color] :vec4))]
+       spec)))
 
   (defn make-shader-spec-2d
     [color-attrib?] (make-shader-spec {:color-attrib? color-attrib? :3d false}))
@@ -406,23 +407,50 @@ Currently the following options are supported:
 #+END_SRC
 
 *** Lambert
+**** Standard shading (uniform)
 
-**** Standard shading
-
-#+BEGIN_SRC glsl :noweb-ref lambert-vs
+#+BEGIN_SRC glsl :noweb-ref lambert-vs-uni
   void main() {
-    float lambert = lambert(surfaceNormal(normal, normalMat), lightDir);
-    vCol = vec4(ambientCol + diffuseCol * lightCol * lambert, alpha);
+    float lam = lambert(surfaceNormal(normal, normalMat), lightDir);
+    vCol = vec4(ambientCol + diffuseCol * lightCol * lam, alpha);
     gl_Position = mvp(position, model, view, proj);
   }
 #+END_SRC
 
-**** Two-sided shading
+**** Standard shading (attribute)
 
-#+BEGIN_SRC glsl :noweb-ref lambert-vs-abs
+This version requires a =color= attribute buffer, used in place of the
+=diffuseCol= shader uniform. The color buffer is assumed to contain
+RGBA colors, however the alpha component is discarded.
+
+#+BEGIN_SRC glsl :noweb-ref lambert-vs-attr
   void main() {
-    float lambert = lambertAbs(surfaceNormal(normal, normalMat), lightDir);
-    vCol = vec4(ambientCol + diffuseCol * lightCol * lambert, alpha);
+    float lam = lambert(surfaceNormal(normal, normalMat), lightDir);
+    vCol = vec4(ambientCol + color.xyz * lightCol * lam, alpha);
+    gl_Position = mvp(position, model, view, proj);
+  }
+#+END_SRC
+
+**** Two-sided shading (uniform)
+
+#+BEGIN_SRC glsl :noweb-ref lambert-vs-abs-uni
+  void main() {
+    float lam = lambertAbs(surfaceNormal(normal, normalMat), lightDir);
+    vCol = vec4(ambientCol + diffuseCol * lightCol * lam, alpha);
+    gl_Position = mvp(position, model, view, proj);
+  }
+#+END_SRC
+
+**** Two-sided shading (attribute)
+
+This version requires a =color= attribute buffer, used in place of the
+=diffuseCol= shader uniform. The color buffer is assumed to contain
+RGBA colors, however the alpha component is discarded.
+
+#+BEGIN_SRC glsl :noweb-ref lambert-vs-abs-attr
+  void main() {
+    float lam = lambertAbs(surfaceNormal(normal, normalMat), lightDir);
+    vCol = vec4(ambientCol + color.xyz * lightCol * lam, alpha);
     gl_Position = mvp(position, model, view, proj);
   }
 #+END_SRC
@@ -463,12 +491,24 @@ Currently the following options are supported:
   (def shader-spec
     (make-shader-spec
      (glsl/minified "
-  <<lambert-vs>>")))
+  <<lambert-vs-uni>>")))
+
+  (def shader-spec-attrib
+    (-> (make-shader-spec
+         (glsl/minified "
+  <<lambert-vs-attr>>"))
+        (assoc-in [:attribs :color] :vec4)))
 
   (def shader-spec-two-sided
     (make-shader-spec
      (glsl/minified "
-  <<lambert-vs-abs>>")))
+  <<lambert-vs-abs-uni>>")))
+
+  (def shader-spec-two-sided-attrib
+    (-> (make-shader-spec
+         (glsl/minified "
+  <<lambert-vs-abs-attr>>"))
+        (assoc-in [:attribs :color] :vec4)))
 
   (defn draw
     [^WebGLRenderingContext gl spec]
@@ -729,7 +769,7 @@ Currently the following options are supported:
 
     <<shadow-lerp2>>
 
-    vec3 excident = (0.4 + skylight(worldNormal.y) +
+    vec3 excident = vec3(0.4 + skylight(worldNormal.y) +
                      lambert(lightSurfaceNormal, -lightPosNormal) *
                      spotlightInfluence(lightPosNormal, coneAngle, 10.0) *
                      spotlightAttenuation(lightPos, 10.0) *
@@ -800,7 +840,7 @@ Currently the following options are supported:
        :fbo (-> (buf/make-fbo gl)
                 (gl/bind)
                 (gl/set-fbo-color-texture tex)
-                (gl/set-fbo-depth-buffer (buf/make-depth-buffer gl size size))
+                (gl/set-fbo-depth-buffer (buf/make-depth-buffer gl size))
                 (gl/unbind))}))
 
   (defn draw-light-pass
@@ -851,6 +891,7 @@ Currently the following options are supported:
      [thi.ng.geom.webgl.buffers :as buf]
      [thi.ng.geom.webgl.shaders :as sh]
      [thi.ng.typedarrays.core :as arrays]
+     [thi.ng.dstruct.streams :as streams]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.math.core :as m]))
 
@@ -875,7 +916,7 @@ Currently the following options are supported:
     ([^WebGLRenderingContext gl r init-shader?]
        (let [vbuf (arrays/float32 8)
              [a b c d] (g/vertices r)
-             _ (g/copy-to-buffer [a b d c] vbuf 2 0)
+             _ (streams/into-buffer [a b d c] vbuf 2 0)
              spec {:attribs  (buf/make-attribute-buffers
                               gl gl/static-draw
                               {:position {:data vbuf :size 2}

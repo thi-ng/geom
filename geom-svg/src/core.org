@@ -4,7 +4,7 @@
  - [[#namespace-thinggeomsvgcore][Namespace: thi.ng.geom.svg.core]]
      - [[#constants--presets][Constants & presets]]
      - [[#protocols][Protocols]]
-         - [[#psvgconvert][PSVGConvert]]
+         - [[#isvgconvert][ISVGConvert]]
      - [[#svg-serialization][SVG serialization]]
          - [[#formatters][Formatters]]
      - [[#attribute-conversion][Attribute conversion]]
@@ -21,7 +21,6 @@
      - [[#complete-namespace-svgadapter][Complete namespace: svg.adapter]]
 
 * Namespace: thi.ng.geom.svg.core
-
 ** Constants & presets
 
 #+BEGIN_SRC clojure :noweb-ref const
@@ -30,10 +29,10 @@
 
 ** Protocols
 
-*** PSVGConvert
+*** ISVGConvert
 
 #+BEGIN_SRC clojure :noweb-ref protos
-  (defprotocol PSVGConvert
+  (defprotocol ISVGConvert
     (as-svg [_ opts]))
 #+END_SRC
 
@@ -201,116 +200,142 @@ and will be automatically converted.
     (into [:g (svg-attribs attribs nil)] body))
 
   (defn path
-    [segments & [attribs]]
-    [:path
-     (svg-attribs
-      attribs
-      {:d (apply f/format
-                 (mapcat (comp path-segment-formats first) segments)
-                 (mapcat rest segments))})])
+    ([segments]
+     (path segments nil))
+    ([segments attribs]
+     [:path
+      (svg-attribs
+       attribs
+       {:d (apply f/format
+                  (mapcat (comp path-segment-formats first) segments)
+                  (mapcat rest segments))})]))
   (defn text
-    [[x y] txt & [attribs]]
-    [:text
-     (svg-attribs attribs {:x (*ff* x) :y (*ff* y)})
-     txt])
+    ([p txt]
+     (text p txt nil))
+    ([[x y] txt attribs]
+     [:text
+      (svg-attribs attribs {:x (*ff* x) :y (*ff* y)})
+      txt]))
 
   (defn circle
-    [[x y] radius & [attribs]]
-    [:circle
-     (svg-attribs
-      attribs
-      {:cx (*ff* x) :cy (*ff* y) :r radius})])
+    ([p radius]
+     (circle p radius nil))
+    ([[x y] radius attribs]
+     [:circle
+      (svg-attribs
+       attribs
+       {:cx (*ff* x) :cy (*ff* y) :r radius})]))
 
   (defn arc-segment
     [center radius theta1 theta2 great? ccw?]
     (let [radius (vec2 radius)
-          p (g/+ (vec2 center) (g/as-cartesian (vec2 (v/x radius) theta1)))
-          q (g/+ (vec2 center) (g/as-cartesian (vec2 (v/y radius) theta2)))]
+          p (m/+ (vec2 center) (g/as-cartesian (vec2 (v/x radius) theta1)))
+          q (m/+ (vec2 center) (g/as-cartesian (vec2 (v/y radius) theta2)))]
       [[:M p] [:A radius 0 (if great? 1 0) (if ccw? 1 0) q]]))
 
   (defn arc
-    [center radius theta1 theta2 great? ccw? & [attribs]]
-    (path (arc-segment center radius theta1 theta2 great? ccw?) attribs))
+    ([center radius theta1 theta2 great? ccw?]
+     (arc center radius theta1 theta2 great? ccw? nil))
+    ([center radius theta1 theta2 great? ccw? attribs]
+     (path (arc-segment center radius theta1 theta2 great? ccw?) attribs)))
 
   (defn rect
-    [[x y] w h & [attribs]]
-    [:rect
-     (svg-attribs
-      attribs
-      {:x (*ff* x) :y (*ff* y) :width w :height h})])
+    ([p w h]
+     (rect p w h nil))
+    ([[x y] w h attribs]
+     [:rect
+      (svg-attribs
+       attribs
+       {:x (*ff* x) :y (*ff* y) :width w :height h})]))
 
   (defn line
-    [[ax ay] [bx by] & [attribs]]
-    [:line
-     (svg-attribs
-      attribs
-      {:x1 (*ff* ax) :y1 (*ff* ay) :x2 (*ff* bx) :y2 (*ff* by)})])
+    ([a b]
+     (line a b nil))
+    ([[ax ay] [bx by] attribs]
+     [:line
+      (svg-attribs
+       attribs
+       {:x1 (*ff* ax) :y1 (*ff* ay) :x2 (*ff* bx) :y2 (*ff* by)})]))
 
   (defn line-decorated
-    [p q start end & [attribs]]
-    (list
-     (line p q attribs)
-     (if start (start q p 0 attribs))
-     (if end   (end p q 0 attribs))))
+    ([p q start end]
+     (line-decorated p q start end nil))
+    ([p q start end attribs]
+     (list
+      (line p q attribs)
+      (if start (start q p 0 attribs))
+      (if end   (end p q 0 attribs)))))
 
   (defn line-strip
-    [points & [attribs]]
-    [:polyline
-     (svg-attribs
-      attribs
-      {:fill "none"
-       :points (apply f/format (point-seq-format (count points)) points)})])
+    ([points]
+     (line-strip points nil))
+    ([points attribs]
+     [:polyline
+      (svg-attribs
+       attribs
+       {:fill "none"
+        :points (apply f/format (point-seq-format (count points)) points)})]))
 
   (defn line-strip-decorated
-    [points start seg end & [attribs]]
-    (let [n (dec (count points))]
-      (list
-       (line-strip points attribs)
-       (if start (start (points 1) (points 0) 0 attribs))
-       (if seg   (map-indexed (fn [i [p q]] (seg p q i attribs)) (d/successive-nth 2 points)))
-       (if end   (end (points (dec n)) (peek points) n attribs)))))
+    ([points start seg end]
+     (line-strip-decorated points start seg end nil))
+    ([points start seg end attribs]
+     (let [n (dec (count points))]
+       (list
+        (line-strip points attribs)
+        (if start (start (points 1) (points 0) 0 attribs))
+        (if seg   (map-indexed (fn [i [p q]] (seg p q i attribs)) (d/successive-nth 2 points)))
+        (if end   (end (points (dec n)) (peek points) n attribs))))))
 
   (defn polygon
-    [points & [attribs]]
-    [:polygon
-     (svg-attribs
-      attribs
-      {:points (apply f/format (point-seq-format (count points)) points)})])
+    ([points]
+     (polygon points nil))
+    ([points attribs]
+     [:polygon
+      (svg-attribs
+       attribs
+       {:points (apply f/format (point-seq-format (count points)) points)})]))
 
   (defn instance
-    [id & [attribs]]
-    [:use (svg-attribs attribs {"xlink:href" (str "#" id)})])
+    ([id]
+     (instance id nil))
+    ([id attribs]
+     [:use (svg-attribs attribs {"xlink:href" (str "#" id)})]))
 #+END_SRC
 
 ** Decorators
 
 #+BEGIN_SRC clojure :noweb-ref decorators
   (defn arrow-head
-    [len theta solid? & [opts]]
-    (fn [p q idx & [attribs]]
-      (let [q (vec2 q)
-            d (g/normalize (g/- q p) len)]
-        (list
-         ((if solid? polygon line-strip)
-          [(g/- q (g/rotate d (- theta))) q (g/- q (g/rotate d theta))]
-            (merge attribs opts))))))
+    ([len theta solid?]
+     (arrow-head len theta solid? nil))
+    ([len theta solid? opts]
+     (fn [p q idx & [attribs]]
+       (let [q (vec2 q)
+             d (m/normalize (m/- q p) len)]
+         (list
+          ((if solid? polygon line-strip)
+           [(m/- q (g/rotate d (- theta))) q (m/- q (g/rotate d theta))]
+           (merge attribs opts)))))))
 
   (defn line-label
-    [& [{:keys [__rotate? __offset] :as opts}]]
-    (let [opts (-> opts
-                   (dissoc :__rotate? :__offset)
-                   (update-in [:text-anchor] #(or % "middle")))]
-      (fn [p q idx & [attribs]]
-        (if-let [label (get-in attribs [:__label idx])]
-          (let [p (vec2 p)
-                m (g/+ (g/mix p q) __offset)
-                opts (if __rotate?
-                       (assoc opts
-                         :transform (str "rotate("
-                                         (m/degrees (g/heading (g/normal (g/- p q))))
-                                         " " (m 0) " " (m 1) ")"))
-                       opts)]
-            (list (text m label (merge (dissoc attribs :__label) opts))))))))
+    ([]
+     (line-label nil))
+    ([{:keys [__rotate? __offset] :as opts}]
+     (let [opts (-> opts
+                    (dissoc :__rotate? :__offset)
+                    (update-in [:text-anchor] #(or % "middle")))]
+       (fn [p q idx & [attribs]]
+         (if-let [label (get-in attribs [:__label idx])]
+           (let [p (vec2 p)
+                 m (m/+ (m/mix p q) __offset)
+                 opts (if __rotate?
+                        (assoc opts
+                               :transform (str "rotate("
+                                               (m/degrees (g/heading (g/normal (m/- p q))))
+                                               " " (m 0) " " (m 1) ")"))
+                        opts)]
+             (list (text m label (merge (dissoc attribs :__label) opts)))))))))
 
   (defn comp-decorators
     [& fns]
@@ -326,7 +351,7 @@ to allow direct use of the shape entities defined in the [[file:~/work/clj/thing
 module without having to manually convert them into their SVG
 representations.
 
-The adapaters work by providing implementations of the [[PSVGConvert]]
+The adapaters work by providing implementations of the [[ISVGConvert]]
 protocol for all built-in 2D types and a simple helper function to
 recursively transform any such types used within an SVG scene.
 
@@ -344,6 +369,7 @@ visualize the result in SVG:
 #+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo01.clj :noweb yes :mkdirp yes :padline no
   (ns svgdemo01
     (:require
+     [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.svg.core :as svg]
@@ -351,7 +377,7 @@ visualize the result in SVG:
      [thi.ng.color.core :as col]))
 
   (defn labeled-dot
-    [p label] (list (c/circle p 3) (svg/text (g/+ p 10 0) label)))
+    [p label] (list (c/circle p 3) (svg/text (m/+ p 10 0) label)))
 
   ;; This scene defines 2 circles and their intersection points
   (def scene
@@ -392,7 +418,7 @@ Btw. This example can be run from the REPL via this command:
 *** Adapter implementation
 
 #+BEGIN_SRC clojure :noweb-ref adapter
-  (extend-protocol svg/PSVGConvert
+  (extend-protocol svg/ISVGConvert
 
     thi.ng.geom.types.Line2
     (as-svg
@@ -440,7 +466,7 @@ Btw. This example can be run from the REPL via this command:
   (defn all-as-svg
     [form]
     (postwalk
-     (fn [x] (if (satisfies? svg/PSVGConvert x) (svg/as-svg x (meta x)) x))
+     (fn [x] (if (satisfies? svg/ISVGConvert x) (svg/as-svg x (meta x)) x))
      form))
 #+END_SRC
 
@@ -476,6 +502,7 @@ Btw. This example can be run from the REPL via this command:
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/svg/core.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.core
     (:require
+     [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec2]]
@@ -504,6 +531,7 @@ Btw. This example can be run from the REPL via this command:
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/svg/adapter.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.adapter
     (:require
+     [thi.ng.math.core :as m]
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.types])

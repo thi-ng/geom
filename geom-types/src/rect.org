@@ -5,31 +5,30 @@
      - [[#constructor][Constructor]]
      - [[#type-specific-functions][Type specific functions]]
      - [[#protocol-implementations][Protocol implementations]]
-         - [[#parea][PArea]]
-         - [[#pboundary][PBoundary]]
-         - [[#pbounds][PBounds]]
-         - [[#pboundingcircle][PBoundingCircle]]
-         - [[#pcenter][PCenter]]
-         - [[#pcircumference][PCircumference]]
-         - [[#pclassify][PClassify]]
-         - [[#pextrude][PExtrude]]
-         - [[#pgraph][PGraph]]
-         - [[#pintersect][PIntersect]]
-         - [[#pmeshconvert][PMeshConvert]]
-         - [[#ppointmap][PPointMap]]
-         - [[#ppolygonconvert][PPolygonConvert]]
-         - [[#pproximity][PProximity]]
-         - [[#psample][PSample]]
-         - [[#todo-psetops][TODO PSetOps]]
-         - [[#psubdivide][PSubdivide]]
-         - [[#ptessellate][PTessellate]]
-         - [[#todo-ptransform][TODO PTransform]]
-         - [[#pvolume][PVolume]]
+         - [[#iarea][IArea]]
+         - [[#iboundary][IBoundary]]
+         - [[#ibounds][IBounds]]
+         - [[#iboundingcircle][IBoundingCircle]]
+         - [[#icenter][ICenter]]
+         - [[#icircumference][ICircumference]]
+         - [[#iclassify][IClassify]]
+         - [[#iextrude][IExtrude]]
+         - [[#igraph][IGraph]]
+         - [[#iintersect][IIntersect]]
+         - [[#imeshconvert][IMeshConvert]]
+         - [[#ipointmap][IPointMap]]
+         - [[#ipolygonconvert][IPolygonConvert]]
+         - [[#iproximity][IProximity]]
+         - [[#isample][ISample]]
+         - [[#todo-isetops][TODO ISetOps]]
+         - [[#isubdivide][ISubdivide]]
+         - [[#itessellate][ITessellate]]
+         - [[#todo-itransform][TODO ITransform]]
+         - [[#ivolume][IVolume]]
          - [[#end-of-implementations][End of implementations]]
      - [[#namespace-declaration][Namespace declaration]]
 
 * thi.ng.geom.rect
-
 ** Constructor
 
 #+BEGIN_SRC clojure :noweb-ref ctors
@@ -40,8 +39,8 @@
        (if (coll? p)
          (if (coll? q)
            (let [p (vec2 p) q (vec2 q)
-                 [p q] [(g/min p q) (g/max p q)]]
-             (thi.ng.geom.types.Rect2. p (g/- q p)))
+                 [p q] [(m/min p q) (m/max p q)]]
+             (thi.ng.geom.types.Rect2. p (m/- q p)))
            (thi.ng.geom.types.Rect2. (vec2 p) (vec2 q)))
          (thi.ng.geom.types.Rect2. (vec2) (vec2 p q))))
     ([x y w]
@@ -56,7 +55,7 @@
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn union
     [{p :p [w h] :size} {q :p [qw qh] :size}]
-    (let [[x1 y1 :as p'] (g/min p q)
+    (let [[x1 y1 :as p'] (m/min p q)
           x2 (max (+ (p 0) w) (+ (q 0) qw))
           y2 (max (+ (p 1) h) (+ (q 1) qh))
           w (- x2 x1)
@@ -68,7 +67,7 @@
   (defn bottom [r] ((:p r) 1))
   (defn bottom-left [r] (:p r))
   (defn top [r] (+ ((:p r) 1) ((:size r) 1)))
-  (defn top-right [r] (g/+ (:p r) (:size r)))
+  (defn top-right [r] (m/+ (:p r) (:size r)))
 #+END_SRC
 
 ** Protocol implementations
@@ -77,66 +76,66 @@
   (extend-type thi.ng.geom.types.Rect2
 #+END_SRC
 
-*** PArea
+*** IArea
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PArea
+  g/IArea
   (area [_] (reduce * (:size _)))
 #+END_SRC
 
-*** PBoundary
+*** IBoundary
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundary
+  g/IBoundary
   (contains-point?
    [{[px py] :p [w h] :size} [x y]]
    (and (m/in-range? 0.0 w (- x px)) (m/in-range? 0.0 h (- y py))))
 #+END_SRC
 
-*** PBounds
+*** IBounds
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBounds
+  g/IBounds
   (bounds[_] _)
   (width  [_] ((:size _) 0))
   (height [_] ((:size _) 1))
   (depth  [_] 0)
 #+END_SRC
 
-*** PBoundingCircle
+*** IBoundingCircle
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundingCircle
+  g/IBoundingCircle
   (bounding-circle
    [_]
    (let [c (g/centroid _)]
      (tu/bounding-circle c (g/dist c (:p _)))))
 #+END_SRC
 
-*** PCenter
+*** ICenter
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PCenter
+  g/ICenter
   (center
    ([{s :size}]
-      (thi.ng.geom.types.Rect2. (g/* s -0.5) s))
+      (thi.ng.geom.types.Rect2. (m/* s -0.5) s))
    ([{s :size} o]
-      (thi.ng.geom.types.Rect2. (g/madd s -0.5 o) s)))
+      (thi.ng.geom.types.Rect2. (m/madd s -0.5 o) s)))
   (centroid
-   [_] (g/madd (:size _) 0.5 (:p _)))
+   [_] (m/madd (:size _) 0.5 (:p _)))
 #+END_SRC
 
-*** PCircumference
+*** ICircumference
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PCircumference
+  g/ICircumference
   (circumference [_] (* 2.0 (reduce + (:size _))))
 #+END_SRC
 
-*** PClassify
+*** IClassify
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PClassify
+  g/IClassify
   (classify-point
    [_ q]
    (transduce
@@ -145,7 +144,7 @@
     (g/edges _)))
 #+END_SRC
 
-*** PExtrude                                                         :verify:
+*** IExtrude                                                         :verify:
 
 Extruding a rectangle along the Z-axis results in a 3D mesh
 implementation. The =extrude= function supports the following
@@ -161,7 +160,7 @@ The process results in bevelled forms for =:scale= values other
 than 1.0.
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PExtrude
+  g/IExtrude
   (extrude
    [_ {:keys [depth scale offset] :or {depth 1.0 scale 1.0} :as opts}]
    (if (and (== scale 1.0) (nil? offset))
@@ -172,33 +171,33 @@ than 1.0.
    [_ opts] (g/extrude-shell (g/as-polygon _) opts))
 #+END_SRC
 
-*** PGraph
+*** IGraph
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVertexAccess
+  g/IVertexAccess
   (vertices
    [_]
    (let [a (:p _)
-         c (g/+ a (:size _))]
+         c (m/+ a (:size _))]
      [a (vec2 (c 0) (a 1)) c (vec2 (a 0) (c 1))]))
-  g/PEdgeAccess
+  g/IEdgeAccess
   (edges
    [_] (let [a (:p _)
-             c (g/+ a (:size _))
+             c (m/+ a (:size _))
              b (vec2 (c 0) (a 1))
              d (vec2 (a 0) (c 1))]
          [[a b] [b c] [c d] [d a]]))
-  g/PGraph
+  g/IGraph
   (vertex-neighbors
    [_ v] (d/neighbors (vec2 v) (g/vertices _)))
   (vertex-valence
    [_ v] (if ((set (g/vertices _)) (vec2 v)) 2 0))
 #+END_SRC
 
-*** PIntersect
+*** IIntersect
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PIntersect
+  g/IIntersect
   (intersect-line
    [_ {[p q] :points}]
    (if (and (g/contains-point? _ p) (g/contains-point? _ q))
@@ -219,19 +218,19 @@ than 1.0.
      :default (err/unsupported! (str "can't intersect w/ " s))))
 #+END_SRC
 
-*** PMeshConvert                                                     :verify:
+*** IMeshConvert                                                     :verify:
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PMeshConvert
+  g/IMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
    ([_ opts]
-      (g/add-face
-       (or (:mesh opts) (bm/basic-mesh))
-       (mapv vec3 (g/vertices _)))))
+    (g/add-face
+     (or (:mesh opts) (bm/basic-mesh))
+     (attr/generate-face-attribs (mapv vec3 (g/vertices _)) 0 (:attribs opts) opts))))
 #+END_SRC
 
-*** PPointMap
+*** IPointMap
 
 - =map-point= takes a rect and 2D point, returns the point in
   normalized UV coords in local rect space, where [0,0] is equivalent
@@ -243,48 +242,48 @@ than 1.0.
   point in local UV coordinates to its world position.
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PPointMap
+  g/IPointMap
   (map-point
    [{:keys [p size]} q]
    (vec2
     (mm/subdiv (q 0) (p 0) (size 0))
     (mm/subdiv (q 1) (p 1) (size 1))))
   (unmap-point
-   [_ q] (g/madd q (:size _) (:p _)))
+   [_ q] (m/madd q (:size _) (:p _)))
 #+END_SRC
 
-*** PPolygonConvert
+*** IPolygonConvert
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PPolygonConvert
+  g/IPolygonConvert
   (as-polygon
    [_] (thi.ng.geom.types.Polygon2. (g/vertices _)))
 #+END_SRC
 
-*** PProximity
+*** IProximity
 
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-proxi>>
 #+END_SRC
 
-*** PSample
+*** ISample
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PSample
+  g/ISample
   (point-at
    [_ t] (gu/point-at t (conj (g/vertices _) (:p _))))
   (random-point
    [_] (g/point-at _ (m/random)))
   (random-point-inside
-   [_] (g/+ (:p _) (m/random ((:size _) 0)) (m/random ((:size _) 1))))
+   [_] (m/+ (:p _) (m/random ((:size _) 0)) (m/random ((:size _) 1))))
   (sample-uniform
    [_ udist include-last?]
    (gu/sample-uniform udist include-last? (conj (g/vertices _) (:p _))))
 #+END_SRC
 
-*** TODO PSetOps
+*** TODO ISetOps
     - Note taken on [2015-03-15 Sun 01:31] \\
-      same as for PSetOps impl for AABB: consider only impls for ops retaining type
+      same as for ISetOps impl for AABB: consider only impls for ops retaining type
 
 The implementations for this protocol are only intended to work with
 other rects and no type checking is done.
@@ -299,23 +298,23 @@ other rects and no type checking is done.
   =nil= in case of no overlap)
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PSetOps
+  m/ISetOps
   (union
    [{pa :p sa :size} {pb :p sb :size}]
-    (let [p (g/min pa pb)]
-      (thi.ng.geom.types.Rect2. p (g/- (g/max (g/+ pa sa) (g/+ pb sb)) p))))
+    (let [p (m/min pa pb)]
+      (thi.ng.geom.types.Rect2. p (m/- (m/max (m/+ pa sa) (m/+ pb sb)) p))))
   (intersection
    [_ r]
-   (let [pa (:p _) qa (g/+ pa (:size _))
-         pb (:p r) qb (g/+ pb (:size r))
-         p' (g/max pa pb)
-         q' (g/min qa qb)
-         s  (g/- q' p')]
+   (let [pa (:p _) qa (m/+ pa (:size _))
+         pb (:p r) qb (m/+ pb (:size r))
+         p' (m/max pa pb)
+         q' (m/min qa qb)
+         s  (m/- q' p')]
      (if (every? #(>= % 0) s)
        (thi.ng.geom.types.Rect2. p' s))))
 #+END_SRC
   
-*** PSubdivide
+*** ISubdivide
 
 A rectangle can be subdivided into smaller ones, i.e. to create a
 list of uniform grid cells. The following options can be given as
@@ -334,7 +333,7 @@ default for missing args. Rects are returned as a lazyseq with
 top-left to bottom-right ordering and inner sorting along X.
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PSubdivide
+  g/ISubdivide
   (subdivide
    ([_] (g/subdivide _ {}))
    ([_ {:keys [num cols rows] :or {num 2}}]
@@ -342,7 +341,7 @@ top-left to bottom-right ordering and inner sorting along X.
             dy (/ 1.0 (or rows num))
             rx (range 0.0 1.0 dx)
             ry (range 0.0 1.0 dy)
-            s (g/* (:size _) dx dy)]
+            s (m/* (:size _) dx dy)]
         (for [y ry x rx
               :let [[px py] (g/unmap-point _ (vec2 x y))
                     px (m/roundto px *eps*)
@@ -350,17 +349,17 @@ top-left to bottom-right ordering and inner sorting along X.
           (thi.ng.geom.types.Rect2. (vec2 px py) s)))))
 #+END_SRC
 
-*** PTessellate
+*** ITessellate
 
 A rectangle can be tessellated into a number of triangles. When
 called without options map as 2nd argument, the rect will be split
 into 2 triangles, each in anti-clockwise orientation: =[tl br tr]=
 & =[tl bl br]=. When called *with* options, then these are used
-for a call to [[PSubdivide][=subdivide=]] first and the function returns a lazyseq
+for a call to [[ISubdivide][=subdivide=]] first and the function returns a lazyseq
 of triangles of the subdivided rects.
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PTessellate
+  g/ITessellate
   (tessellate
    ([_]
     (let [[a b c d] (g/vertices _)]
@@ -373,37 +372,37 @@ of triangles of the subdivided rects.
            (mapcat #(tess-fn (g/vertices %)))
            (map #(thi.ng.geom.types.Triangle2. %)))))))
 #+END_SRC
-*** TODO PTransform
+*** TODO ITransform
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PRotate
+  g/IRotate
   (rotate
    [_ m] (g/rotate (g/as-polygon _) m))
 
-  g/PScale
+  g/IScale
   (scale
    ([_ s]
       (thi.ng.geom.types.Rect2.
-       (g/* (:p _) s) (g/* (:size _) s)))
+       (m/* (:p _) s) (m/* (:size _) s)))
    ([_ a b]
       (thi.ng.geom.types.Rect2.
-       (g/* (:p _) a b) (g/* (:size _) a b))))
+       (m/* (:p _) a b) (m/* (:size _) a b))))
   (scale-size
    [_ s]
-   (let [s' (g/* (:size _) s)]
+   (let [s' (m/* (:size _) s)]
      (thi.ng.geom.types.Rect2.
-      (g/madd s' -0.5 (g/centroid _)) s')))
+      (m/madd s' -0.5 (g/centroid _)) s')))
 
-  g/PTranslate
+  g/ITranslate
   (translate
-   [_ t] (thi.ng.geom.types.Rect2. (g/+ (:p _) t) (:size _)))
+   [_ t] (thi.ng.geom.types.Rect2. (m/+ (:p _) t) (:size _)))
 
-  g/PTransform
+  g/ITransform
   (transform
    [_ m] (g/transform (g/as-polygon _) m))
 #+END_SRC
 
-*** PVolume                                                     :usetemplate:
+*** IVolume                                                     :usetemplate:
 
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-zerovol>>
@@ -426,6 +425,7 @@ of triangles of the subdivided rects.
      [thi.ng.geom.core.intersect :as isec]
      [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types :as types]
      [thi.ng.geom.types.utils :as tu]
@@ -435,7 +435,7 @@ of triangles of the subdivided rects.
      #?(:clj [thi.ng.math.macros :as mm]))
     #?(:clj
        (:import
-        [thi.ng.geom.types Circle2 Polygon2 Rect2])))
+        [thi.ng.geom.types AABB Circle2 Polygon2 Rect2])))
 
   <<ctors>>
 

@@ -22,20 +22,20 @@ them from other templates.
    bindings :initial-value src)
 #+END_SRC
 
-** PArea (zero)
+** IArea (zero)
 
 #+NAME: lob-geom-zeroarea
 #+BEGIN_SRC clojure
-  g/PArea
+  g/IArea
   (area [_] 0.0)
 #+END_SRC
 
-** PBounds
+** IBounds
 
 #+NAME: lob-geom-bounds
 #+BEGIN_SRC emacs-lisp :var fn="" :var depth="no"
   (let ((body (replace-regexp-in-string "{{fn}}" fn
-  "g/PBounds
+  "g/IBounds
   (bounds [_] ({{fn}} (:points _)))
   (width [_] (gu/axis-range 0 (:points _)))
   (height [_] (gu/axis-range 1 (:points _)))")))
@@ -44,25 +44,25 @@ them from other templates.
       (concat body "\n(depth [_] 0)")))
 #+END_SRC
 
-** PBoundingCircle
+** IBoundingCircle
 
 #+NAME: lob-geom-bcircle
 #+BEGIN_SRC clojure
-  g/PBoundingCircle
+  g/IBoundingCircle
   (bounding-circle
    [_] (tu/bounding-circle (g/centroid _) (:points _)))
 #+END_SRC
 
-** PBoundingSphere
+** IBoundingSphere
 
 #+NAME: lob-geom-bsphere
 #+BEGIN_SRC clojure
-  g/PBoundingSphere
+  g/IBoundingSphere
   (bounding-sphere
    [_] (tu/bounding-sphere (g/centroid _) (:points _)))
 #+END_SRC
 
-** PCenter
+** ICenter
 
 #+NAME: lob-geom-center
 #+BEGIN_SRC emacs-lisp :var type="" :var vtype=""
@@ -70,67 +70,67 @@ them from other templates.
    "{{vtype}}" vtype
    (replace-regexp-in-string
     "{{type}}" type
-    "g/PCenter
+    "g/ICenter
   (center
    ([_] ({{type}}. (gu/center ({{vtype}}) (:points _))))
    ([_ o] ({{type}}. (gu/center (g/centroid _) ({{vtype}} o) (:points _)))))"))
 #+END_SRC
 
-** PCircumference
+** ICircumference
 
 #+NAME: lob-geom-circum
 #+BEGIN_SRC clojure
-  g/PCircumference
+  g/ICircumference
   (circumference
    [{p :points}] (gu/arc-length (conj p (first p))))
 #+END_SRC
 
-** PFlip
+** IFlip
 
 #+NAME: lob-geom-flip
 #+BEGIN_SRC emacs-lisp :var type=""
   (replace-regexp-in-string "{{type}}" type
-  "g/PFlip
+  "g/IFlip
   (flip
    [_] ({{type}}. (reverse (:points _))))")
 #+END_SRC
 
-** PPolygonConvert
+** IPolygonConvert
 
 #+NAME: lob-geom-as-polygon
 #+BEGIN_SRC clojure
-  g/PPolygonConvert
+  g/IPolygonConvert
   (as-polygon
    [_] (thi.ng.geom.types.Polygon2. (:points _)))
 #+END_SRC
 
-** PProximity
+** IProximity
 
 #+NAME: lob-geom-proxi
 #+BEGIN_SRC clojure
-  g/PProximity
+  g/IProximity
   (closest-point
    [_ p]
    (first (gu/closest-point-on-segments p (g/edges _))))
 #+END_SRC
 
-** PRotate
+** IRotate
 
 #+NAME: lob-geom-rotate
 #+BEGIN_SRC emacs-lisp :var type=""
   (replace-regexp-in-string "{{type}}" type
-  "g/PRotate
+  "g/IRotate
   (rotate
    [_ theta]
    ({{type}}. (mapv #(g/rotate % theta) (:points _))))")
 #+END_SRC
 
-** PRotate3D
+** IRotate3D
 
 #+NAME: lob-geom-rotate3d
 #+BEGIN_SRC emacs-lisp :var type=""
   (replace-regexp-in-string "{{type}}" type
-  "g/PRotate3D
+  "g/IRotate3D
   (rotate-x
    [_ theta]
    ({{type}}. (mapv #(g/rotate-x % theta) (:points _))))
@@ -146,12 +146,12 @@ them from other templates.
     (mapv #(g/rotate-around-axis % axis theta) (:points _))))")
 #+END_SRC
 
-** PSample
+** ISample
 
 #+NAME: lob-geom-sample
 #+BEGIN_SRC emacs-lisp :var n="3"
   (replace-regexp-in-string "{{n}}" n
-  "g/PSample
+  "g/ISample
   (point-at
    [{p :points} t] (gu/point-at t (conj p (first p))))
   (random-point
@@ -163,49 +163,49 @@ them from other templates.
    (gu/sample-uniform udist include-last? (conj p (first p))))")
 #+END_SRC
 
-** PScale
+** IScale
 
 #+NAME: lob-geom-scale
 #+BEGIN_SRC emacs-lisp :var type=""
   (replace-regexp-in-string "{{type}}" type
-  "g/PScale
+  "g/IScale
   (scale
    ([_ s]
-      ({{type}}. (mapv #(g/* % s) (:points _))))
+      ({{type}}. (mapv #(m/* % s) (:points _))))
    ([_ sx sy]
-      ({{type}}. (mapv #(g/* % sx sy) (:points _))))
+      ({{type}}. (mapv #(m/* % sx sy) (:points _))))
    ([_ sx sy sz]
-      ({{type}}. (mapv #(g/* % sx sy sz) (:points _)))))
+      ({{type}}. (mapv #(m/* % sx sy sz) (:points _)))))
   (scale-size
    [_ s] ({{type}}. (gu/scale-size s (:points _))))")
 #+END_SRC
 
-** PTranslate
+** ITranslate
 
 #+NAME: lob-geom-translate
 #+BEGIN_SRC emacs-lisp :var type=""
   (replace-regexp-in-string "{{type}}" type
-  "g/PTranslate
+  "g/ITranslate
   (translate
    [_ t]
-   ({{type}}. (mapv #(g/+ % t) (:points _))))")
+   ({{type}}. (mapv #(m/+ % t) (:points _))))")
 #+END_SRC
 
-** PTransform
+** ITransform
 
 #+NAME: lob-geom-tx
 #+BEGIN_SRC emacs-lisp :var type=""
   (replace-regexp-in-string "{{type}}" type
-  "g/PTransform
+  "g/ITransform
   (transform
    [_ m]
    ({{type}}. (mapv #(g/transform-vector m %) (:points _))))")
 #+END_SRC
 
-** PVolume (zero)
+** IVolume (zero)
 
 #+NAME: lob-geom-zerovol
 #+BEGIN_SRC clojure
-  g/PVolume
+  g/IVolume
   (volume [_] 0.0)
 #+END_SRC

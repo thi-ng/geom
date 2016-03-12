@@ -5,22 +5,22 @@
      - [[#constructors][Constructors]]
      - [[#type-specific-functions][Type specific functions]]
      - [[#protocol-implementations][Protocol implementations]]
-         - [[#parea][PArea]]
-         - [[#pbounds][PBounds]]
-         - [[#pboundingsphere][PBoundingSphere]]
-         - [[#pboundary][PBoundary]]
-         - [[#pcenter][PCenter]]
-         - [[#pclassify][PClassify]]
-         - [[#pedgeaccess-pfaceaccess--pvertexaccess][PEdgeAccess, PFaceAccess & PVertexAccess]]
-         - [[#todo-pintersect][TODO PIntersect]]
-         - [[#pmeshconvert][PMeshConvert]]
-         - [[#todo-ppointmap][TODO PPointMap]]
-         - [[#todo-pproximity][TODO PProximity]]
-         - [[#todo-psample][TODO PSample]]
-         - [[#psubdivide][PSubdivide]]
-         - [[#ptessellate][PTessellate]]
+         - [[#iarea][IArea]]
+         - [[#ibounds][IBounds]]
+         - [[#iboundingsphere][IBoundingSphere]]
+         - [[#iboundary][IBoundary]]
+         - [[#icenter][ICenter]]
+         - [[#iclassify][IClassify]]
+         - [[#iedgeaccess-ifaceaccess--ivertexaccess][IEdgeAccess, IFaceAccess & IVertexAccess]]
+         - [[#todo-iintersect][TODO IIntersect]]
+         - [[#imeshconvert][IMeshConvert]]
+         - [[#todo-ipointmap][TODO IPointMap]]
+         - [[#todo-iproximity][TODO IProximity]]
+         - [[#todo-isample][TODO ISample]]
+         - [[#isubdivide][ISubdivide]]
+         - [[#itessellate][ITessellate]]
          - [[#transformations][Transformations]]
-         - [[#todo-pvolume][TODO PVolume]]
+         - [[#todo-ivolume][TODO IVolume]]
          - [[#end-of-implementation][End of implementation]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
@@ -51,7 +51,7 @@ constructor function defined in this namespace.
         :default        (err/illegal-arg! x)))
     ([o size]
        (let [[x1 y1 z1 :as a] (vec3 o)
-             [x2 y2 z2 :as g] (g/+ a size)
+             [x2 y2 z2 :as g] (m/+ a size)
              b (vec3 x1 y1 z2) c (vec3 x2 y1 z2)
              d (vec3 x2 y1 z1) e (vec3 x1 y2 z1)
              f (vec3 x1 y2 z2) h (vec3 x2 y2 z1)]
@@ -70,35 +70,35 @@ constructor function defined in this namespace.
   (extend-type thi.ng.geom.types.Cuboid
 #+END_SRC
 
-*** PArea                                                            :verify:
+*** IArea                                                            :verify:
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PArea
+  g/IArea
   (area
    [_] (transduce (map #(apply gu/tri-area3 %)) + (g/tessellate _)))
 #+END_SRC
 
-*** PBounds                                                          :verify:
+*** IBounds                                                          :verify:
 
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-bounds(fn="tu/bounding-box", depth="yes")>>
 #+END_SRC
 
-*** PBoundingSphere                                                  :verify:
+*** IBoundingSphere                                                  :verify:
 
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-bsphere>>
 #+END_SRC
 
-*** PBoundary                                                           :fix:
+*** IBoundary                                                           :fix:
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PBoundary
+  g/IBoundary
   (contains-point?
    [_ p] (>= (g/classify-point _ p) 0))
 #+END_SRC
 
-*** PCenter                                                          :verify:
+*** ICenter                                                          :verify:
 
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-center(type="thi.ng.geom.types.Cuboid", vtype="vec3")>>
@@ -106,7 +106,7 @@ constructor function defined in this namespace.
    [_] (gu/centroid (:points _)))
 #+END_SRC
 
-*** PClassify                                                           :fix:
+*** IClassify                                                           :fix:
 
 In order to determine if a given point lies within or outside the
 cuboid, we compute the classifier for each of the 6 sides/facets/plane
@@ -122,7 +122,7 @@ one facet produces a positive classifier.
 only works for fully planar cuboids.
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PClassify
+  g/IClassify
   (classify-point
    [_ p]
    (- (reduce
@@ -132,7 +132,7 @@ only works for fully planar cuboids.
        -1.0 (g/faces _))))
 #+END_SRC
 
-*** PEdgeAccess, PFaceAccess & PVertexAccess                         :verify:
+*** IEdgeAccess, IFaceAccess & IVertexAccess                         :verify:
 
   : e +----+ h
   :   |\   :\
@@ -146,10 +146,10 @@ Faces are always returned in this order: east, west, north, south,
 front, back - assuming the vertex order given in the diagram.
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVertexAccess
+  g/IVertexAccess
   (vertices
    [_] (:points _))
-  g/PEdgeAccess
+  g/IEdgeAccess
   (edges
    [_]
    (let [[a b c d e f g h] (:points _)]
@@ -158,7 +158,7 @@ front, back - assuming the vertex order given in the diagram.
       [a e] [b f]             ;; left
       [c g] [d h]             ;; right
       ]))
-  g/PFaceAccess
+  g/IFaceAccess
   (faces
    [_]
    (let [[a b c d e f g h] (:points _)]
@@ -170,18 +170,18 @@ front, back - assuming the vertex order given in the diagram.
       [a e h d]]))
 #+END_SRC
 
-*** TODO PIntersect                                                     :fix:
+*** TODO IIntersect                                                     :fix:
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PIntersect
+  g/IIntersect
   (intersect-shape
    [_ s])
 #+END_SRC
 
-*** PMeshConvert                                                     :verify:
+*** IMeshConvert                                                     :verify:
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PMeshConvert
+  g/IMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
    ([_ {:keys [mesh flags] :or {flags "nsewfb"}}]
@@ -197,7 +197,7 @@ front, back - assuming the vertex order given in the diagram.
              (g/into (or mesh (bm/basic-mesh)))))))
 #+END_SRC
 
-*** TODO PPointMap
+*** TODO IPointMap
 
 - =map-point= still missing
 - =unmap-point= takes a seq of 8 points defining a cuboid and vector
@@ -210,7 +210,7 @@ front, back - assuming the vertex order given in the diagram.
 Also see: [[file:~/work/clj/thing/geom/geom-core/src/utils.org::Interpolation][map-trilinear]]
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PPointMap
+  g/IPointMap
   (map-point
    [_ p])
   (unmap-point
@@ -218,14 +218,14 @@ Also see: [[file:~/work/clj/thing/geom/geom-core/src/utils.org::Interpolation][m
     (gu/map-trilinear (:points _) p))
 #+END_SRC
 
-*** TODO PProximity                                                     :fix:
+*** TODO IProximity                                                     :fix:
     - Note taken on [2015-03-15 Sun 01:06] \\
       either calc barycentric coords for quad or use triangles (already implemented)
 
 Do not use, work in progress...
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PProximity
+  g/IProximity
   (closest-point
    [_ p]
    (->> (g/faces _)
@@ -238,19 +238,19 @@ Do not use, work in progress...
         (first)))
 #+END_SRC
 
-*** TODO PSample                                                        :fix:
+*** TODO ISample                                                        :fix:
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PSample
+  g/ISample
   (random-point-inside
    [{p :p size :size}]
    (let [[x1 y1 z1] p
-         [x2 y2 z2] (g/+ p size)]
+         [x2 y2 z2] (m/+ p size)]
      (vec3 (m/random x1 x2) (m/random y1 y2) (m/random z1 z2))))
   (random-point
    [{p :p size :size}]
    (let [[x1 y1 z1] p
-         [x2 y2 z2] (g/+ p size)
+         [x2 y2 z2] (m/+ p size)
          id (int (m/random 6))]
      (cond
       (< id 2) (vec3 (if (zero? id) x1 x2) (m/random y1 y2) (m/random z1 z2))
@@ -258,7 +258,7 @@ Do not use, work in progress...
       :default (vec3 (m/random x1 x2) (m/random y1 y2) (if (= 4 id) z1 z2)))))
 #+END_SRC
 
-*** PSubdivide                                                       :verify:
+*** ISubdivide                                                       :verify:
 
 An Cuboid can be subdivided into smaller ones, i.e. to create a seq of
 uniform grid cells. The following options can be given as a 2nd
@@ -278,7 +278,7 @@ default for missing args. Cuboids are returned as a lazyseq starting
 from the first vertex of the original with inner sorting over XYZ.
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PSubdivide
+  g/ISubdivide
   (subdivide
    ([_] (g/subdivide _ {}))
    ([{points :points} {:keys [num cols rows slices] :or {num 1}}]
@@ -295,10 +295,10 @@ from the first vertex of the original with inner sorting over XYZ.
                         [u1 v2 w1] [u1 v2 w2] [u2 v2 w2] [u2 v2 w1]]))))))
 #+END_SRC
 
-*** PTessellate                                                      :verify:
+*** ITessellate                                                      :verify:
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PTessellate
+  g/ITessellate
   (tessellate
    ([_] (g/tessellate _ {}))
    ([_ {f :fn :or {f gu/tessellate-3} :as opts}]
@@ -314,7 +314,7 @@ from the first vertex of the original with inner sorting over XYZ.
 *** Transformations                                                  :verify:
 
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
-  g/PRotate
+  g/IRotate
   (rotate
    [_ theta] (g/rotate-z _ theta))
   <<lob-geom-rotate3d(type="thi.ng.geom.types.Cuboid")>>
@@ -323,12 +323,12 @@ from the first vertex of the original with inner sorting over XYZ.
   <<lob-geom-tx(type="thi.ng.geom.types.Cuboid")>>
 #+END_SRC
 
-*** TODO PVolume                                                        :fix:
+*** TODO IVolume                                                        :fix:
     - Note taken on [2015-03-15 Sun 01:09] \\
       calc via tetrahedrons
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  g/PVolume
+  g/IVolume
   (volume [_] 0)
 #+END_SRC
 

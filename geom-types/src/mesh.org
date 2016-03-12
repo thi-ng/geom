@@ -6,30 +6,30 @@
      - [[#constructors][Constructors]]
      - [[#protocol-implementations][Protocol implementations]]
          - [[#mesh2][Mesh2]]
-             - [[#pgraph][PGraph]]
-             - [[#parea][PArea]]
-             - [[#todo-pcircumference][TODO PCircumference]]
-             - [[#pbounds][PBounds]]
-             - [[#pboundingcircle][PBoundingCircle]]
-             - [[#todo-pcenter][TODO PCenter]]
-             - [[#todo-pboundary][TODO PBoundary]]
-             - [[#pmesh][PMesh]]
-             - [[#pmeshconvert][PMeshConvert]]
-             - [[#psubdivide][PSubdivide]]
-             - [[#pslice][PSlice]]
+             - [[#igraph][IGraph]]
+             - [[#iarea][IArea]]
+             - [[#todo-icircumference][TODO ICircumference]]
+             - [[#ibounds][IBounds]]
+             - [[#iboundingcircle][IBoundingCircle]]
+             - [[#todo-icenter][TODO ICenter]]
+             - [[#todo-iboundary][TODO IBoundary]]
+             - [[#imesh][IMesh]]
+             - [[#imeshconvert][IMeshConvert]]
+             - [[#isubdivide][ISubdivide]]
+             - [[#islice][ISlice]]
              - [[#end-of-implementation][End of implementation]]
          - [[#mesh3][Mesh3]]
-             - [[#pgraph][PGraph]]
-             - [[#parea][PArea]]
-             - [[#pbounds][PBounds]]
-             - [[#todo-pcenter][TODO PCenter]]
-             - [[#pboundingsphere][PBoundingSphere]]
-             - [[#todo-pvolume][TODO PVolume]]
-             - [[#todo-pboundary][TODO PBoundary]]
-             - [[#pmesh][PMesh]]
-             - [[#pmeshconvert][PMeshConvert]]
-             - [[#psubdivide][PSubdivide]]
-             - [[#pslice][PSlice]]
+             - [[#igraph][IGraph]]
+             - [[#iarea][IArea]]
+             - [[#ibounds][IBounds]]
+             - [[#todo-icenter][TODO ICenter]]
+             - [[#iboundingsphere][IBoundingSphere]]
+             - [[#todo-ivolume][TODO IVolume]]
+             - [[#todo-iboundary][TODO IBoundary]]
+             - [[#imesh][IMesh]]
+             - [[#imeshconvert][IMeshConvert]]
+             - [[#isubdivide][ISubdivide]]
+             - [[#islice][ISlice]]
              - [[#end-of-implementation][End of implementation]]
      - [[#type-specific-functions][Type specific functions]]
          - [[#todo-refactor-transform-as-protocol-method][TODO refactor transform as protocol method]]
@@ -91,7 +91,7 @@
      mesh
      (reduce
       (fn [edits m-or-faces]
-        (let [faces (if (satisfies? g/PMesh m-or-faces)
+        (let [faces (if (satisfies? g/IMesh m-or-faces)
                       (g/faces m-or-faces)
                       (map #(if (map? %) [(:a %) (:b %) (:c %)] %) m-or-faces))
               faces (if cast
@@ -134,7 +134,7 @@
             ab-isec (set/intersection fa fb)
             a-xor (set/difference fa ab-isec)
             b-xor (set/difference fb ab-isec)
-            mp (g/mix a b)]
+            mp (m/mix a b)]
         (-> (reduce g/remove-face mesh (set/union ab-isec a-xor b-xor))
             (replace-vertex* a mp a-xor)
             (replace-vertex* b mp b-xor)))
@@ -145,7 +145,7 @@
     (if ((vertex-neighbors* mesh a) b)
       (let [fa (vertex-faces* mesh a) fb (vertex-faces* mesh b)
             faces (set/intersection fa fb)
-            s-points (map #(g/mix a b %) (d/wrap-seq splits 0.0 1.0))
+            s-points (map #(m/mix a b %) (d/wrap-seq splits 0.0 1.0))
             s-points (d/successive-nth 2 s-points)]
         (reduce
          (fn [[mesh newfaces] f]
@@ -164,8 +164,8 @@
       (let [splits (d/wrap-seq splits 0.0 1.0)
             {:keys [vertices edges faces] :as mesh} (g/remove-face mesh f)
             edge-vertex (if displace
-                          (fn [[ea eb :as e] t] (displace e (g/mix ea eb t) t))
-                          (fn [[ea eb] t] (g/mix ea eb t)))]
+                          (fn [[ea eb :as e] t] (displace e (m/mix ea eb t) t))
+                          (fn [[ea eb] t] (m/mix ea eb t)))]
         (commit-edit
          mesh
          (reduce
@@ -235,9 +235,9 @@
 #+BEGIN_SRC clojure :noweb-ref impl2
   (extend-type thi.ng.geom.types.Mesh2
 #+END_SRC
-**** PGraph
+**** IGraph
 #+BEGIN_SRC clojure :noweb-ref impl2
-  g/PGraph
+  g/IGraph
   (edges
    [_] (keys (:edges _)))
   (vertices
@@ -247,46 +247,46 @@
   (vertex-valence
    [_ v] (vertex-valence* _ v))
 #+END_SRC
-**** PArea
+**** IArea
 #+BEGIN_SRC clojure :noweb-ref impl2
-  g/PArea
+  g/IArea
   (area [_]
         (->> (:faces _)
-             (map #(m/abs (apply gu/tri-area2 %)))
+             (map #(m/abs* (apply gu/tri-area2 %)))
              (reduce +)))
 #+END_SRC
-**** TODO PCircumference
+**** TODO ICircumference
 #+BEGIN_SRC clojure :noweb-ref impl2
-  g/PCircumference
+  g/ICircumference
   (circumference [_] 0)
 #+END_SRC
-**** PBounds
+**** IBounds
 #+BEGIN_SRC clojure :noweb-ref impl2
-  g/PBounds
+  g/IBounds
   (bounds [_] (g/bounding-rect* (keys (:vertices _))))
   (width [_] (g/axis-range* 0 (keys (:vertices _))))
   (height [_] (g/axis-range* 1 (keys (:vertices _))))
   (depth [_] 0)
 #+END_SRC
-**** PBoundingCircle
+**** IBoundingCircle
 #+BEGIN_SRC clojure :noweb-ref impl2
-  g/PBoundingCircle
+  g/IBoundingCircle
   (bounding-circle
    [_] (g/bounding-circle* (g/centroid _) (g/vertices _)))
 #+END_SRC
-**** TODO PCenter
+**** TODO ICenter
 #+BEGIN_SRC clojure :noweb-ref impl2
-  g/PCenter
+  g/ICenter
   (center [_] _)
   (centroid [_] (g/centroid* (keys (:vertices _))))
 #+END_SRC
-**** TODO PBoundary
+**** TODO IBoundary
 #+BEGIN_SRC clojure :noweb-ref impl2
 
 #+END_SRC
-**** PMesh
+**** IMesh
 #+BEGIN_SRC clojure :noweb-ref impl2
-  g/PMesh
+  g/IMesh
   (faces
    [_] (:faces _))
   (vertex-faces
@@ -324,15 +324,15 @@
   (merge-vertices
    [_ a b] (merge-vertices* _ a b))
 #+END_SRC
-**** PMeshConvert
+**** IMeshConvert
 #+BEGIN_SRC clojure :noweb-ref impl2
-  g/PMeshConvert
+  g/IMeshConvert
   (as-mesh [_] _)
 #+END_SRC
 
-**** PSubdivide
+**** ISubdivide
 #+BEGIN_SRC clojure :noweb-ref impl2
-  g/PSubdivide
+  g/ISubdivide
   (subdivide-edge
    [_ a b splits] (subdivide-edge* _ a b splits))
   (subdivide-face
@@ -342,9 +342,9 @@
    [_ opts]
    (subdivide* _ opts))
 #+END_SRC
-**** PSlice
+**** ISlice
 #+BEGIN_SRC clojure :noweb-ref impl2
-  g/PSlice
+  g/ISlice
   (slice-with
    ([_ e]
       (slice-with* _ e g/classify-point (:faces _)))
@@ -361,9 +361,9 @@
 #+BEGIN_SRC clojure :noweb-ref impl3
   (extend-type thi.ng.geom.types.Mesh3
 #+END_SRC
-**** PGraph
+**** IGraph
 #+BEGIN_SRC clojure :noweb-ref impl3
-  g/PGraph
+  g/IGraph
   (edges
    [_] (keys (:edges _)))
   (vertices
@@ -373,47 +373,47 @@
   (vertex-valence
    [_ v] (vertex-valence* _ v))
 #+END_SRC
-**** PArea
+**** IArea
 #+BEGIN_SRC clojure :noweb-ref impl3
-  g/PArea
+  g/IArea
   (area
    [_]
    (->> (:faces _)
-        (map #(m/abs (apply gu/tri-area3 %)))
+        (map #(m/abs* (apply gu/tri-area3 %)))
         (reduce +)))
 #+END_SRC
-**** PBounds
+**** IBounds
 #+BEGIN_SRC clojure :noweb-ref impl3
-  g/PBounds
+  g/IBounds
   (bounds [_] (g/bounding-box* (keys (:vertices _))))
   (width [_] (g/axis-range* 0 (keys (:vertices _))))
   (height [_] (g/axis-range* 1 (keys (:vertices _))))
   (depth [_] (g/axis-range* 2 (keys (:vertices _))))
 #+END_SRC
-**** TODO PCenter
+**** TODO ICenter
 #+BEGIN_SRC clojure :noweb-ref impl3
-  g/PCenter
+  g/ICenter
   (center [_] _)
   (centroid [_] (g/centroid* (keys (:vertices _))))
 #+END_SRC
-**** PBoundingSphere
+**** IBoundingSphere
 #+BEGIN_SRC clojure :noweb-ref impl3
-  g/PBoundingSphere
+  g/IBoundingSphere
   (bounding-sphere
    [_] (g/bounding-sphere* (g/centroid _) (g/vertices _)))
 #+END_SRC
-**** TODO PVolume
+**** TODO IVolume
 #+BEGIN_SRC clojure :noweb-ref impl3
-  g/PVolume
+  g/IVolume
   (volume [_] 0)
 #+END_SRC
-**** TODO PBoundary
+**** TODO IBoundary
 #+BEGIN_SRC clojure :noweb-ref impl3
 
 #+END_SRC
-**** PMesh
+**** IMesh
 #+BEGIN_SRC clojure :noweb-ref impl3
-  g/PMesh
+  g/IMesh
   (faces
    [_] (:faces _))
   (vertex-faces
@@ -437,8 +437,8 @@
             (let [faces (g/vertex-faces _ v)
                   n (->> faces
                          (map #(get fnormals %))
-                         (reduce g/+)
-                         (g/normalize))
+                         (reduce m/+)
+                         (m/normalize))
                   [norms n] (d/index! norms n)]
               [norms (assoc! vnorms v n)]))
           [(transient normals) (transient {})] (keys vertices))]
@@ -475,23 +475,23 @@
   (merge-vertices
    [_ a b] (merge-vertices* _ a b))
 #+END_SRC
-**** PMeshConvert
+**** IMeshConvert
 #+BEGIN_SRC clojure :noweb-ref impl3
-  g/PMeshConvert
+  g/IMeshConvert
   (as-mesh [_] _)
 #+END_SRC
 
-**** PSubdivide
+**** ISubdivide
 #+BEGIN_SRC clojure :noweb-ref impl3
-  g/PSubdivide
+  g/ISubdivide
   (subdivide-edge [_ a b splits] (subdivide-edge* _ a b splits))
   (subdivide-face
    [_ f p opts] (subdivide-face* _ f p (:displace opts) (:splits opts)))
   (subdivide [_ opts] (subdivide* _ opts))
 #+END_SRC
-**** PSlice
+**** ISlice
 #+BEGIN_SRC clojure :noweb-ref impl3
-  g/PSlice
+  g/ISlice
   (slice-with
    ([_ e] (slice-with* _ e g/classify-point (:faces _)))
    ([_ e classifier] (slice-with* _ e classifier (:faces _)))
@@ -507,7 +507,7 @@
   (defn loop-subdivide-face
     [mesh [a b c :as f]]
     (let [{:keys [vertices edges faces] :as mesh} (g/remove-face mesh f)
-          [mab mbc mca] (map (fn [[p q]] (g/mix p q)) [[a b] [b c] [c a]])]
+          [mab mbc mca] (map (fn [[p q]] (m/mix p q)) [[a b] [b c] [c a]])]
       (reduce add-face mesh [[a mab mca] [mab b mbc] [mbc c mca] [mab mbc mca]])))
   
   (defn loop-subdivide-mesh
@@ -519,9 +519,9 @@
     [{:keys[vnormals] :as mesh} amp]
     (fn [p]
       (let [neighbors (g/vertex-neighbors mesh p)]
-        (g/+ p
-           (g/normalize
-            (reduce g/+ (vnormals p) (map (comp #(g/* % 0.5) vnormals) neighbors))
+        (m/+ p
+           (m/normalize
+            (reduce m/+ (vnormals p) (map (comp #(m/* % 0.5) vnormals) neighbors))
             amp)))))
   
   (defn laplacian
@@ -530,11 +530,11 @@
       (let [neighbors (g/vertex-neighbors mesh p)
             nc (count neighbors)]
         (if (pos? nc)
-          (g/* (reduce g/+ neighbors) (/ 1.0 nc))
+          (m/* (reduce m/+ neighbors) (/ 1.0 nc))
           p))))
   
   (defn spherify
-    [r] #(g/normalize % r))
+    [r] #(m/normalize % r))
   
   (defn transform-with
     [{:keys [faces vertices fns]} f]

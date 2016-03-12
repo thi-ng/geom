@@ -393,7 +393,7 @@
                 vid1     (inc vid)
                 vid2     (inc vid1)
                 delta    (if (zero? (bit-and voxel-id 1)) iso* iso)
-                [x y z]  (g/* cell size)
+                [x y z]  (m/* cell size)
                 vertices (if (> (bit-and eflags 0x01) 0)
                            (if (nil? (vertices vid))
                              (assoc! vertices vid
@@ -441,9 +441,9 @@
                (eduction
                 (map
                  (fn [t]
-                   [(vertices (+ eid (indexed-eo (t 0))))
+                   [[(vertices (+ eid (indexed-eo (t 0)))) ;; TODO add attrib support
                     (vertices (+ eid (indexed-eo (t 2))))
-                    (vertices (+ eid (indexed-eo (t 1))))]))
+                    (vertices (+ eid (indexed-eo (t 1))))]]))
                 (cell-triangles vid)))))
            (g/into (bm/basic-mesh)))))
 #+END_SRC

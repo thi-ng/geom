@@ -38,7 +38,7 @@ is defined in its own namespace and can be loaded from the REPL via:
   (def model  (-> (mat/matrix44) (g/rotate-x m/HALF_PI) (g/rotate-z m/SIXTH_PI)))
   (def view   (apply mat/look-at (mat/look-at-vectors 0 0 -2 0 0 0)))
   (def proj   (mat/perspective 60 (/ width height) 0.1 2))
-  (def mvp    (->> model (g/* view) (g/* proj)))
+  (def mvp    (->> model (m/* view) (m/* proj)))
   (def col-tx (g/rotate-x (mat/matrix44) (- m/HALF_PI)))
 
   (def shader
@@ -103,7 +103,7 @@ is defined in its own namespace and can be loaded from the REPL via:
   (def model    (g/rotate-y (mat/matrix44) m/SIXTH_PI))
   (def view     (apply mat/look-at (mat/look-at-vectors 0 1.75 0.75 0 0 0)))
   (def proj     (mat/perspective 60 (/ width height) 0.1 10))
-  (def mvp      (->> model (g/* view) (g/* proj)))
+  (def mvp      (->> model (m/* view) (m/* proj)))
 
   (def diffuse  (shader/normal-rgb (g/rotate-y (mat/matrix44) m/PI)))
   (def uniforms {:stroke "white" :stroke-width 0.25})
@@ -157,8 +157,8 @@ is defined in its own namespace and can be loaded from the REPL via:
   (defn label-3d
     [p mvp screen [l1 l2]]
     (let [p'  (mat/project-point p mvp screen)
-          p2' (mat/project-point (g/+ p 0 0 0.2) mvp screen)
-          p3' (g/+ p2' 100 0)]
+          p2' (mat/project-point (m/+ p 0 0 0.2) mvp screen)
+          p3' (m/+ p2' 100 0)]
       (svg/group
        {:fill "black"
         :font-family "Arial"
@@ -166,8 +166,8 @@ is defined in its own namespace and can be loaded from the REPL via:
         :text-anchor "end"}
        (svg/circle p' 2 nil)
        (svg/line-strip [p' p2' p3'] {:stroke "black"})
-       (svg/text (g/+ p3' 0 -5) l1 {})
-       (svg/text (g/+ p3' 0 12) l2 {:font-weight "bold"}))))
+       (svg/text (m/+ p3' 0 -5) l1 {})
+       (svg/text (m/+ p3' 0 12) l2 {:font-weight "bold"}))))
 
   (defn render-svg
     [path mesh mvp shader width height labels]
@@ -208,7 +208,7 @@ is defined in its own namespace and can be loaded from the REPL via:
   (defn spiral
     [center start end r1 r2 steps]
     (map
-     (fn [r theta] (g/+ (g/as-cartesian (vec2 r theta)) center))
+     (fn [r theta] (m/+ (g/as-cartesian (vec2 r theta)) center))
      (range r1 r2 (mm/subdiv r2 r1 steps))
      (range start end (mm/subdiv end start steps))))
 
@@ -245,7 +245,7 @@ is defined in its own namespace and can be loaded from the REPL via:
   (defn spiral
     [center start end r1 r2 steps]
     (map
-     (fn [r theta] (g/+ (g/as-cartesian (vec2 r theta)) center))
+     (fn [r theta] (m/+ (g/as-cartesian (vec2 r theta)) center))
      (range r1 r2 (mm/subdiv r2 r1 steps))
      (range start end (mm/subdiv end start steps))))
 
