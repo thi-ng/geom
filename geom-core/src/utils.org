@@ -289,7 +289,7 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
      (->> [(first points)]
           (concat points)
           (partition 2 1)
-          (mapv #(vector c (% 0) (% 1))))))
+          (mapv #(vector c (first %) (nth % 1))))))
 
   (defn tessellate-with-first
     [points]
