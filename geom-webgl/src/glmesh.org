@@ -8,6 +8,7 @@
          - [[#icenter][ICenter]]
          - [[#ivertexaccess][IVertexAccess]]
          - [[#ifaceaccess][IFaceAccess]]
+             - [[#todo-implement-gfaces][TODO implement g/faces]]
          - [[#igeomcontainer][IGeomContainer]]
          - [[#iclear][IClear]]
          - [[#itransform][ITransform]]
@@ -17,6 +18,7 @@
          - [[#icenter][ICenter]]
          - [[#ivertexaccess][IVertexAccess]]
          - [[#ifaceaccess][IFaceAccess]]
+             - [[#todo-implement-gfaces][TODO implement g/faces]]
          - [[#igeomcontainer][IGeomContainer]]
          - [[#iclear][IClear]]
          - [[#itransform][ITransform]]
@@ -144,6 +146,7 @@ the mesh (without their attributes, only positions).
 #+END_SRC
 
 *** IFaceAccess
+**** TODO implement g/faces
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IFaceAccess
   (add-face
@@ -156,7 +159,9 @@ the mesh (without their attributes, only positions).
   (into
    [_ faces]
    (if (instance? GLMesh faces)
-     (do (into-glmesh* _ faces) (set! id (+ id (:id faces))) _)
+     (do (into-glmesh* _ faces)
+         (set! id (+ id (:id faces)))
+         _)
      (tu/into-mesh _ add-face* faces)))
 #+END_SRC
 
@@ -286,6 +291,7 @@ the mesh (without their attributes, only positions).
 #+END_SRC
 
 *** IFaceAccess
+**** TODO implement g/faces
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IFaceAccess
   (add-face
@@ -298,7 +304,11 @@ the mesh (without their attributes, only positions).
   (into
    [_ m]
    (if (instance? IndexedGLMesh m)
-     (do (into-iglmesh* _ m) (set! id (+ id (:id m))) _) ;; FIXME
+     (let [res (into-iglmesh* _ m)]
+       (set! index (:index res))
+       (set! id (:id res))
+       (set! fid (:fid res))
+       _)
      (tu/into-mesh _ add-face-indexed* m)))
 #+END_SRC
 
@@ -439,12 +449,12 @@ Furthermore, the options map also supports the following other keys:
         (aset indices fid ida)
         (aset indices (+ fid 1) idb)
         (aset indices (+ fid 2) idc)
-        (set! (.-fid m) (+ fid 3))
-        m)))
+        (set! (.-fid m) (+ fid 3))))
+    m)
 
   (defn transform-vertices
     [f buf num]
-    (let [tv (vec3 0 0 0)
+    (let [tv (vec3 0)
           tb (.-buf ^thi.ng.geom.core.vector.Vec3 tv)]
       (loop [i 0]
         (when (< i num)
@@ -454,45 +464,72 @@ Furthermore, the options map also supports the following other keys:
 
   (defn- into-glmesh*
     [dest src]
-    (let [s-id    (:id src)
-          d-id    (:id dest)
-          s-idv   (* s-id 9)
-          d-idv   (* d-id 9)
-          s-iduv  (* s-id 6)
-          d-iduv  (* d-id 6)
-          s-idcol (* s-id 12)
-          d-idcol (* d-id 12)]
-      (.set (:vertices dest) (.slice (:vertices src) 0 s-idv) d-idv)
-      (when (and (:fnormals dest) (:fnormals src))
-        (.set (:fnormals dest) (.slice (:fnormals src) 0 s-idv) d-idv))
-      (when (and (:vnormals dest) (:vnormals src))
-        (.set (:vnormals dest) (.slice (:vnormals src) 0 s-idv) d-idv))
-      (when (and (:uvs dest) (:uvs src))
-        (.set (:uvs dest) (.slice (:uvs src) 0 s-iduv) d-iduv))
-      (when (and (:cols dest) (:cols src))
-        (.set (:cols dest) (.slice (:cols src) 0 s-idcol) d-idcol))
-      dest))
+    (let [{sverts :vertices sfn :fnormals svn :vnormals scol :cols suv :uvs sid :id} src
+          {dverts :vertices dfn :fnormals dvn :vnormals dcol :cols duv :uvs did :id} dest
+          sidv   (* sid 9)
+          didv   (* did 9)]
+      (.set dverts (.slice sverts 0 sidv) didv)
+      (when (if dfn sfn)
+        (.set dfn (.slice sfn 0 sidv) didv))
+      (when (if dvn svn)
+        (.set dvn (.slice svn 0 sidv) didv))
+      (when (if dcol scol)
+        (.set dcol (.slice scol 0 (* sid 12)) (* did 12)))
+      (when (if duv suv)
+        (.set duv (.slice suv 0 (* sid 6)) (* did 6)))))
+
+  (defn- build-rindex
+    [dindex sindex start]
+    (reduce-kv
+     (fn [[idx nid :as s] v id]
+       (if (get dindex v) s [(assoc! idx id [nid v]) (inc nid)]))
+     [(transient {}) start]
+     sindex))
+
+  (defn- merge-index
+    [dindex rindex]
+    (into dindex (map (fn [kv] [(peek (val kv)) (key kv)])) rindex))
 
   (defn- into-iglmesh*
     [dest src]
-    (let [s-id    (:id src)
-          d-id    (:id dest)
-          s-idv   (* s-id 9)
-          d-idv   (* d-id 9)
-          s-iduv  (* s-id 6)
-          d-iduv  (* d-id 6)
-          s-idcol (* s-id 12)
-          d-idcol (* d-id 12)]
-      (.set (:vertices dest) (.slice (:vertices src) 0 s-idv) d-idv)
-      (when (and (:fnormals dest) (:fnormals src))
-        (.set (:fnormals dest) (.slice (:fnormals src) 0 s-idv) d-idv))
-      (when (and (:vnormals dest) (:vnormals src))
-        (.set (:vnormals dest) (.slice (:vnormals src) 0 s-idv) d-idv))
-      (when (and (:uvs dest) (:uvs src))
-        (.set (:uvs dest) (.slice (:uvs src) 0 s-iduv) d-iduv))
-      (when (and (:cols dest) (:cols src))
-        (.set (:cols dest) (.slice (:cols src) 0 s-idcol) d-idcol))
-      dest))
+    (let [{sverts :vertices sfn :fnormals svn :vnormals scol :cols
+           suv :uvs sidx :indices sindex :index sid :id sfid :fid} src
+          {dverts :vertices dfn :fnormals dvn :vnormals dcol :cols
+           duv :uvs didx :indices dindex :index did :id dfid :fid} dest
+          [rindex did'] (build-rindex dindex sindex did)
+          dindex (merge-index dindex (persistent! rindex))
+          sidv   sfid
+          fn?    (if dfn sfn)
+          vn?    (if dvn svn)
+          col?   (if dcol scol)
+          uv?    (if duv suv)]
+      ;; (debug :rindex rindex)
+      ;; (debug :dindex dindex)
+      ;; (debug :dfid-old dfid :didv (* did 3))
+      ;; TODO implement fast path if no verts can be reused
+      (loop [i 0]
+        (when (< i sidv)
+          (if-let [nid (first (get rindex (aget sidx i)))]
+            (let [sid    (aget sidx i)
+                  sidv   (* sid 3)
+                  didv   (* nid 3)
+                  sidcol (* sid 4)
+                  siduv  (* sid 2)]
+              ;;(debug :reindex sid :> nid :dfid (+ dfid i) :didv didv)
+              (aset didx (+ dfid i) nid)
+              (.set dverts (.slice sverts sidv (+ sidv 3)) didv)
+              (when fn?
+                (.set dfn (.slice sfn sidv (+ sidv 3)) didv))
+              (when vn?
+                (.set dvn (.slice svn sidv (+ sidv 3)) didv))
+              (when col?
+                (.set dcol (.slice scol sidcol (+ sidcol 4)) (* nid 4)))
+              (when uv?
+                (.set duv (.slice suv siduv (+ siduv 2)) (* nid 2))))
+            (do ;;(debug :reuse (aget sidx i) :dfid (+ dfid i))
+              (aset didx (+ dfid i) (aget sidx i))))
+          (recur (inc i))))
+      {:index dindex :id did' :fid (+ dfid sfid)}))
 #+END_SRC
 
 ** Complete namespace definition
