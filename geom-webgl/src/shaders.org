@@ -2,17 +2,13 @@
 
 * Contents                                                         :toc_3_gh:
  - [[#thinggeomwebglshaders][thi.ng.geom.webgl.shaders]]
-     - [[#todo-shader-specs][TODO Shader specs]]
      - [[#shader-uniforms][Shader uniforms]]
          - [[#supported-types][Supported types]]
-         - [[#todo-uniform-setup--handling][TODO Uniform setup & handling]]
+         - [[#uniform-setup--handling][Uniform setup & handling]]
      - [[#shader-attributes][Shader attributes]]
      - [[#shader-creation][Shader creation]]
          - [[#header-injection][Header injection]]
          - [[#creation-compilation--linking][Creation, compilation & linking]]
-     - [[#shader-usage][Shader usage]]
-     - [[#shading-state-preparation][Shading state preparation]]
-     - [[#helpers][Helpers]]
      - [[#complete-namespace-definition][Complete namespace definition]]
      - [[#presets][Presets]]
          - [[#basic][Basic]]
@@ -24,34 +20,32 @@
          - [[#2d-overlay][2D Overlay]]
 
 * thi.ng.geom.webgl.shaders
-
-** TODO Shader specs
 ** Shader uniforms
 *** Supported types
 
 #+BEGIN_SRC clojure :noweb-ref uniforms
   (def uniform-types
-    {:float       ["1fv" arrays/float32]
-     :int         ["1iv" arrays/int32]
-     :vec2        ["2fv" arrays/float32]
-     :vec3        ["3fv" arrays/float32]
-     :vec4        ["4fv" arrays/float32]
-     :ivec2       ["2iv" arrays/int32]
-     :ivec3       ["3iv" arrays/int32]
-     :ivec4       ["4iv" arrays/int32]
-     :bool        ["1iv" arrays/int32]
-     :bvec2       ["2iv" arrays/int32]
-     :bvec3       ["3iv" arrays/int32]
-     :bvec4       ["4iv" arrays/int32]
-     :mat2        ["Matrix2fv" arrays/float32]
-     :mat3        ["Matrix3fv" arrays/float32]
-     :mat4        ["Matrix4fv" arrays/float32]
-     :sampler2D   ["1iv" arrays/int32]
-     :samplerCube ["1iv" arrays/int32]})
+    {:float       ["1fv" ta/float32]
+     :int         ["1iv" ta/int32]
+     :vec2        ["2fv" ta/float32]
+     :vec3        ["3fv" ta/float32]
+     :vec4        ["4fv" ta/float32]
+     :ivec2       ["2iv" ta/int32]
+     :ivec3       ["3iv" ta/int32]
+     :ivec4       ["4iv" ta/int32]
+     :bool        ["1iv" ta/int32]
+     :bvec2       ["2iv" ta/int32]
+     :bvec3       ["3iv" ta/int32]
+     :bvec4       ["4iv" ta/int32]
+     :mat2        ["Matrix2fv" ta/float32]
+     :mat3        ["Matrix3fv" ta/float32]
+     :mat4        ["Matrix4fv" ta/float32]
+     :sampler2D   ["1iv" ta/int32]
+     :samplerCube ["1iv" ta/int32]})
 
 #+END_SRC
 
-*** TODO Uniform setup & handling
+*** Uniform setup & handling
 
 Shader specs define uniforms as a map under the =:uniforms= key. In
 this map, each of the shader's uniform names must be stated as keys
@@ -97,17 +91,17 @@ Special cases:
                            (#{:mat2 :mat3 :mat4} type)
                            (fn [x]
                              (.call setter gl loc transpose?
-                                    (if (arrays/typed-array? x)
+                                    (if (ta/typed-array? x)
                                       x (u-cast x))))
                            (= :vec3 type)
                            (fn [x]
                              (if (number? x)
                                (.call setter gl loc (-> x col/int24 col/as-rgba deref (subvec 0 3) u-cast))
-                               (.call setter gl loc (if (arrays/typed-array? x) x (u-cast x)))))
+                               (.call setter gl loc (if (ta/typed-array? x) x (u-cast x)))))
                            :else
                            (fn [x]
                              (.call setter gl loc
-                                    (if (arrays/typed-array? x)
+                                    (if (ta/typed-array? x)
                                       x (u-cast (if (not (sequential? x)) [x] x))))))
                  :loc loc})))
      {} uniforms))
@@ -117,6 +111,15 @@ Special cases:
     (if-let [u-spec (get-in shader [:uniforms id])]
       ((:setter u-spec) val)
       (warn "Unknown shader uniform: " id)))
+
+  (defn apply-default-uniforms
+    [shader uniforms]
+    (->> (keys uniforms)
+         (apply dissoc (:uniforms shader))
+         (transduce
+          (filter #(:default (val %)))
+          (completing #(set-uniform shader (key %2) (:default (val %2))))
+          nil)))
 #+END_SRC
 
 ** Shader attributes
@@ -133,12 +136,12 @@ Special cases:
     [^WebGLRenderingContext gl shader id {:keys [buffer stride size type normalized? offset]}]
     (if-let [loc (get-in shader [:attribs id])]
       (doto gl
-        (.bindBuffer gl/array-buffer buffer)
+        (.bindBuffer glc/array-buffer buffer)
         (.enableVertexAttribArray loc)
         (.vertexAttribPointer
          loc
          size
-         (or type gl/float)
+         (or type glc/float)
          (boolean normalized?)
          (or stride 0)
          (or offset 0)))
@@ -222,7 +225,7 @@ shader source before compilation with =compile-shader= below.
       (do
         (.shaderSource gl shader src)
         (.compileShader gl shader)
-        (if (.getShaderParameter gl shader gl/compile-status)
+        (if (.getShaderParameter gl shader glc/compile-status)
           shader
           (parse-and-throw-error gl shader src)))
       (err/throw! "Can't create shader")))
@@ -233,14 +236,14 @@ shader source before compilation with =compile-shader= below.
           a-src  (compile-glsl-vars "attribute" attribs)
           v-src  (compile-glsl-vars "varying" varying)
           prefix (str (or prefix header-prefix) u-src v-src)
-          vs     (compile-shader gl (str prefix a-src vs) gl/vertex-shader)
-          fs     (compile-shader gl (str prefix fs) gl/fragment-shader)
+          vs     (compile-shader gl (str prefix a-src vs) glc/vertex-shader)
+          fs     (compile-shader gl (str prefix fs) glc/fragment-shader)
           prog   (.createProgram gl)]
       (doto gl
         (.attachShader prog vs)
         (.attachShader prog fs)
         (.linkProgram prog))
-      (if (.getProgramParameter gl prog gl/link-status)
+      (if (.getProgramParameter gl prog glc/link-status)
         (let [uniforms (init-shader-uniforms gl prog uniforms)
               attribs (init-shader-attribs gl prog (keys attribs))]
           (doto gl
@@ -261,80 +264,6 @@ shader source before compilation with =compile-shader= below.
           :fs (glu/get-script-text fs))))
 #+END_SRC
 
-** Shader usage
-
-#+BEGIN_SRC clojure :noweb-ref draw
-  (defn apply-default-uniforms
-    [shader uniforms]
-    (->> (keys uniforms)
-         (apply dissoc (:uniforms shader))
-         (transduce
-          (filter #(:default (val %)))
-          (completing #(set-uniform shader (key %2) (:default (val %2))))
-          nil)))
-
-  (defn begin-shader
-    [^WebGLRenderingContext gl shader uniforms attribs]
-    (.useProgram gl (:program shader))
-    (apply-default-uniforms shader uniforms)
-    (reduce-kv #(set-uniform shader %2 %3) nil uniforms)
-    (reduce-kv #(set-attribute gl shader %2 %3) nil attribs))
-
-  (defn end-shader
-    [^WebGLRenderingContext gl shader]
-    (reduce #(disable-attribute gl shader (key %2)) nil (:attribs shader)))
-#+END_SRC
-
-** Shading state preparation
-
-Shader specs can specify WebGL render state flags which can then be
-automatically setup using the =prepare-render-state= function below.
-Currently the following options are supported:
-
-| *Key*         | *Values*                               | *Description*                  |
-|---------------+----------------------------------------+--------------------------------|
-| =:depth-test= | boolean                                | enabled if true, else disabled |
-| =:blend=      | boolean                                | enabled if true, else disabled |
-| =:blend-fn=   | 2-elem vector =[src-coeff dest-coeff]= | only used if =:blend true=     |
-|               | [[https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendFunc.xml][reference]]                              |                                |
-
-#+BEGIN_SRC clojure :noweb-ref state
-  (defn prepare-render-state
-    "Takes a Gl context and shader spec, sets GL render flags stored
-    under :state key (only if :state is present)."
-    [gl {:keys [state]}]
-    (when state
-      (if (:depth-test state)
-        (gl/enable gl gl/depth-test)
-        (gl/disable gl gl/depth-test))
-      (if (:blend state)
-        (let [[src dest] (or (:blend-fn state) [gl/src-alpha gl/one])]
-          (doto gl
-            (gl/enable gl/blend)
-            (.blendFunc src dest)))
-        (gl/disable gl gl/blend)))
-    gl)
-#+END_SRC
-
-** Helpers
-
-#+BEGIN_SRC clojure :noweb-ref helpers
-  (defn compute-normal-matrix
-    [m v] (-> v (m/* m) (m/invert) (m/transpose)))
-
-  (defn inject-normal-matrix
-    [spec model-mat view-mat normal-mat-id]
-    (let [model-mat (if (keyword? model-mat)
-                      (-> spec :uniforms model-mat)
-                      model-mat)
-          view-mat (if (keyword? view-mat)
-                      (-> spec :uniforms view-mat)
-                      view-mat)]
-      (assoc-in
-       spec [:uniforms normal-mat-id]
-       (compute-normal-matrix model-mat view-mat))))
-#+END_SRC
-
 ** Complete namespace definition
 
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders.cljs :noweb yes :mkdirp yes :padline no
@@ -345,9 +274,9 @@ Currently the following options are supported:
     [thi.ng.math.core :as m]
     [thi.ng.geom.core :as g]
     [thi.ng.geom.core.matrix]
-    [thi.ng.geom.webgl.core :as gl]
+    [thi.ng.geom.webgl.constants :as glc]
     [thi.ng.geom.webgl.utils :as glu]
-    [thi.ng.typedarrays.core :as arrays]
+    [thi.ng.typedarrays.core :as ta]
     [thi.ng.glsl.core :as glsl :include-macros true]
     [thi.ng.color.core :as col]
     [thi.ng.xerror.core :as err]
@@ -461,8 +390,7 @@ RGBA colors, however the alpha component is discarded.
   (ns thi.ng.geom.webgl.shaders.lambert
     (:require
      [thi.ng.geom.core.matrix :refer [M44]]
-     [thi.ng.geom.webgl.buffers :as buf]
-     [thi.ng.geom.webgl.shaders :as sh]
+     [thi.ng.geom.webgl.core :as gl]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.vertex :as vertex]
      [thi.ng.glsl.lighting :as light]))
@@ -512,7 +440,7 @@ RGBA colors, however the alpha component is discarded.
 
   (defn draw
     [^WebGLRenderingContext gl spec]
-    (buf/draw-arrays-with-shader gl (sh/inject-normal-matrix spec :model :view :normalMat)))
+    (gl/draw-with-shader gl (gl/inject-normal-matrix spec :model :view :normalMat)))
 #+END_SRC
 
 *** Phong
@@ -552,8 +480,7 @@ RGBA colors, however the alpha component is discarded.
   (ns thi.ng.geom.webgl.shaders.phong
     (:require
      [thi.ng.geom.core.matrix :refer [M44]]
-     [thi.ng.geom.webgl.buffers :as buf]
-     [thi.ng.geom.webgl.shaders :as sh]
+     [thi.ng.geom.webgl.core :as gl]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.vertex :as vert]
      [thi.ng.glsl.lighting :as light]))
@@ -589,7 +516,7 @@ RGBA colors, however the alpha component is discarded.
 
   (defn draw
     [^WebGLRenderingContext gl spec]
-    (buf/draw-arrays-with-shader gl (sh/inject-normal-matrix spec :model :view :normalMat)))
+    (gl/draw-with-shader gl (gl/inject-normal-matrix spec :model :view :normalMat)))
 #+END_SRC
 
 *** X-Ray
@@ -599,8 +526,7 @@ RGBA colors, however the alpha component is discarded.
     (:require
      [thi.ng.geom.core.matrix :refer [M44]]
      [thi.ng.geom.webgl.core :as gl]
-     [thi.ng.geom.webgl.buffers :as buf]
-     [thi.ng.geom.webgl.shaders :as sh]
+     [thi.ng.geom.webgl.constants :as glc]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.vertex :as vert]))
 
@@ -631,11 +557,11 @@ RGBA colors, however the alpha component is discarded.
                 :vNormal    :vec3}
      :state    {:depth-test false
                 :blend true
-                :blend-func [gl/src-alpha gl/one]}})
+                :blend-func [glc/src-alpha glc/one]}})
 
   (defn draw
     [^WebGLRenderingContext gl spec]
-    (buf/draw-arrays-with-shader gl (sh/inject-normal-matrix spec :model :view :normalMat)))
+    (gl/draw-with-shader gl (gl/inject-normal-matrix spec :model :view :normalMat)))
 #+END_SRC
 
 *** Spotlight
@@ -786,8 +712,8 @@ RGBA colors, however the alpha component is discarded.
     (:require
      [thi.ng.geom.core.matrix :refer [M44]]
      [thi.ng.geom.webgl.core :as gl]
+     [thi.ng.geom.webgl.constants :as glc]
      [thi.ng.geom.webgl.buffers :as buf]
-     [thi.ng.geom.webgl.shaders :as sh]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.lighting :as light]))
 
@@ -834,8 +760,8 @@ RGBA colors, however the alpha component is discarded.
                gl {:type   (.-type float-ext)
                    :width  size
                    :height size
-                   :filter gl/linear
-                   :wrap   gl/clamp-to-edge})]
+                   :filter glc/linear
+                   :wrap   glc/clamp-to-edge})]
       {:tex tex
        :fbo (-> (buf/make-fbo gl)
                 (gl/bind)
@@ -850,8 +776,8 @@ RGBA colors, however the alpha component is discarded.
       (gl/set-viewport 0 0 (:width tex) (:height tex))
       (gl/clear-color-buffer 1 1 1 1)
       (gl/clear-depth-buffer 1)
-      (gl/enable gl/depth-test)
-      (gl/cull-faces gl/front))
+      (gl/enable glc/depth-test)
+      (gl/cull-faces glc/front))
     (draw-fn)
     (gl/unbind fbo))
 
@@ -859,8 +785,8 @@ RGBA colors, however the alpha component is discarded.
     [^WebGLRenderingContext gl tex draw-fn]
     (doto gl
       (gl/clear-depth-buffer 1)
-      (gl/enable gl/depth-test)
-      (gl/cull-faces gl/back))
+      (gl/enable glc/depth-test)
+      (gl/cull-faces glc/back))
     (gl/bind tex 0)
     (draw-fn {:lightDepthTex 0
               :lightDepthSize [(:width tex) (:height tex)]}))
@@ -888,9 +814,9 @@ RGBA colors, however the alpha component is discarded.
      [thi.ng.geom.core.matrix :refer [M44]]
      [thi.ng.geom.rect :as r]
      [thi.ng.geom.webgl.core :as gl]
-     [thi.ng.geom.webgl.buffers :as buf]
+     [thi.ng.geom.webgl.constants :as glc]
      [thi.ng.geom.webgl.shaders :as sh]
-     [thi.ng.typedarrays.core :as arrays]
+     [thi.ng.typedarrays.core :as ta]
      [thi.ng.dstruct.streams :as streams]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.math.core :as m]))
@@ -908,22 +834,22 @@ RGBA colors, however the alpha component is discarded.
      :varying  {:vUV        :vec2}
      :state    {:depth-test false
                 :blend true
-                :blend-func [gl/src-alpha gl/one-minus-src-alpha]}})
+                :blend-func [glc/src-alpha glc/one-minus-src-alpha]}})
 
   (defn overlay-spec-from-rect
     ([^WebGLRenderingContext gl]
        (overlay-spec-from-rect gl (r/rect 1) true))
     ([^WebGLRenderingContext gl r init-shader?]
-       (let [vbuf (arrays/float32 8)
+       (let [vbuf (ta/float32 8)
              [a b c d] (g/vertices r)
              _ (streams/into-buffer [a b d c] vbuf 2 0)
-             spec {:attribs  (buf/make-attribute-buffers
-                              gl gl/static-draw
+             spec {:attribs  (gl/make-attribute-buffers
+                              gl glc/static-draw
                               {:position {:data vbuf :size 2}
-                               :uv       {:data (arrays/float32 [0 0, 1 0, 0 1, 1 1]) :size 2}})
+                               :uv       {:data (ta/float32 [0 0, 1 0, 0 1, 1 1]) :size 2}})
                    :uniforms {:tex  0
                               :proj (gl/ortho)}
-                   :mode     gl/triangle-strip
+                   :mode     glc/triangle-strip
                    :num-vertices 4}]
          (if init-shader?
            (assoc spec :shader (sh/make-shader-from-spec gl shader-spec))
@@ -938,5 +864,5 @@ RGBA colors, however the alpha component is discarded.
           spec (assoc-in spec [:uniforms :model] (-> M44 (g/translate x y 0) (g/scale s)))]
       (when tex
         (gl/bind tex (get-in spec [:uniforms :tex])))
-      (buf/draw-arrays-with-shader gl spec)))
+      (gl/draw-with-shader gl spec)))
 #+END_SRC

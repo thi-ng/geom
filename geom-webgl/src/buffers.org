@@ -2,8 +2,6 @@
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomwebglbuffers][thi.ng.geom.webgl.buffers]]
-     - [[#attribute-buffers][Attribute buffers]]
-         - [[#drawing][Drawing]]
      - [[#frame-buffer][Frame buffer]]
      - [[#render-buffer][Render buffer]]
      - [[#textures][Textures]]
@@ -11,64 +9,14 @@
 
 * thi.ng.geom.webgl.buffers
 
-** Attribute buffers
-
-#+BEGIN_SRC clojure :noweb-ref a-buffer
-  (defn make-attribute-buffer
-    [^WebGLRenderingContext gl target draw-type data]
-    (let [buffer (.createBuffer gl)]
-      (.bindBuffer gl target buffer)
-      (.bufferData gl target data draw-type)
-      buffer))
-
-  (defn make-attribute-buffers
-    [^WebGLRenderingContext gl mode specs]
-    (reduce-kv
-     (fn [specs id {:keys [data target] :or {target gl/array-buffer}}]
-       (update-in
-        specs [id] merge
-        {:buffer      (make-attribute-buffer gl target mode data)
-         :target      target
-         :buffer-mode mode}))
-     specs specs))
-
-  (defn make-attribute-buffers-in-spec
-    [model-spec ^WebGLRenderingContext gl mode]
-    (update-in model-spec [:attribs] #(make-attribute-buffers gl mode %)))
-
-  (defn update-buffer-in-spec
-    [^WebGLRenderingContext gl spec id coll]
-    (let [{:keys [target data buffer buffer-mode size]} (-> spec :attribs id)]
-      (gl/fill-vertex-buffer data coll size)
-      (.bindBuffer gl target buffer)
-      (.bufferData gl target data buffer-mode)
-      gl))
-#+END_SRC
-
-*** Drawing
-
-#+BEGIN_SRC clojure :noweb-ref a-buffer
-  (defn draw-arrays
-    [^WebGLRenderingContext gl {:keys [mode num-vertices] :or {mode gl/triangles}}]
-    (.drawArrays gl mode 0 num-vertices)
-    gl)
-
-  (defn draw-arrays-with-shader
-    [^WebGLRenderingContext gl {:keys [shader attribs uniforms] :as spec}]
-    (sh/begin-shader gl shader uniforms attribs)
-    (draw-arrays gl spec)
-    (sh/end-shader gl shader)
-    gl)
-#+END_SRC
-
 ** Frame buffer
 
 #+BEGIN_SRC clojure :noweb-ref fbo
   (defrecord FBO [^WebGLRenderingContext gl id]
     gl/IBind
-    (bind [_] (.bindFramebuffer gl gl/framebuffer id) _)
+    (bind [_] (.bindFramebuffer gl glc/framebuffer id) _)
     (bind [_ _] (err/unsupported!))
-    (unbind [_] (.bindFramebuffer gl gl/framebuffer nil) _)
+    (unbind [_] (.bindFramebuffer gl glc/framebuffer nil) _)
 
     gl/IRelease
     (release [_] (.deleteFramebuffer gl id) _)
@@ -76,25 +24,25 @@
     gl/IFramebuffer
     (set-fbo-color-texture
       [_ {:keys [id]}]
-      (.framebufferTexture2D gl gl/framebuffer gl/color-attachment0 gl/texture-2d id 0)
+      (.framebufferTexture2D gl glc/framebuffer glc/color-attachment0 glc/texture-2d id 0)
       (check-fbo gl)
       _)
     (set-fbo-depth-buffer
       [_ {:keys [id]}]
-      (.framebufferRenderbuffer gl gl/framebuffer gl/depth-attachment gl/renderbuffer id)
+      (.framebufferRenderbuffer gl glc/framebuffer glc/depth-attachment glc/renderbuffer id)
       (check-fbo gl)
       _))
 
   (defn- check-fbo
     [^WebGLRenderingContext gl]
-    (condp = (.checkFramebufferStatus gl gl/framebuffer)
-      gl/framebuffer-unsupported
+    (condp = (.checkFramebufferStatus gl glc/framebuffer)
+      glc/framebuffer-unsupported
       (err/throw! "FBO unsupported")
-      gl/framebuffer-incomplete-attachment
+      glc/framebuffer-incomplete-attachment
       (err/throw! "FBO incomplete attachment")
-      gl/framebuffer-incomplete-dimensions
+      glc/framebuffer-incomplete-dimensions
       (err/throw! "FBO incomplete dimensions")
-      gl/framebuffer-incomplete-missing-attachment
+      glc/framebuffer-incomplete-missing-attachment
       (err/throw! "FBO incomplete missing attachment")
       gl))
 
@@ -108,9 +56,9 @@
 #+BEGIN_SRC clojure :noweb-ref r-buffer
   (defrecord RenderBuffer [^WebGLRenderingContext gl id format width height]
     gl/IBind
-    (bind [_] (.bindRenderbuffer gl gl/renderbuffer id) _)
+    (bind [_] (.bindRenderbuffer gl glc/renderbuffer id) _)
     (bind [_ _] (err/unsupported!))
-    (unbind [_] (.bindRenderbuffer gl gl/renderbuffer nil) _)
+    (unbind [_] (.bindRenderbuffer gl glc/renderbuffer nil) _)
 
     gl/IRelease
     (release [_] (.deleteRenderbuffer gl id) _)
@@ -118,7 +66,7 @@
     gl/IConfigure
     (configure [_ {:keys [format width height]}]
       (gl/bind _)
-      (.renderbufferStorage gl gl/renderbuffer format width height)
+      (.renderbufferStorage gl glc/renderbuffer format width height)
       (gl/unbind _)
       (RenderBuffer. gl id format width height)))
 
@@ -133,7 +81,7 @@
     ([^WebGLRenderingContext gl size]
      (make-depth-buffer gl size size))
     ([^WebGLRenderingContext gl width height]
-     (make-render-buffer gl {:format gl/depth-component16 :width width :height height})))
+     (make-render-buffer gl {:format glc/depth-component16 :width width :height height})))
 #+END_SRC
 
 ** Textures
@@ -142,8 +90,8 @@
 |----------------+--------------------+-------------------------|
 | =:image=       | nil                | HTML image or canvas    |
 | =:pixels=      | nil                | Image data array        |
-| =:format=      | =gl/rgba=          | Texture color format    |
-| =:type=        | =gl/unsigned-byte= | Encoding                |
+| =:format=      | =glc/rgba=          | Texture color format    |
+| =:type=        | =glc/unsigned-byte= | Encoding                |
 | =:filter=      | nil                | Interpolation [min mag] |
 | =:wrap=        | nil                | Texture wrap mode [s t] |
 | =:filp=        | nil                | Vertical flip?          |
@@ -158,14 +106,14 @@
         [_] (gl/bind _ 0))
     (bind
         [_ unit]
-      (.activeTexture gl (+ gl/texture0 unit))
+      (.activeTexture gl (+ glc/texture0 unit))
       (.bindTexture gl target id)
       _)
     (unbind
         [_] (gl/unbind _ 0))
     (unbind
         [_ unit]
-      (.activeTexture gl (+ gl/texture0 unit))
+      (.activeTexture gl (+ glc/texture0 unit))
       (.bindTexture gl target nil)
       _)
     gl/IRelease
@@ -174,19 +122,19 @@
     gl/IConfigure
     (configure
         [_ {:keys [width height image pixels format type filter wrap flip premultiply]
-            :or   {type gl/unsigned-byte format gl/rgb} :as config}]
+            :or   {type glc/unsigned-byte format glc/rgb} :as config}]
       (when filter
         (let [[min mag] (if (sequential? filter) filter [filter filter])]
-          (.texParameteri gl target gl/texture-min-filter min)
-          (.texParameteri gl target gl/texture-mag-filter mag)))
+          (.texParameteri gl target glc/texture-min-filter min)
+          (.texParameteri gl target glc/texture-mag-filter mag)))
       (when wrap
         (let [[ws wt] (if (sequential? wrap) wrap [wrap wrap])]
-          (.texParameteri gl target gl/texture-wrap-s ws)
-          (.texParameteri gl target gl/texture-wrap-t wt)))
+          (.texParameteri gl target glc/texture-wrap-s ws)
+          (.texParameteri gl target glc/texture-wrap-t wt)))
       (when (not (nil? flip))
-        (.pixelStorei gl gl/unpack-flip-y-webgl flip))
+        (.pixelStorei gl glc/unpack-flip-y-webgl flip))
       (when (not (nil? premultiply))
-        (.pixelStorei gl gl/unpack-premultiply-alpha-webgl premultiply))
+        (.pixelStorei gl glc/unpack-premultiply-alpha-webgl premultiply))
       (cond
         image
         (.texImage2D gl target 0 format format type image)
@@ -196,8 +144,8 @@
 
   (defn make-texture
     [^WebGLRenderingContext gl opts]
-    (let [tex  (Texture2D. gl (.createTexture gl) (opts :target gl/texture-2d))
-          opts (merge {:format gl/rgba :type gl/unsigned-byte} opts)]
+    (let [tex  (Texture2D. gl (.createTexture gl) (opts :target glc/texture-2d))
+          opts (merge {:format glc/rgba :type glc/unsigned-byte} opts)]
       (gl/bind tex)
       (gl/configure tex opts)))
 
@@ -207,9 +155,9 @@
     ([^WebGLRenderingContext gl canvas opts]
      (->> opts
           (merge {:image       canvas
-                  :format      gl/rgba
-                  :filter      [gl/linear gl/linear]
-                  :wrap        [gl/clamp-to-edge gl/clamp-to-edge]
+                  :format      glc/rgba
+                  :filter      [glc/linear glc/linear]
+                  :wrap        [glc/clamp-to-edge glc/clamp-to-edge]
                   :flip        false
                   :premultiply true})
           (make-texture gl))))
@@ -217,9 +165,9 @@
   (defn load-texture
     [^WebGLRenderingcontext gl opts]
     (let [tex (->> opts
-                   (merge {:format gl/rgba
-                           :filter [gl/linear gl/linear]
-                           :wrap   gl/clamp-to-edge})
+                   (merge {:format glc/rgba
+                           :filter [glc/linear glc/linear]
+                           :wrap   glc/clamp-to-edge})
                    (make-texture gl))
           img (js/Image.)]
       (set! (.-onload img)
@@ -237,14 +185,11 @@
 #+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/buffers.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.buffers
     (:require
-     [thi.ng.typedarrays.core :as arrays]
      [thi.ng.geom.webgl.core :as gl]
-     [thi.ng.geom.webgl.shaders :as sh]
+     [thi.ng.geom.webgl.constants :as glc]
      [thi.ng.xerror.core :as err]))
 
   (declare check-fbo)
-
-  <<a-buffer>>
 
   <<fbo>>
 
