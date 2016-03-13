@@ -328,19 +328,19 @@ These protocol methods are used internally by =g/into=.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IScale
   (scale
-   [_ s] (transform-vertices #(m/*! % s) vertices (* id 9)) _)
+   [_ s] (transform-vertices #(m/*! % s) vertices (* id 3)) _)
   (scale
-   [_ sx sy sz] (transform-vertices #(m/*! % sx sy sz) vertices (* id 9)) _)
+   [_ sx sy sz] (transform-vertices #(m/*! % sx sy sz) vertices (* id 3)) _)
   (scale-size
    [_ s]
    (let [c (g/centroid _)]
-     (transform-vertices #(m/madd! (m/-! % c) s c) vertices (* id 9))) _)
+     (transform-vertices #(m/madd! (m/-! % c) s c) vertices (* id 3))) _)
   g/ITranslate
   (translate
-   [_ t] (transform-vertices #(m/+! % t) vertices (* id 9)) _)
+   [_ t] (transform-vertices #(m/+! % t) vertices (* id 3)) _)
   g/ITransform
   (transform
-   [_ tx] (transform-vertices #(g/transform-vector tx %) vertices (* id 9)) _)
+   [_ tx] (transform-vertices #(g/transform-vector tx %) vertices (* id 3)) _)
 #+END_SRC
 
 *** IWebGLConvert
