@@ -394,15 +394,15 @@ Furthermore, the options map also supports the following other keys:
             (.set fnormals nb idv)
             (.set fnormals nb (+ idv 3))
             (.set fnormals nb (+ idv 6))))
-        (when-let [vn (and vnormals (:vnorm attribs))]
+        (when-let [vn (if vnormals (get attribs :vnorm))]
           (.set vnormals (.-buf ^thi.ng.geom.core.vector.Vec3 (first vn)) idv)
           (.set vnormals (.-buf ^thi.ng.geom.core.vector.Vec3 (nth vn 1)) (+ idv 3))
           (.set vnormals (.-buf ^thi.ng.geom.core.vector.Vec3 (nth vn 2)) (+ idv 6)))
-        (when-let [uv (and uvs (:uv attribs))]
+        (when-let [uv (if uvs (get attribs :uv))]
           (.set uvs (.-buf ^thi.ng.geom.core.vector.Vec2 (first uv)) iduv)
           (.set uvs (.-buf ^thi.ng.geom.core.vector.Vec2 (nth uv 1)) (+ iduv 2))
           (.set uvs (.-buf ^thi.ng.geom.core.vector.Vec2 (nth uv 2)) (+ iduv 4)))
-        (when-let [col (and cols (:col attribs))]
+        (when-let [col (if cols (get attribs :col))]
           (->> (streams/into-buffer (first col) cols 4 idcol)
                (streams/into-buffer (nth col 1) cols 4)
                (streams/into-buffer (nth col 2) cols 4)))
@@ -410,21 +410,21 @@ Furthermore, the options map also supports the following other keys:
     m)
 
   (defn- index-vertex*
-    [m f vertices fnormals vnormals cols uvs]
-    (or (get (.-index m) f)
+    [m va vertices fnormals vnormals cols uvs]
+    (or (get (.-index m) va)
         (let [id  (.-id ^IndexedGLMesh m)
               idv (* id 3)
-              [v fn vn col uv] f]
+              [v fn vn col uv] va]
           (.set vertices (.-buf ^thi.ng.geom.core.vector.Vec3 v) idv)
-          (if (and fnormals fn)
+          (if (if fnormals fn)
             (.set fnormals (.-buf ^thi.ng.geom.core.vector.Vec3 fn) idv)
-            (if (and vnormals vn)
+            (if (if vnormals vn)
               (.set vnormals (.-buf ^thi.ng.geom.core.vector.Vec3 vn) idv)))
-          (when (and cols col)
+          (when (if cols col)
             (streams/into-buffer col cols 4 (* id 4)))
-          (when (and uvs uv)
+          (when (if uvs uv)
             (.set uvs (.-buf ^thi.ng.geom.core.vector.Vec2 uv) (* id 2)))
-          (set! (.-index ^IndexedGLMesh m) (assoc (.-index ^IndexedGLMesh m) f id))
+          (set! (.-index ^IndexedGLMesh m) (assoc (.-index ^IndexedGLMesh m) va id))
           (set! (.-id ^IndexedGLMesh m) (inc id))
           id)))
 
@@ -436,19 +436,19 @@ Furthermore, the options map also supports the following other keys:
            (run! #(add-face-indexed* m %)))
       (let [{:keys [vertices fnormals vnormals uvs cols id fid indices]} m
             {:keys [vnorm uv col]} attribs
-            fnorm (if fnormals (or (get attribs :fnorm) (gu/ortho-normal verts)))
-            ida (index-vertex*
+            fnorm (if fnormals (or (get attribs :fnorm) (gu/ortho-normal verts)))]
+        (aset indices fid
+              (index-vertex*
                  m [(nth verts 0) fnorm (nth vnorm 0 nil) (nth col 0 nil) (nth uv 0 nil)]
-                 vertices fnormals vnormals cols uvs)
-            idb (index-vertex*
+                 vertices fnormals vnormals cols uvs))
+        (aset indices (+ fid 1)
+              (index-vertex*
                  m [(nth verts 1) fnorm (nth vnorm 1 nil) (nth col 1 nil) (nth uv 1 nil)]
-                 vertices fnormals vnormals cols uvs)
-            idc (index-vertex*
+                 vertices fnormals vnormals cols uvs))
+        (aset indices (+ fid 2)
+              (index-vertex*
                  m [(nth verts 2) fnorm (nth vnorm 2 nil) (nth col 2 nil) (nth uv 2 nil)]
-                 vertices fnormals vnormals cols uvs)]
-        (aset indices fid ida)
-        (aset indices (+ fid 1) idb)
-        (aset indices (+ fid 2) idc)
+                 vertices fnormals vnormals cols uvs))
         (set! (.-fid m) (+ fid 3))))
     m)
 
