@@ -76,19 +76,23 @@
      (mm/madd qx (n 2) qy (b 2) (p 2))))
 
   (defn sweep-profile
-    [profile attribs [points _ norms bnorms]]
-    (let [frames     (map vector points norms bnorms)
+    [profile attribs opts [points _ norms bnorms]]
+    (let [{:keys [close? loop?] :or {close? true}} opts
+          frames     (map vector points norms bnorms)
           tx         (fn [[p n b]] (mapv #(sweep-point p n b %) profile))
           frame0     (tx (first frames))
           nprof      (count profile)
           nprof1     (inc nprof)
           numf       (dec (count points))
-          attr-state {:du (/ 1.0 nprof) :dv (/ 1.0 numf)}]
-      (->> (next frames) ;; TODO transducer
+          attr-state {:du (/ 1.0 nprof) :dv (/ 1.0 numf)}
+          frames     (if loop?
+                       (concat (next frames) [(first frames)])
+                       (next frames))]
+      (->> frames ;; TODO transducer
            (reduce
             (fn [[faces prev i fid] frame]
               (let [curr  (tx frame)
-                    curr  (conj curr (first curr))
+                    curr  (if close? (conj curr (first curr)) curr)
                     atts  (assoc attr-state :v (double (/ i numf)))
                     faces (->> (interleave
                                 (partition 2 1 prev)
@@ -103,17 +107,17 @@
                                    (assoc atts :u (double (/ j nprof))))))
                                (concat faces))]
                 [faces curr (inc i) (+ fid nprof1)]))
-            [nil (conj frame0 (first frame0)) 0 0])
+            [nil (if close? (conj frame0 (first frame0)) frame0) 0 0])
            (first))))
 
   (defn sweep-mesh
     ([points profile]
      (sweep-mesh points profile nil))
-    ([points profile {:keys [mesh align? attribs]}]
+    ([points profile {:keys [mesh attribs align?] :as opts}]
      (let [frames (compute-frames points)
            frames (if align? (align-frames frames) frames)]
        (->> frames
-            (sweep-profile profile attribs)
+            (sweep-profile profile attribs opts)
             (g/into (or mesh (bm/basic-mesh)))))))
 
   (defn sweep-strand
