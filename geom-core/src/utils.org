@@ -85,7 +85,7 @@
     (->> points
          (partition 2 1)
          (transduce
-          (map #(g/dist (% 0) (% 1)))
+          (map #(g/dist (nth % 0) (nth % 1)))
           (completing (fn [a d] (conj a (+ (peek a) d))))
           [0])))
 
