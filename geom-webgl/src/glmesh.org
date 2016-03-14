@@ -159,9 +159,7 @@ the mesh (without their attributes, only positions).
   (into
    [_ faces]
    (if (instance? GLMesh faces)
-     (do (into-glmesh* _ faces)
-         (set! id (+ id (:id faces)))
-         _)
+     (into-glmesh* _ faces)
      (tu/into-mesh _ add-face* faces)))
 #+END_SRC
 
@@ -304,11 +302,7 @@ the mesh (without their attributes, only positions).
   (into
    [_ m]
    (if (instance? IndexedGLMesh m)
-     (let [res (into-iglmesh* _ m)]
-       (set! index (:index res))
-       (set! id (:id res))
-       (set! fid (:fid res))
-       _)
+     (into-iglmesh* _ m)
      (tu/into-mesh _ add-face-indexed* m)))
 #+END_SRC
 
@@ -376,7 +370,7 @@ Furthermore, the options map also supports the following other keys:
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn- add-face*
-    [m [verts attribs :as f]]
+    [^GLMesh m [verts attribs :as f]]
     (if (> (count verts) 3)
       (->> f
            ((gu/tessellate-face gu/tessellate-with-first))
@@ -410,7 +404,7 @@ Furthermore, the options map also supports the following other keys:
     m)
 
   (defn- index-vertex*
-    [m va vertices fnormals vnormals cols uvs]
+    [^IndexedGLMesh m va vertices fnormals vnormals cols uvs]
     (or (get (.-index m) va)
         (let [id  (.-id ^IndexedGLMesh m)
               idv (* id 3)
@@ -429,7 +423,7 @@ Furthermore, the options map also supports the following other keys:
           id)))
 
   (defn- add-face-indexed*
-    [m [verts attribs :as f]]
+    [^IndexedGLMesh m [verts attribs :as f]]
     (if (> (count verts) 3)
       (->> f
            ((gu/tessellate-face gu/tessellate-with-first))
@@ -439,20 +433,20 @@ Furthermore, the options map also supports the following other keys:
             fnorm (if fnormals (or (get attribs :fnorm) (gu/ortho-normal verts)))]
         (aset indices fid
               (index-vertex*
-                 m [(nth verts 0) fnorm (nth vnorm 0 nil) (nth col 0 nil) (nth uv 0 nil)]
-                 vertices fnormals vnormals cols uvs))
+               m [(nth verts 0) fnorm (nth vnorm 0 nil) (nth col 0 nil) (nth uv 0 nil)]
+               vertices fnormals vnormals cols uvs))
         (aset indices (+ fid 1)
               (index-vertex*
-                 m [(nth verts 1) fnorm (nth vnorm 1 nil) (nth col 1 nil) (nth uv 1 nil)]
-                 vertices fnormals vnormals cols uvs))
+               m [(nth verts 1) fnorm (nth vnorm 1 nil) (nth col 1 nil) (nth uv 1 nil)]
+               vertices fnormals vnormals cols uvs))
         (aset indices (+ fid 2)
               (index-vertex*
-                 m [(nth verts 2) fnorm (nth vnorm 2 nil) (nth col 2 nil) (nth uv 2 nil)]
-                 vertices fnormals vnormals cols uvs))
+               m [(nth verts 2) fnorm (nth vnorm 2 nil) (nth col 2 nil) (nth uv 2 nil)]
+               vertices fnormals vnormals cols uvs))
         (set! (.-fid m) (+ fid 3))))
     m)
 
-  (defn transform-vertices
+  (defn- transform-vertices
     [f buf num]
     (let [tv (vec3 0)
           tb (.-buf ^thi.ng.geom.core.vector.Vec3 tv)]
@@ -463,7 +457,7 @@ Furthermore, the options map also supports the following other keys:
           (recur (+ i 3))))))
 
   (defn- into-glmesh*
-    [dest src]
+    [^GLMesh dest ^GLMesh src]
     (let [{sverts :vertices sfn :fnormals svn :vnormals scol :cols suv :uvs sid :id} src
           {dverts :vertices dfn :fnormals dvn :vnormals dcol :cols duv :uvs did :id} dest
           sidv   (* sid 9)
@@ -476,7 +470,9 @@ Furthermore, the options map also supports the following other keys:
       (when (if dcol scol)
         (.set dcol (.slice scol 0 (* sid 12)) (* did 12)))
       (when (if duv suv)
-        (.set duv (.slice suv 0 (* sid 6)) (* did 6)))))
+        (.set duv (.slice suv 0 (* sid 6)) (* did 6)))
+      (set! (.-id dest) (+ did sid))
+      dest))
 
   (defn- build-rindex
     [dindex sindex start]
@@ -491,7 +487,7 @@ Furthermore, the options map also supports the following other keys:
     (into dindex (map (fn [kv] [(peek (val kv)) (key kv)])) rindex))
 
   (defn- into-iglmesh*
-    [dest src]
+    [^IndexedGLMesh dest ^IndexedGLMesh src]
     (let [{sverts :vertices sfn :fnormals svn :vnormals scol :cols
            suv :uvs sidx :indices sindex :index sid :id sfid :fid} src
           {dverts :vertices dfn :fnormals dvn :vnormals dcol :cols
@@ -529,7 +525,10 @@ Furthermore, the options map also supports the following other keys:
             (do ;;(debug :reuse (aget sidx i) :dfid (+ dfid i))
               (aset didx (+ dfid i) (aget sidx i))))
           (recur (inc i))))
-      {:index dindex :id did' :fid (+ dfid sfid)}))
+      (set! (.-index dest) dindex)
+      (set! (.-id dest) did')
+      (set! (.-fid dest) (+ dfid sfid))
+      dest))
 #+END_SRC
 
 ** Complete namespace definition
@@ -548,10 +547,11 @@ Furthermore, the options map also supports the following other keys:
      [thi.ng.typedarrays.core :as ta]))
 
   (declare gl-mesh indexed-gl-mesh)
-
-  <<helpers>>
+  (declare add-face* add-face-indexed* into-glmesh* into-iglmesh* transform-vertices)
 
   <<impl>>
 
   <<ctors>>
+
+  <<helpers>>
 #+END_SRC
