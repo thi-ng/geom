@@ -160,7 +160,7 @@ of its 6 sides. The colors must be specified as RGBA using the
           model     (-> (a/aabb 1)
                         (g/center)
                         (g/as-mesh
-                         {:mesh    (glm/gl-mesh 12 #{:col})
+                         {:mesh    (glm/indexed-gl-mesh 12 #{:col})
                           :attribs {:col (->> [[1 0 0] [0 1 0] [0 0 1] [0 1 1] [1 0 1] [1 1 0]]
                                               (map col/rgba)
                                               (attr/const-face-attribs))}})
@@ -195,7 +195,7 @@ Same example as above, only this time using basic lambert shading...
           model     (-> (a/aabb 1)
                         (g/center)
                         (g/as-mesh
-                         {:mesh    (glm/gl-mesh 12 #{:col :fnorm})
+                         {:mesh    (glm/indexed-gl-mesh 12 #{:col :fnorm})
                           :attribs {:col (->> [[1 0 0] [0 1 0] [0 0 1] [0 1 1] [1 0 1] [1 1 0]]
                                               (map col/rgba)
                                               (attr/const-face-attribs))}})
@@ -241,7 +241,7 @@ transformation).
           view-rect (gl/get-viewport-rect gl)
           teeth     20
           model     (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
-                        (g/extrude-shell {:mesh    (glm/gl-mesh 1000 #{:fnorm})
+                        (g/extrude-shell {:mesh    (glm/indexed-gl-mesh 1000 #{:fnorm})
                                           :depth   0.1
                                           :inset   0.025
                                           :wall    0.015
@@ -323,13 +323,13 @@ Live version: http://demo.thi.ng/geom/webgl/unproject/
                       :lightPos  (vec3 -1 2 0)}
           box        (-> (a/aabb 1)
                          (g/center)
-                         (g/as-mesh {:mesh (glm/gl-mesh 12 #{:fnorm})})
+                         (g/as-mesh {:mesh (glm/indexed-gl-mesh 12 #{:fnorm})})
                          (gl/as-webgl-buffer-spec {})
                          (gl/make-buffers-in-spec gl glc/static-draw)
                          (assoc :shader shader :uniforms (assoc uniforms :diffuseCol [1 0 1])))
           ground     (pl/plane-with-point (vec3 0 ground-y 0) v/V3Y)
           back       (pl/plane-with-point (vec3 0 0 (* -0.5 size)) v/V3Z)
-          planes     (-> (g/as-mesh back {:mesh (glm/gl-mesh 4 #{:fnorm}) :size size})
+          planes     (-> (g/as-mesh back {:mesh (glm/indexed-gl-mesh 4 #{:fnorm}) :size size})
                          (g/translate (vec3 0 (+ (* 0.5 size) ground-y) 0))
                          (g/into (g/as-mesh ground {:size size}))
                          (gl/as-webgl-buffer-spec {})
@@ -397,7 +397,7 @@ Live version: http://demo.thi.ng/geom/webgl/texcube/
           model     (-> (a/aabb 1)
                         (g/center)
                         (g/as-mesh
-                         {:mesh    (glm/gl-mesh 12 #{:uv})
+                         {:mesh    (glm/indexed-gl-mesh 12 #{:uv})
                           :attribs {:uv (attr/face-attribs (attr/uv-cube-map-v 256 false))}})
                         (gl/as-webgl-buffer-spec {})
                         (cam/apply (cam/perspective-camera {:eye (vec3 0 0 0.5) :fov 90 :aspect view-rect}))
@@ -511,7 +511,7 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/
         (ptf/compute-frames)
         (ptf/align-frames)
         (ptf/sweep-strand-mesh
-         #(+ 0.5 (* 0.5 (Math/sin (* 8 TWO_PI (/ % 399.0)))))
+         #(+ 0.5 (* 0.5 (Math/sin (* 8 TWO_PI (/ % 400.0)))))
          8 7 (g/vertices (c/circle 0.05) 8)
          {:mesh    (glm/gl-mesh 65536 #{:fnorm :uv})
           :attribs {:uv attr/uv-tube}
