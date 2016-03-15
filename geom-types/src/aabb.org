@@ -237,7 +237,12 @@ front, back (see diagram below).
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IProximity
-  (closest-point [_ p] nil)
+  (closest-point
+   [{[px py pz] :p size :size} q]
+   (vec3
+    (m/clamp (nth q 0) px (+ px (nth size 0)))
+    (m/clamp (nth q 1) py (+ py (nth size 1)))
+    (m/clamp (nth q 2) pz (+ pz (nth size 2)))))
 #+END_SRC
 
 *** TODO ISample
