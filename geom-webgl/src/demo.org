@@ -53,6 +53,7 @@ Then in the browser, using the JS console, the demos can be individually launche
   [thi.ng.geom.aabb :as a]
   [thi.ng.geom.attribs :as attr]
   [thi.ng.typedarrays.core :as arrays]
+  [thi.ng.color.core :as col]
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref stats
@@ -119,7 +120,7 @@ link for more discussion about these options.
        (anim/animate
         (fn [t frame]
           (gl/set-viewport gl view-rect)
-          (gl/clear-color-buffer gl 1 0.98 0.95 1.0)
+          (gl/clear-color-and-depth-buffer gl 1 0.98 0.95 1 1)
           ;; draw left polygon using color uniform (that's why we need to remove color attrib)
           (gl/draw-with-shader
            gl (-> model
@@ -150,8 +151,7 @@ of its 6 sides. The colors must be specified as RGBA using the
     <<require-macros>>
     (:require
      <<default-requires>>
-     [thi.ng.geom.webgl.shaders.basic :as basic]
-     [thi.ng.color.core :as col]))
+     [thi.ng.geom.webgl.shaders.basic :as basic]))
 
   (defn ^:export demo
     []
@@ -171,8 +171,7 @@ of its 6 sides. The colors must be specified as RGBA using the
       (anim/animate
        (fn [t frame]
          (gl/set-viewport gl view-rect)
-         (gl/clear-color-buffer gl 1 1 1 1)
-         (gl/enable gl glc/depth-test)
+         (gl/clear-color-and-depth-buffer gl col/WHITE 1)
          (gl/draw-with-shader
           gl (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2)))))
          true))))
@@ -185,8 +184,7 @@ Same example as above, only this time using basic lambert shading...
     <<require-macros>>
     (:require
      <<default-requires>>
-     [thi.ng.geom.webgl.shaders.lambert :as lambert]
-     [thi.ng.color.core :as col]))
+     [thi.ng.geom.webgl.shaders.lambert :as lambert]))
 
   (defn ^:export demo
     []
@@ -206,8 +204,7 @@ Same example as above, only this time using basic lambert shading...
       (anim/animate
        (fn [t frame]
          (gl/set-viewport gl view-rect)
-         (gl/clear-color-buffer gl 1 1 1 1)
-         (gl/enable gl glc/depth-test)
+         (gl/clear-color-and-depth-buffer gl col/WHITE 1)
          (lambert/draw
           gl (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2)))))
          true))))
@@ -272,9 +269,7 @@ transformation).
                                 (g/rotate-y -0.3)
                                 (g/rotate-z (- (+ t (/ HALF_PI teeth))))))]
            (gl/set-viewport gl view-rect)
-           (gl/clear-color-buffer gl 1 0.98 0.95 1.0)
-           (gl/clear-depth-buffer gl 1)
-           (gl/enable gl glc/depth-test)
+           (gl/clear-color-and-depth-buffer gl 1 0.98 0.95 1 1)
            (phong/draw gl (assoc-in model [:uniforms :model] tx1))
            (phong/draw
             gl (-> model
@@ -351,8 +346,7 @@ Live version: http://demo.thi.ng/geom/webgl/unproject/
                         (vswap! state assoc :isec p :update-ray false) p)
                       (:isec @state))]
            (gl/set-viewport gl view-rect)
-           (gl/clear-color-buffer gl 0.52 0.5 0.5 1)
-           (gl/enable gl glc/depth-test)
+           (gl/clear-color-and-depth-buffer gl 0.52 0.5 0.5 1 1)
            (phong/draw gl (cam/apply planes cam))
            (phong/draw gl (-> box
                               (cam/apply cam)
@@ -412,8 +406,7 @@ Live version: http://demo.thi.ng/geom/webgl/texcube/
        (fn [t frame]
          (when @tex-ready
            (gl/set-viewport gl view-rect)
-           (gl/clear-color-buffer gl 1 1 1 1)
-           (gl/enable gl glc/depth-test)
+           (gl/clear-color-and-depth-buffer gl col/WHITE 1)
            (gl/bind tex 0)
            (gl/draw-with-shader
             gl (assoc-in model [:uniforms :model]
@@ -434,7 +427,6 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/
      [thi.ng.glsl.vertex :as vertex]
      [thi.ng.glsl.lighting :as light]
      [thi.ng.glsl.fog :as fog]
-     [thi.ng.color.core :as col]
      [thi.ng.color.gradients :as grad]
      ))
 
@@ -551,8 +543,7 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/
       (anim/animate
        (fn [t frame]
          (gl/set-viewport gl view-rect)
-         (gl/clear-color-buffer gl 0.0 0.0 0.1 1)
-         (gl/enable gl glc/depth-test)
+         (gl/clear-color-and-depth-buffer gl 0.0 0.0 0.1 1 1)
          (gl/bind tex 0)
          (gl/draw-with-shader
           gl (-> model
@@ -575,8 +566,7 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
      <<default-requires>>
      [thi.ng.geom.sphere :as s]
      [thi.ng.geom.webgl.shaders.lambert :as lambert]
-     [thi.ng.geom.webgl.shaders.overlay :as overlay]
-     [thi.ng.color.core :as col]
+     [thi.ng.geom.webgl.shaders.image :as image]
      [thi.ng.glsl.core :as glsl :include-macros true]))
 
   (def shader-spec
@@ -633,13 +623,12 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
                              (gl/set-fbo-color-texture fbo-tex)
                              (gl/set-fbo-depth-buffer (buf/make-depth-buffer gl fbo-size))
                              (gl/unbind))
-          ov-quad        (-> (overlay/overlay-spec-from-rect gl)
-                             (assoc
-                              :tex      fbo-tex
-                              :viewport view-rect
-                              :pos      [0 0]
-                              :width    128
-                              :height   128))
+          ov-quad        (-> (image/make-shader-spec
+                              gl {:state    {:tex   fbo-tex
+                                             :blend false}
+                                  :viewport view-rect
+                                  :width    128
+                                  :height   128}))
           model1         (-> (s/sphere 1)
                              (g/as-mesh
                               {:mesh    (glm/gl-mesh 64 #{:col :fnorm})
@@ -665,9 +654,7 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
          (gl/bind fbo)
          (doto gl
            (gl/set-viewport 0 0 fbo-size fbo-size)
-           (gl/clear-color-buffer 0 0 0 1)
-           (gl/clear-depth-buffer 1)
-           (gl/enable glc/depth-test)
+           (gl/clear-color-and-depth-buffer col/BLACK 1)
            (lambert/draw
             (assoc-in model1 [:uniforms :model]
                       (-> M44 (g/rotate-x t) (g/rotate-y (* t 2))))))
@@ -677,17 +664,15 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
          (gl/bind fbo-tex)
          (doto gl
            (gl/set-viewport view-rect)
-           (gl/clear-color-buffer 0.8 0.8 0.8 1)
-           (gl/clear-depth-buffer 1)
-           (gl/enable glc/depth-test)
+           (gl/clear-color-and-depth-buffer 0.8 0.8 0.8 1 1)
            (gl/draw-with-shader
             (update model2 :uniforms merge
                     {:model (-> M44 (g/rotate-x (* t -0.25)) (g/rotate-y (* t -0.45)))
                      :time  t})))
          (gl/unbind fbo-tex)
 
-         ;; render pass #3: Draw FBO texture as 2D overlay
-         (overlay/draw-overlay2d gl ov-quad)
+         ;; render pass #3: Draw FBO texture as 2D image
+         (image/draw gl ov-quad)
 
          true))))
 #+END_SRC
@@ -695,13 +680,13 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
 ** TODO Example: Morphogen & shadow mapping
 
 #+BEGIN_SRC clojure
- ;;:tangle ../babel/test/thi/ng/geom/webgl/example06.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.example06
+ ;;:tangle ../babel/test/thi/ng/geom/webgl/example07.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.webgl.example07
     <<require-macros>>
     (:require
      <<default-requires>>
      [thi.ng.geom.webgl.shaders.shadow :as shadow]
-     [thi.ng.geom.webgl.shaders.overlay :as overlay]
+     [thi.ng.geom.webgl.shaders.image :as image]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.basicmesh :refer [basic-mesh]]
      [thi.ng.morphogen.core :as mg]))
@@ -739,7 +724,7 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
           model        (-> mesh
                            (gl/as-webgl-buffer-spec {})
                            (gl/make-buffers-in-spec gl glc/static-draw))
-          ov-quad      (overlay/overlay-spec-from-rect gl)
+          ov-quad      (image/make-shader-spec gl)
           view-rect    (gl/get-viewport-rect gl)
           cam-proj     (gl/perspective 45 view-rect 0.1 100.0)
           light-proj   (gl/perspective 45 1 0.01 100)
@@ -786,7 +771,7 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
 
            (gl/disable gl glc/depth-test)
            (gl/disable gl glc/cull-face)
-           (overlay/draw-overlay2d
+           (image/draw
             gl (assoc ov-quad
                  :viewport view-rect
                  :pos [(m/map-interval (Math/sin t) -1 1 0 512) 352]
