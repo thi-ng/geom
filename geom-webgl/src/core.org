@@ -218,7 +218,10 @@ using the protocol.
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type cljs.core.PersistentVector
     streams/IBuffer
-    (into-buffer [_ buf stride idx]
+    (get-buffer
+      [_] (ta/float32 _))
+    (into-buffer
+      [_ buf stride idx]
       (let [t     (type (first _))
             into* (case t
                    thi.ng.geom.core.vector.Vec2 into-buffer-vec2
@@ -421,22 +424,47 @@ using the protocol.
 
 #+BEGIN_SRC clojure :noweb-ref ctx
   (defn clear-color-buffer
-    [^WebGLRenderingContext gl r g b a]
-    (.clearColor gl r g b a)
-    (.clear gl glc/color-buffer-bit))
+    ([^WebGLRenderingContext gl col]
+     (let [^thi.ng.color.core.RGBA c (col/as-rgba col)]
+       (clear-color-buffer gl (.-r c) (.-g c) (.-b c) (.-a c))))
+    ([^WebGLRenderingContext gl r g b a]
+     (.clearColor gl r g b a)
+     (.clear gl glc/color-buffer-bit)
+     gl))
 
   (defn clear-depth-buffer
     [^WebGLRenderingContext gl d]
     (.clearDepth gl d)
-    (.clear gl glc/depth-buffer-bit))
+    (.clear gl glc/depth-buffer-bit)
+    gl)
+
+  (defn clear-color-and-depth-buffer
+    ([^WebGLRenderingContext gl col d]
+     (let [^thi.ng.color.core.RGBA c (col/as-rgba col)]
+       (clear-color-and-depth-buffer gl (.-r c) (.-g c) (.-b c) (.-a c) d)))
+    ([^WebGLRenderingContext gl r g b a d]
+     (.clearColor gl r g b a)
+     (.clearDepth gl d)
+     (.clear gl (bit-or glc/depth-buffer-bit glc/color-buffer-bit))
+     gl))
 
   (defn disable
     [^WebGLRenderingContext gl flag]
-    (.disable gl flag) gl)
+    (.disable gl flag)
+    gl)
 
   (defn enable
     [^WebGLRenderingContext gl flag]
-    (.enable gl flag) gl)
+    (.enable gl flag)
+    gl)
+
+  (defn scissor-test
+    ([^WebGLRenderingContext gl {[x y] :p [w h] :size}]
+     (scissor-test gl x y w h))
+    ([^WebGLRenderingContext gl x y w h]
+     (.enable gl glc/scissor-test)
+     (.scissor gl x y w h)
+     gl))
 
   (defn cull-faces
     [^WebGLRenderingContext gl side]
@@ -446,9 +474,11 @@ using the protocol.
 
   (defn set-viewport
     ([^WebGLRenderingContext gl {[x y] :p [w h] :size}]
-       (.viewport gl x y w h) gl)
+     (.viewport gl x y w h)
+     gl)
     ([^WebGLRenderingContext gl x y w h]
-       (.viewport gl x y w h) gl))
+     (.viewport gl x y w h)
+     gl))
 
   (defn get-viewport-rect
     [^WebGLRenderingContext gl]
@@ -458,15 +488,15 @@ using the protocol.
   (defn perspective
     [fovy aspect near far]
     (let [aspect (cond
-                  (number? aspect) aspect
-                  (map? aspect) (let [{[w h] :size} aspect] (/ w h))
-                  :default (/ (first aspect) (nth aspect 1)))]
+                   (number? aspect) aspect
+                   (map? aspect)    (let [{[w h] :size} aspect] (/ w h))
+                   :else            (/ (first aspect) (nth aspect 1)))]
       (mat/perspective fovy aspect near far)))
 
   (defn ortho
     ([] (mat/ortho -1 -1 1 1 -1 1))
     ([view-rect]
-     (let [a (reduce / (:size view-rect))]
+     (let [a (apply / (:size view-rect))]
        (mat/ortho (- a) 1 a -1 -1 1))))
 #+END_SRC
 
@@ -581,8 +611,18 @@ Currently the following options are supported:
 | =:blend=      | boolean                                | enabled if true, else disabled |
 | =:blend-fn=   | 2-elem vector =[src-coeff dest-coeff]= | only used if =:blend true=     |
 |               | [[https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendFunc.xml][reference]]                              |                                |
+| =:tex=        | single texture or seq of textures      | binds textures to tex. units   |
+|               |                                        | starting from 0                |
 
 #+BEGIN_SRC clojure :noweb-ref draw
+  (defn bind-sequentially
+    [coll]
+    (loop [i 0, coll coll]
+      (when coll
+        (when-let [x (first coll)]
+          (bind x i))
+        (recur (inc i) (next coll)))))
+
   (defn prepare-render-state
     "Takes a GL context and shader spec, sets GL render flags stored
     under :state key (only if :state is present)."
@@ -596,7 +636,11 @@ Currently the following options are supported:
           (doto gl
             (enable glc/blend)
             (.blendFunc src dest)))
-        (disable gl glc/blend)))
+        (disable gl glc/blend))
+      (when-let [tex (:tex state)]
+        (if (sequential? tex)
+          (bind-sequentially tex)
+          (bind tex 0))))
     gl)
 #+END_SRC
 
@@ -632,6 +676,7 @@ Currently the following options are supported:
 
   (defn draw-with-shader
     [^WebGLRenderingContext gl {:keys [shader] :as spec}]
+    (prepare-render-state gl shader)
     (begin-shader gl shader (get spec :uniforms) (get spec :attribs) (get spec :indices))
     (draw gl spec)
     (end-shader gl shader)
@@ -654,6 +699,7 @@ Currently the following options are supported:
      [thi.ng.geom.webgl.constants :as glc]
      [thi.ng.geom.webgl.shaders :as sh]
      [thi.ng.geom.webgl.utils :as glu]
+     [thi.ng.color.core :as col]
      [thi.ng.typedarrays.core :as ta]
      [thi.ng.dstruct.streams :as streams]
      [thi.ng.xerror.core :as err]))
