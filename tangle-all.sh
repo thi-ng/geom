@@ -2,7 +2,7 @@
 
 ./tangle.sh README.org
 
-readonly MODULES="core types meshops physics svg viz voxel webgl"
+readonly MODULES="core mesh physics svg types utils viz voxel webgl"
 
 for m in $MODULES; do
     ./tangle-module.sh $m
