@@ -171,10 +171,10 @@ front, back (see diagram below).
    (let [[a b c d e f g h] (g/vertices _)] ;; TODO verify with as-mesh order
      [[c d h g]
       [a b f e]
-      [e f g h]
+      [f g h e]
       [a d c b]
       [b c g f]
-      [a e h d]]))
+      [d a e h]]))
 #+END_SRC
 
 *** IIntersect                                                       :verify:
