@@ -1,4 +1,4 @@
-#+SETUPFILE: setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_3_gh:
  - [[#namespace-thinggeomvoxelisosurface][Namespace: thi.ng.geom.voxel.isosurface]]
@@ -310,7 +310,7 @@
 ** Helper functions
 *** Voxel bit test macro
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/voxel/macros.clj :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/voxel/macros.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.voxel.macros)
 
   (defmacro not-cond->
@@ -450,7 +450,7 @@
 
 ** Namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/voxel/isosurface.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/voxel/isosurface.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.voxel.isosurface
     #?(:cljs (:require-macros [thi.ng.geom.voxel.macros :refer [not-cond->]]))
     (:require

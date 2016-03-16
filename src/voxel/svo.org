@@ -1,4 +1,4 @@
-#+SETUPFILE: setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_3_gh:
  - [[#namespace-thinggeomvoxelsvo][Namespace: thi.ng.geom.voxel.svo]]
@@ -294,7 +294,7 @@
 
 ** Namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/voxel/svo.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/voxel/svo.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.voxel.svo
     (:require
      [thi.ng.math.core :as m]

@@ -1,6 +1,13 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
-* geom.voxels examples
+* Contents                                                         :toc_3_gh:
+ - [[#geomvoxel-examples][geom.voxel examples]]
+     - [[#namespaces-used-by-all-the-examples][Namespaces used by all the examples]]
+     - [[#example-gyroid-function-contained-in-two-boxes][Example: Gyroid function contained in two boxes]]
+     - [[#example-sphere-erosion][Example: Sphere erosion]]
+     - [[#example-3d-gradient-noise][Example: 3D Gradient Noise]]
+
+* geom.voxel examples
 
 ** Namespaces used by all the examples
 
@@ -20,7 +27,7 @@ This is a render of the voxel mesh generated with the code below:
 
 [[../../assets/svo-d7.jpg]]
 
-#+BEGIN_SRC clojure :tangle ../babel/examples/example01.clj :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/examples/voxel/example01.clj :noweb yes :mkdirp yes :padline no
   (ns example01
     (:require
      <<default-requires>>))
@@ -84,7 +91,7 @@ This is a render of the voxel mesh generated with the code below:
 
 [[../../assets/svo-sphere-erosion.jpg]]
 
-#+BEGIN_SRC clojure :tangle ../babel/examples/example02.clj :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/examples/voxel/example02.clj :noweb yes :mkdirp yes :padline no
   (ns example02
     (:require
      <<default-requires>>))
@@ -125,7 +132,7 @@ This is a render of the voxel mesh generated with the code below:
 
 [[../../assets/svo-simplexnoise.jpg]]
 
-#+BEGIN_SRC clojure :tangle ../babel/examples/example03.clj :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/examples/voxel/example03.clj :noweb yes :mkdirp yes :padline no
   (ns example03
     (:require
      <<default-requires>>
