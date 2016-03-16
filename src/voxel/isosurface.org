@@ -310,8 +310,8 @@
 ** Helper functions
 *** Voxel bit test macro
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/voxel/macros.clj :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.voxel.macros)
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/macros/voxel.clj :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.macros.voxel)
 
   (defmacro not-cond->
     "Like clojure.core/cond-> but with inverted test semantics."
@@ -452,14 +452,14 @@
 
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/voxel/isosurface.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.voxel.isosurface
-    #?(:cljs (:require-macros [thi.ng.geom.voxel.macros :refer [not-cond->]]))
+    #?(:cljs (:require-macros [thi.ng.geom.macros.voxel :refer [not-cond->]]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.vector :as v :refer [vec3]]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.voxel.svo :as svo :refer [cell-index select-cells voxel-cell voxel-config-at-depth]]
      [thi.ng.math.core :as m]
-     #?(:clj [thi.ng.geom.voxel.macros :refer [not-cond->]])))
+     #?(:clj [thi.ng.geom.macros.voxel :refer [not-cond->]])))
 
   <<lut>>
 
