@@ -35,6 +35,7 @@
              - [[#httpsgithubcomthi-ngtypedarraysthingtypedarrays][[[https://github.com/thi-ng/typedarrays/][thi.ng/typedarrays]]]]
              - [[#httpsgithubcomthi-ngxerrorthingxerror][[[https://github.com/thi-ng/xerror/][thi.ng/xerror]]]]
              - [[#httpsgithubcompostspectacularcljs-logcljs-log][[[https://github.com/postspectacular/cljs-log][cljs-log]]]]
+             - [[#httpsgithubcomweavejesterhiccuphiccup][[[https://github.com/weavejester/hiccup][hiccup]]]]
          - [[#development][Development]]
              - [[#httpsgithubcomemezeskelein-cljsbuildcljsbuild][[[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]]]
              - [[#httpsgithubcomhugoduncancriteriumcriterium][[[https://github.com/hugoduncan/criterium][Criterium]]]]
@@ -412,6 +413,12 @@ target/geom-<<project-version()>>.js
 [cljs-log "0.2.1"]
 #+END_SRC
 
+**** [[https://github.com/weavejester/hiccup][hiccup]]
+
+#+BEGIN_SRC clojure :exports none :noweb-ref dep-hiccup
+[hiccup "1.0.5"]
+#+END_SRC
+
 *** Development
 **** [[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]
 #+NAME: dep-cljsbuild
@@ -479,7 +486,8 @@ target/geom-<<project-version()>>.js
                     <<dep-strf>>
                     <<dep-tarrays>>
                     <<dep-xerror>>
-                    <<dep-cljs-log>>]
+                    <<dep-cljs-log>>
+                    <<dep-hiccup>>]
 
     :perforate    {:environments [{:namespaces [thi.ng.geom.bench.core.vector]}]}
 
@@ -505,11 +513,11 @@ target/geom-<<project-version()>>.js
                             :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}}}}
 
     :cljsbuild    {:builds [{:id "simple"
-                             :source-paths ["src" "test"]
+                             :source-paths ["src" "test" "examples/webgl"]
                              :compiler {:output-to "<<cljs-artefact-path>>"
                                         :optimizations :whitespace
                                         :pretty-print true}}
-                            {:source-paths ["src" "test"]
+                            {:source-paths ["src" "test" "examples/webgl"]
                              :id "prod"
                              :compiler {:output-to "<<cljs-artefact-path>>"
                                         :optimizations :advanced
@@ -537,8 +545,8 @@ target/geom-<<project-version()>>.js
     </head>
     <body>
       <canvas id="main" width="1280" height="720"></canvas>
-      <script type="text/javascript" src="resources/stats.js"></script>
-      <script type="text/javascript" src="resources/webgl-texture-float-extension-shims.js"></script>
+      <script type="text/javascript" src="dev-resources/stats.js"></script>
+      <script type="text/javascript" src="dev-resources/webgl-texture-float-extension-shims.js"></script>
       <script type="text/javascript" src="<<cljs-artefact-path>>"></script>
     </body>
   </html>
