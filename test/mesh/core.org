@@ -15,7 +15,7 @@
 #+END_SRC
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/test/mesh/core.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/test/thi/ng/geom/test/mesh/core.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.test.mesh.core
     #?(:cljs
        (:require-macros

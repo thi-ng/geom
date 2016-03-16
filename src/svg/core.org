@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeomsvgcore][Namespace: thi.ng.geom.svg.core]]
@@ -366,7 +366,7 @@ regard to specific means of visualization. In the example below we
 construct three circles, compute their points of intersection and then
 visualize the result in SVG:
 
-#+BEGIN_SRC clojure :tangle ../babel/examples/svgdemo01.clj :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/examples/svgdemo01.clj :noweb yes :mkdirp yes :padline no
   (ns svgdemo01
     (:require
      [thi.ng.math.core :as m]
@@ -499,7 +499,7 @@ Btw. This example can be run from the REPL via this command:
 
 ** Complete namespace: svg.core
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/svg/core.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/svg/core.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.core
     (:require
      [thi.ng.math.core :as m]
@@ -528,7 +528,7 @@ Btw. This example can be run from the REPL via this command:
 
 ** Complete namespace: svg.adapter
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/svg/adapter.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/svg/adapter.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.adapter
     (:require
      [thi.ng.math.core :as m]

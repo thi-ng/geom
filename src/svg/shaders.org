@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeomsvgshaders][Namespace: thi.ng.geom.svg.shaders]]
@@ -87,7 +87,7 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/svg/shaders.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/svg/shaders.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.svg.shaders
     (:require
      [thi.ng.math.core :as m]
