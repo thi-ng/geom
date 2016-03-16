@@ -98,7 +98,7 @@ Special cases:
                              (.call setter gl loc (boolean opt)
                                     (if (ta/typed-array? x)
                                       x (u-cast x))))
-                           (identical? :vec2 type)
+                           (= :vec2 type)
                            (fn [x]
                              (.call setter gl loc
                                     (cond
@@ -106,7 +106,7 @@ Special cases:
                                       (satisfies? streams/IBuffer x) (streams/get-buffer x)
                                       (number? x) (u-cast [x x])
                                       :else (u-cast x))))
-                           (identical? :vec3 type)
+                           (= :vec3 type)
                            (fn [x]
                              (.call setter gl loc
                                     (cond
@@ -114,7 +114,7 @@ Special cases:
                                       (satisfies? streams/IBuffer x) (streams/get-buffer x)
                                       (number? x) (-> x col/int24 col/as-rgba deref (subvec 0 3) u-cast)
                                       :else (u-cast x))))
-                           (identical? :vec4 type)
+                           (= :vec4 type)
                            (fn [x]
                              (.call setter gl loc
                                     (cond
