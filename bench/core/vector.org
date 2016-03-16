@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#vector-benchmarks][Vector benchmarks]]
@@ -8,7 +8,6 @@
      - [[#complete-namespace-definitions][Complete namespace definitions]]
 
 * Vector benchmarks
-
 ** Constants
 
 #+BEGIN_SRC clojure :noweb-ref helpers
@@ -162,7 +161,7 @@
 
 ** Complete namespace definitions
 
-#+BEGIN_SRC clojure :tangle ../babel/benchmarks/thi/ng/geom/bench/core/vector.clj :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/benchmarks/thi/ng/geom/bench/core/vector.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.bench.core.vector
     (:require
      [thi.ng.geom.core :as g]
@@ -176,7 +175,7 @@
   <<bench>>
 #+END_SRC
 
-#+BEGIN_SRC clojure :tangle ../babel/benchmarks/thi/ng/geom/bench/core/vector.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/benchmarks/thi/ng/geom/bench/core/vector.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.bench.core.vector
     (:require
      [thi.ng.geom.core :as g]

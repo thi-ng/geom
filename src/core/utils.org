@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeomcoreutils][Namespace: thi.ng.geom.core.utils]]
@@ -402,7 +402,7 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core/utils.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core/utils.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.utils
     #?(:cljs
        (:require-macros

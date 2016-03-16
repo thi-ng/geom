@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeomcorematrix][Namespace: thi.ng.geom.core.matrix]]
@@ -43,7 +43,7 @@ Some matrix operations (e.g. computing the determinant or inverse of
 matrix) require quite long mathematical expressions and we therefore
 define some macros to simplify them.
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core/macros/matrix.clj :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core/macros/matrix.clj :mkdirp yes :padline no
   (ns thi.ng.geom.core.macros.matrix
     (:require [thi.ng.math.macros :as mm]))
 
@@ -1027,7 +1027,7 @@ https://github.com/stefanmirea/view-frustum-culling/blob/master/lab_camera.hpp#L
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core/matrix.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core/matrix.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.matrix
     #?(:cljs
        (:require-macros

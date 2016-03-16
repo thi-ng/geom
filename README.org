@@ -1,4 +1,4 @@
-#+SETUPFILE: setup.org
+#+SETUPFILE: ./meta/setup.org
 #+TITLE: thi.ng/geom
 
 * Contents                                                         :toc_4_gh:
@@ -17,17 +17,41 @@
          - [[#geom-voxel][geom-voxel]]
          - [[#geom-webgl][geom-webgl]]
      - [[#status][Status]]
+ - [[#project-definition][Project definition]]
      - [[#building--testing-this-project][Building & testing this project]]
          - [[#testing][Testing]]
          - [[#working-with-the-repl][Working with the REPL]]
      - [[#injected-properties][Injected properties]]
+     - [[#dependencies][Dependencies]]
+         - [[#runtime][Runtime]]
+             - [[#httpsgithubcomclojureclojureclojure][[[https://github.com/clojure/clojure][Clojure]]]]
+             - [[#httpsgithubcomclojureclojurescriptclojurescript][[[https://github.com/clojure/clojurescript][ClojureScript]]]]
+             - [[#httpsgithubcomthi-ngcolorthingcolor][[[https://github.com/thi-ng/color/][thi.ng/color]]]]
+             - [[#httpsgithubcomthi-ngdstructthingdstruct][[[https://github.com/thi-ng/dstruct][thi.ng/dstruct]]]]
+             - [[#httpsgithubcomthi-ngmaththingmath][[[https://github.com/thi-ng/math][thi.ng/math]]]]
+             - [[#httpsgithubcomthi-ngndarraythingndarray][[[https://github.com/thi-ng/ndarray/][thi.ng/ndarray]]]]
+             - [[#httpthingshadergraphthingshadergraph][[[http://thi.ng/shadergraph][thi.ng/shadergraph]]]]
+             - [[#httpsgithubcomthi-ngstrfthingstrf][[[https://github.com/thi-ng/strf][thi.ng/strf]]]]
+             - [[#httpsgithubcomthi-ngtypedarraysthingtypedarrays][[[https://github.com/thi-ng/typedarrays/][thi.ng/typedarrays]]]]
+             - [[#httpsgithubcomthi-ngxerrorthingxerror][[[https://github.com/thi-ng/xerror/][thi.ng/xerror]]]]
+             - [[#httpsgithubcompostspectacularcljs-logcljs-log][[[https://github.com/postspectacular/cljs-log][cljs-log]]]]
+         - [[#development][Development]]
+             - [[#httpsgithubcomemezeskelein-cljsbuildcljsbuild][[[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]]]
+             - [[#httpsgithubcomhugoduncancriteriumcriterium][[[https://github.com/hugoduncan/criterium][Criterium]]]]
+             - [[#httpsgithubcomcemerickclojurescripttestclojurescripttest][[[https://github.com/cemerick/clojurescript.test][clojurescript.test]]]]
+             - [[#httpsgithubcomdavidsantiagoperforateperforate][[[https://github.com/davidsantiago/perforate][perforate]]]]
+             - [[#httpsgithubcompostspectacularperforate-xperforate-x][[[https://github.com/postspectacular/perforate-x][perforate-x]]]]
+             - [[#httpsgithubcomryanmcglein-npmlein-npm][[[https://github.com/RyanMcG/lein-npm][lein-npm]]]]
+             - [[#httpswwwnpmjscompackagebenchmarknode-benchmark][[[https://www.npmjs.com/package/benchmark][node benchmark]]]]
      - [[#leiningen-project-file][Leiningen project file]]
+     - [[#clojurescript-html-harness][ClojureScript HTML harness]]
+     - [[#accessing-library-version-during-runtime][Accessing library version during runtime]]
+         - [[#version-namespace][Version namespace]]
      - [[#release-history--changelog][Release history & changelog]]
      - [[#contributors][Contributors]]
      - [[#license][License]]
 
 * About the project
-
 ** Overview
 
 *Note:* This library relies on the new
@@ -230,6 +254,7 @@ can be considered stable for most use cases.
 
 A full test suite, website & tutorials are actively being worked on.
 
+* Project definition
 ** Building & testing this project
 
 This project is written in a literate programming format and requires
@@ -299,34 +324,243 @@ from Emacs or =tangle.sh=, then reload the namespace in the REPL via
 thi.ng/geom
 #+END_SRC
 
+#+NAME: project-url
+#+BEGIN_SRC clojure
+https://github.com/thi-ng/geom
+#+END_SRC
+
 #+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref cljs-artefact-path
-target/geom-<<conf-version()>>.js
+target/geom-<<project-version()>>.js
+#+END_SRC
+
+#+NAME: project-version
+#+BEGIN_SRC emacs-lisp
+  (concat
+   "0.0."
+   (replace-regexp-in-string
+    "\\`[ \t\n]*" ""
+    (replace-regexp-in-string
+     "[ \t\n]*\\'" ""
+     (shell-command-to-string "git describe --match 'v0.0' --dirty | cut -d '-' -f 2,4"))))
+#+END_SRC
+
+** Dependencies
+*** Runtime
+**** [[https://github.com/clojure/clojure][Clojure]]
+#+NAME: dep-clj
+#+BEGIN_SRC clojure
+[org.clojure/clojure "1.8.0"]
+#+END_SRC
+
+**** [[https://github.com/clojure/clojurescript][ClojureScript]]
+#+NAME: dep-cljs
+#+BEGIN_SRC clojure
+[org.clojure/clojurescript "1.7.228"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/color/][thi.ng/color]]
+#+NAME: dep-color
+#+BEGIN_SRC clojure
+[thi.ng/color "1.1.0-SNAPSHOT"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/dstruct][thi.ng/dstruct]]
+#+NAME: dep-dstruct
+#+BEGIN_SRC clojure
+[thi.ng/dstruct "0.1.3-SNAPSHOT"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/math][thi.ng/math]]
+#+NAME: dep-math
+#+BEGIN_SRC clojure
+[thi.ng/math "0.2.0-SNAPSHOT"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/ndarray/][thi.ng/ndarray]]
+#+NAME: dep-ndarray
+#+BEGIN_SRC clojure
+[thi.ng/ndarray "0.3.0"]
+#+END_SRC
+
+**** [[http://thi.ng/shadergraph][thi.ng/shadergraph]]
+
+#+BEGIN_SRC clojure :exports none :noweb-ref dep-shadergraph
+[thi.ng/shadergraph "0.1.1"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/strf][thi.ng/strf]]
+#+NAME: dep-strf
+#+BEGIN_SRC clojure
+[thi.ng/strf "0.2.2"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/typedarrays/][thi.ng/typedarrays]]
+#+NAME: dep-tarrays
+#+BEGIN_SRC clojure
+[thi.ng/typedarrays "0.1.2"]
+#+END_SRC
+
+**** [[https://github.com/thi-ng/xerror/][thi.ng/xerror]]
+#+NAME: dep-xerror
+#+BEGIN_SRC clojure
+[thi.ng/xerror "0.1.0"]
+#+END_SRC
+
+**** [[https://github.com/postspectacular/cljs-log][cljs-log]]
+
+#+BEGIN_SRC clojure :exports none :noweb-ref dep-cljs-log
+[cljs-log "0.2.1"]
+#+END_SRC
+
+*** Development
+**** [[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]
+#+NAME: dep-cljsbuild
+#+BEGIN_SRC clojure
+[lein-cljsbuild "1.1.3"]
+#+END_SRC
+
+**** [[https://github.com/hugoduncan/criterium][Criterium]]
+#+NAME: dep-criterium
+#+BEGIN_SRC clojure
+[criterium "0.4.3"]
+#+END_SRC
+
+**** [[https://github.com/cemerick/clojurescript.test][clojurescript.test]]
+#+NAME: dep-cljs-test
+#+BEGIN_SRC clojure
+[com.cemerick/clojurescript.test "0.3.3"]
+#+END_SRC
+
+**** [[https://github.com/davidsantiago/perforate][perforate]]
+#+NAME: dep-perforate
+#+BEGIN_SRC clojure
+[perforate "0.3.4"]
+#+END_SRC
+
+**** [[https://github.com/postspectacular/perforate-x][perforate-x]]
+#+NAME: dep-perforate-x
+#+BEGIN_SRC clojure
+[perforate-x "0.1.0"]
+#+END_SRC
+
+**** [[https://github.com/RyanMcG/lein-npm][lein-npm]]
+#+NAME: dep-lein-npm
+#+BEGIN_SRC clojure
+[lein-npm "0.6.2"]
+#+END_SRC
+
+**** [[https://www.npmjs.com/package/benchmark][node benchmark]]
+#+NAME: dep-npm-benchmark
+#+BEGIN_SRC clojure
+[benchmark "1.0.0"]
 #+END_SRC
 
 ** Leiningen project file                                          :noexport:
-#+BEGIN_SRC clojure :tangle ../babel/project.clj :noweb yes :mkdirp yes :padline no
-  (defproject <<project-name>> "<<conf-version()>>"
+
+#+BEGIN_SRC clojure :tangle ./babel/project.clj :noweb yes :mkdirp yes :padline no
+  (defproject <<project-name>> "<<project-version()>>"
     :description  "thi.ng geometry kit - meta project spec including all modules"
-    :url          "<<conf-project-url>>"
+    :url          "<<project-url>>"
     :license      {:name "Apache Software License"
                    :url  "http://www.apache.org/licenses/LICENSE-2.0"
                    :distribution :repo}
     :scm          {:name "git"
-                   :url  "<<conf-project-url>>"}
+                   :url  "<<project-url>>"}
 
-    :dependencies [[thi.ng/geom-core "<<conf-version()>>"]
-                   [thi.ng/geom-types "<<conf-version()>>"]
-                   [thi.ng/geom-meshops "<<conf-version()>>"]
-                   [thi.ng/geom-physics "<<conf-version()>>"]
-                   [thi.ng/geom-svg "<<conf-version()>>"]
-                   [thi.ng/geom-viz "<<conf-version()>>"]
-                   [thi.ng/geom-voxel "<<conf-version()>>"]
-                   [thi.ng/geom-webgl "<<conf-version()>>"]]
+    :min-lein-version "2.4.0"
 
-    :pom-addition [:developers [:developer
-                                [:name "Karsten Schmidt"]
-                                [:url "http://postspectacular.com"]
-                                [:timezone "0"]]])
+    :dependencies  [<<dep-clj>>
+                    <<dep-cljs>>
+                    <<dep-color>>
+                    <<dep-dstruct>>
+                    <<dep-math>>
+                    <<dep-ndarray>>
+                    <<dep-shadergraph>>
+                    <<dep-strf>>
+                    <<dep-tarrays>>
+                    <<dep-xerror>>
+                    <<dep-cljs-log>>]
+
+    :perforate    {:environments [{:namespaces [thi.ng.geom.bench.core.vector]}]}
+
+    :profiles     {:dev   {:plugins           [<<dep-cljsbuild>>
+                                               <<dep-cljs-test>>]
+                           :node-dependencies [<<dep-npm-benchmark>>]
+                           :global-vars       {*warn-on-reflection* true}
+                           :jvm-opts          ^:replace ["-Dclojure.compiler.direct-linking=true"]
+                           :aliases           {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]
+                                               "bench" ["with-profile" "bench" "do" "clean," "perforate," "cljsbuild" "test"]}}
+                   :bench {:dependencies [<<dep-perforate-x>>]
+                           :plugins      [<<dep-perforate>>
+                                          <<dep-lein-npm>>]
+                           :cljsbuild
+                           {:builds
+                            [{:id "bench"
+                              :source-paths ["src" "test" "benchmarks"]
+                              :notify-command ["node" "target/cljs/benchmark.js"]
+                              :compiler {:target :nodejs
+                                         :output-to "target/cljs/benchmark.js"
+                                         :optimizations :simple
+                                         :pretty-print true}}]
+                            :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}}}}
+
+    :cljsbuild    {:builds [{:id "simple"
+                             :source-paths ["src" "test"]
+                             :compiler {:output-to "<<cljs-artefact-path>>"
+                                        :optimizations :whitespace
+                                        :pretty-print true}}
+                            {:source-paths ["src" "test"]
+                             :id "prod"
+                             :compiler {:output-to "<<cljs-artefact-path>>"
+                                        :optimizations :advanced
+                                        :pretty-print false}}]
+                   :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}}
+
+    :pom-addition [:developers
+                   [:developer
+                    [:name "Karsten Schmidt"]
+                    [:url "http://postspectacular.com"]
+                    [:timezone "0"]]])
+#+END_SRC
+
+** ClojureScript HTML harness                                      :noexport:
+
+#+BEGIN_SRC html :tangle ./babel/index.html :noweb yes :mkdirp yes :padline no
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
+      <title><<project-name>> <<project-version()>> test</title>
+      <style type="text/css" media="screen">
+        .stats { position: fixed; top: 0px; left: 0px; }
+      </style>
+    </head>
+    <body>
+      <canvas id="main" width="1280" height="720"></canvas>
+      <script type="text/javascript" src="resources/stats.js"></script>
+      <script type="text/javascript" src="resources/webgl-texture-float-extension-shims.js"></script>
+      <script type="text/javascript" src="<<cljs-artefact-path>>"></script>
+    </body>
+  </html>
+#+END_SRC
+
+** Accessing library version during runtime
+
+The autogenerated namespace =thi.ng.geom.version= contains a single
+symbol =version= holding the version string defined above:
+
+#+BEGIN_SRC clojure :noweb yes
+  (use 'thi.ng.geom.version)
+  
+  (prn version)
+  ; "<<project-version()>>"
+#+END_SRC
+
+*** Version namespace                                              :noexport:
+
+#+BEGIN_SRC clojure :tangle ./babel/src/thi/ng/geom/version.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.version)
+  (def version "<<project-version()>>")
 #+END_SRC
 
 ** Release history & changelog

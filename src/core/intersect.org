@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_3_gh:
  - [[#namespace-thinggeomcoreintersect][Namespace: thi.ng.geom.core.intersect]]
@@ -489,7 +489,7 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core/intersect.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core/intersect.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.intersect
     #?(:cljs
        (:require-macros

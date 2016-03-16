@@ -1,6 +1,6 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
-* thi.ng.geom.core.test.protocols
+* thi.ng.geom.test.core.protocols
 
 ** Constants & helpers
 
@@ -75,8 +75,8 @@
 
 ** Namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/core/test/protocols.cljc :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.core.test.protocols
+#+BEGIN_SRC clojure :tangle ../../babel/test/thi/ng/geom/test/core/protocols.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.test.core.protocols
     #?(:cljs
        (:require-macros
         [cemerick.cljs.test :refer (is deftest with-test run-tests testing)]))

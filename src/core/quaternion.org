@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeomcorequaternion][Namespace: thi.ng.geom.core.quaternion]]
@@ -749,7 +749,7 @@ of the code.
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core/quaternion.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core/quaternion.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.quaternion
     #?(:cljs
        (:require-macros

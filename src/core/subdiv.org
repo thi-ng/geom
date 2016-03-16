@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_3_gh:
  - [[#namespace-thinggeomcoresubdiv][Namespace: thi.ng.geom.core.subdiv]]
@@ -82,7 +82,7 @@ http://algorithmicbotany.org/papers/subgpu.sig2003.pdf
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core/subdiv.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core/subdiv.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.subdiv
     #?(:cljs
        (:require-macros

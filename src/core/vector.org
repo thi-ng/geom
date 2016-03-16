@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_3_gh:
  - [[#thinggeomcorevector][thi.ng.geom.core.vector]]
@@ -2163,7 +2163,7 @@
 
 ** Complete namespace definitions
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core/vector.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core/vector.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.vector
     #?(:cljs
        (:require-macros
@@ -2192,7 +2192,7 @@
   <<ctors>>
 #+END_SRC
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core/macros/vector.clj :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core/macros/vector.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core.macros.vector
     (:require
      [clojure.walk :refer :all]

@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_3_gh:
  - [[#namespace-thinggeomcore][Namespace: thi.ng.geom.core]]
@@ -14,7 +14,6 @@
      - [[#complete-namespace-definition][Complete namespace definition]]
 
 * Namespace: thi.ng.geom.core
-
 ** Protocols
 *** Vector operations
 **** IDistance
@@ -435,7 +434,7 @@ protocol consisting of just this one function:
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/core.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core
     (:refer-clojure :exclude [into]))
 
