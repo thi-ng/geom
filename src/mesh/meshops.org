@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeommeshops][Namespace: thi.ng.geom.mesh.ops]]
@@ -120,7 +120,7 @@
 
 ** Namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/mesh/ops.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/mesh/ops.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.ops
     (:require
      [thi.ng.math.core :as m]

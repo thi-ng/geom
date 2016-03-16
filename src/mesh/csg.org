@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeomcsgcore][Namespace: thi.ng.geom.csg.core]]
@@ -220,7 +220,7 @@ meshes.
 #+END_SRC
 
 ** Complete namespace definition
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/mesh/csg.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/mesh/csg.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.csg
     #?(:cljs
        (:require-macros

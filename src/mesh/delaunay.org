@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeommeshdelaunay][thi.ng.geom.mesh.delaunay]]
@@ -79,7 +79,7 @@ is to add additional point(s) in the center.
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/mesh/delaunay.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/mesh/delaunay.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.mesh.delaunay
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
