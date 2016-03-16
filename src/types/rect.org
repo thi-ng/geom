@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomrect][thi.ng.geom.rect]]
@@ -416,7 +416,7 @@ of triangles of the subdivided rects.
 
 ** Namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/rect.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/rect.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.rect
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require

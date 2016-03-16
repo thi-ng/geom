@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeommeshface][Namespace: thi.ng.geom.meshface]]
@@ -121,7 +121,7 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/meshface.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/meshface.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.meshface
     (:require
      [thi.ng.geom.core :as g]

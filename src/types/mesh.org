@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeommesh-deprecated-do-not-use][thi.ng.geom.mesh (deprecated, do not use)]]
@@ -563,7 +563,7 @@
 
 ** Namespace declaration
 #+BEGIN_SRC clojure
-  ;;:tangle ../babel/src/thi/ng/geom/mesh.cljc :mkdirp yes :padline no
+  ;;:tangle ../../babel/src/thi/ng/geom/mesh.cljc :mkdirp yes :padline no
   (ns thi.ng.geom.mesh
     (:require
      [thi.ng.dstruct.core :as d]

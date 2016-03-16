@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomindexedmesh][thi.ng.geom.indexedmesh]]
@@ -249,7 +249,7 @@ Provide a map of attribute interpolators
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/indexedmesh.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/indexedmesh.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.indexedmesh
     (:require
      [thi.ng.geom.core :as g]

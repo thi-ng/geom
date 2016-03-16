@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeomspatialtree][Namespace: thi.ng.geom.spatialtree]]
@@ -370,7 +370,7 @@
 
 ** Complete namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/spatialtree.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/spatialtree.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.spatialtree
     (:require
      [thi.ng.geom.core :as g]

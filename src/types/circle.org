@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomcircle][thi.ng.geom.circle]]
@@ -276,7 +276,7 @@ results, the =transform= implementation returns a [[file:polygon.org][polygon]].
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/circle.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/circle.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.circle
     (:require
      [thi.ng.geom.core :as g :refer [*resolution*]]

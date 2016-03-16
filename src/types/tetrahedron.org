@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomtetrahedron][thi.ng.geom.tetrahedron]]
@@ -225,7 +225,7 @@
   )
 #+END_SRC
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/tetrahedron.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/tetrahedron.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.tetrahedron
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require

@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeompolygon][thi.ng.geom.polygon]]
@@ -387,7 +387,7 @@
 #+END_SRC
 
 *** IInset
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/quad.cljc
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/quad.cljc
   g/IInset
   (inset
    [_ inset] (th.ng.geom.types.Polygon2. (inset-polygon (:points _) inset)))
@@ -467,7 +467,7 @@
 #+END_SRC
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/polygon.cljc :noweb yes :mkdip yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/polygon.cljc :noweb yes :mkdip yes :padline no
   (ns thi.ng.geom.polygon
     (:require
      [thi.ng.geom.core :as g]

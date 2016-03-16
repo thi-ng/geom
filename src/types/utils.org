@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeomtypesutils][Namespace: thi.ng.geom.types.utils]]
@@ -97,7 +97,7 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/types/utils.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/types/utils.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.types.utils
     (:require
      [thi.ng.math.core :as m]

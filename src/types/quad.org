@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomquad][thi.ng.geom.quad]]
@@ -358,7 +358,7 @@ function returns a lazyseq of triangles of the subdivided quad.
 #+END_SRC
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/quad.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/quad.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.quad
     (:require
      [thi.ng.geom.core :as g]

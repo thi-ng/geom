@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomattribs][thi.ng.geom.attribs]]
@@ -100,7 +100,7 @@ Tube UV mapping is currently only supported by the following implementations:
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/attribs.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/attribs.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.attribs
     (:require
      [thi.ng.geom.core :as g]

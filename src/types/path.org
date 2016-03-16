@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeompath][Namespace: thi.ng.geom.path]]
@@ -218,7 +218,7 @@
 
 ** Namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/path.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/path.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.path
     (:require
      [thi.ng.math.core :as m]

@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeomline][Namespace: thi.ng.geom.line]]
@@ -767,7 +767,7 @@ further below.
 #+END_SRC
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/line.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/line.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.line
     #?(:cljs
        (:require-macros

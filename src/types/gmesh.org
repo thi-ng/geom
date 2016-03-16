@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomgmesh][thi.ng.geom.gmesh]]
@@ -440,7 +440,7 @@ located on the rotation axis.
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/gmesh.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gmesh.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.gmesh
     (:require
      [thi.ng.geom.core :as g]

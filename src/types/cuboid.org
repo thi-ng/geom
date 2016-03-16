@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomcuboid][thi.ng.geom.cuboid]]
@@ -340,7 +340,7 @@ from the first vertex of the original with inner sorting over XYZ.
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/cuboid.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/cuboid.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.cuboid
     #?(:cljs
        (:require-macros

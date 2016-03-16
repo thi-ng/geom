@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomtriangle][thi.ng.geom.triangle]]
@@ -506,7 +506,7 @@ https://web.archive.org/web/20090320013931/http://amp.ece.cmu.edu/Publication/Ch
 
 ** Namespace declaration
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/triangle.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/triangle.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.triangle
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require

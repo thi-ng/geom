@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeombasicmesh][thi.ng.geom.basicmesh]]
@@ -228,7 +228,7 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/basicmesh.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/basicmesh.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.basicmesh
     (:require
      [thi.ng.geom.core :as g]

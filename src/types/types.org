@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomtypes][thi.ng.geom.types]]
@@ -182,7 +182,7 @@ center point =o= and radius =r=.
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/types.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/types.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.types
     (:require
       [thi.ng.geom.core.vector])

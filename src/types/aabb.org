@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomaabb][thi.ng.geom.aabb]]
@@ -30,6 +30,7 @@
          - [[#todo-add-isec-tests][TODO add isec tests]]
          - [[#protocol-impls][Protocol impls]]
          - [[#proximity][Proximity]]
+         - [[#test-namespace-definition][Test namespace definition]]
 
 * thi.ng.geom.aabb
 ** Constructors
@@ -409,7 +410,7 @@ of the original with inner sorting over XYZ.
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/aabb.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/aabb.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.aabb
     #?(:cljs
        (:require-macros
@@ -592,8 +593,10 @@ There're 26 distinct cases for producing the closest point on an AABB to a given
       (is (is-point? (vec3 1 1 1) :+x+y+z))))
 #+END_SRC
 
-#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/types/test/aabb.cljc :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.types.test.aabb
+*** Test namespace definition
+
+#+BEGIN_SRC clojure :tangle ../../babel/test/thi/ng/geom/test/types/aabb.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.test.types.aabb
     #?(:cljs
        (:require-macros
         [cemerick.cljs.test :refer (is deftest with-test run-tests testing)]))

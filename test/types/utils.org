@@ -1,7 +1,6 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
-* thi.ng.geom.types.test.utils
-
+* thi.ng.geom.test.types.utils
 ** Constants & helpers
 
 #+BEGIN_SRC clojure :noweb-ref helpers
@@ -49,8 +48,8 @@
 #+END_SRC
 
 ** Namespace declaration
-#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/types/test/utils.cljc :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.types.test.utils
+#+BEGIN_SRC clojure :tangle ../../babel/test/thi/ng/geom/test/types/utils.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.test.types.utils
     #?(:cljs
        (:require-macros
         [cemerick.cljs.test :refer (is deftest with-test run-tests testing)]))
