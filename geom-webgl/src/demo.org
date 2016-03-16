@@ -170,10 +170,12 @@ of its 6 sides. The colors must be specified as RGBA using the
                         (gl/make-buffers-in-spec gl glc/static-draw))]
       (anim/animate
        (fn [t frame]
-         (gl/set-viewport gl view-rect)
-         (gl/clear-color-and-depth-buffer gl col/WHITE 1)
-         (gl/draw-with-shader
-          gl (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2)))))
+         (doto gl
+           (gl/set-viewport view-rect)
+           (gl/clear-color-and-depth-buffer col/WHITE 1)
+           (gl/enable glc/depth-test)
+           (gl/draw-with-shader
+            (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2))))))
          true))))
 #+END_SRC
 
@@ -203,10 +205,11 @@ Same example as above, only this time using basic lambert shading...
                         (gl/make-buffers-in-spec gl glc/static-draw))]
       (anim/animate
        (fn [t frame]
-         (gl/set-viewport gl view-rect)
-         (gl/clear-color-and-depth-buffer gl col/WHITE 1)
-         (lambert/draw
-          gl (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2)))))
+         (doto gl
+           (gl/set-viewport view-rect)
+           (gl/clear-color-and-depth-buffer col/WHITE 1)
+           (lambert/draw
+            (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2))))))
          true))))
 #+END_SRC
 
@@ -268,13 +271,14 @@ transformation).
                                 (g/translate 0.46 0 0)
                                 (g/rotate-y -0.3)
                                 (g/rotate-z (- (+ t (/ HALF_PI teeth))))))]
-           (gl/set-viewport gl view-rect)
-           (gl/clear-color-and-depth-buffer gl 1 0.98 0.95 1 1)
-           (phong/draw gl (assoc-in model [:uniforms :model] tx1))
-           (phong/draw
-            gl (-> model
-                   (assoc-in [:uniforms :model] tx2)
-                   (assoc-in [:uniforms :diffuseCol] 0x33ff80)))
+           (doto gl
+             (gl/set-viewport view-rect)
+             (gl/clear-color-and-depth-buffer 1 0.98 0.95 1 1)
+             (phong/draw (assoc-in model [:uniforms :model] tx1))
+             (phong/draw
+              (-> model
+                  (assoc-in [:uniforms :model] tx2)
+                  (assoc-in [:uniforms :diffuseCol] 0x33ff80))))
            (update-stats stats)
            true)))))
 #+END_SRC
@@ -345,12 +349,13 @@ Live version: http://demo.thi.ng/geom/webgl/unproject/
                                   (raycast (:eye cam) ground back))]
                         (vswap! state assoc :isec p :update-ray false) p)
                       (:isec @state))]
-           (gl/set-viewport gl view-rect)
-           (gl/clear-color-and-depth-buffer gl 0.52 0.5 0.5 1 1)
-           (phong/draw gl (cam/apply planes cam))
-           (phong/draw gl (-> box
-                              (cam/apply cam)
-                              (assoc-in [:uniforms :model] (g/translate M44 isec)))))
+           (doto gl
+             (gl/set-viewport view-rect)
+             (gl/clear-color-and-depth-buffer 0.52 0.5 0.5 1 1)
+             (phong/draw (cam/apply planes cam))
+             (phong/draw (-> box
+                             (cam/apply cam)
+                             (assoc-in [:uniforms :model] (g/translate M44 isec))))))
          true))
       state))
 #+END_SRC
@@ -405,12 +410,13 @@ Live version: http://demo.thi.ng/geom/webgl/texcube/
       (anim/animate
        (fn [t frame]
          (when @tex-ready
-           (gl/set-viewport gl view-rect)
-           (gl/clear-color-and-depth-buffer gl col/WHITE 1)
            (gl/bind tex 0)
-           (gl/draw-with-shader
-            gl (assoc-in model [:uniforms :model]
-                         (-> M44 (g/rotate-x PI) (g/rotate-y (* t 2))))))
+           (doto gl
+             (gl/set-viewport view-rect)
+             (gl/clear-color-and-depth-buffer col/WHITE 1)
+             (gl/draw-with-shader
+              (assoc-in model [:uniforms :model]
+                        (-> M44 (g/rotate-x PI) (g/rotate-y (* t 2)))))))
          true))))
 #+END_SRC
 
@@ -490,12 +496,13 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/
 
   (defn knot-simple
     []
-    (-> (mapv cinquefoil (m/norm-range 400))
+    (-> (mapv cinquefoil (butlast (m/norm-range 400)))
         (ptf/sweep-mesh
          (g/vertices (c/circle 0.5) 20)
          {:mesh    (glm/gl-mesh 16800 #{:fnorm :uv})
           :attribs {:uv attr/uv-tube}
-          :align?  true})))
+          :align?  true
+          :loop?   true})))
 
   (defn knot-nested
     [nums numt]
@@ -532,8 +539,8 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/
     []
     (let [gl        (gl/gl-context "main")
           view-rect (gl/get-viewport-rect gl)
-          model     (-> #_(knot-simple)
-                        (knot-nested 8 7)
+          model     (-> (knot-simple)
+                        #_(knot-nested 8 7)
                         (gl/as-webgl-buffer-spec {})
                         (cam/apply (cam/perspective-camera {:eye (vec3 0 0 5) :fov 90 :aspect view-rect}))
                         (assoc :shader (sh/make-shader-from-spec gl shader-spec))
@@ -542,16 +549,17 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/
           tex       (gradient-texture gl 4 1024 {:wrap [glc/clamp-to-edge glc/repeat]})]
       (anim/animate
        (fn [t frame]
-         (gl/set-viewport gl view-rect)
-         (gl/clear-color-and-depth-buffer gl 0.0 0.0 0.1 1 1)
          (gl/bind tex 0)
-         (gl/draw-with-shader
-          gl (-> model
-                 (update :uniforms assoc
-                         :time t
-                         :m (+ 0.21 (* 0.2 (Math/sin (* t 0.5))))
-                         :model (-> M44 (g/rotate-x (* t 0.36)) (g/rotate-y t)))
-                 (gl/inject-normal-matrix :model :view :normalMat)))
+         (doto gl
+           (gl/set-viewport view-rect)
+           (gl/clear-color-and-depth-buffer 0.0 0.0 0.1 1 1)
+           (gl/draw-with-shader
+            (-> model
+                (update :uniforms assoc
+                        :time t
+                        :m (+ 0.21 (* 0.2 (Math/sin (* t 0.5))))
+                        :model (-> M44 (g/rotate-x (* t 0.36)) (g/rotate-y t)))
+                (gl/inject-normal-matrix :model :view :normalMat))))
          true))))
 #+END_SRC
 
