@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomwebglconstants][thi.ng.geom.webgl.constants]]
@@ -309,7 +309,7 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/constants.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/constants.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.constants
     (:refer-clojure :exclude [byte float int short keep repeat replace]))
 

@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomwebglcore][thi.ng.geom.webgl.core]]
@@ -685,7 +685,7 @@ Currently the following options are supported:
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/core.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/core.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.core
     (:require
      [thi.ng.math.core :as m]

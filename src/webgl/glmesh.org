@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeomwebglglmesh][Namespace: thi.ng.geom.webgl.glmesh]]
@@ -533,7 +533,7 @@ Furthermore, the options map also supports the following other keys:
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/glmesh.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/glmesh.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.glmesh
     (:require
      [thi.ng.math.core :as m]

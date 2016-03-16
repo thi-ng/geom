@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_3_gh:
  - [[#thinggeomwebglshaders][thi.ng.geom.webgl.shaders]]
@@ -291,7 +291,7 @@ shader source before compilation with =compile-shader= below.
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders.cljs :noweb yes :mkdirp yes :padline no
 (ns thi.ng.geom.webgl.shaders
   (:require-macros
     [cljs-log.core :refer [info warn]])
@@ -324,7 +324,7 @@ shader source before compilation with =compile-shader= below.
 ** Presets
 *** Basic
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/basic.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/basic.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.basic
     (:require
      [thi.ng.geom.core.matrix :refer [M44]]))
@@ -412,7 +412,7 @@ RGBA colors, however the alpha component is discarded.
 
 **** Full namespace
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/lambert.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/lambert.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.lambert
     (:require
      [thi.ng.geom.core.matrix :refer [M44]]
@@ -502,7 +502,7 @@ RGBA colors, however the alpha component is discarded.
   }
 #+END_SRC
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/phong.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/phong.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.phong
     (:require
      [thi.ng.geom.core.matrix :refer [M44]]
@@ -547,7 +547,7 @@ RGBA colors, however the alpha component is discarded.
 
 *** X-Ray
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/xray.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/xray.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.xray
     (:require
      [thi.ng.geom.core.matrix :refer [M44]]
@@ -621,7 +621,7 @@ RGBA colors, however the alpha component is discarded.
   }
 #+END_SRC
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/spotlight.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/spotlight.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.spotlight
     (:require
      [thi.ng.geom.core.matrix :refer [M44]]
@@ -733,7 +733,7 @@ RGBA colors, however the alpha component is discarded.
   }
 #+END_SRC
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/shadow.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/shadow.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.shadow
     (:require
      [thi.ng.geom.core.matrix :refer [M44]]
@@ -833,7 +833,7 @@ RGBA colors, however the alpha component is discarded.
   }
 #+END_SRC
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/shaders/image.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/image.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.image
     (:require
      [thi.ng.geom.core :as g]

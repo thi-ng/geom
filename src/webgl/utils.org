@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomwebglutils][thi.ng.geom.webgl.utils]]
@@ -34,7 +34,7 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/utils.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/utils.cljs :noweb yes :mkdirp yes :padline no
 (ns thi.ng.geom.webgl.utils
   (:require
     [thi.ng.typedarrays.core :as arrays]

@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomwebglbuffers][thi.ng.geom.webgl.buffers]]
@@ -182,7 +182,7 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/webgl/buffers.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/buffers.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.buffers
     (:require
      [thi.ng.geom.webgl.core :as gl]
