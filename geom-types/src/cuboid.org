@@ -164,10 +164,10 @@ front, back - assuming the vertex order given in the diagram.
    (let [[a b c d e f g h] (:points _)]
      [[c d h g]
       [a b f e]
-      [e f g h]
+      [f g h e]
       [a d c b]
       [b c g f]
-      [a e h d]]))
+      [d a e h]]))
 #+END_SRC
 
 *** TODO IIntersect                                                     :fix:
@@ -184,17 +184,17 @@ front, back - assuming the vertex order given in the diagram.
   g/IMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([_ {:keys [mesh flags] :or {flags "nsewfb"}}]
-      (let [[a b c d e f g h] (g/vertices _)
-            [tp bt rt lf fr bk] (d/demunge-flags-seq flags "nsewfb")]
-        (->> [(if fr [b c g f])
-              (if bk [a e h d])
-              (if lf [a b f e])
-              (if rt [c d h g])
-              (if tp [e f g h])
-              (if bt [a d c b])]
-             (sequence (filter identity)) ;; FIXME eduction
-             (g/into (or mesh (bm/basic-mesh)))))))
+   ([_ {:keys [mesh flags attribs] :or {flags "nsewfb"}}]
+    (let [[a b c d e f g h] (g/vertices _)
+          [north south east west front back] (d/demunge-flags-seq flags "nsewfb")]
+      (->> [(if east (attr/generate-face-attribs [c d h g] 0 attribs nil))
+            (if west (attr/generate-face-attribs [a b f e] 1 attribs nil))
+            (if north (attr/generate-face-attribs [f g h e] 2 attribs nil))
+            (if south (attr/generate-face-attribs [a d c b] 3 attribs nil))
+            (if front (attr/generate-face-attribs [b c g f] 4 attribs nil))
+            (if back (attr/generate-face-attribs [d a e h] 5 attribs nil))]
+           (sequence (filter identity))
+           (g/into (or mesh (bm/basic-mesh)))))))
 #+END_SRC
 
 *** TODO IPointMap
@@ -349,6 +349,7 @@ from the first vertex of the original with inner sorting over XYZ.
      [thi.ng.geom.core :as g]
      [thi.ng.geom.core.utils :as gu]
      [thi.ng.geom.core.vector :as v :refer [vec3]]
+     [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.plane :as p]
      [thi.ng.geom.types]
