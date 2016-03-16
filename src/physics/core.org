@@ -1,4 +1,4 @@
-#+SETUPFILE: ../../src/setup.org
+#+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_3_gh:
  - [[#namespace-thinggeomphysicscore][Namespace: thi.ng.geom.physics.core]]
@@ -354,7 +354,7 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../babel/src/thi/ng/geom/physics/core.cljc :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/physics/core.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.physics.core
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require

@@ -1,0 +1,314 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#svg-examples][SVG examples]]
+     - [[#stl-mesh-import-blenders-suzanne][STL mesh import (Blender's Suzanne)]]
+     - [[#dynamic-mesh--shader-comparison][Dynamic mesh & shader comparison]]
+     - [[#gradient-spiral-example][Gradient spiral example]]
+     - [[#gradient-spirals-with-instancing][Gradient spirals with instancing]]
+     - [[#line-decorators][Line decorators]]
+
+* SVG examples
+
+This document contains a growing number of SVG example code. Each demo
+is defined in its own namespace and can be loaded from the REPL via:
+
+#+BEGIN_SRC clojure
+  (load-file "examples/svgdemo01.clj") ;; etc...
+#+END_SRC
+
+** STL mesh import (Blender's Suzanne)
+
+[[http://media.thi.ng/geom/svg/svgdemo02-suzanne.svg]]
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/svgdemo02.clj :mkdirp yes :padline no
+  (ns svgdemo02
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.matrix :as mat]
+     [thi.ng.geom.mesh.io :as mio]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.geom.svg.shaders :as shader]
+     [thi.ng.geom.svg.renderer :as render]
+     [thi.ng.math.core :as m]
+     [clojure.java.io :as io]))
+
+  (def width  640)
+  (def height 480)
+  (def model  (-> (mat/matrix44) (g/rotate-x m/HALF_PI) (g/rotate-z m/SIXTH_PI)))
+  (def view   (apply mat/look-at (mat/look-at-vectors 0 0 -2 0 0 0)))
+  (def proj   (mat/perspective 60 (/ width height) 0.1 2))
+  (def mvp    (->> model (m/* view) (m/* proj)))
+  (def col-tx (g/rotate-x (mat/matrix44) (- m/HALF_PI)))
+
+  (def shader
+    (shader/shader
+     {:fill     (shader/phong
+                 {:model     model
+                  :view      view
+                  :light-pos [0 -2 1]
+                  :light-col [1 1 1]
+                  :diffuse   (shader/normal-rgb col-tx)
+                  :ambient   [0.1 0.1 0.2]
+                  :specular  1.0
+                  :shininess 6.0})
+      :uniforms {:stroke "black" :stroke-width 0.25}
+      :flags    {:solid true}}))
+
+  (def mesh
+    (with-open [in (io/input-stream "../../assets/suzanne.stl")]
+      (-> in
+          (mio/wrapped-input-stream)
+          (mio/read-stl)
+          (g/center)
+          (g/scale 0.85))))
+
+  (defn render-svg
+    [path mesh mvp width height]
+    (let [screen (mat/viewport-matrix width height)]
+      (->> (svg/svg
+            {:width width :height height}
+            (render/mesh mesh mvp screen shader))
+           (svg/serialize)
+           (spit path))))
+
+  (render-svg "svgdemo02-suzanne.svg" mesh mvp width height)
+#+END_SRC
+
+** Dynamic mesh & shader comparison
+
+| [[http://media.thi.ng/geom/svg/svgdemo03-diffuse.svg]] | [[http://media.thi.ng/geom/svg/svgdemo03-lambert.svg]] | [[http://media.thi.ng/geom/svg/svgdemo03-phong.svg]] |
+| *Diffuse:* Normal XYZ > RGB                        | *Diffuse:* Normal XYZ > RGB                        | *Diffuse:* Normal XYZ > RGB                      |
+|                                                    | *Ambient:* [0.1 0.1 0.1]                           | *Ambient:* [0.05 0.05 0.2]                       |
+|                                                    |                                                    | *Specular:* [0.8 0.8 0.8]                        |
+| *Lighting:* N/A                                    | *Lighting:* Lambert                                | *Lighting:* Blinn-Phong                          |
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/svgdemo03.clj :mkdirp yes :padline no
+  (ns svgdemo03
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :refer [vec3]]
+     [thi.ng.geom.core.matrix :as mat]
+     [thi.ng.geom.circle :as c]
+     [thi.ng.geom.polygon :as p]
+     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.mesh.subdivision :as sd]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.geom.svg.shaders :as shader]
+     [thi.ng.geom.svg.renderer :as render]
+     [thi.ng.math.core :as m]))
+
+  (def width    640)
+  (def height   480)
+  (def model    (g/rotate-y (mat/matrix44) m/SIXTH_PI))
+  (def view     (apply mat/look-at (mat/look-at-vectors 0 1.75 0.75 0 0 0)))
+  (def proj     (mat/perspective 60 (/ width height) 0.1 10))
+  (def mvp      (->> model (m/* view) (m/* proj)))
+
+  (def diffuse  (shader/normal-rgb (g/rotate-y (mat/matrix44) m/PI)))
+  (def uniforms {:stroke "white" :stroke-width 0.25})
+
+  (def shader-diffuse
+    (shader/shader
+     {:fill     diffuse
+      :uniforms uniforms
+      :flags    {:solid true}}))
+
+  (def shader-lambert
+    (shader/shader
+     {:fill     (shader/lambert
+                 {:view      view
+                  :light-dir [-1 0 1]
+                  :light-col [1 1 1]
+                  :diffuse   diffuse
+                  :ambient   0.1})
+      :uniforms uniforms
+      :flags    {:solid true}}))
+
+  (def shader-phong
+    (shader/shader
+     {:fill     (shader/phong
+                 {:model     model
+                  :view      view
+                  :light-pos [-1 2 1]
+                  :light-col [1 1 1]
+                  :diffuse   diffuse
+                  :ambient   [0.05 0.05 0.2]
+                  :specular  0.8
+                  :shininess 8.0})
+      :uniforms uniforms
+      :flags    {:solid true}}))
+
+  (defn ring
+    [res radius depth wall]
+    (-> (c/circle radius)
+        (g/as-polygon res)
+        (g/extrude-shell {:depth depth :wall wall :inset -0.1 :mesh (gm/gmesh)})
+        (g/center)))
+
+  (def mesh
+    (->> [[1 0.25 0.15] [0.75 0.35 0.1] [0.5 0.5 0.05] [0.25 0.75 0.05]]
+         (map (partial apply ring 40))
+         (reduce g/into)
+         (sd/catmull-clark)
+         (sd/catmull-clark)))
+
+  ;; 2d text label w/ projected anchor point
+  (defn label-3d
+    [p mvp screen [l1 l2]]
+    (let [p'  (mat/project-point p mvp screen)
+          p2' (mat/project-point (m/+ p 0 0 0.2) mvp screen)
+          p3' (m/+ p2' 100 0)]
+      (svg/group
+       {:fill "black"
+        :font-family "Arial"
+        :font-size 12
+        :text-anchor "end"}
+       (svg/circle p' 2 nil)
+       (svg/line-strip [p' p2' p3'] {:stroke "black"})
+       (svg/text (m/+ p3' 0 -5) l1 {})
+       (svg/text (m/+ p3' 0 12) l2 {:font-weight "bold"}))))
+
+  (defn render-svg
+    [path mesh mvp shader width height labels]
+    (let [screen (mat/viewport-matrix width height)
+          max-z  (/ 0.75 2)]
+      (->> (svg/svg
+            {:width width :height height}
+            (render/mesh mesh mvp screen shader)
+            (label-3d (vec3 0 0 max-z) mvp screen labels))
+           (svg/serialize)
+           (spit path))))
+
+  (render-svg "svgdemo03-diffuse.svg"
+              mesh mvp shader-diffuse width height
+              ["Shader" "Normal/RGB"])
+  (render-svg "svgdemo03-lambert.svg"
+              mesh mvp shader-lambert width height
+              ["Shader" "Lambert"])
+  (render-svg "svgdemo03-phong.svg"
+              mesh mvp shader-phong width height
+              ["Shader" "Blinn-Phong"])
+#+END_SRC
+
+** Gradient spiral example
+
+[[http://media.thi.ng/geom/svg/svgdemo04-spiral.svg]]
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/svgdemo04.clj :mkdirp yes :padline no
+  (ns svgdemo04
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :refer [vec2]]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.color.core :as col]
+     [thi.ng.math.core :as m]
+     [thi.ng.math.macros :as mm]))
+
+  (defn spiral
+    [center start end r1 r2 steps]
+    (map
+     (fn [r theta] (m/+ (g/as-cartesian (vec2 r theta)) center))
+     (range r1 r2 (mm/subdiv r2 r1 steps))
+     (range start end (mm/subdiv end start steps))))
+
+  (def rainbow-gradient (map (fn [h] [h (col/hsva h 1 1)]) (m/norm-range 12)))
+
+  (->> (svg/svg
+        {:width 300 :height 300}
+        (svg/defs
+          (apply svg/radial-gradient "rainbow" {} rainbow-gradient))
+        (svg/line-strip
+         (spiral [150 150] 0 (* 6 m/TWO_PI) 0 140 300)
+         (assoc svg/stroke-round
+           :stroke "url(#rainbow)"
+           :stroke-width 10)))
+        (svg/serialize)
+        (spit "svgdemo04-spiral.svg"))
+#+END_SRC
+
+** Gradient spirals with instancing
+
+[[http://media.thi.ng/geom/svg/svgdemo05-instancing.svg]]
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/svgdemo05.clj :mkdirp yes :padline no
+  (ns svgdemo05
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.vector :refer [vec2]]
+     [thi.ng.geom.core.matrix :refer [M32]]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.color.core :as col]
+     [thi.ng.math.core :as m]
+     [thi.ng.math.macros :as mm]))
+
+  (defn spiral
+    [center start end r1 r2 steps]
+    (map
+     (fn [r theta] (m/+ (g/as-cartesian (vec2 r theta)) center))
+     (range r1 r2 (mm/subdiv r2 r1 steps))
+     (range start end (mm/subdiv end start steps))))
+
+  (def rainbow-gradient (map (fn [h] [h (col/hsva h 1 1)]) (m/norm-range 12)))
+
+  (->> (svg/svg
+        {:width 600 :height 300}
+        (svg/defs
+          (apply svg/radial-gradient "rainbow-rad" {} rainbow-gradient)
+          (apply svg/linear-gradient "rainbow-lin" {} rainbow-gradient)
+          (svg/line-strip
+           (spiral [0 0] 0 (* 6 m/TWO_PI) 0 140 300)
+           (assoc svg/stroke-round :id "spiral")))
+        (svg/instance
+         "spiral"
+         {:transform (-> M32 (g/translate 150 150))
+          :stroke "url(#rainbow-rad)"
+          :stroke-width 10})
+        (svg/instance
+         "spiral"
+         {:transform (-> M32 (g/translate 450 150) (g/rotate m/PI))
+          :stroke "url(#rainbow-lin)"
+          :stroke-width 5}))
+       (svg/serialize)
+       (spit "svgdemo05-instancing.svg"))
+#+END_SRC
+
+** Line decorators
+
+[[http://media.thi.ng/geom/svg/svgdemo06-decorators.svg]]
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/svgdemo06.clj :mkdirp yes :padline no
+  (ns svgdemo06
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.core.matrix :refer [M32]]
+     [thi.ng.geom.line :as l]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.geom.svg.adapter :as adapt]))
+
+  (def arrow (svg/arrow-head 15 0.2 false))
+
+  ;; compose decorators
+  (def labeler
+    (svg/comp-decorators
+     (svg/arrow-head 10 0.25 true {:fill "red"})
+     (svg/line-label {:fill "black" :stroke "none"})))
+
+  (->> (svg/svg
+        {:width 300 :height 300 :font-family "Arial" :font-size 12}
+        ;; option 1: use line-strip-decorated
+        (svg/line-strip-decorated
+         [[5 0] [5 295] [300 295]]
+         arrow nil arrow
+         {:stroke "blue"})
+        ;; option 2: attach decorators as metadata
+        (with-meta
+          (l/linestrip2 [[10 290] [100 150] [200 200] [290 10]])
+          {:stroke "red"
+           :stroke-dasharray "5 5"
+           :__segment labeler
+           :__label ["Jan 2014" "Feb 2014" "Mar 2014"]}))
+       (adapt/all-as-svg)
+       (svg/serialize)
+       (spit "svgdemo06-decorators.svg"))
+#+END_SRC
