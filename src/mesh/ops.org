@@ -28,7 +28,7 @@
                           (if (finder t p)
                             [t (conj! dupes p)]
                             [(g/add-point t p p) dupes]))
-                        [(st/octree (tu/bounding-box (seq points))) (transient [])]
+                        [(st/octree (gu/bounding-box (seq points))) (transient [])]
                         points)]
       [tree (persistent! dupes)]))
 
@@ -125,15 +125,14 @@
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.intersect :as isec]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.utils.intersect :as isec]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.sphere :as s]
      [thi.ng.geom.line :as l]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.spatialtree :as st]
-     [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
      [clojure.set :as set]))
 

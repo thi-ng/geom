@@ -71,8 +71,8 @@
     (:refer-clojure :exclude [apply])
     (:require
      [thi.ng.math.core :as m]
-     [thi.ng.geom.core.vector :as v :refer [vec3]]
-     [thi.ng.geom.core.matrix :as mat]
+     [thi.ng.geom.vector :as v :refer [vec3]]
+     [thi.ng.geom.matrix :as mat]
      [thi.ng.geom.webgl.core :as gl]))
 
   <<helpers>>

@@ -56,19 +56,19 @@
         (map
          (fn [[t protos]] (apply satisfies-all? t protos))
          {
-          thi.ng.geom.core.matrix.Matrix32
+          thi.ng.geom.matrix.Matrix32
           (conj mat-common :shear)
 
-          thi.ng.geom.core.matrix.Matrix44
+          thi.ng.geom.matrix.Matrix44
           mat-common
 
-          thi.ng.geom.core.quaternion.Quat4
+          thi.ng.geom.quaternion.Quat4
           #{:conj :dot :inv :mag :mat :math :mix :norm :scale :vtx}
 
-          thi.ng.geom.core.vector.Vec2
+          thi.ng.geom.vector.Vec2
           vec-common
 
-          thi.ng.geom.core.vector.Vec3
+          thi.ng.geom.vector.Vec3
           (conj vec-common :rot3d)
           }))))
 #+END_SRC
@@ -83,18 +83,18 @@
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.matrix]
-     [thi.ng.geom.core.quaternion]
-     [thi.ng.geom.core.vector]
+     [thi.ng.geom.matrix]
+     [thi.ng.geom.quaternion]
+     [thi.ng.geom.vector]
      #?(:clj
         [clojure.test :refer :all]
         :cljs
         [cemerick.cljs.test]))
     #?(:clj
        (:import
-        [thi.ng.geom.core.matrix Matrix32 Matrix44]
-        [thi.ng.geom.core.quaternion Quat4]
-        [thi.ng.geom.core.vector Vec2 Vec3])))
+        [thi.ng.geom.matrix Matrix32 Matrix44]
+        [thi.ng.geom.quaternion Quat4]
+        [thi.ng.geom.vector Vec2 Vec3])))
 
   <<helpers>>
 

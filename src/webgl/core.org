@@ -57,7 +57,7 @@
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn fill-buffer-vec2
     [buf idx v num stride]
-    (let [vbuf (.-buf ^thi.ng.geom.core.vector.Vec2 v)]
+    (let [vbuf (.-buf ^thi.ng.geom.vector.Vec2 v)]
       (loop [idx 0, num num]
         (when (pos? num)
           (.set buf vbuf idx)
@@ -66,7 +66,7 @@
 
   (defn fill-buffer-vec3
     [buf idx v num stride]
-    (let [vbuf (.-buf ^thi.ng.geom.core.vector.Vec3 v)]
+    (let [vbuf (.-buf ^thi.ng.geom.vector.Vec3 v)]
       (loop [idx 0, num num]
         (when (pos? num)
           (.set buf vbuf idx)
@@ -105,7 +105,7 @@
     (let [buf  (ta/float32 (* (count faces) 3 3))]
       (loop [idx 0, faces faces]
         (if faces
-          (let [nbuf (.-buf ^thi.ng.geom.core.vector.Vec3 (gu/ortho-normal (first faces)))]
+          (let [nbuf (.-buf ^thi.ng.geom.vector.Vec3 (gu/ortho-normal (first faces)))]
             (.set buf nbuf idx)
             (.set buf nbuf (+ idx 3))
             (.set buf nbuf (+ idx 6))
@@ -119,7 +119,7 @@
           buf    (ta/float32 (* (count faces) 3 3))]
       (loop [idx 0, faces faces]
         (if faces
-          (let [nbuf (.-buf ^thi.ng.geom.core.vector.Vec3 (fnorms (first faces)))]
+          (let [nbuf (.-buf ^thi.ng.geom.vector.Vec3 (fnorms (first faces)))]
             (.set buf nbuf idx)
             (.set buf nbuf (+ idx 3))
             (.set buf nbuf (+ idx 6))
@@ -204,12 +204,12 @@ using the protocol.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   (defn into-buffer-vec2
-    [^thi.ng.geom.core.vector.Vec2 v buf stride idx]
+    [^thi.ng.geom.vector.Vec2 v buf stride idx]
     (.set buf (.-buf v) idx)
     (+ idx stride))
   
   (defn into-buffer-vec3
-    [^thi.ng.geom.core.vector.Vec3 v buf stride idx]
+    [^thi.ng.geom.vector.Vec3 v buf stride idx]
     (.set buf (.-buf v) idx)
     (+ idx stride))  
 #+END_SRC
@@ -224,8 +224,8 @@ using the protocol.
       [_ buf stride idx]
       (let [t     (type (first _))
             into* (case t
-                   thi.ng.geom.core.vector.Vec2 into-buffer-vec2
-                   thi.ng.geom.core.vector.Vec3 into-buffer-vec3
+                   thi.ng.geom.vector.Vec2 into-buffer-vec2
+                   thi.ng.geom.vector.Vec3 into-buffer-vec3
                    streams/into-buffer)]
         (case (count _)
           2 (let [idx (into* (first _) buf stride idx)]
@@ -690,9 +690,9 @@ Currently the following options are supported:
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3Z]]
-     [thi.ng.geom.core.matrix :as mat]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3 V3Z]]
+     [thi.ng.geom.matrix :as mat]
      [thi.ng.geom.types]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.rect :as r]

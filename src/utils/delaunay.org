@@ -1,11 +1,11 @@
 #+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
- - [[#thinggeommeshdelaunay][thi.ng.geom.mesh.delaunay]]
+ - [[#thinggeomutilsdelaunay][thi.ng.geom.utils.delaunay]]
      - [[#implementation][Implementation]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
-* thi.ng.geom.mesh.delaunay
+* thi.ng.geom.utils.delaunay
 
 ** Implementation
 
@@ -79,8 +79,8 @@ is to add additional point(s) in the center.
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/mesh/delaunay.cljc :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.mesh.delaunay
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/utils/delaunay.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.utils.delaunay
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]

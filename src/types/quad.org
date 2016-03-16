@@ -104,7 +104,7 @@ quad.
 *** IBounds                                                     :usetemplate:
 
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
-  <<lob-geom-bounds(fn="tu/bounding-box", depth="yes")>>
+  <<lob-geom-bounds(fn="gu/bounding-box", depth="yes")>>
 #+END_SRC
 
 *** IBoundingSphere                                             :usetemplate:
@@ -277,9 +277,16 @@ https://www.garagegames.com/community/forums/viewthread/76960/1#comment-543505
 *** TODO ISample
 
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
-  <<lob-geom-sample(n="4")>>
+  g/ISample
+  (point-at
+   [{p :points} t] (gu/point-at t (conj p (first p))))
+  (random-point
+   [{p :points}] (gu/point-at (m/random) (conj p (first p))))
   (random-point-inside
    [_] (gu/map-bilinear (:points _) (vec2 (m/random) (m/random))))
+  (sample-uniform
+   [{p :points} udist include-last?]
+   (gu/sample-uniform udist include-last? (conj p (first p))))
 #+END_SRC
 
 *** ISubdivide
@@ -362,14 +369,13 @@ function returns a lazyseq of triangles of the subdivided quad.
   (ns thi.ng.geom.quad
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.line :as l]
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.types]
-     [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
      [thi.ng.xerror.core :as err]
      [thi.ng.math.core :as m :refer [*eps*]])

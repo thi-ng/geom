@@ -306,7 +306,7 @@ further below.
 #+END_SRC
 **** IBounds                                                       :template:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
-  <<tpl-bounds(fn="tu/bounding-rect")>>
+  <<tpl-bounds(fn="gu/bounding-rect")>>
   (depth  [_] 0)
 #+END_SRC
 **** IBoundingCircle
@@ -399,7 +399,7 @@ further below.
 #+END_SRC
 **** IBounds                                                       :template:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
-  <<tpl-bounds(fn="tu/bounding-box")>>
+  <<tpl-bounds(fn="gu/bounding-box")>>
   (depth  [{p :points}] (m/abs* (- ((p 0) 2) ((p 1) 2))))
 #+END_SRC
 **** IBoundingSphere
@@ -407,7 +407,7 @@ further below.
   g/IBoundingSphere
   (bounding-sphere
    [{[p q] :points}]
-   (tu/bounding-sphere (m/mix p q) (* 0.5 (g/dist p q))))
+   (gu/bounding-sphere (m/mix p q) (* 0.5 (g/dist p q))))
 #+END_SRC
 **** ICenter                                                       :template:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
@@ -507,7 +507,7 @@ further below.
 #+END_SRC
 **** IBounds
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
-  <<lob-geom-bounds(fn="tu/bounding-rect")>>
+  <<lob-geom-bounds(fn="gu/bounding-rect")>>
 #+END_SRC
 **** IBoundingCircle
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
@@ -644,7 +644,7 @@ further below.
 #+END_SRC
 **** IBounds
 #+BEGIN_SRC clojure :noweb-ref impl-ls3
-  <<lob-geom-bounds(fn="tu/bounding-box",depth="yes")>>
+  <<lob-geom-bounds(fn="gu/bounding-box",depth="yes")>>
 #+END_SRC
 **** IBoundingSphere
 #+BEGIN_SRC clojure :noweb-ref impl-ls3
@@ -774,13 +774,12 @@ further below.
         [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.intersect :as isec]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.utils.intersect :as isec]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types :as types]
-     [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
      [thi.ng.math.core :as m :refer [*eps*]]
      #?(:clj [thi.ng.math.macros :as mm]))

@@ -1044,8 +1044,8 @@ TBD
   (ns thi.ng.geom.viz.core
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.utils :as gu]
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.ndarray.core :as nd]
      [thi.ng.ndarray.contours :as contours]

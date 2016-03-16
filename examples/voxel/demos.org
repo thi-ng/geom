@@ -13,7 +13,7 @@
 
 #+BEGIN_SRC clojure :noweb-ref default-requires
   [thi.ng.geom.core :as g]
-  [thi.ng.geom.core.vector :refer [vec3]]
+  [thi.ng.geom.vector :refer [vec3]]
   [thi.ng.geom.voxel.svo :as svo]
   [thi.ng.geom.voxel.isosurface :as iso]
   [thi.ng.geom.mesh.io :as mio]
@@ -27,8 +27,8 @@ This is a render of the voxel mesh generated with the code below:
 
 [[../../assets/svo-d7.jpg]]
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/voxel/example01.clj :noweb yes :mkdirp yes :padline no
-  (ns example01
+#+BEGIN_SRC clojure :tangle ../../babel/examples/voxel/ex01.clj :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.voxel.ex01
     (:require
      <<default-requires>>))
 
@@ -91,8 +91,8 @@ This is a render of the voxel mesh generated with the code below:
 
 [[../../assets/svo-sphere-erosion.jpg]]
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/voxel/example02.clj :noweb yes :mkdirp yes :padline no
-  (ns example02
+#+BEGIN_SRC clojure :tangle ../../babel/examples/voxel/ex02.clj :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.voxel.ex02
     (:require
      <<default-requires>>))
 
@@ -132,8 +132,8 @@ This is a render of the voxel mesh generated with the code below:
 
 [[../../assets/svo-simplexnoise.jpg]]
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/voxel/example03.clj :noweb yes :mkdirp yes :padline no
-  (ns example03
+#+BEGIN_SRC clojure :tangle ../../babel/examples/voxel/ex03.clj :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.voxel.ex03
     (:require
      <<default-requires>>
      [thi.ng.math.noise :as n]))

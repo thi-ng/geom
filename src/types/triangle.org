@@ -287,7 +287,7 @@
 #+END_SRC
 **** IBounds                                                    :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
-  <<lob-geom-bounds(fn="tu/bounding-rect")>>
+  <<lob-geom-bounds(fn="gu/bounding-rect")>>
 #+END_SRC
 **** IBoundingCircle                                            :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
@@ -398,7 +398,7 @@
 #+END_SRC
 **** IBounds                                                    :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
-  <<lob-geom-bounds(fn="tu/bounding-box",depth="yes")>>
+  <<lob-geom-bounds(fn="gu/bounding-box",depth="yes")>>
 #+END_SRC
 **** IBoundingSphere                                            :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
@@ -511,13 +511,12 @@ https://web.archive.org/web/20090320013931/http://amp.ece.cmu.edu/Publication/Ch
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.intersect :as isec]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3Z]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.utils.intersect :as isec]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3 V3Z]]
      [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types]
-     [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
      [thi.ng.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
      [thi.ng.xerror.core :as err]

@@ -1,7 +1,7 @@
 #+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
- - [[#namespace-thinggeomcorequaternion][Namespace: thi.ng.geom.core.quaternion]]
+ - [[#namespace-thinggeomquaternion][Namespace: thi.ng.geom.quaternion]]
      - [[#templates][Templates]]
          - [[#apply][apply]]
          - [[#assocn][assocN]]
@@ -33,7 +33,7 @@
      - [[#swizzling][Swizzling]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
-* Namespace: thi.ng.geom.core.quaternion
+* Namespace: thi.ng.geom.quaternion
 
 ** Templates
 
@@ -544,7 +544,7 @@ of the code.
          wx (* w x2)
          wy (* w y2)
          wz (* w z2)]
-     (thi.ng.geom.core.matrix.Matrix44.
+     (thi.ng.geom.matrix.Matrix44.
       (- 1.0 (+ yy zz)) (+ xy wz) (- xz wy) 0.0
       (- xy wz) (- 1.0 (+ xx zz)) (+ yz wx) 0.0
       (+ xz wy) (- yz wx) (- 1.0 (+ xx yy)) 0.0
@@ -567,7 +567,7 @@ of the code.
      (aset b 0 (double (mm/maddsub ix w iw nx iy nz iz ny)))
      (aset b 1 (double (mm/maddsub iy w iw ny iz nx ix nz)))
      (aset b 2 (double (mm/maddsub iz w iw nz ix ny iy nx)))
-     (thi.ng.geom.core.vector.Vec3. b nil (meta v))))
+     (thi.ng.geom.vector.Vec3. b nil (meta v))))
 #+END_SRC
 
 *** End of implementation
@@ -749,21 +749,21 @@ of the code.
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core/quaternion.cljc :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.core.quaternion
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/quaternion.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.quaternion
     #?(:cljs
        (:require-macros
         [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V3X V3Y V3Z]]
-     [thi.ng.geom.core.matrix :as mat]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3 V3X V3Y V3Z]]
+     [thi.ng.geom.matrix :as mat]
      [thi.ng.xerror.core :as err]
      [thi.ng.math.core :as m :refer [*eps* PI TWO_PI]]
      #?(:clj [thi.ng.math.macros :as mm]))
     #?(:clj
        (:import
-        [thi.ng.geom.core.matrix Matrix44])))
+        [thi.ng.geom.matrix Matrix44])))
 
   (declare swizzle4 swizzle4-assoc)
 

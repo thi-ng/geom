@@ -27,7 +27,7 @@ These examples can be built by running the following commands in the geom root d
 Then in the browser, using the JS console, the demos can be individually launched like:
 
 #+BEGIN_SRC js
-  thi.ng.geom.webgl.example01.demo()
+  thi.ng.geom.examples.webgl.ex01.demo()
 #+END_SRC
 
 ** Templates for namespace setup
@@ -47,8 +47,8 @@ Then in the browser, using the JS console, the demos can be individually launche
   [thi.ng.geom.webgl.glmesh :as glm]
   [thi.ng.geom.webgl.camera :as cam]
   [thi.ng.geom.core :as g]
-  [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-  [thi.ng.geom.core.matrix :as mat :refer [M44]]
+  [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+  [thi.ng.geom.matrix :as mat :refer [M44]]
   [thi.ng.geom.aabb :as a]
   [thi.ng.geom.attribs :as attr]
   [thi.ng.typedarrays.core :as arrays]
@@ -91,8 +91,8 @@ implication of this is that we don't need to specify a view matrix,
 which has to be given for the 3d case though. Please see the above
 link for more discussion about these options.
 
-#+BEGIN_SRC clojure :tangle ../../babel/test/thi/ng/geom/webgl/example01.cljs :noweb yes :mkdirp yes :padline no
-   (ns thi.ng.geom.webgl.example01
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex01.cljs :noweb yes :mkdirp yes :padline no
+   (ns thi.ng.geom.examples.webgl.ex01
      <<require-macros>>
      (:require
       <<default-requires>>
@@ -145,8 +145,8 @@ with vertex attributes. We define a box with different colors for each
 of its 6 sides. The colors must be specified as RGBA using the
 [[http://thi.ng/color][thi.ng/color]] library.
 
-#+BEGIN_SRC clojure :tangle ../../babel/test/thi/ng/geom/webgl/example02.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.example02
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex02.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.webgl.ex02
     <<require-macros>>
     (:require
      <<default-requires>>
@@ -180,8 +180,8 @@ of its 6 sides. The colors must be specified as RGBA using the
 
 Same example as above, only this time using basic lambert shading...
 
-#+BEGIN_SRC clojure :tangle ../../babel/test/thi/ng/geom/webgl/example02a.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.example02a
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex02a.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.webgl.ex02a
     <<require-macros>>
     (:require
      <<default-requires>>
@@ -222,8 +222,8 @@ then also rotated around the global Y axis. This is achieved with
 simple matrix multiplication (=rot= is the global rotation /
 transformation).
 
-#+BEGIN_SRC clojure :tangle ../../babel/test/thi/ng/geom/webgl/example03.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.example03
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex03.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.webgl.ex03
     <<require-macros>>
     (:require
      <<default-requires>>
@@ -286,13 +286,12 @@ transformation).
 
 Live version: http://demo.thi.ng/geom/webgl/unproject/
 
-#+BEGIN_SRC clojure :tangle ../../babel/test/thi/ng/geom/webgl/example04.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.example04
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex04.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.webgl.ex04
     <<require-macros>>
     (:require
      <<default-requires>>
      [thi.ng.geom.plane :as pl]
-     [thi.ng.geom.core.intersect :as intersect]
      [thi.ng.geom.webgl.shaders.phong :as phong]))
 
   (enable-console-print!)
@@ -363,8 +362,8 @@ Live version: http://demo.thi.ng/geom/webgl/unproject/
 
 Live version: http://demo.thi.ng/geom/webgl/texcube/
 
-#+BEGIN_SRC clojure :tangle ../../babel/test/thi/ng/geom/webgl/example05.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.example05
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex05.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.webgl.ex05
     <<require-macros>>
     (:require
      <<default-requires>>))
@@ -404,7 +403,7 @@ Live version: http://demo.thi.ng/geom/webgl/texcube/
           tex-ready (volatile! false)
           tex       (buf/load-texture
                      gl {:callback (fn [tex img] (vreset! tex-ready true))
-                         :src      "dev/cubev.png"
+                         :src      "dev-resources/cubev.png"
                          :flip     false})]
       (anim/animate
        (fn [t frame]
@@ -421,13 +420,13 @@ Live version: http://demo.thi.ng/geom/webgl/texcube/
 
 Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/webgl/ptf-knot3/
 
-#+BEGIN_SRC clojure :tangle ../../babel/test/thi/ng/geom/webgl/example05a.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.example05a
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex05a.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.webgl.ex05a
     <<require-macros>>
     (:require
      <<default-requires>>
      [thi.ng.geom.circle :as c]
-     [thi.ng.geom.types.utils.ptf :as ptf]
+     [thi.ng.geom.ptf :as ptf]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.vertex :as vertex]
      [thi.ng.glsl.lighting :as light]
@@ -566,8 +565,8 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/
 
 Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/webgl/fbo-rtt2/
 
-#+BEGIN_SRC clojure :tangle ../../babel/test/thi/ng/geom/webgl/example06.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.example06
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex06.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.webgl.ex06
     <<require-macros>>
     (:require
      <<default-requires>>
@@ -684,7 +683,7 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
          true))))
 #+END_SRC
 
-** TODO Example: Morphogen & shadow mapping
+** TODO Example: Morphogen & shadow mapping                        :noexport:
 
 #+BEGIN_SRC clojure
  ;;:tangle ../../babel/test/thi/ng/geom/webgl/example07.cljs :noweb yes :mkdirp yes :padline no

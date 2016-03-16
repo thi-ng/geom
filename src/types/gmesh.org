@@ -187,7 +187,7 @@ located on the rotation axis.
                (mapcat make-face
                        (partition 2 1 sa)
                        (partition 2 1 sb))))
-            (tu/into-mesh (gmesh) add-face*)))))
+            (gu/into-mesh (gmesh) add-face*)))))
 #+END_SRC
 
 *** Predefined forms
@@ -198,7 +198,7 @@ located on the rotation axis.
     (let [sv (vec3 s)]
       (reduce
        (fn [m [p flags]]
-         (tu/into-mesh m add-face* (g/as-mesh (thi.ng.geom.types.AABB p s) {:flags flags})))
+         (gu/into-mesh m add-face* (g/as-mesh (thi.ng.geom.types.AABB p s) {:flags flags})))
        (gmesh)
        [[(vec3) :ewsfb]
         [(vec3 0 s 0) :wfb]
@@ -229,7 +229,7 @@ located on the rotation axis.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IBounds
-  (bounds [_] (tu/bounding-box (keys (:vertices _))))
+  (bounds [_] (gu/bounding-box (keys (:vertices _))))
   (width [_] (gu/axis-range 0 (keys (:vertices _))))
   (height [_] (gu/axis-range 1 (keys (:vertices _))))
   (depth [_] (gu/axis-range 2 (keys (:vertices _))))
@@ -240,7 +240,7 @@ located on the rotation axis.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IBoundingSphere
   (bounding-sphere
-   [_] (tu/bounding-sphere (g/centroid _) (g/vertices _)))
+   [_] (gu/bounding-sphere (g/centroid _) (g/vertices _)))
 #+END_SRC
 
 *** ICenter
@@ -258,7 +258,7 @@ located on the rotation axis.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IFlip
-  (flip [_] (tu/map-mesh (fn [f] [(vec (rseq f))]) _))
+  (flip [_] (gu/map-mesh (fn [f] [(vec (rseq f))]) _))
 #+END_SRC
 
 *** TODO IGraph
@@ -378,7 +378,7 @@ located on the rotation axis.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IGeomContainer
   (into
-   [_ faces] (tu/into-mesh _ add-face* faces))
+   [_ faces] (gu/into-mesh _ add-face* faces))
   g/IClear
   (clear*
    [_] (gmesh))
@@ -399,7 +399,7 @@ located on the rotation axis.
   g/ITessellate
   (tessellate
    ([_]      (g/tessellate _ {}))
-   ([_ opts] (tu/map-mesh (or (:fn opts) (gu/tessellate-face gu/tessellate-with-first)) _)))
+   ([_ opts] (gu/map-mesh (or (:fn opts) (gu/tessellate-face gu/tessellate-with-first)) _)))
 #+END_SRC
 
 *** ITransform
@@ -408,20 +408,20 @@ located on the rotation axis.
   g/IScale
   (scale
    ([_ s]
-      (tu/transform-mesh _ add-face* #(m/* % s)))
+      (gu/transform-mesh _ add-face* #(m/* % s)))
    ([_ sx sy sz]
-      (tu/transform-mesh _ add-face* #(m/* % sx sy sz))))
+      (gu/transform-mesh _ add-face* #(m/* % sx sy sz))))
   (scale-size
    [_ s]
    (let [c (g/centroid _)]
-     (tu/transform-mesh _ add-face* #(m/madd (m/- % c) s c))))
+     (gu/transform-mesh _ add-face* #(m/madd (m/- % c) s c))))
   g/ITranslate
   (translate
-   [_ t] (tu/transform-mesh _ add-face* #(m/+ % t)))
+   [_ t] (gu/transform-mesh _ add-face* #(m/+ % t)))
   g/ITransform
   (transform
    [_ tx]
-   (tu/transform-mesh _ add-face* tx))
+   (gu/transform-mesh _ add-face* tx))
 #+END_SRC
 
 *** IVolume
@@ -444,12 +444,11 @@ located on the rotation axis.
   (ns thi.ng.geom.gmesh
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.geom.meshface :as mf]
      [thi.ng.geom.types]
-     [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
      [thi.ng.math.core :as m :refer [*eps*]]
      [clojure.core.reducers :as r]

@@ -45,7 +45,7 @@
 
   (defn node-offset
     "Computes the position of a child node id"
-    (^thi.ng.geom.core.vector.Vec3
+    (^thi.ng.geom.vector.Vec3
      [[x y z :as p] d]
      (let [[x' y' z'] (m/+ p d)]
        (fn [b]
@@ -53,7 +53,7 @@
           (if (> (bit-and b 2) 0) x' x)
           (if (> (bit-and b 1) 0) y' y)
           (if (> (bit-and b 4) 0) z' z)))))
-    (^thi.ng.geom.core.vector.Vec3
+    (^thi.ng.geom.vector.Vec3
      [[x y z] d b]
      (vec3
       (if (> (bit-and b 2) 0) (+ x d) x)
@@ -222,7 +222,7 @@
     "Returns the cell coordinate for the given `index` and tree
     configuration as vec3 (the latter obtained via
     `voxel-config-at-depth`)."
-    (^thi.ng.geom.core.vector.Vec3
+    (^thi.ng.geom.vector.Vec3
      [{:keys [size stride stride-z]} idx]
      (let [z (int (/ idx stride-z))
            y (int (/ (rem idx stride-z) stride))
@@ -233,7 +233,7 @@
     "Returns the actual world space coordinate for the given `index` and
     tree configuration (the latter obtained via
     `voxel-config-at-depth`)."
-    (^thi.ng.geom.core.vector.Vec3
+    (^thi.ng.geom.vector.Vec3
      [config ^long idx]
      (m/* (voxel-cell config idx) (:size config))))
 
@@ -299,8 +299,8 @@
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [vec3 V3]])
-    #?(:clj (:import [thi.ng.geom.core.vector Vec3])))
+     [thi.ng.geom.vector :as v :refer [vec3 V3]])
+    #?(:clj (:import [thi.ng.geom.vector Vec3])))
 
   <<const>>
 

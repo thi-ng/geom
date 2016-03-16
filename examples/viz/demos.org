@@ -49,7 +49,7 @@ directory.
 #+BEGIN_SRC clojure :noweb-ref example-imports
   (require '[thi.ng.geom.viz.core :as viz] :reload)
   (require '[thi.ng.geom.svg.core :as svg])
-  (require '[thi.ng.geom.core.vector :as v])
+  (require '[thi.ng.geom.vector :as v])
   (require '[thi.ng.color.core :as col])
   (require '[thi.ng.math.core :as m :refer [PI TWO_PI]])
 #+END_SRC
@@ -500,7 +500,7 @@ for list of available presets & how to define new gradients.
   <<example-imports>>
   (require '[thi.ng.color.gradients :as grad])
   (require '[thi.ng.geom.core :as g])
-  (require '[thi.ng.geom.core.utils :as gu])
+  (require '[thi.ng.geom.utils :as gu])
   (require '[thi.ng.math.noise :as n])
 
   (def test-matrix

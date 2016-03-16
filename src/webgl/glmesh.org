@@ -140,7 +140,7 @@ the mesh (without their attributes, only positions).
      (loop [acc (transient #{}), i 0]
        (if (< i num)
          (recur
-          (conj! acc (thi.ng.geom.core.vector.Vec3. (.slice vertices i (+ i 3)) nil nil))
+          (conj! acc (thi.ng.geom.vector.Vec3. (.slice vertices i (+ i 3)) nil nil))
           (+ i 3))
          (persistent! acc)))))
 #+END_SRC
@@ -160,7 +160,7 @@ the mesh (without their attributes, only positions).
    [_ faces]
    (if (instance? GLMesh faces)
      (into-glmesh* _ faces)
-     (tu/into-mesh _ add-face* faces)))
+     (gu/into-mesh _ add-face* faces)))
 #+END_SRC
 
 *** IClear
@@ -283,7 +283,7 @@ the mesh (without their attributes, only positions).
      (loop [acc (transient #{}), i 0]
        (if (< i num)
          (recur
-          (conj! acc (thi.ng.geom.core.vector.Vec3. (.slice vertices i (+ i 3)) nil nil))
+          (conj! acc (thi.ng.geom.vector.Vec3. (.slice vertices i (+ i 3)) nil nil))
           (+ i 3))
          (persistent! acc)))))
 #+END_SRC
@@ -303,7 +303,7 @@ the mesh (without their attributes, only positions).
    [_ m]
    (if (instance? IndexedGLMesh m)
      (into-iglmesh* _ m)
-     (tu/into-mesh _ add-face-indexed* m)))
+     (gu/into-mesh _ add-face-indexed* m)))
 #+END_SRC
 
 *** IClear
@@ -379,23 +379,23 @@ Furthermore, the options map also supports the following other keys:
             idv     (* id 9)
             iduv    (* id 6)
             idcol   (* id 12)]
-        (.set vertices (.-buf ^thi.ng.geom.core.vector.Vec3 (first verts)) idv)
-        (.set vertices (.-buf ^thi.ng.geom.core.vector.Vec3 (nth verts 1)) (+ idv 3))
-        (.set vertices (.-buf ^thi.ng.geom.core.vector.Vec3 (nth verts 2)) (+ idv 6))
+        (.set vertices (.-buf ^thi.ng.geom.vector.Vec3 (first verts)) idv)
+        (.set vertices (.-buf ^thi.ng.geom.vector.Vec3 (nth verts 1)) (+ idv 3))
+        (.set vertices (.-buf ^thi.ng.geom.vector.Vec3 (nth verts 2)) (+ idv 6))
         (when fnormals
           (let [n  (or (:fnorm attribs) (gu/ortho-normal verts))
-                nb (.-buf ^thi.ng.geom.core.vector.Vec3 n)]
+                nb (.-buf ^thi.ng.geom.vector.Vec3 n)]
             (.set fnormals nb idv)
             (.set fnormals nb (+ idv 3))
             (.set fnormals nb (+ idv 6))))
         (when-let [vn (if vnormals (get attribs :vnorm))]
-          (.set vnormals (.-buf ^thi.ng.geom.core.vector.Vec3 (first vn)) idv)
-          (.set vnormals (.-buf ^thi.ng.geom.core.vector.Vec3 (nth vn 1)) (+ idv 3))
-          (.set vnormals (.-buf ^thi.ng.geom.core.vector.Vec3 (nth vn 2)) (+ idv 6)))
+          (.set vnormals (.-buf ^thi.ng.geom.vector.Vec3 (first vn)) idv)
+          (.set vnormals (.-buf ^thi.ng.geom.vector.Vec3 (nth vn 1)) (+ idv 3))
+          (.set vnormals (.-buf ^thi.ng.geom.vector.Vec3 (nth vn 2)) (+ idv 6)))
         (when-let [uv (if uvs (get attribs :uv))]
-          (.set uvs (.-buf ^thi.ng.geom.core.vector.Vec2 (first uv)) iduv)
-          (.set uvs (.-buf ^thi.ng.geom.core.vector.Vec2 (nth uv 1)) (+ iduv 2))
-          (.set uvs (.-buf ^thi.ng.geom.core.vector.Vec2 (nth uv 2)) (+ iduv 4)))
+          (.set uvs (.-buf ^thi.ng.geom.vector.Vec2 (first uv)) iduv)
+          (.set uvs (.-buf ^thi.ng.geom.vector.Vec2 (nth uv 1)) (+ iduv 2))
+          (.set uvs (.-buf ^thi.ng.geom.vector.Vec2 (nth uv 2)) (+ iduv 4)))
         (when-let [col (if cols (get attribs :col))]
           (->> (streams/into-buffer (first col) cols 4 idcol)
                (streams/into-buffer (nth col 1) cols 4)
@@ -409,15 +409,15 @@ Furthermore, the options map also supports the following other keys:
         (let [id  (.-id ^IndexedGLMesh m)
               idv (* id 3)
               [v fn vn col uv] va]
-          (.set vertices (.-buf ^thi.ng.geom.core.vector.Vec3 v) idv)
+          (.set vertices (.-buf ^thi.ng.geom.vector.Vec3 v) idv)
           (if (if fnormals fn)
-            (.set fnormals (.-buf ^thi.ng.geom.core.vector.Vec3 fn) idv)
+            (.set fnormals (.-buf ^thi.ng.geom.vector.Vec3 fn) idv)
             (if (if vnormals vn)
-              (.set vnormals (.-buf ^thi.ng.geom.core.vector.Vec3 vn) idv)))
+              (.set vnormals (.-buf ^thi.ng.geom.vector.Vec3 vn) idv)))
           (when (if cols col)
             (streams/into-buffer col cols 4 (* id 4)))
           (when (if uvs uv)
-            (.set uvs (.-buf ^thi.ng.geom.core.vector.Vec2 uv) (* id 2)))
+            (.set uvs (.-buf ^thi.ng.geom.vector.Vec2 uv) (* id 2)))
           (set! (.-index ^IndexedGLMesh m) (assoc (.-index ^IndexedGLMesh m) va id))
           (set! (.-id ^IndexedGLMesh m) (inc id))
           id)))
@@ -449,11 +449,11 @@ Furthermore, the options map also supports the following other keys:
   (defn- transform-vertices
     [f buf num]
     (let [tv (vec3 0)
-          tb (.-buf ^thi.ng.geom.core.vector.Vec3 tv)]
+          tb (.-buf ^thi.ng.geom.vector.Vec3 tv)]
       (loop [i 0]
         (when (< i num)
           (.set tb (.slice buf i (+ i 3)) 0)
-          (.set buf (.-buf ^thi.ng.geom.core.vector.Vec3 (f tv)) i)
+          (.set buf (.-buf ^thi.ng.geom.vector.Vec3 (f tv)) i)
           (recur (+ i 3))))))
 
   (defn- into-glmesh*
@@ -538,9 +538,8 @@ Furthermore, the options map also supports the following other keys:
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.types.utils :as tu]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.utils :as gu]
      [thi.ng.geom.webgl.core :as gl]
      [thi.ng.geom.webgl.constants :as glc]
      [thi.ng.dstruct.streams :as streams]

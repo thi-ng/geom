@@ -223,8 +223,8 @@
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g :refer [*resolution*]]
-     [thi.ng.geom.core.vector :as v :refer [vec2]]
-     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2]]
+     [thi.ng.geom.utils :as gu]
      [thi.ng.geom.bezier :as b]
      [thi.ng.xerror.core :as err]
      #?(:clj [clojure.xml :as xml]))

@@ -86,7 +86,7 @@
   (bounding-sphere
    [_]
    (let [ext (m/* (get _ :size) 0.5)]
-     (tu/bounding-sphere (m/+ (get _ :p) ext) (m/mag ext))))
+     (gu/bounding-sphere (m/+ (get _ :p) ext) (m/mag ext))))
 #+END_SRC
 
 *** IBoundary
@@ -417,15 +417,14 @@ of the original with inner sorting over XYZ.
         [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.intersect :as isec]
-     [thi.ng.geom.core.vector :as v :refer [vec3]]
-     [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.utils.intersect :as isec]
+     [thi.ng.geom.vector :as v :refer [vec3]]
+     [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.geom.cuboid :as cu]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.types]
-     [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
      [thi.ng.xerror.core :as err]
      [thi.ng.math.core :as m :refer [*eps*]]
@@ -603,11 +602,10 @@ There're 26 distinct cases for producing the closest point on an AABB to a given
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :refer [vec3]]
-     [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :refer [vec3]]
+     [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.geom.types]
-     [thi.ng.geom.types.utils :as tu]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.plane :as pl]
      [thi.ng.geom.cuboid :as cu]

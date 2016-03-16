@@ -109,7 +109,7 @@
   (bounding-circle
    [_]
    (let [c (g/centroid _)]
-     (tu/bounding-circle c (g/dist c (:p _)))))
+     (gu/bounding-circle c (g/dist c (:p _)))))
 #+END_SRC
 
 *** ICenter
@@ -421,14 +421,13 @@ of triangles of the subdivided rects.
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.intersect :as isec]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.utils.intersect :as isec]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types :as types]
-     [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
      [thi.ng.xerror.core :as err]
      [thi.ng.math.core :as m :refer [*eps*]]

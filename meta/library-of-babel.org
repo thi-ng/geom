@@ -50,7 +50,7 @@ them from other templates.
 #+BEGIN_SRC clojure
   g/IBoundingCircle
   (bounding-circle
-   [_] (tu/bounding-circle (g/centroid _) (:points _)))
+   [_] (gu/bounding-circle (g/centroid _) (:points _)))
 #+END_SRC
 
 ** IBoundingSphere
@@ -59,7 +59,7 @@ them from other templates.
 #+BEGIN_SRC clojure
   g/IBoundingSphere
   (bounding-sphere
-   [_] (tu/bounding-sphere (g/centroid _) (:points _)))
+   [_] (gu/bounding-sphere (g/centroid _) (:points _)))
 #+END_SRC
 
 ** ICenter

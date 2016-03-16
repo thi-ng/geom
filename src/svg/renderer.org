@@ -68,9 +68,9 @@
      [thi.ng.geom.core :as g]
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.geom.svg.shaders :as shader]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :refer [vec3 V3Z]]
-     [thi.ng.geom.core.matrix :as mat :refer [M44]]))
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :refer [vec3 V3Z]]
+     [thi.ng.geom.matrix :as mat :refer [M44]]))
 
   <<projection>>
 

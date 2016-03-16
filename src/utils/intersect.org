@@ -1,7 +1,7 @@
 #+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_3_gh:
- - [[#namespace-thinggeomcoreintersect][Namespace: thi.ng.geom.core.intersect]]
+ - [[#namespace-thinggeomutilsintersect][Namespace: thi.ng.geom.utils.intersect]]
      - [[#circle][Circle]]
          - [[#circle---circle][Circle - Circle]]
      - [[#rect][Rect]]
@@ -30,8 +30,7 @@
          - [[#tetrahedron---tetrahedron][Tetrahedron - Tetrahedron]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
-* Namespace: thi.ng.geom.core.intersect
-
+* Namespace: thi.ng.geom.utils.intersect
 ** Circle
 
 *** Circle - Circle
@@ -489,15 +488,15 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core/intersect.cljc :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.core.intersect
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/utils/intersect.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.utils.intersect
     #?(:cljs
        (:require-macros
         [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V2 V3]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3 V2 V3]]
      [thi.ng.math.core :as m :refer [*eps*]]
      #?(:clj [thi.ng.math.macros :as mm])))
 

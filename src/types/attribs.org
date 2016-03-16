@@ -104,9 +104,9 @@ Tube UV mapping is currently only supported by the following implementations:
   (ns thi.ng.geom.attribs
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.math.core :as m]))
 
   <<gen>>

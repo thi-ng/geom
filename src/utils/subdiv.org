@@ -1,15 +1,14 @@
 #+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_3_gh:
- - [[#namespace-thinggeomcoresubdiv][Namespace: thi.ng.geom.core.subdiv]]
-     - [[#iterative-subdivision][Iterative subdivision]]
+ - [[#namespace-thinggeomutilssubdiv][Namespace: thi.ng.geom.utils.subdiv]]
+     - [[#iterative-curve-subdivision][Iterative curve subdivision]]
          - [[#example--comparison][Example & comparison]]
          - [[#implementation][Implementation]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
-* Namespace: thi.ng.geom.core.subdiv
-
-** Iterative subdivision
+* Namespace: thi.ng.geom.utils.subdiv
+** Iterative curve subdivision
 
 http://algorithmicbotany.org/papers/subgpu.sig2003.pdf
 
@@ -19,8 +18,8 @@ http://algorithmicbotany.org/papers/subgpu.sig2003.pdf
 
 #+BEGIN_SRC clojure
   (require '[thi.ng.geom.core :as g])
-  (require '[thi.ng.geom.core.vector :refer [vec2]])
-  (require '[thi.ng.geom.core.subdiv :as sd])
+  (require '[thi.ng.geom.vector :refer [vec2]])
+  (require '[thi.ng.geom.utils.subdiv :as sd])
   (require '[thi.ng.geom.svg.core :as svg])
   (require '[thi.ng.math.core :as m])
   (require '[thi.ng.dstruct.core :as d])
@@ -82,15 +81,15 @@ http://algorithmicbotany.org/papers/subgpu.sig2003.pdf
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core/subdiv.cljc :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.core.subdiv
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/utils/subdiv.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.utils.subdiv
     #?(:cljs
        (:require-macros
         [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
      #?(:clj [thi.ng.math.macros :as mm])))
 
   <<subdiv>>

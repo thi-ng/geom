@@ -15,11 +15,11 @@ which has both the =geom= and =luxor= libs on its classpath.
 
 [[../../assets/ptf-knot.jpg]]
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/ptf-knot.clj :mkdirp yes :padline no
-  (ns ptf-knot
+#+BEGIN_SRC clojure :tangle ../../babel/examples/types/ptf_knot.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.types.ptf-knot
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v]
+     [thi.ng.geom.vector :as v]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.ptf :as ptf]
@@ -54,11 +54,11 @@ with different parameters:
 
 [[../../assets/ptf-knot-weave2.jpg]]
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/ptf-knot2.clj :mkdirp yes :padline no
-  (ns ptf-knot2
+#+BEGIN_SRC clojure :tangle ../../babel/examples/types/ptf_knot2.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.types.ptf-knot2
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v]
+     [thi.ng.geom.vector :as v]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.ptf :as ptf]
@@ -91,11 +91,11 @@ with different parameters:
 
 [[../../assets/ptf-knot-weave-spectrum.jpg]]
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/ptf-knot3.clj :mkdirp yes :padline no
-  (ns ptf-knot3
+#+BEGIN_SRC clojure :tangle ../../babel/examples/types/ptf_knot3.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.types.ptf-knot3
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v]
+     [thi.ng.geom.vector :as v]
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.ptf :as ptf]
      [thi.ng.math.core :as m]
@@ -139,11 +139,11 @@ with different parameters:
 
 [[../../assets/ptf-spline.jpg]]
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/ptf-spline.clj :mkdirp yes :padline no
-  (ns ptf-spline
+#+BEGIN_SRC clojure :tangle ../../babel/examples/types/ptf_spline.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.types.ptf-spline
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v]
+     [thi.ng.geom.vector :as v]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.bezier :as b]
      [thi.ng.geom.circle :as c]

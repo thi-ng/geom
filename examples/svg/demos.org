@@ -14,18 +14,18 @@ This document contains a growing number of SVG example code. Each demo
 is defined in its own namespace and can be loaded from the REPL via:
 
 #+BEGIN_SRC clojure
-  (load-file "examples/svgdemo01.clj") ;; etc...
+  (load-file "examples/svg/ex01.clj") ;; etc...
 #+END_SRC
 
 ** STL mesh import (Blender's Suzanne)
 
 [[http://media.thi.ng/geom/svg/svgdemo02-suzanne.svg]]
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/svgdemo02.clj :mkdirp yes :padline no
-  (ns svgdemo02
+#+BEGIN_SRC clojure :tangle ../../babel/examples/svg/ex02.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.svg.ex02
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.matrix :as mat]
+     [thi.ng.geom.matrix :as mat]
      [thi.ng.geom.mesh.io :as mio]
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.geom.svg.shaders :as shader]
@@ -83,12 +83,12 @@ is defined in its own namespace and can be loaded from the REPL via:
 |                                                    |                                                    | *Specular:* [0.8 0.8 0.8]                        |
 | *Lighting:* N/A                                    | *Lighting:* Lambert                                | *Lighting:* Blinn-Phong                          |
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/svgdemo03.clj :mkdirp yes :padline no
-  (ns svgdemo03
+#+BEGIN_SRC clojure :tangle ../../babel/examples/svg/ex03.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.svg.ex03
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :refer [vec3]]
-     [thi.ng.geom.core.matrix :as mat]
+     [thi.ng.geom.vector :refer [vec3]]
+     [thi.ng.geom.matrix :as mat]
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.polygon :as p]
      [thi.ng.geom.gmesh :as gm]
@@ -195,11 +195,11 @@ is defined in its own namespace and can be loaded from the REPL via:
 
 [[http://media.thi.ng/geom/svg/svgdemo04-spiral.svg]]
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/svgdemo04.clj :mkdirp yes :padline no
-  (ns svgdemo04
+#+BEGIN_SRC clojure :tangle ../../babel/examples/svg/ex04.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.svg.ex04
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :refer [vec2]]
+     [thi.ng.geom.vector :refer [vec2]]
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.color.core :as col]
      [thi.ng.math.core :as m]
@@ -231,12 +231,12 @@ is defined in its own namespace and can be loaded from the REPL via:
 
 [[http://media.thi.ng/geom/svg/svgdemo05-instancing.svg]]
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/svgdemo05.clj :mkdirp yes :padline no
-  (ns svgdemo05
+#+BEGIN_SRC clojure :tangle ../../babel/examples/svg/ex05.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.svg.ex05
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :refer [vec2]]
-     [thi.ng.geom.core.matrix :refer [M32]]
+     [thi.ng.geom.vector :refer [vec2]]
+     [thi.ng.geom.matrix :refer [M32]]
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.color.core :as col]
      [thi.ng.math.core :as m]
@@ -277,11 +277,11 @@ is defined in its own namespace and can be loaded from the REPL via:
 
 [[http://media.thi.ng/geom/svg/svgdemo06-decorators.svg]]
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/svgdemo06.clj :mkdirp yes :padline no
-  (ns svgdemo06
+#+BEGIN_SRC clojure :tangle ../../babel/examples/svg/ex06.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.svg.ex06
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.matrix :refer [M32]]
+     [thi.ng.geom.matrix :refer [M32]]
      [thi.ng.geom.line :as l]
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.geom.svg.adapter :as adapt]))

@@ -164,7 +164,7 @@ returns either a =BasicMesh= or =GMesh= instance.
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [vec3]]
+     [thi.ng.geom.vector :as v :refer [vec3]]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.math.core :as m :refer [PHI PI SQRT2 SQRT3]]

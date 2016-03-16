@@ -71,7 +71,7 @@
 **** IBounds
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IBounds
-  (bounds [_] (tu/bounding-box (g/vertices _)))
+  (bounds [_] (gu/bounding-box (g/vertices _)))
   (width [_] (gu/axis-range 0 (g/vertices _)))
   (height [_] (gu/axis-range 1 (g/vertices _)))
   (depth [_] (gu/axis-range 2 (g/vertices _)))
@@ -80,7 +80,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IBoundingSphere
   (bounding-sphere
-   [_] (tu/bounding-sphere (g/centroid _) (g/vertices _)))
+   [_] (gu/bounding-sphere (g/centroid _) (g/vertices _)))
 #+END_SRC
 **** ICenter
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -230,13 +230,12 @@
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.intersect :as isec]
-     [thi.ng.geom.core.vector :as v :refer [vec3]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.utils.intersect :as isec]
+     [thi.ng.geom.vector :as v :refer [vec3]]
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types]
-     [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
      [thi.ng.xerror.core :as err]
      [thi.ng.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]

@@ -195,14 +195,13 @@
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.intersect :as isec]
-     [thi.ng.geom.core.vector :as v :refer [vec3]]
-     [thi.ng.geom.core.quaternion :as q]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.utils.intersect :as isec]
+     [thi.ng.geom.vector :as v :refer [vec3]]
+     [thi.ng.geom.quaternion :as q]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.types :as types]
-     [thi.ng.geom.types.utils :as tu]
      [thi.ng.xerror.core :as err]
      [thi.ng.math.core :as m :refer [*eps* INF+]]
      #?(:clj [thi.ng.math.macros :as mm])))

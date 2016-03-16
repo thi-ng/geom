@@ -253,8 +253,8 @@
   (ns thi.ng.geom.mesh.io
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec3]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec3]]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.triangle :as t]
      [thi.ng.dstruct.streams :as streams]

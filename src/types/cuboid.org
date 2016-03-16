@@ -81,7 +81,7 @@ constructor function defined in this namespace.
 *** IBounds                                                          :verify:
 
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
-  <<lob-geom-bounds(fn="tu/bounding-box", depth="yes")>>
+  <<lob-geom-bounds(fn="gu/bounding-box", depth="yes")>>
 #+END_SRC
 
 *** IBoundingSphere                                                  :verify:
@@ -347,13 +347,12 @@ from the first vertex of the original with inner sorting over XYZ.
         [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec3]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec3]]
      [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.plane :as p]
      [thi.ng.geom.types]
-     [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
      [thi.ng.xerror.core :as err]
      [thi.ng.math.core :as m :refer [*eps*]]

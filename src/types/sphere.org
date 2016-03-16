@@ -253,9 +253,9 @@ If there's no intersection, the function returns =nil=.
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g :refer [*resolution*]]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec3]]
-     [thi.ng.geom.core.intersect :as isec]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec3]]
+     [thi.ng.geom.utils.intersect :as isec]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.types :as types]

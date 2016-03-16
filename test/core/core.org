@@ -537,9 +537,9 @@
     (:require
      [thi.ng.math.core :as m :refer [*eps* HALF_PI QUARTER_PI delta=]]
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3 V2 V3 V2X V2Y V3X V3Y V3Z]]
-     [thi.ng.geom.core.matrix :as mat :refer [M32 M44 matrix32 matrix44]]
-     [thi.ng.geom.core.quaternion :as q :refer [Q]]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3 V2 V3 V2X V2Y V3X V3Y V3Z]]
+     [thi.ng.geom.matrix :as mat :refer [M32 M44 matrix32 matrix44]]
+     [thi.ng.geom.quaternion :as q :refer [Q]]
      #?(:clj
         [clojure.test :refer :all]
         :cljs

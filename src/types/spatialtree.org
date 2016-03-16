@@ -374,13 +374,12 @@
   (ns thi.ng.geom.spatialtree
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     [thi.ng.geom.core.intersect :as isec]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.utils.intersect :as isec]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.rect :as r]
      [thi.ng.geom.types]
-     [thi.ng.geom.types.utils :as tu]
      [thi.ng.math.core :as m :refer [*eps* delta=]])
     #?(:clj (:import [thi.ng.geom.types AABB Rect2])))
 

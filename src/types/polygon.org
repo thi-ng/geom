@@ -198,7 +198,7 @@
 
 *** IBounds                                                     :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
-  <<lob-geom-bounds(fn="tu/bounding-rect")>>
+  <<lob-geom-bounds(fn="gu/bounding-rect")>>
 #+END_SRC
 
 *** IBoundingCircle                                             :usetemplate:
@@ -471,15 +471,14 @@
   (ns thi.ng.geom.polygon
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.intersect :as isec]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.utils.intersect :as isec]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.line :as l]
      [thi.ng.geom.triangle :as t]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.types :as types]
-     [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
      [thi.ng.math.core :as m :refer [PI HALF_PI THREE_HALVES_PI *eps*]])
     #?(:clj

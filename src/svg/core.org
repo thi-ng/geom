@@ -366,8 +366,8 @@ regard to specific means of visualization. In the example below we
 construct three circles, compute their points of intersection and then
 visualize the result in SVG:
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/svgdemo01.clj :noweb yes :mkdirp yes :padline no
-  (ns svgdemo01
+#+BEGIN_SRC clojure :tangle ../../babel/examples/svg/ex01.clj :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.svg.ex01
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
@@ -402,8 +402,8 @@ visualize the result in SVG:
         (mapcat labeled-dot [a b c d] ["A" "B" "C" "D"])))))
 
   (->> scene
-       (adapt/all-as-svg)    ;; transform all scene elements
-       (svg/serialize)       ;; serialize as SVG XML string
+       (adapt/all-as-svg)              ;; transform all scene elements
+       (svg/serialize)                 ;; serialize as SVG XML string
        (spit "svgdemo01-circles.svg")) ;; write to disk
 #+END_SRC
 
@@ -504,9 +504,9 @@ Btw. This example can be run from the REPL via this command:
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec2]]
-     [thi.ng.geom.core.matrix :as mat :refer [M32]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2]]
+     [thi.ng.geom.matrix :as mat :refer [M32]]
      [thi.ng.dstruct.core :as d]
      [thi.ng.math.core :as m]
      [thi.ng.strf.core :as f]

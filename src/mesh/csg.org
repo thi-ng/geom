@@ -1,14 +1,14 @@
 #+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
- - [[#namespace-thinggeomcsgcore][Namespace: thi.ng.geom.csg.core]]
+ - [[#namespace-thinggeommeshcsg][Namespace: thi.ng.geom.mesh.csg]]
      - [[#type-definitions][Type definitions]]
      - [[#helper-functions][Helper functions]]
      - [[#public-api][Public API]]
      - [[#constructors][Constructors]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
-* Namespace: thi.ng.geom.csg.core
+* Namespace: thi.ng.geom.mesh.csg
 
 Parts of the functionality in this namespace is originally based on an
 early implementation of csg.js and has been ported to Clojure and the
@@ -25,7 +25,7 @@ meshes.
     (bounding-sphere [_]
       (if bsphere
         bsphere
-        (set! bsphere (tu/bounding-sphere vertices))))
+        (set! bsphere (gu/bounding-sphere vertices))))
     g/IFlip
     (flip [_]
       (CSGPolygon. (g/flip plane) (reverse vertices) shared bsphere)))
@@ -227,10 +227,10 @@ meshes.
         [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :as v :refer [vec3 V3X V3Y]]
+     [thi.ng.geom.vector :as v :refer [vec3 V3X V3Y]]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.plane :as p]
-     [thi.ng.geom.types.utils :as tu]
+     [thi.ng.geom.utils :as gu]
      [thi.ng.dstruct.core :as d]
      [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]]
      #?(:clj [thi.ng.math.macros :as mm])))

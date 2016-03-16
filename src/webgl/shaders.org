@@ -298,7 +298,7 @@ shader source before compilation with =compile-shader= below.
   (:require
     [thi.ng.math.core :as m]
     [thi.ng.geom.core :as g]
-    [thi.ng.geom.core.matrix]
+    [thi.ng.geom.matrix]
     [thi.ng.geom.webgl.constants :as glc]
     [thi.ng.geom.webgl.utils :as glu]
     [thi.ng.typedarrays.core :as ta]
@@ -327,7 +327,7 @@ shader source before compilation with =compile-shader= below.
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/basic.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.basic
     (:require
-     [thi.ng.geom.core.matrix :refer [M44]]))
+     [thi.ng.geom.matrix :refer [M44]]))
 
   (defn make-shader-spec
     ([]
@@ -415,7 +415,7 @@ RGBA colors, however the alpha component is discarded.
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/lambert.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.lambert
     (:require
-     [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.geom.webgl.core :as gl]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.vertex :as vertex]
@@ -505,7 +505,7 @@ RGBA colors, however the alpha component is discarded.
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/phong.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.phong
     (:require
-     [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.geom.webgl.core :as gl]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.vertex :as vert]
@@ -550,7 +550,7 @@ RGBA colors, however the alpha component is discarded.
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/xray.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.xray
     (:require
-     [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.geom.webgl.core :as gl]
      [thi.ng.geom.webgl.constants :as glc]
      [thi.ng.glsl.core :as glsl :include-macros true]
@@ -624,7 +624,7 @@ RGBA colors, however the alpha component is discarded.
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/spotlight.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.spotlight
     (:require
-     [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.lighting :as light]))
 
@@ -736,7 +736,7 @@ RGBA colors, however the alpha component is discarded.
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/shadow.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.webgl.shaders.shadow
     (:require
-     [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.geom.webgl.core :as gl]
      [thi.ng.geom.webgl.constants :as glc]
      [thi.ng.geom.webgl.buffers :as buf]
@@ -837,8 +837,8 @@ RGBA colors, however the alpha component is discarded.
   (ns thi.ng.geom.webgl.shaders.image
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.vector :refer [vec2]]
-     [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.vector :refer [vec2]]
+     [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.geom.rect :as r]
      [thi.ng.geom.webgl.core :as gl]
      [thi.ng.geom.webgl.constants :as glc]

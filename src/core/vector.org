@@ -1,7 +1,7 @@
 #+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_3_gh:
- - [[#thinggeomcorevector][thi.ng.geom.core.vector]]
+ - [[#thinggeomvector][thi.ng.geom.vector]]
      - [[#vec2][Vec2]]
          - [[#templates][Templates]]
          - [[#clojure-protocols][Clojure protocols]]
@@ -58,8 +58,7 @@
          - [[#vec3][Vec3]]
      - [[#complete-namespace-definitions][Complete namespace definitions]]
 
-* thi.ng.geom.core.vector
-
+* thi.ng.geom.vector
 ** Vec2
 
 #+BEGIN_SRC clojure :noweb-ref vec2
@@ -2163,11 +2162,11 @@
 
 ** Complete namespace definitions
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core/vector.cljc :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.core.vector
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/vector.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.vector
     #?(:cljs
        (:require-macros
-        [thi.ng.geom.core.macros.vector :as vm :refer [defswizzle]]
+        [thi.ng.geom.macros.vector :as vm :refer [defswizzle]]
         [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
@@ -2175,7 +2174,7 @@
      [thi.ng.dstruct.streams :as streams]
      [thi.ng.xerror.core :as err]
      #?@(:clj
-         [[thi.ng.geom.core.macros.vector :as vm :refer [defswizzle]]
+         [[thi.ng.geom.macros.vector :as vm :refer [defswizzle]]
           [thi.ng.math.macros :as mm]
           [clojure.core.protocols :as cp]])))
 
@@ -2192,8 +2191,8 @@
   <<ctors>>
 #+END_SRC
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core/macros/vector.clj :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.core.macros.vector
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/macros/vector.clj :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.macros.vector
     (:require
      [clojure.walk :refer :all]
      [thi.ng.dstruct.core :as d]

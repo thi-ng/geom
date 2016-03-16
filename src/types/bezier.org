@@ -275,11 +275,10 @@ required control points. This only works for non-closed curves, though.
   (ns thi.ng.geom.bezier
     (:require
      [thi.ng.geom.core :as g :refer [*resolution*]]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     [thi.ng.geom.core.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.utils :as gu]
      [thi.ng.geom.types]
-     [thi.ng.geom.types.utils :as tu]
-     [thi.ng.geom.types.utils.ptf :as ptf]
+     [thi.ng.geom.ptf :as ptf]
      [thi.ng.dstruct.core :as d]
      [thi.ng.math.core :as m]))
 

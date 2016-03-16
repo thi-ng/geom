@@ -280,9 +280,9 @@ results, the =transform= implementation returns a [[file:polygon.org][polygon]].
   (ns thi.ng.geom.circle
     (:require
      [thi.ng.geom.core :as g :refer [*resolution*]]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.intersect :as isec]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.utils.intersect :as isec]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.types :as types]
      [thi.ng.xerror.core :as err]

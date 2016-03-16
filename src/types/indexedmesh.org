@@ -67,7 +67,7 @@
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IBounds
-  (bounds [_] (tu/bounding-box (g/vertices _)))
+  (bounds [_] (gu/bounding-box (g/vertices _)))
   (width [_] (gu/axis-range 0 (g/vertices _)))
   (height [_] (gu/axis-range 1 (g/vertices _)))
   (depth [_] (gu/axis-range 2 (g/vertices _)))
@@ -78,7 +78,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IBoundingSphere
   (bounding-sphere
-   [_] (tu/bounding-sphere (g/centroid _) (g/vertices _)))
+   [_] (gu/bounding-sphere (g/centroid _) (g/vertices _)))
 #+END_SRC
 
 *** ICenter
@@ -109,7 +109,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IGeomContainer
   (into
-   [_ faces] (tu/into-mesh _ add-face* faces))
+   [_ faces] (gu/into-mesh _ add-face* faces))
   g/IClear
   (clear*
    [_] (indexed-mesh))
@@ -208,7 +208,7 @@ Provide a map of attribute interpolators
   g/ITessellate
   (tessellate
    ([_]      (g/tessellate _ {:attribs (zipmap (keys (:attribs _)) (repeat m/mix))}))
-   ([_ opts] (tu/map-mesh (or (:fn opts) (gu/tessellate-face gu/tessellate-with-first)) _)))
+   ([_ opts] (gu/map-mesh (or (:fn opts) (gu/tessellate-face gu/tessellate-with-first)) _)))
 #+END_SRC
 
 *** ITransform
@@ -217,20 +217,20 @@ Provide a map of attribute interpolators
   g/IScale
   (scale
    ([_ s]
-    (tu/transform-mesh _ add-face* #(m/* % s)))
+    (gu/transform-mesh _ add-face* #(m/* % s)))
    ([_ sx sy sz]
-    (tu/transform-mesh _ add-face* #(m/* % sx sy sz))))
+    (gu/transform-mesh _ add-face* #(m/* % sx sy sz))))
   (scale-size
    [_ s]
    (let [c (g/centroid _)]
-     (tu/transform-mesh _ add-face* #(m/madd (m/- % c) s c))))
+     (gu/transform-mesh _ add-face* #(m/madd (m/- % c) s c))))
   g/ITranslate
   (translate
-   [_ t] (tu/transform-mesh _ add-face* #(m/+ % t)))
+   [_ t] (gu/transform-mesh _ add-face* #(m/+ % t)))
   g/ITransform
   (transform
    [_ tx]
-   (tu/transform-mesh _ add-face* tx))
+   (gu/transform-mesh _ add-face* tx))
 #+END_SRC
 
 *** IVolume
@@ -253,12 +253,11 @@ Provide a map of attribute interpolators
   (ns thi.ng.geom.indexedmesh
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
-     [thi.ng.geom.core.matrix :refer [M44]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.geom.meshface :as mf]
      [thi.ng.geom.types]
-     [thi.ng.geom.types.utils :as tu]
      [thi.ng.dstruct.core :as d]
      [thi.ng.dstruct.bidirindex :as idx]
      [thi.ng.math.core :as m :refer [*eps*]]

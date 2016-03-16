@@ -165,8 +165,8 @@
   (ns thi.ng.geom.bench.core.vector
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
      [thi.ng.math.core :as m :refer [*eps* HALF_PI PI]]
      [perforate-x.core :refer :all]))
 
@@ -179,8 +179,8 @@
   (ns thi.ng.geom.bench.core.vector
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.core.utils :as gu]
-     [thi.ng.geom.core.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
      [thi.ng.math.core :as m :refer [*eps* HALF_PI PI]]
      [perforate-x.core :as perf :refer [defgoal defcase]]))
 
