@@ -516,10 +516,10 @@
       (aset b 1 (double (* (+ y vy) 0.5))))
      (Vec2. b nil _meta)))
   (mix
-   [_ v v2]
+   [_ v t]
    (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
      (vm/rewrite-v2-nv-nv
-      buf v v2 0.0 0.0
+      buf v t 0.0 0.0
       (aset b 0 (double (+ (* (- bx x) cx) x)))
       (aset b 1 (double (+ (* (- by y) cy) y))))
      (Vec2. b nil _meta)))
@@ -538,6 +538,30 @@
         (aset b' 0 (double (+ (* (- (+ (* (- dx cx) u) cx) x1) v) x1)))
         (aset b' 1 (double (+ (* (- (+ (* (- dy cy) u) cy) y1) v) y1)))))
      (Vec2. b' nil _meta)))
+  (mix-with
+   [_ v t f]
+   (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
+     (vm/rewrite-v2-nv-nv
+      buf v t 0.0 0.0
+      (aset b 0 (double (f x bx cx)))
+      (aset b 1 (double (f y by cy))))
+     (Vec2. b nil _meta)))
+  (step
+   [_ e]
+   (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
+     (vm/rewrite-v2-nv-no-let
+      buf e 0.0
+      (aset b 0 (double (m/step* vx x)))
+      (aset b 1 (double (m/step* vy y))))
+     (Vec2. b nil _meta)))
+  (smoothstep
+   [_ e1 e2]
+   (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
+     (vm/rewrite-v2-nv-nv
+      buf e1 e2 0.0 0.0
+      (aset b 0 (double (m/smoothstep* bx cx x)))
+      (aset b 1 (double (m/smoothstep* bx cy y))))
+     (Vec2. b nil _meta)))
 #+END_SRC
 *** IInvert
 
@@ -1247,10 +1271,10 @@
       (aset b 2 (double (* (+ z vz) 0.5))))
      (Vec3. b nil _meta)))
   (mix
-   [_ v v2]
+   [_ v t]
    (let [^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
      (vm/rewrite-v3-nv-nv
-      buf v v2 0.0 0.0
+      buf v t 0.0 0.0
       (aset b 0 (double (+ (* (- bx x) cx) x)))
       (aset b 1 (double (+ (* (- by y) cy) y)))
       (aset b 2 (double (+ (* (- bz z) cz) z))))
@@ -1273,6 +1297,33 @@
         (aset b' 1 (double (+ (* (- (+ (* (- dy cy) u) cy) y1) v) y1)))
         (aset b' 2 (double (+ (* (- (+ (* (- dz cz) u) cz) z1) v) z1)))))
      (Vec3. b' nil _meta)))
+  (mix-with
+   [_ v t f]
+   (let [^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
+     (vm/rewrite-v3-nv-nv
+      buf v t 0.0 0.0
+      (aset b 0 (double (f x bx cx)))
+      (aset b 1 (double (f y by cy)))
+      (aset b 2 (double (f z bz cz))))
+     (Vec2. b nil _meta)))
+  (step
+   [_ e]
+   (let [^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
+     (vm/rewrite-v3-nv-no-let
+      buf e 0.0
+      (aset b 0 (double (m/step* vx x)))
+      (aset b 1 (double (m/step* vy y)))
+      (aset b 2 (double (m/step* vz z))))
+     (Vec2. b nil _meta)))
+  (smoothstep
+   [_ e1 e2]
+   (let [^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]
+     (vm/rewrite-v3-nv-nv
+      buf e1 e2 0.0 0.0
+      (aset b 0 (double (m/smoothstep* bx cx x)))
+      (aset b 1 (double (m/smoothstep* by cy y)))
+      (aset b 2 (double (m/smoothstep* bz cz z))))
+     (Vec2. b nil _meta)))
 #+END_SRC
 *** IInvert
 
