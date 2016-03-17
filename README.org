@@ -1,7 +1,11 @@
 #+SETUPFILE: ./meta/setup.org
 #+TITLE: thi.ng/geom
 
-* Contents                                                         :toc_4_gh:
+[[./assets/svo-d7.jpg]]
+
+[[https://gitter.im/thi-ng/geom?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge][https://badges.gitter.im/Join%20Chat.svg]]
+
+* Contents                                                         :toc_3_gh:
  - [[#about-the-project][About the project]]
      - [[#overview][Overview]]
      - [[#leiningen-coordinates][Leiningen coordinates]]
@@ -11,15 +15,15 @@
          - [[#api-scope][API scope]]
      - [[#example-usage][Example usage]]
      - [[#project-structure][Project structure]]
-         - [[#srccorecore][[[./src/core/][core]]]]
-         - [[#srctypestypes][[[./src/types/][types]]]]
-         - [[#srcutilsutils][[[./src/utils/][utils]]]]
-         - [[#srcmeshmesh][[[./src/mesh/][mesh]]]]
-         - [[#srcphysicsphysics][[[./src/physics/][physics]]]]
-         - [[#srcsvgsvg][[[./src/svg/][svg]]]]
-         - [[#srcvizviz][[[./src/viz/][viz]]]]
-         - [[#srcvoxelvoxel][[[./src/voxel/][voxel]]]]
-         - [[#srcwebglwebgl][[[./src/webgl/][webgl]]]]
+         - [[#core][core]]
+         - [[#types][types]]
+         - [[#utils][utils]]
+         - [[#mesh][mesh]]
+         - [[#physics][physics]]
+         - [[#svg][svg]]
+         - [[#viz][viz]]
+         - [[#voxel][voxel]]
+         - [[#webgl][webgl]]
      - [[#status][Status]]
  - [[#project-definition][Project definition]]
      - [[#building--testing-this-project][Building & testing this project]]
@@ -28,26 +32,7 @@
      - [[#injected-properties][Injected properties]]
      - [[#dependencies][Dependencies]]
          - [[#runtime][Runtime]]
-             - [[#httpsgithubcomclojureclojureclojure][[[https://github.com/clojure/clojure][Clojure]]]]
-             - [[#httpsgithubcomclojureclojurescriptclojurescript][[[https://github.com/clojure/clojurescript][ClojureScript]]]]
-             - [[#httpsgithubcomthi-ngcolorthingcolor][[[https://github.com/thi-ng/color/][thi.ng/color]]]]
-             - [[#httpsgithubcomthi-ngdstructthingdstruct][[[https://github.com/thi-ng/dstruct][thi.ng/dstruct]]]]
-             - [[#httpsgithubcomthi-ngmaththingmath][[[https://github.com/thi-ng/math][thi.ng/math]]]]
-             - [[#httpsgithubcomthi-ngndarraythingndarray][[[https://github.com/thi-ng/ndarray/][thi.ng/ndarray]]]]
-             - [[#httpthingshadergraphthingshadergraph][[[http://thi.ng/shadergraph][thi.ng/shadergraph]]]]
-             - [[#httpsgithubcomthi-ngstrfthingstrf][[[https://github.com/thi-ng/strf][thi.ng/strf]]]]
-             - [[#httpsgithubcomthi-ngtypedarraysthingtypedarrays][[[https://github.com/thi-ng/typedarrays/][thi.ng/typedarrays]]]]
-             - [[#httpsgithubcomthi-ngxerrorthingxerror][[[https://github.com/thi-ng/xerror/][thi.ng/xerror]]]]
-             - [[#httpsgithubcompostspectacularcljs-logcljs-log][[[https://github.com/postspectacular/cljs-log][cljs-log]]]]
-             - [[#httpsgithubcomweavejesterhiccuphiccup][[[https://github.com/weavejester/hiccup][hiccup]]]]
          - [[#development][Development]]
-             - [[#httpsgithubcomemezeskelein-cljsbuildcljsbuild][[[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]]]
-             - [[#httpsgithubcomhugoduncancriteriumcriterium][[[https://github.com/hugoduncan/criterium][Criterium]]]]
-             - [[#httpsgithubcomcemerickclojurescripttestclojurescripttest][[[https://github.com/cemerick/clojurescript.test][clojurescript.test]]]]
-             - [[#httpsgithubcomdavidsantiagoperforateperforate][[[https://github.com/davidsantiago/perforate][perforate]]]]
-             - [[#httpsgithubcompostspectacularperforate-xperforate-x][[[https://github.com/postspectacular/perforate-x][perforate-x]]]]
-             - [[#httpsgithubcomryanmcglein-npmlein-npm][[[https://github.com/RyanMcG/lein-npm][lein-npm]]]]
-             - [[#httpswwwnpmjscompackagebenchmarknode-benchmark][[[https://www.npmjs.com/package/benchmark][node benchmark]]]]
      - [[#leiningen-project-file][Leiningen project file]]
      - [[#clojurescript-html-harness][ClojureScript HTML harness]]
      - [[#accessing-library-version-during-runtime][Accessing library version during runtime]]
@@ -57,11 +42,6 @@
      - [[#license][License]]
 
 * About the project
-
-[[./assets/svo-d7.jpg]]
-
-Join the chat at: [[https://gitter.im/thi-ng/geom?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge][https://badges.gitter.im/Join%20Chat.svg]]
-
 ** Overview
 
 Comprehensive and modular geometry & visualization toolkit for
@@ -188,33 +168,43 @@ modules, which have now been consolidated.
 
 [[../assets/overview.png]]
 
-*** [[./src/core/][core]]
+*** core
+
+[[./src/core/][source]]
 
 These namespaces define the core functionality of this library,
 including the approx. 50 protocols and implementations of fundamental
 geometry types/functions like 2d/3d vector algebra, matrices,
 quaternion (+ related convenience constructors & conversions)
 
-*** [[./src/types/][types]]
+*** types
+
+[[./src/types/][source]]
 
 This directory contains all high-level 2d/3d data types with their
 implementations of the various core protocols. From a user
 perspective, these namespaces defined here provide most of this
 project's core functionality.
 
-*** [[./src/utils/][utils]]
+*** utils
+
+[[./src/utils/][source]]
 
 A number of often needed utility functions to deal with point
 collections, normals, path sampling, triangle properties etc. Also
 included here are shape intersection tests, curve subdivisions and 2D
 Delaunay triangulation.
 
-*** [[./src/mesh/][mesh]]
+*** mesh
+
+[[./src/mesh/][source]]
 
 Several tools & operations related to working with 3d meshes, incl.
 I/O, subdivisions, repair / cleaning, CSG / Boolean mesh merge etc.
 
-*** [[./src/physics/][physics]]
+*** physics
+
+[[./src/physics/][source]]
 
 This module provides a simple 2d/3d particle-based physics engine with
 Verlet integration and support for custom behaviors and constaints,
@@ -222,25 +212,33 @@ both for individual particles and global. Particles can be connected
 with springs of varying stiffness as well as made interdependent using
 positive or negative force fields (attractors).
 
-*** [[./src/svg/][svg]]
+*** svg
+
+[[./src/svg/][source]]
 
 A module to help with building SVG based visualizations of geom
 entities using hiccup compatible syntax. Includes a customizable 3D
 mesh renderer w/ software shader support.
 
-*** [[./src/viz/][viz]]
+*** viz
+
+[[./src/viz/][source]]
 
 Declarative, highly customizable 2D data visualization module with ~10
 different layout methods, 3 axis types, cartesian and polar domain
 support. Currently SVG only, but planned to be format-independent.
 
-*** [[./src/voxel/][voxel]]
+*** voxel
+
+[[./src/voxel/][source]]
 
 An experimental implementation of a in-memory sparse voxel tree (SVO)
 and related functionality to extract isosurface polygon meshes from
 the tree.
 
-*** [[./src/webgl/][webgl]]
+*** webgl
+
+[[./src/webgl/][source]]
 
 This is a pure CLJS module and provides a common WebGL functionality
 (context creation, shader management & presets, buffer management,
