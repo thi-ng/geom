@@ -497,7 +497,8 @@ target/geom-<<project-version()>>.js
 
     :perforate    {:environments [{:namespaces [thi.ng.geom.bench.core.vector]}]}
 
-    :profiles     {:dev   {:plugins           [<<dep-cljsbuild>>
+    :profiles     {:dev   {:dependencies      [<<dep-criterium>>]
+                           :plugins           [<<dep-cljsbuild>>
                                                <<dep-cljs-test>>]
                            :node-dependencies [<<dep-npm-benchmark>>]
                            :global-vars       {*warn-on-reflection* true}
