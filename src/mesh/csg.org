@@ -84,7 +84,7 @@ form to use a custom \epsilon value.
                 ti (types i)
                 f  (if (== ti 2) f (conj f vi))
                 b  (if (== ti 1) b (conj b vi))]
-            (if (== 3 (bit-or ti (types j)))
+            (if (== 3 (bit-or ti (nth types j)))
               (let [vj (nth vertices j)
                     v  (m/mix vi vj (/ (- (- w) (m/dot n vi)) (m/dot n (m/- vj vi))))]
                 (recur (conj f v) (conj b v) (inc i)))
@@ -96,27 +96,27 @@ form to use a custom \epsilon value.
       of classified sub-shapes: [coplanar-front coplanar-back front back]."
     [{:keys [n w]} ^CSGPolygon poly state]
     (let [s (g/bounding-sphere poly)
-          r (+ (:r s) *eps*)
-          d (+ (m/dot n (:p s)) w)]
+          r (+ (get s :r) *eps*)
+          d (+ (m/dot n (get s :p)) w)]
       (cond
-        (> d r)     (assoc state 2 (conj (state 2) poly))
-        (< d (- r)) (assoc state 3 (conj (state 3) poly))
+        (> d r)     (assoc state 2 (conj (nth state 2) poly))
+        (< d (- r)) (assoc state 3 (conj (nth state 3) poly))
         :default
         (let [[ptype types] (compute-split-types n w (.-vertices poly))]
           (case (int ptype)
             ;; co-planar
-            0 (if (pos? (m/dot n (:n (.-plane poly))))
-                (assoc state 0 (conj (state 0) poly))
-                (assoc state 1 (conj (state 1) poly)))
+            0 (if (pos? (m/dot n (get (.-plane poly) :n)))
+                (assoc state 0 (conj (nth state 0) poly))
+                (assoc state 1 (conj (nth state 1) poly)))
             ;; front
-            1 (assoc state 2 (conj (state 2) poly))
+            1 (assoc state 2 (conj (nth state 2) poly))
             ;; back
-            2 (assoc state 3 (conj (state 3) poly))
+            2 (assoc state 3 (conj (nth state 3) poly))
             ;; both sides -> split
             3 (let [[f b] (split-poly* n w (.-vertices poly) types)]
-                [(state 0) (state 1)
-                 (if (>= (count f) 3) (conj (state 2) (csg-polygon f (.-shared poly))) f)
-                 (if (>= (count b) 3) (conj (state 3) (csg-polygon b (.-shared poly))) b)]))))))
+                [(nth state 0) (nth state 1)
+                 (if (>= (count f) 3) (conj (nth state 2) (csg-polygon f (.-shared poly))) f)
+                 (if (>= (count b) 3) (conj (nth state 3) (csg-polygon b (.-shared poly))) b)]))))))
 #+END_SRC
 
 ** Public API
@@ -131,25 +131,31 @@ form to use a custom \epsilon value.
             (reduce
              (fn [state poly] (split-poly plane poly state))
              [[] [] [] []] ps)
-            new-front (concat new-front cp-front)
-            new-front (if front (clip-polygons front new-front) new-front)
-            new-back (if back (clip-polygons back (concat new-back cp-back)) [])]
-        (concat new-front new-back))
+            new-front (into new-front cp-front)
+            new-front (if front (clip-polygons front new-front) new-front)]
+        (if back
+          (into new-front (clip-polygons back (into new-back cp-back)))
+          new-front))
       ps))
 
   (defn all-polygons
-    "Returns a lazy seq of all polygons of the given CSG node and its children."
+    "Returns vector of all polygons of the given CSG node and its children."
     [{:keys [front back] :as node}]
-    (concat
-     (:polygons node)
-     (if front (all-polygons front))
-     (if back (all-polygons back))))
+    (cond
+      (and front back) (into (into (vec (get node :polygons))
+                                   (all-polygons front))
+                             (all-polygons back))
+      front            (into (vec (get node :polygons))
+                             (all-polygons front))
+      back             (into (vec (get node :polygons))
+                             (all-polygons back))
+      :else            (get node :polygons)))
 
   (defn invert
     [{:keys [front back plane] :as node}]
     (CSGNode.
      (if plane (g/flip plane))
-     (mapv g/flip (:polygons node))
+     (mapv g/flip (get node :polygons))
      (if back (invert back))
      (if front (invert front))))
 
@@ -158,8 +164,8 @@ form to use a custom \epsilon value.
     Returns the updated node."
     [{:keys [front back] :as a} b]
     (CSGNode.
-     (:plane a)
-     (clip-polygons b (:polygons a))
+     (get a :plane)
+     (clip-polygons b (get a :polygons))
      (if front (clip front b))
      (if back (clip back b))))
 
@@ -168,25 +174,25 @@ form to use a custom \epsilon value.
     computes a plane definition using the first 3 vertices."
     ([vertices] (csg-polygon vertices nil))
     ([vertices shared]
-       (CSGPolygon. (p/plane-from-points vertices) (vec vertices) shared nil)))
+     (CSGPolygon. (p/plane-from-points vertices) (vec vertices) shared nil)))
 
   (defn csg-node
     "Creates a new or refines a CSG tree node and recursively
     adds the given polygons to it."
     ([polygons] (csg-node nil polygons))
     ([{:keys [polygons plane front back] :as node} ps]
-       (if (seq ps)
-         (let [plane (or plane (.-plane ^CSGPolygon (first ps)))
-               [cp-front cp-back new-front new-back]
-               (reduce
-                (fn [state poly] (split-poly plane poly state))
-                [[] [] [] []] ps)]
-           (CSGNode.
-            plane
-            (into (into polygons cp-front) cp-back)
-            (if (seq new-front) (csg-node front new-front) front)
-            (if (seq new-back) (csg-node back new-back) back)))
-         node)))
+     (if (seq ps)
+       (let [plane (if plane plane (.-plane ^CSGPolygon (first ps)))
+             [cp-front cp-back new-front new-back]
+             (reduce
+              (fn [state poly] (split-poly plane poly state))
+              [[] [] [] []] ps)]
+         (CSGNode.
+          plane
+          (into (into polygons cp-front) cp-back)
+          (if (seq new-front) (csg-node front new-front) front)
+          (if (seq new-back) (csg-node back new-back) back)))
+       node)))
 
   (defn union
     [a b]
@@ -230,7 +236,7 @@ form to use a custom \epsilon value.
     ([s e r-south r-north res]
      (let [dir (m/- e s)
            az  (m/normalize dir)
-           ax  (-> (if (> (m/abs* (az 1)) 0.5) V3X V3Y)
+           ax  (-> (if (> (m/abs* (v/y az)) 0.5) V3X V3Y)
                    (m/cross az)
                    (m/normalize))
            ay  (-> ax (m/cross az) m/normalize)
