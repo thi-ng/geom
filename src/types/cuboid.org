@@ -1,0 +1,369 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeomcuboid][thi.ng.geom.cuboid]]
+     - [[#constructors][Constructors]]
+     - [[#type-specific-functions][Type specific functions]]
+     - [[#protocol-implementations][Protocol implementations]]
+         - [[#iarea][IArea]]
+         - [[#ibounds][IBounds]]
+         - [[#iboundingsphere][IBoundingSphere]]
+         - [[#iboundary][IBoundary]]
+         - [[#icenter][ICenter]]
+         - [[#iclassify][IClassify]]
+         - [[#iedgeaccess-ifaceaccess--ivertexaccess][IEdgeAccess, IFaceAccess & IVertexAccess]]
+         - [[#todo-iintersect][TODO IIntersect]]
+         - [[#imeshconvert][IMeshConvert]]
+         - [[#todo-ipointmap][TODO IPointMap]]
+         - [[#todo-iproximity][TODO IProximity]]
+         - [[#todo-isample][TODO ISample]]
+         - [[#isubdivide][ISubdivide]]
+         - [[#itessellate][ITessellate]]
+         - [[#transformations][Transformations]]
+         - [[#todo-ivolume][TODO IVolume]]
+         - [[#end-of-implementation][End of implementation]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
+* thi.ng.geom.cuboid
+
+Unlike an axis-aligned bounding box ([[file:aabb.org][AABB]]), this type specifies a
+freeform box/cuboid, defined by its 8 vertices and which can be freely
+rotated & transformed. An AABB can be considered a logical subtype of
+this type and an AABB can be converted into a cuboid via the =cuboid=
+constructor function defined in this namespace.
+
+** Constructors
+
+#+BEGIN_SRC clojure :noweb-ref ctors
+  (defn cuboid
+    ([] (cuboid 1.0))
+    ([a b c d e f g h]
+       (thi.ng.geom.types.Cuboid. (mapv vec3 [a b c d e f g h])))
+    ([x]
+       (cond
+        (number? x)     (cuboid (vec3) x)
+        (map? x)        (cuboid (:p x) (:size x))
+        (sequential? x) (if (== 8 (count x))
+                          (thi.ng.geom.types.Cuboid. (mapv vec3 x))
+                          (err/illegal-arg!
+                           "Wrong number of points, expected 8 but got"
+                           (count x)))
+        :default        (err/illegal-arg! x)))
+    ([o size]
+       (let [[x1 y1 z1 :as a] (vec3 o)
+             [x2 y2 z2 :as g] (m/+ a size)
+             b (vec3 x1 y1 z2) c (vec3 x2 y1 z2)
+             d (vec3 x2 y1 z1) e (vec3 x1 y2 z1)
+             f (vec3 x1 y2 z2) h (vec3 x2 y2 z1)]
+         (thi.ng.geom.types.Cuboid. [a b c d e f g h]))))
+#+END_SRC
+
+** Type specific functions
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+
+#+END_SRC
+
+** Protocol implementations
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  (extend-type thi.ng.geom.types.Cuboid
+#+END_SRC
+
+*** IArea                                                            :verify:
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IArea
+  (area
+   [_] (transduce (map #(apply gu/tri-area3 %)) + (g/tessellate _)))
+#+END_SRC
+
+*** IBounds                                                          :verify:
+
+#+BEGIN_SRC clojure :noweb-ref impl :noweb yes
+  <<lob-geom-bounds(fn="gu/bounding-box", depth="yes")>>
+#+END_SRC
+
+*** IBoundingSphere                                                  :verify:
+
+#+BEGIN_SRC clojure :noweb-ref impl :noweb yes
+  <<lob-geom-bsphere>>
+#+END_SRC
+
+*** IBoundary                                                           :fix:
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IBoundary
+  (contains-point?
+   [_ p] (>= (g/classify-point _ p) 0))
+#+END_SRC
+
+*** ICenter                                                          :verify:
+
+#+BEGIN_SRC clojure :noweb-ref impl :noweb yes
+  <<lob-geom-center(type="thi.ng.geom.types.Cuboid", vtype="vec3")>>
+  (centroid
+   [_] (gu/centroid (:points _)))
+#+END_SRC
+
+*** IClassify                                                           :fix:
+
+In order to determine if a given point lies within or outside the
+cuboid, we compute the classifier for each of the 6 sides/facets/plane
+and use their maximum as compound result. Since the faces are all
+pointing outwards (away from the center), =classify-point= for each
+face will return a positive value if the point is in the positive half
+space of that plane. This means, in order for a point to be inside
+the cuboid, all plane classifiers need to be negative (or zero if the
+point is on the surface. The search is terminated early as soon as
+one facet produces a positive classifier.
+
+*Note:* Because on its reliance on plane normals, this implementation
+only works for fully planar cuboids.
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IClassify
+  (classify-point
+   [_ p]
+   (- (reduce
+       (fn [c f]
+         (let [c' (g/classify-point (p/plane-from-points f) p)]
+           (if (pos? c') (reduced c') (max c c'))))
+       -1.0 (g/faces _))))
+#+END_SRC
+
+*** IEdgeAccess, IFaceAccess & IVertexAccess                         :verify:
+
+  : e +----+ h
+  :   |\   :\
+  :   |f+----+ g
+  :   | |  : |
+  : a +-|--+d|
+  :    \|   \|
+  :   b +----+ c
+
+Faces are always returned in this order: east, west, north, south,
+front, back - assuming the vertex order given in the diagram.
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IVertexAccess
+  (vertices
+   [_] (:points _))
+  g/IEdgeAccess
+  (edges
+   [_]
+   (let [[a b c d e f g h] (:points _)]
+     [[a b] [b c] [c d] [d a] ;; bottom
+      [e f] [f g] [g h] [h e] ;; top
+      [a e] [b f]             ;; left
+      [c g] [d h]             ;; right
+      ]))
+  g/IFaceAccess
+  (faces
+   [_]
+   (let [[a b c d e f g h] (:points _)]
+     [[c d h g]
+      [a b f e]
+      [f g h e]
+      [a d c b]
+      [b c g f]
+      [d a e h]]))
+#+END_SRC
+
+*** TODO IIntersect                                                     :fix:
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IIntersect
+  (intersect-shape
+   [_ s])
+#+END_SRC
+
+*** IMeshConvert                                                     :verify:
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IMeshConvert
+  (as-mesh
+   ([_] (g/as-mesh _ {}))
+   ([_ {:keys [mesh flags attribs] :or {flags "nsewfb"}}]
+    (let [[a b c d e f g h] (g/vertices _)
+          [north south east west front back] (d/demunge-flags-seq flags "nsewfb")]
+      (->> [(if east (attr/generate-face-attribs [c d h g] 0 attribs nil))
+            (if west (attr/generate-face-attribs [a b f e] 1 attribs nil))
+            (if north (attr/generate-face-attribs [f g h e] 2 attribs nil))
+            (if south (attr/generate-face-attribs [a d c b] 3 attribs nil))
+            (if front (attr/generate-face-attribs [b c g f] 4 attribs nil))
+            (if back (attr/generate-face-attribs [d a e h] 5 attribs nil))]
+           (sequence (filter identity))
+           (g/into (or mesh (bm/basic-mesh)))))))
+#+END_SRC
+
+*** TODO IPointMap
+
+- =map-point= still missing
+- =unmap-point= takes a seq of 8 points defining a cuboid and vector
+  of normalized UVW coordinates. Applies trilinear interpolation to
+  compute point within the cuboid:
+  - U is coord along AD/BC edge
+  - V along AE/BF
+  - W along AB/DC
+
+Also see: [[file:~/work/clj/thing/geom/geom-core/src/utils.org::Interpolation][map-trilinear]]
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IPointMap
+  (map-point
+   [_ p])
+  (unmap-point
+    [_ p]
+    (gu/map-trilinear (:points _) p))
+#+END_SRC
+
+*** TODO IProximity                                                     :fix:
+    - Note taken on [2015-03-15 Sun 01:06] \\
+      either calc barycentric coords for quad or use triangles (already implemented)
+
+Do not use, work in progress...
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IProximity
+  (closest-point
+   [_ p]
+   (->> (g/faces _)
+        (reduce
+         (fn [acc f]
+           (let [p' (g/closest-point (p/plane-from-points f) p)
+                 d (g/dist-squared p p')]
+             (if (< d (acc 1)) [p' d] acc)))
+         [nil 1e+100])
+        (first)))
+#+END_SRC
+
+*** TODO ISample                                                        :fix:
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/ISample
+  (random-point-inside
+   [{p :p size :size}]
+   (let [[x1 y1 z1] p
+         [x2 y2 z2] (m/+ p size)]
+     (vec3 (m/random x1 x2) (m/random y1 y2) (m/random z1 z2))))
+  (random-point
+   [{p :p size :size}]
+   (let [[x1 y1 z1] p
+         [x2 y2 z2] (m/+ p size)
+         id (int (m/random 6))]
+     (cond
+      (< id 2) (vec3 (if (zero? id) x1 x2) (m/random y1 y2) (m/random z1 z2))
+      (< id 4) (vec3 (m/random x1 x2) (if (= 2 id) y1 y2) (m/random z1 z2))
+      :default (vec3 (m/random x1 x2) (m/random y1 y2) (if (= 4 id) z1 z2)))))
+#+END_SRC
+
+*** ISubdivide                                                       :verify:
+
+An Cuboid can be subdivided into smaller ones, i.e. to create a seq of
+uniform grid cells. The following options can be given as a 2nd
+argument map:
+
+| Key       | Description                                                           | Default |
+|-----------+-----------------------------------------------------------------------+---------|
+| =:num=    | number of cols/rows/slices the form will be uniformly subdivided into |       1 |
+| =:cols=   | number of times the form will be subdivided along the X-axis          |       1 |
+| =:rows=   | number of times the form will be subdivided along the Y-axis          |       1 |
+| =:slices= | number of times the form will be subdivided along the Z-axis          |       1 |
+
+When =:num= is given, the resulting cuboids will retain the aspect
+ratio of the original. If specified, =:cols=, =:rows= and =:slices=
+will take precedence over =:num=, but the latter will be used as
+default for missing args. Cuboids are returned as a lazyseq starting
+from the first vertex of the original with inner sorting over XYZ.
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/ISubdivide
+  (subdivide
+   ([_] (g/subdivide _ {}))
+   ([{points :points} {:keys [num cols rows slices] :or {num 1}}]
+      (let [ru (d/successive-nth 2 (m/norm-range (or cols num)))
+            rv (d/successive-nth 2 (m/norm-range (or rows num)))
+            rw (d/successive-nth 2 (m/norm-range (or slices num)))
+            map-p (fn [p]
+                    (->> (gu/map-trilinear points p)
+                         (mapv #(m/roundto % *eps*))
+                         (vec3)))]
+        (for [[w1 w2] rw, [v1 v2] rv, [u1 u2] ru]
+          (thi.ng.geom.types.Cuboid.
+           (mapv map-p [[u1 v1 w1] [u1 v1 w2] [u2 v1 w2] [u2 v1 w1]
+                        [u1 v2 w1] [u1 v2 w2] [u2 v2 w2] [u2 v2 w1]]))))))
+#+END_SRC
+
+*** ITessellate                                                      :verify:
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/ITessellate
+  (tessellate
+   ([_] (g/tessellate _ {}))
+   ([_ {f :fn :or {f gu/tessellate-3} :as opts}]
+      (->> (if (some #{:num :cols :rows :slices} (keys opts))
+             (g/subdivide _ opts)
+             [_])
+           (sequence
+            (comp
+             (mapcat g/faces)
+             (mapcat f))))))
+#+END_SRC
+
+*** Transformations                                                  :verify:
+
+#+BEGIN_SRC clojure :noweb-ref impl :noweb yes
+  g/IRotate
+  (rotate
+   [_ theta] (g/rotate-z _ theta))
+  <<lob-geom-rotate3d(type="thi.ng.geom.types.Cuboid")>>
+  <<lob-geom-scale(type="thi.ng.geom.types.Cuboid")>>
+  <<lob-geom-translate(type="thi.ng.geom.types.Cuboid")>>
+  <<lob-geom-tx(type="thi.ng.geom.types.Cuboid")>>
+#+END_SRC
+
+*** TODO IVolume                                                        :fix:
+    - Note taken on [2015-03-15 Sun 01:09] \\
+      calc via tetrahedrons
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IVolume
+  (volume [_] 0)
+#+END_SRC
+
+*** End of implementation                                          :noexport:
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  )
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/cuboid.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.cuboid
+    #?(:cljs
+       (:require-macros
+        [thi.ng.math.macros :as mm]))
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec3]]
+     [thi.ng.geom.attribs :as attr]
+     [thi.ng.geom.basicmesh :as bm]
+     [thi.ng.geom.plane :as p]
+     [thi.ng.geom.types]
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.xerror.core :as err]
+     [thi.ng.math.core :as m :refer [*eps*]]
+     #?(:clj [thi.ng.math.macros :as mm]))
+    #?(:clj
+       (:import
+        [thi.ng.geom.types AABB Cuboid Sphere])))
+
+  <<ctors>>
+
+  <<helpers>>
+
+  <<impl>>
+#+END_SRC

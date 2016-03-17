@@ -1,0 +1,196 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeomtypes][thi.ng.geom.types]]
+     - [[#graph-types][Graph types]]
+     - [[#2d-types][2D types]]
+         - [[#bezier2][Bezier2]]
+         - [[#circle2--ellipse2][Circle2 & Ellipse2]]
+         - [[#line2--linestrip2][Line2 & LineStrip2]]
+         - [[#mesh2][Mesh2]]
+         - [[#path2][Path2]]
+         - [[#polygon2][Polygon2]]
+         - [[#rect2][Rect2]]
+         - [[#triangle2][Triangle2]]
+     - [[#3d-types][3D types]]
+         - [[#aabb][AABB]]
+         - [[#cuboid][Cuboid]]
+         - [[#bezier3][Bezier3]]
+         - [[#meshes][Meshes]]
+         - [[#line3--linestrip3][Line3 & LineStrip3]]
+         - [[#mesh][Mesh]]
+         - [[#plane][Plane]]
+         - [[#quad3][Quad3]]
+         - [[#sphere][Sphere]]
+         - [[#tetrahedron][Tetrahedron]]
+         - [[#triangle3][Triangle3]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
+* thi.ng.geom.types
+
+** Graph types
+
+#+BEGIN_SRC clojure :noweb-ref types-graph
+  (defrecord Graph [vertices edges])
+#+END_SRC
+
+** 2D types
+
+*** Bezier2
+
+#+BEGIN_SRC clojure :noweb-ref types2d
+  (defrecord Bezier2 [points])
+#+END_SRC
+
+*** Circle2 & Ellipse2
+
+Even though a circle is a specialization of an Ellipse, we define
+an extra Circle type for performance reasons.
+
+#+BEGIN_SRC clojure :noweb-ref types2d
+  (defrecord Circle2 #?(:clj [^Vec2 p ^double r] :cljs [p r]))
+  (defrecord Ellipse2 #?(:clj [^Vec2 p ^double rx ^double ry] :cljs [p rx ry]))
+#+END_SRC
+
+*** Line2 & LineStrip2
+
+#+BEGIN_SRC clojure :noweb-ref types2d
+  (defrecord Line2 [points])
+  (defrecord LineStrip2 [points])
+#+END_SRC
+
+*** Mesh2
+
+#+BEGIN_SRC clojure :noweb-ref types2d
+  (defrecord Mesh2 [vertices normals fnormals vnormals edges faces attribs])
+#+END_SRC
+
+*** Path2
+
+#+BEGIN_SRC clojure :noweb-ref types2d
+  (defrecord Path2 [segments])
+#+END_SRC
+
+*** Polygon2
+
+#+BEGIN_SRC clojure :noweb-ref types2d
+  (defrecord Polygon2 [points])
+#+END_SRC
+
+*** Rect2
+
+#+BEGIN_SRC clojure :noweb-ref types2d
+  (defrecord Rect2 #?(:clj [^Vec2 p ^Vec2 size] :cljs [p size]))
+#+END_SRC
+
+*** Triangle2
+
+#+BEGIN_SRC clojure :noweb-ref types2d
+  (defrecord Triangle2 [points])
+#+END_SRC
+
+** 3D types
+*** AABB
+
+An Axis-aligned bounding box is defined as the cartesian volume
+extending for =size= units (a 3D vector) from point =p= toward
+positive infinity.
+
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord AABB [^Vec3 p size])
+#+END_SRC
+
+*** Cuboid
+
+In addition to the AABB type, we also define a free-form box, merely
+grouping a set of 8 vertices in a specific order (see
+[[file:box.org][type implementation]] for more details).
+
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord Cuboid [points])
+#+END_SRC
+
+*** Bezier3
+
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord Bezier3 [points])
+#+END_SRC
+
+*** Meshes
+
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord BasicMesh [vertices faces fnormals])
+#+END_SRC
+
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord GMesh [vertices normals fnormals vnormals edges faces])
+#+END_SRC
+
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord IndexedMesh [vertices faces attribs])
+#+END_SRC
+
+*** Line3 & LineStrip3
+
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord Line3 [points])
+  (defrecord LineStrip3 [points])
+#+END_SRC
+
+*** Mesh
+
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord Mesh3 [vertices normals fnormals vnormals edges faces attribs])
+#+END_SRC
+
+*** Plane
+
+A plane in cartesian 3D space can be defined as a point =p= lying on
+the plane and normal vector =n= standing perpendicular on the plane.
+The latter defines the plane's orientation in space.
+
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord Plane #?(:clj [n ^double w] :cljs [n w]))
+#+END_SRC
+
+*** Quad3
+
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord Quad3 [points])
+#+END_SRC
+
+*** Sphere
+
+Just like a circle in 2D, a sphere in 3D is uniquely defined via its
+center point =o= and radius =r=.
+
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord Sphere #?(:clj [^Vec3 p ^double r] :cljs [p r]))
+#+END_SRC
+
+*** Tetrahedron
+
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord Tetrahedron [points])
+#+END_SRC
+
+*** Triangle3
+
+#+BEGIN_SRC clojure :noweb-ref types3d
+  (defrecord Triangle3 [points])
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/types.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.types
+    (:require
+      [thi.ng.geom.vector])
+    #?(:clj (:import [thi.ng.geom.vector Vec2 Vec3])))
+
+  <<types-graph>>
+
+  <<types2d>>
+
+  <<types3d>>
+#+END_SRC

@@ -1,0 +1,543 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#namespace-thinggeomsvgcore][Namespace: thi.ng.geom.svg.core]]
+     - [[#constants--presets][Constants & presets]]
+     - [[#protocols][Protocols]]
+         - [[#isvgconvert][ISVGConvert]]
+     - [[#svg-serialization][SVG serialization]]
+         - [[#formatters][Formatters]]
+     - [[#attribute-conversion][Attribute conversion]]
+         - [[#colors][Colors]]
+         - [[#transforms][Transforms]]
+         - [[#attribute-processing][Attribute processing]]
+     - [[#svg-primitives][SVG primitives]]
+     - [[#decorators][Decorators]]
+     - [[#svg-conversions-for-geomtypes][SVG conversions for geom.types]]
+         - [[#example-use-case][Example use case]]
+         - [[#adapter-implementation][Adapter implementation]]
+         - [[#reactjs-key-prop-injection][React.js :key prop injection]]
+     - [[#complete-namespace-svgcore][Complete namespace: svg.core]]
+     - [[#complete-namespace-svgadapter][Complete namespace: svg.adapter]]
+
+* Namespace: thi.ng.geom.svg.core
+** Constants & presets
+
+#+BEGIN_SRC clojure :noweb-ref const
+  (def stroke-round {:stroke-linecap "round" :stroke-linejoin "round"})
+#+END_SRC
+
+** Protocols
+
+*** ISVGConvert
+
+#+BEGIN_SRC clojure :noweb-ref protos
+  (defprotocol ISVGConvert
+    (as-svg [_ opts]))
+#+END_SRC
+
+** SVG serialization
+
+*** Formatters
+
+#+BEGIN_SRC clojure :noweb-ref const
+  (def xml-preamble "<?xml version=\"1.0\"?>\n")
+
+  (def ^:dynamic *ff* (f/float 2))
+  (def ^:dynamic *fmt-vec* (fn [p] (str (*ff* (first p)) "," (*ff* (nth p 1)))))
+  (def ^:dynamic *fmt-percent* (fn [x] (str (int (* x 100)) "%")))
+
+  (def ^:dynamic *fmt-matrix* ["matrix(" *ff* "," *ff* "," *ff* "," *ff* "," *ff* "," *ff* ")"])
+
+  (def point-seq-format2 [*fmt-vec* " " *fmt-vec*])
+  (def point-seq-format3 [*fmt-vec* " " *fmt-vec* " " *fmt-vec*])
+  (def point-seq-format4 [*fmt-vec* " " *fmt-vec* " " *fmt-vec* " " *fmt-vec*])
+
+  (defn point-seq-format
+    [n]
+    (case (int n)
+      1 [*fmt-vec*]
+      2 point-seq-format2
+      3 point-seq-format3
+      4 point-seq-format4
+      (->> *fmt-vec*
+           (repeat n)
+           (interpose " "))))
+
+  (def path-segment-formats
+    {:M ["M" *fmt-vec* " "]
+     :m ["m" *fmt-vec* " "]
+     :L ["L" *fmt-vec* " "]
+     :l ["l" *fmt-vec* " "]
+     :C ["C" *fmt-vec* " " *fmt-vec* " " *fmt-vec* " "]
+     :c ["c" *fmt-vec* " " *fmt-vec* " " *fmt-vec* " "]
+     :A ["A" *fmt-vec* " " *ff* " " str " " str " " *fmt-vec* " "]
+     :a ["a" *fmt-vec* " " *ff* " " str " " str " " *fmt-vec* " "]
+     :Z ["Z"]
+     :z ["z"]})
+#+END_SRC
+
+Actual conversion to SVG XML strings is only directly supported for
+the Clojure version using James Reeve's [[https://github.com/weavejester/hiccup][hiccup]] library. For
+ClojureScript it is more likely (and efficient) to directly translate
+a SVG data structure into a DOM tree for which there're many different
+libraries available and we don't want to be prescriptive here and
+introduce uneccessary dependencies.
+
+#+BEGIN_SRC clojure :noweb-ref svg
+  #?(:clj
+     (defn serialize
+       ^String [svg] (str xml-preamble (html {:mode :xml} svg))))
+
+  #?(:clj
+     (defn serialize-as-byte-array
+       ^bytes [svg] (.getBytes (serialize svg) "UTF-8")))
+#+END_SRC
+
+** Attribute conversion
+
+*** Colors
+
+Colors in SVG need to be defined as CSS color strings and hence are
+completely opaque to other parts of the code base and which might deal
+with the dynamic generation of color values. Therefore we allow the
+=:stroke= and =:fill= attributes to be defined as any color type
+defined by the [[http://thi.ng/color][thi.ng/color]] library (RGB, HSV, HSL, CMYK, YUV etc.).
+If these attributes are present and *not* already a string value, they
+will be converted into a CSS color automatically (using the
+polymorphic =as-css= protocol method of thi.ng/color).
+
+*Note:* The same applies to specifying colors in gradients (see
+=linear-gradient= and =radial-gradient= functions below).
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn color-attrib
+    [attribs id]
+    (if-let [att (attribs id)]
+      (if (string? att)
+        attribs
+        (assoc attribs id @(col/as-css att)))
+      attribs))
+#+END_SRC
+
+*** Transforms
+
+Many SVG elements support the attachment of local coordinate
+transformations. If a =:transform= attribute has a non-string value,
+it will be interpreted as a =Matrix32= or equivalent 6-element vector
+and will be automatically converted.
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn matrix-attrib
+    [attribs id]
+    (if-let [mat (attribs id)]
+      (if (string? mat)
+        attribs
+        (let [[a c e b d f] mat]
+          (assoc attribs id (apply f/format *fmt-matrix* [a b c d e f]))))
+      attribs))
+#+END_SRC
+
+*** Attribute processing
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn filter-attribs
+    [attribs]
+    (loop [acc (transient attribs), ks (keys attribs)]
+      (if ks
+        (recur
+         (if (= "__" (subs (name (first ks)) 0 2)) (dissoc! acc (first ks)) acc)
+         (next ks))
+        (persistent! acc))))
+
+  (defn svg-attribs
+    [attribs base]
+    (if (seq attribs)
+      (-> (filter-attribs attribs)
+          (color-attrib :stroke)
+          (color-attrib :fill)
+          (matrix-attrib :transform)
+          (into base))
+      base))
+#+END_SRC
+
+** SVG primitives
+
+#+BEGIN_SRC clojure :noweb-ref prims
+  (defn svg
+    [attribs & body]
+    [:svg
+     (svg-attribs
+      attribs
+      {"xmlns" "http://www.w3.org/2000/svg"
+       "xmlns:xlink" "http://www.w3.org/1999/xlink"
+       "version" "1.1"})
+     body])
+
+  (defn defs
+    [& defs]
+    [:defs defs])
+
+  (defn gradient-stop
+    [[pos col]]
+    (let [col (if (string? col) col @(col/as-css col))]
+      [:stop {:offset (*fmt-percent* pos) :stop-color col}]))
+
+  (defn linear-gradient
+    [id attribs & stops]
+    [:linearGradient
+     (assoc attribs :id id)
+     (map gradient-stop stops)])
+
+  (defn radial-gradient
+    [id attribs & stops]
+    [:radialGradient
+     (assoc attribs :id id)
+     (map gradient-stop stops)])
+
+  (defn group
+    [attribs & body]
+    (into [:g (svg-attribs attribs nil)] body))
+
+  (defn path
+    ([segments]
+     (path segments nil))
+    ([segments attribs]
+     [:path
+      (svg-attribs
+       attribs
+       {:d (apply f/format
+                  (mapcat (comp path-segment-formats first) segments)
+                  (mapcat rest segments))})]))
+  (defn text
+    ([p txt]
+     (text p txt nil))
+    ([[x y] txt attribs]
+     [:text
+      (svg-attribs attribs {:x (*ff* x) :y (*ff* y)})
+      txt]))
+
+  (defn circle
+    ([p radius]
+     (circle p radius nil))
+    ([[x y] radius attribs]
+     [:circle
+      (svg-attribs
+       attribs
+       {:cx (*ff* x) :cy (*ff* y) :r radius})]))
+
+  (defn arc-segment
+    [center radius theta1 theta2 great? ccw?]
+    (let [radius (vec2 radius)
+          p (m/+ (vec2 center) (g/as-cartesian (vec2 (v/x radius) theta1)))
+          q (m/+ (vec2 center) (g/as-cartesian (vec2 (v/y radius) theta2)))]
+      [[:M p] [:A radius 0 (if great? 1 0) (if ccw? 1 0) q]]))
+
+  (defn arc
+    ([center radius theta1 theta2 great? ccw?]
+     (arc center radius theta1 theta2 great? ccw? nil))
+    ([center radius theta1 theta2 great? ccw? attribs]
+     (path (arc-segment center radius theta1 theta2 great? ccw?) attribs)))
+
+  (defn rect
+    ([p w h]
+     (rect p w h nil))
+    ([[x y] w h attribs]
+     [:rect
+      (svg-attribs
+       attribs
+       {:x (*ff* x) :y (*ff* y) :width w :height h})]))
+
+  (defn line
+    ([a b]
+     (line a b nil))
+    ([[ax ay] [bx by] attribs]
+     [:line
+      (svg-attribs
+       attribs
+       {:x1 (*ff* ax) :y1 (*ff* ay) :x2 (*ff* bx) :y2 (*ff* by)})]))
+
+  (defn line-decorated
+    ([p q start end]
+     (line-decorated p q start end nil))
+    ([p q start end attribs]
+     (list
+      (line p q attribs)
+      (if start (start q p 0 attribs))
+      (if end   (end p q 0 attribs)))))
+
+  (defn line-strip
+    ([points]
+     (line-strip points nil))
+    ([points attribs]
+     [:polyline
+      (svg-attribs
+       attribs
+       {:fill "none"
+        :points (apply f/format (point-seq-format (count points)) points)})]))
+
+  (defn line-strip-decorated
+    ([points start seg end]
+     (line-strip-decorated points start seg end nil))
+    ([points start seg end attribs]
+     (let [n (dec (count points))]
+       (list
+        (line-strip points attribs)
+        (if start (start (points 1) (points 0) 0 attribs))
+        (if seg   (map-indexed (fn [i [p q]] (seg p q i attribs)) (d/successive-nth 2 points)))
+        (if end   (end (points (dec n)) (peek points) n attribs))))))
+
+  (defn polygon
+    ([points]
+     (polygon points nil))
+    ([points attribs]
+     [:polygon
+      (svg-attribs
+       attribs
+       {:points (apply f/format (point-seq-format (count points)) points)})]))
+
+  (defn instance
+    ([id]
+     (instance id nil))
+    ([id attribs]
+     [:use (svg-attribs attribs {"xlink:href" (str "#" id)})]))
+#+END_SRC
+
+** Decorators
+
+#+BEGIN_SRC clojure :noweb-ref decorators
+  (defn arrow-head
+    ([len theta solid?]
+     (arrow-head len theta solid? nil))
+    ([len theta solid? opts]
+     (fn [p q idx & [attribs]]
+       (let [q (vec2 q)
+             d (m/normalize (m/- q p) len)]
+         (list
+          ((if solid? polygon line-strip)
+           [(m/- q (g/rotate d (- theta))) q (m/- q (g/rotate d theta))]
+           (merge attribs opts)))))))
+
+  (defn line-label
+    ([]
+     (line-label nil))
+    ([{:keys [__rotate? __offset] :as opts}]
+     (let [opts (-> opts
+                    (dissoc :__rotate? :__offset)
+                    (update-in [:text-anchor] #(or % "middle")))]
+       (fn [p q idx & [attribs]]
+         (if-let [label (get-in attribs [:__label idx])]
+           (let [p (vec2 p)
+                 m (m/+ (m/mix p q) __offset)
+                 opts (if __rotate?
+                        (assoc opts
+                               :transform (str "rotate("
+                                               (m/degrees (g/heading (g/normal (m/- p q))))
+                                               " " (m 0) " " (m 1) ")"))
+                        opts)]
+             (list (text m label (merge (dissoc attribs :__label) opts)))))))))
+
+  (defn comp-decorators
+    [& fns]
+    (fn [p q idx & [attribs]]
+      (reduce
+       (fn [acc f] (concat acc (f p q idx attribs))) () fns)))
+#+END_SRC
+
+** SVG conversions for geom.types
+
+The =thi.ng.geom.svg.adapater= namespace provides some simple wrappers
+to allow direct use of the shape entities defined in the [[file:~/work/clj/thing/geom/geom-types/src/index.org][geom-types]]
+module without having to manually convert them into their SVG
+representations.
+
+The adapaters work by providing implementations of the [[ISVGConvert]]
+protocol for all built-in 2D types and a simple helper function to
+recursively transform any such types used within an SVG scene.
+
+Any 3D entities (e.g. meshes) need to be processed via the
+[[file:renderer.org][geom.svg.renderer]] namespace.
+
+*** Example use case
+
+The entities defined by the geom library are purely mathematical and
+are intented to help solving geometric problems, but without any
+regard to specific means of visualization. In the example below we
+construct three circles, compute their points of intersection and then
+visualize the result in SVG:
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/svg/ex01.clj :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.svg.ex01
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.circle :as c]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.geom.svg.adapter :as adapt]
+     [thi.ng.color.core :as col]))
+
+  (defn labeled-dot
+    [p label] (list (c/circle p 3) (svg/text (m/+ p 10 0) label)))
+
+  ;; This scene defines 2 circles and their intersection points
+  (def scene
+    (let [c1    (c/circle 50 150 50)
+          c2    (c/circle 250 150 50)
+          c3    (c/circle 150 150 100)
+          [a b] (g/intersect-shape c1 c3)
+          [c d] (g/intersect-shape c2 c3)]
+      (svg/svg
+       {:width 300 :height 300}
+       (svg/group
+        {:fill "yellow"}
+        ;; these circles inherit all attributes from parent group
+        c1 c2
+        ;; we can use metadata to override specific attribs per shape
+        ;; here we also demonstrate automatic color attrib conversion
+        (with-meta c3 {:fill (col/rgba 0 1 1 0.25) :stroke (col/hsva 0 1 1)}))
+       (svg/group
+        {:fill "#000"
+         :font-family "Arial, sans-serif"
+         :font-size 10}
+        (mapcat labeled-dot [a b c d] ["A" "B" "C" "D"])))))
+
+  (->> scene
+       (adapt/all-as-svg)              ;; transform all scene elements
+       (svg/serialize)                 ;; serialize as SVG XML string
+       (spit "svgdemo01-circles.svg")) ;; write to disk
+#+END_SRC
+
+[[http://media.thi.ng/geom/svg/svgdemo01-circles.svg]]
+
+Btw. This example can be run from the REPL via this command:
+
+#+BEGIN_SRC clojure
+  (load-file "examples/circles.clj")
+#+END_SRC
+
+*** Adapter implementation
+
+#+BEGIN_SRC clojure :noweb-ref adapter
+  (extend-protocol svg/ISVGConvert
+
+    thi.ng.geom.types.Line2
+    (as-svg
+      [{p :points} {:keys [__start __end] :as opts}]
+      (if (or __start __end)
+        (svg/line-decorated (p 0) (p 1) __start __end opts)
+        (svg/line (p 0) (p 1) opts)))
+
+    thi.ng.geom.types.Circle2
+    (as-svg
+      [_ opts] (svg/circle (:p _) (:r _) opts))
+
+    thi.ng.geom.types.LineStrip2
+    (as-svg
+      [{:keys [points]} {:keys [__start __segment __end] :as opts}]
+      (if (or __start __segment __end)
+        (svg/line-strip-decorated points __start __segment __end opts)
+        (svg/line-strip points opts)))
+
+    thi.ng.geom.types.Polygon2
+    (as-svg
+      [_ opts] (svg/polygon (:points _) opts))
+
+    thi.ng.geom.types.Rect2
+    (as-svg
+      [{:keys [p size]} opts] (svg/rect p (size 0) (size 1) opts))
+
+    thi.ng.geom.types.Triangle2
+    (as-svg
+      [_ opts] (svg/polygon (:points _) opts)))
+
+  ;; CLJS walk differs to clojure's impl and doesn't work for defrecords
+  ;; hence we provide a custom version here...
+
+  (defn walk
+    [inner outer form]
+    (cond
+      (seq? form)    (outer (doall (map inner form)))
+      (vector? form) (outer (mapv inner form))
+      :else          (outer form)))
+
+  (defn postwalk
+    [f form] (walk (partial postwalk f) f form))
+
+  (defn all-as-svg
+    [form]
+    (postwalk
+     (fn [x] (if (satisfies? svg/ISVGConvert x) (svg/as-svg x (meta x)) x))
+     form))
+#+END_SRC
+
+*** React.js :key prop injection
+
+#+BEGIN_SRC clojure :noweb-ref adapter
+  (defn key-attrib-injector
+    "To be used with inject-element-attribs, generates an unique :key
+    attrib for each SVG element."
+    [el attribs] (assoc attribs :key (name (gensym))))
+
+  (defn inject-element-attribs
+    "Walks SVG DOM tree with postwalk and applies given function to each
+    element node. The fn takes 2 args: the element itself and its
+    attribute map. The fn's return value will be used as the new
+    attribute map."
+    ([root]
+     (inject-element-attribs key-attrib-injector root))
+    ([f root]
+     (postwalk
+      (fn [x]
+        (if (vector? x)
+          (let [y (nth x 1)]
+            (if (or (nil? y) (map? y))
+              (assoc x 1 (f x y))
+              x))
+          x))
+      root)))
+#+END_SRC
+
+** Complete namespace: svg.core
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/svg/core.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.svg.core
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2]]
+     [thi.ng.geom.matrix :as mat :refer [M32]]
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.math.core :as m]
+     [thi.ng.strf.core :as f]
+     [thi.ng.color.core :as col]
+     #?(:clj [hiccup.core :refer [html]])))
+
+  <<const>>
+
+  <<protos>>
+
+  <<svg>>
+
+  <<helpers>>
+
+  <<prims>>
+
+  <<decorators>>
+#+END_SRC
+
+** Complete namespace: svg.adapter
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/svg/adapter.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.svg.adapter
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.types])
+    #?(:clj
+       (:import
+        [thi.ng.geom.types Circle2 Line2 LineStrip2 Polygon2 Rect2 Triangle2])))
+
+  <<adapter>>
+#+END_SRC

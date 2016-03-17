@@ -1,0 +1,535 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeomtriangle][thi.ng.geom.triangle]]
+     - [[#constructors][Constructors]]
+     - [[#shared-2d3d-functions][Shared 2d/3d functions]]
+     - [[#reusable-protocol-templates-for-2d3d][Reusable protocol templates for 2d/3d]]
+         - [[#iarea][IArea]]
+         - [[#icircumference][ICircumference]]
+         - [[#igraph][IGraph]]
+         - [[#islice][ISlice]]
+         - [[#isubdivide][ISubdivide]]
+     - [[#protocol-implementations][Protocol implementations]]
+         - [[#triangle2][Triangle2]]
+             - [[#iarea][IArea]]
+             - [[#iclassify][IClassify]]
+             - [[#iboundary][IBoundary]]
+             - [[#ibounds][IBounds]]
+             - [[#iboundingcircle][IBoundingCircle]]
+             - [[#icenter][ICenter]]
+             - [[#icircumference][ICircumference]]
+             - [[#iextrude][IExtrude]]
+             - [[#iflip][IFlip]]
+             - [[#igraph][IGraph]]
+             - [[#iintersect][IIntersect]]
+             - [[#imeshconvert][IMeshConvert]]
+             - [[#ipolygonconvert][IPolygonConvert]]
+             - [[#iproximity][IProximity]]
+             - [[#isample][ISample]]
+             - [[#islice][ISlice]]
+             - [[#isubdivide][ISubdivide]]
+             - [[#itessellate][ITessellate]]
+             - [[#itransform][ITransform]]
+             - [[#ivolume][IVolume]]
+             - [[#end-of-implementations][End of implementations]]
+         - [[#triangle3][Triangle3]]
+             - [[#iarea][IArea]]
+             - [[#iboundary][IBoundary]]
+             - [[#ibounds][IBounds]]
+             - [[#iboundingsphere][IBoundingSphere]]
+             - [[#icenter][ICenter]]
+             - [[#icircumference][ICircumference]]
+             - [[#iclassify][IClassify]]
+             - [[#todo-iextrude][TODO IExtrude]]
+             - [[#iflip][IFlip]]
+             - [[#igraph][IGraph]]
+             - [[#todo-iintersect][TODO IIntersect]]
+             - [[#imeshconvert][IMeshConvert]]
+             - [[#todo-iproximity][TODO IProximity]]
+             - [[#isample][ISample]]
+             - [[#islice][ISlice]]
+             - [[#isubdivide][ISubdivide]]
+             - [[#itessellate][ITessellate]]
+             - [[#itransform][ITransform]]
+             - [[#ivolume][IVolume]]
+             - [[#end-of-implementations][End of implementations]]
+     - [[#namespace-declaration][Namespace declaration]]
+
+* thi.ng.geom.triangle
+** Constructors
+#+BEGIN_SRC clojure :noweb-ref ctors
+  (defn triangle2
+    ([t]
+       (cond
+        (map? t)        (thi.ng.geom.types.Triangle2.
+                         [(vec2 (:a t)) (vec2 (:b t)) (vec2 (:c t))])
+        (sequential? t) (thi.ng.geom.types.Triangle2.
+                         [(vec2 (first t)) (vec2 (nth t 1)) (vec2 (nth t 2))])
+        :default (err/illegal-arg! t)))
+    ([a b c] (thi.ng.geom.types.Triangle2. [(vec2 a) (vec2 b) (vec2 c)])))
+
+  (defn triangle3
+    ([t]
+       (cond
+        (map? t)        (thi.ng.geom.types.Triangle3.
+                         [(vec3 (:a t)) (vec3 (:b t)) (vec3 (:c t))])
+        (sequential? t) (thi.ng.geom.types.Triangle3.
+                         [(vec3 (first t)) (vec3 (nth t 1)) (vec3 (nth t 2))])
+        :default (err/illegal-arg! t)))
+    ([a b c] (thi.ng.geom.types.Triangle3. [(vec3 a) (vec3 b) (vec3 c)])))
+
+  (defn equilateral2
+    ([l]
+       (cond
+        (map? l) (equilateral2 (:p l) (:q l))
+        (sequential? l) (equilateral2 (first l) (nth l 1))
+        :default (err/illegal-arg! l)))
+    ([a b]
+       (let [a (vec2 a) b (vec2 b)
+             dir (m/- a b)
+             n (g/normal dir)
+             c (-> n (m/normalize (mm/mul (m/mag dir) SQRT3 0.5)) (m/+ (m/mix a b)))]
+         (triangle2 a b c)))
+    ([x1 y1 x2 y2]
+       (equilateral2 (vec2 x1 y1) (vec2 x2 y2))))
+
+  (defn equilateral3
+   [a b n]
+   (let [a (vec3 a) b (vec3 b)
+         dir (m/- b a)
+         n (m/normalize (m/cross dir n))
+         c (-> n (m/normalize (mm/mul (m/mag dir) SQRT3 0.5)) (m/+ (m/mix a b)))]
+      (thi.ng.geom.types.Triangle3. [a b c])))
+#+END_SRC
+
+** Shared 2d/3d functions
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn other-point-in-tri
+    [[ta tb tc] a b]
+    (if (= a ta)
+      (if (= b tb) tc tb)
+      (if (= a tb)
+        (if (= b ta) tc ta)
+        (if (= b ta) tb ta))))
+  
+  (defn altitude
+    ([[a b c] id]
+       (case id
+         :a (altitude b c a)
+         :b (altitude a c b)
+         :c (altitude a b c)))
+    ([a b c]
+       [(m/mix a b (gu/closest-point-coeff c a b)) c]))
+  
+  (defn norm-altitude
+    ([points id]
+       (let [[a b] (altitude points id)]
+         (m/normalize (m/- b a))))
+    ([a b c]
+       (m/normalize (m/- c (m/mix a b (gu/closest-point-coeff c a b))))))
+  
+  (defn centroid
+    ([a b c] (m/* (m/+ a b c) THIRD))
+    ([[a b c]] (m/* (m/+ a b c) THIRD)))
+  
+  (defn check-edge
+    [splits classifier e p q add-p? add-q?]
+    (let [pc (classifier e p)
+          qc (classifier e q)
+          splits (if add-p? (conj splits [p pc]) splits)]
+      (if (neg? (* pc qc))
+        (let [ip (:p (g/intersect-line e p q))]
+          (if add-q?
+            (-> splits (conj [ip 0]) (conj [q qc]))
+            (conj splits [ip 0])))
+        (if add-q?
+          (conj splits [q qc])
+          splits))))
+  
+  (defn slice-with*
+    ([t e] (slice-with* t e g/classify-point))
+    ([[a b c] e classifier] (slice-with* a b c e classifier))
+    ([a b c e classifier]
+       (let [verts (-> []
+                       (check-edge classifier e a b true true)
+                       (check-edge classifier e b c false true)
+                       (check-edge classifier e c a false false))
+             cmap (fn [ids]
+                    (->> ids
+                         (map (fn [[a b c]] [(verts a) (verts b) (verts c)])) ;; TODO transducer
+                         (reduce
+                          (fn [m [a b c]]
+                            (update-in m [(a 1)] conj [(a 0) (b 0) (c 0)]))
+                          {-1 [] 1 []})))]
+         (condp = (count verts)
+           4 (let [triverts #{a b c}
+                   d (loop [i 3]
+                       (if-let [vc (verts i)]
+                         (if (and (zero? (vc 1)) (triverts (vc 0)))
+                           i (recur (dec i)))))]
+               (cmap [[(m/wrap-range (inc d) 4) (m/wrap-range (+ d 2) 4) d]
+                      [(m/wrap-range (dec d) 4) d (m/wrap-range (+ d 2) 4)]]))
+           5 (if (zero? (get-in verts [1 1]))
+               (if (zero? (get-in verts [3 1]))
+                 (cmap [[0 1 3] [0 3 4] [2 3 1]])
+                 (cmap [[0 1 4] [2 4 1] [2 3 4]]))
+               (cmap [[0 1 2] [0 2 4] [3 4 2]]))
+           nil))))
+  
+  ;; http://astronomy.swin.edu.au/~pbourke/modelling/triangulate/
+  (defn circumcircle-raw
+    [[ax ay :as a] [bx by :as b] [cx cy :as c]]
+    (let [eq-ab? (m/delta= ay by *eps*)
+          eq-bc? (m/delta= by cy *eps*)]
+      (when-not (and eq-ab? eq-bc?)
+        (let [o (cond
+                 eq-ab? (let [cx (mm/addm ax bx 0.5)]
+                          (vec2 cx (mm/submadd
+                                    cx (mm/addm bx cx 0.5)
+                                    (- (mm/subdiv cx bx cy by))
+                                    (mm/addm by cy 0.5))))
+                 eq-bc? (let [cx (mm/addm bx cx 0.5)]
+                          (vec2 cx (mm/submadd
+                                    cx (mm/addm ax bx 0.5)
+                                    (- (mm/subdiv bx ax by ay))
+                                    (mm/addm ay by 0.5))))
+                 :default (let [m1 (- (mm/subdiv bx ax by ay))
+                                m2 (- (mm/subdiv cx bx cy by))
+                                mx1 (mm/addm ax bx 0.5)
+                                my1 (mm/addm ay by 0.5)
+                                cx (/ (mm/add
+                                       (mm/msub m1 mx1 m2 (mm/addm bx cx 0.5))
+                                       (mm/addm by cy 0.5)
+                                       (- my1))
+                                      (- m1 m2))]
+                            (vec2 cx (mm/submadd cx mx1 m1 my1))))]
+          [o (g/dist o b)]))))
+  
+  (defn circumcircle
+    ([t] (circumcircle (:a t) (:b t) (:c t)))
+    ([a b c]
+       (let [[o r] (circumcircle-raw a b c)]
+         (thi.ng.geom.types.Circle2. o r))))
+#+END_SRC
+
+** Reusable protocol templates for 2d/3d
+*** IArea                                                          :template:
+#+NAME: tpl-area
+#+BEGIN_SRC emacs-lisp :var fn=""
+  (replace-regexp-in-string "{{fn}}" fn
+  "g/IArea
+  (area [_] (apply {{fn}} (:points _)))")
+#+END_SRC
+*** ICircumference                                                 :template:
+#+BEGIN_SRC clojure :noweb-ref tpl-circum
+  g/ICircumference
+  (circumference
+   [{[a b c] :points}] (mm/add (g/dist a b) (g/dist b c) (g/dist c a)))
+#+END_SRC
+*** IGraph                                                         :template:
+#+BEGIN_SRC clojure :noweb-ref tpl-graph
+  g/IVertexAccess
+  (vertices
+   [_] (:points _))
+  g/IEdgeAccess
+  (edges
+   [{[a b c] :points}] [[a b] [b c] [c a]])
+  g/IGraph
+  (vertex-neighbors
+   [{[a b c] :points} v] (condp = v, a [c b], b [a c], c [b a], nil))
+  (vertex-valence
+   [_ v] (if ((set (:points _)) v) 2 0))
+#+END_SRC
+*** ISlice                                                         :template:
+#+BEGIN_SRC clojure :noweb-ref tpl-slice
+  g/ISlice
+  (slice-with
+   ([_ e]
+    (slice-with* (:points _) e g/classify-point))
+   ([_ e classifier]
+    (slice-with* (:points _) e classifier)))
+#+END_SRC
+*** ISubdivide                                                     :template:
+#+NAME: tpl-subdiv
+#+BEGIN_SRC emacs-lisp :var type=""
+  (replace-regexp-in-string "{{type}}" type
+  "g/ISubdivide
+  (subdivide
+   [_] (->> (:points _)
+            (gu/tessellate-with-point)
+            (map #({{type}}. %))))")
+#+END_SRC
+
+** Protocol implementations
+*** Triangle2
+#+BEGIN_SRC clojure :noweb-ref impl2
+  (extend-type thi.ng.geom.types.Triangle2
+#+END_SRC
+**** IArea                                                      :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<tpl-area(fn="gu/tri-area2")>>
+#+END_SRC
+**** IClassify                                                       :verify:
+***** TODO add clockwise? check, currently assumes clockwise ordering
+#+BEGIN_SRC clojure :noweb-ref impl2
+  g/IClassify
+  (classify-point
+   [_ p] (->> (g/edges _)
+              (map #(m/signum (apply gu/closest-point-coeff p %) *eps*))
+              (reduce min)))
+#+END_SRC
+**** IBoundary                                                       :verify:
+#+BEGIN_SRC clojure :noweb-ref impl2
+  g/IBoundary
+  (contains-point?
+   [_ p] (apply gu/point-in-triangle2? p (:points _)))
+#+END_SRC
+**** IBounds                                                    :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<lob-geom-bounds(fn="gu/bounding-rect")>>
+#+END_SRC
+**** IBoundingCircle                                            :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<lob-geom-bcircle>>
+#+END_SRC
+**** ICenter                                                    :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<lob-geom-center(type="thi.ng.geom.types.Triangle2",vtype="vec2")>>
+  (centroid [_] (centroid (:points _)))
+#+END_SRC
+**** ICircumference                                             :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<tpl-circum>>
+#+END_SRC
+**** IExtrude
+#+BEGIN_SRC clojure :noweb-ref impl2
+  g/IExtrude
+  (extrude [_ opts] (g/extrude (g/as-polygon _) opts))
+  (extrude-shell [_ opts] (g/extrude-shell (g/as-polygon _) opts))
+#+END_SRC
+**** IFlip                                                      :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<lob-geom-flip(type="thi.ng.geom.types.Triangle2")>>
+#+END_SRC
+**** IGraph                                                     :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<tpl-graph>>
+#+END_SRC
+**** IIntersect
+     - Note taken on [2015-03-15 Sun 01:47] \\
+       update ray definition or protocol?
+#+BEGIN_SRC clojure :noweb-ref impl2
+  g/IIntersect
+  (intersect-line
+   [_ {[p q] :points}]
+   (if (and (g/contains-point? _ p) (g/contains-point? _ q))
+     {:type :coincident}
+     (isec/intersect-line2-edges? p q (g/edges _))))
+  (intersect-ray
+   ([_ ray]
+    (let [[p dir] (if (map? ray) [(:p ray) (:dir ray)] ray)]
+      (isec/intersect-ray2-edges? p dir (g/edges _))))
+   ([_ p dir]
+    (isec/intersect-ray2-edges? p dir (g/edges _))))
+#+END_SRC
+**** IMeshConvert                                                       :fix:
+#+BEGIN_SRC clojure :noweb-ref impl2
+  g/IMeshConvert
+  (as-mesh
+   ([_] (g/as-mesh _ {}))
+   ([_ opts]
+    (g/add-face
+     (or (:mesh opts) (bm/basic-mesh))
+     (attr/generate-face-attribs (mapv vec3 (:points _)) 0 (:attribs opts) opts))))
+#+END_SRC
+**** IPolygonConvert                                            :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<lob-geom-as-polygon>>
+#+END_SRC
+**** IProximity                                                 :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<lob-geom-proxi>>
+#+END_SRC
+**** ISample                                             :verify:usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<lob-geom-sample(n="3")>>
+#+END_SRC
+**** ISlice                                                     :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<tpl-slice>>
+#+END_SRC
+**** ISubdivide                                                 :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<tpl-subdiv(type="thi.ng.geom.types.Triangle2")>>
+#+END_SRC
+**** ITessellate
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  g/ITessellate
+  (tessellate [_] [_])
+#+END_SRC
+**** ITransform                                                 :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<lob-geom-rotate(type="thi.ng.geom.types.Triangle2")>>
+  <<lob-geom-scale(type="thi.ng.geom.types.Triangle2")>>
+  <<lob-geom-translate(type="thi.ng.geom.types.Triangle2")>>
+  <<lob-geom-tx(type="thi.ng.geom.types.Triangle2")>>
+#+END_SRC
+**** IVolume                                                    :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<lob-geom-zerovol>>
+#+END_SRC
+**** End of implementations                                        :noexport:
+#+BEGIN_SRC clojure :noweb-ref impl2
+  )
+#+END_SRC
+*** Triangle3
+#+BEGIN_SRC clojure :noweb-ref impl3
+  (extend-type thi.ng.geom.types.Triangle3
+#+END_SRC
+**** IArea                                                      :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<tpl-area(fn="gu/tri-area3")>>
+#+END_SRC
+**** IBoundary
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/IBoundary
+  (contains-point? [_ p] (apply gu/point-in-triangle3? p (:points _)))
+#+END_SRC
+**** IBounds                                                    :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<lob-geom-bounds(fn="gu/bounding-box",depth="yes")>>
+#+END_SRC
+**** IBoundingSphere                                            :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<lob-geom-bsphere>>
+#+END_SRC
+**** ICenter                                                    :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<lob-geom-center(type="thi.ng.geom.types.Triangle3",vtype="vec3")>>
+  (centroid [_] (centroid (:points _)))
+#+END_SRC
+**** ICircumference                                             :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<tpl-circum>>
+#+END_SRC
+**** IClassify                                                       :verify:
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/IClassify
+  (classify-point
+   [_ p]
+   (let [a (first (:points _))
+         n (gu/ortho-normal (:points _))
+         w (- (m/dot n a))]
+     (-> n (m/dot p) (+ w) (m/signum *eps*))))
+#+END_SRC
+**** TODO IExtrude
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/IExtrude
+  (extrude [_ opts] (err/unsupported!)) ; TODO
+  (extrude-shell [_ opts] (err/unsupported!)) ; TODO
+#+END_SRC
+**** IFlip                                                      :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<lob-geom-flip(type="thi.ng.geom.types.Triangle3")>>
+#+END_SRC
+**** IGraph                                                     :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<tpl-graph>>
+#+END_SRC
+**** TODO IIntersect
+     - Note taken on [2015-03-15 Sun 01:47] \\
+       update ray definition or protocol?
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/IIntersect
+  (intersect-ray
+   ([{[a b c] :points} ray]
+      (let [[p dir] (if (map? ray) [(:p ray) (:dir ray)] ray)]
+        (isec/intersect-ray-triangle3? p dir a b c)))
+   ([{[a b c] :points} p dir]
+      (isec/intersect-ray-triangle3? p dir a b c)))
+#+END_SRC
+**** IMeshConvert
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/IMeshConvert
+  (as-mesh
+   ([_] (g/as-mesh _ {}))
+   ([_ opts]
+    (g/add-face
+     (or (:mesh opts) (bm/basic-mesh))
+     (attr/generate-face-attribs (:points _) 0 (:attribs opts) opts))))
+#+END_SRC
+
+**** TODO IProximity
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<lob-geom-proxi>>
+#+END_SRC
+**** ISample                                             :verify:usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<lob-geom-sample(n="3")>>
+#+END_SRC
+**** ISlice                                                     :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<tpl-slice>>
+#+END_SRC
+**** ISubdivide                                                 :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<tpl-subdiv(type="thi.ng.geom.types.Triangle3")>>
+#+END_SRC
+**** ITessellate
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  g/ITessellate
+  (tessellate [_] [_])
+#+END_SRC
+**** ITransform                                                 :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<lob-geom-rotate(type="thi.ng.geom.types.Triangle3")>>
+  <<lob-geom-rotate3d(type="thi.ng.geom.types.Triangle3")>>
+  <<lob-geom-scale(type="thi.ng.geom.types.Triangle3")>>
+  <<lob-geom-translate(type="thi.ng.geom.types.Triangle3")>>
+  <<lob-geom-tx(type="thi.ng.geom.types.Triangle3")>>
+#+END_SRC
+**** IVolume                                                    :usetemplate:
+
+Signed volume impl based on:
+https://web.archive.org/web/20090320013931/http://amp.ece.cmu.edu/Publication/Cha/icip01_Cha.pdf
+
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<lob-geom-zerovol>>
+  (signed-volume
+   [{[a b c] :points}] (/ (m/dot a (m/cross b c)) 6.0))
+#+END_SRC
+**** End of implementations                                        :noexport:
+#+BEGIN_SRC clojure :noweb-ref impl3
+  )
+#+END_SRC
+
+** Namespace declaration
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/triangle.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.triangle
+    #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.utils.intersect :as isec]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3 V3Z]]
+     [thi.ng.geom.attribs :as attr]
+     [thi.ng.geom.basicmesh :as bm]
+     [thi.ng.geom.types]
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
+     [thi.ng.xerror.core :as err]
+     #?(:clj [thi.ng.math.macros :as mm]))
+    #?(:clj
+       (:import
+        [thi.ng.geom.types Circle2 Rect2 Polygon2 Triangle2 Triangle3])))
+
+  <<ctors>>
+
+  <<helpers>>
+
+  <<impl2>>
+
+  <<impl3>>
+#+END_SRC

@@ -1,0 +1,252 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeombasicmesh][thi.ng.geom.basicmesh]]
+     - [[#helper-functions][Helper functions]]
+     - [[#constructors][Constructors]]
+     - [[#protocol-implementations][Protocol implementations]]
+         - [[#iarea][IArea]]
+         - [[#todo-iboundary][TODO IBoundary]]
+         - [[#ibounds][IBounds]]
+         - [[#iboundingsphere][IBoundingSphere]]
+         - [[#icenter][ICenter]]
+         - [[#iflip][IFlip]]
+         - [[#ivertexaccess-iedgeaccess--ifaceaccess][IVertexAccess, IEdgeAccess & IFaceAccess]]
+         - [[#inormalaccess][INormalAccess]]
+         - [[#igeomcontainer][IGeomContainer]]
+         - [[#imeshconvert][IMeshConvert]]
+         - [[#itessellate][ITessellate]]
+         - [[#itransform][ITransform]]
+         - [[#ivolume][IVolume]]
+         - [[#end-of-implementation][End of implementation]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
+* thi.ng.geom.basicmesh
+
+** Helper functions
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn- add-face*
+    [mesh [fverts]]
+    (thi.ng.geom.types.BasicMesh.
+     (into (:vertices mesh) fverts)
+     (conj (:faces mesh) (thi.ng.geom.meshface.MeshFace. fverts nil))
+     (:fnormals mesh)))
+#+END_SRC
+
+** Constructors
+
+#+BEGIN_SRC clojure :noweb-ref ctors
+  (defn basic-mesh
+    "Builds a new 3d mesh data structure and (optionally) populates it with
+    the given items (a seq of existing meshes and/or faces). Faces are defined
+    as vectors of their vertices."
+    [] (thi.ng.geom.types.BasicMesh. #{} #{} {}))
+#+END_SRC
+
+** Protocol implementations
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  (extend-type thi.ng.geom.types.BasicMesh
+#+END_SRC
+
+*** IArea
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IArea
+  (area
+   [_] (gu/total-area-3d (mf/xf-face-verts _) (:faces _)))
+#+END_SRC
+
+*** TODO IBoundary
+
+#+BEGIN_SRC clojure :noweb-ref impl
+
+#+END_SRC
+
+*** IBounds
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IBounds
+  (bounds [_] (gu/bounding-box (seq (:vertices _))))
+  (width [_]  (gu/axis-range 0 (:vertices _)))
+  (height [_] (gu/axis-range 1 (:vertices _)))
+  (depth [_]  (gu/axis-range 2 (:vertices _)))
+#+END_SRC
+
+*** IBoundingSphere
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IBoundingSphere
+  (bounding-sphere
+   [_] (gu/bounding-sphere (g/centroid _) (:vertices _)))
+#+END_SRC
+
+*** ICenter
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/ICenter
+  (center
+   ([_]   (g/center _ (vec3)))
+   ([_ o] (g/transform _ (g/translate M44 (m/- o (g/centroid _))))))
+  (centroid
+   [_]    (gu/centroid (seq (:vertices _))))
+#+END_SRC
+
+*** IFlip
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IFlip
+  (flip [_] (gu/map-mesh (fn [f] [(vec (rseq f))]) _))
+#+END_SRC
+
+*** IVertexAccess, IEdgeAccess & IFaceAccess
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IVertexAccess
+  (vertices
+   [_] (:vertices _))
+  g/IEdgeAccess
+  (edges
+   [_]
+   (into
+    #{}
+    (comp
+     (map #(g/vertices % _))
+     (mapcat #(d/successive-nth 2 (conj % (first %))))
+     (map set))
+    (:faces _)))
+  g/IFaceAccess
+  (faces
+   ([_] (:faces _))
+   ([_ opts]
+    (if opts
+      (map #(g/raw % _) (:faces _))
+      (:faces _))))
+  (add-face
+   [_ face] (add-face* _ face))
+  (vertex-faces
+   [_ v]
+   (sequence
+    (comp
+     (map #(g/vertices % _))
+     (filter
+      #(pos? #?(:clj (.indexOf ^clojure.lang.PersistentVector % v)
+                :cljs (d/index-of % v))))
+     (:faces _))))
+  (remove-face
+   [_ f]
+   (err/unsupported!)) ;; TODO implement
+#+END_SRC
+
+*** INormalAccess
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/INormalAccess
+  (face-normals
+   [_ force?] (if (seq (:fnormals _)) (:fnormals _) (if force? (:fnormals (g/compute-face-normals _)))))
+  (face-normal
+   [_ f] ((:fnormals _) f))
+  (vertex-normals
+   [_ force?] (if force? (err/unsupported!)))
+  (vertex-normal
+   [_ v] (err/unsupported!))
+  (compute-face-normals
+   [_]
+   (loop [fnorms (transient {}), faces (:faces _)]
+     (if faces
+       (let [f (first faces)]
+         (recur (assoc! fnorms f (gu/ortho-normal (g/vertices f _))) (next faces)))
+       (assoc _ :fnormals (persistent! fnorms)))))
+  (compute-vertex-normals
+   [_] (err/unsupported!))
+#+END_SRC
+
+*** IGeomContainer
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IGeomContainer
+  (into
+   [_ faces] (gu/into-mesh _ add-face* faces))
+  g/IClear
+  (clear*
+   [_] (basic-mesh))
+#+END_SRC
+
+*** IMeshConvert
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IMeshConvert
+  (as-mesh
+   ([_] _)
+   ([_ opts] (g/into (:mesh opts) (:faces _))))
+#+END_SRC
+
+*** ITessellate
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/ITessellate
+  (tessellate
+   ([_]      (g/tessellate _ {}))
+   ([_ opts] (gu/map-mesh (or (:fn opts) (gu/tessellate-face gu/tessellate-with-first)) _)))
+#+END_SRC
+
+*** ITransform
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IScale
+  (scale
+   ([_ s]
+      (gu/transform-mesh _ add-face* #(m/* % s)))
+   ([_ sx sy sz]
+      (gu/transform-mesh _ add-face* #(m/* % sx sy sz))))
+  (scale-size
+   [_ s]
+   (let [c (g/centroid _)]
+     (gu/transform-mesh _ add-face* #(m/madd (m/- % c) s c))))
+  g/ITranslate
+  (translate
+   [_ t] (gu/transform-mesh _ add-face* #(m/+ % t)))
+  g/ITransform
+  (transform
+   [_ m]
+   (gu/transform-mesh _ add-face* m))
+#+END_SRC
+
+*** IVolume
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IVolume
+  (volume
+   [_] (gu/total-volume (mf/xf-face-verts _) (:faces _)))
+#+END_SRC
+
+*** End of implementation                                          :noexport:
+#+BEGIN_SRC clojure :noweb-ref impl
+  )
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/basicmesh.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.basicmesh
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.matrix :refer [M44]]
+     [thi.ng.geom.meshface :as mf]
+     [thi.ng.geom.types :as types]
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.math.core :as m :refer [*eps*]]
+     [thi.ng.xerror.core :as err]
+     [clojure.core.reducers :as r]))
+
+  (declare basic-mesh)
+
+  <<helpers>>
+
+  <<ctors>>
+
+  <<impl>>
+#+END_SRC

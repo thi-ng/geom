@@ -1,0 +1,167 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeomptf][thi.ng.geom.ptf]]
+     - [[#parallel-transport-frames][Parallel Transport Frames]]
+     - [[#namespace-declaration][Namespace declaration]]
+
+* thi.ng.geom.ptf
+** Parallel Transport Frames
+
+- http://en.wikipedia.org/wiki/Parallel_transport
+- http://www.cs.indiana.edu/pub/techreports/TR425.pdf
+
+#+BEGIN_SRC clojure :noweb-ref ptf
+  (defn compute-tangents
+    [points]
+    (let [t (mapv (fn [[p q]] (m/normalize (m/- q p))) (partition 2 1 points))]
+      (conj t (peek t))))
+
+  (defn compute-frame
+    [tangents norms bnorms i]
+    (let [ii (dec i)
+          p  (tangents ii)
+          q  (tangents i)
+          a  (m/cross p q)
+          n  (if-not (m/delta= 0.0 (m/mag-squared a))
+               (let [theta (Math/acos (m/clamp-normalized (m/dot p q)))]
+                 (g/transform-vector (g/rotate-around-axis M44 (m/normalize a) theta) (norms ii)))
+               (norms ii))]
+      [n (m/cross q n)]))
+
+  (defn compute-first-frame
+    [t]
+    (let [t' (m/abs t)
+          i  (if (< (t' 0) (t' 1)) 0 1)
+          i  (if (< (t' 2) (t' i)) 2 i)
+          n  (m/cross t (m/normalize (m/cross t (assoc V3 i 1.0))))]
+      [n (m/cross t n)]))
+
+  (defn compute-frames
+    [points]
+    (let [tangents (compute-tangents points)
+          [n b]    (compute-first-frame (first tangents))
+          num      (count tangents)]
+      (loop [norms [n], bnorms [b], i 1]
+        (if (< i num)
+          (let [[n b] (compute-frame tangents norms bnorms i)]
+            (recur (conj norms n) (conj bnorms b) (inc i)))
+          [points tangents norms bnorms]))))
+
+  (defn align-frames
+    [[points tangents norms bnorms]]
+    (let [num   (count tangents)
+          a     (first norms)
+          b     (peek norms)
+          theta (-> (m/dot a b) (m/clamp-normalized) (Math/acos) (/ (dec num)))
+          theta (if (> (m/dot (first tangents) (m/cross a b)) 0.0) (- theta) theta)]
+      (loop [norms norms, bnorms bnorms, i 1]
+        (if (< i num)
+          (let [t (tangents i)
+                n (-> M44
+                      (g/rotate-around-axis t (* theta i))
+                      (g/transform-vector (norms i)))
+                b (m/cross t n)]
+            (recur (assoc norms i n) (assoc bnorms i b) (inc i)))
+          [points tangents norms bnorms]))))
+
+  (defn sweep-point
+    "Takes a path point, a PTF normal & binormal and a profile point.
+    Returns profile point projected on path (point)."
+    [p n b [qx qy]]
+    (vec3
+     (mm/madd qx (n 0) qy (b 0) (p 0))
+     (mm/madd qx (n 1) qy (b 1) (p 1))
+     (mm/madd qx (n 2) qy (b 2) (p 2))))
+
+  (defn sweep-profile
+    [profile attribs opts [points _ norms bnorms]]
+    (let [{:keys [close? loop?] :or {close? true}} opts
+          frames     (map vector points norms bnorms)
+          tx         (fn [[p n b]] (mapv #(sweep-point p n b %) profile))
+          frame0     (tx (first frames))
+          nprof      (count profile)
+          nprof1     (inc nprof)
+          numf       (dec (count points))
+          attr-state {:du (/ 1.0 nprof) :dv (/ 1.0 numf)}
+          frames     (if loop?
+                       (concat (next frames) [(first frames)])
+                       (next frames))]
+      (->> frames ;; TODO transducer
+           (reduce
+            (fn [[faces prev i fid] frame]
+              (let [curr  (tx frame)
+                    curr  (if close? (conj curr (first curr)) curr)
+                    atts  (assoc attr-state :v (double (/ i numf)))
+                    faces (->> (interleave
+                                (partition 2 1 prev)
+                                (partition 2 1 curr))
+                               (partition 2)
+                               (map-indexed
+                                (fn [j [a b]]
+                                  (attr/generate-face-attribs
+                                   [(nth a 0) (nth a 1) (nth b 1) (nth b 0)]
+                                   (+ fid j)
+                                   attribs
+                                   (assoc atts :u (double (/ j nprof))))))
+                               (concat faces))]
+                [faces curr (inc i) (+ fid nprof1)]))
+            [nil (if close? (conj frame0 (first frame0)) frame0) 0 0])
+           (first))))
+
+  (defn sweep-mesh
+    ([points profile]
+     (sweep-mesh points profile nil))
+    ([points profile {:keys [mesh attribs align?] :as opts}]
+     (let [frames (compute-frames points)
+           frames (if align? (align-frames frames) frames)]
+       (->> frames
+            (sweep-profile profile attribs opts)
+            (g/into (or mesh (bm/basic-mesh)))))))
+
+  (defn sweep-strand
+    [[p _ n b] r theta delta profile opts]
+    (let [pfn (if (fn? r)
+                #(vec2 (r %) (mm/madd %2 delta theta))
+                #(vec2 r (mm/madd %2 delta theta)))]
+      (-> (map-indexed
+           #(->> (pfn % %2)
+                 (g/as-cartesian)
+                 (sweep-point (p %2) (n %2) (b %2)))
+           (range (count p)))
+          (sweep-mesh profile (merge {:align? true} opts)))))
+
+  (defn sweep-strands
+    [base r strands twists profile opts]
+    (let [delta (/ (* twists TWO_PI) (dec (count (first base))))]
+      (->> (m/norm-range strands)
+           (butlast)
+           (#?(:clj pmap :cljs map)
+            #(sweep-strand base r (* % TWO_PI) delta profile opts)))))
+
+  (defn sweep-strand-mesh
+    ([base r strands twists profile]
+     (sweep-strand-mesh base r strands twists profile))
+    ([base r strands twists profile opts]
+     (let [meshes (sweep-strands base r strands twists profile opts)]
+       (if-not (:mesh opts)
+         (reduce g/into (or (:mesh opts) (bm/basic-mesh)))
+         (last meshes)))))
+#+END_SRC
+
+** Namespace declaration
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/ptf.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.ptf
+    #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.vector :refer [vec2 vec3 V3]]
+     [thi.ng.geom.matrix :refer [matrix44 M44]]
+     [thi.ng.geom.attribs :as attr]
+     [thi.ng.geom.basicmesh :as bm]
+     [thi.ng.math.core :as m :refer [*eps* TWO_PI]]
+     #?(:clj [thi.ng.math.macros :as mm])))
+
+  <<ptf>>
+#+END_SRC

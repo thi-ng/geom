@@ -1,0 +1,556 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#namespace-thinggeomwebglglmesh][Namespace: thi.ng.geom.webgl.glmesh]]
+     - [[#limitations][Limitations]]
+     - [[#constructors][Constructors]]
+     - [[#glmesh][GLMesh]]
+         - [[#icenter][ICenter]]
+         - [[#ivertexaccess][IVertexAccess]]
+         - [[#ifaceaccess][IFaceAccess]]
+             - [[#todo-implement-gfaces][TODO implement g/faces]]
+         - [[#igeomcontainer][IGeomContainer]]
+         - [[#iclear][IClear]]
+         - [[#itransform][ITransform]]
+         - [[#iwebglconvert][IWebGLConvert]]
+         - [[#end-of-implementation][End of implementation]]
+     - [[#indexedglmesh][IndexedGLMesh]]
+         - [[#icenter][ICenter]]
+         - [[#ivertexaccess][IVertexAccess]]
+         - [[#ifaceaccess][IFaceAccess]]
+             - [[#todo-implement-gfaces][TODO implement g/faces]]
+         - [[#igeomcontainer][IGeomContainer]]
+         - [[#iclear][IClear]]
+         - [[#itransform][ITransform]]
+         - [[#iwebglconvert][IWebGLConvert]]
+         - [[#end-of-implementation][End of implementation]]
+     - [[#helpers][Helpers]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
+* Namespace: thi.ng.geom.webgl.glmesh
+
+This namespace provides speed optimized, *mutable* mesh
+implementations primarily intended for display purposes via WebGL.
+Both the =GLMesh= and =IndexedGLMesh= types have the following
+features:
+
+- optional vertex attributes: face normals, vertex normals,
+  texture coordinates & colors
+- native storage in JS typed arrays
+- automatic triangle tessellation when adding mesh faces
+- automatic face normal calculation when adding faces (and face
+  normals are enabled)
+- customizable attribute names when calling =gl/as-webgl-buffer-spec=
+  (see further below)
+
+The =IndexedGLMesh= furthermore does automatic indexing based on
+unique vertex values (and their attributes) and therefore reduces the
+amount of data needing to be sent and processed by the GPU.
+
+On the other hand the =GLMesh= builds flattened attribute buffers, is
+faster to construct and too allows for bigger meshes, since the 16bit
+element index limitation of WebGL does not apply here.
+
+** Limitations
+
+- Meshes are not resizable (due to fixed length buffers)
+- Max. 65536 unique vertices (WebGL limitation, =IndexedGLMesh= only)
+- No support for vertex normal calculation. V-normals must be pre-assigned
+- Currently only partial support for mesh analysis and transformations
+
+** Constructors
+
+Since the meshes are built on JS typed arrays, the number of faces
+must be known at construction time. This doesn't need to (but
+generally should) be the exact number, as long as it's at least the
+number of faces going to be added. The meshes internally keep track of
+the actual elements used, but *do no bounds checking*.
+
+The second arg given is an optional set of vertex attribute buffer IDs
+(see tables under =IWebGLConvert= further below for details).
+
+#+BEGIN_SRC clojure :noweb-ref ctors
+  (defn gl-mesh
+    "Builds a fixed size mesh with given face count & attribs (a set of
+    #{:fnorm :vnorm :uv :col}). All attributes (incl. vertices) are
+    stored directly in typed array buffers."
+    ([numf] (gl-mesh numf nil))
+    ([numf attribs]
+    (GLMesh.
+      (ta/float32 (* numf 9))
+      (if (:fnorm attribs) (ta/float32 (* numf 9)))
+      (if (:vnorm attribs) (ta/float32 (* numf 9)))
+      (if (:uv attribs) (ta/float32 (* numf 6)))
+      (if (:col attribs) (ta/float32 (* numf 12)))
+      0
+      attribs)))
+
+  (defn indexed-gl-mesh
+    "Builds a fixed size, indexed mesh with given face count & optional
+    attribs (a set of #{:fnorm :vnorm :uv :col}). All attributes (incl.
+    vertices) are stored directly in typed array buffers. Internally
+    builds index of unique vertices (position + attribs) and re-uses
+    indices where possible."
+    ([numf] (indexed-gl-mesh numf nil))
+    ([numf attribs]
+     (IndexedGLMesh.
+      (ta/float32 (* numf 9))
+      (if (:fnorm attribs) (ta/float32 (* numf 9)))
+      (if (:vnorm attribs) (ta/float32 (* numf 9)))
+      (if (:uv attribs) (ta/float32 (* numf 6)))
+      (if (:col attribs) (ta/float32 (* numf 12)))
+      (ta/uint16 (* numf 3))
+      attribs
+      {} 0 0)))
+#+END_SRC
+
+** GLMesh
+#+BEGIN_SRC clojure :noweb-ref impl
+  (defrecord GLMesh
+      [^js/Float32Array vertices
+       ^js/Float32Array fnormals
+       ^js/Float32Array vnormals
+       ^js/Float32Array uvs
+       ^js/Float32Array cols
+       ^:mutable id
+       attribs]
+#+END_SRC
+
+*** ICenter
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/ICenter
+  (center
+   [_] (g/center _ (vec3)))
+  (center
+   [_ o] (g/translate _ (m/- o (g/centroid _))))
+  (centroid
+   [_] (gu/centroid (g/vertices _)))
+#+END_SRC
+
+*** IVertexAccess
+
+The =g/vertices= implementation returns the set of unique vertices in
+the mesh (without their attributes, only positions).
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IVertexAccess
+  (vertices
+   [_]
+   (let [num (* id 9)]
+     (loop [acc (transient #{}), i 0]
+       (if (< i num)
+         (recur
+          (conj! acc (thi.ng.geom.vector.Vec3. (.slice vertices i (+ i 3)) nil nil))
+          (+ i 3))
+         (persistent! acc)))))
+#+END_SRC
+
+*** IFaceAccess
+**** TODO implement g/faces
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IFaceAccess
+  (add-face
+   [_ f] (add-face* _ f))
+#+END_SRC
+
+*** IGeomContainer
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IGeomContainer
+  (into
+   [_ faces]
+   (if (instance? GLMesh faces)
+     (into-glmesh* _ faces)
+     (gu/into-mesh _ add-face* faces)))
+#+END_SRC
+
+*** IClear
+
+These protocol methods are used internally by =g/into=.
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IClear
+  (clear*
+   [_] (gl-mesh (/ (.-length vertices) 9) attribs))
+  (clear!
+   [_] (set! id 0) _)
+#+END_SRC
+
+*** ITransform
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IScale
+  (scale
+   [_ s] (transform-vertices #(m/*! % s) vertices (* id 9)) _)
+  (scale
+   [_ sx sy sz] (transform-vertices #(m/*! % sx sy sz) vertices (* id 9)) _)
+  (scale-size
+   [_ s]
+   (let [c (g/centroid _)]
+     (transform-vertices #(m/madd! (m/-! % c) s c) vertices (* id 9))) _)
+  g/ITranslate
+  (translate
+   [_ t] (transform-vertices #(m/+! % t) vertices (* id 9)) _)
+  g/ITransform
+  (transform
+   [_ tx] (transform-vertices #(g/transform-vector tx %) vertices (* id 9)) _)
+#+END_SRC
+
+*** IWebGLConvert
+
+Since a =GLMesh= holds all its data in typed arrays, conversion into a
+readily usable format for display purposes is reduced to a straight
+forward re-formatting into WebGL spec map. By supplying an =:attribs=
+map in the 2nd arg (options map), all mesh attributes can be renamed
+in the spec map. The default attribute names are:
+
+| *Key*       | *Default value* | *Description*     |
+|-------------+-----------------+-------------------|
+| =:position= | =:position=     | vertex positions  |
+| =:fnorm=    | =:normal=       | face normals      |
+| =:vnorm=    | =:normal=       | vertex normals    |
+| =:uv=       | =:uv=           | UV texture coords |
+| =:col=      | =:color=        | vertex colors     |
+
+*Note:* As mentioned above, the =GLMesh= is *not* able to compute
+ vertex normals itself.
+
+If a shader requires that an attribute must be renamed in the
+resulting spec map, call the function like this:
+
+#+BEGIN_SRC clojure
+  ;; rename :position & :uv attribs in result spec
+  (gl/as-webgl-buffer-spec mesh {:attribs {:uv :texcoord, :position :pos}})
+#+END_SRC
+
+Furthermore, the options map also supports the following other keys:
+
+- =:mode= - WebGL draw mode (default: =glc/triangles=)
+- =:num-vertices= - number of vertices to draw (default: number mesh verts)
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  gl/IWebGLConvert
+  (as-webgl-buffer-spec
+   [_ {:keys [attribs] :as opts}]
+   {:attribs      (cond->    {(get attribs :position :position) {:data vertices :size 3}}
+                    fnormals (assoc (get attribs :fnorm :normal) {:data fnormals :size 3})
+                    vnormals (assoc (get attribs :vnorm :normal) {:data vnormals :size 3})
+                    uvs      (assoc (get attribs :uv :uv) {:data uvs :size 2})
+                    cols     (assoc (get attribs :col :color) {:data cols :size 4}))
+    :num-vertices (or (:num-vertices opts) (* id 3))
+    :mode         (or (:mode opts) glc/triangles)})
+#+END_SRC
+
+*** End of implementation
+#+BEGIN_SRC clojure :noweb-ref impl
+  )
+#+END_SRC
+
+** IndexedGLMesh
+#+BEGIN_SRC clojure :noweb-ref impl
+  (defrecord IndexedGLMesh
+      [^js/Float32Array vertices
+       ^js/Float32Array fnormals
+       ^js/Float32Array vnormals
+       ^js/Float32Array uvs
+       ^js/Float32Array cols
+       ^js/Uint16Array indices
+       attribs
+       ^:mutable index
+       ^:mutable id
+       ^:mutable fid]
+#+END_SRC
+
+*** ICenter
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/ICenter
+  (center
+   [_] (g/center _ (vec3)))
+  (center
+   [_ o] (g/translate _ (m/- o (g/centroid _))))
+  (centroid
+   [_] (gu/centroid (g/vertices _)))
+#+END_SRC
+
+*** IVertexAccess
+
+The =g/vertices= implementation returns the set of unique vertices in
+the mesh (without their attributes, only positions).
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IVertexAccess
+  (vertices
+   [_]
+   (let [num (* id 3)]
+     (loop [acc (transient #{}), i 0]
+       (if (< i num)
+         (recur
+          (conj! acc (thi.ng.geom.vector.Vec3. (.slice vertices i (+ i 3)) nil nil))
+          (+ i 3))
+         (persistent! acc)))))
+#+END_SRC
+
+*** IFaceAccess
+**** TODO implement g/faces
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IFaceAccess
+  (add-face
+   [_ f] (add-face-indexed* _ f))
+#+END_SRC
+
+*** IGeomContainer
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IGeomContainer
+  (into
+   [_ m]
+   (if (instance? IndexedGLMesh m)
+     (into-iglmesh* _ m)
+     (gu/into-mesh _ add-face-indexed* m)))
+#+END_SRC
+
+*** IClear
+
+These protocol methods are used internally by =g/into=.
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IClear
+  (clear*
+   [_] (indexed-gl-mesh (/ (.-length vertices) 9) attribs))
+  (clear!
+   [_] (set! id 0) (set! fid 0) _)
+#+END_SRC
+
+*** ITransform
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IScale
+  (scale
+   [_ s] (transform-vertices #(m/*! % s) vertices (* id 3)) _)
+  (scale
+   [_ sx sy sz] (transform-vertices #(m/*! % sx sy sz) vertices (* id 3)) _)
+  (scale-size
+   [_ s]
+   (let [c (g/centroid _)]
+     (transform-vertices #(m/madd! (m/-! % c) s c) vertices (* id 3))) _)
+  g/ITranslate
+  (translate
+   [_ t] (transform-vertices #(m/+! % t) vertices (* id 3)) _)
+  g/ITransform
+  (transform
+   [_ tx] (transform-vertices #(g/transform-vector tx %) vertices (* id 3)) _)
+#+END_SRC
+
+*** IWebGLConvert
+
+See description of this protocol implementation for =GLMesh= above.
+
+Furthermore, the options map also supports the following other keys:
+
+- =:mode= - WebGL draw mode (default: =glc/triangles=)
+- =:num-items= - number of items (vertices) to draw (default: number of current faces * 3)
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  gl/IWebGLConvert
+  (as-webgl-buffer-spec
+   [_ {:keys [attribs] :as opts}]
+   {:attribs      (cond->    {(get attribs :position :position) {:data vertices :size 3}}
+                    fnormals (assoc (get attribs :fnorm :normal) {:data fnormals :size 3})
+                    vnormals (assoc (get attribs :vnorm :normal) {:data vnormals :size 3})
+                    uvs      (assoc (get attribs :uv :uv) {:data uvs :size 2})
+                    cols     (assoc (get attribs :col :color) {:data cols :size 4}))
+    :indices      {:data indices}
+    :num-items    (or (:num-items opts) fid)
+    :num-vertices id
+    :mode         (or (:mode opts) glc/triangles)})
+#+END_SRC
+
+*** End of implementation
+#+BEGIN_SRC clojure :noweb-ref impl
+  )
+#+END_SRC
+
+** Helpers
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn- add-face*
+    [^GLMesh m [verts attribs :as f]]
+    (if (> (count verts) 3)
+      (->> f
+           ((gu/tessellate-face gu/tessellate-with-first))
+           (run! #(add-face* m %)))
+      (let [{:keys [vertices fnormals vnormals uvs cols id]} m
+            idv     (* id 9)
+            iduv    (* id 6)
+            idcol   (* id 12)]
+        (.set vertices (.-buf ^thi.ng.geom.vector.Vec3 (first verts)) idv)
+        (.set vertices (.-buf ^thi.ng.geom.vector.Vec3 (nth verts 1)) (+ idv 3))
+        (.set vertices (.-buf ^thi.ng.geom.vector.Vec3 (nth verts 2)) (+ idv 6))
+        (when fnormals
+          (let [n  (or (:fnorm attribs) (gu/ortho-normal verts))
+                nb (.-buf ^thi.ng.geom.vector.Vec3 n)]
+            (.set fnormals nb idv)
+            (.set fnormals nb (+ idv 3))
+            (.set fnormals nb (+ idv 6))))
+        (when-let [vn (if vnormals (get attribs :vnorm))]
+          (.set vnormals (.-buf ^thi.ng.geom.vector.Vec3 (first vn)) idv)
+          (.set vnormals (.-buf ^thi.ng.geom.vector.Vec3 (nth vn 1)) (+ idv 3))
+          (.set vnormals (.-buf ^thi.ng.geom.vector.Vec3 (nth vn 2)) (+ idv 6)))
+        (when-let [uv (if uvs (get attribs :uv))]
+          (.set uvs (.-buf ^thi.ng.geom.vector.Vec2 (first uv)) iduv)
+          (.set uvs (.-buf ^thi.ng.geom.vector.Vec2 (nth uv 1)) (+ iduv 2))
+          (.set uvs (.-buf ^thi.ng.geom.vector.Vec2 (nth uv 2)) (+ iduv 4)))
+        (when-let [col (if cols (get attribs :col))]
+          (->> (streams/into-buffer (first col) cols 4 idcol)
+               (streams/into-buffer (nth col 1) cols 4)
+               (streams/into-buffer (nth col 2) cols 4)))
+        (set! (.-id m) (inc id))))
+    m)
+
+  (defn- index-vertex*
+    [^IndexedGLMesh m va vertices fnormals vnormals cols uvs]
+    (or (get (.-index m) va)
+        (let [id  (.-id ^IndexedGLMesh m)
+              idv (* id 3)
+              [v fn vn col uv] va]
+          (.set vertices (.-buf ^thi.ng.geom.vector.Vec3 v) idv)
+          (if (if fnormals fn)
+            (.set fnormals (.-buf ^thi.ng.geom.vector.Vec3 fn) idv)
+            (if (if vnormals vn)
+              (.set vnormals (.-buf ^thi.ng.geom.vector.Vec3 vn) idv)))
+          (when (if cols col)
+            (streams/into-buffer col cols 4 (* id 4)))
+          (when (if uvs uv)
+            (.set uvs (.-buf ^thi.ng.geom.vector.Vec2 uv) (* id 2)))
+          (set! (.-index ^IndexedGLMesh m) (assoc (.-index ^IndexedGLMesh m) va id))
+          (set! (.-id ^IndexedGLMesh m) (inc id))
+          id)))
+
+  (defn- add-face-indexed*
+    [^IndexedGLMesh m [verts attribs :as f]]
+    (if (> (count verts) 3)
+      (->> f
+           ((gu/tessellate-face gu/tessellate-with-first))
+           (run! #(add-face-indexed* m %)))
+      (let [{:keys [vertices fnormals vnormals uvs cols id fid indices]} m
+            {:keys [vnorm uv col]} attribs
+            fnorm (if fnormals (or (get attribs :fnorm) (gu/ortho-normal verts)))]
+        (aset indices fid
+              (index-vertex*
+               m [(nth verts 0) fnorm (nth vnorm 0 nil) (nth col 0 nil) (nth uv 0 nil)]
+               vertices fnormals vnormals cols uvs))
+        (aset indices (+ fid 1)
+              (index-vertex*
+               m [(nth verts 1) fnorm (nth vnorm 1 nil) (nth col 1 nil) (nth uv 1 nil)]
+               vertices fnormals vnormals cols uvs))
+        (aset indices (+ fid 2)
+              (index-vertex*
+               m [(nth verts 2) fnorm (nth vnorm 2 nil) (nth col 2 nil) (nth uv 2 nil)]
+               vertices fnormals vnormals cols uvs))
+        (set! (.-fid m) (+ fid 3))))
+    m)
+
+  (defn- transform-vertices
+    [f buf num]
+    (let [tv (vec3 0)
+          tb (.-buf ^thi.ng.geom.vector.Vec3 tv)]
+      (loop [i 0]
+        (when (< i num)
+          (.set tb (.slice buf i (+ i 3)) 0)
+          (.set buf (.-buf ^thi.ng.geom.vector.Vec3 (f tv)) i)
+          (recur (+ i 3))))))
+
+  (defn- into-glmesh*
+    [^GLMesh dest ^GLMesh src]
+    (let [{sverts :vertices sfn :fnormals svn :vnormals scol :cols suv :uvs sid :id} src
+          {dverts :vertices dfn :fnormals dvn :vnormals dcol :cols duv :uvs did :id} dest
+          sidv   (* sid 9)
+          didv   (* did 9)]
+      (.set dverts (.slice sverts 0 sidv) didv)
+      (when (if dfn sfn)
+        (.set dfn (.slice sfn 0 sidv) didv))
+      (when (if dvn svn)
+        (.set dvn (.slice svn 0 sidv) didv))
+      (when (if dcol scol)
+        (.set dcol (.slice scol 0 (* sid 12)) (* did 12)))
+      (when (if duv suv)
+        (.set duv (.slice suv 0 (* sid 6)) (* did 6)))
+      (set! (.-id dest) (+ did sid))
+      dest))
+
+  (defn- build-rindex
+    [dindex sindex start]
+    (reduce-kv
+     (fn [[idx nid :as s] v id]
+       (if (get dindex v) s [(assoc! idx id [nid v]) (inc nid)]))
+     [(transient {}) start]
+     sindex))
+
+  (defn- merge-index
+    [dindex rindex]
+    (into dindex (map (fn [kv] [(peek (val kv)) (key kv)])) rindex))
+
+  (defn- into-iglmesh*
+    [^IndexedGLMesh dest ^IndexedGLMesh src]
+    (let [{sverts :vertices sfn :fnormals svn :vnormals scol :cols
+           suv :uvs sidx :indices sindex :index sid :id sfid :fid} src
+          {dverts :vertices dfn :fnormals dvn :vnormals dcol :cols
+           duv :uvs didx :indices dindex :index did :id dfid :fid} dest
+          [rindex did'] (build-rindex dindex sindex did)
+          dindex (merge-index dindex (persistent! rindex))
+          sidv   sfid
+          fn?    (if dfn sfn)
+          vn?    (if dvn svn)
+          col?   (if dcol scol)
+          uv?    (if duv suv)]
+      ;; (debug :rindex rindex)
+      ;; (debug :dindex dindex)
+      ;; (debug :dfid-old dfid :didv (* did 3))
+      ;; TODO implement fast path if no verts can be reused
+      (loop [i 0]
+        (when (< i sidv)
+          (if-let [nid (first (get rindex (aget sidx i)))]
+            (let [sid    (aget sidx i)
+                  sidv   (* sid 3)
+                  didv   (* nid 3)
+                  sidcol (* sid 4)
+                  siduv  (* sid 2)]
+              ;;(debug :reindex sid :> nid :dfid (+ dfid i) :didv didv)
+              (aset didx (+ dfid i) nid)
+              (.set dverts (.slice sverts sidv (+ sidv 3)) didv)
+              (when fn?
+                (.set dfn (.slice sfn sidv (+ sidv 3)) didv))
+              (when vn?
+                (.set dvn (.slice svn sidv (+ sidv 3)) didv))
+              (when col?
+                (.set dcol (.slice scol sidcol (+ sidcol 4)) (* nid 4)))
+              (when uv?
+                (.set duv (.slice suv siduv (+ siduv 2)) (* nid 2))))
+            (do ;;(debug :reuse (aget sidx i) :dfid (+ dfid i))
+              (aset didx (+ dfid i) (aget sidx i))))
+          (recur (inc i))))
+      (set! (.-index dest) dindex)
+      (set! (.-id dest) did')
+      (set! (.-fid dest) (+ dfid sfid))
+      dest))
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/glmesh.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.webgl.glmesh
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.webgl.core :as gl]
+     [thi.ng.geom.webgl.constants :as glc]
+     [thi.ng.dstruct.streams :as streams]
+     [thi.ng.typedarrays.core :as ta]))
+
+  (declare gl-mesh indexed-gl-mesh)
+  (declare add-face* add-face-indexed* into-glmesh* into-iglmesh* transform-vertices)
+
+  <<impl>>
+
+  <<ctors>>
+
+  <<helpers>>
+#+END_SRC

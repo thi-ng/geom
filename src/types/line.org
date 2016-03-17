@@ -1,0 +1,802 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#namespace-thinggeomline][Namespace: thi.ng.geom.line]]
+     - [[#constructors][Constructors]]
+     - [[#shared-helper-functions][Shared helper functions]]
+     - [[#reusable-protocol-templates-for-2d3d][Reusable protocol templates for 2d/3d]]
+         - [[#icenter][ICenter]]
+         - [[#ibounds][IBounds]]
+         - [[#icircumference][ICircumference]]
+         - [[#iextrude][IExtrude]]
+         - [[#igraph][IGraph]]
+         - [[#imagnitude][IMagnitude]]
+         - [[#todo-inormalize][TODO INormalize]]
+         - [[#ireflect][IReflect]]
+         - [[#irotate][IRotate]]
+         - [[#isample][ISample]]
+         - [[#itransform][ITransform]]
+     - [[#line2][Line2]]
+         - [[#protocol-implementations][Protocol implementations]]
+             - [[#iarea][IArea]]
+             - [[#iboundary][IBoundary]]
+             - [[#ibounds][IBounds]]
+             - [[#iboundingcircle][IBoundingCircle]]
+             - [[#icenter][ICenter]]
+             - [[#icircumference][ICircumference]]
+             - [[#iclassify][IClassify]]
+             - [[#iextrude][IExtrude]]
+             - [[#igraph][IGraph]]
+             - [[#iintersect][IIntersect]]
+             - [[#imagnitude][IMagnitude]]
+             - [[#inormalize][INormalize]]
+             - [[#iproximity][IProximity]]
+             - [[#ireflect][IReflect]]
+             - [[#isample][ISample]]
+             - [[#itransform][ITransform]]
+             - [[#ivolume][IVolume]]
+             - [[#end-of-implementations][End of implementations]]
+     - [[#line3][Line3]]
+         - [[#protocol-implementations][Protocol implementations]]
+             - [[#iarea][IArea]]
+             - [[#todo-iboundary][TODO IBoundary]]
+             - [[#ibounds][IBounds]]
+             - [[#iboundingsphere][IBoundingSphere]]
+             - [[#icenter][ICenter]]
+             - [[#icircumference][ICircumference]]
+             - [[#todo-iclassify][TODO IClassify]]
+             - [[#iextrude][IExtrude]]
+             - [[#igraph][IGraph]]
+             - [[#todo-iintersect][TODO IIntersect]]
+             - [[#imagnitude][IMagnitude]]
+             - [[#inormalize][INormalize]]
+             - [[#iproximity][IProximity]]
+             - [[#ireflect][IReflect]]
+             - [[#isample][ISample]]
+             - [[#itransform][ITransform]]
+             - [[#ivolume][IVolume]]
+             - [[#end-of-implementations][End of implementations]]
+     - [[#linestrip2][LineStrip2]]
+         - [[#protocol-implementations][Protocol implementations]]
+             - [[#iarea][IArea]]
+             - [[#todo-iboundary][TODO IBoundary]]
+             - [[#ibounds][IBounds]]
+             - [[#iboundingcircle][IBoundingCircle]]
+             - [[#icenter][ICenter]]
+             - [[#icircumference][ICircumference]]
+             - [[#todo-iclassify][TODO IClassify]]
+             - [[#iextrude][IExtrude]]
+             - [[#todo-igraph][TODO IGraph]]
+             - [[#todo-iintersect][TODO IIntersect]]
+             - [[#imagnitude][IMagnitude]]
+             - [[#iproximity][IProximity]]
+             - [[#todo-ireflect][TODO IReflect]]
+             - [[#isample][ISample]]
+             - [[#itransform][ITransform]]
+             - [[#ivolume][IVolume]]
+             - [[#end-of-implementations][End of implementations]]
+     - [[#linestrip3][LineStrip3]]
+         - [[#protocol-implementations][Protocol implementations]]
+             - [[#iarea][IArea]]
+             - [[#todo-iboundary][TODO IBoundary]]
+             - [[#ibounds][IBounds]]
+             - [[#iboundingsphere][IBoundingSphere]]
+             - [[#icenter][ICenter]]
+             - [[#icircumference][ICircumference]]
+             - [[#todo-iclassify][TODO IClassify]]
+             - [[#iextrude][IExtrude]]
+             - [[#todo-igraph][TODO IGraph]]
+             - [[#todo-iintersect][TODO IIntersect]]
+             - [[#imagnitude][IMagnitude]]
+             - [[#iproximity][IProximity]]
+             - [[#todo-ireflect][TODO IReflect]]
+             - [[#isample][ISample]]
+             - [[#itransform][ITransform]]
+             - [[#ivolume][IVolume]]
+             - [[#end-of-implementations][End of implementations]]
+     - [[#namespace-declaration][Namespace declaration]]
+
+* Namespace: thi.ng.geom.line
+** Constructors
+#+BEGIN_SRC clojure :noweb-ref ctors
+  (defn line2
+    ([[p q]] (thi.ng.geom.types.Line2. [(vec2 p) (vec2 q)]))
+    ([p q] (thi.ng.geom.types.Line2. [(vec2 p) (vec2 q)]))
+    ([px py qx qy] (thi.ng.geom.types.Line2. [(vec2 px py) (vec2 qx qy)])))
+
+  (defn line3
+    ([[p q]] (thi.ng.geom.types.Line3. [(vec3 p) (vec3 q)]))
+    ([p q] (thi.ng.geom.types.Line3. [(vec3 p) (vec3 q)]))
+    ([px py qx qy] (thi.ng.geom.types.Line3. [(vec3 px py) (vec3 qx qy)]))
+    ([px py pz qx qy qz] (thi.ng.geom.types.Line3. [(vec3 px py pz) (vec3 qx qy qz)])))
+
+  (defn linestrip2
+    ([points] (thi.ng.geom.types.LineStrip2. (mapv vec2 points)))
+    ([p q & more] (thi.ng.geom.types.LineStrip2. (mapv vec2 (cons p (cons q more))))))
+
+  (defn linestrip3
+    ([points] (thi.ng.geom.types.LineStrip3. (mapv vec3 points)))
+    ([p q & more] (thi.ng.geom.types.LineStrip3. (mapv vec3 (cons p (cons q more))))))
+#+END_SRC
+
+** Shared helper functions
+
+These functions are used for both 2D/3D implementations:
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+  (defn reflect-on-ray
+    [ctor p q rc dir]
+    (ctor
+     (m/+ rc (g/reflect (m/- p rc) dir))
+     (m/+ rc (g/reflect (m/- q rc) dir))))
+
+  (defn reflect-on-line
+    [ctor p q rp rq]
+    (reflect-on-ray ctor p q (m/mix rp rq) (m/normalize (m/- rq rp))))
+#+END_SRC
+** Reusable protocol templates for 2d/3d
+
+These templates are used for protocol implementations which only have
+minor differences between the 2d/3d versions. Templates with variables
+are wrapped in an Emacs Lisp form and will have the variables injected
+during code generation/tangling. See call sites in [[Line2]] & [[Line3]]
+further below.
+
+*** ICenter
+#+NAME: tpl-center
+#+BEGIN_SRC emacs-lisp :noweb yes :var type="" :results output
+  (princ
+   (replace-regexp-in-string "{{type}}" type
+  "g/ICenter
+  (center
+   ([{[p q] :points}]
+    (let [c (m/mix p q)]
+      ({{type}}. [(m/- p c) (m/- q c)])))
+   ([{[p q] :points} o]
+    (let [c (m/- o (m/mix p q))]
+      ({{type}}. [(m/+ p c) (m/+ q c)]))))
+  (centroid [{p :points}] (m/mix (p 0) (p 1)))"))
+#+END_SRC
+*** IBounds
+#+NAME: tpl-bounds
+#+BEGIN_SRC emacs-lisp :noweb yes :var fn="" :results output
+  (princ
+   (replace-regexp-in-string "{{fn}}" fn
+  "g/IBounds
+  (bounds [_] ({{fn}} (:points _)))
+  (width  [{p :points}] (m/abs* (- ((p 0) 0) ((p 1) 0))))
+  (height [{p :points}] (m/abs* (- ((p 0) 1) ((p 1) 1))))"))
+#+END_SRC
+*** ICircumference
+#+BEGIN_SRC clojure :noweb-ref tpl-circum
+  g/ICircumference
+  (circumference [{p :points}] (g/dist (p 0) (p 1)))
+#+END_SRC
+*** IExtrude
+#+BEGIN_SRC clojure :noweb-ref tpl-extrude
+  g/IExtrude
+  (extrude
+   [{points :points :as _}
+    {:keys [mesh depth scale offset attribs]
+     :or {depth 1.0 scale 1.0} :as opts}]
+   (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
+         off     (or offset (vec3 0 0 depth))
+         a       (vec3 (points 0))
+         b       (vec3 (points 1))
+         ta      (m/+ off (tpoints 0))
+         tb      (m/+ off (tpoints 1))]
+     (g/add-face
+      (or mesh (bm/basic-mesh))
+      (attr/generate-face-attribs [a b tb ta] 0 attribs opts))))
+#+END_SRC
+*** IGraph
+#+BEGIN_SRC clojure :noweb-ref tpl-graph
+  g/IVertexAccess
+  (vertices
+   ([_] (:points _))
+   ([{p :points} res] (gu/sample-segment-with-res (p 0) (p 1) res true)))
+  g/IEdgeAccess
+  (edges
+   ([_] [(:points _)])
+   ([_ res] (d/successive-nth 2 (g/vertices _ res))))
+  g/IGraph
+  (vertex-neighbors
+   [{[p q] :points} v] (condp = v, p q, q p, nil))
+  (vertex-valence
+   [{p :points} v] (if (or (= v (p 0)) (= v (p 1))) 1 0))
+#+END_SRC
+*** IMagnitude
+#+BEGIN_SRC clojure :noweb-ref tpl-mag
+  m/IMagnitude
+  (mag [{p :points}] (g/dist (p 0) (p 1)))
+  (mag-squared [{p :points}] (g/dist-squared (p 0) (p 1)))
+#+END_SRC
+*** TODO INormalize
+#+NAME: tpl-normalize
+#+BEGIN_SRC emacs-lisp :noweb yes :var type="" :results output
+  (princ
+   (replace-regexp-in-string "{{type}}" type
+  "m/INormalize
+  (normalize
+   ([{[p q] :points}]
+      (let [d (m/normalize (m/- q p))]
+        ({{type}}. [p (m/+ p d)])))
+   ([{[p q] :points} n]
+      (let [d (m/normalize (m/- q p) n)]
+        ({{type}}. [p (m/+ p d)]))))
+  (normalized? [_] (m/delta= 1.0 (m/mag-squared _)))"))
+#+END_SRC
+*** IReflect
+#+NAME: tpl-reflect
+#+BEGIN_SRC emacs-lisp :noweb yes :var type="" :var ctor="" :results output
+  (princ
+   (replace-regexp-in-string "{{ctor}}" ctor
+    (replace-regexp-in-string "{{type}}" type
+  "g/IReflect
+  (reflect
+   [{[p q] :points} r]
+   (if (instance? {{type}} r)
+     (let [[pr qr] (:points r)] (reflect-on-line {{ctor}} p q pr qr))
+     ({{type}}. [(g/reflect p r) (g/reflect q r)])))")))
+#+END_SRC
+*** IRotate
+#+NAME: tpl-rotate
+#+BEGIN_SRC emacs-lisp :noweb yes :var type="" :results output
+  (princ
+   (replace-regexp-in-string "{{type}}" type
+  "g/IRotate
+  (rotate
+   [{p :points} theta]
+   ({{type}}. [(g/rotate (p 0) theta) (g/rotate (p 1) theta)]))"))
+#+END_SRC
+*** ISample
+#+BEGIN_SRC clojure :noweb-ref tpl-sample
+  g/ISample
+  (point-at
+   [{p :points} t] (m/mix (p 0) (p 1) t))
+  (random-point
+   [{p :points}] (m/mix (p 0) (p 1) (m/random)))
+  (random-point-inside
+   [{p :points}] (m/mix (p 0) (p 1) (m/random)))
+  (sample-uniform
+   [_ dist include-last?]
+   (gu/sample-uniform dist include-last? (:points _)))
+#+END_SRC
+*** ITransform
+#+NAME: tpl-tx
+#+BEGIN_SRC emacs-lisp :noweb yes :var type="" :results output
+  (princ
+   (replace-regexp-in-string "{{type}}" type
+  "g/IScale
+  (scale
+   ([{p :points} s]
+    ({{type}}. [(m/* (p 0) s) (m/* (p 1) s)]))
+   ([{p :points} sx sy]
+    ({{type}}. [(m/* (p 0) sx sy) (m/* (p 1) sx sy)])))
+  (scale-size
+   [{[p q] :points} s]
+   (let [c (m/mix p q)]
+     ({{type}}. [(m/madd (m/- p c) s c) (m/madd (m/- q c) s c)])))
+  g/ITranslate
+  (translate
+   [{p :points} t]
+   ({{type}}. [(m/+ (p 0) t) (m/+ (p 1) t)]))
+  g/ITransform
+  (transform
+   [{p :points} m]
+   ({{type}}.
+    [(g/transform-vector m (p 0)) (g/transform-vector m (p 1))]))"))
+#+END_SRC
+
+** Line2
+*** Protocol implementations
+#+BEGIN_SRC clojure :noweb-ref impl2
+  (extend-type thi.ng.geom.types.Line2
+#+END_SRC
+**** IArea
+#+BEGIN_SRC clojure :noweb-ref impl2
+  g/IArea
+  (area [_] 0)
+#+END_SRC
+**** IBoundary
+#+BEGIN_SRC clojure :noweb-ref impl2
+  g/IBoundary
+  (contains-point?
+   [{p :points} q] (m/in-range? 0.0 1.0 (gu/closest-point-coeff (vec2 q) (p 0) (p 1))))
+#+END_SRC
+**** IBounds                                                       :template:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<tpl-bounds(fn="gu/bounding-rect")>>
+  (depth  [_] 0)
+#+END_SRC
+**** IBoundingCircle
+#+BEGIN_SRC clojure :noweb-ref impl2
+  g/IBoundingCircle
+  (bounding-circle
+   [{[p q] :points}]
+   (thi.ng.geom.types.Circle2. (m/mix p q) (* 0.5 (g/dist p q))))
+#+END_SRC
+**** ICenter                                                       :template:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<tpl-center(type="thi.ng.geom.types.Line2")>>
+#+END_SRC
+**** ICircumference                                                :template:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<tpl-circum>>
+#+END_SRC
+**** IClassify
+#+BEGIN_SRC clojure :noweb-ref impl2
+  g/IClassify
+  (classify-point
+   [{[p q] :points} v]
+   (m/signum (m/dot (m/- (vec2 v) p) (g/normal (m/- q p))) *eps*))
+#+END_SRC
+**** IExtrude                                                           :template:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<tpl-extrude>>
+#+END_SRC
+**** IGraph                                                        :template:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<tpl-graph>>
+#+END_SRC
+**** IIntersect
+#+BEGIN_SRC clojure :noweb-ref impl2
+  g/IIntersect
+  (intersect-line
+   [{[a b] :points} l]
+   (let [[c d] (or (:points l) l)]
+     (isec/intersect-line2-line2? a b c d)))
+#+END_SRC
+**** IMagnitude                                                    :template:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<tpl-mag>>
+#+END_SRC
+**** INormalize                                                    :template:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<tpl-normalize(type="thi.ng.geom.types.Line2")>>
+#+END_SRC
+**** IProximity
+#+BEGIN_SRC clojure :noweb-ref impl2
+  g/IProximity
+  (closest-point
+   [{p :points} q] (gu/closest-point-on-segment (vec2 q) (p 0) (p 1)))
+#+END_SRC
+**** IReflect                                                      :template:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<tpl-reflect(type="thi.ng.geom.types.Line2", ctor="line2")>>
+#+END_SRC
+**** ISample                                                       :template:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<tpl-sample>>
+#+END_SRC
+**** ITransform                                                    :template:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<tpl-rotate(type="thi.ng.geom.types.Line2")>>
+  <<tpl-tx(type="thi.ng.geom.types.Line2")>>
+#+END_SRC
+**** IVolume                                                       :template:
+#+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
+  <<lob-geom-zerovol>>
+#+END_SRC
+**** End of implementations                                        :noexport:
+#+BEGIN_SRC clojure :noweb-ref impl2
+  )
+#+END_SRC
+** Line3
+*** Protocol implementations
+#+BEGIN_SRC clojure :noweb-ref impl3
+  (extend-type thi.ng.geom.types.Line3
+#+END_SRC
+**** IArea
+#+BEGIN_SRC clojure :noweb-ref impl3
+  <<lob-geom-zeroarea>>
+#+END_SRC
+**** TODO IBoundary
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/IBoundary
+  (contains-point?
+   [{p :points} q] (m/in-range? 0.0 1.0 (gu/closest-point-coeff (vec3 q) (p 0) (p 1))))
+#+END_SRC
+**** IBounds                                                       :template:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<tpl-bounds(fn="gu/bounding-box")>>
+  (depth  [{p :points}] (m/abs* (- ((p 0) 2) ((p 1) 2))))
+#+END_SRC
+**** IBoundingSphere
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/IBoundingSphere
+  (bounding-sphere
+   [{[p q] :points}]
+   (gu/bounding-sphere (m/mix p q) (* 0.5 (g/dist p q))))
+#+END_SRC
+**** ICenter                                                       :template:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<tpl-center(type="thi.ng.geom.types.Line3")>>
+#+END_SRC
+**** ICircumference                                                :template:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<tpl-circum>>
+#+END_SRC
+**** TODO IClassify
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/IClassify
+  (classify-point
+   [{p :points} p] nil) ; TODO needs normal to define plane to classify
+#+END_SRC
+**** IExtrude                                                           :template:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<tpl-extrude>>
+#+END_SRC
+**** IGraph                                                        :template:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<tpl-graph>>
+#+END_SRC
+**** TODO IIntersect
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/IIntersect
+  (intersect-line
+   [{[a b] :points} l]
+   (let [[c d] (or (:points l) l)]
+     (gu/closest-line-between a b c d)))
+  (intersect-ray [_ r])
+  (intersect-shape [_ s])
+#+END_SRC
+**** IMagnitude                                                    :template:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<tpl-mag>>
+#+END_SRC
+**** INormalize                                                    :template:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<tpl-normalize(type="thi.ng.geom.types.Line3")>>
+#+END_SRC
+**** IProximity
+#+BEGIN_SRC clojure :noweb-ref impl3
+  g/IProximity
+  (closest-point
+   [{p :points} q] (gu/closest-point-on-segment (vec3 q) (p 0) (p 1)))
+#+END_SRC
+**** IReflect                                               :verify:template:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<tpl-reflect(type="thi.ng.geom.types.Line3", ctor="line3")>>
+#+END_SRC
+**** ISample                                                       :template:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<tpl-sample>>
+#+END_SRC
+**** ITransform                                                    :template:
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  g/IRotate3D
+  (rotate-x
+   [{p :points} theta]
+   (thi.ng.geom.types.Line3. [(g/rotate-x (p 0) theta) (g/rotate-x (p 1) theta)]))
+  (rotate-y
+   [{p :points} theta]
+   (thi.ng.geom.types.Line3. [(g/rotate-y (p 0) theta) (g/rotate-y (p 1) theta)]))
+  (rotate-z
+   [{p :points} theta]
+   (thi.ng.geom.types.Line3. [(g/rotate-z (p 0) theta) (g/rotate-z (p 1) theta)]))
+  (rotate-around-axis
+   [{p :points} axis theta]
+   (thi.ng.geom.types.Line3.
+    [(g/rotate-around-axis (p 0) axis theta)
+     (g/rotate-around-axis (p 1) axis theta)]))
+  <<tpl-rotate(type="thi.ng.geom.types.Line3")>>
+  <<tpl-tx(type="thi.ng.geom.types.Line3")>>
+#+END_SRC
+**** IVolume
+#+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
+  <<lob-geom-zerovol>>
+#+END_SRC
+**** End of implementations                                        :noexport:
+#+BEGIN_SRC clojure :noweb-ref impl3
+  )
+#+END_SRC
+** LineStrip2
+*** Protocol implementations
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  (extend-type thi.ng.geom.types.LineStrip2
+#+END_SRC
+**** IArea
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  <<lob-geom-zeroarea>>
+#+END_SRC
+**** TODO IBoundary
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  g/IBoundary
+  (contains-point? [_ a])
+#+END_SRC
+**** IBounds
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  <<lob-geom-bounds(fn="gu/bounding-rect")>>
+#+END_SRC
+**** IBoundingCircle
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  <<lob-geom-bcircle>>
+#+END_SRC
+**** ICenter
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  <<lob-geom-center(type="thi.ng.geom.types.LineStrip2",vtype="vec2")>>
+  (centroid
+   [_] (gu/centroid (:points _)))
+#+END_SRC
+**** ICircumference
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  g/ICircumference
+  (circumference
+   [_] (m/mag _))
+#+END_SRC
+**** TODO IClassify
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  g/IClassify
+  (classify-point [_ v])
+#+END_SRC
+**** IExtrude                                                        :verify:
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  g/IExtrude
+  (extrude
+   [{:keys [points] :as _}
+    {:keys [mesh depth offset scale attribs]
+     :or {depth 1.0 scale 1.0} :as opts}]
+   (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
+         off     (or offset (vec3 0 0 depth))
+         bottom  (mapv vec3 points)
+         top     (mapv #(m/+ off %) tpoints)]
+     (->> (interleave
+           (d/successive-nth 2 bottom)
+           (d/successive-nth 2 top))
+          (partition 2)
+          (map-indexed
+           (fn [i [[a1 a2] [b1 b2]]]
+             (attr/generate-face-attribs [a1 b1 b2 a2] i attribs opts)))
+          (g/into (or mesh (bm/basic-mesh))))))
+#+END_SRC
+**** TODO IGraph                                                     :verify:
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  g/IVertexAccess
+  (vertices
+   ([_] (:points _))
+   ([{points :points} res]
+      (map #(gu/point-at % points) (m/norm-range res)))) ;; TODO transduce
+  g/IEdgeAccess
+  (edges
+   ([_] (d/successive-nth 2 (:points _)))
+   ([_ res] (d/successive-nth 2 (g/vertices _ res))))
+  g/IGraph
+  (vertex-neighbors
+   [_ v] (d/neighbors v (:points _)))
+  (vertex-valence
+   [{points :points} v]
+   (if-let [p (d/neighbors v points)]
+     (if (= (first points) (peek points))
+       2
+       (if (or (= p (first points)) (= p (peek points)))
+         1 2))
+     0))
+#+END_SRC
+**** TODO IIntersect
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  g/IIntersect
+  (intersect-line [_ l])
+#+END_SRC
+**** IMagnitude
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  m/IMagnitude
+  (mag
+   [_] (d/reduce-pairs + g/dist (:points _)))
+  (mag-squared
+   [_] (d/reduce-pairs + g/dist-squared (:points _)))
+#+END_SRC
+**** IProximity                                                 :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl :noweb yes
+  <<lob-geom-proxi>>
+#+END_SRC
+**** TODO IReflect
+***** TODO add support for reflect-on-line
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  g/IReflect
+  (reflect
+   [_ r]
+   (thi.ng.geom.types.LineStrip2. (mapv #(g/reflect % r) (:points _))))
+#+END_SRC
+**** ISample
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  g/ISample
+  (point-at
+   [_ t] (gu/point-at t (:points _) nil))
+  (random-point
+   [_] (gu/point-at (m/random) (:points _) nil))
+  (random-point-inside
+   [_] (g/random-point _))
+  (sample-uniform
+   [_ udist include-last?]
+   (gu/sample-uniform udist include-last? (:points _)))
+#+END_SRC
+**** ITransform
+#+BEGIN_SRC clojure :noweb-ref impl-ls2 :noweb yes
+  <<lob-geom-rotate(type="thi.ng.geom.types.LineStrip2")>>
+  <<lob-geom-scale(type="thi.ng.geom.types.LineStrip2")>>
+  <<lob-geom-translate(type="thi.ng.geom.types.LineStrip2")>>
+  <<lob-geom-tx(type="thi.ng.geom.types.LineStrip2")>>
+#+END_SRC
+**** IVolume
+#+BEGIN_SRC clojure :noweb-ref impl-ls2 :noweb yes
+  <<lob-geom-zerovol>>
+#+END_SRC
+
+**** End of implementations                                        :noexport:
+#+BEGIN_SRC clojure :noweb-ref impl-ls2
+  )
+#+END_SRC
+
+** LineStrip3
+*** Protocol implementations
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  (extend-type thi.ng.geom.types.LineStrip3
+#+END_SRC
+**** IArea
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  <<lob-geom-zeroarea>>
+#+END_SRC
+**** TODO IBoundary
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/IBoundary
+  (contains-point? [_ a])
+#+END_SRC
+**** IBounds
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  <<lob-geom-bounds(fn="gu/bounding-box",depth="yes")>>
+#+END_SRC
+**** IBoundingSphere
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  <<lob-geom-bsphere>>
+#+END_SRC
+**** ICenter
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  <<lob-geom-center(type="thi.ng.geom.types.LineStrip3",vtype="vec3")>>
+  (centroid
+   [_] (gu/centroid (:points _)))
+#+END_SRC
+**** ICircumference
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/ICircumference
+  (circumference
+   [_] (m/mag _))
+#+END_SRC
+**** TODO IClassify
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/IClassify
+  (classify-point [_ v])
+#+END_SRC
+**** IExtrude                                                        :verify:
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/IExtrude
+  (extrude
+   [{:keys [points] :as _}
+    {:keys [mesh depth offset scale attribs]
+     :or {depth 1.0 scale 1.0} :as opts}]
+   (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
+         off     (or offset (vec3 0 0 depth))
+         top     (mapv #(m/+ off %) tpoints)]
+     (->> (interleave
+           (d/successive-nth 2 points)
+           (d/successive-nth 2 top))
+          (partition 2)
+          (map-indexed
+           (fn [i [[a1 a2] [b1 b2]]]
+             (attr/generate-face-attribs [a1 b1 b2 a2] i attribs opts)))
+          (g/into (or mesh (bm/basic-mesh))))))
+#+END_SRC
+**** TODO IGraph                                                     :verify:
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/IVertexAccess
+  (vertices
+   ([_] (:points _))
+   ([{points :points} res]
+      (map #(gu/point-at % points) (m/norm-range res)))) ;; TODO transduce
+  g/IEdgeAccess
+  (edges
+   ([_] (d/successive-nth 2 (:points _)))
+   ([_ res] (d/successive-nth 2 (g/vertices _ res))))
+  g/IGraph
+  (vertex-neighbors
+   [_ v] (d/neighbors v (:points _)))
+  (vertex-valence
+   [{points :points} v]
+   (if-let [p (d/neighbors v points)]
+     (if (= (first points) (peek points))
+       2
+       (if (or (= p (first points)) (= p (peek points)))
+         1 2))
+     0))
+#+END_SRC
+**** TODO IIntersect
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/IIntersect
+  (intersect-line [_ l])
+#+END_SRC
+**** IMagnitude
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  m/IMagnitude
+  (mag
+   [_] (d/reduce-pairs + g/dist (:points _)))
+  (mag-squared
+   [_] (d/reduce-pairs + g/dist-squared (:points _)))
+#+END_SRC
+**** IProximity                                                 :usetemplate:
+#+BEGIN_SRC clojure :noweb-ref impl :noweb yes
+  <<lob-geom-proxi>>
+#+END_SRC
+**** TODO IReflect
+     - Note taken on [2015-03-15 Sun 01:19] \\
+       add support for reflect-on-line
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/IReflect
+  (reflect
+   [_ r]
+   (thi.ng.geom.types.LineStrip3. (mapv #(g/reflect % r) (:points _))))
+#+END_SRC
+**** ISample
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  g/ISample
+  (point-at
+   [_ t] (gu/point-at t (:points _) nil))
+  (random-point
+   [_] (gu/point-at (m/random) (:points _) nil))
+  (random-point-inside
+   [_] (g/random-point _))
+  (sample-uniform
+   [_ udist include-last?]
+   (gu/sample-uniform udist include-last? (:points _)))
+#+END_SRC
+**** ITransform
+#+BEGIN_SRC clojure :noweb-ref impl-ls3 :noweb yes
+  <<lob-geom-rotate(type="thi.ng.geom.types.LineStrip3")>>
+  <<lob-geom-rotate3d(type="thi.ng.geom.types.LineStrip3")>>
+  <<lob-geom-scale(type="thi.ng.geom.types.LineStrip3")>>
+  <<lob-geom-translate(type="thi.ng.geom.types.LineStrip3")>>
+  <<lob-geom-tx(type="thi.ng.geom.types.LineStrip3")>>
+#+END_SRC
+**** IVolume
+#+BEGIN_SRC clojure :noweb-ref impl-ls3 :noweb yes
+  <<lob-geom-zerovol>>
+#+END_SRC
+
+**** End of implementations                                        :noexport:
+#+BEGIN_SRC clojure :noweb-ref impl-ls3
+  )
+#+END_SRC
+
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/line.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.line
+    #?(:cljs
+       (:require-macros
+        [thi.ng.math.macros :as mm]))
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.utils.intersect :as isec]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.attribs :as attr]
+     [thi.ng.geom.basicmesh :as bm]
+     [thi.ng.geom.types :as types]
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.math.core :as m :refer [*eps*]]
+     #?(:clj [thi.ng.math.macros :as mm]))
+    #?(:clj
+       (:import
+        [thi.ng.geom.types Circle2 Line2 Line3 LineStrip2])))
+
+  <<ctors>>
+
+  <<helpers>>
+
+  <<impl2>>
+
+  <<impl3>>
+
+  <<impl-ls2>>
+
+  <<impl-ls3>>
+#+END_SRC
+

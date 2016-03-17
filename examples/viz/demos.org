@@ -1,0 +1,794 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#geomviz-examples][geom.viz examples]]
+     - [[#running-all-examples-from-repl][Running all examples from REPL]]
+         - [[#todo-create-fn-to-re-use-for-all-modules][TODO create fn to re-use for all modules]]
+     - [[#namespaces-required-by-all-examples][Namespaces required by all examples]]
+     - [[#scatter-plot][Scatter plot]]
+     - [[#line--area-plot][Line & area plot]]
+     - [[#bar-graph][Bar graph]]
+     - [[#radar-plot][Radar plot]]
+     - [[#stacked-intervals][Stacked intervals]]
+         - [[#plain-intervals][Plain intervals]]
+         - [[#categorized-timeline][Categorized timeline]]
+     - [[#heatmap][Heatmap]]
+     - [[#github-commit-history][Github commit history]]
+     - [[#contour-plot][Contour plot]]
+     - [[#gis-terrain-contours-w-elevation-color-gradient][GIS terrain contours w/ elevation color gradient]]
+
+* geom.viz examples
+
+This section shows some basic example outputs and general usage
+patterns for all currently implemented visualization methods. The
+section after then describes the various options in more detail.
+
+** Running all examples from REPL
+
+Once you've tangled this document (see [[../../README.org#building--testing-this-project][README.org]]), the following
+examples can be found in the =/babel/examples/viz= folder. Launching a
+REPL from within the =babel= directory, all examples can be run with
+this command and will create a number of SVG files in the same
+directory.
+
+#+BEGIN_SRC clojure
+  (load-file "examples/viz/all.clj")
+#+END_SRC
+
+*** TODO create fn to re-use for all modules
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/all.clj :noweb yes :mkdirp yes :padline no
+  ;; all.clj
+  (doseq [f (rest (file-seq (java.io.File. "examples/viz")))
+          :when (not= "all.clj" (.getName f))]
+    (load-file (.getAbsolutePath f)))
+#+END_SRC
+
+** Namespaces required by all examples
+
+#+BEGIN_SRC clojure :noweb-ref example-imports
+  (require '[thi.ng.geom.viz.core :as viz] :reload)
+  (require '[thi.ng.geom.svg.core :as svg])
+  (require '[thi.ng.geom.vector :as v])
+  (require '[thi.ng.color.core :as col])
+  (require '[thi.ng.math.core :as m :refer [PI TWO_PI]])
+#+END_SRC
+
+** Scatter plot
+
+| [[http://media.thi.ng/geom/viz/scatter-linear-3.svg]] | [[http://media.thi.ng/geom/viz/scatter-log-3.svg]] |
+| Logarithmic X-axis, linear Y                      | Log X, Log Y                                   |
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/scatter.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
+
+  (defn export-viz
+    [spec path]
+    (->> spec
+         (viz/svg-plot2d-cartesian)
+         (svg/svg {:width 600 :height 600})
+         (svg/serialize)
+         (spit path)))
+
+  (def spec
+    {:x-axis (viz/log-axis
+              {:domain [1 201]
+               :range  [50 590]
+               :pos    550})
+     :y-axis (viz/linear-axis
+              {:domain      [0.1 100]
+               :range       [550 20]
+               :major       10
+               :minor       5
+               :pos         50
+               :label-dist  15
+               :label-style {:text-anchor "end"}})
+     :grid   {:attribs {:stroke "#caa"}
+              :minor-x true
+              :minor-y true}
+     :data   [{:values  (map (juxt identity #(Math/sqrt %)) (range 0 200 2))
+               :attribs {:fill "#0af" :stroke "none"}
+               :layout  viz/svg-scatter-plot}
+              {:values  (map (juxt identity #(m/random %)) (range 0 200 2))
+               :attribs {:fill "none" :stroke "#f60"}
+               :shape   (viz/svg-triangle-down 6)
+               :layout  viz/svg-scatter-plot}]})
+
+  (export-viz spec "scatter-linear.svg")
+
+  (-> spec
+      (assoc :y-axis (viz/log-axis
+                      {:domain      [0.1 101]
+                       :range       [550 20]
+                       :pos         50
+                       :label-dist  15
+                       :label-style {:text-anchor "end"}}))
+      (export-viz "scatter-log.svg"))
+#+END_SRC
+
+** Line & area plot
+
+| [[http://media.thi.ng/geom/viz/lineplot-3.svg]] | [[http://media.thi.ng/geom/viz/areaplot-3.svg]] |
+| Line plot (cartesian)                       | Area plot (cartesian)                       |
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/lineplot.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
+
+  (defn test-equation
+    [t] (let [x (m/mix* (- PI) PI t)] [x (* (Math/cos (* 0.5 x)) (Math/sin (* x x x)))]))
+
+  (defn export-viz
+    [viz path] (->> viz (svg/svg {:width 600 :height 320}) (svg/serialize) (spit path)))
+
+  (def viz-spec
+    {:x-axis (viz/linear-axis
+              {:domain [(- PI) PI]
+               :range  [50 580]
+               :major  (/ PI 2)
+               :minor  (/ PI 4)
+               :pos    250})
+     :y-axis (viz/linear-axis
+              {:domain      [-1 1]
+               :range       [250 20]
+               :major       0.2
+               :minor       0.1
+               :pos         50
+               :label-dist  15
+               :label-style {:text-anchor "end"}})
+     :grid   {:attribs {:stroke "#caa"}
+              :minor-y true}
+     :data   [{:values  (map test-equation (m/norm-range 200))
+               :attribs {:fill "none" :stroke "#0af"}
+               :layout  viz/svg-line-plot}]})
+
+  (-> viz-spec
+      (viz/svg-plot2d-cartesian)
+      (export-viz "lineplot.svg"))
+
+  ;; same spec, just update style attribs & layout method
+  (-> viz-spec
+      (update-in [:data 0] merge {:attribs {:fill "#0af"} :layout viz/svg-area-plot})
+      (viz/svg-plot2d-cartesian)
+      (export-viz "areaplot.svg"))
+#+END_SRC
+
+Same overall visualization setup, only using polar coordinate transform and redefined axis ranges (in radians)...
+
+| [[http://media.thi.ng/geom/viz/lineplot-polar-3.svg]] | [[http://media.thi.ng/geom/viz/areaplot-polar-3.svg]] |
+| Line plot (polar)                                 | Area plot (polar)                                 |
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/lineplot.clj :padline yes
+  (def viz-spec-polar
+    {:x-axis (viz/linear-axis
+              {:domain [(- PI) PI]
+               :range  [(* 1.1 PI) (* 1.9 PI)]
+               :major  (/ PI 2)
+               :minor  (/ PI 16)
+               :pos    280})
+     :y-axis (viz/linear-axis
+              {:domain [-1 1]
+               :range  [60 280]
+               :major  0.5
+               :minor  0.25
+               :pos    (* 1.1 PI)})
+     :origin (v/vec2 300 310)
+     :grid   {:attribs {:stroke "#caa" :fill "none"}
+              :minor-x true
+              :minor-y true}
+     :data   [{:values  (map test-equation (m/norm-range 200))
+               :attribs {:fill "none" :stroke "#0af"}
+               :layout  viz/svg-line-plot}]})
+
+  (-> viz-spec-polar (viz/svg-plot2d-polar) (export-viz "lineplot-polar.svg"))
+
+  ;; same spec, just update style attribs & layout method
+  (-> viz-spec-polar
+      (update-in [:data 0] merge {:attribs {:fill "#0af"} :res 20 :layout viz/svg-area-plot})
+      (viz/svg-plot2d-polar)
+      (export-viz "areaplot-polar.svg"))
+#+END_SRC
+
+** Bar graph
+
+| [[http://media.thi.ng/geom/viz/bars-3.svg]] | [[http://media.thi.ng/geom/viz/bars-interleave-3.svg]]  |
+| Single value per domain position        | 3 interleaved values (datasets) per domain position |
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/bars.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
+
+  (defn export-viz
+    [viz path] (->> viz (svg/svg {:width 600 :height 320}) (svg/serialize) (spit path)))
+
+  (defn bar-spec
+    [num width]
+    (fn [idx col]
+      {:values     (map (fn [i] [i (m/random 100)]) (range 2000 2016))
+       :attribs    {:stroke       col
+                    :stroke-width (str (dec width) "px")}
+       :layout     viz/svg-bar-plot
+       :interleave num
+       :bar-width  width
+       :offset     idx}))
+
+  (def viz-spec
+    {:x-axis (viz/linear-axis
+              {:domain [1999 2016]
+               :range  [50 580]
+               :major  1
+               :pos    280
+               :label  (viz/default-svg-label int)})
+     :y-axis (viz/linear-axis
+              {:domain      [0 100]
+               :range       [280 20]
+               :major       10
+               :minor       5
+               :pos         50
+               :label-dist  15
+               :label-style {:text-anchor "end"}})
+     :grid   {:minor-y true}})
+
+  (-> viz-spec
+      (assoc :data [((bar-spec 1 20) 0 "#0af")])
+      (viz/svg-plot2d-cartesian)
+      (export-viz "bars.svg"))
+
+  (-> viz-spec
+      (assoc :data (map-indexed (bar-spec 3 6) ["#0af" "#fa0" "#f0a"]))
+      (viz/svg-plot2d-cartesian)
+      (export-viz "bars-interleave.svg"))
+#+END_SRC
+
+** Radar plot
+
+| [[http://media.thi.ng/geom/viz/radarplot-3.svg]] | [[http://media.thi.ng/geom/viz/radarplot-minmax.svg]] |
+| 6 categories, 3 data sets, single values     | 6 categories, 3 data sets, min-max intervals      |
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/radar.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
+
+  (def category->domain (zipmap [:C1 :C2 :C3 :C4 :C5 :C6] (range)))
+  (def domain->category (reduce-kv #(assoc % %3 %2) {} category->domain))
+
+  (defn random-radar-spec
+    "Generates radar plot data spec w/ random values for each category in the form:
+     {:C1 0.8 :C2 0.2 ...}"
+    [color]
+    {:values   (zipmap (keys category->domain) (repeatedly #(m/random 0.25 1)))
+     :item-pos (fn [[k v]] [(category->domain k) v])
+     :attribs  {:fill (col/rgba color)}
+     :layout   viz/svg-radar-plot})
+
+  (defn random-radar-spec-minmax
+    "Generates radar plot data spec w/ random value intervals for each category in the form:
+     {:C1 [0.5 0.8] :C2 [0.12 0.2] ...}"
+    [color]
+    {:values       (zipmap
+                    (keys category->domain)
+                    (repeatedly #(let [x (m/random 0.5 1)] [(* x (m/random 0.25 0.75)) x])))
+     :item-pos-min (fn [[k v]] [(category->domain k) (first v)])
+     :item-pos-max (fn [[k v]] [(category->domain k) (peek v)])
+     :attribs      {:fill (col/rgba color)}
+     :layout       viz/svg-radar-plot-minmax})
+
+  (def viz-spec
+    {:x-axis (viz/linear-axis
+              {:domain     [0 5]
+               :range      [0 (* (/ 5 6) TWO_PI)]
+               :major      1
+               :label-dist 20
+               :pos        260
+               :label      (viz/default-svg-label (comp name domain->category))})
+     :y-axis (viz/linear-axis
+              {:domain      [0 1.05]
+               :range       [0 260]
+               :major       0.5
+               :minor       0.1
+               :pos         (/ PI 2)
+               :label-style {:text-anchor "start"}
+               :label       (viz/default-svg-label viz/format-percent)})
+     :grid   {:minor-x true :minor-y true}
+     :origin (v/vec2 300 300)
+     :circle true})
+
+  (->> (assoc viz-spec :data (mapv random-radar-spec [[0 0.66 1 0.33] [1 0.5 0 0.33] [1 0 0.8 0.33]]))
+       (viz/svg-plot2d-polar)
+       (svg/svg {:width 600 :height 600})
+       (svg/serialize)
+       (spit "radarplot.svg"))
+
+  (->> (assoc viz-spec :data (mapv random-radar-spec-minmax [[0 0.66 1 0.33] [1 0.5 0 0.33] [1 0 0.8 0.33]]))
+       (viz/svg-plot2d-polar)
+       (svg/svg {:width 600 :height 600})
+       (svg/serialize)
+       (spit "radarplot-minmax.svg"))
+#+END_SRC
+
+** Stacked intervals
+*** Plain intervals
+
+[[http://media.thi.ng/geom/viz/intervals-3.svg]]
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/intervals.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
+
+  (->> {:x-axis (viz/linear-axis
+                 {:domain [-10 310]
+                  :range  [50 550]
+                  :major  100
+                  :minor  50
+                  :pos    150})
+        :y-axis (viz/linear-axis
+                 {:domain  [0 4]
+                  :range   [50 150]
+                  :visible false})
+        :data   [{:values  [[0 100] [10 90] [80 200] [250 300] [150 170] [110 120]
+                            [210 280] [180 280] [160 240] [160 170]]
+                  :attribs {:stroke-width "10px" :stroke-linecap "round" :stroke "#0af"}
+                  :layout  viz/svg-stacked-interval-plot}]}
+       (viz/svg-plot2d-cartesian)
+       (svg/svg {:width 600 :height 200})
+       (svg/serialize)
+       (spit "intervals.svg"))
+#+END_SRC
+
+*** Categorized timeline
+
+This more complex example shows how to use structured data (here
+project descriptions) to create a timeline and visualize each item
+using a custom shape function w/ linear gradients (based on item type).
+
+[[http://media.thi.ng/geom/viz/timeline-3.svg]]
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/timeline.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
+  (require '[thi.ng.color.core :as col])
+  (import '[java.util Calendar GregorianCalendar])
+
+  (def items
+    [{:title "toxiclibs"          :from #inst "2006-03" :to #inst "2013-06" :type :oss}
+     {:title "thi.ng/geom"        :from #inst "2011-08" :to #inst "2015-10" :type :oss}
+     {:title "thi.ng/trio"        :from #inst "2012-12" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/fabric"      :from #inst "2014-12" :to #inst "2015-09" :type :oss}
+     {:title "thi.ng/simplecl"    :from #inst "2012-10" :to #inst "2013-06" :type :oss}
+     {:title "thi.ng/raymarchcl"  :from #inst "2013-02" :to #inst "2013-05" :type :oss}
+     {:title "thi.ng/structgen"   :from #inst "2012-10" :to #inst "2013-02" :type :oss}
+     {:title "thi.ng/luxor"       :from #inst "2013-10" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/morphogen"   :from #inst "2014-03" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/color"       :from #inst "2014-09" :to #inst "2015-10" :type :oss}
+     {:title "thi.ng/validate"    :from #inst "2014-05" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/ndarray"     :from #inst "2015-05" :to #inst "2015-06" :type :oss}
+     {:title "thi.ng/tweeny"      :from #inst "2013-10" :to #inst "2015-01" :type :oss}
+     {:title "Co(De)Factory"      :from #inst "2013-12" :to #inst "2014-08" :type :project}
+     {:title "Chrome WebLab"      :from #inst "2011-05" :to #inst "2012-11" :type :project}
+     {:title "ODI"                :from #inst "2013-07" :to #inst "2013-10" :type :project}
+     {:title "LCOM"               :from #inst "2012-06" :to #inst "2013-05" :type :project}
+     {:title "V&amp;A Ornamental" :from #inst "2010-12" :to #inst "2011-05" :type :project}
+     {:title "Engine26"           :from #inst "2010-08" :to #inst "2010-12" :type :project}
+     {:title "Resonate"           :from #inst "2012-04" :to #inst "2012-04" :type :workshop}
+     {:title "Resonate"           :from #inst "2013-03" :to #inst "2013-03" :type :workshop}
+     {:title "Resonate"           :from #inst "2014-04" :to #inst "2014-04" :type :workshop}
+     {:title "Resonate"           :from #inst "2015-04" :to #inst "2015-04" :type :workshop}
+     {:title "Resonate"           :from #inst "2012-04" :to #inst "2012-04" :type :talk}
+     {:title "Resonate"           :from #inst "2013-03" :to #inst "2013-03" :type :talk}
+     {:title "Resonate"           :from #inst "2014-04" :to #inst "2014-04" :type :talk}
+     {:title "Resonate"           :from #inst "2015-04" :to #inst "2015-04" :type :talk}
+     {:title "Retune"             :from #inst "2014-09" :to #inst "2014-09" :type :talk}
+     {:title "Bezalel"            :from #inst "2011-04" :to #inst "2011-04" :type :workshop}
+     {:title "V&amp;A"            :from #inst "2011-01" :to #inst "2011-03" :type :workshop}
+     {:title "HEAD"               :from #inst "2010-10" :to #inst "2010-10" :type :workshop}
+     {:title "ETH"                :from #inst "2010-11" :to #inst "2010-11" :type :workshop}
+     {:title "SAC"                :from #inst "2012-11" :to #inst "2012-11" :type :workshop}
+     {:title "SAC"                :from #inst "2014-12" :to #inst "2014-12" :type :workshop}
+     {:title "MSA"                :from #inst "2013-04" :to #inst "2013-04" :type :workshop}
+     {:title "Young Creators"     :from #inst "2014-06" :to #inst "2014-06" :type :workshop}
+     {:title "EYEO"               :from #inst "2013-06" :to #inst "2013-06" :type :talk}
+     {:title "Reasons"            :from #inst "2014-02" :to #inst "2014-02" :type :talk}
+     {:title "Reasons"            :from #inst "2014-09" :to #inst "2014-09" :type :talk}])
+
+  (def item-type-colors {:project "#0af" :oss "#63f" :workshop "#9f0" :talk "#f9f"})
+
+  (def month (* (/ (+ (* 3 365) 366) 4.0 12.0) 24 60 60 1000))
+  (def year  (* month 12))
+
+  (defn ->epoch [^java.util.Date d] (.getTime d))
+
+  ;; http://stackoverflow.com/questions/9001384/java-date-rounding
+  (defn round-to-year
+    [epoch]
+    (let [cal (GregorianCalendar.)]
+      (doto cal
+        (.setTimeInMillis (long epoch))
+        (.add Calendar/MONTH 6)
+        (.set Calendar/MONTH 0)
+        (.set Calendar/DAY_OF_MONTH 1)
+        (.set Calendar/HOUR 0)
+        (.set Calendar/MINUTE 0)
+        (.set Calendar/SECOND 0)
+        (.set Calendar/MILLISECOND 0))
+      (.get cal Calendar/YEAR)))
+
+  (defn make-gradient
+    [[id base]]
+    (let [base (col/as-hsva (col/css base))]
+      (svg/linear-gradient
+       id {} [0 base] [1 (col/adjust-saturation base -0.66)])))
+
+  (defn item-range [i] [(->epoch (:from i)) (->epoch (:to i))])
+
+  (defn timeline-spec
+    [type offset]
+    {:values     (if type (filter #(= type (:type %)) items) items)
+     :offset     offset
+     :item-range item-range
+     :attribs    {:fill "white"
+                  :stroke "none"
+                  :font-family "Arial"
+                  :font-size 10}
+     :shape      (viz/labeled-rect-horizontal
+                  {:h         14
+                   :r         7
+                   :min-width 30
+                   :base-line 3
+                   :label     :title
+                   :fill      #(str "url(#" (name (:type %)) ")")})
+     :layout     viz/svg-stacked-interval-plot})
+
+  ;; Create stacked timeline with *all* items
+  (->> {:x-axis (viz/linear-axis
+                 {:domain [(->epoch #inst "2010-09") (->epoch #inst "2015-06")]
+                  :range  [10 950]
+                  :pos    160
+                  :major  year
+                  :minor  month
+                  :label  (viz/default-svg-label round-to-year)})
+        :y-axis (viz/linear-axis
+                 {:domain  [0 9]
+                  :range   [10 160]
+                  :visible false})
+        :grid   {:minor-x true}
+        :data   [(timeline-spec nil 0)]}
+       (viz/svg-plot2d-cartesian)
+       (svg/svg
+        {:width 960 :height 200}
+        (apply svg/defs (map make-gradient item-type-colors)))
+       (svg/serialize)
+       (spit "timeline.svg"))
+#+END_SRC
+
+We can also group items by their =:type= property and arrange them
+separately along the Y-axis. This creates a less compact result, but
+better legibility. The example also shows how to re-use visualization
+spec fragments (via the use of our =timeline-spec= fn).
+
+[[http://media.thi.ng/geom/viz/timeline-separate-3.svg]]
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/timeline.clj :mkdirp yes
+  ;; Create stacked timeline vertically grouped by item type
+  (->> {:x-axis (viz/linear-axis
+                 {:domain [(->epoch #inst "2010-09") (->epoch #inst "2015-06")]
+                  :range  [10 950]
+                  :pos    220
+                  :major  year
+                  :minor  month
+                  :label  (viz/default-svg-label round-to-year)})
+        :y-axis (viz/linear-axis
+                 {:domain  [0 13]
+                  :range   [10 220]
+                  :visible false})
+        :grid   {:minor-x true}
+        :data   [(timeline-spec :project 0)
+                 (timeline-spec :oss 2)
+                 (timeline-spec :workshop 10)
+                 (timeline-spec :talk 11)]}
+       (viz/svg-plot2d-cartesian)
+       (svg/svg
+        {:width 960 :height 245}
+        (apply svg/defs (map make-gradient item-type-colors)))
+       (svg/serialize)
+       (spit "timeline-separate.svg"))
+#+END_SRC
+
+** Heatmap
+
+| [[http://media.thi.ng/geom/viz/hm-rainbow2.svg]]             | [[http://media.thi.ng/geom/viz/hm-orange-blue.svg]]       |
+| :rainbow2 gradient preset                                | :orange-blue gradient preset                                 |
+
+This demo uses procedural gradients provided by [[https://github.com/thi-ng/color/blob/master/src/gradients.org#cosine-based-gradient-generation][thi.ng/color]]. See link
+for list of available presets & how to define new gradients.
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/heatmap.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
+  (require '[thi.ng.color.gradients :as grad])
+  (require '[thi.ng.geom.core :as g])
+  (require '[thi.ng.geom.utils :as gu])
+  (require '[thi.ng.math.noise :as n])
+
+  (def test-matrix
+    (->> (for [y (range 10) x (range 50)] (n/noise2 (* x 0.1) (* y 0.25)))
+         (viz/matrix-2d 50 10)))
+
+  (defn heatmap-spec
+    [id]
+    {:matrix        test-matrix
+     :value-domain  (viz/value-domain-bounds test-matrix)
+     :palette       (->> id (grad/cosine-schemes) (apply grad/cosine-gradient 100))
+     :palette-scale viz/linear-scale
+     :layout        viz/svg-heatmap})
+
+  (defn cartesian-viz
+    [prefix id & [opts]]
+    (->> {:x-axis (viz/linear-axis
+                   {:domain [0 50]
+                    :range [50 550]
+                    :major 10
+                    :minor 5
+                    :pos 280})
+          :y-axis (viz/linear-axis
+                   {:domain      [0 10]
+                    :range       [280 20]
+                    :major       1
+                    :pos         50
+                    :label-dist  15
+                    :label-style {:text-anchor "end"}})
+          :data   [(merge (heatmap-spec id) opts)]}
+         (viz/svg-plot2d-cartesian)
+         (svg/svg {:width 600 :height 300})
+         (svg/serialize)
+         (spit (str prefix "-" (name id) ".svg"))))
+
+  (cartesian-viz "hm" :rainbow2)
+  (cartesian-viz "hm" :orange-blue)
+#+END_SRC
+
+| [[http://media.thi.ng/geom/viz/hmp-yellow-magenta-cyan.svg]] | [[http://media.thi.ng/geom/viz/hmp-green-magenta.svg]] |
+| :yellow-magenta-cyan, polar projection                   | :green-magenta, polar projection                             |
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/heatmap.clj :noweb yes :mkdirp yes :padline no
+  (defn polar-viz
+    [prefix id & [opts]]
+    (->> {:x-axis (viz/linear-axis
+                   {:domain [0 50]
+                    :range [(* 1.1 PI) (* 1.9 PI)]
+                    :major 10
+                    :minor 5
+                    :pos 280})
+          :y-axis (viz/linear-axis
+                   {:domain     [0 10]
+                    :range      [90 280]
+                    :major      5
+                    :pos        (* 1.1 PI)
+                    :major-size 10
+                    :label-dist 20})
+          :origin (v/vec2 300)
+          :data   [(merge (heatmap-spec id) opts)]}
+         (viz/svg-plot2d-polar)
+         (svg/svg {:width 600 :height 320})
+         (svg/serialize)
+         (spit (str prefix "-" (name id) ".svg"))))
+
+  (polar-viz "hmp" :yellow-magenta-cyan)
+  (polar-viz "hmp" :green-magenta)
+#+END_SRC
+
+| [[http://media.thi.ng/geom/viz/hms-rainbow2.svg]] | [[http://media.thi.ng/geom/viz/hmsp-rainbow2.svg]] |
+| :rainbow2 w/ custom shape fn                  | :rainbow2, polar projection, custom shape fn   |
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/heatmap.clj :noweb yes :mkdirp yes :padline no
+  ;; using custom shape function applied for each matrix cell
+  ;; (a circle fitting within the 4 points defining a grid cell)
+  (cartesian-viz "hms" :rainbow2 {:shape viz/circle-cell})
+  (polar-viz "hmsp" :rainbow2 {:shape viz/circle-cell})
+#+END_SRC
+
+** Github commit history
+
+*Note:* This example requires [[https://github.com/Raynes/tentacles][raynes/tentacles 0.3.0]] to be added to
+your project in order to download the commit history of a given
+project.
+
+This example downloads the commit history for this project from GitHub
+and produces a similar activity heatmap as shown on GH user pages
+(each column = 1 week).
+
+Btw. You can use the local repo by switching the lines calling
+=load-commits-fs= and =load-commits-gh=...
+
+[[http://media.thi.ng/geom/viz/commit-history.svg]]
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/hm-github.clj :mkdirp yes :padline no
+  (require '[tentacles.repos :as repos])
+  (require '[thi.ng.ndarray.core :as nd])
+  (require '[clojure.string :as str])
+  (require '[clojure.java.shell :refer [sh]])
+
+  (def day         (* 24 60 60 1000))
+  (def week        (* 7 day))
+  (def fmt-iso8601 (java.text.SimpleDateFormat. "yyyy-MM-dd'T'HH:mm:ssX"))
+  (def fmt-month   (java.text.SimpleDateFormat. "MMM"))
+  (def fmt-year    (java.text.SimpleDateFormat. "yyyy"))
+  (def ->epoch #(try (.getTime (.parse fmt-iso8601 %)) (catch Exception e)))
+
+  (defn month-or-year
+    [from]
+    #(let [d (java.util.Date. (long (+ from (* % week))))]
+       (.format (if (zero? (.getMonth d)) fmt-year fmt-month) d)))
+
+  (defn load-commits-gh
+    [user repo]
+    (prn (str "loading GH commit history: " user "/" repo))
+    (->> (repos/commits user repo {:all-pages true})
+         (map #(->epoch (get-in % [:commit :author :date])))
+         (filter identity)))
+
+  (defn load-commits-fs
+    [repo-path]
+    (->> (sh "git" "log" "--pretty=format:%aI" :dir repo-path)
+         :out
+         str/split-lines
+         (map ->epoch)
+         (filter identity)))
+
+  (defn commits-per-week-day
+    [t0 commits]
+    (->> (for [c commits
+               :let [t (- c t0)
+                     w (int (/ t week))
+                     d (int (/ (rem t week) day))]]
+           [w d])
+         (frequencies)
+         (sort-by first)))
+
+  (defn commits->matrix
+    [commits]
+    (let [weeks (inc (- (ffirst (last commits)) (first (ffirst commits))))
+          mat (nd/ndarray :int8 (byte-array (* 7 weeks)) [7 weeks])]
+      (doseq [[[w d] n] commits] (nd/set-at mat d w n))
+      mat))
+
+  (let [commits   (load-commits-fs ".")
+        ;;commits   (load-commits-gh "thi-ng" "geom")
+        [from to] (viz/value-domain-bounds commits)
+        from      (* (long (/ from week)) week)
+        to        (* (inc (long (/ to week))) week)
+        mat       (commits->matrix (commits-per-week-day from commits))
+        weeks     (last (nd/shape mat))
+        max-x     (+ 50 (* weeks 10))]
+    (->> {:x-axis (viz/linear-axis
+                   {:domain [0 weeks]
+                    :range  [50 max-x]
+                    :major  4
+                    :minor  1
+                    :pos    85
+                    :label  (viz/default-svg-label (month-or-year from))})
+          :y-axis (viz/linear-axis
+                   {:domain  [0 7]
+                    :range   [10 80]
+                    :visible false})
+          :data   [{:matrix        mat
+                    :value-domain  [1 (reduce max mat)]
+                    :palette       (->> :yellow-red (grad/cosine-schemes) (apply grad/cosine-gradient 100))
+                    :palette-scale viz/linear-scale
+                    :layout        viz/svg-heatmap
+                    :shape         viz/circle-cell}]}
+         (viz/svg-plot2d-cartesian)
+         (svg/svg {:width (+ 70 max-x) :height 120})
+         (svg/serialize)
+         (spit "commit-history.svg")))
+#+END_SRC
+
+** Contour plot
+
+| [[http://media.thi.ng/geom/viz/contours-4.svg]]     | [[http://media.thi.ng/geom/viz/contours-outline-4.svg]]     |
+| linear X/Y filled                               | linear X/Y outline                                      |
+| [[http://media.thi.ng/geom/viz/contours-log-4.svg]] | [[http://media.thi.ng/geom/viz/contours-log-outline-4.svg]] |
+| log X/Y filled                                  | log X/Y outline                                         |
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/contours.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
+  (require '[thi.ng.math.noise :as n])
+
+  (def viz-spec
+    {:x-axis (viz/linear-axis
+              {:domain [0 63]
+               :range  [50 550]
+               :major  8
+               :minor  2
+               :pos    550})
+     :y-axis (viz/linear-axis
+              {:domain      [0 63]
+               :range       [550 50]
+               :major       8
+               :minor       2
+               :pos         50
+               :label-dist  15
+               :label-style {:text-anchor "end"}})
+     :data   [{:matrix       (->> (for [y (range 64) x (range 64)] (n/noise2 (* x 0.06) (* y 0.06)))
+                                  (viz/contour-matrix 64 64))
+               :levels       (range -1 1 0.05)
+               :value-domain [-1.0 1.0]
+               :attribs      {:fill "none" :stroke "#0af"}
+               :layout       viz/svg-contour-plot}]})
+
+  (def viz-spec-log
+    (merge viz-spec
+           {:x-axis (viz/log-axis
+                     {:domain [0 64]
+                      :range [50 550]
+                      :base 2
+                      :pos 555})
+            :y-axis (viz/log-axis
+                     {:domain      [0 64]
+                      :range       [550 50]
+                      :base        2
+                      :pos         45
+                      :label-dist  15
+                      :label-style {:text-anchor "end"}})}))
+
+  (def fill-attribs {:fill (col/rgba 0.0 0.66 1.0 0.05) :stroke "#fff"})
+
+  (defn export-viz
+    [viz path] (->> viz (svg/svg {:width 600 :height 600}) (svg/serialize) (spit path)))
+
+  (->> {"contours-outline.svg"     [viz-spec false]
+        "contours.svg"             [viz-spec true]
+        "contours-log-outline.svg" [viz-spec-log false]
+        "contours-log.svg"         [viz-spec-log true]}
+       (run!
+        (fn [[path [spec fill?]]]
+          (-> (if fill? (assoc-in spec [:data 0 :attribs] fill-attribs) spec)
+              (viz/svg-plot2d-cartesian)
+              (export-viz path)))))
+#+END_SRC
+
+An animated variation with polar coordinates:
+
+[[http://media.thi.ng/geom/viz/contours-polar.gif]]
+
+** GIS terrain contours w/ elevation color gradient
+
+| [[http://media.thi.ng/geom/viz/terrain-24.svg]] | [[http://media.thi.ng/geom/viz/terrain-18.svg]] |
+| contour delta = 24                          | contour delta = 18                          |
+| [[http://media.thi.ng/geom/viz/terrain-12.svg]] | [[http://media.thi.ng/geom/viz/terrain-6.svg]]  |
+| contour delta = 12                          | contour delta = 6                           |
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/terrain.clj :noweb yes :mkdirp yes :padline no
+  <<example-imports>>
+  (require '[thi.ng.color.gradients :as grad])
+
+  (defn load-image
+    [path]
+    (let [img (javax.imageio.ImageIO/read (java.io.File. path))
+          w   (.getWidth img)
+          h   (.getHeight img)
+          rgb (.getRGB img 0 0 w h (int-array (* w h)) 0 w)]
+      (viz/contour-matrix w h (map #(bit-and % 0xff) rgb))))
+
+  (def viz-spec
+    {:x-axis (viz/linear-axis
+              {:domain [0 79]
+               :range [50 550]
+               :major 8
+               :minor 2
+               :pos 550})
+     :y-axis (viz/linear-axis
+              {:domain      [0 79]
+               :range       [50 550]
+               :major       8
+               :minor       2
+               :pos         50
+               :label-dist  15
+               :label-style {:text-anchor "end"}})
+     :data   [{:matrix          (load-image "../../assets/california-detail-gis.png")
+               :value-domain    [0.0 255.0]
+               :attribs         {:fill "none"}
+               :palette         (->> :orange-blue (grad/cosine-schemes) (apply grad/cosine-gradient 100))
+               :contour-attribs (fn [col] {:stroke col})
+               :layout          viz/svg-contour-plot}]})
+
+  (doseq [res [6 12 18 24]]
+   (->> (assoc-in viz-spec [:data 0 :levels] (range 0 255 res))
+        (viz/svg-plot2d-cartesian)
+        (svg/svg {:width 600 :height 600})
+        (svg/serialize)
+        (spit (str "terrain-" res ".svg"))))
+#+END_SRC

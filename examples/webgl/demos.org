@@ -1,0 +1,790 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#webgl-examples--test-scenes][WebGL examples & test scenes]]
+     - [[#usage][Usage]]
+     - [[#templates-for-namespace-setup][Templates for namespace setup]]
+     - [[#example-1-2d-polygons][Example 1: 2D polygons]]
+     - [[#example-2-colored-mesh][Example 2: Colored mesh]]
+     - [[#example-3-extruded-2d-polygons-with-blinn-phong-shading][Example 3: Extruded 2D polygons with Blinn-Phong shading]]
+     - [[#example-4-unproject--scene-raycasting][Example 4: Unproject & scene raycasting]]
+     - [[#example-5-texture-mapping][Example 5: Texture mapping]]
+     - [[#example-6-fbo--render-to-texture][Example 6: FBO & Render to texture]]
+     - [[#todo-example-morphogen--shadow-mapping][TODO Example: Morphogen & shadow mapping]]
+
+* WebGL examples & test scenes
+** Usage
+
+These examples can be built by running the following commands in the geom root directory:
+
+#+BEGIN_SRC bash
+  ./tangle-all.sh
+  cd babel
+  lein do clean, cljsbuild once prod
+  open index.html
+#+END_SRC
+
+Then in the browser, using the JS console, the demos can be individually launched like:
+
+#+BEGIN_SRC js
+  thi.ng.geom.examples.webgl.ex01.demo()
+#+END_SRC
+
+** Templates for namespace setup
+#+BEGIN_SRC clojure :noweb-ref require-macros
+  (:require-macros
+   [thi.ng.math.macros :as mm])
+#+END_SRC
+
+#+BEGIN_SRC clojure :noweb-ref default-requires
+  [thi.ng.math.core :as m :refer [PI HALF_PI TWO_PI]]
+  [thi.ng.geom.webgl.core :as gl]
+  [thi.ng.geom.webgl.constants :as glc]
+  [thi.ng.geom.webgl.animator :as anim]
+  [thi.ng.geom.webgl.buffers :as buf]
+  [thi.ng.geom.webgl.shaders :as sh]
+  [thi.ng.geom.webgl.utils :as glu]
+  [thi.ng.geom.webgl.glmesh :as glm]
+  [thi.ng.geom.webgl.camera :as cam]
+  [thi.ng.geom.core :as g]
+  [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+  [thi.ng.geom.matrix :as mat :refer [M44]]
+  [thi.ng.geom.aabb :as a]
+  [thi.ng.geom.attribs :as attr]
+  [thi.ng.typedarrays.core :as arrays]
+  [thi.ng.color.core :as col]
+#+END_SRC
+
+#+BEGIN_SRC clojure :noweb-ref stats
+  (defn init-stats
+    []
+    (let [stats (js/Stats.)
+          sdom  (.call (aget stats "getDomElement") stats)]
+      (.appendChild (.-body js/document) sdom)
+      (.setAttribute sdom "class" "stats")
+      stats))
+
+  (defn update-stats
+   [stats]
+   (.call (aget stats "update") stats))
+#+END_SRC
+
+** Example 1: 2D polygons
+
+This demo utilizes the [[file:shaders.org::Basic][basic color shader]] to draw two filled, rotating
+2d polygons. The shader itself is generated based on given parameters
+and the example shows some alternatives:
+
+- =shader1= is requesting to specify the color as a uniform value
+- =shader2= is requesting to specify the color as a vertex attribute
+  and we generate the required attribute buffer in the call to
+  =as-webgl-buffer-spec=.
+
+If we're only after displaying a model with a single color,
+specifying it as shader uniform is much more efficient. However,
+having an attribute buffer allows us to specify colors per vertex and
+hence provides more flexibility.
+
+For both cases we set the =:3d= option to =false= in order to save on
+bandwidth since our polygons are only 2d entities anyhow. Another
+implication of this is that we don't need to specify a view matrix,
+which has to be given for the 3d case though. Please see the above
+link for more discussion about these options.
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex01.cljs :noweb yes :mkdirp yes :padline no
+   (ns thi.ng.geom.examples.webgl.ex01
+     <<require-macros>>
+     (:require
+      <<default-requires>>
+      [thi.ng.geom.webgl.shaders.basic :as basic]
+      [thi.ng.geom.circle :as c]
+      [thi.ng.geom.polygon :as poly]))
+
+   <<stats>>
+
+   (defn ^:export demo
+     []
+     (enable-console-print!)
+     (let [gl        (gl/gl-context "main")
+           view-rect (gl/get-viewport-rect gl)
+           shader1   (sh/make-shader-from-spec gl (basic/make-shader-spec-2d false))
+           shader2   (sh/make-shader-from-spec gl (basic/make-shader-spec-2d true))
+           teeth     20
+           model     (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
+                         (gl/as-webgl-buffer-spec {:normals false :single-color [1 0 0 1]})
+                         (gl/make-buffers-in-spec gl glc/static-draw)
+                         (assoc-in [:uniforms :proj] (gl/ortho view-rect))
+                         (time))
+           stats     (init-stats)]
+       (anim/animate
+        (fn [t frame]
+          (gl/set-viewport gl view-rect)
+          (gl/clear-color-and-depth-buffer gl 1 0.98 0.95 1 1)
+          ;; draw left polygon using color uniform (that's why we need to remove color attrib)
+          (gl/draw-with-shader
+           gl (-> model
+                  (assoc :shader  shader1)
+                  (update-in [:attribs] dissoc :color)
+                  (update-in [:uniforms] merge
+                             {:model (-> M44 (g/translate -0.48 0 0) (g/rotate t))
+                              :color [0 1 1 1]})))
+          ;; draw right polygon using color attribs
+          (gl/draw-with-shader
+           gl (-> model
+                  (assoc :shader shader2)
+                  (assoc-in [:uniforms :model]
+                            (-> M44 (g/translate 0.48 0 0) (g/rotate (- (+ t (/ HALF_PI teeth))))))))
+          (update-stats stats)
+          true))))
+#+END_SRC
+
+** Example 2: Colored mesh
+
+This example demonstrates the basic principle of displaying a mesh
+with vertex attributes. We define a box with different colors for each
+of its 6 sides. The colors must be specified as RGBA using the
+[[http://thi.ng/color][thi.ng/color]] library.
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex02.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.webgl.ex02
+    <<require-macros>>
+    (:require
+     <<default-requires>>
+     [thi.ng.geom.webgl.shaders.basic :as basic]))
+
+  (defn ^:export demo
+    []
+    (let [gl        (gl/gl-context "main")
+          view-rect (gl/get-viewport-rect gl)
+          model     (-> (a/aabb 1)
+                        (g/center)
+                        (g/as-mesh
+                         {:mesh    (glm/indexed-gl-mesh 12 #{:col})
+                          :attribs {:col (->> [[1 0 0] [0 1 0] [0 0 1] [0 1 1] [1 0 1] [1 1 0]]
+                                              (map col/rgba)
+                                              (attr/const-face-attribs))}})
+                        (gl/as-webgl-buffer-spec {})
+                        (cam/apply (cam/perspective-camera {:aspect view-rect}))
+                        (assoc :shader (sh/make-shader-from-spec gl (basic/make-shader-spec-3d true)))
+                        (gl/make-buffers-in-spec gl glc/static-draw))]
+      (anim/animate
+       (fn [t frame]
+         (doto gl
+           (gl/set-viewport view-rect)
+           (gl/clear-color-and-depth-buffer col/WHITE 1)
+           (gl/enable glc/depth-test)
+           (gl/draw-with-shader
+            (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2))))))
+         true))))
+#+END_SRC
+
+Same example as above, only this time using basic lambert shading...
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex02a.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.webgl.ex02a
+    <<require-macros>>
+    (:require
+     <<default-requires>>
+     [thi.ng.geom.webgl.shaders.lambert :as lambert]))
+
+  (defn ^:export demo
+    []
+    (let [gl        (gl/gl-context "main")
+          view-rect (gl/get-viewport-rect gl)
+          model     (-> (a/aabb 1)
+                        (g/center)
+                        (g/as-mesh
+                         {:mesh    (glm/indexed-gl-mesh 12 #{:col :fnorm})
+                          :attribs {:col (->> [[1 0 0] [0 1 0] [0 0 1] [0 1 1] [1 0 1] [1 1 0]]
+                                              (map col/rgba)
+                                              (attr/const-face-attribs))}})
+                        (gl/as-webgl-buffer-spec {})
+                        (cam/apply (cam/perspective-camera {:aspect view-rect}))
+                        (assoc :shader (sh/make-shader-from-spec gl lambert/shader-spec-attrib))
+                        (gl/make-buffers-in-spec gl glc/static-draw))]
+      (anim/animate
+       (fn [t frame]
+         (doto gl
+           (gl/set-viewport view-rect)
+           (gl/clear-color-and-depth-buffer col/WHITE 1)
+           (lambert/draw
+            (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2))))))
+         true))))
+#+END_SRC
+
+** Example 3: Extruded 2D polygons with Blinn-Phong shading
+
+Using the same model setup as in example #1, this time we extrude the
+polygon and render the resulting 3D mesh. To better appreciate the
+mesh structure, we make use of the Phong shader and see how to combine
+transformation matrices: Each cog rotates around its own axis, but is
+then also rotated around the global Y axis. This is achieved with
+simple matrix multiplication (=rot= is the global rotation /
+transformation).
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex03.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.webgl.ex03
+    <<require-macros>>
+    (:require
+     <<default-requires>>
+     [thi.ng.geom.webgl.shaders.phong :as phong]
+     [thi.ng.geom.circle :as c]
+     [thi.ng.geom.polygon :as poly]))
+
+  <<stats>>
+
+  (defn ^:export demo
+    []
+    (enable-console-print!)
+    (let [gl        (gl/gl-context "main")
+          view-rect (gl/get-viewport-rect gl)
+          teeth     20
+          model     (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
+                        (g/extrude-shell {:mesh    (glm/indexed-gl-mesh 1000 #{:fnorm})
+                                          :depth   0.1
+                                          :inset   0.025
+                                          :wall    0.015
+                                          :bottom? true})
+                        (gl/as-webgl-buffer-spec {})
+                        (cam/apply (cam/perspective-camera {:aspect view-rect}))
+                        (assoc :shader (sh/make-shader-from-spec gl phong/shader-spec))
+                        (update :uniforms merge
+                                {:lightPos      (vec3 0.1 0 1)
+                                 :ambientCol    0x0e1a4c
+                                 :diffuseCol    0xff3310
+                                 :specularCol   0x99ffff
+                                 :shininess     100
+                                 :wrap          0
+                                 :useBlinnPhong true})
+                        (gl/make-buffers-in-spec gl glc/static-draw)
+                        (time))
+          stats     (init-stats)]
+      (anim/animate
+       (fn [t frame]
+         (let [rot (g/rotate-y M44 (* t 0.5))
+               tx1 (m/* rot (-> M44
+                                (g/translate -0.46 0 0)
+                                (g/rotate-y 0.3)
+                                (g/rotate-z t)))
+               tx2 (m/* rot (-> M44
+                                (g/translate 0.46 0 0)
+                                (g/rotate-y -0.3)
+                                (g/rotate-z (- (+ t (/ HALF_PI teeth))))))]
+           (doto gl
+             (gl/set-viewport view-rect)
+             (gl/clear-color-and-depth-buffer 1 0.98 0.95 1 1)
+             (phong/draw (assoc-in model [:uniforms :model] tx1))
+             (phong/draw
+              (-> model
+                  (assoc-in [:uniforms :model] tx2)
+                  (assoc-in [:uniforms :diffuseCol] 0x33ff80))))
+           (update-stats stats)
+           true)))))
+#+END_SRC
+
+** Example 4: Unproject & scene raycasting
+
+Live version: http://demo.thi.ng/geom/webgl/unproject/
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex04.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.webgl.ex04
+    <<require-macros>>
+    (:require
+     <<default-requires>>
+     [thi.ng.geom.plane :as pl]
+     [thi.ng.geom.webgl.shaders.phong :as phong]))
+
+  (enable-console-print!)
+
+  (defn raycast
+    [p eye ground back]
+    (let [dir (m/- p eye)
+          i1  (:p (g/intersect-ray ground eye dir))
+          i2  (:p (g/intersect-ray back eye dir))]
+      (if (< (g/dist-squared eye i1) (g/dist-squared eye i2)) i1 i2)))
+
+  (defn ^:export demo
+    []
+    (let [gl         (gl/gl-context "main")
+          view-rect  (gl/get-viewport-rect gl)
+          shader     (sh/make-shader-from-spec gl phong/shader-spec)
+          cam        (cam/perspective-camera
+                      {:eye (vec3 1 2 6)
+                       :target (vec3 0 0.6 0)
+                       :aspect view-rect
+                       :far 10})
+          size       3
+          ground-y   -0.55
+          uniforms   {:model     M44
+                      :shininess 1000
+                      :lightPos  (vec3 -1 2 0)}
+          box        (-> (a/aabb 1)
+                         (g/center)
+                         (g/as-mesh {:mesh (glm/indexed-gl-mesh 12 #{:fnorm})})
+                         (gl/as-webgl-buffer-spec {})
+                         (gl/make-buffers-in-spec gl glc/static-draw)
+                         (assoc :shader shader :uniforms (assoc uniforms :diffuseCol [1 0 1])))
+          ground     (pl/plane-with-point (vec3 0 ground-y 0) v/V3Y)
+          back       (pl/plane-with-point (vec3 0 0 (* -0.5 size)) v/V3Z)
+          planes     (-> (g/as-mesh back {:mesh (glm/indexed-gl-mesh 4 #{:fnorm}) :size size})
+                         (g/translate (vec3 0 (+ (* 0.5 size) ground-y) 0))
+                         (g/into (g/as-mesh ground {:size size}))
+                         (gl/as-webgl-buffer-spec {})
+                         (gl/make-buffers-in-spec gl glc/static-draw)
+                         (assoc :shader shader :uniforms uniforms))
+          state      (volatile! {:mpos (g/centroid view-rect) :update-ray true})
+          update-pos #(vswap! state assoc
+                              :mpos (vec2 (.-clientX %) (.-clientY %))
+                              :update-ray true)]
+      (.addEventListener js/window "mousemove" update-pos)
+      (.addEventListener js/window "touchmove" #(do (.preventDefault %) (update-pos (aget (.-touches %) 0))))
+      (anim/animate
+       (fn [t frame]
+         (let [cam  (cam/set-view cam {:eye #(g/rotate-y % (Math/sin t))})
+               isec (if (:update-ray @state)
+                      (let [p (-> (vec3 (:mpos @state) 0)
+                                  (mat/unproject-point (m/invert (m/* (:proj cam) (:view cam))) view-rect)
+                                  (raycast (:eye cam) ground back))]
+                        (vswap! state assoc :isec p :update-ray false) p)
+                      (:isec @state))]
+           (doto gl
+             (gl/set-viewport view-rect)
+             (gl/clear-color-and-depth-buffer 0.52 0.5 0.5 1 1)
+             (phong/draw (cam/apply planes cam))
+             (phong/draw (-> box
+                             (cam/apply cam)
+                             (assoc-in [:uniforms :model] (g/translate M44 isec))))))
+         true))
+      state))
+#+END_SRC
+
+** Example 5: Texture mapping
+
+Live version: http://demo.thi.ng/geom/webgl/texcube/
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex05.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.webgl.ex05
+    <<require-macros>>
+    (:require
+     <<default-requires>>))
+
+  (enable-console-print!)
+
+  (def shader-spec
+    {:vs "void main() {
+      vUV = uv;
+      gl_Position = proj * view * model * vec4(position, 1.0);
+      }"
+     :fs "void main() {
+      gl_FragColor = texture2D(tex, vUV);
+      }"
+     :uniforms {:model    [:mat4 M44]
+                :view     :mat4
+                :proj     :mat4
+                :tex      :sampler2D}
+     :attribs  {:position :vec3
+                :uv       :vec2}
+     :varying  {:vUV      :vec2}
+     :state    {:depth-test true}})
+
+  (defn ^:export demo
+    []
+    (let [gl        (gl/gl-context "main")
+          view-rect (gl/get-viewport-rect gl)
+          model     (-> (a/aabb 1)
+                        (g/center)
+                        (g/as-mesh
+                         {:mesh    (glm/indexed-gl-mesh 12 #{:uv})
+                          :attribs {:uv (attr/face-attribs (attr/uv-cube-map-v 256 false))}})
+                        (gl/as-webgl-buffer-spec {})
+                        (cam/apply (cam/perspective-camera {:eye (vec3 0 0 0.5) :fov 90 :aspect view-rect}))
+                        (assoc :shader (sh/make-shader-from-spec gl shader-spec))
+                        (gl/make-buffers-in-spec gl glc/static-draw))
+          tex-ready (volatile! false)
+          tex       (buf/load-texture
+                     gl {:callback (fn [tex img] (vreset! tex-ready true))
+                         :src      "dev-resources/cubev.png"
+                         :flip     false})]
+      (anim/animate
+       (fn [t frame]
+         (when @tex-ready
+           (gl/bind tex 0)
+           (doto gl
+             (gl/set-viewport view-rect)
+             (gl/clear-color-and-depth-buffer col/WHITE 1)
+             (gl/draw-with-shader
+              (assoc-in model [:uniforms :model]
+                        (-> M44 (g/rotate-x PI) (g/rotate-y (* t 2)))))))
+         true))))
+#+END_SRC
+
+Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/webgl/ptf-knot3/
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex05a.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.webgl.ex05a
+    <<require-macros>>
+    (:require
+     <<default-requires>>
+     [thi.ng.geom.circle :as c]
+     [thi.ng.geom.ptf :as ptf]
+     [thi.ng.glsl.core :as glsl :include-macros true]
+     [thi.ng.glsl.vertex :as vertex]
+     [thi.ng.glsl.lighting :as light]
+     [thi.ng.glsl.fog :as fog]
+     [thi.ng.color.gradients :as grad]
+     ))
+
+  (enable-console-print!)
+
+  (def shader-spec
+    {:vs (->> "void main() {
+                  vUV = uv + vec2(0, time * 0.025);
+                  vPos = (view * model * vec4(position, 1.0)).xyz;
+                  vNormal = surfaceNormal(normal, normalMat);
+                  vLightDir = (view * vec4(lightPos, 1.0)).xyz - vPos;
+                  gl_Position = proj * vec4(vPos, 1.0);
+                }"
+              (glsl/glsl-spec [vertex/normal])
+              (glsl/assemble))
+     :fs (->> "void main() {
+                  vec3 n = normalize(vNormal);
+                  vec3 v = normalize(-vPos);
+                  vec3 l = normalize(vLightDir);
+                  float NdotL = max(0.0, dot(n, l));
+                  vec3 specular = Ks * beckmannSpecular(l, v, n, m);
+                  vec3 att = lightCol / pow(length(vLightDir), lightAtt);
+                  vec3 diff = texture2D(tex, vUV).xyz;
+                  vec3 col = att * NdotL * ((1.0 - s) * diff + s * specular) + Ka * diff;
+                  float fog = fogLinear(length(vPos), 1.0, 7.5);
+                  col = mix(col, Kf, fog);
+                  gl_FragColor = vec4(col, 1.0);
+                }"
+              (glsl/glsl-spec [fog/linear fog/exp light/beckmann-specular])
+              (glsl/assemble))
+     :uniforms {:model     :mat4
+                :view      :mat4
+                :proj      :mat4
+                :normalMat :mat4
+                :tex       :sampler2D
+                :Ks        [:vec3 [1 1 1]]
+                :Ka        [:vec3 [0.0 0.0 0.3]]
+                :Kf        [:vec3 [0.0 0.0 0.1]]
+                :m         [:float 0.1]
+                :s         [:float 0.9]
+                :lightCol  [:vec3 [200 80 40]]
+                :lightPos  [:vec3 [0 0 5]]
+                :lightAtt  [:float 3.0]
+                :time      :float}
+     :attribs  {:position :vec3
+                :normal   :vec3
+                :uv       :vec2}
+     :varying  {:vUV      :vec2
+                :vPos     :vec3
+                :vNormal  :vec3
+                :vLightDir :vec3}
+     :state    {:depth-test true}})
+
+  (defn cinquefoil
+    [t]
+    (let [t  (* t m/TWO_PI)
+          pt (* 2.0 t)
+          qt (* 5.0 t)
+          qc (+ 3.0 (Math/cos qt))]
+      (v/vec3 (* qc (Math/cos pt)) (* qc (Math/sin pt)) (Math/sin qt))))
+
+  (defn knot-simple
+    []
+    (-> (mapv cinquefoil (butlast (m/norm-range 400)))
+        (ptf/sweep-mesh
+         (g/vertices (c/circle 0.5) 20)
+         {:mesh    (glm/gl-mesh 16800 #{:fnorm :uv})
+          :attribs {:uv attr/uv-tube}
+          :align?  true
+          :loop?   true})))
+
+  (defn knot-nested
+    [nums numt]
+    (-> (mapv cinquefoil (m/norm-range 400))
+        (ptf/compute-frames)
+        (ptf/align-frames)
+        (ptf/sweep-strand-mesh
+         #(+ 0.5 (* 0.5 (Math/sin (* 8 TWO_PI (/ % 400.0)))))
+         8 7 (g/vertices (c/circle 0.05) 8)
+         {:mesh    (glm/gl-mesh 65536 #{:fnorm :uv})
+          :attribs {:uv attr/uv-tube}
+          :align?  true})))
+
+  (defn gradient-texture
+    [gl w h opts]
+    (let [canv (.createElement js/document "canvas")
+          ctx  (.getContext canv "2d")
+          cols (apply grad/cosine-gradient h (:rainbow1 grad/cosine-schemes))]
+      (set! (.-width canv) w)
+      (set! (.-height canv) h)
+      (set! (.-strokeStyle ctx) "none")
+      (loop [y 0, cols cols]
+        (if cols
+          (let [c (first cols)
+                c (if (< (mod y 16) 8)
+                    (col/adjust-brightness c -0.75)
+                    c)]
+            (set! (.-fillStyle ctx) @(col/as-css c))
+            (.fillRect ctx 0 y w 1)
+            (recur (inc y) (next cols)))
+          (buf/make-canvas-texture gl canv opts)))))
+
+  (defn ^:export demo
+    []
+    (let [gl        (gl/gl-context "main")
+          view-rect (gl/get-viewport-rect gl)
+          model     (-> (knot-simple)
+                        #_(knot-nested 8 7)
+                        (gl/as-webgl-buffer-spec {})
+                        (cam/apply (cam/perspective-camera {:eye (vec3 0 0 5) :fov 90 :aspect view-rect}))
+                        (assoc :shader (sh/make-shader-from-spec gl shader-spec))
+                        (gl/make-buffers-in-spec gl glc/static-draw)
+                        (time))
+          tex       (gradient-texture gl 4 1024 {:wrap [glc/clamp-to-edge glc/repeat]})]
+      (anim/animate
+       (fn [t frame]
+         (gl/bind tex 0)
+         (doto gl
+           (gl/set-viewport view-rect)
+           (gl/clear-color-and-depth-buffer 0.0 0.0 0.1 1 1)
+           (gl/draw-with-shader
+            (-> model
+                (update :uniforms assoc
+                        :time t
+                        :m (+ 0.21 (* 0.2 (Math/sin (* t 0.5))))
+                        :model (-> M44 (g/rotate-x (* t 0.36)) (g/rotate-y t)))
+                (gl/inject-normal-matrix :model :view :normalMat))))
+         true))))
+#+END_SRC
+
+** Example 6: FBO & Render to texture
+
+Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/webgl/fbo-rtt2/
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex06.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.webgl.ex06
+    <<require-macros>>
+    (:require
+     <<default-requires>>
+     [thi.ng.geom.sphere :as s]
+     [thi.ng.geom.webgl.shaders.lambert :as lambert]
+     [thi.ng.geom.webgl.shaders.image :as image]
+     [thi.ng.glsl.core :as glsl :include-macros true]))
+
+  (def shader-spec
+    {:vs (glsl/minified
+          "vec3 rotateX(vec3 p, float theta) {
+            float s = sin(theta);
+            float c = cos(theta);
+            return vec3(p.x, p.y * c - p.z * s, p.z * c + p.y * s);
+           }
+
+           vec3 rotateY(vec3 p, float theta) {
+            float s = sin(theta);
+            float c = cos(theta);
+            return vec3(p.x * c + p.z * s, p.y, p.z * c - p.x * s);
+           }
+
+           vec3 rotateZ(vec3 p, float theta) {
+            float s = sin(theta);
+            float c = cos(theta);
+            return vec3(p.x * c - p.y * s, p.y * c + p.x * s, p.z);
+           }
+
+           void main() {
+            vUV = uv;
+            vec3 p = rotateZ(position, position.z * sin(time) + time);
+            gl_Position = proj * view * model * vec4(p, 1.0);
+           }")
+     :fs "void main() { gl_FragColor = texture2D(tex, vUV); }"
+     :uniforms {:model    [:mat4 M44]
+                :view     :mat4
+                :proj     :mat4
+                :tex      [:sampler2D 0]
+                :time     :float}
+     :attribs  {:position :vec3
+                :uv       :vec2}
+     :varying  {:vUV      :vec2}
+     :state    {:depth-test true}})
+
+  (defn ^:export demo
+    []
+    (enable-console-print!)
+    (let [gl             (gl/gl-context "main")
+          view-rect      (gl/get-viewport-rect gl)
+          main-shader    (sh/make-shader-from-spec gl shader-spec)
+          lambert-shader (sh/make-shader-from-spec gl lambert/shader-spec-attrib)
+          fbo-size       512
+          fbo-tex        (buf/make-texture
+                          gl {:width  fbo-size
+                              :height fbo-size
+                              :filter glc/linear
+                              :wrap   glc/clamp-to-edge})
+          fbo            (-> (buf/make-fbo gl)
+                             (gl/bind)
+                             (gl/set-fbo-color-texture fbo-tex)
+                             (gl/set-fbo-depth-buffer (buf/make-depth-buffer gl fbo-size))
+                             (gl/unbind))
+          ov-quad        (-> (image/make-shader-spec
+                              gl {:state    {:tex   fbo-tex
+                                             :blend false}
+                                  :viewport view-rect
+                                  :width    128
+                                  :height   128}))
+          model1         (-> (s/sphere 1)
+                             (g/as-mesh
+                              {:mesh    (glm/gl-mesh 64 #{:col :fnorm})
+                               :attribs {:col (fn [_ _ v _] (col/rgba (m/madd (m/normalize v) 0.5 0.5)))}
+                               :res     6})
+                             (gl/as-webgl-buffer-spec {})
+                             (cam/apply (cam/perspective-camera {:eye (vec3 0 0 3) :aspect 1.0}))
+                             (assoc :shader lambert-shader)
+                             (gl/make-buffers-in-spec gl glc/static-draw))
+          model2         (-> (s/sphere 2.5)
+                             (g/as-mesh
+                              {:mesh    (glm/gl-mesh 2048 #{:uv})
+                               :attribs {:uv attr/uv-faces}
+                               :res     32})
+                             (gl/as-webgl-buffer-spec {})
+                             (cam/apply (cam/perspective-camera {:fov 90 :aspect view-rect}))
+                             (assoc :shader main-shader)
+                             (gl/make-buffers-in-spec gl glc/static-draw))]
+
+      (anim/animate
+       (fn [t frame]
+         ;; render pass #1: Render to FBO
+         (gl/bind fbo)
+         (doto gl
+           (gl/set-viewport 0 0 fbo-size fbo-size)
+           (gl/clear-color-and-depth-buffer col/BLACK 1)
+           (lambert/draw
+            (assoc-in model1 [:uniforms :model]
+                      (-> M44 (g/rotate-x t) (g/rotate-y (* t 2))))))
+         (gl/unbind fbo)
+
+         ;; render pass #2: Render with FBO as texture
+         (gl/bind fbo-tex)
+         (doto gl
+           (gl/set-viewport view-rect)
+           (gl/clear-color-and-depth-buffer 0.8 0.8 0.8 1 1)
+           (gl/draw-with-shader
+            (update model2 :uniforms merge
+                    {:model (-> M44 (g/rotate-x (* t -0.25)) (g/rotate-y (* t -0.45)))
+                     :time  t})))
+         (gl/unbind fbo-tex)
+
+         ;; render pass #3: Draw FBO texture as 2D image
+         (image/draw gl ov-quad)
+
+         true))))
+#+END_SRC
+
+** TODO Example: Morphogen & shadow mapping                        :noexport:
+
+#+BEGIN_SRC clojure
+ ;;:tangle ../../babel/test/thi/ng/geom/webgl/example07.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.webgl.example07
+    <<require-macros>>
+    (:require
+     <<default-requires>>
+     [thi.ng.geom.webgl.shaders.shadow :as shadow]
+     [thi.ng.geom.webgl.shaders.image :as image]
+     [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.basicmesh :refer [basic-mesh]]
+     [thi.ng.morphogen.core :as mg]))
+
+  <<stats>>
+
+  (defn mg-hex-sphere
+    []
+    (let [hex           (mg/apply-recursively (mg/reflect :dir :e) 5 [1] 1)
+          reflected-hex (mg/reflect :dir :n :out [{} hex])
+          inject        #(-> hex
+                             (assoc-in (mg/child-path [1 1 0]) %)
+                             (assoc-in (mg/child-path [1 1 1 1 0]) %))
+          seed-clone    (mg/reflect
+                         :dir :s :out [{} (inject reflected-hex)])
+          tree          (mg/reflect
+                         :dir :s :out [(inject seed-clone) (inject reflected-hex)])]
+      (-> (mg/seed (mg/sphere-lattice-seg 6 0.25 0.0955 0.2))
+          (mg/walk tree)
+          (mg/union-mesh (basic-mesh))
+          (g/transform (-> M44 (g/rotate-x (- HALF_PI)) (g/scale 0.5))))))
+
+  (defn ^:export demo
+    []
+    (enable-console-print!)
+    (let [gl           (gl/gl-context "main")
+          light-shader (sh/make-shader-from-spec gl shadow/light-pass-spec)
+          cam-shader   (sh/make-shader-from-spec gl shadow/cam-pass-spec)
+          mesh         (mg-hex-sphere)
+          room         (-> (a/aabb 5)
+                           (g/center (vec3 0 2.4 0))
+                           (g/as-mesh)
+                           (g/flip))
+          mesh         (g/into mesh room)
+          model        (-> mesh
+                           (gl/as-webgl-buffer-spec {})
+                           (gl/make-buffers-in-spec gl glc/static-draw))
+          ov-quad      (image/make-shader-spec gl)
+          view-rect    (gl/get-viewport-rect gl)
+          cam-proj     (gl/perspective 45 view-rect 0.1 100.0)
+          light-proj   (gl/perspective 45 1 0.01 100)
+          light-fbo    (shadow/init-light-fbo gl 512)
+          stats        (init-stats)]
+
+      (anim/animate
+       (fn [t frame]
+         (let [y          (m/map-interval (Math/sin (* t 0.5)) -1 1 0 3)
+               cam-view   (-> (vec3 0 y 2)
+                              (g/rotate-y (* t 0.4))
+                              (mat/look-at (vec3 0 0 0) (vec3 0 1 0)))
+               model-tx   (-> M44 (g/translate 0 0 0) (g/rotate-x (* 0 0.15)))
+               cone-angle (m/map-interval (Math/cos (* t 0.3)) -1 1 30 90)
+               lr         (* (m/map-interval (Math/cos (* t 0.7)) -1 1 -0.85 0.85) PI)
+               light-view (mat/look-at (g/rotate-y (vec3 0 2.4 2.4) lr) (vec3 0 0 0) (vec3 0 1 0))
+               light-rot  (mat/matrix44->matrix33-rot light-view)]
+
+           (shadow/draw-light-pass
+            gl light-fbo
+            #(buf/draw
+              gl (assoc model
+                   :shader  light-shader
+                   :attribs (select-keys (:attribs model) [:position])
+                   :uniforms {:model model-tx
+                              :view  light-view
+                              :proj  light-proj})))
+           (gl/set-viewport gl view-rect)
+           (gl/clear-color-buffer gl 0.08 0.1 0.12 1.0)
+           (shadow/draw-cam-pass
+            gl (:tex light-fbo)
+            (fn [uniforms]
+              (buf/draw
+               gl (assoc model
+                    :shader   cam-shader
+                    :uniforms (assoc uniforms
+                                :model     model-tx
+                                :view      cam-view
+                                :proj      cam-proj
+                                :lightView light-view
+                                :lightProj light-proj
+                                :lightRot  light-rot
+                                :coneAngle cone-angle)))))
+
+           (gl/disable gl glc/depth-test)
+           (gl/disable gl glc/cull-face)
+           (image/draw
+            gl (assoc ov-quad
+                 :viewport view-rect
+                 :pos [(m/map-interval (Math/sin t) -1 1 0 512) 352]
+                 :width 128
+                 :height 128))
+
+           (update-stats stats)
+           ;; keep animating...
+           true)))))
+#+END_SRC

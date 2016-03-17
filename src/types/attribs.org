@@ -1,0 +1,115 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeomattribs][thi.ng.geom.attribs]]
+     - [[#attribute-generation--application][Attribute generation & application]]
+     - [[#attribute-generation][Attribute generation]]
+         - [[#uv-texture-coordinates][UV texture coordinates]]
+             - [[#cube][Cube]]
+             - [[#tube][Tube]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
+* thi.ng.geom.attribs
+
+This namespace provides vertex attribute generators and utilities used
+by various other geom namespaces to simplify the creation of
+attributed meshes.
+
+** Attribute generation & application
+
+#+BEGIN_SRC clojure :noweb-ref gen
+  (defn face-attribs
+    "Vertex attribute generator using given seq of attribs. The seq
+    should contain at least the same number of elements as there are
+    faces to be generated. Each item itself is a vector of attrib
+    values (in vertex order) to be assigned to each vertex. Returns
+    generator fn."
+    [fattribs] (fn [fid vid _ _] (-> fattribs (nth fid) (nth vid))))
+
+  (defn const-face-attribs
+    "Similar to face-attribs fn, but for attributes which are constant
+    for all vertices of a single face. Takes a seq of attrib values and
+    returns generator fn."
+    [fattribs] (fn [fid _ _ _] (nth fattribs fid)))
+#+END_SRC
+
+#+BEGIN_SRC clojure :noweb-ref gen
+  (defn generate-face-attribs
+    "Takes a vector of face vertices, face id, a map of vertex attribute
+    generator fns and an options arg passed to the attribute generator
+    fns. Returns 2-elem vector of [verts vert-attribs]. The generator
+    fns themselves take these 4 args and should return the attribute for
+    a single vertex: face-id, vertex-id, vertex, opts (a map)."
+    [verts face-id attribs opts]
+    [verts
+     (when (seq attribs)
+       (reduce-kv
+        (fn [acc k f] (assoc acc k (map-indexed #(f face-id % %2 opts) verts)))
+        {} attribs))])
+#+END_SRC
+
+** Attribute generation
+*** UV texture coordinates
+**** Cube
+#+BEGIN_SRC clojure :noweb-ref attribs
+  (defn uv-rect-for-size
+    ([w] (uv-rect-for-size w w))
+    ([w h] (uv-rect-for-size w w 0.0 0.0 1.0 1.0))
+    ([w h x y uw vh]
+     (let [u  (* 0.5 (/ uw w))
+           v  (* 0.5 (/ vh h))
+           iu (- uw u)
+           iv (- vh v)]
+       (mapv #(m/+ % x y) [(vec2 u v) (vec2 iu v) (vec2 iu iv) (vec2 u iv)]))))
+
+  (defn uv-cube-map-h
+    ([h] (uv-cube-map-h h false))
+    ([h pow2?]
+     (let [w  (* h 6)
+           tw (if pow2? (m/ceil-pow2 w) w)
+           fw (/ w tw 6.0)]
+       (mapv #(uv-rect-for-size h h (* % fw) 0.0 fw 1.0) (range 6)))))
+
+  (defn uv-cube-map-v
+    ([h] (uv-cube-map-v h false))
+    ([w pow2?]
+     (let [h  (* w 6)
+           th (if pow2? (m/ceil-pow2 h) h)
+           fh (/ h th 6.0)]
+       (mapv #(uv-rect-for-size w w 0.0 (* % fh) 1.0 fh) (range 6)))))
+
+  (def uv-default-rect [(vec2) (vec2 1.0 0.0) (vec2 1.0) (vec2 0.0 1.0)])
+  (def uv-faces (face-attribs (repeat uv-default-rect)))
+#+END_SRC
+
+**** Tube
+
+Tube UV mapping is currently only supported by the following implementations:
+
+- [[./ptf.org][PTF sweep-mesh]]
+
+#+BEGIN_SRC clojure :noweb-ref attribs
+  (defn uv-tube
+    [_ vid _ {:keys [u v du dv]}]
+    (case (int vid)
+      0 (v/vec2 u v)
+      1 (v/vec2 (+ u du) v)
+      2 (v/vec2 (+ u du) (+ v dv))
+      (v/vec2 u (+ v dv))))
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/attribs.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.attribs
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.matrix :refer [M44]]
+     [thi.ng.math.core :as m]))
+
+  <<gen>>
+
+  <<attribs>>
+#+END_SRC
