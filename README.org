@@ -8,11 +8,11 @@
 * Contents                                                         :toc_3_gh:
  - [[#about-the-project][About the project]]
      - [[#overview][Overview]]
-     - [[#leiningen-coordinates][Leiningen coordinates]]
-         - [[#latest-stable][Latest stable]]
          - [[#main-features-non-exhaustive-list][Main features (non-exhaustive list)]]
          - [[#main-geometry-types][Main geometry types]]
          - [[#api-scope][API scope]]
+     - [[#leiningen-coordinates][Leiningen coordinates]]
+         - [[#latest-stable][Latest stable]]
      - [[#example-usage][Example usage]]
      - [[#project-structure][Project structure]]
          - [[#core][core]]
@@ -51,13 +51,6 @@ iteration/rewrite cycle.
 
 This project is part of the [[https://github.com/thi-ng/][thi.ng]] collection of Clojure &
 Clojurescript libraries.
-
-** Leiningen coordinates
-*** Latest stable
-
-#+BEGIN_SRC clojure
-  [thi.ng/geom "0.0.908"]
-#+END_SRC
 
 *** Main features (non-exhaustive list)
 
@@ -136,6 +129,12 @@ rendering using [[http://luxrender.net][Luxrender]].
 Furthermore, providing all functionality under a common API for both
 Clojure & Clojurescript, makes it trivial to offload heavy operations
 (e.g. large mesh processing) to the server side.
+
+** Leiningen coordinates
+*** Latest stable
+#+BEGIN_SRC clojure
+  [thi.ng/geom "0.0.908"]
+#+END_SRC
 
 ** Example usage
 
