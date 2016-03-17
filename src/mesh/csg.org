@@ -2,6 +2,7 @@
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeommeshcsg][Namespace: thi.ng.geom.mesh.csg]]
+     - [[#guidance--known-issues][Guidance & known issues]]
      - [[#type-definitions][Type definitions]]
      - [[#helper-functions][Helper functions]]
      - [[#public-api][Public API]]
@@ -15,6 +16,36 @@ early implementation of csg.js and has been ported to Clojure and the
 geometry types of this library. Meanwhile several additions & changes
 have been made to address both performance & resulting quality of
 meshes.
+
+** Guidance & known issues
+
+Only fully closed meshes (i.e. enclosing solid volumes) can be used
+for CSG operations, or else results will be undefined.
+
+As with many other polygon based CSG implementations, this one uses a
+Binary Space Partitioning (BSP) tree, constructed from all facets of
+the input meshes. Therefore it's best to keep meshes fairly
+simple/small and avoid too many randomly aligned planes in the
+geometry.
+
+Many resulting meshes after a CSG operation will lose their
+"watertightness" feature and will exhibit so called T-Junctions. Such
+meshes usually cause issues with later mesh processing (e.g.
+subdivisions) and also cannot be directly used for 3D printing without
+repair. In this case, use the =repair-tjunctions= function in the
+=geom.mesh.ops= namespace as postprocessing step.
+
+In some cases a CSG operation might fail and produce a stack overflow
+error, either caused by too complex input meshes and/or floating point
+precision errors (especially for CLJS). In the latter case, you can
+try to remedy these by adjusting the scale (in magnitudes) of your
+geometry and/or wrapping the entirety of your CSG calls in a =binding=
+form to use a custom \epsilon value.
+
+#+BEGIN_SRC clojure
+  (binding [thi.ng.math.core/*eps* 1e-3]
+    ...)
+#+END_SRC
 
 ** Type definitions
 #+BEGIN_SRC clojure :noweb-ref types
@@ -182,8 +213,7 @@ meshes.
   (defn mesh->csg
     [m]
     (->> (g/faces m true)
-         (map first)
-         (map (fn [f] (csg-polygon f nil)))
+         (map #(-> % first (csg-polygon nil)))
          (csg-node nil)))
 
   (defn csg->mesh
