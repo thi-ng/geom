@@ -2,12 +2,13 @@
 
 * Contents                                                         :toc_4_gh:
  - [[#namespace-thinggeommeshops][Namespace: thi.ng.geom.mesh.ops]]
-     - [[#mesh-cleanup-utilities][Mesh cleanup utilities]]
+     - [[#cleanup--repair-utilities-for-gmesh-types][Cleanup & repair utilities for GMesh types]]
+         - [[#repair-t-junctions][Repair T-Junctions]]
      - [[#namespace-declaration][Namespace declaration]]
 
 * Namespace: thi.ng.geom.mesh.ops                                       :fix:
 
-** Mesh cleanup utilities
+** Cleanup & repair utilities for GMesh types
 
 #+BEGIN_SRC clojure :noweb-ref ops
   (defn find-in-tree
@@ -118,6 +119,64 @@
        m (keys vertices))))
 #+END_SRC
 
+*** Repair T-Junctions
+
+#+BEGIN_SRC clojure :noweb-ref t-junctions
+  (defn edges-without-v
+    "Takes gmesh and vertex, returns lazyseq of all edges NOT related to v."
+    [m v] (filter #(not (% v)) (g/edges m)))
+
+  (defn dist-to-edge
+    "Takes a vertex and edge, returns distance between v & e."
+    [v e]
+    (let [[a b] (seq e)
+          coeff (gu/closest-point-coeff v a b)]
+      (if (m/in-range? 1e-6 0.999999 coeff)
+        (g/dist v (m/mix a b coeff))
+        m/INF+)))
+
+  (defn t-junction?
+    "Takes gmesh and a vertex. Returns a vector, describing a T-junction
+    edge/face pair (or nil, if vertex is properly connected)"
+    [m v]
+    (let [edges (get m :edges)]
+      (->> (edges-without-v m v)
+           (map (fn [e] [v e (dist-to-edge v e)]))
+           (filter #(m/delta= (peek %) 0.0))
+           (mapcat (fn [[v e]] (map (fn [f] [v e f]) (get edges e))))
+           set
+           first)))
+
+  (defn t-junctions
+    "Takes gmesh and returns lazyseq of t-junctions (each a 3-elem
+    vector of [vertex edge face])."
+    [m]
+    (sequence (comp (map #(t-junction? m %)) (filter identity)) (g/vertices m)))
+
+  (defn split-tface
+    "Takes a vertex, edge and face (triangle) to be split. Returns
+    vector of 2 new faces."
+    [v e fverts]
+    (let [[a b] (seq e)
+          c     (first (remove e fverts))
+          [a b] (if (pos? (m/dot (gu/ortho-normal fverts) (gu/ortho-normal a v c))) [a b] [b a])]
+      [[[a v c]] [[v b c]]]))
+
+  (defn repair-tjunctions
+    "Takes a gmesh, finds all t-junction? and repairs them by
+    introducing new edges/faces. Returns updated mesh."
+    [m]
+    (->> m
+         t-junctions
+         (reduce
+          (fn [m [v e f]]
+            (->> m
+                 (g/vertices f)
+                 (split-tface v e)
+                 (g/into (g/remove-face m f))))
+          m)))
+#+END_SRC
+
 ** Namespace declaration
 
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/mesh/ops.cljc :noweb yes :mkdirp yes :padline no
@@ -137,4 +196,6 @@
      [clojure.set :as set]))
 
   <<ops>>
+
+  <<t-junctions>>
 #+END_SRC
