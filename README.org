@@ -4,18 +4,22 @@
 * Contents                                                         :toc_4_gh:
  - [[#about-the-project][About the project]]
      - [[#overview][Overview]]
-         - [[#geometric-entities][Geometric entities]]
-         - [[#geometry-operations][Geometry operations]]
+     - [[#leiningen-coordinates][Leiningen coordinates]]
+         - [[#latest-stable][Latest stable]]
+         - [[#main-features-non-exhaustive-list][Main features (non-exhaustive list)]]
+         - [[#main-geometry-types][Main geometry types]]
          - [[#api-scope][API scope]]
      - [[#example-usage][Example usage]]
-     - [[#library-module-structure][Library module structure]]
-         - [[#geom-core][geom-core]]
-         - [[#geom-types][geom-types]]
-         - [[#geom-meshops][geom-meshops]]
-         - [[#geom-physics][geom-physics]]
-         - [[#geom-svg][geom-svg]]
-         - [[#geom-voxel][geom-voxel]]
-         - [[#geom-webgl][geom-webgl]]
+     - [[#project-structure][Project structure]]
+         - [[#srccorecore][[[./src/core/][core]]]]
+         - [[#srctypestypes][[[./src/types/][types]]]]
+         - [[#srcutilsutils][[[./src/utils/][utils]]]]
+         - [[#srcmeshmesh][[[./src/mesh/][mesh]]]]
+         - [[#srcphysicsphysics][[[./src/physics/][physics]]]]
+         - [[#srcsvgsvg][[[./src/svg/][svg]]]]
+         - [[#srcvizviz][[[./src/viz/][viz]]]]
+         - [[#srcvoxelvoxel][[[./src/voxel/][voxel]]]]
+         - [[#srcwebglwebgl][[[./src/webgl/][webgl]]]]
      - [[#status][Status]]
  - [[#project-definition][Project definition]]
      - [[#building--testing-this-project][Building & testing this project]]
@@ -53,34 +57,65 @@
      - [[#license][License]]
 
 * About the project
+
+[[./assets/svo-d7.jpg]]
+
+Join the chat at: [[https://gitter.im/thi-ng/geom?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge][https://badges.gitter.im/Join%20Chat.svg]]
+
 ** Overview
 
-*Note:* This library relies on the new
-conditional reader syntax of recent Clojure & Clojurescript versions
-and therefore is *not compatible with Clojure versions < 1.7.0*...
+Comprehensive and modular geometry & visualization toolkit for
+Clojure/ClojureScript. Developed in a literate programming style and
+in active, regular development since late 2011, currently in its 4th
+iteration/rewrite cycle.
 
 This project is part of the [[https://github.com/thi-ng/][thi.ng]] collection of Clojure &
-Clojurescript libraries. It constitutes the current chapter-in-writing
-in a long, ongoing quest to create a comprehensive, cross-platform,
-yet easy-to-use API for 2D/3D geometry operations, both common and
-more niché. Since geometry is fundamental to so many aspects of design
-production, as with its Java based predecessor [[http://toxiclibs.org][toxiclibs]], the
-objective is *not* to produce a graphics engine for games or other
-specific use cases, but aims to provide geometry related functionality
-in a minimal, modular and as re-usable as possible context, thus
-making it easy to integrate into a wide number of scenarios: from
-architecture, digital fabrication to data visualization, generative
-design in general. We attempt to realise this goal by defining almost
-all operations as [[file:core.org][polymorphic protocols]] (currently approx. 50 of
-them). These are implemented to different extends by the various basic
-[[file:types.org][entities/types]] and together form a small domain-specific language
-(whilst remaining fully extensible) to easily create, transform,
-visualise & export geometry. At the core of this DSL is an extensive
-(and still growing) set of vector, matrix & quaternion
-types/operations, which the rest of the library is built on,
-currently:
+Clojurescript libraries.
 
-*** Geometric entities
+** Leiningen coordinates
+*** Latest stable
+
+#+BEGIN_SRC clojure
+  [thi.ng/geom "0.0.908"]
+#+END_SRC
+
+*** Main features (non-exhaustive list)
+
+- Comprehensive & optimized 2d/3d vector & matrix algebra / transformations
+- Vector swizzling
+- Unified, easy-to-learn core API defined via ~50 polymorphic protocols
+- 35+ custom (mainly immutable) geometry types implementing core protocols
+- Surface area, circumference & volume calculations for all implemented types
+- 2D/3D intersection checks (vs. point, line, ray, shapes)
+- Access entities as graph-like structures (vertices/edges)
+- 2D/3D platonic entity to 3D polygon mesh conversion (w/ many options)
+- 2D shape extrusions as 3D mesh (solid or walled)
+- Parallel-transport frame sweep mesh generation from points (skinning)
+- Basic insetting of simple 2D polygons (no miter support)
+- Shape subdivision (only lines, triangles, rects, quads, tetrahedrons)
+- Subdivision meshes (Catmull-Clark, Doo-Sabin, Butterfly)
+- 3D Boolean (CSG) operations on meshes (union, difference, intersection)
+- 3D geometry export (PLY, STL, OBJ, OFF formats)
+- 3D mesh repair tools (T-junctions, unify vertices etc.)
+- Lightweight WebGL wrapper, shader, buffer & texture utilities
+- WebGL shader presets based on [[http://thi.ng/shadergraph][thi.ng/shadergraph]]
+- Optimized conversions to WebGL meshes (with attributes, indexed, non-indexed)
+- SVG generation API & optional conversion of geom types
+- Basic SVG =<path>= parsing with different segment types
+- 3D SVG mesh renderer with software facet shader support
+- 2D/3D particle based Verlet Physics with customizable behaviors & constraints
+- Tesselation of simple 2D polygons (no holes)
+- 2D Delaunay triangulation
+- Sutherland-Hodgeman clipping of 2D polygons
+- Boundary sampling (at fixed resolution or uniform distance)
+- 2D convex hull
+- 2D/3D quadtree/octree (mutable) for fast spatial indexing
+- Automatic spline generation from list of points
+- Declararitve 2D data visualization module with various modes (area,
+  bar, line, scatter, contours, stacks etc.)
+...
+
+*** Main geometry types
 
 | *2D*           | *3D*                      |
 |----------------+---------------------------|
@@ -101,46 +136,22 @@ currently:
 |                | Plane                     |
 |                | BasicMesh (polygon soup)  |
 |                | GMesh (navigatable)       |
+|                | GLMesh (WebGL)            |
+|                | IndexedGLMesh (WebGL)     |
 | Point quadtree | Point octree              |
+| VerletPhysics  | VerletPhysics             |
 |                | SVO (experimental)        |
 |                | Isosurface (experimental) |
 
-Once the protocol API is finalized an overview table/graph will show
-which types implement which protocols. For now please consult the
-source code to see which operations are supported.
-
-*** Geometry operations
-
-In addition to these types, the library also implements these common
-operations:
-
-- Automatic spline generation from list of points
-- Parallel-transport frame sweep mesh generation
-- Basic SVG path parsing
-- 2D Delaunay triangulation
-- 2D convex hull
-- Shape extrusion as solid or walled mesh
-- Tesselation of simple 2D polygons (no holes)
-- Basic insetting of simple 2D polygons (no miter support)
-- Sutherland-Hodgeman clipping of 2D polygons
-- Entity area, circumference & volume calculations for all implemented types
-- 2D/3D entity intersection checks (vs. line, ray, shape)
-- 2D/3D entity to mesh conversion (w/ many options)
-- Access entities as graph-like structures (vertices/edges)
-- Entity sampling (at fixed resolution or uniform distance)
-- Entity subdivision (only lines, triangles, rects, quads, tetrahedrons)
-- Subdivision meshes (Catmull-Clark, Doo-Sabin, Butterfly)
-- 3D Boolean operations on meshes (union, difference, intersection)
-- 3D geometry export (PLY, STL, OBJ, OFF formats)
-
 *** API scope
 
-Since the core lib does not provide any display & rendering
-functionality at all, a number of support modules are being worked on,
-incl. WebGL & SVG support via Clojurescript and wrappers & GUI
-libraries for [[http://jogamp.org/jogl/www/][JOGL]] based desktop apps. Together with sister libraries
-like [[https://github.com/thi-ng/luxor][luxor]], it's also possible to generate complete 3D scenes for high
-quality & high resolution rendering using [[http://luxrender.net][Luxrender]].
+Since the core library does only deal with pure "platonic" geometry,
+it doesn't address any display or rendering functionality at all.
+However a number of support modules are provided, incl. WebGL & SVG
+support. 2D/3D shape/mesh exporters are provided as well and together
+with sister libraries like [[https://github.com/thi-ng/luxor][thi.ng/luxor]], it's also possible to
+generate complete 3D scenes for high quality & high resolution offline
+rendering using [[http://luxrender.net][Luxrender]].
 
 Furthermore, providing all functionality under a common API for both
 Clojure & Clojurescript, makes it trivial to offload heavy operations
@@ -148,18 +159,17 @@ Clojure & Clojurescript, makes it trivial to offload heavy operations
 
 ** Example usage
 
-Several small examples are still included in this repo (but will be
-migrated to the demo repo soon):
+Several small examples are still included in this repo under the
+=/examples= directory:
 
-- [[../geom-webgl/src/demo.org][WebGL demos]] (source + live versions)
-- [[../geom-svg/src/examples.org][SVG examples]]
-- [[../geom-types/src/ptf.org][PTF examples]]
-- [[https://github.com/thi-ng/geom/blob/master/geom-voxel/src/examples.org][Voxel examples]]
+- [[./examples/webgl/demos.org][WebGL demos]] (source + links to live versions)
+- [[./examples/svg/demos.org][SVG examples]]
+- [[./examples/types/ptf.org][PTF examples]]
+- [[./examples/voxel/demos.org][Voxel examples]]
 
-Demo repository for all thi.ng libraries:
+[[https://github.com/thi-ng/demos][Demo repository]] for all thi.ng libraries (early stage):
 
-- [[https://github.com/thi-ng/demos][Demo repository]]
-  - [[http://demo.thi.ng/geom/physics/strands.html][SVG physics strands]] (Clojurescript online demo)
+- [[http://demo.thi.ng/geom/physics/strands.html][SVG physics strands]] (Clojurescript online demo)
 
 A preliminary list of other projects using this library:
 
@@ -171,89 +181,87 @@ A preliminary list of other projects using this library:
 - [[http://github.com/thi-ng/morphogen][Morphogen]]
 - [[http://thi.ng/][thi.ng website]]
 
-** Library module structure
+** Project structure
 
-The project has been structured into a number of modules, each
-addressing a different level of abstraction and to group namespaces
-based on functionality. This reduces potential code bloat for CLJS
-applications, but should also make it less daunting for newcomers to
-navigate this quite large project.
+The project was originally structured into a number of separate
+modules, which have now been consolidated.
 
 [[../assets/overview.png]]
 
-*** geom-core
+*** [[./src/core/][core]]
 
-[[../geom-core/src/index.org][module repo]] | [[http://crossclj.info/doc/thi.ng/geom-core/latest/index.html][CrossCLJ info]]
+These namespaces define the core functionality of this library,
+including the approx. 50 protocols and implementations of fundamental
+geometry types/functions like 2d/3d vector algebra, matrices,
+quaternion (+ related convenience constructors & conversions)
 
-This module forms the library's core and is required by all others. It
-defines approx. 50 protocols and provides implementations of
-fundamental geometry types/functions like 2d/3d vector algebra,
-matrices, quaternion (and related convenience constructors &
-conversions) and a number of often needed utility functions to deal
-with point collections, normals, sampling, triangles etc.
+*** [[./src/types/][types]]
 
-*** geom-types
+This directory contains all high-level 2d/3d data types with their
+implementations of the various core protocols. From a user
+perspective, these namespaces defined here provide most of this
+project's core functionality.
 
-[[../geom-types/src/index.org][module repo]] | [[http://crossclj.info/doc/thi.ng/geom-types/latest/index.html][CrossCLJ info]]
+*** [[./src/utils/][utils]]
 
-This module defines all high-level 2d/3d data types and
-implementations of the various core protocols for each. From a user
-perspective this module should be considered part of the core, however
-it's been split out to dramatically reduce code size for use cases
-where only vectors/matrix ops are needed.
+A number of often needed utility functions to deal with point
+collections, normals, path sampling, triangle properties etc. Also
+included here are shape intersection tests, curve subdivisions and 2D
+Delaunay triangulation.
 
-*** geom-meshops
+*** [[./src/mesh/][mesh]]
 
-[[../geom-meshops/src/index.org][module repo]] | [[http://crossclj.info/doc/thi.ng/geom-meshops/latest/index.html][CrossCLJ info]]
+Several tools & operations related to working with 3d meshes, incl.
+I/O, subdivisions, repair / cleaning, CSG / Boolean mesh merge etc.
 
-This module provides several tools & operations related to working
-with meshes, incl. I/O, subdivisions, Delaunay triangulation,
-cleaning, CSG/Boolean mesh merge etc.
+*** [[./src/physics/][physics]]
 
-*** geom-physics
-
-[[../geom-physics/src/index.org][module repo]] | [[http://crossclj.info/doc/thi.ng/geom-physics/latest/index.html][CrossCLJ info]]
-
-This module consists of a simple particle-based physics engine with
-Verlet integration and support for behaviors and constaints, both for
-individual particles and global. Particles can be connected with
-springs of varying stiffness as well as made interdependent using
+This module provides a simple 2d/3d particle-based physics engine with
+Verlet integration and support for custom behaviors and constaints,
+both for individual particles and global. Particles can be connected
+with springs of varying stiffness as well as made interdependent using
 positive or negative force fields (attractors).
 
-*** geom-svg
-
-[[../geom-svg/src/index.org][module repo]] | [[http://crossclj.info/doc/thi.ng/geom-svg/latest/index.html][CrossCLJ info]]
+*** [[./src/svg/][svg]]
 
 A module to help with building SVG based visualizations of geom
 entities using hiccup compatible syntax. Includes a customizable 3D
 mesh renderer w/ software shader support.
 
-*** geom-voxel
+*** [[./src/viz/][viz]]
 
-[[../geom-voxel/src/index.org][module repo]] | [[http://crossclj.info/doc/thi.ng/geom-voxel/latest/index.html][CrossCLJ info]]
+Declarative, highly customizable 2D data visualization module with ~10
+different layout methods, 3 axis types, cartesian and polar domain
+support. Currently SVG only, but planned to be format-independent.
+
+*** [[./src/voxel/][voxel]]
 
 An experimental implementation of a in-memory sparse voxel tree (SVO)
-and related functionality to extract isosurface meshes from the tree.
+and related functionality to extract isosurface polygon meshes from
+the tree.
 
-*** geom-webgl
-
-[[../geom-webgl/src/index.org][module repo]] | [[http://crossclj.info/doc/thi.ng/geom-webgl/latest/index.html][CrossCLJ info]]
+*** [[./src/webgl/][webgl]]
 
 This is a pure CLJS module and provides a common WebGL functionality
 (context creation, shader management & presets, buffer management,
-textures, FBO etc.), as well as a number of conversion & rendering
-functions to simplify the use of types defined in the =geom-types=
-module under CLJS with WebGL.
+textures, FBO etc.), as well as a number of optimized mesh types,
+conversion & rendering functions to simplify the use of other geometry
+types defined in this project for use with WebGL.
 
 ** Status
 
-The project has been in development since late 2011 and is currently
-in its 4th iteration/rewrite cycle. It should still be considered
-BETA quality. On the other hand, the library has already been used
-successfully in several commercial projects over the past 2 years and
-can be considered stable for most use cases.
+The project has been in active, regular development since late 2011
+and is currently in its 4th iteration/rewrite cycle. It should still
+be considered BETA quality. On the other hand, the library is matured
+and has been used successfully in several commercial projects over the
+past 3 years and can be considered stable for most use cases.
 
-A full test suite, website & tutorials are actively being worked on.
+A full test suite, website & tutorials are actively being worked on
+and the various examples are used as test cases as well.
+
+*Note:* This library heavily relies on the conditional reader syntax
+of recent Clojure & Clojurescript versions and therefore is *not
+compatible with Clojure versions < 1.7.0*...
 
 * Project definition
 ** Building & testing this project
