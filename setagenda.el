@@ -1,7 +1,6 @@
 (setq org-agenda-files
       (-mapcat
        (lambda (module)
-         (let ((dir (concat default-directory module "/src/")))
+         (let ((dir (concat default-directory "src/" module "/")))
            (-map (lambda (f) (concat dir f)) (directory-files dir nil "\\.org$"))))
-       (list "geom-core" "geom-types" "geom-meshops" "geom-physics" "geom-svg" "geom-webgl" "")))
-
+       (list "core" "types" "mesh" "physics" "utils" "svg" "viz" "webgl" "")))

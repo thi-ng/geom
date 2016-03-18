@@ -277,17 +277,21 @@ in =tangle.sh=):
   # tangle all modules...
   ./tangle-all.sh
 
-  # ...or just tangle an individual module
+  # tangle a single module
+  ./tangle-module.sh svg
+
+  # ...or just tangle selected files
   ./tangle.sh geom-core/src/*.org geom-core/test/*.org
 
-  # ...or an individual file
+  # ...or individual file
   ./tangle.sh geom-core/src/utils.org
 #+END_SRC
 
 Tangling is the process of extracting & combining source blocks from
 =.org= files into an actual working project/source tree. This project
-currently consists of 30 namespaces and 6800+ lines of code, the
-tangling of which takes approx. 20 secs.
+currently consists of 30+ namespaces and 13,000+ lines of code
+(excluding examples), the tangling of which takes approx. 2 mins on a
+2010 MBP...
 
 Once tangling is complete, you can =cd= into the generated project
 directory of a module (=babel= in this case) and then use =lein= as usual.
@@ -380,7 +384,7 @@ target/geom-<<project-version()>>.js
 **** [[https://github.com/thi-ng/math][thi.ng/math]]
 #+NAME: dep-math
 #+BEGIN_SRC clojure
-[thi.ng/math "0.2.0-SNAPSHOT"]
+[thi.ng/math "0.2.0"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/ndarray/][thi.ng/ndarray]]
