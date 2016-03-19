@@ -511,7 +511,7 @@ for list of available presets & how to define new gradients.
     [id]
     {:matrix        test-matrix
      :value-domain  (viz/value-domain-bounds test-matrix)
-     :palette       (->> id (grad/cosine-schemes) (apply grad/cosine-gradient 100))
+     :palette       (->> id grad/cosine-schemes (grad/cosine-gradient 100))
      :palette-scale viz/linear-scale
      :layout        viz/svg-heatmap})
 
@@ -666,7 +666,7 @@ Btw. You can use the local repo by switching the lines calling
                     :visible false})
           :data   [{:matrix        mat
                     :value-domain  [1 (reduce max mat)]
-                    :palette       (->> :yellow-red (grad/cosine-schemes) (apply grad/cosine-gradient 100))
+                    :palette       (->> :yellow-red grad/cosine-schemes (grad/cosine-gradient 100))
                     :palette-scale viz/linear-scale
                     :layout        viz/svg-heatmap
                     :shape         viz/circle-cell}]}
@@ -778,10 +778,10 @@ An animated variation with polar coordinates:
                :pos         50
                :label-dist  15
                :label-style {:text-anchor "end"}})
-     :data   [{:matrix          (load-image "../../assets/california-detail-gis.png")
+     :data   [{:matrix          (load-image "../assets/california-detail-gis.png")
                :value-domain    [0.0 255.0]
                :attribs         {:fill "none"}
-               :palette         (->> :orange-blue (grad/cosine-schemes) (apply grad/cosine-gradient 100))
+               :palette         (->> :orange-blue grad/cosine-schemes (grad/cosine-gradient 100))
                :contour-attribs (fn [col] {:stroke col})
                :layout          viz/svg-contour-plot}]})
 

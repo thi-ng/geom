@@ -56,7 +56,7 @@ is defined in its own namespace and can be loaded from the REPL via:
       :flags    {:solid true}}))
 
   (def mesh
-    (with-open [in (io/input-stream "../../assets/suzanne.stl")]
+    (with-open [in (io/input-stream "../assets/suzanne.stl")]
       (-> in
           (mio/wrapped-input-stream)
           (mio/read-stl)
