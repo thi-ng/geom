@@ -284,7 +284,7 @@ and will be automatically converted.
        (list
         (line-strip points attribs)
         (if start (start (points 1) (points 0) 0 attribs))
-        (if seg   (map-indexed (fn [i [p q]] (seg p q i attribs)) (d/successive-nth 2 points)))
+        (if seg   (map-indexed (fn [i [p q]] (seg p q i attribs)) (partition 2 1 points)))
         (if end   (end (points (dec n)) (peek points) n attribs))))))
 
   (defn polygon
@@ -450,22 +450,9 @@ Btw. This example can be run from the REPL via this command:
     (as-svg
       [_ opts] (svg/polygon (:points _) opts)))
 
-  ;; CLJS walk differs to clojure's impl and doesn't work for defrecords
-  ;; hence we provide a custom version here...
-
-  (defn walk
-    [inner outer form]
-    (cond
-      (seq? form)    (outer (doall (map inner form)))
-      (vector? form) (outer (mapv inner form))
-      :else          (outer form)))
-
-  (defn postwalk
-    [f form] (walk (partial postwalk f) f form))
-
   (defn all-as-svg
     [form]
-    (postwalk
+    (d/postwalk
      (fn [x] (if (satisfies? svg/ISVGConvert x) (svg/as-svg x (meta x)) x))
      form))
 #+END_SRC
@@ -479,14 +466,14 @@ Btw. This example can be run from the REPL via this command:
     [el attribs] (assoc attribs :key (name (gensym))))
 
   (defn inject-element-attribs
-    "Walks SVG DOM tree with postwalk and applies given function to each
-    element node. The fn takes 2 args: the element itself and its
-    attribute map. The fn's return value will be used as the new
-    attribute map."
+    "Walks SVG DOM tree with thi.ng.dstruct.core/postwalk and applies
+    given function to each element node. The fn takes 2 args: the
+    element itself and its attribute map. The fn's return value will be
+    used as the new attribute map."
     ([root]
      (inject-element-attribs key-attrib-injector root))
     ([f root]
-     (postwalk
+     (d/postwalk
       (fn [x]
         (if (vector? x)
           (let [y (nth x 1)]
@@ -507,7 +494,6 @@ Btw. This example can be run from the REPL via this command:
      [thi.ng.geom.utils :as gu]
      [thi.ng.geom.vector :as v :refer [vec2]]
      [thi.ng.geom.matrix :as mat :refer [M32]]
-     [thi.ng.dstruct.core :as d]
      [thi.ng.math.core :as m]
      [thi.ng.strf.core :as f]
      [thi.ng.color.core :as col]
@@ -534,7 +520,8 @@ Btw. This example can be run from the REPL via this command:
      [thi.ng.math.core :as m]
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.types])
+     [thi.ng.geom.types]
+     [thi.ng.dstruct.core :as d])
     #?(:clj
        (:import
         [thi.ng.geom.types Circle2 Line2 LineStrip2 Polygon2 Rect2 Triangle2])))
