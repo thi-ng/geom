@@ -175,6 +175,35 @@ A preliminary list of other projects using this library:
 The project was originally structured into a number of separate
 modules, which have now been consolidated.
 
+*Important note:* For time reasons, the graph below is still
+reflecting the previous structure (up until v0.0.908) - it will be
+updated ASAP. Several namespaces have been added, migrated, renamed or
+merged:
+
+| *Previous*                       | *Current/new*                 |
+|----------------------------------+-------------------------------|
+| =thi.ng.geom.core.vector=        | =thi.ng.geom.vector=          |
+| =thi.ng.geom.core.matrix=        | =thi.ng.geom.matrix=          |
+| =thi.ng.geom.core.quaternion=    | =thi.ng.geom.quaternion=      |
+| =thi.ng.geom.core.utils=         | =thi.ng.geom.utils=           |
+| =thi.ng.geom.core.macros.vector= | =thi.ng.geom.macros.vector=   |
+| =thi.ng.geom.core.macros.matrix= | =thi.ng.geom.macros.matrix=   |
+| =thi.ng.geom.core.intersect=     | =thi.ng.geom.utils.intersect= |
+| =thi.ng.geom.core.subdiv=        | =thi.ng.geom.utils.subdiv=    |
+| =thi.ng.geom.mesh.delaunay=      | =thi.ng.geom.utils.delaunay=  |
+| =thi.ng.geom.types.utils=        | =thi.ng.geom.utils= (merged)  |
+| =thi.ng.geom.types.utils.ptf=    | =thi.ng.geom.ptf=             |
+|----------------------------------+-------------------------------|
+|                                  | =thi.ng.geom.attribs=         |
+|                                  | =thi.ng.geom.indexedmesh=     |
+|                                  | =thi.ng.geom.meshface=        |
+|                                  | =thi.ng.geom.webgl.camera=    |
+|                                  | =thi.ng.geom.webgl.constants= |
+|                                  | =thi.ng.geom.webgl.glmesh=    |
+
+All examples now share the common ns prefix: =thi.ng.geom.examples.*=
+(sources & docs located in =/examples= dir)
+
 [[./assets/overview.png]]
 
 *** core
