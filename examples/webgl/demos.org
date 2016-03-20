@@ -4,6 +4,7 @@
  - [[#webgl-examples--test-scenes][WebGL examples & test scenes]]
      - [[#usage][Usage]]
      - [[#templates-for-namespace-setup][Templates for namespace setup]]
+         - [[#shared-imports][Shared imports]]
      - [[#example-1-2d-polygons][Example 1: 2D polygons]]
      - [[#example-2-colored-mesh][Example 2: Colored mesh]]
      - [[#example-3-extruded-2d-polygons-with-blinn-phong-shading][Example 3: Extruded 2D polygons with Blinn-Phong shading]]
@@ -31,6 +32,7 @@ Then in the browser, using the JS console, the demos can be individually launche
 #+END_SRC
 
 ** Templates for namespace setup
+*** Shared imports
 #+BEGIN_SRC clojure :noweb-ref require-macros
   (:require-macros
    [thi.ng.math.macros :as mm])
@@ -71,7 +73,7 @@ Then in the browser, using the JS console, the demos can be individually launche
 
 ** Example 1: 2D polygons
 
-This demo utilizes the [[file:shaders.org::Basic][basic color shader]] to draw two filled, rotating
+This demo utilizes the [[../../src/webgl/shaders.org#basic][basic color shader]] to draw two filled, rotating
 2d polygons. The shader itself is generated based on given parameters
 and the example shows some alternatives:
 
@@ -444,7 +446,7 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/
                   vLightDir = (view * vec4(lightPos, 1.0)).xyz - vPos;
                   gl_Position = proj * vec4(vPos, 1.0);
                 }"
-              (glsl/glsl-spec [vertex/normal])
+              (glsl/glsl-spec [vertex/surface-normal])
               (glsl/assemble))
      :fs (->> "void main() {
                   vec3 n = normalize(vNormal);
@@ -459,7 +461,7 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/
                   col = mix(col, Kf, fog);
                   gl_FragColor = vec4(col, 1.0);
                 }"
-              (glsl/glsl-spec [fog/linear fog/exp light/beckmann-specular])
+              (glsl/glsl-spec [fog/fog-linear light/beckmann-specular])
               (glsl/assemble))
      :uniforms {:model     :mat4
                 :view      :mat4
@@ -684,6 +686,8 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
 #+END_SRC
 
 ** TODO Example: Morphogen & shadow mapping                        :noexport:
+
+*Note:* This example needs updating and doesn't work at the moment...
 
 #+BEGIN_SRC clojure
  ;;:tangle ../../babel/test/thi/ng/geom/webgl/example07.cljs :noweb yes :mkdirp yes :padline no

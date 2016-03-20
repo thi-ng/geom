@@ -425,7 +425,7 @@ RGBA colors, however the alpha component is discarded.
     [vs-src]
     {:vs (->> vs-src
               (glsl/glsl-spec-plain
-               [vertex/mvp vertex/normal light/lambert light/lambert-abs])
+               [vertex/mvp vertex/surface-normal light/lambert light/lambert-abs])
               (glsl/assemble))
      :fs "void main(){gl_FragColor=vCol;}"
      :uniforms {:model      [:mat4 M44]
@@ -514,7 +514,7 @@ RGBA colors, however the alpha component is discarded.
   (def shader-spec
     {:vs (glsl/assemble
           (glsl/glsl-spec
-           [vert/normal]
+           [vert/surface-normal]
            "
   <<phong-vs>>"))
      :fs (glsl/assemble
@@ -559,7 +559,7 @@ RGBA colors, however the alpha component is discarded.
   (def shader-spec
     {:vs (glsl/assemble
           (glsl/glsl-spec
-           [vert/normal]
+           [vert/surface-normal]
            "void main() {
               vIncident = view * model * vec4(position, 1.0);
               vNormal = surfaceNormal(normal, normalMat);

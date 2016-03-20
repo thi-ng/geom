@@ -143,15 +143,25 @@ Several small examples are still included in this repo under the
 
 - [[./examples/webgl/demos.org][WebGL demos]] (source + links to live versions)
 - [[./examples/svg/demos.org][SVG examples]]
-- [[./examples/types/ptf.org][PTF examples]]
+- [[./examples/viz/demos.org][Visualization examples]]
+- [[./examples/types/ptf.org][PTF mesh examples]]
 - [[./examples/voxel/demos.org][Voxel examples]]
 
 [[https://github.com/thi-ng/demos][Demo repository]] for all thi.ng libraries (early stage):
 
 - [[http://demo.thi.ng/geom/physics/strands.html][SVG physics strands]] (Clojurescript online demo)
 
+Growing list of [[http://workshop.thi.ng/][thi.ng workshop]] repositories (These workshops are running
+on a monthly basis & internationally):
+
+- [[http://thi.ng/ws-ldn-1][WS-LDN-1]]
+- [[http://thi.ng/ws-ldn-2][WS-LDN-2]]
+- [[http://thi.ng/ws-bln-1][WS-BLN-1]]
+- WS-LDN-5
+
 A preliminary list of other projects using this library:
 
+- [[https://medium.com/@thi.ng/evolutionary-failures-part-1-54522c69be37][HOLO Magazine cover & guest design]]
 - [[https://github.com/postspectacular/devart-codefactory/][Google DevArt Co(de)Factory]]
 - [[https://github.com/jackrusher/geometer/][Geometer]] (by [[https://github.com/jackrusher][Jack Rusher]])
 - [[http://holiday2014.movingbrands.com][MB Home installation]]
@@ -395,7 +405,7 @@ target/geom-<<project-version()>>.js
 
 **** [[http://thi.ng/shadergraph][thi.ng/shadergraph]]
 #+BEGIN_SRC clojure :exports none :noweb-ref dep-shadergraph
-[thi.ng/shadergraph "0.1.1"]
+[thi.ng/shadergraph "0.2.0"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/strf][thi.ng/strf]]
