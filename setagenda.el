@@ -1,6 +1,10 @@
 (setq org-agenda-files
       (-mapcat
-       (lambda (module)
-         (let ((dir (concat default-directory "src/" module "/")))
-           (-map (lambda (f) (concat dir f)) (directory-files dir nil "\\.org$"))))
-       (list "core" "types" "mesh" "physics" "utils" "svg" "viz" "webgl" "")))
+       (lambda (base)
+         (-mapcat
+          (lambda (module)
+            (let ((dir (concat default-directory base "/" module "/")))
+              (if (file-directory-p dir)
+                  (directory-files dir t "\\.org$"))))
+          (list "core" "mesh" "physics" "svg" "types" "utils" "viz" "voxels" "webgl" "")))
+       (list "src" "test" "examples")))
