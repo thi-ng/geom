@@ -40,7 +40,7 @@ which has both the =geom= and =luxor= libs on its classpath.
        (ptf/sweep-mesh
         (mapv cinquefoil (m/norm-range 400))
         (g/vertices (c/circle 0.5) 20)
-        {:align? true})
+        {:align? true :loop? true})
        {:id :knot :bounds (a/aabb 1.5) :target [0 0.5 -2] :rx (- m/THIRD_PI)})
       (lio/serialize-scene "ptf-knot" false)
       (lio/export-scene)
@@ -81,7 +81,7 @@ with different parameters:
 
   (-> (scene/base-scene {:width 640 :height 360})
       (scene/add-main-mesh
-       (ptf/sweep-strand-mesh knot 0.5 10 7 (g/vertices (c/circle 0.1) 20))
+       (ptf/sweep-strand-mesh knot 0.5 10 7 (g/vertices (c/circle 0.1) 20) {:loop? true})
         ;;(ptf/sweep-strand-mesh knot 0.8 6 12 (g/vertices (c/circle 0.1) 20))
        {:id :knot-weave :bounds (a/aabb 1.5) :target [0 0.5 -2] :rx (- m/THIRD_PI)})
       (lio/serialize-scene "ptf-knot-weave" false)
@@ -130,7 +130,7 @@ with different parameters:
 
   (-> (scene/base-scene {:width 640 :height 360})
       (add-meshes
-       (ptf/sweep-strands knot 0.5 10 7 (g/vertices (c/circle 0.1) 20))
+       (ptf/sweep-strands knot 0.5 10 7 (g/vertices (c/circle 0.1) 20) {:loop? true})
        {:tx {:translate [0 0.5 -2] :scale 0.175 :rx -65}})
       (lio/serialize-scene "ptf-knot-weave-spectrum" false)
       (lio/export-scene)

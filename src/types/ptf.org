@@ -14,26 +14,29 @@
 #+BEGIN_SRC clojure :noweb-ref ptf
   (defn compute-tangents
     [points]
-    (let [t (mapv (fn [[p q]] (m/normalize (m/- q p))) (partition 2 1 points))]
-      (conj t (peek t))))
+    (mapv
+     (fn [pair] (m/normalize (m/- (nth pair 1) (first pair))))
+     (partition 2 1 points)))
 
   (defn compute-frame
     [tangents norms bnorms i]
     (let [ii (dec i)
-          p  (tangents ii)
-          q  (tangents i)
+          p  (nth tangents ii)
+          q  (nth tangents i)
           a  (m/cross p q)
           n  (if-not (m/delta= 0.0 (m/mag-squared a))
                (let [theta (Math/acos (m/clamp-normalized (m/dot p q)))]
-                 (g/transform-vector (g/rotate-around-axis M44 (m/normalize a) theta) (norms ii)))
-               (norms ii))]
+                 (g/transform-vector
+                  (g/rotate-around-axis M44 (m/normalize a) theta)
+                  (nth norms ii)))
+               (nth norms ii))]
       [n (m/cross q n)]))
 
   (defn compute-first-frame
     [t]
     (let [t' (m/abs t)
-          i  (if (< (t' 0) (t' 1)) 0 1)
-          i  (if (< (t' 2) (t' i)) 2 i)
+          i  (if (< (v/x t') (v/y t')) 0 1)
+          i  (if (< (v/z t') (nth t' i)) 2 i)
           n  (m/cross t (m/normalize (m/cross t (assoc V3 i 1.0))))]
       [n (m/cross t n)]))
 
@@ -42,11 +45,11 @@
     (let [tangents (compute-tangents points)
           [n b]    (compute-first-frame (first tangents))
           num      (count tangents)]
-      (loop [norms [n], bnorms [b], i 1]
+      (loop [norms (transient [n]), bnorms (transient [b]), i 1]
         (if (< i num)
-          (let [[n b] (compute-frame tangents norms bnorms i)]
-            (recur (conj norms n) (conj bnorms b) (inc i)))
-          [points tangents norms bnorms]))))
+          (let [f (compute-frame tangents norms bnorms i)]
+            (recur (conj! norms (first f)) (conj! bnorms (nth f 1)) (inc i)))
+          [points tangents (persistent! norms) (persistent! bnorms)]))))
 
   (defn align-frames
     [[points tangents norms bnorms]]
@@ -55,24 +58,24 @@
           b     (peek norms)
           theta (-> (m/dot a b) (m/clamp-normalized) (Math/acos) (/ (dec num)))
           theta (if (> (m/dot (first tangents) (m/cross a b)) 0.0) (- theta) theta)]
-      (loop [norms norms, bnorms bnorms, i 1]
+      (loop [norms (transient norms), bnorms (transient bnorms), i 1]
         (if (< i num)
-          (let [t (tangents i)
+          (let [t (nth tangents i)
                 n (-> M44
                       (g/rotate-around-axis t (* theta i))
-                      (g/transform-vector (norms i)))
+                      (g/transform-vector (nth norms i)))
                 b (m/cross t n)]
-            (recur (assoc norms i n) (assoc bnorms i b) (inc i)))
-          [points tangents norms bnorms]))))
+            (recur (assoc! norms i n) (assoc! bnorms i b) (inc i)))
+          [points tangents (persistent! norms) (persistent! bnorms)]))))
 
   (defn sweep-point
     "Takes a path point, a PTF normal & binormal and a profile point.
     Returns profile point projected on path (point)."
     [p n b [qx qy]]
     (vec3
-     (mm/madd qx (n 0) qy (b 0) (p 0))
-     (mm/madd qx (n 1) qy (b 1) (p 1))
-     (mm/madd qx (n 2) qy (b 2) (p 2))))
+     (mm/madd qx (v/x n) qy (v/x b) (v/x p))
+     (mm/madd qx (v/y n) qy (v/y b) (v/y p))
+     (mm/madd qx (v/z n) qy (v/z b) (v/z p))))
 
   (defn sweep-profile
     [profile attribs opts [points _ norms bnorms]]
@@ -87,7 +90,7 @@
           frames     (if loop?
                        (concat (next frames) [(first frames)])
                        (next frames))]
-      (->> frames ;; TODO transducer
+      (->> frames
            (reduce
             (fn [[faces prev i fid] frame]
               (let [curr  (tx frame)
@@ -97,16 +100,16 @@
                                 (partition 2 1 prev)
                                 (partition 2 1 curr))
                                (partition 2)
-                               (map-indexed
-                                (fn [j [a b]]
-                                  (attr/generate-face-attribs
-                                   [(nth a 0) (nth a 1) (nth b 1) (nth b 0)]
-                                   (+ fid j)
-                                   attribs
-                                   (assoc atts :u (double (/ j nprof))))))
-                               (concat faces))]
+                               (into faces
+                                     (map-indexed
+                                      (fn [j [a b]]
+                                        (attr/generate-face-attribs
+                                         [(nth a 0) (nth a 1) (nth b 1) (nth b 0)]
+                                         (+ fid j)
+                                         attribs
+                                         (assoc atts :u (double (/ j nprof))))))))]
                 [faces curr (inc i) (+ fid nprof1)]))
-            [nil (if close? (conj frame0 (first frame0)) frame0) 0 0])
+            [[] (if close? (conj frame0 (first frame0)) frame0) 0 0])
            (first))))
 
   (defn sweep-mesh
@@ -141,11 +144,11 @@
 
   (defn sweep-strand-mesh
     ([base r strands twists profile]
-     (sweep-strand-mesh base r strands twists profile))
+     (sweep-strand-mesh base r strands twists profile nil))
     ([base r strands twists profile opts]
      (let [meshes (sweep-strands base r strands twists profile opts)]
        (if-not (:mesh opts)
-         (reduce g/into (or (:mesh opts) (bm/basic-mesh)))
+         (reduce g/into (or (:mesh opts) (bm/basic-mesh)) meshes)
          (last meshes)))))
 #+END_SRC
 
@@ -156,7 +159,7 @@
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
-     [thi.ng.geom.vector :refer [vec2 vec3 V3]]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3 V3]]
      [thi.ng.geom.matrix :refer [matrix44 M44]]
      [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.basicmesh :as bm]
