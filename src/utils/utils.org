@@ -195,6 +195,17 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
     [points weights]
     (reduce m/+ (map m/* points weights)))
 
+  (defn point-at-index
+    "Takes a seq of points and normalized index (0.0 .. 1.0), returns
+    interpolated point at position t."
+    [points t]
+    (let [n  (dec (count points))
+          t' (* t n)
+          ti (int t')]
+      (if (< ti n)
+        (m/mix (nth points ti) (nth points (inc ti)) (- t' ti))
+        (nth points (if (neg? ti) 0 n)))))
+
   (defn point-at*
     [points idx total t i]
     (let [ct (* t total)
