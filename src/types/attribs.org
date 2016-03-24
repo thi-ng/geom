@@ -4,6 +4,7 @@
  - [[#thinggeomattribs][thi.ng.geom.attribs]]
      - [[#attribute-generation--application][Attribute generation & application]]
      - [[#attribute-generation][Attribute generation]]
+         - [[#generic][Generic]]
          - [[#uv-texture-coordinates][UV texture coordinates]]
              - [[#cube][Cube]]
              - [[#tube][Tube]]
@@ -14,6 +15,17 @@
 This namespace provides vertex attribute generators and utilities used
 by various other geom namespaces to simplify the creation of
 attributed meshes.
+
+This project uses a functional approach for vertex attribute
+generation and relies on attribute generator fns accepting these 4
+arguments, in order:
+
+| *Arg*       | *Type*    | *Description*                                            |
+|-------------+-----------+----------------------------------------------------------|
+| =face-id=   | int       | ID of face currently being generated                     |
+| =vertex-id= | int       | ID of vertex in current face (usually 0-3 or 0-4)        |
+| =vertex=    | vec2/vec3 | the actual vertex                                        |
+| =opts=      | map       | extra data supplied by type to help w/ attrib generation |
 
 ** Attribute generation & application
 
@@ -49,6 +61,32 @@ attributed meshes.
 #+END_SRC
 
 ** Attribute generation
+*** Generic
+
+Several types provide useful additional data to attribute generator
+functions, which sometimes even is directly usable as attribute
+values. E.g. the sphere type's =as-mesh= implementation internally
+requires UV coordinates, which then are also supplied to attribute
+generators and can directly be harnessed for the actual vertex
+attributes.
+
+In general, if available, this kind of additional data is provided via
+a map as the 4th argument to an attribute generator fn. The following
+generic helper function can be used to select such a pre-computed
+attribute value (and optionally transform it).
+
+#+BEGIN_SRC clojure :noweb-ref attribs
+  (defn supplied-attrib
+    "Higher order helper, returns attribute generator fn for types which
+    emit pre-computed values as part of their `as-mesh` impl. Takes
+    attrib key and for each vertex looks up value in opts map (which is
+    supplied by supporting types, e.g. sphere). If called via 2 args,
+    the looked up values will also be passed to transformation fn (2nd
+    arg)."
+    ([attrib] (fn [_ id _ opts] (-> opts (get attrib) (nth id))))
+    ([attrib tx] (fn [_ id _ opts] (-> opts (get attrib) (nth id) tx))))
+#+END_SRC
+
 *** UV texture coordinates
 **** Cube
 #+BEGIN_SRC clojure :noweb-ref attribs
