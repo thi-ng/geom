@@ -829,7 +829,7 @@ RGBA colors, however the alpha component is discarded.
 
 #+BEGIN_SRC glsl :noweb-ref image-fs
   void main() {
-    gl_FragColor = texture2D(tex, vUV);
+    gl_FragColor = texture2D(tex, vUV) * tint;
   }
 #+END_SRC
 
@@ -856,7 +856,8 @@ RGBA colors, however the alpha component is discarded.
   <<image-fs>>")
      :uniforms {:proj       :mat4
                 :model      [:mat4 M44]
-                :tex        [:sampler2D 0]}
+                :tex        [:sampler2D 0]
+                :tint       [:vec4 [1 1 1 1]]}
      :attribs  {:position   :vec2
                 :uv         :vec2}
      :varying  {:vUV        :vec2}
