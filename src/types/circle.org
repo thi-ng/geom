@@ -182,12 +182,18 @@
   g/IMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {:res *resolution*}))
-   ([_ {:keys [mesh res]}]
+   ([_ {:keys [mesh res attribs]}]
+    (let [ires (/ TWO_PI res)
+          aopts {:delta ires :r 0.5}]
       (->> res
            (g/vertices _)
-           (mapv vec3)
+           (map vec3)
            (gu/tessellate-with-point (vec3 (get _ :p)))
-           (g/into (or (bm/basic-mesh))))))
+           (map-indexed
+            (fn [i verts]
+              (attr/generate-face-attribs
+               verts i attribs (assoc aopts :theta (* i ires)))))
+           (g/into (or mesh (bm/basic-mesh)))))))
 #+END_SRC
 
 *** IPolygonConvert
@@ -281,6 +287,7 @@ results, the =transform= implementation returns a [[file:polygon.org][polygon]].
     (:require
      [thi.ng.geom.core :as g :refer [*resolution*]]
      [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.utils :as gu]
      [thi.ng.geom.utils.intersect :as isec]
      [thi.ng.geom.basicmesh :as bm]

@@ -134,18 +134,30 @@ Tube UV mapping is currently only supported by the following implementations:
       1 (v/vec2 (+ u du) v)
       2 (v/vec2 (+ u du) (+ v dv))
       (v/vec2 u (+ v dv))))
+
+  (defn uv-flat-disc
+    [_ vid _ {:keys [theta r] :as opts}]
+    (case (int vid)
+      0 (vec2 0.5)
+      1 (vec2 (mm/madd (Math/cos theta) r 0.5)
+              (mm/madd (Math/sin theta) r 0.5))
+      (let [theta (+ theta (:delta opts))]
+        (vec2 (mm/madd (Math/cos theta) r 0.5)
+              (mm/madd (Math/sin theta) r 0.5)))))
 #+END_SRC
 
 ** Complete namespace definition
 
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/attribs.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.attribs
+    #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.utils :as gu]
      [thi.ng.geom.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.matrix :refer [M44]]
-     [thi.ng.math.core :as m]))
+     [thi.ng.math.core :as m]
+     #?(:clj [thi.ng.math.macros :as mm])))
 
   <<gen>>
 
