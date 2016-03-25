@@ -12,7 +12,7 @@
          - [[#tessellation][Tessellation]]
      - [[#normals][Normals]]
      - [[#triangles][Triangles]]
-     - [[#bounds][Bounds]]
+     - [[#bounds-w-types][Bounds (w/ types)]]
      - [[#meshes][Meshes]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
@@ -412,7 +412,7 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
           (and (>= u 0.0) (>= w 0.0) (m/in-range? 0.0 1.0 v))))))
 #+END_SRC
 
-** Bounds
+** Bounds (w/ types)
 
 #+BEGIN_SRC clojure :noweb-ref t-bounds
   (defn bounding-rect

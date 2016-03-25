@@ -410,11 +410,14 @@
   (as-mesh
    ([_] (g/as-mesh _ {}))
    ([_ {:keys [attribs] :as opts}]
+    (let [bounds (gu/bounding-rect (get _ :points))]
       (->> (tessellate* _)
            (map-indexed
             (fn [i [a b c]]
-              (attr/generate-face-attribs [(vec3 a) (vec3 b) (vec3 c)] i attribs nil)))
-           (g/into (or (:mesh opts) (bm/basic-mesh))))))
+              (attr/generate-face-attribs
+               [(vec3 a) (vec3 b) (vec3 c)] i attribs
+               {:uv [(g/map-point bounds a) (g/map-point bounds b) (g/map-point bounds c)]})))
+           (g/into (or (:mesh opts) (bm/basic-mesh)))))))
 #+END_SRC
 
 *** IPolygonConvert
