@@ -13,6 +13,8 @@
 
 #+BEGIN_SRC clojure :noweb-ref ptf
   (defn compute-tangents
+    "Takes a seq of path points and computes their tangents (pairwise
+    normalized direction vectors)."
     [points]
     (mapv
      (fn [pair] (m/normalize (m/- (nth pair 1) (first pair))))
@@ -33,6 +35,8 @@
       [n (m/cross q n)]))
 
   (defn compute-first-frame
+    "Takes a tangent vector (normalized dir between 2 path points) and
+    returns a suitable normal and binormal vector."
     [t]
     (let [t' (m/abs t)
           i  (if (< (v/x t') (v/y t')) 0 1)
@@ -41,6 +45,8 @@
       [n (m/cross t n)]))
 
   (defn compute-frames
+    "Takes a seq of 3d points and returns vector of its PTFs. The result
+    is a vector of 4 elements: [points tangents normals binormals]."
     [points]
     (let [tangents (compute-tangents points)
           [n b]    (compute-first-frame (first tangents))
@@ -52,6 +58,9 @@
           [points tangents (persistent! norms) (persistent! bnorms)]))))
 
   (defn align-frames
+    "Takes a vector of PTFs (as returned by compute-frames) and
+    re-aligns all frames such that the orientation of the first and last
+    are the same. Returns updated PTFs."
     [[points tangents norms bnorms]]
     (let [num   (count tangents)
           a     (first norms)
@@ -112,15 +121,23 @@
             [[] (if close? (conj frame0 (first frame0)) frame0) 0 0])
            (first))))
 
-  (defn sweep-mesh
+  (defn sweep-profile-faces
+    "Takes a list of path points and seq of 2D profile vertices to sweep
+    along path and optional map of sweep & vertex attrib options.
+    Returns vector of raw faces (each face a vector of [verts attribs])."
     ([points profile]
-     (sweep-mesh points profile nil))
-    ([points profile {:keys [mesh attribs align?] :as opts}]
+     (sweep-profile-faces points profile nil))
+    ([points profile {:keys [attribs align?] :as opts}]
      (let [frames (compute-frames points)
            frames (if align? (align-frames frames) frames)]
-       (->> frames
-            (sweep-profile profile attribs opts)
-            (g/into (or mesh (bm/basic-mesh)))))))
+       (sweep-profile profile attribs opts frames))))
+
+  (defn sweep-mesh
+    "Like sweep-profile-faces, but returns result as mesh."
+    ([points profile]
+     (sweep-mesh points profile nil))
+    ([points profile opts]
+     (g/into (or (:mesh opts) (bm/basic-mesh)) (sweep-profile-faces points profile opts))))
 
   (defn sweep-strand
     [[p _ n b] r theta delta profile opts]
@@ -131,7 +148,7 @@
            #(->> (pfn % %2)
                  (g/as-cartesian)
                  (sweep-point (p %2) (n %2) (b %2)))
-           (range (count p)))
+           (range (dec (count p))))
           (sweep-mesh profile (merge {:align? true} opts)))))
 
   (defn sweep-strands
