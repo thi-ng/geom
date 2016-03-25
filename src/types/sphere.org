@@ -147,33 +147,38 @@ If there's no intersection, the function returns =nil=.
   (as-mesh
    ([_] (g/as-mesh _ {}))
    ([{[x y z] :p r :r} {:keys [mesh res slices stacks attribs] :or {res *resolution*}}]
-    (let [slices (or slices res), stacks (or stacks res)
-          range-u (range slices), range-v (range stacks)]
-      (->> (for [i range-u, j range-v
-                 :let [u (/ i slices)
-                       v (/ j stacks)
-                       u1 (/ (inc i) slices)
-                       v1 (/ (inc j) stacks)
-                       verts [[u v]]
-                       verts (if (pos? j) (conj verts [u1 v]) verts)
-                       verts (if (< j (dec stacks)) (conj verts [u1 v1]) verts)]]
-             (conj verts [u v1]))
-           ;; TODO transduce
-           (map-indexed
-            (fn [i fuvs]
-              (let [fverts (mapv
-                            (fn [uv]
-                              (let [theta (* TWO_PI (uv 0)) ;; FIXME optimize trig
-                                    phi (* PI (uv 1))
-                                    st (Math/sin theta) ct (Math/cos theta)
-                                    sp (Math/sin phi) cp (Math/cos phi)]
-                                (vec3
-                                 (+ (mm/mul ct sp r) x)
-                                 (mm/madd cp r y)
-                                 (+ (mm/mul st sp r) z))))
-                            fuvs)]
-                (attr/generate-face-attribs fverts i attribs {:uv fuvs}))))
-           (g/into (or mesh (bm/basic-mesh)))))))
+    (let [slices  (or slices res)
+          stacks  (or stacks res)
+          rsl     (m/norm-range slices)
+          rst     (m/norm-range stacks)
+          st      (#?(:clj double-array :cljs ta/float32) (map #(Math/sin (* TWO_PI %)) rsl))
+          ct      (#?(:clj double-array :cljs ta/float32) (map #(Math/cos (* TWO_PI %)) rsl))
+          sp      (#?(:clj double-array :cljs ta/float32) (map #(Math/sin (* PI %)) rst))
+          cp      (#?(:clj double-array :cljs ta/float32) (map #(Math/cos (* PI %)) rst))
+          iu      (/ 1.0 slices)
+          iv      (/ 1.0 stacks)
+          stacks' (dec stacks)]
+      (loop [acc (transient []), fid 0, i 0, j 0]
+        (if (< i slices)
+          (let [ii (inc i)
+                verts [[i j]]
+                verts (if (pos? j) (conj verts [ii j]) verts)
+                verts (if (< j (dec stacks)) (conj verts [ii (inc j)]) verts)
+                verts (conj verts [i (inc j)])
+                fverts (mapv
+                        (fn [[u v]]
+                          (vec3
+                           (+ (mm/mul (aget ct u) (aget sp v) r) x)
+                           (mm/madd (aget cp v) r y)
+                           (+ (mm/mul (aget st u) (aget sp v) r) z)))
+                        verts)
+                face  (attr/generate-face-attribs
+                       fverts fid attribs
+                       {:uv (mapv #(vec2 (* iu (first %)) (* iv (nth % 1))) verts)})]
+            (recur (conj! acc face) (inc fid) ii j))
+          (if (< j stacks')
+            (recur acc fid 0 (inc j))
+            (g/into (or mesh (bm/basic-mesh)) (persistent! acc))))))))
 #+END_SRC
 
 *** IProximity
@@ -250,18 +255,20 @@ If there's no intersection, the function returns =nil=.
 
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/sphere.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.sphere
-    #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
+    #?(:cljs
+       (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g :refer [*resolution*]]
      [thi.ng.geom.utils :as gu]
-     [thi.ng.geom.vector :as v :refer [vec3]]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.utils.intersect :as isec]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.types :as types]
      [thi.ng.xerror.core :as err]
      [thi.ng.math.core :as m :refer [TWO_PI PI *eps*]]
-     #?(:clj [thi.ng.math.macros :as mm]))
+     #?(:clj [thi.ng.math.macros :as mm]
+        :cljs [thi.ng.typedarrays.core :as ta]))
     #?(:clj
        (:import
         [thi.ng.geom.types AABB Sphere])))
