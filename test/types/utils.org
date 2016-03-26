@@ -5,7 +5,7 @@
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn bounds=
-    [a b] (and (m/delta= (:p a) (:p b)) (m/delta= (:size a) (:size b))))
+    [a b] (and (m/delta= (get a :p) (get b :p)) (m/delta= (get a :size) (get b :size))))
 #+END_SRC
 
 ** Main

@@ -134,16 +134,16 @@ Special cases:
   (defn set-uniform
     [shader id val]
     (if-let [u-spec (get-in shader [:uniforms id])]
-      ((:setter u-spec) val)
+      ((get u-spec :setter) val)
       (warn "Unknown shader uniform: " id)))
 
   (defn apply-default-uniforms
     [shader uniforms]
     (->> (keys uniforms)
-         (apply dissoc (:uniforms shader))
+         (apply dissoc (get shader :uniforms))
          (transduce
-          (filter #(:default (val %)))
-          (completing #(set-uniform shader (key %2) (:default (val %2))))
+          (filter #(-> % val (get :default)))
+          (completing #(set-uniform shader (key %2) (-> %2 val (get :default))))
           nil)))
 #+END_SRC
 
@@ -799,7 +799,7 @@ RGBA colors, however the alpha component is discarded.
     [^WebGLRenderingContext gl {:keys [fbo tex]} draw-fn]
     (gl/bind fbo)
     (doto gl
-      (gl/set-viewport 0 0 (:width tex) (:height tex))
+      (gl/set-viewport 0 0 (get tex :width) (get tex :height))
       (gl/clear-color-buffer 1 1 1 1)
       (gl/clear-depth-buffer 1)
       (gl/enable glc/depth-test)
@@ -815,7 +815,7 @@ RGBA colors, however the alpha component is discarded.
       (gl/cull-faces glc/back))
     (gl/bind tex 0)
     (draw-fn {:lightDepthTex 0
-              :lightDepthSize [(:width tex) (:height tex)]}))
+              :lightDepthSize [(get tex :width) (get tex :height)]}))
 #+END_SRC
 
 *** 2D Image
@@ -891,7 +891,7 @@ RGBA colors, however the alpha component is discarded.
 
   (defn draw
     [^WebGLRenderingContext gl {:keys [viewport pos width height] :as spec}]
-    (let [[vw vh] (:size (or viewport (gl/get-viewport-rect gl)))
+    (let [[vw vh] (get (or viewport (gl/get-viewport-rect gl)) :size)
           x       (m/map-interval (nth pos 0) 0 vw -1 1)
           y       (m/map-interval (nth pos 1) 0 vh -1 1)
           s       (vec2 (* 2.0 (/ width vw)) (* 2.0 (/ height vh)))

@@ -32,7 +32,7 @@
   (defn z-map-faces
     [faces]
     (mapv
-     (fn [[f f' n']] [(:z (gu/centroid f')) f f' n'])
+     (fn [[f f' n']] [(v/z (gu/centroid f')) f f' n'])
      faces))
 
   (defn z-sort-faces
@@ -69,7 +69,7 @@
      [thi.ng.geom.svg.core :as svg]
      [thi.ng.geom.svg.shaders :as shader]
      [thi.ng.geom.utils :as gu]
-     [thi.ng.geom.vector :refer [vec3 V3Z]]
+     [thi.ng.geom.vector :as v :refer [vec3 V3Z]]
      [thi.ng.geom.matrix :as mat :refer [M44]]))
 
   <<projection>>

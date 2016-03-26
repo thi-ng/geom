@@ -61,7 +61,7 @@ quad.
     the end point lying on AB (the first line given). Returns nil if there
     is no intersection (i.e. the given lines are parallel or zero length)."
     [a b c d n1 n2]
-    (:a (gu/closest-line-between (m/+ a n1) (m/+ b n1) (m/+ c n2) (m/+ d n2))))
+    (get (gu/closest-line-between (m/+ a n1) (m/+ b n1) (m/+ c n2) (m/+ d n2)) :a))
 
   (defn inset-quad
     "Takes a vector of four points defining a convex quad and an inset
@@ -117,7 +117,7 @@ quad.
 
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
   <<lob-geom-center(type="thi.ng.geom.types.Quad3",vtype="vec3")>>
-  (centroid [_] (gu/centroid (:points _)))
+  (centroid [_] (gu/centroid (get _ :points)))
 #+END_SRC
 
 *** ICircumference                                              :usetemplate:
@@ -197,15 +197,15 @@ than 1.0.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IVertexAccess
   (vertices
-   [_] (:points _))
+   [_] (get _ :points))
   g/IEdgeAccess
   (edges
    [{[a b c d] :points}] [[a b] [b c] [c d] [d a]])
   g/IGraph
   (vertex-neighbors
-   [_ v] (d/neighbors (vec3 v) (:points _)))
+   [_ v] (d/neighbors (vec3 v) (get _ :points)))
   (vertex-valence
-   [_ v] (if ((set (:points _)) v) 2 0))
+   [_ v] (if ((set (get _ :points)) v) 2 0))
 #+END_SRC
 
 *** IInset
@@ -213,7 +213,7 @@ than 1.0.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IInset
   (inset
-   [_ inset] (thi.ng.geom.types.Quad3. (inset-quad (:points _) inset)))
+   [_ inset] (thi.ng.geom.types.Quad3. (inset-quad (get _ :points) inset)))
 #+END_SRC
 
 *** TODO IIntersect
@@ -238,8 +238,8 @@ A quad's mesh representation is simply a quad mesh with a single face.
    ([_] (g/as-mesh _ {}))
    ([_ opts]
     (g/add-face
-     (or (:mesh opts) (bm/basic-mesh))
-     (attr/generate-face-attribs (:points _) 0 (:attribs opts) opts))))
+     (or (get opts :mesh) (bm/basic-mesh))
+     (attr/generate-face-attribs (get _ :points) 0 (get opts :attribs) opts))))
 #+END_SRC
 
 *** TODO IPointMap
@@ -265,7 +265,7 @@ https://www.garagegames.com/community/forums/viewthread/76960/1#comment-543505
                 (* v2 (/ dbc (+ dad dbc))))]
       (vec2 u* v*)))
   (unmap-point
-    [_ p] (gu/map-bilinear (:points _) p))
+    [_ p] (gu/map-bilinear (get _ :points) p))
 #+END_SRC
 
 *** IProximity
@@ -283,7 +283,7 @@ https://www.garagegames.com/community/forums/viewthread/76960/1#comment-543505
   (random-point
    [{p :points}] (gu/point-at (m/random) (conj p (first p))))
   (random-point-inside
-   [_] (gu/map-bilinear (:points _) (vec2 (m/random) (m/random))))
+   [_] (gu/map-bilinear (get _ :points) (vec2 (m/random) (m/random))))
   (sample-uniform
    [{p :points} udist include-last?]
    (gu/sample-uniform udist include-last? (conj p (first p))))
@@ -338,7 +338,7 @@ function returns a lazyseq of triangles of the subdivided quad.
     (->> (g/subdivide _ opts)
          (sequence
           (comp
-           (mapcat #(tess-fn (:points %)))
+           (mapcat #(tess-fn (get % :points)))
            (map #(thi.ng.geom.types.Triangle3. %)))))))
 #+END_SRC
 

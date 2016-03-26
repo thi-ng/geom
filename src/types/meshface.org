@@ -54,14 +54,14 @@
         (mapv #(get idx %) vertices)))
     g/IAttributeAccess
     (attribs [_ mesh]
-      (let [mattr (:attribs mesh)]
+      (let [mattr (get mesh :attribs)]
         (reduce-kv
          (fn [acc k v]
-           (let [idx (-> mattr k :id->v)]
-             (assoc acc k (if (sequential? v) (mapv idx v) (idx v)))))
+           (let [idx (-> mattr (get k) (get :id->v))]
+             (assoc acc k (if (sequential? v) (mapv #(get idx %) v) (get idx v)))))
          {} attribs)))
     (attribs [_ mesh attr]
-      (let [idx (-> mesh :attribs attr :id->v)
+      (let [idx  (-> mesh (get :attribs) (get attr) (get :id->v))
             aval (attribs attr)]
         (if (sequential? aval) (mapv idx attribs) (idx aval))))
     g/IRawAccess

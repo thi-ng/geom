@@ -145,7 +145,7 @@ required control points. This only works for non-closed curves, though.
   g/IVertexAccess
   (vertices
    ([_] (g/vertices _ *resolution*))
-   ([_ res] (sample-with-res res true (:points _))))
+   ([_ res] (sample-with-res res true (get _ :points))))
   g/IEdgeAccess
   (edges
    ([_] (d/successive-nth 2 (g/vertices _ *resolution*)))
@@ -187,9 +187,9 @@ required control points. This only works for non-closed curves, though.
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
   g/ISample
   (point-at
-   [_ t] (gu/point-at t (:points _) nil))
+   [_ t] (gu/point-at t (get _ :points) nil))
   (random-point
-   [_] (gu/point-at (m/random) (:points _) nil))
+   [_] (gu/point-at (m/random) (get _ :points) nil))
   (random-point-inside
    [_] (g/random-point _))
   (sample-uniform
@@ -212,7 +212,7 @@ required control points. This only works for non-closed curves, though.
   g/IVertexAccess
   (vertices
    ([_] (g/vertices _ *resolution*))
-   ([_ res] (sample-with-res res true (:points _))))
+   ([_ res] (sample-with-res res true (get _ :points))))
   g/IEdgeAccess
   (edges
    ([_] (d/successive-nth 2 (g/vertices _ *resolution*)))
@@ -254,9 +254,9 @@ required control points. This only works for non-closed curves, though.
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   g/ISample
   (point-at
-   [_ t] (gu/point-at t (:points _) nil))
+   [_ t] (gu/point-at t (get _ :points) nil))
   (random-point
-   [_] (gu/point-at (m/random) (:points _) nil))
+   [_] (gu/point-at (m/random) (get _ :points) nil))
   (random-point-inside
    [_] (g/random-point _))
   (sample-uniform

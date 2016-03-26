@@ -137,7 +137,7 @@
     ([points profile]
      (sweep-mesh points profile nil))
     ([points profile opts]
-     (g/into (or (:mesh opts) (bm/basic-mesh)) (sweep-profile-faces points profile opts))))
+     (g/into (or (get opts :mesh) (bm/basic-mesh)) (sweep-profile-faces points profile opts))))
 
   (defn sweep-strand
     [[p _ n b] r theta delta profile opts]
@@ -164,8 +164,8 @@
      (sweep-strand-mesh base r strands twists profile nil))
     ([base r strands twists profile opts]
      (let [meshes (sweep-strands base r strands twists profile opts)]
-       (if-not (:mesh opts)
-         (reduce g/into (or (:mesh opts) (bm/basic-mesh)) meshes)
+       (if-not (get opts :mesh)
+         (reduce g/into (bm/basic-mesh) meshes)
          (last meshes)))))
 #+END_SRC
 

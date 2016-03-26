@@ -74,14 +74,14 @@
      (d/value-set :prev vertices v)))
 
   (defn vertex-valence*
-    [mesh v] (inc (count (get (:vertices mesh) v))))
+    [mesh v] (-> mesh (get :vertices) (get v) count inc))
 
   (defn vertex-faces*
-    [mesh v] (d/value-set :f (:vertices mesh) v))
+    [mesh v] (d/value-set :f (get mesh :vertices) v))
 
   (defn remove-vertex*
     [mesh v]
-    (if (find (:vertices mesh) v)
+    (if (find (get mesh :vertices) v)
       (reduce g/remove-face mesh (vertex-faces* mesh v))
       mesh))
 
@@ -216,7 +216,7 @@ located on the rotation axis.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IArea
   (area
-   [_] (gu/total-area-3d (mf/xf-face-verts _) (:faces _)))
+   [_] (gu/total-area-3d (mf/xf-face-verts _) (get _ :faces)))
 #+END_SRC
 
 *** TODO IBoundary
@@ -229,10 +229,10 @@ located on the rotation axis.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IBounds
-  (bounds [_] (gu/bounding-box (keys (:vertices _))))
-  (width [_] (gu/axis-range 0 (keys (:vertices _))))
-  (height [_] (gu/axis-range 1 (keys (:vertices _))))
-  (depth [_] (gu/axis-range 2 (keys (:vertices _))))
+  (bounds [_] (gu/bounding-box (keys (get _ :vertices))))
+  (width [_] (gu/axis-range 0 (keys (get _ :vertices))))
+  (height [_] (gu/axis-range 1 (keys (get _ :vertices))))
+  (depth [_] (gu/axis-range 2 (keys (get _ :vertices))))
 #+END_SRC
 
 *** IBoundingSphere
@@ -251,7 +251,7 @@ located on the rotation axis.
    ([_] (g/center _ (vec3)))
    ([_ o] (g/transform _ (g/translate M44 (m/- o (g/centroid _))))))
   (centroid
-   [_] (gu/centroid (keys (:vertices _))))
+   [_] (gu/centroid (keys (get _ :vertices))))
 #+END_SRC
 
 *** IFlip
@@ -284,17 +284,17 @@ located on the rotation axis.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IVertexAccess
   (vertices
-   [_] (keys (:vertices _)))
+   [_] (keys (get _ :vertices)))
   g/IEdgeAccess
   (edges
-   [_] (keys (:edges _)))
+   [_] (keys (get _ :edges)))
   g/IFaceAccess
   (faces
-   ([_] (:faces _))
+   ([_] (get _ :faces))
    ([_ opts]
     (if opts
-      (map #(g/raw % _) (:faces _))
-      (:faces _))))
+      (map #(g/raw % _) (get _ :faces))
+      (get _ :faces))))
   (add-face
    [_ face] (add-face* _ face))
   (vertex-faces
@@ -314,7 +314,7 @@ located on the rotation axis.
                  edges  (if (seq efaces)
                           (assoc edges e efaces)
                           (dissoc edges e))
-                 ve     (filter #(not= (:f %) f) (get verts a))]
+                 ve     (filter #(not= (get % :f) f) (get verts a))]
              (if (seq ve)
                (recur (assoc verts a (into #{} ve)) vnorms edges (next fedges))
                (recur (dissoc verts a) (dissoc vnorms a) edges (next fedges))))
@@ -333,21 +333,21 @@ located on the rotation axis.
   g/INormalAccess
   (face-normals
    [_ force?]
-   (if (seq (:fnormals _))
-     (:fnormals _)
-     (if force? (:fnormals (g/compute-face-normals _)))))
+   (if (seq (get _ :fnormals))
+     (get _ :fnormals)
+     (if force? (get (g/compute-face-normals _) :fnormals))))
   (face-normal
-   [_ f] ((:fnormals _) f))
+   [_ f] (get (get _ :fnormals) f))
   (vertex-normals
    [_ force?]
-   (if (seq (:vnormals _))
-     (:vnormals _)
-     (if force? (:vnormals (g/compute-vertex-normals _)))))
+   (if (seq (get _ :vnormals))
+     (get _ :vnormals)
+     (if force? (get (g/compute-vertex-normals _) :vnormals))))
   (vertex-normal
-   [_ v] ((:vnormals _) v))
+   [_ v] (get (get _ :vnormals) v))
   (compute-face-normals
    [_]
-   (loop [norms (transient #{}), fnorms (transient (hash-map)), faces (:faces _)]
+   (loop [norms (transient #{}), fnorms (transient (hash-map)), faces (get _ :faces)]
      (if faces
        (let [^thi.ng.geom.meshface.MeshFace f (first faces)
              [norms n] (d/index! norms (gu/ortho-normal (.-vertices f)))]
@@ -357,7 +357,7 @@ located on the rotation axis.
               :fnormals (persistent! fnorms)))))
   (compute-vertex-normals
    [_]
-   (let [this (if (seq (:fnormals _)) _ (g/compute-face-normals _))
+   (let [this (if (seq (get _ :fnormals)) _ (g/compute-face-normals _))
          {:keys [vertices normals fnormals]} this
          ntx (map #(get fnormals %))]
      (loop [norms (transient normals), vnorms (transient (hash-map)), verts (keys vertices)]
@@ -390,7 +390,7 @@ located on the rotation axis.
   g/IMeshConvert
   (as-mesh
    ([_] _)
-   ([_ opts] (g/into (:mesh opts) (:faces _))))
+   ([_ opts] (g/into (get opts :mesh) (get _ :faces))))
 #+END_SRC
 
 *** ITessellate
@@ -399,7 +399,7 @@ located on the rotation axis.
   g/ITessellate
   (tessellate
    ([_]      (g/tessellate _ {}))
-   ([_ opts] (gu/map-mesh (or (:fn opts) (gu/tessellate-face gu/tessellate-with-first)) _)))
+   ([_ opts] (gu/map-mesh (or (get opts :fn) (gu/tessellate-face gu/tessellate-with-first)) _)))
 #+END_SRC
 
 *** ITransform
@@ -429,7 +429,7 @@ located on the rotation axis.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IVolume
   (volume
-   [_] (gu/total-volume (mf/xf-face-verts _) (:faces _)))
+   [_] (gu/total-volume (mf/xf-face-verts _) (get _ :faces)))
 #+END_SRC
 
 *** End of implementation                                          :noexport:

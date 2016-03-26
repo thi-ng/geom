@@ -496,7 +496,7 @@ using the protocol.
   (defn ortho
     ([] (mat/ortho -1 -1 1 1 -1 1))
     ([view-rect]
-     (let [a (apply / (:size view-rect))]
+     (let [a (apply / (get view-rect :size))]
        (mat/ortho (- a) 1 a -1 -1 1))))
 #+END_SRC
 
@@ -526,14 +526,14 @@ using the protocol.
              :precision :half :half true}]
            (reduce
             (fn [acc c]
-              (if (and (:texture c) (every? c (:require spec)))
+              (if (and (get c :texture) (every? c (get spec :require)))
                 (conj acc c) acc))
             [])
            (map
             (fn [c]
               (assoc c :score
                      (apply + (map (fn [pref score] (if (c pref) score 0))
-                                   (:prefer spec) [0x80 0x40 0x20 0x10 0x8 0x4 0x2 0x1])))))
+                                   (get spec :prefer) [0x80 0x40 0x20 0x10 0x8 0x4 0x2 0x1])))))
            (sort-by :score)
            (last))))
 
@@ -566,10 +566,10 @@ using the protocol.
   (defn make-buffers-in-spec
     [spec ^WebGLRenderingContext gl mode]
     (let [spec (update spec :attribs #(make-attribute-buffers gl mode %))]
-      (if (:indices spec)
+      (if (get spec :indices)
         (update spec :indices
                 #(merge %
-                        {:buffer (make-attribute-buffer gl glc/element-array-buffer mode (:data %))
+                        {:buffer (make-attribute-buffer gl glc/element-array-buffer mode (get % :data))
                          :buffer-mode mode}))
         spec)))
 
@@ -587,7 +587,7 @@ using the protocol.
 #+BEGIN_SRC clojure :noweb-ref draw
   (defn begin-shader
     [^WebGLRenderingContext gl shader uniforms attribs indices]
-    (.useProgram gl (:program shader))
+    (.useProgram gl (get shader :program))
     (sh/apply-default-uniforms shader uniforms)
     (reduce-kv #(sh/set-uniform shader %2 %3) nil uniforms)
     (reduce-kv #(sh/set-attribute gl shader %2 %3) nil attribs)
@@ -596,7 +596,7 @@ using the protocol.
 
   (defn end-shader
     [^WebGLRenderingContext gl shader]
-    (reduce #(sh/disable-attribute gl shader (key %2)) nil (:attribs shader)))
+    (reduce #(sh/disable-attribute gl shader (key %2)) nil (get shader :attribs)))
 #+END_SRC
 
 *** Shading state preparation
@@ -628,16 +628,16 @@ Currently the following options are supported:
     under :state key (only if :state is present)."
     [^WebGLRenderingContext gl {:keys [state]}]
     (when state
-      (if (:depth-test state)
+      (if (get state :depth-test)
         (enable gl glc/depth-test)
         (disable gl glc/depth-test))
-      (if (:blend state)
-        (let [[src dest] (or (:blend-fn state) [glc/src-alpha glc/one])]
+      (if (get state :blend)
+        (let [[src dest] (or (get state :blend-fn) [glc/src-alpha glc/one])]
           (doto gl
             (enable glc/blend)
             (.blendFunc src dest)))
         (disable gl glc/blend))
-      (when-let [tex (:tex state)]
+      (when-let [tex (get state :tex)]
         (if (sequential? tex)
           (bind-sequentially tex)
           (bind tex 0))))

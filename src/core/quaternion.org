@@ -531,7 +531,7 @@ of the code.
    [_] (g/as-matrix _ nil))
   (as-matrix
    [_ opts]
-   (let [[tx ty tz] (:translate opts)
+   (let [[tx ty tz] (get opts :translate)
          x2 (+ x x)
          y2 (+ y y)
          z2 (+ z z)

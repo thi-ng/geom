@@ -520,7 +520,7 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/
     [gl w h opts]
     (let [canv (.createElement js/document "canvas")
           ctx  (.getContext canv "2d")
-          cols (apply grad/cosine-gradient h (:rainbow1 grad/cosine-schemes))]
+          cols (grad/cosine-gradient h (:rainbow1 grad/cosine-schemes))]
       (set! (.-width canv) w)
       (set! (.-height canv) h)
       (set! (.-strokeStyle ctx) "none")

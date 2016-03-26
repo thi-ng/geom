@@ -62,12 +62,12 @@
           h (- y2 y1)]
       (thi.ng.geom.types.Rect2. p' (vec2 w h))))
 
-  (defn left [r] ((:p r) 0))
-  (defn right [r] (+ ((:p r) 0) ((:size r) 0)))
-  (defn bottom [r] ((:p r) 1))
-  (defn bottom-left [r] (:p r))
-  (defn top [r] (+ ((:p r) 1) ((:size r) 1)))
-  (defn top-right [r] (m/+ (:p r) (:size r)))
+  (defn left [r] (v/x (get r :p)))
+  (defn right [r] (+ (v/x (get r :p)) (v/x (get r :size))))
+  (defn bottom [r] (v/y (get r :p)))
+  (defn bottom-left [r] (get r :p))
+  (defn top [r] (+ (v/y (get r :p)) (v/y (get r :size))))
+  (defn top-right [r] (m/+ (get r :p) (get r :size)))
 #+END_SRC
 
 ** Protocol implementations
@@ -80,7 +80,7 @@
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IArea
-  (area [_] (reduce * (:size _)))
+  (area [_] (reduce * (get _ :size)))
 #+END_SRC
 
 *** IBoundary
@@ -97,8 +97,8 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IBounds
   (bounds[_] _)
-  (width  [_] ((:size _) 0))
-  (height [_] ((:size _) 1))
+  (width  [_] ((get _ :size) 0))
+  (height [_] ((get _ :size) 1))
   (depth  [_] 0)
 #+END_SRC
 
@@ -109,7 +109,7 @@
   (bounding-circle
    [_]
    (let [c (g/centroid _)]
-     (gu/bounding-circle c (g/dist c (:p _)))))
+     (gu/bounding-circle c (g/dist c (get _ :p)))))
 #+END_SRC
 
 *** ICenter
@@ -122,14 +122,14 @@
    ([{s :size} o]
       (thi.ng.geom.types.Rect2. (m/madd s -0.5 o) s)))
   (centroid
-   [_] (m/madd (:size _) 0.5 (:p _)))
+   [_] (m/madd (get _ :size) 0.5 (get _ :p)))
 #+END_SRC
 
 *** ICircumference
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/ICircumference
-  (circumference [_] (* 2.0 (reduce + (:size _))))
+  (circumference [_] (* 2.0 (reduce + (get _ :size))))
 #+END_SRC
 
 *** IClassify
@@ -184,13 +184,13 @@ this method for rects:
   g/IVertexAccess
   (vertices
    [_]
-   (let [a (:p _)
-         c (m/+ a (:size _))]
+   (let [a (get _ :p)
+         c (m/+ a (get _ :size))]
      [a (vec2 (c 0) (a 1)) c (vec2 (a 0) (c 1))]))
   g/IEdgeAccess
   (edges
-   [_] (let [a (:p _)
-             c (m/+ a (:size _))
+   [_] (let [a (get _ :p)
+             c (m/+ a (get _ :size))
              b (vec2 (c 0) (a 1))
              d (vec2 (a 0) (c 1))]
          [[a b] [b c] [c d] [d a]]))
@@ -212,7 +212,7 @@ this method for rects:
      (isec/intersect-line2-edges? p q (g/edges _))))
   (intersect-ray
    ([_ ray]
-    (let [[p dir] (if (map? ray) [(:p ray) (:dir ray)] ray)]
+    (let [[p dir] (if (map? ray) [(get ray :p) (get ray :dir)] ray)]
       (isec/intersect-ray2-edges? p dir (g/edges _))))
    ([_ p dir]
     (isec/intersect-ray2-edges? p dir (g/edges _))))
@@ -233,7 +233,7 @@ this method for rects:
    ([_] (g/as-mesh _ {}))
    ([_ opts]
     (g/add-face
-     (or (:mesh opts) (bm/basic-mesh))
+     (or (get opts :mesh) (bm/basic-mesh))
      (attr/generate-face-attribs
       (mapv vec3 (g/vertices _)) 0 (get opts :attribs)
       (merge {:uv attr/uv-default-rect} opts)))))
@@ -280,14 +280,14 @@ this method for rects:
 #+BEGIN_SRC clojure :noweb-ref impl
   g/ISample
   (point-at
-   [_ t] (gu/point-at t (conj (g/vertices _) (:p _))))
+   [_ t] (gu/point-at t (conj (g/vertices _) (get _ :p))))
   (random-point
    [_] (g/point-at _ (m/random)))
   (random-point-inside
-   [_] (m/+ (:p _) (m/random ((:size _) 0)) (m/random ((:size _) 1))))
+   [_] (m/+ (get _ :p) (m/random ((get _ :size) 0)) (m/random ((get _ :size) 1))))
   (sample-uniform
    [_ udist include-last?]
-   (gu/sample-uniform udist include-last? (conj (g/vertices _) (:p _))))
+   (gu/sample-uniform udist include-last? (conj (g/vertices _) (get _ :p))))
 #+END_SRC
 
 *** TODO ISetOps
@@ -314,8 +314,8 @@ other rects and no type checking is done.
       (thi.ng.geom.types.Rect2. p (m/- (m/max (m/+ pa sa) (m/+ pb sb)) p))))
   (intersection
    [_ r]
-   (let [pa (:p _) qa (m/+ pa (:size _))
-         pb (:p r) qb (m/+ pb (:size r))
+   (let [pa (get _ :p) qa (m/+ pa (get _ :size))
+         pb (get r :p) qb (m/+ pb (get r :size))
          p' (m/max pa pb)
          q' (m/min qa qb)
          s  (m/- q' p')]
@@ -350,7 +350,7 @@ top-left to bottom-right ordering and inner sorting along X.
             dy (/ 1.0 (or rows num))
             rx (range 0.0 1.0 dx)
             ry (range 0.0 1.0 dy)
-            s (m/* (:size _) dx dy)]
+            s (m/* (get _ :size) dx dy)]
         (for [y ry x rx
               :let [[px py] (g/unmap-point _ (vec2 x y))
                     px (m/roundto px *eps*)
@@ -392,19 +392,19 @@ of triangles of the subdivided rects.
   (scale
    ([_ s]
       (thi.ng.geom.types.Rect2.
-       (m/* (:p _) s) (m/* (:size _) s)))
+       (m/* (get _ :p) s) (m/* (get _ :size) s)))
    ([_ a b]
       (thi.ng.geom.types.Rect2.
-       (m/* (:p _) a b) (m/* (:size _) a b))))
+       (m/* (get _ :p) a b) (m/* (get _ :size) a b))))
   (scale-size
    [_ s]
-   (let [s' (m/* (:size _) s)]
+   (let [s' (m/* (get _ :size) s)]
      (thi.ng.geom.types.Rect2.
       (m/madd s' -0.5 (g/centroid _)) s')))
 
   g/ITranslate
   (translate
-   [_ t] (thi.ng.geom.types.Rect2. (m/+ (:p _) t) (:size _)))
+   [_ t] (thi.ng.geom.types.Rect2. (m/+ (get _ :p) t) (get _ :size)))
 
   g/ITransform
   (transform

@@ -36,11 +36,11 @@ them from other templates.
 #+BEGIN_SRC emacs-lisp :var fn="" :var depth="no"
   (let ((body (replace-regexp-in-string "{{fn}}" fn
   "g/IBounds
-  (bounds [_] ({{fn}} (:points _)))
-  (width [_] (gu/axis-range 0 (:points _)))
-  (height [_] (gu/axis-range 1 (:points _)))")))
+  (bounds [_] ({{fn}} (get _ :points)))
+  (width [_] (gu/axis-range 0 (get _ :points)))
+  (height [_] (gu/axis-range 1 (get _ :points)))")))
     (if (string= "yes" depth)
-      (concat body "\n(depth [_] (gu/axis-range 2 (:points _)))")
+      (concat body "\n(depth [_] (gu/axis-range 2 (get _ :points)))")
       (concat body "\n(depth [_] 0)")))
 #+END_SRC
 
@@ -50,7 +50,7 @@ them from other templates.
 #+BEGIN_SRC clojure
   g/IBoundingCircle
   (bounding-circle
-   [_] (gu/bounding-circle (g/centroid _) (:points _)))
+   [_] (gu/bounding-circle (g/centroid _) (get _ :points)))
 #+END_SRC
 
 ** IBoundingSphere
@@ -59,7 +59,7 @@ them from other templates.
 #+BEGIN_SRC clojure
   g/IBoundingSphere
   (bounding-sphere
-   [_] (gu/bounding-sphere (g/centroid _) (:points _)))
+   [_] (gu/bounding-sphere (g/centroid _) (get _ :points)))
 #+END_SRC
 
 ** ICenter
@@ -72,8 +72,8 @@ them from other templates.
     "{{type}}" type
     "g/ICenter
   (center
-   ([_] ({{type}}. (gu/center ({{vtype}}) (:points _))))
-   ([_ o] ({{type}}. (gu/center (g/centroid _) ({{vtype}} o) (:points _)))))"))
+   ([_] ({{type}}. (gu/center ({{vtype}}) (get _ :points))))
+   ([_ o] ({{type}}. (gu/center (g/centroid _) ({{vtype}} o) (get _ :points)))))"))
 #+END_SRC
 
 ** ICircumference
@@ -92,7 +92,7 @@ them from other templates.
   (replace-regexp-in-string "{{type}}" type
   "g/IFlip
   (flip
-   [_] ({{type}}. (reverse (:points _))))")
+   [_] ({{type}}. (reverse (get _ :points))))")
 #+END_SRC
 
 ** IPolygonConvert
@@ -101,7 +101,7 @@ them from other templates.
 #+BEGIN_SRC clojure
   g/IPolygonConvert
   (as-polygon
-   [_] (thi.ng.geom.types.Polygon2. (:points _)))
+   [_] (thi.ng.geom.types.Polygon2. (get _ :points)))
 #+END_SRC
 
 ** IProximity
@@ -122,7 +122,7 @@ them from other templates.
   "g/IRotate
   (rotate
    [_ theta]
-   ({{type}}. (mapv #(g/rotate % theta) (:points _))))")
+   ({{type}}. (mapv #(g/rotate % theta) (get _ :points))))")
 #+END_SRC
 
 ** IRotate3D
@@ -133,17 +133,17 @@ them from other templates.
   "g/IRotate3D
   (rotate-x
    [_ theta]
-   ({{type}}. (mapv #(g/rotate-x % theta) (:points _))))
+   ({{type}}. (mapv #(g/rotate-x % theta) (get _ :points))))
   (rotate-y
    [_ theta]
-   ({{type}}. (mapv #(g/rotate-y % theta) (:points _))))
+   ({{type}}. (mapv #(g/rotate-y % theta) (get _ :points))))
   (rotate-z
    [_ theta]
-   ({{type}}. (mapv #(g/rotate-z % theta) (:points _))))
+   ({{type}}. (mapv #(g/rotate-z % theta) (get _ :points))))
   (rotate-around-axis
    [_ axis theta]
    ({{type}}.
-    (mapv #(g/rotate-around-axis % axis theta) (:points _))))")
+    (mapv #(g/rotate-around-axis % axis theta) (get _ :points))))")
 #+END_SRC
 
 ** ISample
@@ -157,7 +157,7 @@ them from other templates.
   (random-point
    [{p :points}] (gu/point-at (m/random) (conj p (first p))))
   (random-point-inside
-   [_] (gu/from-barycentric (:points _) (m/normdist-weights {{n}})))
+   [_] (gu/from-barycentric (get _ :points) (m/normdist-weights {{n}})))
   (sample-uniform
    [{p :points} udist include-last?]
    (gu/sample-uniform udist include-last? (conj p (first p))))")
@@ -171,13 +171,13 @@ them from other templates.
   "g/IScale
   (scale
    ([_ s]
-      ({{type}}. (mapv #(m/* % s) (:points _))))
+      ({{type}}. (mapv #(m/* % s) (get _ :points))))
    ([_ sx sy]
-      ({{type}}. (mapv #(m/* % sx sy) (:points _))))
+      ({{type}}. (mapv #(m/* % sx sy) (get _ :points))))
    ([_ sx sy sz]
-      ({{type}}. (mapv #(m/* % sx sy sz) (:points _)))))
+      ({{type}}. (mapv #(m/* % sx sy sz) (get _ :points)))))
   (scale-size
-   [_ s] ({{type}}. (gu/scale-size s (:points _))))")
+   [_ s] ({{type}}. (gu/scale-size s (get _ :points))))")
 #+END_SRC
 
 ** ITranslate
@@ -188,7 +188,7 @@ them from other templates.
   "g/ITranslate
   (translate
    [_ t]
-   ({{type}}. (mapv #(m/+ % t) (:points _))))")
+   ({{type}}. (mapv #(m/+ % t) (get _ :points))))")
 #+END_SRC
 
 ** ITransform
@@ -199,7 +199,7 @@ them from other templates.
   "g/ITransform
   (transform
    [_ m]
-   ({{type}}. (mapv #(g/transform-vector m %) (:points _))))")
+   ({{type}}. (mapv #(g/transform-vector m %) (get _ :points))))")
 #+END_SRC
 
 ** IVolume (zero)

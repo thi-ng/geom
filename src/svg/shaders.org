@@ -44,7 +44,7 @@
                 fill   (assoc :fill   (col/rgba (if (fn? fill) (fill f f' z) fill)))
                 stroke (assoc :stroke (col/rgba (if (fn? stroke) (stroke f f' z) stroke)))))
       (uniforms [_] uniforms)
-      (solid? [_] (:solid flags true))))
+      (solid? [_] (get flags :solid true))))
 
   (defn lambert
     [{:keys [view light-dir light-col diffuse ambient]}]

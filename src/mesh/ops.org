@@ -36,11 +36,11 @@
   (defn collapse-edges
     [m eps]
     (let [eps* (* eps eps)]
-      (->> (:edges m)
+      (->> (get m :edges)
            (keys)
            (filter (fn [e] (let [[a b] (seq e)] (< (g/dist-squared a b) eps*))))
            (reduce
-            (fn [m e] (if (-> m :edges e) (gm/merge-vertices* m (first e) (second e)) m))
+            (fn [m e] (if (-> m (get :edges) (get e)) (gm/merge-vertices* m (first e) (second e)) m))
             m))))
 
   (defn canonicalize-vertices
@@ -76,7 +76,7 @@
             (fn [acc e]
               (let [ef (-> mesh :edges e)]
                 (if (> (count ef) 1)
-                  (let [efn (select-keys (:fnormals mesh) ef)
+                  (let [efn (select-keys (get mesh :fnormals) ef)
                         ef (set ef)
                         acc (reduce
                              (fn [acc [f n]]
@@ -109,7 +109,7 @@
                             (let [t (coeff a b)
                                   p (if (m/in-range? 0.01 0.99 t) (m/mix a b t))]
                               (if (and p (< (g/dist-squared v p) eps*)) p)))]
-           (loop [edges (set/difference (into #{} (keys (:edges m))) vedges)]
+           (loop [edges (set/difference (into #{} (keys (get m :edges))) vedges)]
              (if-let [e (first edges)]
                (let [[a b] (seq e) p (v-on-edge? a b)]
                  (if p

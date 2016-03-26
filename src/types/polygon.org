@@ -60,7 +60,7 @@
     [verts bounds]
     (let [verts (conj verts (first verts))
           bc (g/centroid bounds)
-          ec-pos (fn [e p q] (:p (g/intersect-line e [p q])))]
+          ec-pos (fn [e p q] (get (g/intersect-line e [p q]) :p))]
       (loop [cedges (mapv l/line2 (g/edges bounds)) points verts clipped []]
         (if cedges
           (let [ce (first cedges)
@@ -123,7 +123,8 @@
   (defn tessellate*
     [p]
     (let [[points area] (if (instance? thi.ng.geom.types.Polygon2 p)
-                          [(:points p) (g/area p)] [(vec p) (g/area (polygon2 p))])
+                          [(get p :points) (g/area p)]
+                          [(vec p) (g/area (polygon2 p))])
           nv (count points)
           verts (vec (if (pos? area) (range nv) (range (dec nv) -1 -1)))]
       (loop [result [], verts verts, v (dec nv), nv nv, cnt (dec (* 2 nv))]
@@ -158,7 +159,7 @@
               c1 (m/+ curr i1), c2 (m/+ curr i2)
               prev (m/+ prev i1), next (m/+ next i2)]
           (if (m/delta= c1 c2)
-            c1 (:p (isec/intersect-line2-line2? prev c1 c2 next))))
+            c1 (get (isec/intersect-line2-line2? prev c1 c2 next) :p)))
         curr)))
 
   (defn inset-polygon
@@ -252,14 +253,14 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IClip
   (clip-with
-   [_ s] (polygon2 (clip-convex* (:points _) s)))
+   [_ s] (polygon2 (clip-convex* (get _ :points) s)))
 #+END_SRC
 
 *** IConvexHull
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IConvexHull
   (convex-hull
-   [_] (polygon2 (convex-hull* (:points _))))
+   [_] (polygon2 (convex-hull* (get _ :points))))
 #+END_SRC
 
 *** IExtrude
@@ -273,7 +274,7 @@
    (let [points   (if (neg? (g/area _)) (reverse points) points)
          tpoints  (if (= 1.0 scale)
                     points
-                    (:points (g/scale-size (polygon2 points) scale)))
+                    (get (g/scale-size (polygon2 points) scale) :points))
          off      (or offset (vec3 0 0 depth))
          points3  (mapv vec3 points)
          tpoints3 (mapv #(m/+ off %) tpoints)
@@ -374,7 +375,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IVertexAccess
   (vertices
-   [_] (:points _))
+   [_] (get _ :points))
   g/IEdgeAccess
   (edges
    [{points :points}]
@@ -390,7 +391,7 @@
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/quad.cljc
   g/IInset
   (inset
-   [_ inset] (th.ng.geom.types.Polygon2. (inset-polygon (:points _) inset)))
+   [_ inset] (th.ng.geom.types.Polygon2. (inset-polygon (get _ :points) inset)))
 #+END_SRC
 
 *** TODO IIntersect
@@ -417,7 +418,7 @@
               (attr/generate-face-attribs
                [(vec3 a) (vec3 b) (vec3 c)] i attribs
                {:uv [(g/map-point bounds a) (g/map-point bounds b) (g/map-point bounds c)]})))
-           (g/into (or (:mesh opts) (bm/basic-mesh)))))))
+           (g/into (or (get opts :mesh) (bm/basic-mesh)))))))
 #+END_SRC
 
 *** IPolygonConvert

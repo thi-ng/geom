@@ -44,7 +44,7 @@
 ** Path segment processing
 *** TODO refactor to use protocols
 #+BEGIN_SRC clojure :noweb-ref parser
-  (defmulti sample-segment (fn [s res last?] (:type s)))
+  (defmulti sample-segment (fn [s res last?] (get s :type)))
 
   (defmethod sample-segment :line
     [{[a b] :points} res last?]
@@ -64,7 +64,7 @@
           [paths curr] (reduce
                         (fn [[paths curr] seg]
                           (let [curr (concat curr (sample-segment seg res (= seg last)))]
-                            (if (= :close (:type seg))
+                            (if (= :close (get seg :type))
                               [(conj paths curr) []]
                               [paths curr])))
                         [[] []] segments)]
@@ -124,8 +124,8 @@
        (->> src
             (xml/parse)
             (xml-seq)
-            (filter #(= :path (:tag %)))
-            (mapv #(parse-svg-path (get-in % [:attrs :d])))
+            (filter #(= :path (get % :tag)))
+            (mapv #(parse-svg-path (-> % (get :attrs) (get :d))))
             (map path2))))
 #+END_SRC
 
@@ -183,7 +183,7 @@
   g/IVertexAccess
   (vertices
    [_ res]
-   (first (sample-segments* res (:segments _))))
+   (first (sample-segments* res (get _ :segments))))
   g/IEdgeAccess
   (edges [_])
 #+END_SRC

@@ -1717,7 +1717,7 @@
         (instance? Vec2 v) v
         (number? v)        (vec2 v v)
         (sequential? v)    (vec2 (nth v 0 0.0) (nth v 1 0.0))
-        (map? v)           (vec2 (:x v 0) (:y v 0))
+        (map? v)           (vec2 (get v :x 0) (get v :y 0))
         :else              (err/type-error! "Vec2" v)))
     ([x y]
        (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
@@ -1732,12 +1732,12 @@
         (instance? Vec3 v) v
         (number? v)        (vec3 v v v)
         (sequential? v)    (vec3 (nth v 0 0.0) (nth v 1 0.0) (nth v 2 0.0))
-        (map? v)           (vec3 (:x v 0) (:y v 0) (:z v 0))
+        (map? v)           (vec3 (get v :x 0.0) (get v :y 0.0) (get v :z 0.0))
         :else              (err/type-error! "Vec3" v)))
     ([v z]
        (cond
         (sequential? v) (vec3 (nth v 0 0.0) (nth v 1 0.0) z)
-        (map? v)        (vec3 (:x v 0) (:y v 0) z)
+        (map? v)        (vec3 (get v :x 0.0) (get v :y 0.0) z)
         (number? v)     (vec3 v z 0)
         :else           (err/type-error! "Vec3" v)))
     ([x y z]
@@ -1753,7 +1753,7 @@
         (instance? Vec2 v) (with-meta v meta)
         (number? v)        (vec2-with-meta v v meta)
         (sequential? v)    (vec2-with-meta (nth v 0 0.0) (nth v 1 0.0) meta)
-        (map? v)           (vec2-with-meta (:x v 0.0) (:y v 0.0) meta)
+        (map? v)           (vec2-with-meta (get v :x 0.0) (get v :y 0.0) meta)
         :else              (err/type-error! "Vec2" v)))
     ([x y meta]
        (let [^doubles b #?(:clj (double-array 2) :cljs (js/Float32Array. 2))]
@@ -1767,7 +1767,7 @@
         (instance? Vec3 v) (with-meta v meta)
         (number? v)        (vec3-with-meta v v v meta)
         (sequential? v)    (vec3-with-meta (nth v 0 0.0) (nth v 1 0.0) (nth v 2 0.0) meta)
-        (map? v)           (vec3-with-meta (:x v 0.0) (:y v 0.0) (:z v 0.0) meta)
+        (map? v)           (vec3-with-meta (get v :x 0.0) (get v :y 0.0) (get v :z 0.0) meta)
         :else              (err/type-error! "Vec3" v)))
     ([x y z meta]
        (let [^doubles b #?(:clj (double-array 3) :cljs (js/Float32Array. 3))]

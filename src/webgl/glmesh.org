@@ -78,10 +78,10 @@ The second arg given is an optional set of vertex attribute buffer IDs
     ([numf attribs]
     (GLMesh.
       (ta/float32 (* numf 9))
-      (if (:fnorm attribs) (ta/float32 (* numf 9)))
-      (if (:vnorm attribs) (ta/float32 (* numf 9)))
-      (if (:uv attribs) (ta/float32 (* numf 6)))
-      (if (:col attribs) (ta/float32 (* numf 12)))
+      (if (get attribs :fnorm) (ta/float32 (* numf 9)))
+      (if (get attribs :vnorm) (ta/float32 (* numf 9)))
+      (if (get attribs :uv) (ta/float32 (* numf 6)))
+      (if (get attribs :col) (ta/float32 (* numf 12)))
       0
       attribs)))
 
@@ -95,10 +95,10 @@ The second arg given is an optional set of vertex attribute buffer IDs
     ([numf attribs]
      (IndexedGLMesh.
       (ta/float32 (* numf 9))
-      (if (:fnorm attribs) (ta/float32 (* numf 9)))
-      (if (:vnorm attribs) (ta/float32 (* numf 9)))
-      (if (:uv attribs) (ta/float32 (* numf 6)))
-      (if (:col attribs) (ta/float32 (* numf 12)))
+      (if (get attribs :fnorm) (ta/float32 (* numf 9)))
+      (if (get attribs :vnorm) (ta/float32 (* numf 9)))
+      (if (get attribs :uv) (ta/float32 (* numf 6)))
+      (if (get attribs :col) (ta/float32 (* numf 12)))
       (ta/uint16 (* numf 3))
       attribs
       {} 0 0)))
@@ -235,8 +235,8 @@ Furthermore, the options map also supports the following other keys:
                     vnormals (assoc (get attribs :vnorm :normal) {:data vnormals :size 3})
                     uvs      (assoc (get attribs :uv :uv) {:data uvs :size 2})
                     cols     (assoc (get attribs :col :color) {:data cols :size 4}))
-    :num-vertices (or (:num-vertices opts) (* id 3))
-    :mode         (or (:mode opts) glc/triangles)})
+    :num-vertices (or (get opts :num-vertices) (* id 3))
+    :mode         (get opts :mode glc/triangles)})
 #+END_SRC
 
 *** End of implementation
@@ -356,9 +356,9 @@ Furthermore, the options map also supports the following other keys:
                     uvs      (assoc (get attribs :uv :uv) {:data uvs :size 2})
                     cols     (assoc (get attribs :col :color) {:data cols :size 4}))
     :indices      {:data indices}
-    :num-items    (or (:num-items opts) fid)
+    :num-items    (get opts :num-items fid)
     :num-vertices id
-    :mode         (or (:mode opts) glc/triangles)})
+    :mode         (get opts :mode glc/triangles)})
 #+END_SRC
 
 *** End of implementation
@@ -383,7 +383,7 @@ Furthermore, the options map also supports the following other keys:
         (.set vertices (.-buf ^thi.ng.geom.vector.Vec3 (nth verts 1)) (+ idv 3))
         (.set vertices (.-buf ^thi.ng.geom.vector.Vec3 (nth verts 2)) (+ idv 6))
         (when fnormals
-          (let [n  (or (:fnorm attribs) (gu/ortho-normal verts))
+          (let [n  (or (get attribs :fnorm) (gu/ortho-normal verts))
                 nb (.-buf ^thi.ng.geom.vector.Vec3 n)]
             (.set fnormals nb idv)
             (.set fnormals nb (+ idv 3))

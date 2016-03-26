@@ -429,7 +429,7 @@ Btw. This example can be run from the REPL via this command:
 
     thi.ng.geom.types.Circle2
     (as-svg
-      [_ opts] (svg/circle (:p _) (:r _) opts))
+      [_ opts] (svg/circle (get _ :p) (get _ :r) opts))
 
     thi.ng.geom.types.LineStrip2
     (as-svg
@@ -440,7 +440,7 @@ Btw. This example can be run from the REPL via this command:
 
     thi.ng.geom.types.Polygon2
     (as-svg
-      [_ opts] (svg/polygon (:points _) opts))
+      [_ opts] (svg/polygon (get _ :points) opts))
 
     thi.ng.geom.types.Rect2
     (as-svg
@@ -448,7 +448,7 @@ Btw. This example can be run from the REPL via this command:
 
     thi.ng.geom.types.Triangle2
     (as-svg
-      [_ opts] (svg/polygon (:points _) opts)))
+      [_ opts] (svg/polygon (get _ :points) opts)))
 
   (defn all-as-svg
     [form]

@@ -175,8 +175,8 @@
               (doto tex
                 (gl/bind)
                 (gl/configure (merge {:flip false :image img} opts)))
-              (when-let [cb (:callback opts)] (cb tex img))))
-      (set! (.-src img) (:src opts))
+              (when-let [cb (get opts :callback)] (cb tex img))))
+      (set! (.-src img) (get opts :src))
       tex))
 #+END_SRC
 

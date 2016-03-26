@@ -24,12 +24,12 @@
   (defn set-view
     [cam opts]
     (let [cam (update-keys cam [:eye :target :up] opts)]
-      (assoc cam :view (mat/look-at (:eye cam) (:target cam) (:up cam)))))
+      (assoc cam :view (mat/look-at (get cam :eye) (get cam :target) (get cam :up)))))
 
   (defn set-projection
     [cam opts]
     (let [cam (update-keys cam  [:fov :aspect :near :far] opts)]
-      (assoc cam :proj (gl/perspective (:fov cam) (:aspect cam) (:near cam) (:far cam)))))
+      (assoc cam :proj (gl/perspective (get cam :fov) (get cam :aspect) (get cam :near) (get cam :far)))))
 
   (defn perspective-camera
     [opts]
@@ -52,7 +52,7 @@
     "Takes a webgl model spec map & camera, injects :view & :proj
     uniforms into spec."
     [spec cam]
-    (update spec :uniforms merge {:view (:view cam) :proj (:proj cam)}))
+    (update spec :uniforms merge {:view (get cam :view) :proj (get cam :proj)}))
 
   (defn update-keys
     "Takes a map m, key seq and map of new vals, replaces keys in m with

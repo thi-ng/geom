@@ -29,9 +29,9 @@
   (defn- add-face*
     [mesh [fverts]]
     (thi.ng.geom.types.BasicMesh.
-     (into (:vertices mesh) fverts)
-     (conj (:faces mesh) (thi.ng.geom.meshface.MeshFace. fverts nil))
-     (:fnormals mesh)))
+     (into (get mesh :vertices) fverts)
+     (conj (get mesh :faces) (thi.ng.geom.meshface.MeshFace. fverts nil))
+     (get mesh :fnormals)))
 #+END_SRC
 
 ** Constructors
@@ -55,7 +55,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IArea
   (area
-   [_] (gu/total-area-3d (mf/xf-face-verts _) (:faces _)))
+   [_] (gu/total-area-3d (mf/xf-face-verts _) (get _ :faces)))
 #+END_SRC
 
 *** TODO IBoundary
@@ -68,10 +68,10 @@
 
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IBounds
-  (bounds [_] (gu/bounding-box (seq (:vertices _))))
-  (width [_]  (gu/axis-range 0 (:vertices _)))
-  (height [_] (gu/axis-range 1 (:vertices _)))
-  (depth [_]  (gu/axis-range 2 (:vertices _)))
+  (bounds [_] (gu/bounding-box (seq (get _ :vertices))))
+  (width [_]  (gu/axis-range 0 (get _ :vertices)))
+  (height [_] (gu/axis-range 1 (get _ :vertices)))
+  (depth [_]  (gu/axis-range 2 (get _ :vertices)))
 #+END_SRC
 
 *** IBoundingSphere
@@ -79,7 +79,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IBoundingSphere
   (bounding-sphere
-   [_] (gu/bounding-sphere (g/centroid _) (:vertices _)))
+   [_] (gu/bounding-sphere (g/centroid _) (get _ :vertices)))
 #+END_SRC
 
 *** ICenter
@@ -90,7 +90,7 @@
    ([_]   (g/center _ (vec3)))
    ([_ o] (g/transform _ (g/translate M44 (m/- o (g/centroid _))))))
   (centroid
-   [_]    (gu/centroid (seq (:vertices _))))
+   [_]    (gu/centroid (seq (get _ :vertices))))
 #+END_SRC
 
 *** IFlip
@@ -105,7 +105,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IVertexAccess
   (vertices
-   [_] (:vertices _))
+   [_] (get _ :vertices))
   g/IEdgeAccess
   (edges
    [_]
@@ -115,14 +115,14 @@
      (map #(g/vertices % _))
      (mapcat #(d/successive-nth 2 (conj % (first %))))
      (map set))
-    (:faces _)))
+    (get _ :faces)))
   g/IFaceAccess
   (faces
-   ([_] (:faces _))
+   ([_] (get _ :faces))
    ([_ opts]
     (if opts
-      (map #(g/raw % _) (:faces _))
-      (:faces _))))
+      (map #(g/raw % _) (get _ :faces))
+      (get _ :faces))))
   (add-face
    [_ face] (add-face* _ face))
   (vertex-faces
@@ -133,7 +133,7 @@
      (filter
       #(pos? #?(:clj (.indexOf ^clojure.lang.PersistentVector % v)
                 :cljs (d/index-of % v))))
-     (:faces _))))
+     (get _ :faces))))
   (remove-face
    [_ f]
    (err/unsupported!)) ;; TODO implement
@@ -144,16 +144,16 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/INormalAccess
   (face-normals
-   [_ force?] (if (seq (:fnormals _)) (:fnormals _) (if force? (:fnormals (g/compute-face-normals _)))))
+   [_ force?] (if (seq (get _ :fnormals)) (get _ :fnormals) (if force? (get (g/compute-face-normals _) :fnormals))))
   (face-normal
-   [_ f] ((:fnormals _) f))
+   [_ f] (get (get _ :fnormals) f))
   (vertex-normals
    [_ force?] (if force? (err/unsupported!)))
   (vertex-normal
    [_ v] (err/unsupported!))
   (compute-face-normals
    [_]
-   (loop [fnorms (transient {}), faces (:faces _)]
+   (loop [fnorms (transient {}), faces (get _ :faces)]
      (if faces
        (let [f (first faces)]
          (recur (assoc! fnorms f (gu/ortho-normal (g/vertices f _))) (next faces)))
@@ -179,7 +179,7 @@
   g/IMeshConvert
   (as-mesh
    ([_] _)
-   ([_ opts] (g/into (:mesh opts) (:faces _))))
+   ([_ opts] (g/into (get opts :mesh) (get _ :faces))))
 #+END_SRC
 
 *** ITessellate
@@ -188,7 +188,7 @@
   g/ITessellate
   (tessellate
    ([_]      (g/tessellate _ {}))
-   ([_ opts] (gu/map-mesh (or (:fn opts) (gu/tessellate-face gu/tessellate-with-first)) _)))
+   ([_ opts] (gu/map-mesh (or (get opts :fn) (gu/tessellate-face gu/tessellate-with-first)) _)))
 #+END_SRC
 
 *** ITransform
@@ -218,7 +218,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IVolume
   (volume
-   [_] (gu/total-volume (mf/xf-face-verts _) (:faces _)))
+   [_] (gu/total-volume (mf/xf-face-verts _) (get _ :faces)))
 #+END_SRC
 
 *** End of implementation                                          :noexport:

@@ -67,10 +67,10 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IBounds
   (bounds
-   [_] (thi.ng.geom.types.AABB. (m/- (:p _) (:r _)) (vec3 (* 2 (:r _)))))
-  (width  [_] (* 2.0 (:r _)))
-  (height [_] (* 2.0 (:r _)))
-  (depth  [_] (* 2.0 (:r _)))
+   [_] (thi.ng.geom.types.AABB. (m/- (get _ :p) (get _ :r)) (vec3 (* 2 (get _ :r)))))
+  (width  [_] (* 2.0 (get _ :r)))
+  (height [_] (* 2.0 (get _ :r)))
+  (depth  [_] (* 2.0 (get _ :r)))
 #+END_SRC
 
 *** IBoundingSphere
@@ -85,9 +85,9 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/ICenter
   (center
-   ([_] (thi.ng.geom.types.Sphere. (vec3) (:r _)))
-   ([_ p] (thi.ng.geom.types.Sphere. (vec3 p) (:r _))))
-  (centroid [_] (:p _))
+   ([_] (thi.ng.geom.types.Sphere. (vec3) (get _ :r)))
+   ([_ p] (thi.ng.geom.types.Sphere. (vec3 p) (get _ :r))))
+  (centroid [_] (get _ :p))
 #+END_SRC
 
 *** IClassify
@@ -126,7 +126,7 @@ If there's no intersection, the function returns =nil=.
   g/IIntersect
   (intersect-ray
    [{p :p r :r} ray]
-   (let [[rp dir] (if (map? ray) [(:p ray) (:dir ray)] ray)]
+   (let [[rp dir] (if (map? ray) [(get ray :p) (get ray :dir)] ray)]
      (isec/intersect-ray-sphere? rp dir p r)))
   (intersect-shape
    [_ s]
@@ -136,7 +136,7 @@ If there's no intersection, the function returns =nil=.
     (instance? thi.ng.geom.types.Sphere s)
     (isec/intersect-sphere-sphere? _ s)
     (instance? thi.ng.geom.types.Plane s)
-    (isec/intersect-plane-sphere? (:n s) (:w s) (:p _) (:r _))
+    (isec/intersect-plane-sphere? (get s :n) (get s :w) (get _ :p) (get _ :r))
     :default (err/type-error! "Sphere" s)))
 #+END_SRC
 
@@ -203,10 +203,10 @@ If there's no intersection, the function returns =nil=.
   g/ISample
   (random-point-inside
    [_]
-   (m/+ (:p _) (v/randvec3 (m/random (:r _)))))
+   (m/+ (get _ :p) (v/randvec3 (m/random (get _ :r)))))
   (random-point
    [_]
-   (m/+ (:p _) (v/randvec3 (:r _))))
+   (m/+ (get _ :p) (v/randvec3 (get _ :r))))
 #+END_SRC
 
 *** ITessellate
@@ -224,25 +224,25 @@ If there's no intersection, the function returns =nil=.
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IRotate
   (rotate
-   [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-z (:p _) theta) (:r _)))
+   [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-z (get _ :p) theta) (get _ :r)))
   g/IRotate3D
   (rotate-x
-   [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-x (:p _) theta) (:r _)))
+   [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-x (get _ :p) theta) (get _ :r)))
   (rotate-y
-   [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-y (:p _) theta) (:r _)))
+   [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-y (get _ :p) theta) (get _ :r)))
   (rotate-z
-   [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-z (:p _) theta) (:r _)))
+   [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-z (get _ :p) theta) (get _ :r)))
   (rotate-around-axis
    [_ axis theta]
    (thi.ng.geom.types.Sphere.
-    (g/rotate-around-axis (:p _) axis theta) (:r _)))
+    (g/rotate-around-axis (get _ :p) axis theta) (get _ :r)))
   
   g/IScale
-  (scale [_ s] (thi.ng.geom.types.Sphere. (m/* (:p _) s) (* (:r _) s)))
-  (scale-size [_ s] (thi.ng.geom.types.Sphere. (:p _) (* (:r _) s)))
+  (scale [_ s] (thi.ng.geom.types.Sphere. (m/* (get _ :p) s) (* (get _ :r) s)))
+  (scale-size [_ s] (thi.ng.geom.types.Sphere. (get _ :p) (* (get _ :r) s)))
 
   g/ITranslate
-  (translate [_ t] (thi.ng.geom.types.Sphere. (m/+ (:p _) t) (:r _)))
+  (translate [_ t] (thi.ng.geom.types.Sphere. (m/+ (get _ :p) t) (get _ :r)))
 #+END_SRC
 
 *** IVolume

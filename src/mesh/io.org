@@ -185,9 +185,9 @@
            fmt-vertex  (obj-fmt3 "v")
            fmt-vnormal (obj-fmt3 "vn")
            fmt-uv      (obj-fmt2 "vt")]
-       (when-let [mtl (:mtl-lib opts)]
+       (when-let [mtl (get opts :mtl-lib)]
          (streams/write-utf8-bytes
-          out (str "mtllib " mtl "\nusemtl " (or (:mtl opts) "default") "\n\n")))
+          out (str "mtllib " mtl "\nusemtl " (get opts :mtl "default") "\n\n")))
        (doseq [[x y z] (vals vertices)]
          (streams/write-utf8-bytes out (fmt-vertex x y z)))
        (doseq [[x y z] (vals vnormals)]
@@ -201,19 +201,19 @@
              (streams/write-utf8-bytes
               out (obj-fmt-face-v-uv-vn
                    (mapv inc (.-vertices f))
-                   (mapv inc (:uv (.-attribs f)))
-                   (mapv inc (:vnormals (.-attribs f))))))
+                   (mapv inc (get (.-attribs f) :uv))
+                   (mapv inc (get (.-attribs f) :vnormals)))))
            (doseq [^thi.ng.geom.meshface.IndexedMeshFace f faces]
              (streams/write-utf8-bytes
               out (obj-fmt-face-v-vn
                    (mapv inc (.-vertices f))
-                   (mapv inc (:vnormals (.-attribs f)))))))
+                   (mapv inc (get (.-attribs f) :vnormals))))))
          (if uvs
            (doseq [^thi.ng.geom.meshface.IndexedMeshFace f faces]
              (streams/write-utf8-bytes
               out (obj-fmt-face-v-uv
                    (mapv inc (.-vertices f))
-                   (mapv inc (:uv (.-attribs f))))))
+                   (mapv inc (get (.-attribs f) :uv)))))
            (doseq [^thi.ng.geom.meshface.IndexedMeshFace f faces]
              (streams/write-utf8-bytes
               out (obj-fmt-face-v

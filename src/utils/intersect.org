@@ -299,10 +299,10 @@ http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/tribox3.txt
          (transduce
           (comp
            (map (fn [[p q]] (intersect-line2-line2? rp rq p q)))
-           (filter #(and (:p %) (#{:intersect :coincident} (:type %)))))
+           (filter #(if (get % :p) (get #{:intersect :coincident} (get % :type)))))
           (completing
            (fn [closest isec]
-             (let [p (:p isec)
+             (let [p (get isec :p)
                    d (g/dist-squared rp p)]
                (if (< d (closest 1)) [p d] closest))))
           [nil m/INF+])

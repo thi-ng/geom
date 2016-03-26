@@ -65,7 +65,7 @@ http://algorithmicbotany.org/papers/subgpu.sig2003.pdf
 
   (defn subdivide-closed
     ([scheme points]
-       (subdivide-closed (:fn scheme) (:coeff scheme) points))
+       (subdivide-closed (get scheme :fn) (get scheme :coeff) points))
     ([f [u v] points]
        (let [n  (count u)
              n2 (int (/ n 2))]

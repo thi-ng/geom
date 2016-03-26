@@ -452,7 +452,7 @@ Volume calculation is using [[file:triangle.org::*Triangle3][signed volume imple
     entities. Use rects as target bounds for 2D colls."
     [bounds coll]
     (let [b (coll-bounds coll)
-          s (reduce min (m/div (:size bounds) (:size b)))
+          s (reduce min (m/div (get bounds :size) (get b :size)))
           b' (g/center (g/scale b s) (g/centroid bounds))]
       (map
        #(-> %

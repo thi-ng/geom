@@ -146,8 +146,8 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
                      #?(:cljs (seq))
                      (r/map
                       (fn [n]
-                        (let [f1 (f-points (some #(if (= n (:prev %)) (:f %)) v-faces))
-                              f2 (f-points (some #(if (= n (:next %)) (:f %)) v-faces))]
+                        (let [f1 (f-points (some #(if (= n (get % :prev)) (get % :f)) v-faces))
+                              f2 (f-points (some #(if (= n (get % :next)) (get % :f)) v-faces))]
                           [(get f1 v v) (get f2 v v)])))
                      (r/foldcat)
                      (ds-make-edge-loop))))))
@@ -163,8 +163,8 @@ Based on reference: [[https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_
             (if (= 2 (count e-faces))
               (let [[a b] (seq e)
                     va (vertices a)
-                    f1 (f-points (some #(if (= b (:prev %)) (:f %)) va))
-                    f2 (f-points (some #(if (= b (:next %)) (:f %)) va))]
+                    f1 (f-points (some #(if (= b (get % :prev)) (get % :f)) va))
+                    f2 (f-points (some #(if (= b (get % :next)) (get % :f)) va))]
                 [(f1 a) (f1 b) (f2 b) (f2 a)]))))
          (r/filter identity)
          (r/foldcat)))
@@ -229,7 +229,7 @@ you're not sure your mesh contains only triangles, pass it through
   (defn butterfly
     ([mesh] (butterfly mesh (/ 8.0)))
     ([mesh omega]
-       (let [e-points (bf-edge-points (:edges mesh) omega)]
+       (let [e-points (bf-edge-points (get :edges mesh) omega)]
          (->> (g/faces mesh)
               #?(:cljs (seq))
               (r/mapcat

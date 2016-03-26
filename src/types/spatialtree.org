@@ -117,7 +117,7 @@
   (defn- do-with-radius
     [f f2 q c r]
     (let [rsq (* r r)]
-      (f q #(f2 (:p %) (m/+ (:p %) (:size %)) c r) #(< (g/dist-squared c %) rsq))))
+      (f q #(f2 (get % :p) (m/+ (get % :p) (get % :size)) c r) #(< (g/dist-squared c %) rsq))))
 
   (defn points-in-circle?
     [q c r] (do-with-radius check-with isec/intersect-rect-circle? q c r))

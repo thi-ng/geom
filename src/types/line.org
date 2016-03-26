@@ -163,7 +163,7 @@ further below.
   (princ
    (replace-regexp-in-string "{{fn}}" fn
   "g/IBounds
-  (bounds [_] ({{fn}} (:points _)))
+  (bounds [_] ({{fn}} (get _ :points)))
   (width  [{p :points}] (m/abs* (- ((p 0) 0) ((p 1) 0))))
   (height [{p :points}] (m/abs* (- ((p 0) 1) ((p 1) 1))))"))
 #+END_SRC
@@ -179,7 +179,7 @@ further below.
    [{points :points :as _}
     {:keys [mesh depth scale offset attribs]
      :or {depth 1.0 scale 1.0} :as opts}]
-   (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
+   (let [tpoints (if (= 1.0 scale) points (get (g/scale-size _ scale) :points))
          off     (or offset (vec3 0 0 depth))
          a       (vec3 (points 0))
          b       (vec3 (points 1))
@@ -193,11 +193,11 @@ further below.
 #+BEGIN_SRC clojure :noweb-ref tpl-graph
   g/IVertexAccess
   (vertices
-   ([_] (:points _))
+   ([_] (get _ :points))
    ([{p :points} res] (gu/sample-segment-with-res (p 0) (p 1) res true)))
   g/IEdgeAccess
   (edges
-   ([_] [(:points _)])
+   ([_] [(get _ :points)])
    ([_ res] (d/successive-nth 2 (g/vertices _ res))))
   g/IGraph
   (vertex-neighbors
@@ -236,7 +236,7 @@ further below.
   (reflect
    [{[p q] :points} r]
    (if (instance? {{type}} r)
-     (let [[pr qr] (:points r)] (reflect-on-line {{ctor}} p q pr qr))
+     (let [[pr qr] (get r :points)] (reflect-on-line {{ctor}} p q pr qr))
      ({{type}}. [(g/reflect p r) (g/reflect q r)])))")))
 #+END_SRC
 *** IRotate
@@ -260,7 +260,7 @@ further below.
    [{p :points}] (m/mix (p 0) (p 1) (m/random)))
   (sample-uniform
    [_ dist include-last?]
-   (gu/sample-uniform dist include-last? (:points _)))
+   (gu/sample-uniform dist include-last? (get _ :points)))
 #+END_SRC
 *** ITransform
 #+NAME: tpl-tx
@@ -344,7 +344,7 @@ further below.
   g/IIntersect
   (intersect-line
    [{[a b] :points} l]
-   (let [[c d] (or (:points l) l)]
+   (let [[c d] (get l :points l)]
      (isec/intersect-line2-line2? a b c d)))
 #+END_SRC
 **** IMagnitude                                                    :template:
@@ -436,7 +436,7 @@ further below.
   g/IIntersect
   (intersect-line
    [{[a b] :points} l]
-   (let [[c d] (or (:points l) l)]
+   (let [[c d] (get l :points l)]
      (gu/closest-line-between a b c d)))
   (intersect-ray [_ r])
   (intersect-shape [_ s])
@@ -517,7 +517,7 @@ further below.
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
   <<lob-geom-center(type="thi.ng.geom.types.LineStrip2",vtype="vec2")>>
   (centroid
-   [_] (gu/centroid (:points _)))
+   [_] (gu/centroid (get _ :points)))
 #+END_SRC
 **** ICircumference
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
@@ -537,7 +537,7 @@ further below.
    [{:keys [points] :as _}
     {:keys [mesh depth offset scale attribs]
      :or {depth 1.0 scale 1.0} :as opts}]
-   (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
+   (let [tpoints (if (= 1.0 scale) points (get (g/scale-size _ scale) :points))
          off     (or offset (vec3 0 0 depth))
          bottom  (mapv vec3 points)
          top     (mapv #(m/+ off %) tpoints)]
@@ -554,16 +554,16 @@ further below.
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
   g/IVertexAccess
   (vertices
-   ([_] (:points _))
+   ([_] (get _ :points))
    ([{points :points} res]
       (map #(gu/point-at % points) (m/norm-range res)))) ;; TODO transduce
   g/IEdgeAccess
   (edges
-   ([_] (d/successive-nth 2 (:points _)))
+   ([_] (d/successive-nth 2 (get _ :points)))
    ([_ res] (d/successive-nth 2 (g/vertices _ res))))
   g/IGraph
   (vertex-neighbors
-   [_ v] (d/neighbors v (:points _)))
+   [_ v] (d/neighbors v (get _ :points)))
   (vertex-valence
    [{points :points} v]
    (if-let [p (d/neighbors v points)]
@@ -582,9 +582,9 @@ further below.
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
   m/IMagnitude
   (mag
-   [_] (d/reduce-pairs + g/dist (:points _)))
+   [_] (d/reduce-pairs + g/dist (get _ :points)))
   (mag-squared
-   [_] (d/reduce-pairs + g/dist-squared (:points _)))
+   [_] (d/reduce-pairs + g/dist-squared (get _ :points)))
 #+END_SRC
 **** IProximity                                                 :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
@@ -596,20 +596,20 @@ further below.
   g/IReflect
   (reflect
    [_ r]
-   (thi.ng.geom.types.LineStrip2. (mapv #(g/reflect % r) (:points _))))
+   (thi.ng.geom.types.LineStrip2. (mapv #(g/reflect % r) (get _ :points))))
 #+END_SRC
 **** ISample
 #+BEGIN_SRC clojure :noweb-ref impl-ls2
   g/ISample
   (point-at
-   [_ t] (gu/point-at t (:points _) nil))
+   [_ t] (gu/point-at t (get _ :points) nil))
   (random-point
-   [_] (gu/point-at (m/random) (:points _) nil))
+   [_] (gu/point-at (m/random) (get _ :points) nil))
   (random-point-inside
    [_] (g/random-point _))
   (sample-uniform
    [_ udist include-last?]
-   (gu/sample-uniform udist include-last? (:points _)))
+   (gu/sample-uniform udist include-last? (get _ :points)))
 #+END_SRC
 **** ITransform
 #+BEGIN_SRC clojure :noweb-ref impl-ls2 :noweb yes
@@ -654,7 +654,7 @@ further below.
 #+BEGIN_SRC clojure :noweb-ref impl-ls3
   <<lob-geom-center(type="thi.ng.geom.types.LineStrip3",vtype="vec3")>>
   (centroid
-   [_] (gu/centroid (:points _)))
+   [_] (gu/centroid (get _ :points)))
 #+END_SRC
 **** ICircumference
 #+BEGIN_SRC clojure :noweb-ref impl-ls3
@@ -674,7 +674,7 @@ further below.
    [{:keys [points] :as _}
     {:keys [mesh depth offset scale attribs]
      :or {depth 1.0 scale 1.0} :as opts}]
-   (let [tpoints (if (= 1.0 scale) points (:points (g/scale-size _ scale)))
+   (let [tpoints (if (= 1.0 scale) points (get (g/scale-size _ scale) :points))
          off     (or offset (vec3 0 0 depth))
          top     (mapv #(m/+ off %) tpoints)]
      (->> (interleave
@@ -690,16 +690,16 @@ further below.
 #+BEGIN_SRC clojure :noweb-ref impl-ls3
   g/IVertexAccess
   (vertices
-   ([_] (:points _))
+   ([_] (get _ :points))
    ([{points :points} res]
       (map #(gu/point-at % points) (m/norm-range res)))) ;; TODO transduce
   g/IEdgeAccess
   (edges
-   ([_] (d/successive-nth 2 (:points _)))
+   ([_] (d/successive-nth 2 (get _ :points)))
    ([_ res] (d/successive-nth 2 (g/vertices _ res))))
   g/IGraph
   (vertex-neighbors
-   [_ v] (d/neighbors v (:points _)))
+   [_ v] (d/neighbors v (get _ :points)))
   (vertex-valence
    [{points :points} v]
    (if-let [p (d/neighbors v points)]
@@ -718,9 +718,9 @@ further below.
 #+BEGIN_SRC clojure :noweb-ref impl-ls3
   m/IMagnitude
   (mag
-   [_] (d/reduce-pairs + g/dist (:points _)))
+   [_] (d/reduce-pairs + g/dist (get _ :points)))
   (mag-squared
-   [_] (d/reduce-pairs + g/dist-squared (:points _)))
+   [_] (d/reduce-pairs + g/dist-squared (get _ :points)))
 #+END_SRC
 **** IProximity                                                 :usetemplate:
 #+BEGIN_SRC clojure :noweb-ref impl :noweb yes
@@ -733,20 +733,20 @@ further below.
   g/IReflect
   (reflect
    [_ r]
-   (thi.ng.geom.types.LineStrip3. (mapv #(g/reflect % r) (:points _))))
+   (thi.ng.geom.types.LineStrip3. (mapv #(g/reflect % r) (get _ :points))))
 #+END_SRC
 **** ISample
 #+BEGIN_SRC clojure :noweb-ref impl-ls3
   g/ISample
   (point-at
-   [_ t] (gu/point-at t (:points _) nil))
+   [_ t] (gu/point-at t (get _ :points) nil))
   (random-point
-   [_] (gu/point-at (m/random) (:points _) nil))
+   [_] (gu/point-at (m/random) (get _ :points) nil))
   (random-point-inside
    [_] (g/random-point _))
   (sample-uniform
    [_ udist include-last?]
-   (gu/sample-uniform udist include-last? (:points _)))
+   (gu/sample-uniform udist include-last? (get _ :points)))
 #+END_SRC
 **** ITransform
 #+BEGIN_SRC clojure :noweb-ref impl-ls3 :noweb yes

@@ -239,10 +239,10 @@
     (timestep
       [_ iter]
       (let [delta (/ 1.0 iter)]
-        (if-let [l (:timestep listeners)] (l _))
+        (if-let [l (get listeners :timestep)] (l _))
         (loop [i iter]
           (when (pos? i)
-            (if-let [l (:iter listeners)] (l _ i))
+            (if-let [l (get listeners :iter)] (l _ i))
             (-> (apply-behaviors _ delta)
                 (update-springs delta)
                 (update-particles delta)
