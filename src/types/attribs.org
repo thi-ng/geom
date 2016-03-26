@@ -2,6 +2,7 @@
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomattribs][thi.ng.geom.attribs]]
+     - [[#types-supporting-attribute-generation][Types supporting attribute generation]]
      - [[#attribute-generation--application][Attribute generation & application]]
      - [[#attribute-generation][Attribute generation]]
          - [[#generic][Generic]]
@@ -26,6 +27,31 @@ arguments, in order:
 | =vertex-id= | int       | ID of vertex in current face (usually 0-3 or 0-4)        |
 | =vertex=    | vec2/vec3 | the actual vertex                                        |
 | =opts=      | map       | extra data supplied by type to help w/ attrib generation |
+
+** Types supporting attribute generation
+
+Eventually, all shape types provided will support vertex attribute
+generation as part of their =g/as-mesh= implementations. At current,
+this is only supported by the following implementations, though. Since
+UV texture coordinates are one of the most common applications of
+vertex attributes, the table also lists which attribute generator
+should/could be used for each type.
+
+*Note:* Vertex attributes are only supported by the following mesh types:
+
+- =thi.ng.geom.IndexedMesh=
+- =thi.ng.geom.webgl.GLMesh= (CLJS only)
+- =thi.ng.geom.webgl.IndexedGLMesh= (CLJS only)
+
+| *Type*   | *UV generation example*                                               |
+|----------+-----------------------------------------------------------------------|
+| AABB     | =(g/as-mesh a {:mesh ... :attribs {:uv (attr/uv-cube-map-v)}})=       |
+| Circle   | =(g/as-mesh a {:mesh ... :attribs {:uv attr/uv-flat-disc}})=          |
+| Cuboid   | =(g/as-mesh a {:mesh ... :attribs {:uv (attr/uv-cube-map-v)}})=       |
+| Polygon2 | =(g/as-mesh a {:mesh ... :attribs {:uv (attr/supplied-attrib :uv)}})= |
+| PTF      | =(g/as-mesh a {:mesh ... :attribs {:uv attr/uv-tube}})=               |
+| Rect2    | =(g/as-mesh a {:mesh ... :attribs {:uv (attr/supplied-attrib :uv)}})= |
+| Sphere   | =(g/as-mesh a {:mesh ... :attribs {:uv (attr/supplied-attrib :uv)}})= |
 
 ** Attribute generation & application
 
@@ -141,7 +167,7 @@ Tube UV mapping is currently only supported by the following implementations:
       0 (vec2 0.5)
       1 (vec2 (mm/madd (Math/cos theta) r 0.5)
               (mm/madd (Math/sin theta) r 0.5))
-      (let [theta (+ theta (:delta opts))]
+      (let [theta (+ theta (get opts :delta))]
         (vec2 (mm/madd (Math/cos theta) r 0.5)
               (mm/madd (Math/sin theta) r 0.5)))))
 #+END_SRC
