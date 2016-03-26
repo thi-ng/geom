@@ -1582,18 +1582,19 @@
           [a b v] (repeatedly 3 gensym)
           c (count id)
           type (if (== 3 c) 'Vec3 'Vec2)
-          pre (if (>= (.indexOf id "z") 0) {:pre [`(instance? ~'Vec3 ~v)]} {})]
+          ;;pre (if (>= (.indexOf id "z") 0) {:pre [`(instance? ~'Vec3 ~v)]} {})
+          ]
       (if (== 1 c)
         `(defn ~key
            [~v]
-           ~pre
+           ;;~pre
            (let [~(with-meta a {:tag "doubles"}) (if (instance? ~'Vec2 ~v)
                                                    (.-buf ~(with-meta v {:tag "Vec2"}))
                                                    (.-buf ~(with-meta v {:tag "Vec3"})))]
              (aget ~a ~(swizzle-keys (first id)))))
         `(defn ~key
            [~v]
-           ~pre
+           ;;~pre
            (let [~(with-meta a {:tag "doubles"}) (if (instance? ~'Vec2 ~v)
                                                    (.-buf ~(with-meta v {:tag "Vec2"}))
                                                    (.-buf ~(with-meta v {:tag "Vec3"})))
