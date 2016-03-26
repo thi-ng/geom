@@ -146,8 +146,10 @@ If there's no intersection, the function returns =nil=.
   g/IMeshConvert
   (as-mesh
    ([_] (g/as-mesh _ {}))
-   ([{[x y z] :p r :r} {:keys [mesh res slices stacks attribs] :or {res *resolution*}}]
-    (let [slices  (or slices res)
+   ([{[x y z] :p r :r}
+     {:keys [mesh res slices stacks attribs] :as opts}]
+    (let [res     (or res *resolution*)
+          slices  (or slices res)
           stacks  (or stacks res)
           rsl     (m/norm-range slices)
           rst     (m/norm-range stacks)
@@ -157,25 +159,30 @@ If there's no intersection, the function returns =nil=.
           cp      (#?(:clj double-array :cljs ta/float32) (map #(Math/cos (* PI %)) rst))
           iu      (/ 1.0 slices)
           iv      (/ 1.0 stacks)
-          stacks' (dec stacks)]
+          stacks' (dec stacks)
+          fgen    (if attribs
+                    (fn [fverts verts fid]
+                      (attr/generate-face-attribs
+                       fverts fid attribs
+                       (merge {:uv (mapv #(vec2 (* iu (first %)) (* iv (nth % 1))) verts)} opts)))
+                    (fn [fverts _ _] [fverts]))]
       (loop [acc (transient []), fid 0, i 0, j 0]
         (if (< i slices)
-          (let [ii (inc i)
-                verts [[i j]]
-                verts (if (pos? j) (conj verts [ii j]) verts)
-                verts (if (< j (dec stacks)) (conj verts [ii (inc j)]) verts)
-                verts (conj verts [i (inc j)])
+          (let [ii     (inc i)
+                jj     (inc j)
+                verts  (if (pos? j)
+                         (if (< j stacks')
+                           [[i j] [ii j] [ii jj] [i jj]]
+                           [[i j] [ii j] [i jj]])
+                         [[i j] [ii jj] [i jj]])
                 fverts (mapv
                         (fn [[u v]]
                           (vec3
                            (+ (mm/mul (aget ct u) (aget sp v) r) x)
                            (mm/madd (aget cp v) r y)
                            (+ (mm/mul (aget st u) (aget sp v) r) z)))
-                        verts)
-                face  (attr/generate-face-attribs
-                       fverts fid attribs
-                       {:uv (mapv #(vec2 (* iu (first %)) (* iv (nth % 1))) verts)})]
-            (recur (conj! acc face) (inc fid) ii j))
+                        verts)]
+            (recur (conj! acc (fgen fverts verts fid)) (inc fid) ii j))
           (if (< j stacks')
             (recur acc fid 0 (inc j))
             (g/into (or mesh (bm/basic-mesh)) (persistent! acc))))))))
