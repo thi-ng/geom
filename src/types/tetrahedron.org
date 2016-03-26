@@ -86,9 +86,9 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/ICenter
   (center
-   ([_] (thi.ng.geom.types.Tetrahedron. (gu/center v/V3 (:points _))))
-   ([_ o] (thi.ng.geom.types.Tetrahedron. (gu/center o (:points _)))))
-  (centroid [_] (gu/centroid (:points _)))
+   ([_] (thi.ng.geom.types.Tetrahedron. (gu/center v/V3 (get _ :points))))
+   ([_ o] (thi.ng.geom.types.Tetrahedron. (gu/center o (get _ :points)))))
+  (centroid [_] (gu/centroid (get _ :points)))
 #+END_SRC
 **** IFlip
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -100,7 +100,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IVertexAccess
   (vertices
-   [_] (:points _))
+   [_] (get _ :points))
   g/IEdgeAccess
   (edges
    [{[a b c d] :points}]
@@ -119,9 +119,9 @@
      d [a b c]
      nil))
   (vertex-valence
-   [_ v] (if ((set (:points _)) v) 3 0))
+   [_ v] (if ((set (get _ :points)) v) 3 0))
 #+END_SRC
-**** TODO IIntersect                                                 :verify:
+**** TODO IIntersect
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IIntersect
   (intersect-shape
@@ -132,11 +132,11 @@
      (orient-tetra (g/vertices _)) (orient-tetra (g/vertices s)))
     (and (sequential? s) (= 4 (count s)))
     (isec/intersect-tetrahedra? (g/vertices _) (orient-tetra s))
-    :default (err/type-error! "Tetrahedron" s)))
+    :else (err/type-error! "Tetrahedron" s)))
   (intersect-line
-   [_ l] nil)
+   [_ l] (err/unsupported!))
   (intersect-ray
-   [_ {p :p dir :dir}] nil)
+   [_ {p :p dir :dir}] (err/unsupported!))
 #+END_SRC
 **** IMeshConvert
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -144,8 +144,8 @@
   (as-mesh
    ([_] (g/as-mesh _ {}))
    ([_ opts]
-      (let [[a b c d] (orient-tetra (:points _))]
-        (g/into (or (:mesh opts) (bm/basic-mesh)) (g/faces _)))))
+      (let [[a b c d] (orient-tetra (get _ :points))]
+        (g/into (or (get opts :mesh) (bm/basic-mesh)) (g/faces _)))))
 #+END_SRC
 **** TODO ISample                                                    :verify:
 #+BEGIN_SRC clojure :noweb-ref impl
@@ -168,7 +168,7 @@
   g/ISubdivide
   (subdivide
    [_]
-   (let [cp (gu/centroid (:points _))]
+   (let [cp (gu/centroid (get _ :points))]
      (map #(tetrahedron (conj % cp)) (g/faces _))))
 #+END_SRC
 **** ITessellate
@@ -184,41 +184,45 @@
   g/IRotate3D
   (rotate-x
    [_ theta]
-   (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-x % theta) (:points _))))
+   (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-x % theta) (get _ :points))))
   (rotate-y
    [_ theta]
-   (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-y % theta) (:points _))))
+   (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-y % theta) (get _ :points))))
   (rotate-z
    [_ theta]
-   (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-z % theta) (:points _))))
+   (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-z % theta) (get _ :points))))
   (rotate-around-axis
    [_ axis theta]
    (thi.ng.geom.types.Tetrahedron.
-    (mapv #(g/rotate-around-axis % axis theta) (:points _))))
+    (mapv #(g/rotate-around-axis % axis theta) (get _ :points))))
   g/IScale
   (scale
    ([_ s]
-      (thi.ng.geom.types.Tetrahedron. (mapv #(m/* % s) (:points _))))
+      (thi.ng.geom.types.Tetrahedron. (mapv #(m/* % s) (get _ :points))))
    ([_ sx sy]
-      (thi.ng.geom.types.Tetrahedron. (mapv #(m/* % sx sy) (:points _))))
+      (thi.ng.geom.types.Tetrahedron. (mapv #(m/* % sx sy) (get _ :points))))
    ([_ sx sy sz]
-      (thi.ng.geom.types.Tetrahedron. (mapv #(m/* % sx sy sz) (:points _)))))
+      (thi.ng.geom.types.Tetrahedron. (mapv #(m/* % sx sy sz) (get _ :points)))))
   (scale-size
-   [_ s] (thi.ng.geom.types.Tetrahedron. (gu/scale-size s (:points _))))
+   [_ s] (thi.ng.geom.types.Tetrahedron. (gu/scale-size s (get _ :points))))
   g/ITranslate
   (translate
    [_ t]
-   (thi.ng.geom.types.Tetrahedron. (mapv #(m/+ % t) (:points _))))
+   (thi.ng.geom.types.Tetrahedron. (mapv #(m/+ % t) (get _ :points))))
   g/ITransform
   (transform
    [_ m]
-   (thi.ng.geom.types.Tetrahedron. (mapv #(g/transform-vector m %) (:points _))))
+   (thi.ng.geom.types.Tetrahedron. (mapv #(g/transform-vector m %) (get _ :points))))
 #+END_SRC
-**** IVolume                                                         :verify:
+**** IVolume
+- http://mathcentral.uregina.ca/QQ/database/QQ.09.03/peter2.html
+
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IVolume
-  (volume [{[a b c d] :points}]
-    (/ (m/dot (m/- a d) (gu/ortho-normal d b c)) 6.0))
+  (volume
+   [{[a b c d] :points}]
+   (let [n (gu/ortho-normal a b c)]
+     (Math/abs (* (* m/THIRD (gu/tri-area3 a b c)) (- (m/dot n d) (m/dot n a))))))
 #+END_SRC
 **** End of implementations                                        :noexport:
 #+BEGIN_SRC clojure :noweb-ref impl
