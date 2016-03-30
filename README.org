@@ -23,7 +23,7 @@
          - [[#svg][svg]]
          - [[#viz][viz]]
          - [[#voxel][voxel]]
-         - [[#webgl][webgl]]
+         - [[#opengl--webgl][OpenGL & WebGL]]
      - [[#status][Status]]
  - [[#project-definition][Project definition]]
      - [[#building--testing-this-project][Building & testing this project]]
@@ -141,7 +141,7 @@ Clojure & Clojurescript, makes it trivial to offload heavy operations
 Several small examples are still included in this repo under the
 =/examples= directory:
 
-- [[./examples/webgl/demos.org][WebGL demos]] (source + links to live versions)
+- [[./examples/gl/demos.org][OpenGL & WebGL demos]] (source + links to live versions)
 - [[./examples/svg/demos.org][SVG examples]]
 - [[./examples/viz/demos.org][Visualization examples]]
 - [[./examples/types/ptf.org][PTF mesh examples]]
@@ -180,26 +180,28 @@ reflecting the previous structure (up until v0.0.908) - it will be
 updated ASAP. Several namespaces have been added, migrated, renamed or
 merged:
 
-| *Previous*                       | *Current/new*                 |
-|----------------------------------+-------------------------------|
-| =thi.ng.geom.core.vector=        | =thi.ng.geom.vector=          |
-| =thi.ng.geom.core.matrix=        | =thi.ng.geom.matrix=          |
-| =thi.ng.geom.core.quaternion=    | =thi.ng.geom.quaternion=      |
-| =thi.ng.geom.core.utils=         | =thi.ng.geom.utils=           |
-| =thi.ng.geom.core.macros.vector= | =thi.ng.geom.macros.vector=   |
-| =thi.ng.geom.core.macros.matrix= | =thi.ng.geom.macros.matrix=   |
-| =thi.ng.geom.core.intersect=     | =thi.ng.geom.utils.intersect= |
-| =thi.ng.geom.core.subdiv=        | =thi.ng.geom.utils.subdiv=    |
-| =thi.ng.geom.mesh.delaunay=      | =thi.ng.geom.utils.delaunay=  |
-| =thi.ng.geom.types.utils=        | =thi.ng.geom.utils= (merged)  |
-| =thi.ng.geom.types.utils.ptf=    | =thi.ng.geom.ptf=             |
-|----------------------------------+-------------------------------|
-|                                  | =thi.ng.geom.attribs=         |
-|                                  | =thi.ng.geom.indexedmesh=     |
-|                                  | =thi.ng.geom.meshface=        |
-|                                  | =thi.ng.geom.webgl.camera=    |
-|                                  | =thi.ng.geom.webgl.constants= |
-|                                  | =thi.ng.geom.webgl.glmesh=    |
+| *Previous*                       | *Current/new*                    |
+|----------------------------------+----------------------------------|
+| =thi.ng.geom.core.vector=        | =thi.ng.geom.vector=             |
+| =thi.ng.geom.core.matrix=        | =thi.ng.geom.matrix=             |
+| =thi.ng.geom.core.quaternion=    | =thi.ng.geom.quaternion=         |
+| =thi.ng.geom.core.utils=         | =thi.ng.geom.utils=              |
+| =thi.ng.geom.core.macros.vector= | =thi.ng.geom.macros.vector=      |
+| =thi.ng.geom.core.macros.matrix= | =thi.ng.geom.macros.matrix=      |
+| =thi.ng.geom.core.intersect=     | =thi.ng.geom.utils.intersect=    |
+| =thi.ng.geom.core.subdiv=        | =thi.ng.geom.utils.subdiv=       |
+| =thi.ng.geom.mesh.delaunay=      | =thi.ng.geom.utils.delaunay=     |
+| =thi.ng.geom.types.utils=        | =thi.ng.geom.utils= (merged)     |
+| =thi.ng.geom.types.utils.ptf=    | =thi.ng.geom.ptf=                |
+| =thi.ng.geom.webgl.animator=     | =thi.ng.geom.gl.webgl.animator=  |
+|----------------------------------+----------------------------------|
+|                                  | =thi.ng.geom.attribs=            |
+|                                  | =thi.ng.geom.indexedmesh=        |
+|                                  | =thi.ng.geom.meshface=           |
+|                                  | =thi.ng.geom.gl.camera=          |
+|                                  | =thi.ng.geom.gl.jogl.constants=  |
+|                                  | =thi.ng.geom.gl.webgl.constants= |
+|                                  | =thi.ng.geom.gl.glmesh=          |
 
 All examples now share the common ns prefix: =thi.ng.geom.examples.*=
 (sources & docs located in =/examples= dir)
@@ -275,9 +277,9 @@ An experimental implementation of a in-memory sparse voxel tree (SVO)
 and related functionality to extract isosurface polygon meshes from
 the tree.
 
-*** webgl
+*** OpenGL & WebGL
 
-[[./src/webgl/][source]]
+[[./src/gl/][source]]
 
 This is a pure CLJS module and provides a common WebGL functionality
 (context creation, shader management & presets, buffer management,
@@ -560,11 +562,11 @@ target/geom-<<project-version()>>.js
                             :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}}}}
 
     :cljsbuild    {:builds [{:id "simple"
-                             :source-paths ["src" "test" "examples/webgl"]
+                             :source-paths ["src" "test" "examples/gl"]
                              :compiler {:output-to "<<cljs-artefact-path>>"
                                         :optimizations :whitespace
                                         :pretty-print true}}
-                            {:source-paths ["src" "test" "examples/webgl"]
+                            {:source-paths ["src" "test" "examples/gl"]
                              :id "prod"
                              :compiler {:output-to "<<cljs-artefact-path>>"
                                         :optimizations :advanced

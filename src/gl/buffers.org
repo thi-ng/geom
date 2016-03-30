@@ -1,13 +1,13 @@
 #+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
- - [[#thinggeomwebglbuffers][thi.ng.geom.webgl.buffers]]
+ - [[#thinggeomglbuffers][thi.ng.geom.gl.buffers]]
      - [[#frame-buffer][Frame buffer]]
      - [[#render-buffer][Render buffer]]
      - [[#textures][Textures]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
-* thi.ng.geom.webgl.buffers
+* thi.ng.geom.gl.buffers
 
 ** Frame buffer
 
@@ -182,11 +182,11 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/buffers.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.buffers
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/buffers.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.buffers
     (:require
-     [thi.ng.geom.webgl.core :as gl]
-     [thi.ng.geom.webgl.constants :as glc]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.constants :as glc]
      [thi.ng.xerror.core :as err]))
 
   (declare check-fbo)

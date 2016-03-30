@@ -1,11 +1,11 @@
 #+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
- - [[#thinggeomwebglanimator][thi.ng.geom.webgl.animator]]
+ - [[#thinggeomglanimator][thi.ng.geom.gl.animator]]
      - [[#animator][Animator]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
-* thi.ng.geom.webgl.animator
+* thi.ng.geom.gl.animator
 
 ** Animator
 
@@ -43,8 +43,8 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/animator.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.animator)
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/webgl/animator.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.webgl.animator)
 
   <<animator>>
 #+END_SRC

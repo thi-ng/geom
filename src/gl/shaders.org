@@ -1,7 +1,7 @@
 #+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_3_gh:
- - [[#thinggeomwebglshaders][thi.ng.geom.webgl.shaders]]
+ - [[#thinggeomglshaders][thi.ng.geom.gl.shaders]]
      - [[#shader-uniforms][Shader uniforms]]
          - [[#supported-types][Supported types]]
          - [[#uniform-setup--handling][Uniform setup & handling]]
@@ -19,7 +19,7 @@
          - [[#shadow][Shadow]]
          - [[#2d-image][2D Image]]
 
-* thi.ng.geom.webgl.shaders
+* thi.ng.geom.gl.shaders
 ** Shader uniforms
 *** Supported types
 
@@ -291,16 +291,16 @@ shader source before compilation with =compile-shader= below.
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders.cljs :noweb yes :mkdirp yes :padline no
-(ns thi.ng.geom.webgl.shaders
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders.cljs :noweb yes :mkdirp yes :padline no
+(ns thi.ng.geom.gl.shaders
   (:require-macros
     [cljs-log.core :refer [info warn]])
   (:require
     [thi.ng.math.core :as m]
     [thi.ng.geom.core :as g]
     [thi.ng.geom.matrix]
-    [thi.ng.geom.webgl.constants :as glc]
-    [thi.ng.geom.webgl.utils :as glu]
+    [thi.ng.geom.gl.constants :as glc]
+    [thi.ng.geom.gl.utils :as glu]
     [thi.ng.typedarrays.core :as ta]
     [thi.ng.dstruct.streams :as streams]
     [thi.ng.glsl.core :as glsl :include-macros true]
@@ -324,8 +324,8 @@ shader source before compilation with =compile-shader= below.
 ** Presets
 *** Basic
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/basic.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.shaders.basic
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders/basic.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.shaders.basic
     (:require
      [thi.ng.geom.matrix :refer [M44]]))
 
@@ -412,11 +412,11 @@ RGBA colors, however the alpha component is discarded.
 
 **** Full namespace
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/lambert.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.shaders.lambert
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders/lambert.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.shaders.lambert
     (:require
      [thi.ng.geom.matrix :refer [M44]]
-     [thi.ng.geom.webgl.core :as gl]
+     [thi.ng.geom.gl.core :as gl]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.vertex :as vertex]
      [thi.ng.glsl.lighting :as light]))
@@ -502,11 +502,11 @@ RGBA colors, however the alpha component is discarded.
   }
 #+END_SRC
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/phong.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.shaders.phong
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders/phong.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.shaders.phong
     (:require
      [thi.ng.geom.matrix :refer [M44]]
-     [thi.ng.geom.webgl.core :as gl]
+     [thi.ng.geom.gl.core :as gl]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.vertex :as vert]
      [thi.ng.glsl.lighting :as light]))
@@ -547,12 +547,12 @@ RGBA colors, however the alpha component is discarded.
 
 *** X-Ray
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/xray.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.shaders.xray
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders/xray.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.shaders.xray
     (:require
      [thi.ng.geom.matrix :refer [M44]]
-     [thi.ng.geom.webgl.core :as gl]
-     [thi.ng.geom.webgl.constants :as glc]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.constants :as glc]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.vertex :as vert]))
 
@@ -621,8 +621,8 @@ RGBA colors, however the alpha component is discarded.
   }
 #+END_SRC
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/spotlight.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.shaders.spotlight
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders/spotlight.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.shaders.spotlight
     (:require
      [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.glsl.core :as glsl :include-macros true]
@@ -733,13 +733,13 @@ RGBA colors, however the alpha component is discarded.
   }
 #+END_SRC
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/shadow.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.shaders.shadow
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders/shadow.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.shaders.shadow
     (:require
      [thi.ng.geom.matrix :refer [M44]]
-     [thi.ng.geom.webgl.core :as gl]
-     [thi.ng.geom.webgl.constants :as glc]
-     [thi.ng.geom.webgl.buffers :as buf]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.constants :as glc]
+     [thi.ng.geom.gl.buffers :as buf]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.lighting :as light]))
 
@@ -833,16 +833,16 @@ RGBA colors, however the alpha component is discarded.
   }
 #+END_SRC
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/shaders/image.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.shaders.image
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders/image.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.shaders.image
     (:require
      [thi.ng.geom.core :as g]
      [thi.ng.geom.vector :refer [vec2]]
      [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.geom.rect :as r]
-     [thi.ng.geom.webgl.core :as gl]
-     [thi.ng.geom.webgl.constants :as glc]
-     [thi.ng.geom.webgl.shaders :as sh]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.constants :as glc]
+     [thi.ng.geom.gl.shaders :as sh]
      [thi.ng.typedarrays.core :as ta]
      [thi.ng.dstruct.core :as d]
      [thi.ng.dstruct.streams :as streams]

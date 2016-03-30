@@ -1,7 +1,7 @@
 #+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
- - [[#namespace-thinggeomwebglglmesh][Namespace: thi.ng.geom.webgl.glmesh]]
+ - [[#namespace-thinggeomglglmesh][Namespace: thi.ng.geom.gl.glmesh]]
      - [[#limitations][Limitations]]
      - [[#constructors][Constructors]]
      - [[#glmesh][GLMesh]]
@@ -12,7 +12,7 @@
          - [[#igeomcontainer][IGeomContainer]]
          - [[#iclear][IClear]]
          - [[#itransform][ITransform]]
-         - [[#iwebglconvert][IWebGLConvert]]
+         - [[#iglconvert][IGLConvert]]
          - [[#end-of-implementation][End of implementation]]
      - [[#indexedglmesh][IndexedGLMesh]]
          - [[#icenter][ICenter]]
@@ -22,12 +22,12 @@
          - [[#igeomcontainer][IGeomContainer]]
          - [[#iclear][IClear]]
          - [[#itransform][ITransform]]
-         - [[#iwebglconvert][IWebGLConvert]]
+         - [[#iglconvert][IGLConvert]]
          - [[#end-of-implementation][End of implementation]]
      - [[#helpers][Helpers]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
-* Namespace: thi.ng.geom.webgl.glmesh
+* Namespace: thi.ng.geom.gl.glmesh
 
 This namespace provides speed optimized, *mutable* mesh
 implementations primarily intended for display purposes via WebGL.
@@ -40,7 +40,7 @@ features:
 - automatic triangle tessellation when adding mesh faces
 - automatic face normal calculation when adding faces (and face
   normals are enabled)
-- customizable attribute names when calling =gl/as-webgl-buffer-spec=
+- customizable attribute names when calling =gl/as-gl-buffer-spec=
   (see further below)
 
 The =IndexedGLMesh= furthermore does automatic indexing based on
@@ -49,12 +49,12 @@ amount of data needing to be sent and processed by the GPU.
 
 On the other hand the =GLMesh= builds flattened attribute buffers, is
 faster to construct and too allows for bigger meshes, since the 16bit
-element index limitation of WebGL does not apply here.
+element index limitation of OpenGL does not apply here.
 
 ** Limitations
 
 - Meshes are not resizable (due to fixed length buffers)
-- Max. 65536 unique vertices (WebGL limitation, =IndexedGLMesh= only)
+- Max. 65536 unique vertices (OpenGL limitation, =IndexedGLMesh= only)
 - No support for vertex normal calculation. V-normals must be pre-assigned
 - Currently only partial support for mesh analysis and transformations
 
@@ -67,7 +67,7 @@ number of faces going to be added. The meshes internally keep track of
 the actual elements used, but *do no bounds checking*.
 
 The second arg given is an optional set of vertex attribute buffer IDs
-(see tables under =IWebGLConvert= further below for details).
+(see tables under =IGLConvert= further below for details).
 
 #+BEGIN_SRC clojure :noweb-ref ctors
   (defn gl-mesh
@@ -194,11 +194,11 @@ These protocol methods are used internally by =g/into=.
    [_ tx] (transform-vertices #(g/transform-vector tx %) vertices (* id 9)) _)
 #+END_SRC
 
-*** IWebGLConvert
+*** IGLConvert
 
 Since a =GLMesh= holds all its data in typed arrays, conversion into a
 readily usable format for display purposes is reduced to a straight
-forward re-formatting into WebGL spec map. By supplying an =:attribs=
+forward re-formatting into GL spec map. By supplying an =:attribs=
 map in the 2nd arg (options map), all mesh attributes can be renamed
 in the spec map. The default attribute names are:
 
@@ -218,17 +218,17 @@ resulting spec map, call the function like this:
 
 #+BEGIN_SRC clojure
   ;; rename :position & :uv attribs in result spec
-  (gl/as-webgl-buffer-spec mesh {:attribs {:uv :texcoord, :position :pos}})
+  (gl/as-gl-buffer-spec mesh {:attribs {:uv :texcoord, :position :pos}})
 #+END_SRC
 
 Furthermore, the options map also supports the following other keys:
 
-- =:mode= - WebGL draw mode (default: =glc/triangles=)
+- =:mode= - GL draw mode (default: =glc/triangles=)
 - =:num-vertices= - number of vertices to draw (default: number mesh verts)
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  gl/IWebGLConvert
-  (as-webgl-buffer-spec
+  gl/IGLConvert
+  (as-gl-buffer-spec
    [_ {:keys [attribs] :as opts}]
    {:attribs      (cond->    {(get attribs :position :position) {:data vertices :size 3}}
                     fnormals (assoc (get attribs :fnorm :normal) {:data fnormals :size 3})
@@ -337,18 +337,18 @@ These protocol methods are used internally by =g/into=.
    [_ tx] (transform-vertices #(g/transform-vector tx %) vertices (* id 3)) _)
 #+END_SRC
 
-*** IWebGLConvert
+*** IGLConvert
 
 See description of this protocol implementation for =GLMesh= above.
 
 Furthermore, the options map also supports the following other keys:
 
-- =:mode= - WebGL draw mode (default: =glc/triangles=)
+- =:mode= - GL draw mode (default: =glc/triangles=)
 - =:num-items= - number of items (vertices) to draw (default: number of current faces * 3)
 
 #+BEGIN_SRC clojure :noweb-ref impl
-  gl/IWebGLConvert
-  (as-webgl-buffer-spec
+  gl/IGLConvert
+  (as-gl-buffer-spec
    [_ {:keys [attribs] :as opts}]
    {:attribs      (cond->    {(get attribs :position :position) {:data vertices :size 3}}
                     fnormals (assoc (get attribs :fnorm :normal) {:data fnormals :size 3})
@@ -533,15 +533,15 @@ Furthermore, the options map also supports the following other keys:
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/glmesh.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.glmesh
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/glmesh.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.glmesh
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
      [thi.ng.geom.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.utils :as gu]
-     [thi.ng.geom.webgl.core :as gl]
-     [thi.ng.geom.webgl.constants :as glc]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.constants :as glc]
      [thi.ng.dstruct.streams :as streams]
      [thi.ng.typedarrays.core :as ta]))
 

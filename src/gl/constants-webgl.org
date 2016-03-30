@@ -1,11 +1,11 @@
 #+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
- - [[#thinggeomwebglconstants][thi.ng.geom.webgl.constants]]
+ - [[#thinggeomglwebglconstants][thi.ng.geom.gl.webgl.constants]]
      - [[#webgl-10-constants][WebGL 1.0 constants]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
-* thi.ng.geom.webgl.constants
+* thi.ng.geom.gl.webgl.constants
 ** WebGL 1.0 constants
 #+BEGIN_SRC clojure :noweb-ref const
   (def active-attributes 0x8b89)
@@ -309,10 +309,9 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/constants.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.constants
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/webgl/constants.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.webgl.constants
     (:refer-clojure :exclude [byte float int short keep repeat replace]))
 
   <<const>>
 #+END_SRC
-

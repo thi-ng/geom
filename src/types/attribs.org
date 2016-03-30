@@ -40,8 +40,8 @@ should/could be used for each type.
 *Note:* Vertex attributes are only supported by the following mesh types:
 
 - =thi.ng.geom.IndexedMesh=
-- =thi.ng.geom.webgl.GLMesh= (CLJS only)
-- =thi.ng.geom.webgl.IndexedGLMesh= (CLJS only)
+- =thi.ng.geom.gl.GLMesh=
+- =thi.ng.geom.gl.IndexedGLMesh=
 
 | *Type*   | *UV generation example*                                               |
 |----------+-----------------------------------------------------------------------|

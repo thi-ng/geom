@@ -1,12 +1,12 @@
 #+SETUPFILE: ../../meta/setup.org
 
 * Contents                                                         :toc_4_gh:
- - [[#thinggeomwebglcamera][thi.ng.geom.webgl.camera]]
+ - [[#thinggeomglcamera][thi.ng.geom.gl.camera]]
      - [[#perspective-camera][Perspective camera]]
      - [[#helpers][Helpers]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
-* thi.ng.geom.webgl.camera
+* thi.ng.geom.gl.camera
 
 ** Perspective camera
 
@@ -49,7 +49,7 @@
 ** Helpers
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn apply
-    "Takes a webgl model spec map & camera, injects :view & :proj
+    "Takes a GL model spec map & camera, injects :view & :proj
     uniforms into spec."
     [spec cam]
     (update spec :uniforms merge {:view (get cam :view) :proj (get cam :proj)}))
@@ -66,14 +66,14 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/webgl/camera.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.camera
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/camera.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.camera
     (:refer-clojure :exclude [apply])
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.geom.vector :as v :refer [vec3]]
      [thi.ng.geom.matrix :as mat]
-     [thi.ng.geom.webgl.core :as gl]))
+     [thi.ng.geom.gl.core :as gl]))
 
   <<helpers>>
 
