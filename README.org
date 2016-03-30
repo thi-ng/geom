@@ -457,6 +457,12 @@ target/geom-<<project-version()>>.js
 [thi.ng/xerror "0.1.0"]
 #+END_SRC
 
+**** [[http://jogamp.org/jogl/www/][JOGL]]
+#+BEGIN_SRC clojure :exports none :noweb-ref dep-jogl
+[org.jogamp.gluegen/gluegen-rt "2.3.2"]
+[org.jogamp.jogl/jogl-all "2.3.2"]
+#+END_SRC
+
 **** [[https://github.com/postspectacular/cljs-log][cljs-log]]
 #+BEGIN_SRC clojure :exports none :noweb-ref dep-cljs-log
 [cljs-log "0.2.2"]
@@ -534,6 +540,7 @@ target/geom-<<project-version()>>.js
                     <<dep-strf>>
                     <<dep-tarrays>>
                     <<dep-xerror>>
+                    <<dep-jogl>>
                     <<dep-cljs-log>>
                     <<dep-hiccup>>]
 
