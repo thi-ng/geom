@@ -186,7 +186,7 @@
   (ns thi.ng.geom.gl.buffers
     (:require
      [thi.ng.geom.gl.core :as gl]
-     [thi.ng.geom.gl.constants :as glc]
+     [thi.ng.geom.gl.webgl.constants :as glc]
      [thi.ng.xerror.core :as err]))
 
   (declare check-fbo)
