@@ -14,10 +14,20 @@ the Java JOGL sources in order to provide a better user experience
 from Clojure. This is a superset of the WebGL constants defined in
 [[file:constants-webgl.org]].
 
+The resulting constants are all in kebab case naming convention with
+their =gl-= prefix removed, unless it would result in a symbol with
+leading digits (in which case the =gl-= remains intact)
+
 #+BEGIN_SRC clojure :noweb-ref converts
+  (defn keep-gl?
+    [x]
+    (or (re-find #"^GL_[0-9]+" x)
+        (= "GL_FALSE" x)
+        (= "GL_TRUE" x)))
+
   (defn snake->kebab
     [x]
-    (let [x (if (re-find #"^GL_[0-9]+" x) x (subs x 3))]
+    (let [x (if (keep-gl? x) x (subs x 3))]
       (-> x str/lower-case (str/replace "_" "-"))))
 
   (defn extract-constants-from-file
@@ -776,7 +786,7 @@ from Clojure. This is a superset of the WebGL constants defined in
   (def factor-max-amd 0x901d)
   (def factor-min-amd 0x901c)
   (def failure-nv 0x9030)
-  (def false 0x0)
+  (def gl-false 0x0)
   (def fastest 0x1101)
   (def feedback 0x1c01)
   (def feedback-buffer-pointer 0xdf0)
@@ -2802,7 +2812,7 @@ from Clojure. This is a superset of the WebGL constants defined in
   (def triangles-adjacency 0xc)
   (def triangles-adjacency-arb 0xc)
   (def triangles-adjacency-ext 0xc)
-  (def true 0x1)
+  (def gl-true 0x1)
   (def type 0x92fa)
   (def undefined-apple 0x8a1c)
   (def undefined-vertex 0x8260)
@@ -3116,7 +3126,8 @@ from Clojure. This is a superset of the WebGL constants defined in
 
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/jogl/constants.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.gl.jogl.constants
-    (:refer-clojure :exclude [byte float int short keep repeat replace]))
+    (:refer-clojure
+      :exclude [byte compile double filter float int load max min reduce set short keep repeat replace and or type]))
 
   <<const>>
 #+END_SRC

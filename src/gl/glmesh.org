@@ -541,7 +541,7 @@ Furthermore, the options map also supports the following other keys:
      [thi.ng.geom.vector :as v :refer [vec2 vec3]]
      [thi.ng.geom.utils :as gu]
      [thi.ng.geom.gl.core :as gl]
-     [thi.ng.geom.gl.constants :as glc]
+     [thi.ng.geom.gl.webgl.constants :as glc]
      [thi.ng.dstruct.streams :as streams]
      [thi.ng.typedarrays.core :as ta]))
 

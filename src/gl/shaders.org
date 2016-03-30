@@ -299,7 +299,7 @@ shader source before compilation with =compile-shader= below.
     [thi.ng.math.core :as m]
     [thi.ng.geom.core :as g]
     [thi.ng.geom.matrix]
-    [thi.ng.geom.gl.constants :as glc]
+    [thi.ng.geom.gl.webgl.constants :as glc]
     [thi.ng.geom.gl.utils :as glu]
     [thi.ng.typedarrays.core :as ta]
     [thi.ng.dstruct.streams :as streams]
@@ -552,7 +552,7 @@ RGBA colors, however the alpha component is discarded.
     (:require
      [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.geom.gl.core :as gl]
-     [thi.ng.geom.gl.constants :as glc]
+     [thi.ng.geom.gl.webgl.constants :as glc]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.vertex :as vert]))
 
@@ -738,7 +738,7 @@ RGBA colors, however the alpha component is discarded.
     (:require
      [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.geom.gl.core :as gl]
-     [thi.ng.geom.gl.constants :as glc]
+     [thi.ng.geom.gl.webgl.constants :as glc]
      [thi.ng.geom.gl.buffers :as buf]
      [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.lighting :as light]))
@@ -841,7 +841,7 @@ RGBA colors, however the alpha component is discarded.
      [thi.ng.geom.matrix :refer [M44]]
      [thi.ng.geom.rect :as r]
      [thi.ng.geom.gl.core :as gl]
-     [thi.ng.geom.gl.constants :as glc]
+     [thi.ng.geom.gl.webgl.constants :as glc]
      [thi.ng.geom.gl.shaders :as sh]
      [thi.ng.typedarrays.core :as ta]
      [thi.ng.dstruct.core :as d]
