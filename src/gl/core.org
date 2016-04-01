@@ -381,16 +381,18 @@ using the protocol.
     (into-buffer
       [_ buf stride idx]
       (let [t     (type (first _))
-            into* (case t
+            into* (condp = t
                    thi.ng.geom.vector.Vec2 into-buffer-vec2
                    thi.ng.geom.vector.Vec3 into-buffer-vec3
                    streams/into-buffer)]
         (case (count _)
-          2 (let [idx (into* (first _) buf stride idx)]
-              (into* (nth _ 1) buf stride idx))
-          3 (let [idx (into* (first _) buf stride idx)
-                  idx (into* (nth _ 1) buf stride idx)]
-              (into* (nth _ 2) buf stride idx))
+          2 (->> idx
+                 (into* (first _) buf stride)
+                 (into* (nth _ 1) buf stride))
+          3 (->> idx
+                 (into* (first _) buf stride)
+                 (into* (nth _ 1) buf stride)
+                 (into* (nth _ 2) buf stride))
           (loop [idx idx, xs _]
             (if xs
               (recur (into* (first xs) buf stride idx) (next xs))
