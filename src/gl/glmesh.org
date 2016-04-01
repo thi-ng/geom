@@ -473,9 +473,9 @@ Furthermore, the options map also supports the following other keys:
             idcol   (* id 12)]
         #?@(:clj
             [(->> idv
-                  (gl/into-buffer-vec3 (first verts) vertices 3)
-                  (gl/into-buffer-vec3 (nth verts 1) vertices 3)
-                  (gl/into-buffer-vec3 (nth verts 2) vertices 3))]
+                  (gl/into-float-buffer-vec3 (first verts) vertices 3)
+                  (gl/into-float-buffer-vec3 (nth verts 1) vertices 3)
+                  (gl/into-float-buffer-vec3 (nth verts 2) vertices 3))]
             :cljs
             [(.set vertices (.-buf ^thi.ng.geom.vector.Vec3 (first verts)) idv)
              (.set vertices (.-buf ^thi.ng.geom.vector.Vec3 (nth verts 1)) (+ idv 3))
@@ -484,9 +484,9 @@ Furthermore, the options map also supports the following other keys:
           #?(:clj
              (let [n  (or (get attribs :fnorm) (gu/ortho-normal verts))]
                (->> idv
-                    (gl/into-buffer-vec3 n fnormals 3)
-                    (gl/into-buffer-vec3 n fnormals 3)
-                    (gl/into-buffer-vec3 n fnormals 3)))
+                    (gl/into-float-buffer-vec3 n fnormals 3)
+                    (gl/into-float-buffer-vec3 n fnormals 3)
+                    (gl/into-float-buffer-vec3 n fnormals 3)))
              :cljs
              (let [n  (or (get attribs :fnorm) (gu/ortho-normal verts))
                    nb (.-buf ^thi.ng.geom.vector.Vec3 n)]
@@ -496,9 +496,9 @@ Furthermore, the options map also supports the following other keys:
         (when-let [vn (if vnormals (get attribs :vnorm))]
           #?@(:clj
               [(->> idv
-                    (gl/into-buffer-vec3 (first vn) vnormals 3)
-                    (gl/into-buffer-vec3 (nth vn 1) vnormals 3)
-                    (gl/into-buffer-vec3 (nth vn 2) vnormals 3))]
+                    (gl/into-float-buffer-vec3 (first vn) vnormals 3)
+                    (gl/into-float-buffer-vec3 (nth vn 1) vnormals 3)
+                    (gl/into-float-buffer-vec3 (nth vn 2) vnormals 3))]
               :cljs
               [(.set vnormals (.-buf ^thi.ng.geom.vector.Vec3 (first vn)) idv)
                (.set vnormals (.-buf ^thi.ng.geom.vector.Vec3 (nth vn 1)) (+ idv 3))
@@ -506,17 +506,17 @@ Furthermore, the options map also supports the following other keys:
         (when-let [uv (if uvs (get attribs :uv))]
           #?@(:clj
               [(->> iduv
-                    (gl/into-buffer-vec2 (first uv) uvs 2)
-                    (gl/into-buffer-vec2 (nth uv 1) uvs 2)
-                    (gl/into-buffer-vec2 (nth uv 2) uvs 2))]
+                    (gl/into-float-buffer-vec2 (first uv) uvs 2)
+                    (gl/into-float-buffer-vec2 (nth uv 1) uvs 2)
+                    (gl/into-float-buffer-vec2 (nth uv 2) uvs 2))]
               :cljs
               [(.set uvs (.-buf ^thi.ng.geom.vector.Vec2 (first uv)) iduv)
                (.set uvs (.-buf ^thi.ng.geom.vector.Vec2 (nth uv 1)) (+ iduv 2))
                (.set uvs (.-buf ^thi.ng.geom.vector.Vec2 (nth uv 2)) (+ iduv 4))]))
         (when-let [col (if cols (get attribs :col))]
-          (->> (streams/into-buffer (first col) cols 4 idcol) ;; FIXME
-               (streams/into-buffer (nth col 1) cols 4)
-               (streams/into-buffer (nth col 2) cols 4)))
+          (->> (streams/into-float-buffer (first col) cols 4 idcol)
+               (streams/into-float-buffer (nth col 1) cols 4)
+               (streams/into-float-buffer (nth col 2) cols 4)))
         #?(:clj  (g/set-prop! m :id (inc id))
            :cljs (set! (.-id m) (inc id)))))
     m)
@@ -528,18 +528,18 @@ Furthermore, the options map also supports the following other keys:
               id    #?(:clj (g/get-prop m :id) :cljs (.-id m))
               idv   (* id 3)
               [v fn vn col uv] va]
-          #?(:clj  (gl/into-buffer-vec3 v vertices 3 idv)
+          #?(:clj  (gl/into-float-buffer-vec3 v vertices 3 idv)
              :cljs (.set vertices (.-buf ^thi.ng.geom.vector.Vec3 v) idv))
           (if (if fnormals fn)
-            #?(:clj  (gl/into-buffer-vec3 fn fnormals 3 idv)
+            #?(:clj  (gl/into-float-buffer-vec3 fn fnormals 3 idv)
                :cljs (.set fnormals (.-buf ^thi.ng.geom.vector.Vec3 fn) idv))
             (if (if vnormals vn)
-              #?(:clj  (gl/into-buffer-vec3 vn vnormals 3 idv)
+              #?(:clj  (gl/into-float-buffer-vec3 vn vnormals 3 idv)
                  :cljs (.set vnormals (.-buf ^thi.ng.geom.vector.Vec3 vn) idv))))
           (when (if cols col)
-            (streams/into-buffer col cols 4 (* id 4))) ;; FIXME
+            (streams/into-float-buffer col cols 4 (* id 4)))
           (when (if uvs uv)
-            #?(:clj  (gl/into-buffer-vec2 uv uvs 2 (* id 2))
+            #?(:clj  (gl/into-float-buffer-vec2 uv uvs 2 (* id 2))
                :cljs (.set uvs (.-buf ^thi.ng.geom.vector.Vec2 uv) (* id 2))))
           #?@(:clj
               [(g/set-prop! m :index (assoc index va id))
@@ -590,7 +590,7 @@ Furthermore, the options map also supports the following other keys:
                [(aset tb 0 (.get buf i))
                 (aset tb 1 (.get buf (unchecked-add-int i 1)))
                 (aset tb 2 (.get buf (unchecked-add-int i 2)))
-                (gl/into-buffer-vec3 (f tv) buf 3 i)]
+                (gl/into-float-buffer-vec3 (f tv) buf 3 i)]
                :cljs
                [(.set tb (.slice buf i (+ i 3)) 0)
                 (.set buf (.-buf ^thi.ng.geom.vector.Vec3 (f tv)) i)])

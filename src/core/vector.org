@@ -387,15 +387,24 @@
 
 #+BEGIN_SRC clojure :noweb-ref vec2
   streams/IBuffer
-  (get-buffer [_] buf)
-  (into-buffer
+  (get-float-buffer
+   [_]
+   #?(:clj
+      (doto (FloatBuffer/allocate 2)
+        (.put (float (aget buf 0)))
+        (.put (float (aget buf 1)))
+        (.rewind))
+      :cljs buf))
+  streams/IIntoBuffer
+  (into-float-buffer
    [_ dest stride idx]
    #?@(:clj
-       [(aset ^doubles dest idx (aget buf 0))
-        (aset ^doubles dest (inc idx) (aget buf 1))]
+       [(.position ^FloatBuffer dest (int idx))
+        (.put ^FloatBuffer dest (float (aget buf 0)))
+        (.put ^FloatBuffer dest (float (aget buf 1)))]
        :cljs
        [(.set dest buf idx)])
-   (+ idx stride))
+   (unchecked-add-int idx stride))
 #+END_SRC
 
 *** IMathOps
@@ -1109,16 +1118,26 @@
 
 #+BEGIN_SRC clojure :noweb-ref vec3
   streams/IBuffer
-  (get-buffer [_] buf)
-  (into-buffer
-   [_ dest stride idx]
-   #?@(:clj
-       [(aset ^doubles dest idx (aget buf 0))
-        (aset ^doubles dest (inc idx) (aget buf 1))
-        (aset ^doubles dest (+ idx 2) (aget buf 2))]
-       :cljs
-       [(.set dest buf idx)])
-   (+ idx stride))
+  (get-float-buffer
+   [_]
+   #?(:clj
+      (doto (FloatBuffer/allocate 3)
+        (.put (float (aget buf 0)))
+        (.put (float (aget buf 1)))
+        (.put (float (aget buf 2)))
+        (.rewind))
+      :cljs buf))
+  streams/IIntoBuffer
+  (into-float-buffer
+     [_ dest stride idx]
+     #?@(:clj
+         [(.position ^FloatBuffer dest (int idx))
+          (.put ^FloatBuffer dest (float (aget buf 0)))
+          (.put ^FloatBuffer dest (float (aget buf 1)))
+          (.put ^FloatBuffer dest (float (aget buf 2)))]
+         :cljs
+         [(.set dest buf idx)])
+     (unchecked-add-int idx stride))
 #+END_SRC
 
 *** IMathOps
@@ -2216,7 +2235,10 @@
 
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/vector.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.vector
-    #?(:cljs
+    #?(:clj
+       (:import
+        [java.nio FloatBuffer])
+       :cljs
        (:require-macros
         [thi.ng.geom.macros.vector :as vm :refer [defswizzle]]
         [thi.ng.math.macros :as mm]))

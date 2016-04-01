@@ -228,10 +228,10 @@ can be created using helper functions in this namespace or the
     [buf coll stride]
     (loop [i 0, coll (seq coll)]
       (if coll
-        (recur (int (streams/into-buffer (first coll) buf stride i)) (next coll))
+        (recur (int (streams/into-float-buffer (first coll) buf stride i)) (next coll))
         buf)))
 
-  (defn fill-vertex-buffer-3
+  (defn fill-vertex-buffer-faces
     [f buf coll stride]
     (loop [i 0, coll (seq coll)]
       (if coll
@@ -377,26 +377,26 @@ using the protocol.
 
 #+BEGIN_SRC clojure :noweb-ref impl
   #?(:clj
-     (defn into-buffer-vec2
+     (defn into-float-buffer-vec2
        [^thi.ng.geom.vector.Vec2 v ^FloatBuffer buf stride idx]
        (.put buf idx       (float (aget ^doubles (.-buf v) 0)))
        (.put buf (inc idx) (float (aget ^doubles (.-buf v) 1)))
        (unchecked-add-int idx stride))
      :cljs
-     (defn into-buffer-vec2
+     (defn into-float-buffer-vec2
        [^thi.ng.geom.vector.Vec2 v buf stride idx]
        (.set buf (.-buf v) idx)
        (+ idx stride)))
 
   #?(:clj
-     (defn into-buffer-vec3
+     (defn into-float-buffer-vec3
        [^thi.ng.geom.vector.Vec3 v ^FloatBuffer buf stride idx]
        (.put buf idx       (float (aget ^doubles (.-buf v) 0)))
        (.put buf (inc idx) (float (aget ^doubles (.-buf v) 1)))
        (.put buf (+ idx 2) (float (aget ^doubles (.-buf v) 2)))
        (unchecked-add-int idx stride))
      :cljs
-     (defn into-buffer-vec3
+     (defn into-float-buffer-vec3
        [^thi.ng.geom.vector.Vec3 v buf stride idx]
        (.set buf (.-buf v) idx)
        (+ idx stride)))
@@ -406,15 +406,16 @@ using the protocol.
 #+BEGIN_SRC clojure :noweb-ref impl
   (extend-type #?(:clj clojure.lang.PersistentVector :cljs cljs.core.PersistentVector)
     streams/IBuffer
-    (get-buffer
+    (get-float-buffer
       [_] (#?(:clj float-buffer :cljs ta/float32) _))
-    (into-buffer
+    streams/IIntoBuffer
+    (into-float-buffer
       [_ buf stride idx]
       (let [t     (type (first _))
             into* (condp = t
-                   thi.ng.geom.vector.Vec2 into-buffer-vec2
-                   thi.ng.geom.vector.Vec3 into-buffer-vec3
-                   streams/into-buffer)]
+                   thi.ng.geom.vector.Vec2 into-float-buffer-vec2
+                   thi.ng.geom.vector.Vec3 into-float-buffer-vec3
+                   streams/into-float-buffer)]
         (case (count _)
           2 (->> idx
                  (into* (first _) buf stride)
@@ -423,6 +424,11 @@ using the protocol.
                  (into* (first _) buf stride)
                  (into* (nth _ 1) buf stride)
                  (into* (nth _ 2) buf stride))
+          4 (->> idx
+                 (into* (first _) buf stride)
+                 (into* (nth _ 1) buf stride)
+                 (into* (nth _ 2) buf stride)
+                 (into* (nth _ 3) buf stride))
           (loop [idx idx, xs _]
             (if xs
               (recur (into* (first xs) buf stride idx) (next xs))
@@ -537,8 +543,8 @@ using the protocol.
             num-verts (* num-faces 3)]
         (common-attrib-buffer-specs
          {:attribs
-          {:position    {:data (fill-vertex-buffer-3
-                                into-buffer-vec3
+          {:position    {:data (fill-vertex-buffer-faces
+                                into-float-buffer-vec3
                                 (#?(:clj float-buffer :cljs ta/float32) (* num-verts stride))
                                 faces stride)
                          :size stride}}
@@ -566,8 +572,8 @@ using the protocol.
                        :default nil)]
         (common-attrib-buffer-specs
          {:attribs
-          {:position    {:data (fill-vertex-buffer-3
-                                into-buffer-vec3
+          {:position    {:data (fill-vertex-buffer-faces
+                                into-float-buffer-vec3
                                 (#?(:clj float-buffer :cljs ta/float32) (* num-verts stride))
                                 faces stride)
                          :size stride}}
@@ -955,7 +961,7 @@ Currently the following options are supported:
          :cljs [[thi.ng.geom.gl.webgl.constants :as glc]
                 [thi.ng.typedarrays.core :as ta]])))
 
-  (declare into-buffer-vec3)
+  (declare into-float-buffer-vec3)
 
   <<protos>>
 

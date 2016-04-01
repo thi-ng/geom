@@ -872,7 +872,7 @@ RGBA colors, however the alpha component is discarded.
      (let [r         (or (get opts :rect) (r/rect 1))
            [a b c d] (g/vertices r)
            verts     (ta/float32 8)]
-       (streams/into-buffer [a b d c] verts 2 0)
+       (streams/into-float-buffer [a b d c] verts 2 0)
        {:attribs      (gl/make-attribute-buffers
                        gl glc/static-draw
                        {:position {:data verts :size 2}
