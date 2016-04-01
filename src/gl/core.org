@@ -50,7 +50,7 @@ a hash map (from here on called "GL model spec") of the following format:
   ;; - GL draw mode
   {:attribs      {:position {:data (gl/float-buffer [0 0 0,   1 0 0,   0 1 0])   :size 3}
                   :color    {:data (gl/float-buffer [1 0 0 1, 0 1 0 1, 0 0 1 1]) :size 4}}
-   :indices      {:data [0 1 2]}
+   :indices      {:data (gl/short-buffer [0 1 2])}
    :num-items    3
    :num-vertices 3
    :mode         glc/triangles}
@@ -58,8 +58,8 @@ a hash map (from here on called "GL model spec") of the following format:
 
 *Important:* The collections for =:data= and =:indices= keys MUST be
 native buffers (in Clojure) or JS Typed Arrays (Clojurescript). These
-can be created using with functions in the =thi.ng.geom.gl.buffers= or
-=thi.ng.typedarrays.core= namespaces respectively.
+can be created using helper functions in this namespace or the
+=thi.ng.typedarrays.core= namespace respectively.
 
 #+BEGIN_SRC clojure :noweb-ref protos
   (defprotocol IGLConvert
