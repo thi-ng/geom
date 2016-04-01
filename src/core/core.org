@@ -9,6 +9,7 @@
          - [[#sub-shape-accessors][Sub-shape accessors]]
          - [[#shape-based--structural-operations][Shape based & structural operations]]
          - [[#type-specific-operations][Type specific operations]]
+         - [[#mutable-property-access][Mutable property access]]
      - [[#constants][Constants]]
          - [[#default-circle-resolution][Default circle resolution]]
      - [[#complete-namespace-definition][Complete namespace definition]]
@@ -423,6 +424,14 @@ protocol consisting of just this one function:
     (delete-point [_ p])
     (get-point [_])
     (get-point-data [_]))
+#+END_SRC
+
+*** Mutable property access
+#+BEGIN_SRC clojure :noweb-ref protos-special
+  (defprotocol IMutableProps
+    (get-prop [_ k])
+    (set-prop! [_ k v])
+    (update-prop! [_ k f]))
 #+END_SRC
 
 ** Constants
