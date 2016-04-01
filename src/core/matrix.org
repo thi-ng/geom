@@ -910,25 +910,33 @@ https://github.com/stefanmirea/view-frustum-culling/blob/master/lab_camera.hpp#L
     "Returns an orthographic projection matrix, in which objects are the
     same size no matter how far away or nearby they are. This emulates
     the OpenGL function glOrtho()."
-    [l t r b n f]
-    (let[dx (/ (- l r))
-         dy (/ (- b t))
-         dz (/ (- n f))]
-      (Matrix44.
-       (* -2.0 dx) 0.0 0.0 0.0
-       0.0 (* -2.0 dy) 0.0 0.0
-       0.0 0.0 (* 2.0 dz) 0.0
-       (mm/addm l r dx) (mm/addm t b dy) (mm/addm n f dz) 1.0
-       nil nil)))
+    ([]
+     (ortho -1 -1 1 1 -1 1))
+    ([view-rect]
+     (let [a (apply / (get view-rect :size [1 1]))]
+       (ortho (- a) 1 a -1 -1 1)))
+    ([left top right bottom near far]
+     (let[dx (/ (- left right))
+          dy (/ (- bottom top))
+          dz (/ (- near far))]
+       (Matrix44.
+        (* -2.0 dx) 0.0 0.0 0.0
+        0.0 (* -2.0 dy) 0.0 0.0
+        0.0 0.0 (* 2.0 dz) 0.0
+        (mm/addm left right dx) (mm/addm top bottom dy) (mm/addm near far dz) 1.0
+        nil nil))))
 
   (defn perspective
-    "Returns a perspective transform matrix, which makes far away objects appear
-    smaller than nearby objects. The `aspect` argument should be the width
-    divided by the height of your viewport and `fov` is the vertical angle
-    of the field of view in degrees."
+    "Returns a perspective transform matrix, which makes far away
+    objects appear smaller than nearby objects. `fovy` is the vertical
+    angle of the field of view in degrees. The `aspect` argument should
+    be a rect, a map with a `:size` key (vec2) or the width divided by
+    the height of your viewport. `near` and `far` are the distances of
+    the clipping planes."
     [fovy aspect near far]
-    (let [f (/ (Math/tan (* 0.5 (m/radians fovy))))
-          nf (/ (- near far))]
+    (let [f      (/ (Math/tan (* 0.5 (m/radians fovy))))
+          nf     (/ (- near far))
+          aspect (if (map? aspect) (apply / (get aspect :size [1 1])) aspect)]
       (Matrix44.
        (/ f aspect) 0.0 0.0 0.0
        0.0 f 0.0 0.0
@@ -1060,4 +1068,3 @@ https://github.com/stefanmirea/view-frustum-culling/blob/master/lab_camera.hpp#L
 
   <<helpers>>
 #+END_SRC
-
