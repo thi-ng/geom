@@ -129,6 +129,36 @@ can be created using helper functions in this namespace or the
        (if (number? n-or-coll)
          (GLBuffers/newDirectIntBuffer (int n-or-coll))
          (-> n-or-coll int-array GLBuffers/newDirectIntBuffer))))
+
+  #?(:clj
+     (defn copy-float-buffer
+       [^FloatBuffer dest ^FloatBuffer src did sid len]
+       (.position dest (int did))
+       (loop [len len, did did, sid sid]
+         (when (pos? len)
+           (.put dest (.get src (int sid)))
+           (recur (dec len) (unchecked-inc did) (unchecked-inc sid))))))
+
+  #?(:clj
+     (defn copy-float-buffer-vec2
+       [^FloatBuffer dest ^FloatBuffer src did sid]
+       (.put dest (int did) (.get src (int sid)))
+       (.put dest (.get src (unchecked-add-int sid 1)))))
+
+  #?(:clj
+     (defn copy-float-buffer-vec3
+       [^FloatBuffer dest ^FloatBuffer src did sid]
+       (.put dest (int did) (.get src (int sid)))
+       (.put dest (.get src (unchecked-add-int sid 1)))
+       (.put dest (.get src (unchecked-add-int sid 2)))))
+
+  #?(:clj
+     (defn copy-float-buffer-vec4
+       [^FloatBuffer dest ^FloatBuffer src did sid]
+       (.put dest (int did) (.get src (int sid)))
+       (.put dest (.get src (unchecked-add-int sid 1)))
+       (.put dest (.get src (unchecked-add-int sid 2)))
+       (.put dest (.get src (unchecked-add-int sid 3)))))
 #+END_SRC
 
 ** Helpers
@@ -655,19 +685,9 @@ using the protocol.
        (let [b (.getParameter gl glc/viewport)]
          (r/rect (aget b 0) (aget b 1) (aget b 2) (aget b 3)))))
 
-  (defn perspective
-    [fovy aspect near far]
-    (let [aspect (cond
-                   (number? aspect) aspect
-                   (map? aspect)    (let [{[w h] :size} aspect] (/ w h))
-                   :else            (/ (first aspect) (nth aspect 1)))]
-      (mat/perspective fovy aspect near far)))
+  (def perspective mat/perspective)
 
-  (defn ortho
-    ([] (mat/ortho -1 -1 1 1 -1 1))
-    ([view-rect]
-     (let [a (apply / (get view-rect :size))]
-       (mat/ortho (- a) 1 a -1 -1 1))))
+  (def ortho mat/ortho)
 #+END_SRC
 
 *** WebGL extensions
