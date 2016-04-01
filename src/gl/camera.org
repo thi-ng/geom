@@ -29,7 +29,7 @@
   (defn set-projection
     [cam opts]
     (let [cam (update-keys cam  [:fov :aspect :near :far] opts)]
-      (assoc cam :proj (gl/perspective (get cam :fov) (get cam :aspect) (get cam :near) (get cam :far)))))
+      (assoc cam :proj (mat/perspective (get cam :fov) (get cam :aspect) (get cam :near) (get cam :far)))))
 
   (defn perspective-camera
     [opts]
@@ -66,14 +66,13 @@
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/camera.cljs :noweb yes :mkdirp yes :padline no
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/camera.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.gl.camera
     (:refer-clojure :exclude [apply])
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.geom.vector :as v :refer [vec3]]
-     [thi.ng.geom.matrix :as mat]
-     [thi.ng.geom.gl.core :as gl]))
+     [thi.ng.geom.matrix :as mat]))
 
   <<helpers>>
 
