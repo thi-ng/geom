@@ -6,8 +6,6 @@
   (ns thi.ng.geom.examples.jogl.ex01
     (:import
      [com.jogamp.opengl GL3 GLAutoDrawable]
-     [com.jogamp.opengl.util Animator]
-     [com.jogamp.newt.opengl GLWindow]
      [com.jogamp.newt.event MouseEvent KeyEvent])
     (:require
      [thi.ng.math.core :as m]
@@ -58,7 +56,7 @@
           tex     (buf/load-texture gl {:src (io/file "dev-resources/cubev.png")})
           spec    (-> (a/aabb 1)
                       (g/center)
-                      (g/as-mesh {:mesh (glm/gl-mesh 12 #{:uv})
+                      (g/as-mesh {:mesh    (glm/gl-mesh 12 #{:uv})
                                   :attribs {:uv (attr/face-attribs (attr/uv-cube-map-v 256 false))}})
                       (gl/as-gl-buffer-spec {})
                       (assoc :shader (sh/make-shader-from-spec gl shader))
@@ -66,13 +64,13 @@
                       (gl/make-buffers-in-spec gl glc/static-draw))]
       (pprint spec)
       (swap! app assoc
-             :spec spec
+             :model spec
              :zoom 1)))
 
   (defn display
     [^GLAutoDrawable drawable t]
     (let [^GL3 gl (.. drawable getGL getGL3)
-          {:keys [shader vao] :as spec} (:spec @app)
+          {:keys [shader] :as spec} (:model @app)
           unis    (:uniforms shader)
           t       (* 0.25 t)
           model   (-> mat/M44 (g/rotate-x t) (g/rotate-y (* t 1.5)))
@@ -88,8 +86,7 @@
   (defn resize
     [_ x y w h]
     (swap! app assoc :width w :height h)
-    (swap! app assoc-in [:spec :uniforms :proj]
-           (mat/perspective 45 (/ w h) 0.1 10)))
+    (swap! app assoc-in [:model :uniforms :proj] (mat/perspective 45 (/ w h) 0.1 10)))
 
   (defn key-pressed
     [^KeyEvent e]
@@ -98,12 +95,11 @@
       nil))
 
   (defn mouse-moved
-    [^MouseEvent e] (prn (.getX e) (.getY e)))
+    [^MouseEvent e] (swap! app assoc :mouse-pos (v/vec2 (.getX e) (.getY e))))
 
   (defn mousewheel-moved
     [^MouseEvent e deltas]
-    (swap! app update :zoom
-           #(m/clamp (+ % (* (nth deltas 1) 0.01)) 0.5 2)))
+    (swap! app update :zoom #(m/clamp (+ % (* (nth deltas 1) 0.01)) 0.5 2)))
 
   (defn -main
     [& args]
@@ -119,5 +115,6 @@
                        :resize  resize
                        :keys    {:press key-pressed}
                        :mouse   {:move  mouse-moved
-                                 :wheel mousewheel-moved}}})))
+                                 :wheel mousewheel-moved}}}))
+    nil)
 #+END_SRC
