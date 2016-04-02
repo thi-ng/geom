@@ -1,0 +1,102 @@
+* JOGL examples
+** Example 1
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/jogl/ex01.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.jogl.ex01
+    (:import
+     [com.jogamp.opengl GL3 GLAutoDrawable]
+     [com.jogamp.opengl.util Animator]
+     [com.jogamp.newt.opengl GLWindow]
+     [com.jogamp.newt.event MouseEvent KeyEvent]
+     [java.nio FloatBuffer])
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.attribs :as attr]
+     [thi.ng.geom.vector :as v]
+     [thi.ng.geom.matrix :as mat]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.camera :as cam]
+     [thi.ng.geom.gl.shaders :as sh]
+     [thi.ng.geom.gl.glmesh :as glm]
+     [thi.ng.geom.gl.jogl.core :as jogl]
+     [thi.ng.geom.gl.jogl.constants :as glc]))
+
+  (def app (atom nil))
+
+  (def shader
+    {:vs "
+  void main() {
+    col = vec4(position.xy * 0.5 + 0.5, fract(time), 1.0);
+    gl_Position = proj * view * model * vec4(position, 1.0);
+  }"
+     :fs "out vec4 outCol;
+
+  void main() {
+    outCol = col;
+  }"
+     :version  330
+     :attribs  {:position :vec3}
+     :varying  {:col      :vec4}
+     :uniforms {:model :mat4
+                :view  :mat4
+                :proj  :mat4
+                :time  :float}
+     :state    {:depth-test true}})
+
+  (defn init
+    [^GLAutoDrawable drawable]
+    (let [^GL3 gl (.. drawable getGL getGL3)
+          spec    (-> (a/aabb 1)
+                      (g/center)
+                      (g/as-mesh {:mesh (glm/gl-mesh 12 #{})})
+                      (gl/as-gl-buffer-spec {})
+                      (assoc :shader (sh/make-shader-from-spec gl shader))
+                      (gl/make-buffers-in-spec gl glc/static-draw)
+                      #_(gl/make-vertex-array gl))]
+      (prn spec)
+      (swap! app assoc :spec spec)))
+
+  (defn display
+    [^GLAutoDrawable drawable t]
+    (let [^GL3 gl (.. drawable getGL getGL3)
+          {:keys [shader vao] :as spec} (:spec @app)
+          unis    (:uniforms shader)
+          t       (* 0.25 t)
+          model   (-> mat/M44 (g/rotate-x t) (g/rotate-y (* t 1.5)))
+          view    (mat/look-at (v/vec3 0 0 (* 3 (:zoom @app))) (v/vec3) (v/vec3 0 1 0))
+          proj    (mat/perspective 45 (/ (:width @app) (:height @app)) 0.1 10)]
+      (doto gl
+        (gl/clear-color-and-depth-buffer 0.3 0.3 0.3 1.0 1.0)
+        (gl/draw-with-shader
+         (update spec :uniforms merge
+                 {:model model
+                  :view view
+                  :proj proj
+                  :time t})))))
+
+  (defn -main
+    [& args]
+    (swap!
+     app
+     (fn [_]
+       (-> {:profile         :gl3
+            :samples         4
+            :double-buffer   true
+            :fullscreen      false
+            :events          {:init    init
+                              :display display
+                              :dispose (fn [_] (prn :dispose) (.stop ^Animator (:anim @app)))
+                              :resize  (fn [_ x y w h] (swap! app assoc :width w :height h))
+                              :keys    {:press (fn [^KeyEvent e]
+                                                 (if (= KeyEvent/VK_ESCAPE (.getKeyCode e))
+                                                   (.destroy ^GLWindow (:window @app))))}
+                              :mouse   {:move  (fn [^MouseEvent e]
+                                                 (prn (.getX e) (.getY e)))
+                                        :wheel (fn [^MouseEvent e deltas]
+                                                 (swap! app update :zoom
+                                                        #(m/clamp (+ % (* (nth deltas 1) 0.01)) 0.5 2)))}}}
+           (jogl/gl-window)
+           (merge {:zoom 1})))))
+#+END_SRC
