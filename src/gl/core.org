@@ -102,15 +102,23 @@ can be created using helper functions in this namespace or the
 ** Helpers
 
 #+BEGIN_SRC clojure :noweb-ref helpers
+  (defn zero-fill-coll
+    [coll stride]
+    (let [len (count coll)]
+      (cond
+        (< len stride) (take stride (concat coll (repeat 0)))
+        (> len stride) (take stride coll)
+        :else          coll)))
+
   #?(:clj
      (defn fill-buffer-vec2
        [^FloatBuffer buf idx v num stride]
-       (let [^doubles vbuf (.-buf ^thi.ng.geom.vector.Vec2 v)]
-         (loop [idx 0, num num]
+       (let [^float vbuf (float-array (.-buf ^thi.ng.geom.vector.Vec2 v))]
+         (.position buf 0)
+         (loop [num num]
            (when (pos? num)
-             (.put buf idx (float (aget vbuf 0)))
-             (.put buf idx (float (aget vbuf 1)))
-             (recur (unchecked-add-int idx stride) (dec num)))))
+             (.put buf vbuf)
+             (recur (dec num)))))
        buf)
      :cljs
      (defn fill-buffer-vec2
@@ -125,13 +133,12 @@ can be created using helper functions in this namespace or the
   #?(:clj
      (defn fill-buffer-vec3
        [^FloatBuffer buf idx v num stride]
-       (let [^doubles vbuf (.-buf ^thi.ng.geom.vector.Vec3 v)]
-         (loop [idx 0, num num]
+       (let [^floats vbuf (float-array (.-buf ^thi.ng.geom.vector.Vec3 v))]
+         (.position buf 0)
+         (loop [num num]
            (when (pos? num)
-             (.put buf idx       (float (aget vbuf 0)))
-             (.put buf (+ idx 1) (float (aget vbuf 1)))
-             (.put buf (+ idx 2) (float (aget vbuf 2)))
-             (recur (unchecked-add-int idx stride) (dec num)))))
+             (.put buf vbuf)
+             (recur (dec num)))))
        buf)
      :cljs
      (defn fill-buffer-vec3
@@ -146,7 +153,8 @@ can be created using helper functions in this namespace or the
   #?(:clj
      (defn fill-buffer
        [^FloatBuffer buf idx coll n stride]
-       (let [^floats b (float-array coll)]
+       (let [^floats b (float-array (zero-fill-coll coll stride))]
+         (.position buf 0)
          (loop [i idx, n n]
            (when (pos? n)
              (.put buf b)
@@ -155,7 +163,7 @@ can be created using helper functions in this namespace or the
      :cljs
      (defn fill-buffer
        [buf idx coll n stride]
-       (let [b (ta/float32 coll)]
+       (let [b (ta/float32 (zero-fill-coll coll stride))]
          (loop [i idx, n n]
            (when (pos? n)
              (.set buf b i)
@@ -183,36 +191,36 @@ can be created using helper functions in this namespace or the
 
   (defn face-normals-buffer
     [faces]
-    (let [buf (#?(:clj native/float-buffer :cljs ta/float32) (* (count faces) 3 3))]
-      (loop [idx 0, faces faces]
+    (let [buf (#?(:clj native/float-buffer-direct :cljs ta/float32) (* (count faces) 3 3))]
+      (loop [faces faces #?@(:cljs [idx 0])]
         (if faces
           #?(:clj
              (let [^floats nbuf (float-array (.-buf ^thi.ng.geom.vector.Vec3 (gu/ortho-normal (first faces))))]
-               (.put buf idx       nbuf)
-               (.put buf (+ idx 3) nbuf)
-               (.put buf (+ idx 6) nbuf)
-               (recur (+ idx 9) (next faces)))
+               (.put buf nbuf)
+               (.put buf nbuf)
+               (.put buf nbuf)
+               (recur (next faces)))
              :cljs
              (let [nbuf (.-buf ^thi.ng.geom.vector.Vec3 (gu/ortho-normal (first faces)))]
                (.set buf nbuf idx)
                (.set buf nbuf (+ idx 3))
                (.set buf nbuf (+ idx 6))
-               (recur (+ idx 9) (next faces))))
+               (recur (next faces) (+ idx 9))))
           buf))))
 
-  (defn face-normals
+  (defn mesh-face-normals-buffer
     [m]
     (let [fnorms (g/face-normals m true)
           faces  (g/faces m)
-          buf    (#?(:clj native/float-buffer :cljs ta/float32) (* (count faces) 9))]
-      (loop [idx 0, faces faces]
+          buf    (#?(:clj native/float-buffer-direct :cljs ta/float32) (* (count faces) 9))]
+      (loop [faces faces #?@(:cljs [idx 0])]
         (if faces
           #?(:clj
              (let [^floats nbuf (float-array (.-buf ^thi.ng.geom.vector.Vec3 (fnorms (first faces))))]
-               (.put buf idx       nbuf)
-               (.put buf (+ idx 3) nbuf)
-               (.put buf (+ idx 6) nbuf)
-               (recur (+ idx 9) (next faces)))
+               (.put buf nbuf)
+               (.put buf nbuf)
+               (.put buf nbuf)
+               (recur (next faces)))
              :cljs
              (let [nbuf (.-buf ^thi.ng.geom.vector.Vec3 (fnorms (first faces)))]
                (.set buf nbuf idx)
@@ -221,28 +229,28 @@ can be created using helper functions in this namespace or the
                (recur (+ idx 9) (next faces))))
           buf))))
 
-  (defn vertex-normals
+  (defn mesh-vertex-normals-buffer
     [m]
     (let [vnorms (g/vertex-normals m true)
           faces  (g/faces m)
-          buf    (#?(:clj native/float-buffer :cljs ta/float32) (* (count faces) 9))]
-      (loop [idx 0, faces faces]
+          buf    (#?(:clj native/float-buffer-direct :cljs ta/float32) (* (count faces) 9))]
+      (loop [faces faces #?@(:cljs [idx 0])]
         (if faces
           #?(:clj
              (let [f (first faces)
                    ^doubles vna (.-buf ^thi.ng.geom.vector.Vec3 (get vnorms (first f)))
                    ^doubles vnb (.-buf ^thi.ng.geom.vector.Vec3 (get vnorms (nth f 1)))
                    ^doubles vnc (.-buf ^thi.ng.geom.vector.Vec3 (get vnorms (nth f 2)))]
-               (.put buf idx       (float (aget vna 0)))
-               (.put buf (+ idx 1) (float (aget vna 1)))
-               (.put buf (+ idx 2) (float (aget vna 2)))
-               (.put buf (+ idx 3) (float (aget vnb 0)))
-               (.put buf (+ idx 4) (float (aget vnb 1)))
-               (.put buf (+ idx 5) (float (aget vnb 2)))
-               (.put buf (+ idx 6) (float (aget vnc 0)))
-               (.put buf (+ idx 7) (float (aget vnc 1)))
-               (.put buf (+ idx 8) (float (aget vnc 2)))
-               (recur (+ idx 9) (next faces)))
+               (.put buf (float (aget vna 0)))
+               (.put buf (float (aget vna 1)))
+               (.put buf (float (aget vna 2)))
+               (.put buf (float (aget vnb 0)))
+               (.put buf (float (aget vnb 1)))
+               (.put buf (float (aget vnb 2)))
+               (.put buf (float (aget vnc 0)))
+               (.put buf (float (aget vnc 1)))
+               (.put buf (float (aget vnc 2)))
+               (recur (next faces)))
              :cljs
              (let [f (first faces)]
                (.set buf (.-buf ^thi.ng.geom.vector.Vec3 (get vnorms (first f))) idx)
@@ -263,10 +271,10 @@ supported.
 
 #+BEGIN_SRC clojure :noweb-ref helpers
   (defn common-attrib-buffer-specs
-    [{:keys [num-vertices] :as acc} {:keys [normals fixed-normal uv colors single-color]}]
+    [{:keys [num-vertices] :as acc} {:keys [normals fixed-normal uv colors fixed-color]}]
     (let [c-stride (if colors
                      (count (first colors))
-                     (if single-color (count single-color)))]
+                     (if fixed-color (count fixed-color)))]
       (cond->
        acc
 
@@ -277,7 +285,7 @@ supported.
        (assoc-in
         [:attribs :normal]
         {:data (fill-buffer-vec3
-                (#?(:clj native/float-buffer :cljs ta/float32) (* num-vertices 3))
+                (#?(:clj native/float-buffer-direct :cljs ta/float32) (* num-vertices 3))
                 0 fixed-normal num-vertices 3)
          :size 3})
 
@@ -285,23 +293,23 @@ supported.
        (assoc-in
         [:attribs :uv]
         {:data (fill-vertex-buffer
-                (#?(:clj native/float-buffer :cljs ta/float32) (* 2 (count uv))) uv 2)
+                (#?(:clj native/float-buffer-direct :cljs ta/float32) (* 2 (count uv))) uv 2)
          :size 2})
 
        colors
        (assoc-in
         [:attribs :color]
         {:data (fill-vertex-buffer
-                (#?(:clj native/float-buffer :cljs ta/float32) (* c-stride (count colors)))
+                (#?(:clj native/float-buffer-direct :cljs ta/float32) (* c-stride (count colors)))
                 colors c-stride)
          :size c-stride})
 
-       single-color
+       fixed-color
        (assoc-in
         [:attribs :color]
         {:data (fill-buffer
-                (#?(:clj native/float-buffer :cljs ta/float32) (* num-vertices c-stride))
-                0 single-color num-vertices c-stride)
+                (#?(:clj native/float-buffer-direct :cljs ta/float32) (* num-vertices c-stride))
+                0 fixed-color num-vertices c-stride)
          :size c-stride}))))
 #+END_SRC
 
@@ -489,7 +497,7 @@ using the protocol.
           :mode         glc/triangles
           :num-vertices num-verts
           :num-faces    num-faces}
-         (assoc spec :normals (if fnormals (face-normals m)))))))
+         (assoc spec :normals (if fnormals (mesh-face-normals-buffer m)))))))
 #+END_SRC
 
 *** GMesh
@@ -505,8 +513,8 @@ using the protocol.
             num-faces (count faces)
             num-verts (* num-faces 3)
             normals   (cond
-                       vnormals (vertex-normals m)
-                       fnormals (face-normals m)
+                       vnormals (mesh-vertex-normals-buffer m)
+                       fnormals (mesh-face-normals-buffer m)
                        :default nil)]
         (common-attrib-buffer-specs
          {:attribs

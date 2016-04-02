@@ -113,7 +113,7 @@ link for more discussion about these options.
            shader2   (sh/make-shader-from-spec gl (basic/make-shader-spec-2d true))
            teeth     20
            model     (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
-                         (gl/as-gl-buffer-spec {:normals false :single-color [1 0 0 1]})
+                         (gl/as-gl-buffer-spec {:normals false :fixed-color [1 0 0 1]})
                          (gl/make-buffers-in-spec gl glc/static-draw)
                          (assoc-in [:uniforms :proj] (gl/ortho view-rect))
                          (time))

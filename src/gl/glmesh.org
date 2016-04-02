@@ -80,15 +80,15 @@ The second arg given is an optional set of vertex attribute buffer IDs
     ([numf] (gl-mesh numf nil))
     ([numf attribs]
     (GLMesh.
-      (#?(:clj native/float-buffer :cljs ta/float32) (* numf 9))
+      (#?(:clj native/float-buffer-direct :cljs ta/float32) (* numf 9))
       (if (get attribs :fnorm)
-        (#?(:clj native/float-buffer :cljs ta/float32) (* numf 9)))
+        (#?(:clj native/float-buffer-direct :cljs ta/float32) (* numf 9)))
       (if (get attribs :vnorm)
-        (#?(:clj native/float-buffer :cljs ta/float32) (* numf 9)))
+        (#?(:clj native/float-buffer-direct :cljs ta/float32) (* numf 9)))
       (if (get attribs :uv)
-        (#?(:clj native/float-buffer :cljs ta/float32) (* numf 6)))
+        (#?(:clj native/float-buffer-direct :cljs ta/float32) (* numf 6)))
       (if (get attribs :col)
-        (#?(:clj native/float-buffer :cljs ta/float32) (* numf 12)))
+        (#?(:clj native/float-buffer-direct :cljs ta/float32) (* numf 12)))
       0
       attribs)))
 
@@ -101,16 +101,16 @@ The second arg given is an optional set of vertex attribute buffer IDs
     ([numf] (indexed-gl-mesh numf nil))
     ([numf attribs]
      (IndexedGLMesh.
-      (#?(:clj native/float-buffer :cljs ta/float32) (* numf 9))
+      (#?(:clj native/float-buffer-direct :cljs ta/float32) (* numf 9))
       (if (get attribs :fnorm)
-        (#?(:clj native/float-buffer :cljs ta/float32) (* numf 9)))
+        (#?(:clj native/float-buffer-direct :cljs ta/float32) (* numf 9)))
       (if (get attribs :vnorm)
-        (#?(:clj native/float-buffer :cljs ta/float32) (* numf 9)))
+        (#?(:clj native/float-buffer-direct :cljs ta/float32) (* numf 9)))
       (if (get attribs :uv)
-        (#?(:clj native/float-buffer :cljs ta/float32) (* numf 6)))
+        (#?(:clj native/float-buffer-direct :cljs ta/float32) (* numf 6)))
       (if (get attribs :col)
-        (#?(:clj native/float-buffer :cljs ta/float32) (* numf 12)))
-      (#?(:clj native/short-buffer :cljs ta/uint16) (* numf 3))
+        (#?(:clj native/float-buffer-direct :cljs ta/float32) (* numf 12)))
+      (#?(:clj native/short-buffer-direct :cljs ta/uint16) (* numf 3))
       attribs
       {} 0 0)))
 #+END_SRC

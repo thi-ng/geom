@@ -8,8 +8,7 @@
      [com.jogamp.opengl GL3 GLAutoDrawable]
      [com.jogamp.opengl.util Animator]
      [com.jogamp.newt.opengl GLWindow]
-     [com.jogamp.newt.event MouseEvent KeyEvent]
-     [java.nio FloatBuffer])
+     [com.jogamp.newt.event MouseEvent KeyEvent])
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
