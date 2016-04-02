@@ -46,6 +46,14 @@
        :profile profile
        :caps    caps
        :anim    (doto (Animator. win) (.start))}))
+
+  (defn dispose-window
+    ([^GLWindow window]
+     (dispose-window window nil))
+    ([^GLWindow window ^Animator animator]
+     (prn :dispose)
+     (.destroy window)
+     (when animator (.stop animator))))
 #+END_SRC
 
 ** Event proxies
