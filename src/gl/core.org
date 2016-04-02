@@ -664,8 +664,9 @@ using the protocol.
   #?(:clj
      (defn get-viewport-rect
        [^GL3 gl]
-       (let [b (.glGetParameter gl glc/viewport)]
-         (r/rect (aget b 0) (aget b 1) (aget b 2) (aget b 3))))
+       (let [^IntBuffer b (native/int-buffer 4)]
+         (.glGetIntegeri_v gl glc/viewport 0 b)
+         (r/rect (.get b 0) (.get b 1) (.get b 2) (.get b 3))))
      :cljs
      (defn get-viewport-rect
        [^WebGLRenderingContext gl]
@@ -727,7 +728,7 @@ using the protocol.
 #+BEGIN_SRC clojure :noweb-ref attribs
   #?(:clj
      (def ^:private buffer-strides
-       {glc/array-buffer 4
+       {glc/array-buffer         4
         glc/element-array-buffer 2}))
 
   #?(:clj
@@ -852,7 +853,7 @@ Currently the following options are supported:
           (bind x i))
         (recur (inc i) (next coll)))))
 
-  #_(defn prepare-render-state
+  (defn prepare-render-state
     "Takes a GL context and shader spec, sets GL render flags stored
     under :state key (only if :state is present)."
     #?(:clj  [^GL3 gl {:keys [state]}]
@@ -897,7 +898,15 @@ Currently the following options are supported:
 ** Drawing
 
 #+BEGIN_SRC clojure :noweb-ref draw
-  #?(:cljs
+  #?(:clj
+     (defn draw
+       [^GL3 gl spec]
+       (let [mode (get spec :mode glc/triangles)]
+         (if (get spec :indices)
+           (.glDrawElements gl mode (get spec :num-items) glc/unsigned-short 0)
+           (.glDrawArrays gl mode 0 (get spec :num-vertices)))
+         gl))
+     :cljs
      (defn draw
        [^WebGLRenderingContext gl spec]
        (let [mode (get spec :mode glc/triangles)]
@@ -906,14 +915,14 @@ Currently the following options are supported:
            (.drawArrays gl mode 0 (get spec :num-vertices)))
          gl)))
 
-  #?(:cljs
-     (defn draw-with-shader
-       [^WebGLRenderingContext gl {:keys [shader] :as spec}]
-       (prepare-render-state gl shader)
-       (begin-shader gl shader (get spec :uniforms) (get spec :attribs) (get spec :indices))
-       (draw gl spec)
-       (end-shader gl shader)
-       gl))
+  (defn draw-with-shader
+    #?(:clj  [^GL3 gl {:keys [shader] :as spec}]
+       :cljs [^WebGLRenderingContext gl {:keys [shader] :as spec}])
+    (prepare-render-state gl shader)
+    (begin-shader gl shader (get spec :uniforms) (get spec :attribs) (get spec :indices))
+    (draw gl spec)
+    (end-shader gl shader)
+    gl)
 #+END_SRC
 
 ** Complete namespace definition

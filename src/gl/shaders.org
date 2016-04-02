@@ -125,7 +125,7 @@ Special cases:
                       (#{:mat2 :mat3 :mat4} type)
                       (fn [x]
                         #?(:clj
-                           (setter gl loc (if opt glc/gl-true glc/gl-false)
+                           (setter gl loc (boolean opt)
                                    (if (instance? FloatBuffer x)
                                      x (u-cast x)))
                            :cljs
@@ -216,8 +216,9 @@ Special cases:
     (let [{:keys [buffer stride size type normalized? offset]} attrib-spec]
       (if-let [loc (-> shader (get :attribs) (get id))]
         (doto gl
-          (#?(:clj .glBindBuffer :cljs .bindBuffer) glc/array-buffer buffer)
-          (#?(:clj .glEnableVertexAttribArray :cljs .enableVertexAttribArray) loc)
+          #?(:clj  (.glBindBuffer glc/array-buffer (.get ^IntBuffer buffer 0))
+             :cljs (.bindBuffer glc/array-buffer buffer))
+          (#?(:clj .glEnableVertexAttribArray :cljs .enableVertexAttribArray) (int loc))
           (#?(:clj .glVertexAttribPointer :cljs .vertexAttribPointer)
            loc
            size
@@ -231,7 +232,7 @@ Special cases:
     #?(:clj  [^GL3 gl shader id]
        :cljs [^WebGLRenderingContext gl shader id])
     (if-let [loc (-> shader (get :attribs) (get id))]
-      (do (#?(:cljs .glDisableVertexAttribArray :cljs .disableVertexAttribArray) gl loc) gl)
+      (do (#?(:clj .glDisableVertexAttribArray :cljs .disableVertexAttribArray) gl loc) gl)
       (#?(:clj println :cljs warn) (str "Unknown shader attribute: " id))))
 #+END_SRC
 
