@@ -17,45 +17,54 @@
      [thi.ng.geom.vector :as v]
      [thi.ng.geom.matrix :as mat]
      [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.buffers :as buf]
      [thi.ng.geom.gl.camera :as cam]
      [thi.ng.geom.gl.shaders :as sh]
      [thi.ng.geom.gl.glmesh :as glm]
      [thi.ng.geom.gl.jogl.core :as jogl]
-     [thi.ng.geom.gl.jogl.constants :as glc]))
+     [thi.ng.geom.gl.jogl.constants :as glc]
+     [clojure.pprint :refer [pprint]]
+     [clojure.java.io :as io]))
 
   (def app (atom nil))
 
   (def shader
     {:vs "
   void main() {
-    col = vec4(position.xy * 0.5 + 0.5, fract(time), 1.0);
+    vCol = vec4(position.xy * 0.5 + 0.5, fract(time), 1.0);
+    vUV = uv;
     gl_Position = proj * view * model * vec4(position, 1.0);
   }"
      :fs "out vec4 outCol;
 
   void main() {
-    outCol = col;
+    outCol = vCol * texture(tex, vUV);
   }"
      :version  330
-     :attribs  {:position :vec3}
-     :varying  {:col      :vec4}
+     :attribs  {:position :vec3
+                :uv       :vec2}
+     :varying  {:vCol     :vec4
+                :vUV      :vec2}
      :uniforms {:model :mat4
                 :view  :mat4
                 :proj  :mat4
+                :tex   :sampler2D
                 :time  :float}
      :state    {:depth-test true}})
 
   (defn init
     [^GLAutoDrawable drawable]
     (let [^GL3 gl (.. drawable getGL getGL3)
+          tex     (buf/load-texture gl {:src (io/file "dev-resources/cubev.png")})
           spec    (-> (a/aabb 1)
                       (g/center)
-                      (g/as-mesh {:mesh (glm/gl-mesh 12 #{})})
+                      (g/as-mesh {:mesh (glm/gl-mesh 12 #{:uv})
+                                  :attribs {:uv (attr/face-attribs (attr/uv-cube-map-v 256 false))}})
                       (gl/as-gl-buffer-spec {})
                       (assoc :shader (sh/make-shader-from-spec gl shader))
-                      (gl/make-buffers-in-spec gl glc/static-draw)
-                      #_(gl/make-vertex-array gl))]
-      (prn spec)
+                      (assoc-in [:shader :state :tex] tex)
+                      (gl/make-buffers-in-spec gl glc/static-draw))]
+      (pprint spec)
       (swap! app assoc
              :spec spec
              :zoom 1)))
@@ -104,7 +113,7 @@
       {:profile       :gl3
        :samples       4
        :double-buffer true
-       :fullscreen    true
+       :fullscreen    false
        :events        {:init    init
                        :display display
                        :resize  resize
