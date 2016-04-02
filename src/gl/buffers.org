@@ -14,11 +14,11 @@
 
 #+BEGIN_SRC clojure :noweb-ref fbo
   (defrecord FBO
-      #?(:clj [^GL3 gl id]
+      #?(:clj [^GL3 gl ^IntBuffer id]
          :cljs [^WebGLRenderingContext gl id])
     gl/IBind
     (bind [_]
-      #?(:clj  (.glBindFramebuffer gl glc/framebuffer (.get ^IntBuffer id 0))
+      #?(:clj  (.glBindFramebuffer gl glc/framebuffer (.get id 0))
          :cljs (.bindFramebuffer gl glc/framebuffer id))
       _)
     (bind [_ _]
@@ -78,11 +78,11 @@
 
 #+BEGIN_SRC clojure :noweb-ref render-buffer
   (defrecord RenderBuffer
-      #?(:clj  [^GL3 gl id format width height]
+      #?(:clj  [^GL3 gl ^IntBuffer id format width height]
          :cljs [^WebGLRenderingContext gl id format width height])
     gl/IBind
     (bind [_]
-      #?(:clj  (.glBindRenderbuffer gl glc/renderbuffer (.get ^IntBuffer id 0))
+      #?(:clj  (.glBindRenderbuffer gl glc/renderbuffer (.get id 0))
          :cljs (.bindRenderbuffer gl glc/renderbuffer id))
       _)
     (bind [_ _] (err/unsupported!))
@@ -155,50 +155,87 @@
 | =:height=      | nil                | Texture height          |
 
 #+BEGIN_SRC clojure :noweb-ref tex
-  #?(:cljs
-     (defrecord Texture2D [^WebGLRenderingContext gl id target]
-       gl/IBind
-       (bind
-           [_] (gl/bind _ 0))
-       (bind
-           [_ unit]
-           (.activeTexture gl (+ glc/texture0 unit))
-           (.bindTexture gl target id)
-           _)
-       (unbind
-           [_] (gl/unbind _ 0))
-       (unbind
-           [_ unit]
-           (.activeTexture gl (+ glc/texture0 unit))
-           (.bindTexture gl target nil)
-           _)
-       gl/IRelease
-       (release
-           [_] (.deleteTexture gl id) _)
-       gl/IConfigure
-       (configure
-           [_ {:keys [width height image pixels format type filter wrap flip premultiply]
-               :or   {type glc/unsigned-byte format glc/rgb} :as config}]
-           (when filter
-             (let [[min mag] (if (sequential? filter) filter [filter filter])]
-               (.texParameteri gl target glc/texture-min-filter min)
-               (.texParameteri gl target glc/texture-mag-filter mag)))
-           (when wrap
-             (let [[ws wt] (if (sequential? wrap) wrap [wrap wrap])]
-               (.texParameteri gl target glc/texture-wrap-s ws)
-               (.texParameteri gl target glc/texture-wrap-t wt)))
-           (when (not (nil? flip))
+  (defrecord Texture2D
+      #?(:clj  [^GL3 gl ^IntBuffer id target]
+         :cljs [^WebGLRenderingContext gl id target])
+    gl/IBind
+    (bind [_]
+      (gl/bind _ 0))
+    (bind [_ unit]
+      #?@(:clj
+          [(.glActiveTexture gl (+ glc/texture0 unit))
+           (.glBindTexture gl target (.get id 0))]
+          :cljs
+          [(.activeTexture gl (+ glc/texture0 unit))
+           (.bindTexture gl target id)])
+      _)
+    (unbind [_]
+      (gl/unbind _ 0))
+    (unbind [_ unit]
+      #?@(:clj
+          [(.glActiveTexture gl (+ glc/texture0 unit))
+           (.glBindTexture gl target 0)]
+          :cljs
+          [(.activeTexture gl (+ glc/texture0 unit))
+           (.bindTexture gl target nil)])
+      _)
+    gl/IRelease
+    (release [_]
+      #?(:cljs (.glDeleteTextures gl 1 id) :cljs (.deleteTexture gl id))
+      _)
+    gl/IConfigure
+    (configure
+        [_ {:keys [width height image pixels format type filter wrap flip premultiply]
+            :or   {type glc/unsigned-byte format glc/rgb} :as config}]
+      (when filter
+        (let [[min mag] (if (sequential? filter) filter [filter filter])]
+          #?@(:clj
+              [(.glTexParameteri gl target glc/texture-min-filter min)
+               (.glTexParameteri gl target glc/texture-mag-filter mag)]
+              :cljs
+              [(.texParameteri gl target glc/texture-min-filter min)
+               (.texParameteri gl target glc/texture-mag-filter mag)])))
+      (when wrap
+        (let [[ws wt] (if (sequential? wrap) wrap [wrap wrap])]
+          #?@(:clj
+              [(.glTexParameteri gl target glc/texture-wrap-s ws)
+               (.glTexParameteri gl target glc/texture-wrap-t wt)]
+              :cljs
+              [(.texParameteri gl target glc/texture-wrap-s ws)
+               (.texParameteri gl target glc/texture-wrap-t wt)])))
+      #?@(:cljs
+          [(when (not (nil? flip))
              (.pixelStorei gl glc/unpack-flip-y-webgl flip))
            (when (not (nil? premultiply))
-             (.pixelStorei gl glc/unpack-premultiply-alpha-webgl premultiply))
-           (cond
-             image
-             (.texImage2D gl target 0 format format type image)
-             (and width height)
-             (.texImage2D gl target 0 format width height 0 format type pixels))
-           _)))
+             (.pixelStorei gl glc/unpack-premultiply-alpha-webgl premultiply))])
+      #?(:clj
+         (cond
+           image (let [^TextureData d image]
+                   (.glTexImage2D
+                    gl (int target) (int 0)
+                    (.getInternalFormat d)
+                    (.getWidth d)
+                    (.getHeight d)
+                    (int 0)
+                    (.getPixelFormat d)
+                    (.getPixelType d)
+                    (.getBuffer d))))
+         :cljs
+         (cond
+           image                     (.texImage2D gl target 0 format format type image)
+           (and pixels width height) (.texImage2D gl target 0 format width height 0 format type pixels)))
+      _))
 
-  #?(:cljs
+  #?(:clj
+     (defn make-texture
+       [^GL3 gl opts]
+       (let [id   (native/int-buffer 1)
+             _    (.glGenTextures gl 1 id)
+             tex  (Texture2D. gl id (opts :target glc/texture-2d))
+             opts (merge {:format glc/rgba :type glc/unsigned-byte} opts)]
+         (gl/bind tex)
+         (gl/configure tex opts)))
+     :cljs
      (defn make-texture
        [^WebGLRenderingContext gl opts]
        (let [tex  (Texture2D. gl (.createTexture gl) (opts :target glc/texture-2d))
@@ -220,7 +257,24 @@
                      :premultiply true})
              (make-texture gl)))))
 
-  #?(:cljs
+  #?(:clj
+     (defn load-texture
+       [^GL3 gl opts]
+       (let [tex (->> opts
+                      (merge {:format glc/rgba
+                              :filter [glc/linear glc/linear]
+                              :wrap   glc/clamp-to-edge})
+                      (make-texture gl))
+             img (TextureIO/newTextureData
+                  (.getGLProfile gl)
+                  ^java.io.File (get opts :src)
+                  false
+                  (name (get opts :src-format "png")))]
+         (doto tex
+           (gl/bind)
+           (gl/configure (merge {:image img} opts)))
+         tex))
+     :cljs
      (defn load-texture
        [^WebGLRenderingcontext gl opts]
        (let [tex (->> opts
@@ -246,6 +300,7 @@
     #?(:clj
        (:import
         [com.jogamp.opengl GL3]
+        [com.jogamp.opengl.util.texture TextureData TextureIO]
         [java.nio Buffer DoubleBuffer FloatBuffer ShortBuffer IntBuffer]))
     (:require
      [thi.ng.geom.gl.core :as gl]
