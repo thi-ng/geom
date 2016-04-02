@@ -9,7 +9,6 @@
          - [[#iconfigure][IConfigure]]
          - [[#itexture][ITexture]]
          - [[#iframebuffer][IFrameBuffer]]
-     - [[#native-buffer-wrappers-for-clojure--jogl][Native buffer wrappers for Clojure / JOGL]]
      - [[#helpers][Helpers]]
          - [[#attribute-buffer-generation][Attribute buffer generation]]
      - [[#gl-buffer-conversions][GL buffer conversions]]
@@ -48,9 +47,9 @@ a hash map (from here on called "GL model spec") of the following format:
   ;; - number of indices (only required if :indices given)
   ;; - number of vertices
   ;; - GL draw mode
-  {:attribs      {:position {:data (gl/float-buffer [0 0 0,   1 0 0,   0 1 0])   :size 3}
-                  :color    {:data (gl/float-buffer [1 0 0 1, 0 1 0 1, 0 0 1 1]) :size 4}}
-   :indices      {:data (gl/short-buffer [0 1 2])}
+  {:attribs      {:position {:data (native/float-buffer [0 0 0,   1 0 0,   0 1 0])   :size 3}
+                  :color    {:data (native/float-buffer [1 0 0 1, 0 1 0 1, 0 0 1 1]) :size 4}}
+   :indices      {:data (native/short-buffer [0 1 2])}
    :num-items    3
    :num-vertices 3
    :mode         glc/triangles}
@@ -99,67 +98,6 @@ can be created using helper functions in this namespace or the
     (set-fbo-depth-buffer [_ depth-buffer]))
 #+END_SRC
 
-** Native buffer wrappers for Clojure / JOGL
-
-#+BEGIN_SRC clojure :noweb-ref native
-  #?(:clj
-     (defn ^FloatBuffer float-buffer
-       [n-or-coll]
-       (if (number? n-or-coll)
-         (GLBuffers/newDirectFloatBuffer (int n-or-coll))
-         (-> n-or-coll float-array GLBuffers/newDirectFloatBuffer))))
-
-  #?(:clj
-     (defn ^DoubleBuffer double-buffer
-       [n-or-coll]
-       (if (number? n-or-coll)
-         (GLBuffers/newDirectDoubleBuffer (int n-or-coll))
-         (-> n-or-coll double-array GLBuffers/newDirectDoubleBuffer))))
-
-  #?(:clj
-     (defn ^ShortBuffer short-buffer
-       [n-or-coll]
-       (if (number? n-or-coll)
-         (GLBuffers/newDirectShortBuffer (int n-or-coll))
-         (-> n-or-coll short-array GLBuffers/newDirectShortBuffer))))
-
-  #?(:clj
-     (defn ^IntBuffer int-buffer
-       [n-or-coll]
-       (if (number? n-or-coll)
-         (GLBuffers/newDirectIntBuffer (int n-or-coll))
-         (-> n-or-coll int-array GLBuffers/newDirectIntBuffer))))
-
-  #?(:clj
-     (defn copy-float-buffer
-       [^FloatBuffer dest ^FloatBuffer src did sid len]
-       (.position dest (int did))
-       (loop [len len, did did, sid sid]
-         (when (pos? len)
-           (.put dest (.get src (int sid)))
-           (recur (dec len) (unchecked-inc did) (unchecked-inc sid))))))
-
-  #?(:clj
-     (defn copy-float-buffer-vec2
-       [^FloatBuffer dest ^FloatBuffer src did sid]
-       (.put dest (int did) (.get src (int sid)))
-       (.put dest (.get src (unchecked-add-int sid 1)))))
-
-  #?(:clj
-     (defn copy-float-buffer-vec3
-       [^FloatBuffer dest ^FloatBuffer src did sid]
-       (.put dest (int did) (.get src (int sid)))
-       (.put dest (.get src (unchecked-add-int sid 1)))
-       (.put dest (.get src (unchecked-add-int sid 2)))))
-
-  #?(:clj
-     (defn copy-float-buffer-vec4
-       [^FloatBuffer dest ^FloatBuffer src did sid]
-       (.put dest (int did) (.get src (int sid)))
-       (.put dest (.get src (unchecked-add-int sid 1)))
-       (.put dest (.get src (unchecked-add-int sid 2)))
-       (.put dest (.get src (unchecked-add-int sid 3)))))
-#+END_SRC
 
 ** Helpers
 
@@ -245,7 +183,7 @@ can be created using helper functions in this namespace or the
 
   (defn face-normals-buffer
     [faces]
-    (let [buf (#?(:clj float-buffer :cljs ta/float32) (* (count faces) 3 3))]
+    (let [buf (#?(:clj native/float-buffer :cljs ta/float32) (* (count faces) 3 3))]
       (loop [idx 0, faces faces]
         (if faces
           #?(:clj
@@ -266,7 +204,7 @@ can be created using helper functions in this namespace or the
     [m]
     (let [fnorms (g/face-normals m true)
           faces  (g/faces m)
-          buf    (#?(:clj float-buffer :cljs ta/float32) (* (count faces) 9))]
+          buf    (#?(:clj native/float-buffer :cljs ta/float32) (* (count faces) 9))]
       (loop [idx 0, faces faces]
         (if faces
           #?(:clj
@@ -287,7 +225,7 @@ can be created using helper functions in this namespace or the
     [m]
     (let [vnorms (g/vertex-normals m true)
           faces  (g/faces m)
-          buf    (#?(:clj float-buffer :cljs ta/float32) (* (count faces) 9))]
+          buf    (#?(:clj native/float-buffer :cljs ta/float32) (* (count faces) 9))]
       (loop [idx 0, faces faces]
         (if faces
           #?(:clj
@@ -339,7 +277,7 @@ supported.
        (assoc-in
         [:attribs :normal]
         {:data (fill-buffer-vec3
-                (#?(:clj float-buffer :cljs ta/float32) (* num-vertices 3))
+                (#?(:clj native/float-buffer :cljs ta/float32) (* num-vertices 3))
                 0 fixed-normal num-vertices 3)
          :size 3})
 
@@ -347,14 +285,14 @@ supported.
        (assoc-in
         [:attribs :uv]
         {:data (fill-vertex-buffer
-                (#?(:clj float-buffer :cljs ta/float32) (* 2 (count uv))) uv 2)
+                (#?(:clj native/float-buffer :cljs ta/float32) (* 2 (count uv))) uv 2)
          :size 2})
 
        colors
        (assoc-in
         [:attribs :color]
         {:data (fill-vertex-buffer
-                (#?(:clj float-buffer :cljs ta/float32) (* c-stride (count colors)))
+                (#?(:clj native/float-buffer :cljs ta/float32) (* c-stride (count colors)))
                 colors c-stride)
          :size c-stride})
 
@@ -362,7 +300,7 @@ supported.
        (assoc-in
         [:attribs :color]
         {:data (fill-buffer
-                (#?(:clj float-buffer :cljs ta/float32) (* num-vertices c-stride))
+                (#?(:clj native/float-buffer :cljs ta/float32) (* num-vertices c-stride))
                 0 single-color num-vertices c-stride)
          :size c-stride}))))
 #+END_SRC
@@ -407,7 +345,7 @@ using the protocol.
   (extend-type #?(:clj clojure.lang.PersistentVector :cljs cljs.core.PersistentVector)
     streams/IBuffer
     (get-float-buffer
-      [_] (#?(:clj float-buffer :cljs ta/float32) _))
+      [_] (#?(:clj native/float-buffer :cljs ta/float32) _))
     streams/IIntoBuffer
     (into-float-buffer
       [_ buf stride idx]
@@ -446,7 +384,7 @@ using the protocol.
         (common-attrib-buffer-specs
          {:attribs
           {:position    {:data (fill-vertex-buffer
-                                (#?(:clj float-buffer :cljs ta/float32) (* numv stride))
+                                (#?(:clj native/float-buffer :cljs ta/float32) (* numv stride))
                                 points stride)
                          :size stride}}
           :mode         glc/line-strip
@@ -465,7 +403,7 @@ using the protocol.
         (common-attrib-buffer-specs
          {:attribs
           {:position    {:data (fill-vertex-buffer
-                                (#?(:clj float-buffer :cljs ta/float32) (* numv stride))
+                                (#?(:clj native/float-buffer :cljs ta/float32) (* numv stride))
                                 points stride)
                          :size stride}}
           :mode         glc/line-strip
@@ -484,7 +422,7 @@ using the protocol.
         (common-attrib-buffer-specs
          {:attribs
           {:position    {:data (fill-vertex-buffer
-                                (#?(:clj float-buffer :cljs ta/float32) (* 4 stride))
+                                (#?(:clj native/float-buffer :cljs ta/float32) (* 4 stride))
                                 [a b d c] stride)
                          :size stride}}
           :mode         glc/triangle-strip
@@ -507,7 +445,7 @@ using the protocol.
               num-verts (* num-faces 3)]
           (common-attrib-buffer-specs
            {:attribs {:position {:data (fill-vertex-buffer
-                                        (#?(:clj float-buffer :cljs ta/float32) (* num-verts stride))
+                                        (#?(:clj native/float-buffer :cljs ta/float32) (* num-verts stride))
                                         faces stride)
                                  :size stride}}
             :mode         mode
@@ -521,7 +459,7 @@ using the protocol.
               num-verts (count verts)]
           (common-attrib-buffer-specs
            {:attribs {:position {:data (fill-vertex-buffer
-                                        (#?(:clj float-buffer :cljs ta/float32) (* num-verts stride))
+                                        (#?(:clj native/float-buffer :cljs ta/float32) (* num-verts stride))
                                         verts stride)
                                  :size stride}}
             :mode         mode
@@ -545,7 +483,7 @@ using the protocol.
          {:attribs
           {:position    {:data (fill-vertex-buffer-faces
                                 into-float-buffer-vec3
-                                (#?(:clj float-buffer :cljs ta/float32) (* num-verts stride))
+                                (#?(:clj native/float-buffer :cljs ta/float32) (* num-verts stride))
                                 faces stride)
                          :size stride}}
           :mode         glc/triangles
@@ -574,7 +512,7 @@ using the protocol.
          {:attribs
           {:position    {:data (fill-vertex-buffer-faces
                                 into-float-buffer-vec3
-                                (#?(:clj float-buffer :cljs ta/float32) (* num-verts stride))
+                                (#?(:clj native/float-buffer :cljs ta/float32) (* num-verts stride))
                                 faces stride)
                          :size stride}}
           :mode         glc/triangles
@@ -587,15 +525,16 @@ using the protocol.
 *** Default configuration
 
 #+BEGIN_SRC clojure :noweb-ref ctx
-  (def context-default-attribs
-    {:alpha true
-     :antialias true
-     :depth true
-     :fail-if-major-performance-caveat false
-     :prefer-low-power-to-high-performance false
-     :premultiplied-alpha true
-     :preserve-drawing-buffer false
-     :stencil false})
+  #?(:cljs
+     (def context-default-attribs
+       {:alpha                                true
+        :antialias                            true
+        :depth                                true
+        :fail-if-major-performance-caveat     false
+        :prefer-low-power-to-high-performance false
+        :premultiplied-alpha                  true
+        :preserve-drawing-buffer              false
+        :stencil                              false}))
 #+END_SRC
 
 *** Context creation
@@ -620,72 +559,114 @@ using the protocol.
 *** Context manipulation functions
 
 #+BEGIN_SRC clojure :noweb-ref ctx
-  #?(:cljs
+  #?(:clj
+     (defn clear-color-buffer
+       ([^GL3 gl col]
+        (let [^thi.ng.color.core.RGBA c (col/as-rgba col)]
+          (clear-color-buffer gl (.-r c) (.-g c) (.-b c) (.-a c))))
+       ([^GL3 gl r g b a]
+        (doto gl
+          (.glClearColor r g b a)
+          (.glClear glc/color-buffer-bit))))
+     :cljs
      (defn clear-color-buffer
        ([^WebGLRenderingContext gl col]
         (let [^thi.ng.color.core.RGBA c (col/as-rgba col)]
           (clear-color-buffer gl (.-r c) (.-g c) (.-b c) (.-a c))))
        ([^WebGLRenderingContext gl r g b a]
-        (.clearColor gl r g b a)
-        (.clear gl glc/color-buffer-bit)
-        gl)))
+        (doto gl
+          (.clearColor r g b a)
+          (.clear glc/color-buffer-bit)))))
 
-  #?(:cljs
+  #?(:clj
+     (defn clear-depth-buffer
+       [^GL3 gl d]
+       (doto gl
+         (.glClearDepth (float d))
+         (.glClear glc/depth-buffer-bit)))
+     :cljs
      (defn clear-depth-buffer
        [^WebGLRenderingContext gl d]
-       (.clearDepth gl d)
-       (.clear gl glc/depth-buffer-bit)
-       gl))
+       (doto gl
+         (.clearDepth d)
+         (.clear glc/depth-buffer-bit))))
 
-  #?(:cljs
+  #?(:clj
+     (defn clear-color-and-depth-buffer
+       ([^GL3 gl col d]
+        (let [^thi.ng.color.core.RGBA c (col/as-rgba col)]
+          (clear-color-and-depth-buffer gl (.-r c) (.-g c) (.-b c) (.-a c) d)))
+       ([^GL3 gl r g b a d]
+        (doto gl
+          (.glClearColor r g b a)
+          (.glClearDepth d)
+          (.glClear (bit-or glc/depth-buffer-bit glc/color-buffer-bit)))))
+     :cljs
      (defn clear-color-and-depth-buffer
        ([^WebGLRenderingContext gl col d]
         (let [^thi.ng.color.core.RGBA c (col/as-rgba col)]
           (clear-color-and-depth-buffer gl (.-r c) (.-g c) (.-b c) (.-a c) d)))
        ([^WebGLRenderingContext gl r g b a d]
-        (.clearColor gl r g b a)
-        (.clearDepth gl d)
-        (.clear gl (bit-or glc/depth-buffer-bit glc/color-buffer-bit))
-        gl)))
+        (doto gl
+          (.clearColor r g b a)
+          (.clearDepth d)
+          (.clear (bit-or glc/depth-buffer-bit glc/color-buffer-bit))))))
 
-  #?(:cljs
-     (defn disable
-       [^WebGLRenderingContext gl flag]
-       (.disable gl flag)
-       gl))
+  #?(:clj
+     (defn disable [^GL3 gl flag] (.glDisable gl flag) gl)
+     :cljs
+     (defn disable [^WebGLRenderingContext gl flag] (.disable gl flag) gl))
 
-  #?(:cljs
-     (defn enable
-       [^WebGLRenderingContext gl flag]
-       (.enable gl flag)
-       gl))
+  #?(:clj
+     (defn enable [^GL3 gl flag] (.glEnable gl flag) gl)
+     :cljs
+     (defn enable [^WebGLRenderingContext gl flag] (.enable gl flag) gl))
 
-  #?(:cljs
+  #?(:clj
+     (defn scissor-test
+       ([^GL3 gl {[x y] :p [w h] :size}]
+        (scissor-test gl x y w h))
+       ([^GL3 gl x y w h]
+        (doto gl
+          (.glEnable glc/scissor-test)
+          (.glScissor x y w h))))
+     :cljs
      (defn scissor-test
        ([^WebGLRenderingContext gl {[x y] :p [w h] :size}]
         (scissor-test gl x y w h))
        ([^WebGLRenderingContext gl x y w h]
-        (.enable gl glc/scissor-test)
-        (.scissor gl x y w h)
-        gl)))
+        (doto gl
+          (.enable glc/scissor-test)
+          (.scissor x y w h)))))
 
-  #?(:cljs
+  #?(:clj
+     (defn cull-faces
+       [^GL3 gl side]
+       (doto gl
+         (.glEnable glc/cull-face)
+         (.glCullFace side)))
+     :cljs
      (defn cull-faces
        [^WebGLRenderingContext gl side]
-       (.enable gl glc/cull-face)
-       (.cullFace gl side)
-       gl))
+       (doto gl
+         (.enable glc/cull-face)
+         (.cullFace side))))
 
-  #?(:cljs
+  #?(:clj
      (defn set-viewport
-       ([^WebGLRenderingContext gl {[x y] :p [w h] :size}]
-        (.viewport gl x y w h)
-        gl)
-       ([^WebGLRenderingContext gl x y w h]
-        (.viewport gl x y w h)
-        gl)))
+       ([^GL3 gl {[x y] :p [w h] :size}] (.glViewport gl x y w h) gl)
+       ([^GL3 gl x y w h] (.glViewport gl x y w h) gl))
+     :cljs
+     (defn set-viewport
+       ([^WebGLRenderingContext gl {[x y] :p [w h] :size}] (.viewport gl x y w h) gl)
+       ([^WebGLRenderingContext gl x y w h] (.viewport gl x y w h) gl)))
 
-  #?(:cljs
+  #?(:clj
+     (defn get-viewport-rect
+       [^GL3 gl]
+       (let [b (.glGetParameter gl glc/viewport)]
+         (r/rect (aget b 0) (aget b 1) (aget b 2) (aget b 3))))
+     :cljs
      (defn get-viewport-rect
        [^WebGLRenderingContext gl]
        (let [b (.getParameter gl glc/viewport)]
@@ -754,7 +735,7 @@ using the protocol.
        [^GL3 gl target mode data]
        (let [size (or (get buffer-strides target)
                       (err/unsupported! "Buffer type must be array-buffer or element-array-buffer"))
-             ^IntBuffer id   (int-buffer 1)]
+             ^IntBuffer id (native/int-buffer 1)]
          (doto gl
            (.glGenBuffers 1 id)
            (.glBindBuffer target (.get id 0))
@@ -771,15 +752,16 @@ using the protocol.
   #?(:clj
      (defn make-vertex-array
        [^GL3 gl spec]
-       (let [^IntBuffer id (int-buffer 1)]
+       (let [^IntBuffer id (native/int-buffer 1)]
          (.glGenVertexArrays gl 1 id)
          (.glBindVertexArray gl (.get id 0))
-         (doseq [[_ {:keys [id pos offset size stride]
-                     :or   {stride (* 4 size) offset 0}}] (:attribs spec)]
-           (doto gl
-             (.glBindBuffer glc/array-buffer (.get ^IntBuffer id 0))
-             (.glEnableVertexAttribArray (int pos))
-             (.glVertexAttribPointer (int pos) (int size) glc/float false (int stride) (int offset))))
+         (doseq [[attr {:keys [id loc offset size stride]
+                        :or   {stride (* 4 size) offset 0}}] (:attribs spec)]
+           (let [loc (int (or loc (get-in spec [:shader :attribs attr])))]
+             (doto gl
+               (.glBindBuffer glc/array-buffer (.get ^IntBuffer id 0))
+               (.glEnableVertexAttribArray loc)
+               (.glVertexAttribPointer loc (int size) glc/float false (int stride) (int offset)))))
          (when-let [index (:index spec)]
            (.glBindBuffer gl glc/element-array-buffer (.get ^IntBuffer index 0)))
          (.glBindVertexArray gl 0)
@@ -787,17 +769,17 @@ using the protocol.
 
   (defn make-attribute-buffers
     #?(:clj
-       [^GL3 gl mode specs]
+       [^GL3 gl mode attribs]
        :cljs
-       [^WebGLRenderingContext gl mode specs])
+       [^WebGLRenderingContext gl mode attribs])
     (reduce-kv
-     (fn [specs id {:keys [data target] :or {target glc/array-buffer}}]
+     (fn [attribs id {:keys [data target] :or {target glc/array-buffer}}]
        (update-in
-        specs [id] merge
+        attribs [id] merge
         {:buffer      (make-array-buffer gl target mode data)
          :target      target
          :buffer-mode mode}))
-     specs specs))
+     attribs attribs))
 
   (defn make-buffers-in-spec
     [spec gl mode]
@@ -830,20 +812,20 @@ using the protocol.
 ** Shader usage
 
 #+BEGIN_SRC clojure :noweb-ref draw
-  #?(:cljs
-     (defn begin-shader
-       [^WebGLRenderingContext gl shader uniforms attribs indices]
-       (.useProgram gl (get shader :program))
-       (sh/apply-default-uniforms shader uniforms)
-       (reduce-kv #(sh/set-uniform shader %2 %3) nil uniforms)
-       (reduce-kv #(sh/set-attribute gl shader %2 %3) nil attribs)
-       (when indices
-         (.bindBuffer gl glc/element-array-buffer (get indices :buffer)))))
+  (defn begin-shader
+    #?(:clj  [^GL3 gl shader uniforms attribs indices]
+       :cljs [^WebGLRenderingContext gl shader uniforms attribs indices])
+    (#?(:clj .glUseProgram :cljs .useProgram) gl (int (get shader :program)))
+    (sh/apply-default-uniforms shader uniforms)
+    (reduce-kv #(sh/set-uniform shader %2 %3) nil uniforms)
+    (reduce-kv #(sh/set-attribute gl shader %2 %3) nil attribs)
+    (when indices
+      (#?(:clj .glBindBuffer :cljs .bindBuffer) gl glc/element-array-buffer (get indices :buffer))))
 
-  #?(:cljs
-     (defn end-shader
-       [^WebGLRenderingContext gl shader]
-       (reduce #(sh/disable-attribute gl shader (key %2)) nil (get shader :attribs))))
+  (defn end-shader
+    #?(:clj  [^GL3 gl shader]
+       :cljs [^WebGLRenderingContext gl shader])
+    (reduce #(sh/disable-attribute gl shader (key %2)) nil (get shader :attribs)))
 #+END_SRC
 
 *** Shading state preparation
@@ -949,23 +931,23 @@ Currently the following options are supported:
      [thi.ng.geom.utils :as gu]
      [thi.ng.geom.vector :as v :refer [vec2 vec3 V3Z]]
      [thi.ng.geom.matrix :as mat]
-     [thi.ng.geom.types]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.geom.rect :as r]
-     #_[thi.ng.geom.gl.shaders :as sh]
-     #_[thi.ng.geom.gl.utils :as glu]
+     [thi.ng.geom.types]
+     [thi.ng.geom.gl.shaders :as sh]
      [thi.ng.color.core :as col]
      [thi.ng.dstruct.streams :as streams]
      [thi.ng.xerror.core :as err]
-     #?@(:clj  [[thi.ng.geom.gl.jogl.constants :as glc]]
-         :cljs [[thi.ng.geom.gl.webgl.constants :as glc]
-                [thi.ng.typedarrays.core :as ta]])))
+     #?@(:clj
+         [[thi.ng.geom.gl.jogl.buffers :as native]
+          [thi.ng.geom.gl.jogl.constants :as glc]]
+         :cljs
+         [[thi.ng.geom.gl.webgl.constants :as glc]
+          [thi.ng.typedarrays.core :as ta]])))
 
   (declare into-float-buffer-vec3)
 
   <<protos>>
-
-  <<native>>
 
   <<helpers>>
 

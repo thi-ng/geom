@@ -65,7 +65,7 @@
   #?(:clj
      (defn make-fbo
        [^GL3 gl]
-       (let [id (gl/int-buffer 1)]
+       (let [id (native/int-buffer 1)]
          (.glGenFramebuffers gl 1 id)
          (FBO. gl id)))
      :cljs
@@ -110,7 +110,7 @@
        ([^GL3 gl]
         (make-render-buffer gl nil))
        ([^GL3 gl opts]
-        (let [id  (gl/int-buffer 1)
+        (let [id  (native/int-buffer 1)
               _   (.glGenRenderbuffers gl 1 id)
               buf (RenderBuffer. gl id nil nil nil)]
           (if opts (gl/configure buf opts) buf))))
@@ -250,8 +250,11 @@
     (:require
      [thi.ng.geom.gl.core :as gl]
      [thi.ng.xerror.core :as err]
-     #?(:clj  [thi.ng.geom.gl.jogl.constants :as glc]
-        :cljs [thi.ng.geom.gl.webgl.constants :as glc])))
+     #?@(:clj
+         [[thi.ng.geom.gl.jogl.buffers :as native]
+          [thi.ng.geom.gl.jogl.constants :as glc]]
+         :cljs
+         [[thi.ng.geom.gl.webgl.constants :as glc]])))
 
   (declare check-fbo)
 
