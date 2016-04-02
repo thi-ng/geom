@@ -117,7 +117,7 @@ Special cases:
           {:type    type
            :default default
            :setter  (cond
-                      (#{:float :int :bool} type)
+                      (#{:float :int :bool :sampler2D} type)
                       (fn [x]
                         #?(:clj  (setter gl loc (u-cast x))
                            :cljs (.call setter gl loc (u-cast x))))
