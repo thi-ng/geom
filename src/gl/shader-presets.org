@@ -1,0 +1,594 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_3_gh:
+ - [[#thinggeomglshaders-presets][thi.ng.geom.gl.shaders presets]]
+     - [[#basic][Basic]]
+     - [[#lambert][Lambert]]
+         - [[#standard-shading-uniform][Standard shading (uniform)]]
+         - [[#standard-shading-attribute][Standard shading (attribute)]]
+         - [[#two-sided-shading-uniform][Two-sided shading (uniform)]]
+         - [[#two-sided-shading-attribute][Two-sided shading (attribute)]]
+         - [[#full-namespace][Full namespace]]
+     - [[#phong][Phong]]
+     - [[#x-ray][X-Ray]]
+     - [[#spotlight][Spotlight]]
+     - [[#shadow][Shadow]]
+     - [[#2d-image][2D Image]]
+
+* thi.ng.geom.gl.shaders presets
+** Basic
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders/basic.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.shaders.basic
+    (:require
+     [thi.ng.geom.matrix :refer [M44]]))
+
+  (defn make-shader-spec
+    ([]
+     (make-shader-spec nil))
+    ([{attr? :color-attrib? is3d? :3d :or {is3d? true}}]
+     (let [spec {:vs       (str "void main(){"
+                                (if attr? "vCol=color;")
+                                "gl_Position=proj*"
+                                (if is3d?
+                                  "view*model*vec4(position,1.0)"
+                                  "view*model*vec4(position,0.0,1.0)")
+                                ";}")
+                 :fs       (str "void main(){gl_FragColor="
+                                (if attr? "vCol" "color")
+                                ";}")
+                 :uniforms {:proj  :mat4
+                            :model [:mat4 M44]
+                            :view  [:mat4 M44]}
+                 :attribs  {:position (if is3d? :vec3 :vec2)}}
+           spec (if attr?
+                  (-> spec
+                      (assoc-in [:attribs :color] :vec4)
+                      (assoc :varying {:vCol :vec4}))
+                  (assoc-in spec [:uniforms :color] :vec4))]
+       spec)))
+
+  (defn make-shader-spec-2d
+    [color-attrib?] (make-shader-spec {:color-attrib? color-attrib? :3d false}))
+
+  (defn make-shader-spec-3d
+    [color-attrib?] (make-shader-spec {:color-attrib? color-attrib? :3d true}))
+#+END_SRC
+
+** Lambert
+*** Standard shading (uniform)
+
+#+BEGIN_SRC glsl :noweb-ref lambert-vs-uni
+  void main() {
+    float lam = lambert(surfaceNormal(normal, normalMat), lightDir);
+    vCol = vec4(ambientCol + diffuseCol * lightCol * lam, alpha);
+    gl_Position = mvp(position, model, view, proj);
+  }
+#+END_SRC
+
+*** Standard shading (attribute)
+
+This version requires a =color= attribute buffer, used in place of the
+=diffuseCol= shader uniform. The color buffer is assumed to contain
+RGBA colors, however the alpha component is discarded.
+
+#+BEGIN_SRC glsl :noweb-ref lambert-vs-attr
+  void main() {
+    float lam = lambert(surfaceNormal(normal, normalMat), lightDir);
+    vCol = vec4(ambientCol + color.xyz * lightCol * lam, alpha);
+    gl_Position = mvp(position, model, view, proj);
+  }
+#+END_SRC
+
+*** Two-sided shading (uniform)
+
+#+BEGIN_SRC glsl :noweb-ref lambert-vs-abs-uni
+  void main() {
+    float lam = lambertAbs(surfaceNormal(normal, normalMat), lightDir);
+    vCol = vec4(ambientCol + diffuseCol * lightCol * lam, alpha);
+    gl_Position = mvp(position, model, view, proj);
+  }
+#+END_SRC
+
+*** Two-sided shading (attribute)
+
+This version requires a =color= attribute buffer, used in place of the
+=diffuseCol= shader uniform. The color buffer is assumed to contain
+RGBA colors, however the alpha component is discarded.
+
+#+BEGIN_SRC glsl :noweb-ref lambert-vs-abs-attr
+  void main() {
+    float lam = lambertAbs(surfaceNormal(normal, normalMat), lightDir);
+    vCol = vec4(ambientCol + color.xyz * lightCol * lam, alpha);
+    gl_Position = mvp(position, model, view, proj);
+  }
+#+END_SRC
+
+*** Full namespace
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders/lambert.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.shaders.lambert
+    (:require
+     [thi.ng.geom.matrix :refer [M44]]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.glsl.core :as glsl :include-macros true]
+     [thi.ng.glsl.vertex :as vertex]
+     [thi.ng.glsl.lighting :as light]))
+
+  (defn- make-shader-spec
+    [vs-src]
+    {:vs (->> vs-src
+              (glsl/glsl-spec-plain
+               [vertex/mvp vertex/surface-normal light/lambert light/lambert-abs])
+              (glsl/assemble))
+     :fs "void main(){gl_FragColor=vCol;}"
+     :uniforms {:model      [:mat4 M44]
+                :view       :mat4
+                :proj       :mat4
+                :normalMat  :mat4
+                :ambientCol [:vec3 [0 0 0]]
+                :diffuseCol [:vec3 [1 1 1]]
+                :lightCol   [:vec3 [1 1 1]]
+                :lightDir   [:vec3 [0 0 1]]
+                :alpha      [:float 1]}
+     :attribs  {:position   :vec3
+                :normal     :vec3}
+     :varying  {:vCol       :vec4}
+     :state    {:depth-test true}})
+
+  (def shader-spec
+    (make-shader-spec
+     (glsl/minified "
+  <<lambert-vs-uni>>")))
+
+  (def shader-spec-attrib
+    (-> (make-shader-spec
+         (glsl/minified "
+  <<lambert-vs-attr>>"))
+        (assoc-in [:attribs :color] :vec4)))
+
+  (def shader-spec-two-sided
+    (make-shader-spec
+     (glsl/minified "
+  <<lambert-vs-abs-uni>>")))
+
+  (def shader-spec-two-sided-attrib
+    (-> (make-shader-spec
+         (glsl/minified "
+  <<lambert-vs-abs-attr>>"))
+        (assoc-in [:attribs :color] :vec4)))
+
+  (defn draw
+    [^WebGLRenderingContext gl spec]
+    (gl/draw-with-shader gl (gl/inject-normal-matrix spec :model :view :normalMat)))
+#+END_SRC
+
+** Phong
+
+#+BEGIN_SRC glsl :noweb-ref phong-vs
+  void main(){
+    vec4 worldPos = model * vec4(position, 1.0);
+    vec4 eyePos = view * worldPos;
+    vEyePos = eyePos.xyz;
+    vNormal = surfaceNormal(normal, normalMat);
+    vLightPos = (view * vec4(lightPos, 1.0)).xyz;
+    gl_Position = proj * eyePos;
+  }
+#+END_SRC
+
+#+BEGIN_SRC glsl :noweb-ref phong-fs
+  void main() {
+    vec3 L = normalize(vLightPos - vEyePos);
+    vec3 E = normalize(-vEyePos);
+    vec3 N = normalize(vNormal);
+
+    float NdotL = max(0.0, (dot(N, L) + wrap) / (1.0 + wrap));
+    vec3 color = ambientCol + NdotL * diffuseCol;
+
+    float specular = 0.0;
+    if (useBlinnPhong) {
+      specular = blinnPhong(L, E, N);
+    } else {
+      specular = phong(L, E, N);
+    }
+    color += max(pow(specular, shininess), 0.0) * specularCol;
+    gl_FragColor = vec4(color, 1.0);
+  }
+#+END_SRC
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders/phong.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.shaders.phong
+    (:require
+     [thi.ng.geom.matrix :refer [M44]]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.glsl.core :as glsl :include-macros true]
+     [thi.ng.glsl.vertex :as vert]
+     [thi.ng.glsl.lighting :as light]))
+
+  (def shader-spec
+    {:vs (glsl/assemble
+          (glsl/glsl-spec
+           [vert/surface-normal]
+           "
+  <<phong-vs>>"))
+     :fs (glsl/assemble
+          (glsl/glsl-spec
+           [light/phong light/blinn-phong]
+           "
+  <<phong-fs>>"))
+     :uniforms {:view          :mat4
+                :proj          :mat4
+                :model         [:mat4 M44]
+                :normalMat     :mat4
+                :shininess     [:float 32]
+                :ambientCol    [:vec3 [0 0 0]]
+                :diffuseCol    [:vec3 [0.8 0.8 0.8]]
+                :specularCol   [:vec3 [1 1 1]]
+                :lightPos      [:vec3 [0 0 0]]
+                :useBlinnPhong [:bool true]
+                :wrap          [:float 0]}
+     :attribs {:position       :vec3
+               :normal         :vec3}
+     :varying {:vNormal        :vec3
+               :vEyePos        :vec3
+               :vLightPos      :vec3}
+     :state    {:depth-test    true}})
+
+  (defn draw
+    [^WebGLRenderingContext gl spec]
+    (gl/draw-with-shader gl (gl/inject-normal-matrix spec :model :view :normalMat)))
+#+END_SRC
+
+** X-Ray
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders/xray.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.shaders.xray
+    (:require
+     [thi.ng.geom.matrix :refer [M44]]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.webgl.constants :as glc]
+     [thi.ng.glsl.core :as glsl :include-macros true]
+     [thi.ng.glsl.vertex :as vert]))
+
+  (def shader-spec
+    {:vs (glsl/assemble
+          (glsl/glsl-spec
+           [vert/surface-normal]
+           "void main() {
+              vIncident = view * model * vec4(position, 1.0);
+              vNormal = surfaceNormal(normal, normalMat);
+              gl_Position = proj * vIncident;
+            }"))
+     :fs (glsl/minified
+          "void main() {
+             float opac = abs(dot(normalize(-vNormal), normalize(-vIncident.xyz)));
+             opac = 1.0 - pow(opac, alpha);
+             gl_FragColor = vec4(lightCol * opac, opac);
+           }")
+     :uniforms {:model      [:mat4 M44]
+                :view       :mat4
+                :normalMat  :mat4
+                :proj       :mat4
+                :lightCol   [:vec3 [1 1 1]]
+                :alpha      [:float 0.5]}
+     :attribs  {:position   :vec3
+                :normal     :vec3}
+     :varying  {:vIncident  :vec4
+                :vNormal    :vec3}
+     :state    {:depth-test false
+                :blend      true
+                :blend-func [glc/src-alpha glc/one]}})
+
+  (defn draw
+    [^WebGLRenderingContext gl spec]
+    (gl/draw-with-shader gl (gl/inject-normal-matrix spec :model :view :normalMat)))
+#+END_SRC
+
+** Spotlight
+
+#+BEGIN_SRC glsl :noweb-ref spot-vs
+  void main(){
+    vNormal = normal;
+    vWorldPos = model * vec4(position, 1.0);
+    gl_Position = proj * view * vWorldPos;
+  }
+#+END_SRC
+
+#+BEGIN_SRC glsl :noweb-ref spot-fs
+  vec3 gamma(vec3 color){
+    return pow(color, vec3(2.2));
+  }
+
+  void main(){
+    vec3 worldNormal = normalize(vNormal);
+
+    vec3 camPos = (view * vWorldPos).xyz;
+    vec3 lightPos = (lightView * vWorldPos).xyz;
+    vec3 lightPosNormal = normalize(lightPos);
+    vec3 lightSurfaceNormal = lightRot * worldNormal;
+
+    vec3 excident = (skylight(worldNormal.y) +
+                     lambert(lightSurfaceNormal, -lightPosNormal) *
+                     spotlightInfluence(lightPosNormal, coneAngle, 10.0) *
+                     spotlightAttenuation(lightPos, 10.0));
+    gl_FragColor = vec4(gamma(excident), 1.0);
+  }
+#+END_SRC
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders/spotlight.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.shaders.spotlight
+    (:require
+     [thi.ng.geom.matrix :refer [M44]]
+     [thi.ng.glsl.core :as glsl :include-macros true]
+     [thi.ng.glsl.lighting :as light]))
+
+  (def shader-spec
+    {:vs (glsl/minified "
+  <<spot-vs>>")
+     :fs (glsl/assemble
+          (glsl/glsl-spec
+           [light/spotlight-attenuation light/spotlight-influence
+            light/lambert light/skylight]
+           "
+  <<spot-fs>>"))
+     :uniforms {:view :mat4
+                :proj :mat4
+                :model [:mat4 M44]
+                :lightView :mat4
+                :lightRot :mat3
+                :coneAngle [:float 15]}
+     :attribs {:position :vec3
+               :normal :vec3}
+     :varying {:vNormal :vec3
+               :vWorldPos :vec4}})
+#+END_SRC
+
+** Shadow
+
+#+BEGIN_SRC glsl :noweb-ref shadow-vs-pass1
+  void main() {
+    vWorldPos = model * vec4(position, 1.0);
+    gl_Position = proj * view * vWorldPos;
+  }
+#+END_SRC
+
+#+BEGIN_SRC glsl :noweb-ref shadow-fs-pass1
+  void main() {
+    vec3 lightPos = (view * vWorldPos).xyz;
+    float depth = clamp(length(lightPos) / 10.0, 0.0, 1.0);
+    gl_FragColor = vec4(vec3(depth), 1.0);
+  }
+#+END_SRC
+
+#+BEGIN_SRC glsl :noweb-ref shadow-hard
+  // shadow calculation
+  float lightDepth1 = texture2D(lightDepthTex, lightUV).r;                                                     
+  float lightDepth2 = clamp(length(lightPos)/40.0, 0.0, 1.0);
+  float bias = 0.001;
+  float illuminated = step(lightDepth2, lightDepth1+bias);
+#+END_SRC
+
+#+BEGIN_SRC glsl :noweb-ref shadow-lerp1
+  float texture2DCompare(sampler2D depths, vec2 uv, float compare) {
+    float depth = texture2D(depths, uv).r;
+    return step(compare, depth);
+  }
+
+  float texture2DShadowLerp(sampler2D depths, vec2 size, vec2 uv, float compare) {
+    vec2 texelSize = vec2(1.0) / size;
+    vec2 f = fract(uv * size + 0.5);
+    vec2 centroidUV = floor(uv * size + 0.5) / size;
+
+    float lb = texture2DCompare(depths, centroidUV + texelSize * vec2(0.0, 0.0), compare);
+    float lt = texture2DCompare(depths, centroidUV + texelSize * vec2(0.0, 1.0), compare);
+    float rb = texture2DCompare(depths, centroidUV + texelSize * vec2(1.0, 0.0), compare);
+    float rt = texture2DCompare(depths, centroidUV + texelSize * vec2(1.0, 1.0), compare);
+    return mix(mix(lb, lt, f.y), mix(rb, rt, f.y), f.x);
+  }
+#+END_SRC
+
+#+BEGIN_SRC glsl :noweb-ref shadow-lerp2
+  // shadow calculation
+  float bias = 1e-4;
+  float lightDepth2 = clamp(length(lightPos) / 10.0, 0.0, 1.0) - bias;
+  float illuminated = texture2DShadowLerp(lightDepthTex, lightDepthSize, lightUV, lightDepth2);
+#+END_SRC
+
+#+BEGIN_SRC glsl :noweb-ref shadow-fs-pass2 :noweb yes
+  vec3 gamma(vec3 color) {
+    return pow(color, vec3(2.2));
+  }
+
+  <<shadow-lerp1>>
+
+  void main() {
+    vec3 worldNormal = normalize(vNormal);
+
+    vec3 camPos = (view * vWorldPos).xyz;
+    vec3 lightPos = (lightView * vWorldPos).xyz;
+    vec3 lightPosNormal = normalize(lightPos);
+    vec3 lightSurfaceNormal = lightRot * worldNormal;
+
+    vec4 lightDevice = lightProj * vec4(lightPos, 1.0);
+    vec2 lightDeviceNormal = lightDevice.xy / lightDevice.w;
+    vec2 lightUV = lightDeviceNormal * 0.5 + 0.5;
+
+    <<shadow-lerp2>>
+
+    vec3 excident = vec3(0.4 + skylight(worldNormal.y) +
+                     lambert(lightSurfaceNormal, -lightPosNormal) *
+                     spotlightInfluence(lightPosNormal, coneAngle, 10.0) *
+                     spotlightAttenuation(lightPos, 10.0) *
+                     illuminated);
+
+    //excident *=  worldNormal * 0.5 + 0.5; // TODO remove, debug only
+
+    gl_FragColor = vec4(gamma(excident), 1.0);
+  }
+#+END_SRC
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders/shadow.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.shaders.shadow
+    (:require
+     [thi.ng.geom.matrix :refer [M44]]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.webgl.constants :as glc]
+     [thi.ng.geom.gl.buffers :as buf]
+     [thi.ng.glsl.core :as glsl :include-macros true]
+     [thi.ng.glsl.lighting :as light]))
+
+  (def light-pass-spec
+    {:vs (glsl/minified "
+  <<shadow-vs-pass1>>")
+     :fs (glsl/minified "
+  <<shadow-fs-pass1>>")
+     :uniforms {:view     :mat4
+                :proj     :mat4
+                :model    [:mat4 M44]} 
+     :attribs {:position  :vec3}
+     :varying {:vWorldPos :vec4}})
+
+  (def cam-pass-spec
+    {:vs (glsl/minified "
+  <<spot-vs>>")
+     :fs (glsl/assemble
+          (glsl/glsl-spec
+           [light/spotlight-attenuation light/spotlight-influence
+            light/lambert light/skylight]
+           "
+  <<shadow-fs-pass2>>"))
+     :uniforms {:view           :mat4
+                :proj           :mat4
+                :model          [:mat4 M44]
+                :lightView      :mat4
+                :lightProj      :mat4
+                :lightRot       :mat3
+                :lightDepthTex  [:sampler2D 0]
+                :lightDepthSize :vec2
+                :coneAngle      [:float 15]}
+     :attribs  {:position       :vec3
+                :normal         :vec3}
+     :varying  {:vNormal        :vec3
+                :vWorldPos      :vec4}})
+
+  (defn init-light-fbo
+    [^WebGLRenderingContext gl size]
+    (let [float-ext (.call (aget gl "getFloatExtension")
+                           gl #js {:require ["renderable"]
+                                   :prefer  ["filterable" "half"]})
+          tex (buf/make-texture
+               gl {:type   (.-type float-ext)
+                   :width  size
+                   :height size
+                   :filter glc/linear
+                   :wrap   glc/clamp-to-edge})]
+      {:tex tex
+       :fbo (-> (buf/make-fbo gl)
+                (gl/bind)
+                (gl/set-fbo-color-texture tex)
+                (gl/set-fbo-depth-buffer (buf/make-depth-buffer gl size))
+                (gl/unbind))}))
+
+  (defn draw-light-pass
+    [^WebGLRenderingContext gl {:keys [fbo tex]} draw-fn]
+    (gl/bind fbo)
+    (doto gl
+      (gl/set-viewport 0 0 (get tex :width) (get tex :height))
+      (gl/clear-color-buffer 1 1 1 1)
+      (gl/clear-depth-buffer 1)
+      (gl/enable glc/depth-test)
+      (gl/cull-faces glc/front))
+    (draw-fn)
+    (gl/unbind fbo))
+
+  (defn draw-cam-pass
+    [^WebGLRenderingContext gl tex draw-fn]
+    (doto gl
+      (gl/clear-depth-buffer 1)
+      (gl/enable glc/depth-test)
+      (gl/cull-faces glc/back))
+    (gl/bind tex 0)
+    (draw-fn {:lightDepthTex 0
+              :lightDepthSize [(get tex :width) (get tex :height)]}))
+#+END_SRC
+
+** 2D Image
+
+#+BEGIN_SRC glsl :noweb-ref image-vs
+  void main() {
+    vUV = uv;
+    gl_Position = proj * model * vec4(position, 0.0, 1.0);
+  }
+#+END_SRC
+
+#+BEGIN_SRC glsl :noweb-ref image-fs
+  void main() {
+    gl_FragColor = texture2D(tex, vUV) * tint;
+  }
+#+END_SRC
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders/image.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.shaders.image
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.vector :refer [vec2]]
+     [thi.ng.geom.matrix :refer [M44]]
+     [thi.ng.geom.rect :as r]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.webgl.constants :as glc]
+     [thi.ng.geom.gl.shaders :as sh]
+     [thi.ng.typedarrays.core :as ta]
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.dstruct.streams :as streams]
+     [thi.ng.glsl.core :as glsl :include-macros true]
+     [thi.ng.math.core :as m]))
+
+  (def shader-spec
+    {:vs (glsl/minified "
+  <<image-vs>>")
+     :fs (glsl/minified "
+  <<image-fs>>")
+     :uniforms {:proj       :mat4
+                :model      [:mat4 M44]
+                :tex        [:sampler2D 0]
+                :tint       [:vec4 [1 1 1 1]]}
+     :attribs  {:position   :vec2
+                :uv         :vec2}
+     :varying  {:vUV        :vec2}
+     :state    {:depth-test false
+                :blend      true
+                :blend-func [glc/src-alpha glc/one-minus-src-alpha]}})
+
+  (defn make-shader-spec
+    ([^WebGLRenderingContext gl]
+     (make-shader-spec gl nil))
+    ([^WebGLRenderingContext gl opts]
+     (let [r         (or (get opts :rect) (r/rect 1))
+           [a b c d] (g/vertices r)
+           verts     (ta/float32 8)]
+       (streams/into-float-buffer [a b d c] verts 2 0)
+       {:attribs      (gl/make-attribute-buffers
+                       gl glc/static-draw
+                       {:position {:data verts :size 2}
+                        :uv       {:data (ta/float32 [0 0, 1 0, 0 1, 1 1]) :size 2}})
+        :uniforms     {:tex  0
+                       :proj (gl/ortho)}
+        :shader       (d/merge-deep
+                       (or (get opts :shader) (sh/make-shader-from-spec gl shader-spec))
+                       {:state (get opts :state)})
+        :view-port    (get opts :viewport)
+        :pos          (get opts :pos (vec2))
+        :width        (get opts :width 128)
+        :height       (get opts :height 128)
+        :mode         glc/triangle-strip
+        :num-vertices 4})))
+
+  (defn draw
+    [^WebGLRenderingContext gl {:keys [viewport pos width height] :as spec}]
+    (let [[vw vh] (get (or viewport (gl/get-viewport-rect gl)) :size)
+          x       (m/map-interval (nth pos 0) 0 vw -1 1)
+          y       (m/map-interval (nth pos 1) 0 vh -1 1)
+          s       (vec2 (* 2.0 (/ width vw)) (* 2.0 (/ height vh)))
+          spec    (assoc-in spec [:uniforms :model] (-> M44 (g/translate x y 0) (g/scale s)))]
+      (gl/draw-with-shader gl spec)))
+#+END_SRC
