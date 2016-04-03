@@ -680,7 +680,7 @@ emphasize this difference...
   (defn svg-stacked-interval-plot
     [{:keys [x-axis y-axis]}
      {:keys [values attribs shape item-range offset]
-      :or   {shape (fn [[a b]] (svg/line a b))
+      :or   {shape (fn [[a b]] (svg/line (vec2 a) (vec2 b)))
              item-range identity
              offset 0}}]
     (let [scale-x (:scale x-axis)
@@ -740,9 +740,9 @@ TBD
           y-minor (+ pos minor-size)
           y-label (+ pos label-dist)]
       (svg-axis*
-       spec (svg/line [r1 pos] [r2 pos])
-       #(let [x (scale %)] (svg/line [x pos] [x y-major]))
-       #(let [x (scale %)] (svg/line [x pos] [x y-minor]))
+       spec (svg/line (vec2 r1 pos) (vec2 r2 pos))
+       #(let [x (scale %)] (svg/line (vec2 x pos) (vec2 x y-major)))
+       #(let [x (scale %)] (svg/line (vec2 x pos) (vec2 x y-minor)))
        #(label (vec2 (scale %) y-label) %))))
 
   (defn svg-y-axis-cartesian
@@ -753,9 +753,9 @@ TBD
           x-minor (- pos minor-size)
           x-label (- pos label-dist)]
       (svg-axis*
-       spec (svg/line [pos r1] [pos r2])
-       #(let [y (scale %)] (svg/line [pos y] [x-major y]))
-       #(let [y (scale %)] (svg/line [pos y] [x-minor y]))
+       spec (svg/line (vec2 pos r1) (vec2 pos r2))
+       #(let [y (scale %)] (svg/line (vec2 pos y) (vec2 x-major y)))
+       #(let [y (scale %)] (svg/line (vec2 pos y) (vec2 x-minor y)))
        #(label (vec2 x-label (+ (scale %) label-y)) %))))
 #+END_SRC
 
@@ -774,9 +774,9 @@ TBD
       (svg/group
        (merge {:stroke "#ccc" :stroke-dasharray "1 1"} attribs)
        (if (:visible x-axis)
-         (map #(let [x (scale-x %)] (svg/line [x y1] [x y2])) (select-ticks x-axis minor-x)))
+         (map #(let [x (scale-x %)] (svg/line (vec2 x y1) (vec2 x y2))) (select-ticks x-axis minor-x)))
        (if (:visible y-axis)
-         (map #(let [y (scale-y %)] (svg/line [x1 y] [x2 y])) (select-ticks y-axis minor-y))))))
+         (map #(let [y (scale-y %)] (svg/line (vec2 x1 y) (vec2 x2 y))) (select-ticks y-axis minor-y))))))
 
   (defn svg-plot2d-cartesian
     [{:keys [x-axis y-axis grid data] :as opts}]
@@ -790,7 +790,6 @@ TBD
 #+END_SRC
 
 ** 2D Polar Plotting (SVG)
-
 *** SVG axis generators
 
 #+BEGIN_SRC clojure :noweb-ref plot-2d
@@ -952,7 +951,7 @@ file).
       (fn [[[x y]]] (svg/polygon [[(- x w) (- y h)] [(+ x w) (- y h)] [x y]]))))
 
   (defn svg-square
-    [r] (let [d (* r 2.0)] (fn [[[x y]]] (svg/rect [(- x r) (- y r)] d d))))
+    [r] (let [d (* r 2.0)] (fn [[[x y]]] (svg/rect (vec2 (- x r) (- y r)) d d))))
 
   (defn labeled-rect-horizontal
     [{:keys [h r label fill min-width base-line]}]
@@ -962,10 +961,10 @@ file).
         (svg/group
          {}
          (svg/rect
-          [(- ax r) (- ay h2)] (- bx ax r2) h
+          (vec2 (- ax r) (- ay h2)) (- bx ax r2) h
           {:fill (fill item) :rx r :ry r})
          (if (< min-width (- bx ax))
-           (svg/text [ax (+ base-line ay)] (label item)))))))
+           (svg/text (vec2 ax (+ base-line ay)) (label item)))))))
 
   (defn circle-cell
     [a b c d col]
