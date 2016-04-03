@@ -3,7 +3,6 @@
 * Contents                                                         :toc_4_gh:
  - [[#geomviz-examples][geom.viz examples]]
      - [[#running-all-examples-from-repl][Running all examples from REPL]]
-         - [[#todo-create-fn-to-re-use-for-all-modules][TODO create fn to re-use for all modules]]
      - [[#namespaces-required-by-all-examples][Namespaces required by all examples]]
      - [[#scatter-plot][Scatter plot]]
      - [[#line--area-plot][Line & area plot]]
@@ -25,24 +24,10 @@ section after then describes the various options in more detail.
 
 ** Running all examples from REPL
 
-Once you've tangled this document (see [[../../README.org#building--testing-this-project][README.org]]), the following
-examples can be found in the =/babel/examples/viz= folder. Launching a
-REPL from within the =babel= directory, all examples can be run with
-this command and will create a number of SVG files in the same
-directory.
-
-#+BEGIN_SRC clojure
-  (load-file "examples/viz/all.clj")
-#+END_SRC
-
-*** TODO create fn to re-use for all modules
-
-#+BEGIN_SRC clojure :tangle ../../babel/examples/viz/all.clj :noweb yes :mkdirp yes :padline no
-  ;; all.clj
-  (doseq [f (rest (file-seq (java.io.File. "examples/viz")))
-          :when (not= "all.clj" (.getName f))]
-    (load-file (.getAbsolutePath f)))
-#+END_SRC
+See instructions in [[../all.org][examples/all.org]] about running all the examples in
+this module from the REPL. Note, these examples are all for Clojure,
+but (apart from outputting SVG files), the same functionality is
+available in Clojurescript (with or without React.js).
 
 ** Namespaces required by all examples
 

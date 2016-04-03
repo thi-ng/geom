@@ -1,6 +1,6 @@
 #!/bin/sh
 
-./tangle.sh README.org
+./tangle.sh README.org examples/all.org
 
 readonly MODULES="core mesh physics svg types utils viz voxel gl"
 

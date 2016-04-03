@@ -96,7 +96,7 @@ This is a render of the voxel mesh generated with the code below:
     (:require
      <<default-requires>>))
 
-  (def res (double 1/2))
+  (def res (double 1/4))
   (def num-holes 30)
 
   (defn voxel-sphere
