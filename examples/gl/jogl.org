@@ -15,8 +15,8 @@
      [thi.ng.geom.vector :as v]
      [thi.ng.geom.matrix :as mat]
      [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.arcball :as arc]
      [thi.ng.geom.gl.buffers :as buf]
-     [thi.ng.geom.gl.camera :as cam]
      [thi.ng.geom.gl.shaders :as sh]
      [thi.ng.geom.gl.glmesh :as glm]
      [thi.ng.geom.gl.jogl.core :as jogl]
@@ -64,8 +64,8 @@
                       (gl/make-buffers-in-spec gl glc/static-draw))]
       (pprint spec)
       (swap! app assoc
-             :model spec
-             :zoom 1)))
+             :model   spec
+             :arcball (arc/arcball {}))))
 
   (defn display
     [^GLAutoDrawable drawable t]
@@ -74,7 +74,7 @@
           unis    (:uniforms shader)
           t       (* 0.25 t)
           model   (-> mat/M44 (g/rotate-x t) (g/rotate-y (* t 1.5)))
-          view    (mat/look-at (v/vec3 0 0 (* 3 (:zoom @app))) (v/vec3) (v/vec3 0 1 0))]
+          view    (arc/get-view (:arcball @app))]
       (doto gl
         (gl/clear-color-and-depth-buffer 0.3 0.3 0.3 1.0 1.0)
         (gl/draw-with-shader
@@ -85,8 +85,8 @@
 
   (defn resize
     [_ x y w h]
-    (swap! app assoc :width w :height h)
-    (swap! app assoc-in [:model :uniforms :proj] (mat/perspective 45 (/ w h) 0.1 10)))
+    (swap! app assoc-in [:model :uniforms :proj] (mat/perspective 45 (/ w h) 0.1 10))
+    (swap! app update :arcball arc/resize w h))
 
   (defn key-pressed
     [^KeyEvent e]
@@ -97,9 +97,14 @@
   (defn mouse-moved
     [^MouseEvent e] (swap! app assoc :mouse-pos (v/vec2 (.getX e) (.getY e))))
 
-  (defn mousewheel-moved
-    [^MouseEvent e deltas]
-    (swap! app update :zoom #(m/clamp (+ % (* (nth deltas 1) 0.01)) 0.5 2)))
+  (defn mouse-pressed
+    [^MouseEvent e] (swap! app update :arcball arc/down (.getX e) (.getY e)))
+
+  (defn mouse-dragged
+    [^MouseEvent e] (swap! app update :arcball arc/drag (.getX e) (.getY e)))
+
+  (defn wheel-moved
+    [^MouseEvent e deltas] (swap! app update :arcball arc/zoom-delta (nth deltas 1)))
 
   (defn -main
     [& args]
@@ -115,6 +120,8 @@
                        :resize  resize
                        :keys    {:press key-pressed}
                        :mouse   {:move  mouse-moved
-                                 :wheel mousewheel-moved}}}))
+                                 :press mouse-pressed
+                                 :drag  mouse-dragged
+                                 :wheel wheel-moved}}}))
     nil)
 #+END_SRC
