@@ -28,7 +28,7 @@ These examples can be built by running the following commands in the geom root d
 Then in the browser, using the JS console, the demos can be individually launched like:
 
 #+BEGIN_SRC js
-  thi.ng.geom.examples.webgl.ex01.demo()
+  thi.ng.geom.examples.gl.ex01.demo()
 #+END_SRC
 
 ** Templates for namespace setup
@@ -40,21 +40,21 @@ Then in the browser, using the JS console, the demos can be individually launche
 
 #+BEGIN_SRC clojure :noweb-ref default-requires
   [thi.ng.math.core :as m :refer [PI HALF_PI TWO_PI]]
-  [thi.ng.geom.webgl.core :as gl]
-  [thi.ng.geom.webgl.constants :as glc]
-  [thi.ng.geom.webgl.animator :as anim]
-  [thi.ng.geom.webgl.buffers :as buf]
-  [thi.ng.geom.webgl.shaders :as sh]
-  [thi.ng.geom.webgl.utils :as glu]
-  [thi.ng.geom.webgl.glmesh :as glm]
-  [thi.ng.geom.webgl.camera :as cam]
+  [thi.ng.color.core :as col]
+  [thi.ng.typedarrays.core :as arrays]
+  [thi.ng.geom.gl.core :as gl]
+  [thi.ng.geom.gl.webgl.constants :as glc]
+  [thi.ng.geom.gl.webgl.animator :as anim]
+  [thi.ng.geom.gl.buffers :as buf]
+  [thi.ng.geom.gl.shaders :as sh]
+  [thi.ng.geom.gl.utils :as glu]
+  [thi.ng.geom.gl.glmesh :as glm]
+  [thi.ng.geom.gl.camera :as cam]
   [thi.ng.geom.core :as g]
   [thi.ng.geom.vector :as v :refer [vec2 vec3]]
   [thi.ng.geom.matrix :as mat :refer [M44]]
   [thi.ng.geom.aabb :as a]
   [thi.ng.geom.attribs :as attr]
-  [thi.ng.typedarrays.core :as arrays]
-  [thi.ng.color.core :as col]
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref stats
@@ -73,14 +73,14 @@ Then in the browser, using the JS console, the demos can be individually launche
 
 ** Example 1: 2D polygons
 
-This demo utilizes the [[../../src/webgl/shaders.org#basic][basic color shader]] to draw two filled, rotating
+This demo utilizes the [[../../src/gl/shaders.org#basic][basic color shader]] to draw two filled, rotating
 2d polygons. The shader itself is generated based on given parameters
 and the example shows some alternatives:
 
 - =shader1= is requesting to specify the color as a uniform value
 - =shader2= is requesting to specify the color as a vertex attribute
   and we generate the required attribute buffer in the call to
-  =as-webgl-buffer-spec=.
+  =as-gl-buffer-spec=.
 
 If we're only after displaying a model with a single color,
 specifying it as shader uniform is much more efficient. However,
@@ -93,12 +93,12 @@ implication of this is that we don't need to specify a view matrix,
 which has to be given for the 3d case though. Please see the above
 link for more discussion about these options.
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex01.cljs :noweb yes :mkdirp yes :padline no
-   (ns thi.ng.geom.examples.webgl.ex01
+#+BEGIN_SRC clojure :tangle ../../babel/examples/gl/ex01.cljs :noweb yes :mkdirp yes :padline no
+   (ns thi.ng.geom.examples.gl.ex01
      <<require-macros>>
      (:require
       <<default-requires>>
-      [thi.ng.geom.webgl.shaders.basic :as basic]
+      [thi.ng.geom.gl.shaders.basic :as basic]
       [thi.ng.geom.circle :as c]
       [thi.ng.geom.polygon :as poly]))
 
@@ -113,7 +113,7 @@ link for more discussion about these options.
            shader2   (sh/make-shader-from-spec gl (basic/make-shader-spec-2d true))
            teeth     20
            model     (-> (poly/cog 0.5 teeth [0.9 1 1 0.9])
-                         (gl/as-webgl-buffer-spec {:normals false :single-color [1 0 0 1]})
+                         (gl/as-gl-buffer-spec {:normals false :fixed-color [1 0 0 1]})
                          (gl/make-buffers-in-spec gl glc/static-draw)
                          (assoc-in [:uniforms :proj] (gl/ortho view-rect))
                          (time))
@@ -147,12 +147,12 @@ with vertex attributes. We define a box with different colors for each
 of its 6 sides. The colors must be specified as RGBA using the
 [[http://thi.ng/color][thi.ng/color]] library.
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex02.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.examples.webgl.ex02
+#+BEGIN_SRC clojure :tangle ../../babel/examples/gl/ex02.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.gl.ex02
     <<require-macros>>
     (:require
      <<default-requires>>
-     [thi.ng.geom.webgl.shaders.basic :as basic]))
+     [thi.ng.geom.gl.shaders.basic :as basic]))
 
   (defn ^:export demo
     []
@@ -165,7 +165,7 @@ of its 6 sides. The colors must be specified as RGBA using the
                           :attribs {:col (->> [[1 0 0] [0 1 0] [0 0 1] [0 1 1] [1 0 1] [1 1 0]]
                                               (map col/rgba)
                                               (attr/const-face-attribs))}})
-                        (gl/as-webgl-buffer-spec {})
+                        (gl/as-gl-buffer-spec {})
                         (cam/apply (cam/perspective-camera {:aspect view-rect}))
                         (assoc :shader (sh/make-shader-from-spec gl (basic/make-shader-spec-3d true)))
                         (gl/make-buffers-in-spec gl glc/static-draw))]
@@ -182,12 +182,12 @@ of its 6 sides. The colors must be specified as RGBA using the
 
 Same example as above, only this time using basic lambert shading...
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex02a.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.examples.webgl.ex02a
+#+BEGIN_SRC clojure :tangle ../../babel/examples/gl/ex02a.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.gl.ex02a
     <<require-macros>>
     (:require
      <<default-requires>>
-     [thi.ng.geom.webgl.shaders.lambert :as lambert]))
+     [thi.ng.geom.gl.shaders.lambert :as lambert]))
 
   (defn ^:export demo
     []
@@ -200,7 +200,7 @@ Same example as above, only this time using basic lambert shading...
                           :attribs {:col (->> [[1 0 0] [0 1 0] [0 0 1] [0 1 1] [1 0 1] [1 1 0]]
                                               (map col/rgba)
                                               (attr/const-face-attribs))}})
-                        (gl/as-webgl-buffer-spec {})
+                        (gl/as-gl-buffer-spec {})
                         (cam/apply (cam/perspective-camera {:aspect view-rect}))
                         (assoc :shader (sh/make-shader-from-spec gl lambert/shader-spec-attrib))
                         (gl/make-buffers-in-spec gl glc/static-draw))]
@@ -224,12 +224,12 @@ then also rotated around the global Y axis. This is achieved with
 simple matrix multiplication (=rot= is the global rotation /
 transformation).
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex03.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.examples.webgl.ex03
+#+BEGIN_SRC clojure :tangle ../../babel/examples/gl/ex03.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.gl.ex03
     <<require-macros>>
     (:require
      <<default-requires>>
-     [thi.ng.geom.webgl.shaders.phong :as phong]
+     [thi.ng.geom.gl.shaders.phong :as phong]
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.polygon :as poly]))
 
@@ -247,7 +247,7 @@ transformation).
                                           :inset   0.025
                                           :wall    0.015
                                           :bottom? true})
-                        (gl/as-webgl-buffer-spec {})
+                        (gl/as-gl-buffer-spec {})
                         (cam/apply (cam/perspective-camera {:aspect view-rect}))
                         (assoc :shader (sh/make-shader-from-spec gl phong/shader-spec))
                         (update :uniforms merge
@@ -288,13 +288,13 @@ transformation).
 
 Live version: http://demo.thi.ng/geom/webgl/unproject/
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex04.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.examples.webgl.ex04
+#+BEGIN_SRC clojure :tangle ../../babel/examples/gl/ex04.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.gl.ex04
     <<require-macros>>
     (:require
      <<default-requires>>
      [thi.ng.geom.plane :as pl]
-     [thi.ng.geom.webgl.shaders.phong :as phong]))
+     [thi.ng.geom.gl.shaders.phong :as phong]))
 
   (enable-console-print!)
 
@@ -323,7 +323,7 @@ Live version: http://demo.thi.ng/geom/webgl/unproject/
           box        (-> (a/aabb 1)
                          (g/center)
                          (g/as-mesh {:mesh (glm/indexed-gl-mesh 12 #{:fnorm})})
-                         (gl/as-webgl-buffer-spec {})
+                         (gl/as-gl-buffer-spec {})
                          (gl/make-buffers-in-spec gl glc/static-draw)
                          (assoc :shader shader :uniforms (assoc uniforms :diffuseCol [1 0 1])))
           ground     (pl/plane-with-point (vec3 0 ground-y 0) v/V3Y)
@@ -331,7 +331,7 @@ Live version: http://demo.thi.ng/geom/webgl/unproject/
           planes     (-> (g/as-mesh back {:mesh (glm/indexed-gl-mesh 4 #{:fnorm}) :size size})
                          (g/translate (vec3 0 (+ (* 0.5 size) ground-y) 0))
                          (g/into (g/as-mesh ground {:size size}))
-                         (gl/as-webgl-buffer-spec {})
+                         (gl/as-gl-buffer-spec {})
                          (gl/make-buffers-in-spec gl glc/static-draw)
                          (assoc :shader shader :uniforms uniforms))
           state      (volatile! {:mpos (g/centroid view-rect) :update-ray true})
@@ -364,8 +364,8 @@ Live version: http://demo.thi.ng/geom/webgl/unproject/
 
 Live version: http://demo.thi.ng/geom/webgl/texcube/
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex05.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.examples.webgl.ex05
+#+BEGIN_SRC clojure :tangle ../../babel/examples/gl/ex05.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.gl.ex05
     <<require-macros>>
     (:require
      <<default-requires>>))
@@ -398,7 +398,7 @@ Live version: http://demo.thi.ng/geom/webgl/texcube/
                         (g/as-mesh
                          {:mesh    (glm/indexed-gl-mesh 12 #{:uv})
                           :attribs {:uv (attr/face-attribs (attr/uv-cube-map-v 256 false))}})
-                        (gl/as-webgl-buffer-spec {})
+                        (gl/as-gl-buffer-spec {})
                         (cam/apply (cam/perspective-camera {:eye (vec3 0 0 0.5) :fov 90 :aspect view-rect}))
                         (assoc :shader (sh/make-shader-from-spec gl shader-spec))
                         (gl/make-buffers-in-spec gl glc/static-draw))
@@ -422,8 +422,8 @@ Live version: http://demo.thi.ng/geom/webgl/texcube/
 
 Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/webgl/ptf-knot3/
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex05a.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.examples.webgl.ex05a
+#+BEGIN_SRC clojure :tangle ../../babel/examples/gl/ex05a.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.gl.ex05a
     <<require-macros>>
     (:require
      <<default-requires>>
@@ -541,7 +541,7 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/
           view-rect (gl/get-viewport-rect gl)
           model     (-> (knot-simple)
                         #_(knot-nested 8 7)
-                        (gl/as-webgl-buffer-spec {})
+                        (gl/as-gl-buffer-spec {})
                         (cam/apply (cam/perspective-camera {:eye (vec3 0 0 5) :fov 90 :aspect view-rect}))
                         (assoc :shader (sh/make-shader-from-spec gl shader-spec))
                         (gl/make-buffers-in-spec gl glc/static-draw)
@@ -567,14 +567,14 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/
 
 Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/webgl/fbo-rtt2/
 
-#+BEGIN_SRC clojure :tangle ../../babel/examples/webgl/ex06.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.examples.webgl.ex06
+#+BEGIN_SRC clojure :tangle ../../babel/examples/gl/ex06.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.gl.ex06
     <<require-macros>>
     (:require
      <<default-requires>>
      [thi.ng.geom.sphere :as s]
-     [thi.ng.geom.webgl.shaders.lambert :as lambert]
-     [thi.ng.geom.webgl.shaders.image :as image]
+     [thi.ng.geom.gl.shaders.lambert :as lambert]
+     [thi.ng.geom.gl.shaders.image :as image]
      [thi.ng.glsl.core :as glsl :include-macros true]))
 
   (def shader-spec
@@ -642,7 +642,7 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
                               {:mesh    (glm/gl-mesh 64 #{:col :fnorm})
                                :attribs {:col (fn [_ _ v _] (col/rgba (m/madd (m/normalize v) 0.5 0.5)))}
                                :res     6})
-                             (gl/as-webgl-buffer-spec {})
+                             (gl/as-gl-buffer-spec {})
                              (cam/apply (cam/perspective-camera {:eye (vec3 0 0 3) :aspect 1.0}))
                              (assoc :shader lambert-shader)
                              (gl/make-buffers-in-spec gl glc/static-draw))
@@ -651,7 +651,7 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
                               {:mesh    (glm/gl-mesh 2048 #{:uv})
                                :attribs {:uv attr/uv-faces}
                                :res     32})
-                             (gl/as-webgl-buffer-spec {})
+                             (gl/as-gl-buffer-spec {})
                              (cam/apply (cam/perspective-camera {:fov 90 :aspect view-rect}))
                              (assoc :shader main-shader)
                              (gl/make-buffers-in-spec gl glc/static-draw))]
@@ -690,13 +690,13 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
 *Note:* This example needs updating and doesn't work at the moment...
 
 #+BEGIN_SRC clojure
- ;;:tangle ../../babel/test/thi/ng/geom/webgl/example07.cljs :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.webgl.example07
+ ;;:tangle ../../babel/test/thi/ng/geom/gl/example07.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.gl.example07
     <<require-macros>>
     (:require
      <<default-requires>>
-     [thi.ng.geom.webgl.shaders.shadow :as shadow]
-     [thi.ng.geom.webgl.shaders.image :as image]
+     [thi.ng.geom.gl.shaders.shadow :as shadow]
+     [thi.ng.geom.gl.shaders.image :as image]
      [thi.ng.geom.aabb :as a]
      [thi.ng.geom.basicmesh :refer [basic-mesh]]
      [thi.ng.morphogen.core :as mg]))
@@ -732,7 +732,7 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
                            (g/flip))
           mesh         (g/into mesh room)
           model        (-> mesh
-                           (gl/as-webgl-buffer-spec {})
+                           (gl/as-gl-buffer-spec {})
                            (gl/make-buffers-in-spec gl glc/static-draw))
           ov-quad      (image/make-shader-spec gl)
           view-rect    (gl/get-viewport-rect gl)
