@@ -181,7 +181,7 @@
       _)
     gl/IRelease
     (release [_]
-      #?(:cljs (.glDeleteTextures gl 1 id) :cljs (.deleteTexture gl id))
+      #?(:clj (.glDeleteTextures gl 1 id) :cljs (.deleteTexture gl id))
       _)
     gl/IConfigure
     (configure
@@ -222,8 +222,8 @@
                     (.getBuffer d))))
          :cljs
          (cond
-           image                     (.texImage2D gl target 0 format format type image)
-           (and pixels width height) (.texImage2D gl target 0 format width height 0 format type pixels)))
+           image              (.texImage2D gl target 0 format format type image)
+           (and width height) (.texImage2D gl target 0 format width height 0 format type pixels)))
       _))
 
   #?(:clj
