@@ -41,7 +41,7 @@ OpenGL/WebGL representation of their data. Implementations must create
 a hash map (from here on called "GL model spec") of the following format:
 
 #+BEGIN_SRC clojure
-  ;; GL model spec defining:
+  ;; example GL model spec (for Clojure) defining:
   ;; - 2 attribute buffers defining position & color for 3 vertices
   ;; - 1 index buffer defining a single triangle (optional)
   ;; - number of indices (only required if :indices given)
@@ -57,8 +57,9 @@ a hash map (from here on called "GL model spec") of the following format:
 
 *Important:* The collections for =:data= and =:indices= keys MUST be
 native buffers (in Clojure) or JS Typed Arrays (Clojurescript). These
-can be created using helper functions in this namespace or the
-=thi.ng.typedarrays.core= namespace respectively.
+can be created using helper functions in the
+=thi.ng.geom.gl.jogl.buffers= or the =thi.ng.typedarrays.core=
+namespaces respectively.
 
 #+BEGIN_SRC clojure :noweb-ref protos
   (defprotocol IGLConvert
