@@ -824,7 +824,8 @@ using the protocol.
   (defn begin-shader
     #?(:clj  [^GL3 gl shader uniforms attribs indices]
        :cljs [^WebGLRenderingContext gl shader uniforms attribs indices])
-    (#?(:clj .glUseProgram :cljs .useProgram) gl (int (get shader :program)))
+    #?(:clj  (.glUseProgram gl (int (get shader :program)))
+       :cljs (.useProgram gl (get shader :program)))
     (sh/apply-default-uniforms shader uniforms)
     (reduce-kv #(sh/set-uniform shader %2 %3) nil uniforms)
     (reduce-kv #(sh/set-attribute gl shader %2 %3) nil attribs)
