@@ -210,16 +210,27 @@
              (.pixelStorei gl glc/unpack-premultiply-alpha-webgl premultiply))])
       #?(:clj
          (cond
-           image (let [^TextureData d image]
-                   (.glTexImage2D
-                    gl (int target) (int 0)
-                    (.getInternalFormat d)
-                    (.getWidth d)
-                    (.getHeight d)
-                    (int 0)
-                    (.getPixelFormat d)
-                    (.getPixelType d)
-                    (.getBuffer d))))
+           image
+           (let [^TextureData d image]
+             (.glTexImage2D
+              gl (int target) 0
+              (.getInternalFormat d)
+              (.getWidth d)
+              (.getHeight d)
+              0
+              (.getPixelFormat d)
+              (.getPixelType d)
+              (.getBuffer d)))
+           (and width height)
+           (.glTexImage2D
+            gl (int target) 0
+            (int format)
+            (int width)
+            (int height)
+            0
+            (int format)
+            (int type)
+            ^Buffer pixels))
          :cljs
          (cond
            image              (.texImage2D gl target 0 format format type image)
