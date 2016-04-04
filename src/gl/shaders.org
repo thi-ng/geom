@@ -216,7 +216,7 @@ Special cases:
     #?(:clj  [^GL3 gl shader id attrib-spec]
        :cljs [^WebGLRenderingContext gl shader id attrib-spec])
     (let [{:keys [buffer stride size type normalized? offset loc]} attrib-spec]
-      ;;(prn :loc id (-> shader (get :attribs) (get id)))
+      ;;(prn :loc id (or loc (-> shader (get :attribs) (get id))) :size size stride)
       (if-let [loc (int (or loc (-> shader (get :attribs) (get id))))]
         (doto gl
           #?(:clj  (.glBindBuffer glc/array-buffer (.get ^IntBuffer buffer 0))
@@ -329,6 +329,16 @@ shader source before compilation with =compile-shader= below.
              (parse-and-throw-error gl shader src)))
          (err/throw! "Can't create shader"))))
 
+  (defn bind-attrib-locations
+    #?(:clj  [^GL3 gl program attribs]
+       :cljs [^WebGLRenderingContext gl program attribs])
+    (reduce-kv
+     (fn [_ id att]
+       (when (sequential? att)
+         (prn :bind-attr id (nth att 1))
+         (#?(:clj .glBindAttribLocation :cljs .bindAttribLocation) gl program (nth att 1) (name id))))
+     nil attribs))
+
   #?(:clj
      (defn make-shader-from-spec
        [^GL3 gl spec]
@@ -344,7 +354,7 @@ shader source before compilation with =compile-shader= below.
                        (.add fs)
                        (.init gl))
              prog-id (.program prog)]
-         ;; TODO optional glBindAttribLocation(prog-id, loc, "position")
+         (bind-attrib-locations gl prog-id (:attribs spec))
          (if (.link prog gl System/out)
            (let [attribs  (init-shader-attribs gl prog-id (:attribs spec))
                  uniforms (init-shader-uniforms gl prog-id (:uniforms spec))]
@@ -366,6 +376,7 @@ shader source before compilation with =compile-shader= below.
          (doto gl
            (.attachShader prog vs)
            (.attachShader prog fs)
+           (bind-attrib-locations prog-id attribs)
            (.linkProgram prog))
          (if (.getProgramParameter gl prog glc/link-status)
            (let [attribs  (init-shader-attribs gl prog attribs)
