@@ -26,6 +26,8 @@
 | =:version=  | GLSL version number (generates =#version= directive)    |
 | =:state=    | OpenGL state flags to initialize when shader is used    |
 
+TODO sample shader spec
+
 ** Shader uniforms
 *** Supported types
 
@@ -213,15 +215,16 @@ Special cases:
   (defn set-attribute
     #?(:clj  [^GL3 gl shader id attrib-spec]
        :cljs [^WebGLRenderingContext gl shader id attrib-spec])
-    (let [{:keys [buffer stride size type normalized? offset]} attrib-spec]
-      (if-let [loc (-> shader (get :attribs) (get id))]
+    (let [{:keys [buffer stride size type normalized? offset loc]} attrib-spec]
+      ;;(prn :loc id (-> shader (get :attribs) (get id)))
+      (if-let [loc (int (or loc (-> shader (get :attribs) (get id))))]
         (doto gl
           #?(:clj  (.glBindBuffer glc/array-buffer (.get ^IntBuffer buffer 0))
              :cljs (.bindBuffer glc/array-buffer buffer))
-          (#?(:clj .glEnableVertexAttribArray :cljs .enableVertexAttribArray) (int loc))
+          (#?(:clj .glEnableVertexAttribArray :cljs .enableVertexAttribArray) loc)
           (#?(:clj .glVertexAttribPointer :cljs .vertexAttribPointer)
            loc
-           size
+           (int size)
            (or type glc/float)
            (boolean normalized?)
            (or stride 0)
@@ -341,6 +344,7 @@ shader source before compilation with =compile-shader= below.
                        (.add fs)
                        (.init gl))
              prog-id (.program prog)]
+         ;; TODO optional glBindAttribLocation(prog-id, loc, "position")
          (if (.link prog gl System/out)
            (let [attribs  (init-shader-attribs gl prog-id (:attribs spec))
                  uniforms (init-shader-uniforms gl prog-id (:uniforms spec))]
