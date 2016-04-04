@@ -437,7 +437,7 @@ target/geom-<<project-version()>>.js
 
 **** [[http://thi.ng/shadergraph][thi.ng/shadergraph]]
 #+BEGIN_SRC clojure :exports none :noweb-ref dep-shadergraph
-[thi.ng/shadergraph "0.2.0"]
+[thi.ng/shadergraph "0.3.0-SNAPSHOT"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/strf][thi.ng/strf]]
@@ -552,7 +552,7 @@ target/geom-<<project-version()>>.js
                                                <<dep-cljs-test>>]
                            :node-dependencies [<<dep-npm-benchmark>>]
                            :global-vars       {*warn-on-reflection* true}
-                           :jvm-opts          ^:replace ["-Dclojure.compiler.direct-linking=true"]
+                           :jvm-opts          ^:replace ["-Dclojure.compiler.direct-linking=false"]
                            :aliases           {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]
                                                "bench" ["with-profile" "bench" "do" "clean," "perforate," "cljsbuild" "test"]}}
                    :bench {:dependencies [<<dep-perforate-x>>]
