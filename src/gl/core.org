@@ -746,6 +746,7 @@ using the protocol.
        (let [size (or (get buffer-strides target)
                       (err/unsupported! "Buffer type must be array-buffer or element-array-buffer"))
              ^IntBuffer id (native/int-buffer 1)]
+         ;;(prn :capacity (.capacity ^Buffer data))
          (doto gl
            (.glGenBuffers 1 id)
            (.glBindBuffer target (.get id 0))
@@ -766,7 +767,7 @@ using the protocol.
          (.glGenVertexArrays gl 1 id)
          (.glBindVertexArray gl (.get id 0))
          (doseq [[attr {:keys [id loc offset size stride]
-                        :or   {stride (* 4 size) offset 0}}] (:attribs spec)]
+                        :or   {stride 0 offset 0}}] (:attribs spec)]
            (let [loc (int (or loc (get-in spec [:shader :attribs attr])))]
              (doto gl
                (.glBindBuffer glc/array-buffer (.get ^IntBuffer id 0))
@@ -831,7 +832,8 @@ using the protocol.
     (reduce-kv #(sh/set-uniform shader %2 %3) nil uniforms)
     (reduce-kv #(sh/set-attribute gl shader %2 %3) nil attribs)
     (when indices
-      (#?(:clj .glBindBuffer :cljs .bindBuffer) gl glc/element-array-buffer (get indices :buffer))))
+      #?(:clj  (.glBindBuffer gl glc/element-array-buffer (.get ^IntBuffer (get indices :buffer) 0))
+         :cljs (.bindBuffer gl glc/element-array-buffer (get indices :buffer)))))
 
   (defn end-shader
     #?(:clj  [^GL3 gl shader]
