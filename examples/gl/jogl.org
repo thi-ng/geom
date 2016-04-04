@@ -46,7 +46,7 @@
      :uniforms {:model :mat4
                 :view  :mat4
                 :proj  :mat4
-                :tex   :sampler2D
+                :tex   [:sampler2D 0]
                 :time  :float}
      :state    {:depth-test true}})
 
@@ -123,5 +123,118 @@
                                  :press mouse-pressed
                                  :drag  mouse-dragged
                                  :wheel wheel-moved}}}))
+    nil)
+#+END_SRC
+** Example 2
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/jogl/ex02.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.jogl.ex02
+    (:import
+     [com.jogamp.opengl GL3 GLAutoDrawable]
+     [com.jogamp.newt.event MouseEvent KeyEvent])
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.color.core :as col]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.attribs :as attr]
+     [thi.ng.geom.vector :as v]
+     [thi.ng.geom.matrix :as mat]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.camera :as cam]
+     [thi.ng.geom.gl.buffers :as buf]
+     [thi.ng.geom.gl.shaders :as sh]
+     [thi.ng.geom.gl.shaders.lambert :as lambert]
+     [thi.ng.geom.gl.shaders.image :as image]
+     [thi.ng.geom.gl.glmesh :as glm]
+     [thi.ng.geom.gl.jogl.core :as jogl]
+     [thi.ng.geom.gl.jogl.constants :as glc]
+     [clojure.pprint :refer [pprint]]
+     [clojure.java.io :as io]))
+
+  (def app (atom nil))
+
+  (defn init
+    [^GLAutoDrawable drawable]
+    (let [^GL3 gl   (.. drawable getGL getGL3)
+          view-rect (gl/get-viewport-rect gl)
+          lambert   (sh/make-shader-from-spec gl (assoc lambert/shader-spec :version 330))
+          img-shader (sh/make-shader-from-spec gl (assoc image/shader-spec :version 330))
+          fbo-size  512
+          fbo-tex   (buf/make-texture
+                     gl {:width  fbo-size
+                         :height fbo-size
+                         :filter glc/linear
+                         :wrap   glc/clamp-to-edge})
+          fbo       (-> (buf/make-fbo gl)
+                        (gl/bind)
+                        (gl/set-fbo-color-texture fbo-tex)
+                        (gl/set-fbo-depth-buffer (buf/make-depth-buffer gl fbo-size))
+                        (gl/unbind))
+          image     (-> (image/make-shader-spec
+                         gl {:state    {:tex   fbo-tex
+                                        :blend false}
+                             :shader   img-shader
+                             :viewport view-rect
+                             :width    256
+                             :height   256}))
+          model     (-> (a/aabb 1)
+                        (g/center)
+                        (g/as-mesh
+                         {:mesh    (glm/indexed-gl-mesh 12 #{:fnorm})
+                          ;;:attribs {:col (fn [_ _ v _] (col/rgba (m/madd (m/normalize v) 0.5 0.5)))}
+                          })
+                        (gl/as-gl-buffer-spec {})
+                        (cam/apply (cam/perspective-camera {:eye (v/vec3 0 0 3) :aspect 1.0}))
+                        (assoc :shader lambert)
+                        (gl/make-buffers-in-spec gl glc/static-draw))]
+      (pprint model)
+      (swap! app assoc
+             :model    model
+             :fbo      fbo
+             :fbo-size fbo-size
+             :image    image)))
+
+  (defn display
+    [^GLAutoDrawable drawable t]
+    (let [^GL3 gl (.. drawable getGL getGL3)
+          {:keys [model fbo fbo-size image width height]} @app
+          {:keys [shader] :as spec} model
+          t       (* 0.25 t)
+          model   (-> mat/M44 (g/rotate-x t) (g/rotate-y (* t 2)))]
+      (gl/bind fbo)
+      (doto gl
+        (gl/set-viewport 0 0 fbo-size fbo-size)
+        (gl/clear-color-and-depth-buffer col/GRAY 1)
+        (lambert/draw (assoc-in spec [:uniforms :model] model)))
+      (gl/unbind fbo)
+      (doto gl
+        (gl/set-viewport 0 0 width height)
+        (gl/clear-color-and-depth-buffer col/BLACK 1)
+        (image/draw image))))
+
+  (defn resize
+    [_ x y w h]
+    (swap! app assoc :width w :height h))
+
+  (defn key-pressed
+    [^KeyEvent e]
+    (condp = (.getKeyCode e)
+      KeyEvent/VK_ESCAPE (jogl/dispose-window (:window @app) (:anim @app))
+      nil))
+
+  (defn -main
+    [& args]
+    (reset!
+     app
+     (jogl/gl-window
+      {:profile       :gl3
+       :samples       4
+       :double-buffer true
+       :fullscreen    false
+       :events        {:init    init
+                       :display display
+                       :resize  resize
+                       :keys    {:press key-pressed}}}))
     nil)
 #+END_SRC
