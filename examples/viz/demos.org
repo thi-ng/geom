@@ -567,21 +567,21 @@ for list of available presets & how to define new gradients.
 
 ** Github commit history
 
-*Note:* This example requires [[https://github.com/Raynes/tentacles][raynes/tentacles 0.3.0]] to be added to
-your project in order to download the commit history of a given
-project.
+*Note:* This example can optionally use [[https://github.com/Raynes/tentacles][raynes/tentacles 0.3.0]] (needs
+to be manually added to your project) to download the commit history
+of a given project.
 
 This example downloads the commit history for this project from GitHub
 and produces a similar activity heatmap as shown on GH user pages
 (each column = 1 week).
 
 Btw. You can use the local repo by switching the lines calling
-=load-commits-fs= and =load-commits-gh=...
+=load-commits-fs= (default) and =load-commits-gh=...
 
 [[http://media.thi.ng/geom/viz/commit-history.svg]]
 
 #+BEGIN_SRC clojure :tangle ../../babel/examples/viz/hm-github.clj :mkdirp yes :padline no
-  (require '[tentacles.repos :as repos])
+  ;;(require '[tentacles.repos :as repos])
   (require '[thi.ng.ndarray.core :as nd])
   (require '[clojure.string :as str])
   (require '[clojure.java.shell :refer [sh]])
@@ -598,7 +598,8 @@ Btw. You can use the local repo by switching the lines calling
     #(let [d (java.util.Date. (long (+ from (* % week))))]
        (.format (if (zero? (.getMonth d)) fmt-year fmt-month) d)))
 
-  (defn load-commits-gh
+  ;; currently disabled to due CLJ 1.8 incompatibility
+  #_(defn load-commits-gh
     [user repo]
     (prn (str "loading GH commit history: " user "/" repo))
     (->> (repos/commits user repo {:all-pages true})
