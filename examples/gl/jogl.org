@@ -43,7 +43,7 @@
                 :uv       :vec2}
      :varying  {:vCol     :vec4
                 :vUV      :vec2}
-     :uniforms {:model :mat4
+     :uniforms {:model [:mat4 mat/M44]
                 :view  :mat4
                 :proj  :mat4
                 :tex   [:sampler2D 0]
@@ -73,13 +73,11 @@
           {:keys [shader] :as spec} (:model @app)
           unis    (:uniforms shader)
           t       (* 0.25 t)
-          model   mat/M44 ;;(-> mat/M44 (g/rotate-x t) (g/rotate-y (* t 1.5)))
           view    (arc/get-view (:arcball @app))]
       (doto gl
         (gl/clear-color-and-depth-buffer 0.3 0.3 0.3 1.0 1.0)
         (gl/draw-with-shader
          (update spec :uniforms assoc
-                 :model model
                  :view view
                  :time t)))))
 
