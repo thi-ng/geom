@@ -115,7 +115,7 @@ Special cases:
              [type default opt]    (if (sequential? type) type [type])
              [setter u-cast u-len] (uniform-types type)
              #?@(:cljs [setter (aget gl (str "uniform" setter))])]
-         (#?(:clj prn :cljs debug) :uniform-loc id loc)
+         #?(:clj (prn :uniform-loc id loc))
          (assoc
           umap id
           {:type    type
@@ -388,7 +388,7 @@ shader source before compilation with =compile-shader= below.
          (doto gl
            (.attachShader prog vs)
            (.attachShader prog fs)
-           (bind-attrib-locations prog-id attribs)
+           (bind-attrib-locations prog attribs)
            (.linkProgram prog))
          (if (.getProgramParameter gl prog glc/link-status)
            (let [attribs  (init-shader-attribs gl prog attribs)
@@ -432,7 +432,7 @@ shader source before compilation with =compile-shader= below.
         [java.nio Buffer FloatBuffer IntBuffer ShortBuffer])
        :cljs
        (:require-macros
-        [cljs-log.core :refer [warn]]))
+        [cljs-log.core :refer [debug warn]]))
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.geom.core :as g]
@@ -461,6 +461,4 @@ shader source before compilation with =compile-shader= below.
   <<draw>>
 
   <<state>>
-
-  <<helpers>>
 #+END_SRC
