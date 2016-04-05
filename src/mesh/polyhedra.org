@@ -41,9 +41,13 @@ returns either a =BasicMesh= or =GMesh= instance.
 
 #+BEGIN_SRC clojure :noweb-ref polyhedra
   (defn polyhedron-mesh
-   ([f] (polyhedron-mesh f 1))
-   ([f scale] (g/into (bm/basic-mesh) (f scale)))
-   ([f subdiv scale iter] (nth (iterate subdiv (g/into (gm/gmesh) (f scale))) iter)))
+    ([f] (polyhedron-mesh f nil))
+    ([f {:keys [scale subdiv iter attribs mesh]}]
+     (let [faces (f (or scale 1.0) attribs)]
+       (if subdiv
+         (let [m (nth (iterate subdiv (g/into (gm/gmesh) faces)) (or iter 1))]
+           (if mesh (g/into mesh m) m))
+         (g/into (or mesh (bm/basic-mesh)) faces)))))
 #+END_SRC
 
 *** Tetrahedron
@@ -61,9 +65,11 @@ returns either a =BasicMesh= or =GMesh= instance.
             (vec3 0 0 r)])))
 
   (defn tetrahedron
-    [scale]
+    [scale attribs]
     (let [[a b c d] (tetrahedron-vertices scale)]
-      [[a b c] [a c d] [a d b] [c b d]]))
+      (map-indexed
+       (fn [i fverts] (attr/generate-face-attribs fverts i attribs nil))
+       [[a b c] [a c d] [a d b] [c b d]])))
 #+END_SRC
 
 *** Octahedron
@@ -82,10 +88,12 @@ returns either a =BasicMesh= or =GMesh= instance.
             (vec3 0 q' 0)])))
 
   (defn octahedron
-    [scale]
+    [scale attribs]
     (let [[a b c d e f] (octahedron-vertices scale)]
-      [[d a e] [c d e] [b c e] [a b e]
-       [d c f] [a d f] [c b f] [b a f]]))
+      (map-indexed
+       (fn [i fverts] (attr/generate-face-attribs fverts i attribs nil))
+       [[d a e] [c d e] [b c e] [a b e]
+        [d c f] [a d f] [c b f] [b a f]])))
 #+END_SRC
 
 *** Icosahedron
@@ -110,13 +118,15 @@ returns either a =BasicMesh= or =GMesh= instance.
             (vec3 q' p' 0)])))
 
   (defn icosahedron
-    [scale]
+    [scale attribs]
     (let [[a b c d e f g h i j k l] (icosahedron-vertices scale)]
-      [[b a c] [c d b] [e d f] [g d e]
-       [h a i] [j a h] [k e l] [l h k]
-       [f c j] [j l f] [i b g] [g k i]
-       [f d c] [b d g] [c a j] [i a b]
-       [j h l] [k h i] [l e f] [g e k]]))
+      (map-indexed
+       (fn [i fverts] (attr/generate-face-attribs fverts i attribs nil))
+       [[b a c] [c d b] [e d f] [g d e]
+        [h a i] [j a h] [k e l] [l h k]
+        [f c j] [j l f] [i b g] [g k i]
+        [f d c] [b d g] [c a j] [i a b]
+        [j h l] [k h i] [l e f] [g e k]])))
 #+END_SRC
 
 *** Dodecahedron
@@ -150,11 +160,13 @@ returns either a =BasicMesh= or =GMesh= instance.
             (vec3 p r' 0)])))
 
   (defn dodecahedron
-    [scale]
+    [scale attribs]
     (let [[a b c d e f g h i j k l m n o p q r s t] (dodecahedron-vertices scale)]
-      [[e d c b a] [h g f a b] [m l k j i] [p o n i j]
-       [o d e q n] [d o p r c] [l g h s k] [g l m t f]
-       [e a f t q] [m i n q t] [p j k s r] [h b c r s]]))
+      (map-indexed
+       (fn [i fverts] (attr/generate-face-attribs fverts i attribs nil))
+       [[e d c b a] [h g f a b] [m l k j i] [p o n i j]
+        [o d e q n] [d o p r c] [l g h s k] [g l m t f]
+        [e a f t q] [m i n q t] [p j k s r] [h b c r s]])))
 #+END_SRC
 
 ** Complete namespace definition
@@ -164,6 +176,7 @@ returns either a =BasicMesh= or =GMesh= instance.
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
+     [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.vector :as v :refer [vec3]]
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.gmesh :as gm]
