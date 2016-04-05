@@ -81,7 +81,7 @@ RGBA colors, however the alpha component is discarded.
 #+BEGIN_SRC glsl :noweb-ref lambert-vs-attr
   void main() {
     float lam = lambert(surfaceNormal(normal, normalMat), lightDir);
-    vCol = vec4(ambientCol + color.xyz * lightCol * lam, alpha);
+    vCol = vec4(ambientCol + color.rgb * lightCol * lam, alpha);
     gl_Position = mvp(position, model, view, proj);
   }
 #+END_SRC
@@ -105,7 +105,7 @@ RGBA colors, however the alpha component is discarded.
 #+BEGIN_SRC glsl :noweb-ref lambert-vs-abs-attr
   void main() {
     float lam = lambertAbs(surfaceNormal(normal, normalMat), lightDir);
-    vCol = vec4(ambientCol + color.xyz * lightCol * lam, alpha);
+    vCol = vec4(ambientCol + color.rgb * lightCol * lam, alpha);
     gl_Position = mvp(position, model, view, proj);
   }
 #+END_SRC
@@ -138,8 +138,8 @@ RGBA colors, however the alpha component is discarded.
                 :lightCol   [:vec3 [1 1 1]]
                 :lightDir   [:vec3 [0 0 1]]
                 :alpha      [:float 1]}
-     :attribs  {:position   :vec3
-                :normal     :vec3}
+     :attribs  {:position   [:vec3 0]
+                :normal     [:vec3 1]}
      :varying  {:vCol       :vec4}
      :state    {:depth-test true}})
 
@@ -152,7 +152,7 @@ RGBA colors, however the alpha component is discarded.
     (-> (make-shader-spec
          (glsl/minified "
   <<lambert-vs-attr>>"))
-        (assoc-in [:attribs :color] :vec4)))
+        (assoc-in [:attribs :color] [:vec4 2])))
 
   (def shader-spec-two-sided
     (make-shader-spec
@@ -163,7 +163,7 @@ RGBA colors, however the alpha component is discarded.
     (-> (make-shader-spec
          (glsl/minified "
   <<lambert-vs-abs-attr>>"))
-        (assoc-in [:attribs :color] :vec4)))
+        (assoc-in [:attribs :color] [:vec4 2])))
 
   (defn draw
     [gl spec]
@@ -242,8 +242,8 @@ RGBA colors, however the alpha component is discarded.
                 :lightPos      [:vec3 [0 0 0]]
                 :useBlinnPhong [:bool true]
                 :wrap          [:float 0]}
-     :attribs {:position       :vec3
-               :normal         :vec3}
+     :attribs {:position       [:vec3 0]
+               :normal         [:vec3 1]}
      :varying {:vNormal        :vec3
                :vEyePos        :vec3
                :vLightPos      :vec3}
