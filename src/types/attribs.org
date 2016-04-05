@@ -9,6 +9,7 @@
          - [[#uv-texture-coordinates][UV texture coordinates]]
              - [[#cube][Cube]]
              - [[#tube][Tube]]
+             - [[#disc][Disc]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
 * thi.ng.geom.attribs
@@ -43,15 +44,16 @@ should/could be used for each type.
 - =thi.ng.geom.gl.GLMesh=
 - =thi.ng.geom.gl.IndexedGLMesh=
 
-| *Type*   | *UV generation example*                                               |
-|----------+-----------------------------------------------------------------------|
-| AABB     | =(g/as-mesh a {:mesh ... :attribs {:uv (attr/uv-cube-map-v)}})=       |
-| Circle   | =(g/as-mesh a {:mesh ... :attribs {:uv attr/uv-flat-disc}})=          |
-| Cuboid   | =(g/as-mesh a {:mesh ... :attribs {:uv (attr/uv-cube-map-v)}})=       |
-| Polygon2 | =(g/as-mesh a {:mesh ... :attribs {:uv (attr/supplied-attrib :uv)}})= |
-| PTF      | =(g/as-mesh a {:mesh ... :attribs {:uv attr/uv-tube}})=               |
-| Rect2    | =(g/as-mesh a {:mesh ... :attribs {:uv (attr/supplied-attrib :uv)}})= |
-| Sphere   | =(g/as-mesh a {:mesh ... :attribs {:uv (attr/supplied-attrib :uv)}})= |
+| *Type*          | *UV generation examples*                                              |
+|-----------------+-----------------------------------------------------------------------|
+| [[./aabb.org][AABB]]            | =(g/as-mesh a {:mesh ... :attribs {:uv (attr/uv-cube-map-v)}})=       |
+| [[./circle.org][Circle]]          | =(g/as-mesh a {:mesh ... :attribs {:uv attr/uv-flat-disc}})=          |
+| [[./cuboid.org][Cuboid]]          | =(g/as-mesh a {:mesh ... :attribs {:uv (attr/uv-cube-map-v)}})=       |
+| [[./polygon.org][Polygon2]]        | =(g/as-mesh a {:mesh ... :attribs {:uv (attr/supplied-attrib :uv)}})= |
+| [[./polyhedra.org][Polyhedron mesh]] | =(polyhedron-mesh f {:mesh ... :attribs {:uv ...}})=                  |
+| [[./ptf.org][PTF]]             | =(g/as-mesh a {:mesh ... :attribs {:uv attr/uv-tube}})=               |
+| [[./rect.org][Rect2]]           | =(g/as-mesh a {:mesh ... :attribs {:uv (attr/supplied-attrib :uv)}})= |
+| [[./sphere.org][Sphere]]          | =(g/as-mesh a {:mesh ... :attribs {:uv (attr/supplied-attrib :uv)}})= |
 
 ** Attribute generation & application
 
@@ -115,6 +117,7 @@ attribute value (and optionally transform it).
 
 *** UV texture coordinates
 **** Cube
+
 #+BEGIN_SRC clojure :noweb-ref attribs
   (defn uv-rect-for-size
     ([w] (uv-rect-for-size w w))
@@ -154,14 +157,24 @@ Tube UV mapping is currently only supported by the following implementations:
 
 #+BEGIN_SRC clojure :noweb-ref attribs
   (defn uv-tube
+    "Generates tubular UV coordinates, using data provided in
+    options map (:u :v :du :dv keys)"
     [_ vid _ {:keys [u v du dv]}]
     (case (int vid)
       0 (v/vec2 u v)
       1 (v/vec2 (+ u du) v)
       2 (v/vec2 (+ u du) (+ v dv))
       (v/vec2 u (+ v dv))))
+#+END_SRC
 
+**** Disc
+
+#+BEGIN_SRC clojure :noweb-ref attribs
   (defn uv-flat-disc
+    "Generates UV coordinates for a circle/trianglefan, using data
+    provided in options map (:theta & :r keys). The first vertex of each
+    triangle is assumed to be in the center of the circle, the other 2
+    vertices are located at the circles perimeter."
     [_ vid _ {:keys [theta r] :as opts}]
     (case (int vid)
       0 (vec2 0.5)
@@ -170,6 +183,16 @@ Tube UV mapping is currently only supported by the following implementations:
       (let [theta (+ theta (get opts :delta))]
         (vec2 (mm/madd (Math/cos theta) r 0.5)
               (mm/madd (Math/sin theta) r 0.5)))))
+
+  (defn uv-polygon-disc
+    "HOF UV generator for polygons/polyhedras. Takes polygon resolution
+    and computes N UV coords, returns generator fn"
+    [res]
+    (->> res
+         m/norm-range
+         (mapv #(m/+ (g/as-cartesian (vec2 0.5 (* % m/TWO_PI))) 0.5))
+         repeat
+         face-attribs))
 #+END_SRC
 
 ** Complete namespace definition
