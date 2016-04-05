@@ -209,7 +209,7 @@ Same example as above, only this time using basic lambert shading...
          (doto gl
            (gl/set-viewport view-rect)
            (gl/clear-color-and-depth-buffer col/WHITE 1)
-           (lambert/draw
+           (gl/draw-with-shader
             (assoc-in model [:uniforms :model] (-> M44 (g/rotate-x t) (g/rotate-y (* t 2))))))
          true))))
 #+END_SRC
@@ -275,8 +275,8 @@ transformation).
            (doto gl
              (gl/set-viewport view-rect)
              (gl/clear-color-and-depth-buffer 1 0.98 0.95 1 1)
-             (phong/draw (assoc-in model [:uniforms :model] tx1))
-             (phong/draw
+             (gl/draw-with-shader (assoc-in model [:uniforms :model] tx1))
+             (gl/draw-with-shader
               (-> model
                   (assoc-in [:uniforms :model] tx2)
                   (assoc-in [:uniforms :diffuseCol] 0x33ff80))))
@@ -352,10 +352,11 @@ Live version: http://demo.thi.ng/geom/webgl/unproject/
            (doto gl
              (gl/set-viewport view-rect)
              (gl/clear-color-and-depth-buffer 0.52 0.5 0.5 1 1)
-             (phong/draw (cam/apply planes cam))
-             (phong/draw (-> box
-                             (cam/apply cam)
-                             (assoc-in [:uniforms :model] (g/translate M44 isec))))))
+             (gl/draw-with-shader (cam/apply planes cam))
+             (gl/draw-with-shader
+              (-> box
+                  (cam/apply cam)
+                  (assoc-in [:uniforms :model] (g/translate M44 isec))))))
          true))
       state))
 #+END_SRC
@@ -626,17 +627,17 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
                               :height fbo-size
                               :filter glc/linear
                               :wrap   glc/clamp-to-edge})
-          fbo            (-> (buf/make-fbo gl)
-                             (gl/bind)
-                             (gl/set-fbo-color-texture fbo-tex)
-                             (gl/set-fbo-depth-buffer (buf/make-depth-buffer gl fbo-size))
-                             (gl/unbind))
-          ov-quad        (-> (image/make-shader-spec
-                              gl {:state    {:tex   fbo-tex
-                                             :blend false}
-                                  :viewport view-rect
-                                  :width    128
-                                  :height   128}))
+          fbo            (buf/make-fbo-with-attachments
+                          gl {:tex    fbo-tex
+                              :width  fbo-size
+                              :height fbo-size
+                              :depth? true})
+          ov-quad        (image/make-shader-spec
+                          gl {:state    {:tex   fbo-tex
+                                         :blend false}
+                              :viewport view-rect
+                              :width    128
+                              :height   128})
           model1         (-> (s/sphere 1)
                              (g/as-mesh
                               {:mesh    (glm/gl-mesh 64 #{:col :fnorm})
@@ -663,7 +664,7 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
          (doto gl
            (gl/set-viewport 0 0 fbo-size fbo-size)
            (gl/clear-color-and-depth-buffer col/BLACK 1)
-           (lambert/draw
+           (gl/draw-with-shader
             (assoc-in model1 [:uniforms :model]
                       (-> M44 (g/rotate-x t) (g/rotate-y (* t 2))))))
          (gl/unbind fbo)

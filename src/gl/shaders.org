@@ -307,7 +307,6 @@ shader source before compilation with =compile-shader= below.
           v-src-fs (compile-glsl-vars (if gl3? "in" "varying") varying)
           src      (if version (str "#version " version "\n") "")
           src      (str src (or prelude default-prelude) u-src)]
-      (println a-src)
       {:vs-src (str src v-src-vs a-src vs)
        :fs-src (str src v-src-fs fs)}))
 
