@@ -23,7 +23,7 @@
          - [[#ivolume][IVolume]]
          - [[#end-of-implementation][End of implementation]]
      - [[#complete-namespace-definition][Complete namespace definition]]
-     - [[#tests][Tests]]
+     - [[#todo-tests][TODO Tests]]
          - [[#protocol-impls][Protocol impls]]
          - [[#test-namespace-definition][Test namespace definition]]
 
@@ -383,16 +383,18 @@ from the first vertex of the original with inner sorting over XYZ.
   <<impl>>
 #+END_SRC
 
-** Tests
+** TODO Tests
 
 #+BEGIN_SRC clojure :noweb-ref tests
-  (deftest test-ctors)
+  (deftest test-ctors
+    (is true))
 #+END_SRC
 
 *** Protocol impls
 
 #+BEGIN_SRC clojure :noweb-ref tests
-  (deftest test-impls)
+  (deftest test-impls
+    (is true))
 #+END_SRC
 
 *** Test namespace definition
