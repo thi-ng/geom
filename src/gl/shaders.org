@@ -10,6 +10,7 @@
      - [[#shader-creation][Shader creation]]
          - [[#header-injection][Header injection]]
          - [[#creation-compilation--linking][Creation, compilation & linking]]
+     - [[#helpers][Helpers]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
 * thi.ng.geom.gl.shaders
@@ -41,10 +42,10 @@ TODO sample shader spec
               :ivec2       [#(.glUniform2iv ^GL3 % %2 1 %3) native/int-buffer 2]
               :ivec3       [#(.glUniform3iv ^GL3 % %2 1 %3) native/int-buffer 3]
               :ivec4       [#(.glUniform4iv ^GL3 % %2 1 %3) native/int-buffer 4]
-              :bool        [#(.glUniform1i ^GL3 % %2 %3) int 1] ;; TODO
-              :bvec2       [#(.glUniform2iv ^GL3 % %2 1 %3) native/int-buffer 2] ;; TODO bool -> int
-              :bvec3       [#(.glUniform3iv ^GL3 % %2 1 %3) native/int-buffer 3]
-              :bvec4       [#(.glUniform4iv ^GL3 % %2 1 %3) native/int-buffer 4]
+              :bool        [#(.glUniform1i ^GL3 % %2 %3) bool->int 1]
+              :bvec2       [#(.glUniform2iv ^GL3 % %2 1 %3) bool->ivec 2]
+              :bvec3       [#(.glUniform3iv ^GL3 % %2 1 %3) bool->ivec 3]
+              :bvec4       [#(.glUniform4iv ^GL3 % %2 1 %3) bool->ivec 4]
               :mat2        [#(.glUniformMatrix2fv ^GL3 % %2 1 %3 %4) native/float-buffer 4]
               :mat3        [#(.glUniformMatrix3fv ^GL3 % %2 1 %3 %4) native/float-buffer 9]
               :mat4        [#(.glUniformMatrix4fv ^GL3 % %2 1 %3 %4) native/float-buffer 16]
@@ -114,6 +115,7 @@ Special cases:
              [type default opt]    (if (sequential? type) type [type])
              [setter u-cast u-len] (uniform-types type)
              #?@(:cljs [setter (aget gl (str "uniform" setter))])]
+         (#?(:clj prn :cljs debug) :uniform-loc id loc)
          (assoc
           umap id
           {:type    type
@@ -184,9 +186,10 @@ Special cases:
 
   (defn set-uniform
     [shader id val]
+    ;;(#?(:clj prn :cljs debug) :uniform id (get-in shader [:uniforms id :loc]) val)
     (if-let [u-spec (get-in shader [:uniforms id])]
       ((get u-spec :setter) val)
-      (#?(:clj println :cljs warn) "Unknown shader uniform: " id)))
+      (#?(:clj prn :cljs warn) "Unknown shader uniform: " id)))
 
   (defn apply-default-uniforms
     [shader uniforms]
@@ -204,10 +207,8 @@ Special cases:
   (defn init-shader-attribs
     #?(:clj  [^GL3 gl prog attribs]
        :cljs [^WebGLRenderingContext gl prog attribs])
-    (prn :init-attribs attribs)
     (reduce-kv
      (fn [acc id _]
-       (prn :attr id _)
        (assoc acc id
               (#?(:clj .glGetAttribLocation :cljs .getAttribLocation) gl prog (name id))))
      {} attribs))
@@ -216,8 +217,8 @@ Special cases:
     #?(:clj  [^GL3 gl shader id attrib-spec]
        :cljs [^WebGLRenderingContext gl shader id attrib-spec])
     (let [{:keys [buffer stride size type normalized? offset loc]} attrib-spec]
-      ;;(prn :loc id (or loc (-> shader (get :attribs) (get id))) :size size stride)
-      (if-let [loc (int (or loc (-> shader (get :attribs) (get id))))]
+      ;;(#?(:clj prn :cljs debug) :loc id (-> shader (get :attribs) (get id)) :size size (or stride (* 4 size)))
+      (if-let [loc (int (-> shader (get :attribs) (get id)))]
         (doto gl
           #?(:clj  (.glBindBuffer glc/array-buffer (.get ^IntBuffer buffer 0))
              :cljs (.bindBuffer glc/array-buffer buffer))
@@ -287,15 +288,26 @@ shader source before compilation with =compile-shader= below.
                  (name id) ";\n")))
          (apply str)))
 
+  (defn compile-glsl3-attribs
+    [coll]
+    (->> coll
+         (map
+          (fn [[id type]]
+            (if (sequential? type)
+              (str "layout(location=" (nth type 1) ") in " (name (first type)) " " (name id) ";\n")
+              (str "in " (name type) " " (name id) ";\n"))))
+         (apply str)))
+
   (defn prepare-shader-sources
     [{:keys [vs fs uniforms attribs varying prelude version]}]
     (let [gl3?     (and version (>= version 300))
           u-src    (compile-glsl-vars "uniform" uniforms)
-          a-src    (compile-glsl-vars (if gl3? "in" "attribute") attribs)
+          a-src    (if gl3? (compile-glsl3-attribs attribs) (compile-glsl-vars "attribute" attribs))
           v-src-vs (compile-glsl-vars (if gl3? "out" "varying") varying)
           v-src-fs (compile-glsl-vars (if gl3? "in" "varying") varying)
           src      (if version (str "#version " version "\n") "")
           src      (str src (or prelude default-prelude) u-src)]
+      (println a-src)
       {:vs-src (str src v-src-vs a-src vs)
        :fs-src (str src v-src-fs fs)}))
 
@@ -335,7 +347,7 @@ shader source before compilation with =compile-shader= below.
     (reduce-kv
      (fn [_ id att]
        (when (sequential? att)
-         (prn :bind-attr id (nth att 1))
+         (#?(:clj prn :cljs debug) :bind-attr id (nth att 1))
          (#?(:clj .glBindAttribLocation :cljs .bindAttribLocation) gl program (nth att 1) (name id))))
      nil attribs))
 
@@ -368,7 +380,7 @@ shader source before compilation with =compile-shader= below.
      :cljs
      (defn make-shader-from-spec
        [^WebGLRenderingContext gl spec]
-       (let [{:keys [vs fs uniforms attribs]} spec
+       (let [{:keys [uniforms attribs]} spec
              {:keys [vs-src fs-src]} (prepare-shader-sources spec)
              vs       (compile-shader gl vs-src glc/vertex-shader)
              fs       (compile-shader gl fs-src glc/fragment-shader)
@@ -401,6 +413,14 @@ shader source before compilation with =compile-shader= below.
                   :fs (glu/get-script-text fs)))))
 #+END_SRC
 
+** Helpers
+#+BEGIN_SRC clojure :noweb-ref helpers
+ (defn bool->int [x] (if x 1 0))
+
+ (defn bool->ivec
+   [coll] (#?(:clj native/int-buffer :cljs ta/int32) (mapv bool->int coll)))
+#+END_SRC
+
 ** Complete namespace definition
 
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/shaders.cljc :noweb yes :mkdirp yes :padline no
@@ -429,6 +449,8 @@ shader source before compilation with =compile-shader= below.
           [thi.ng.geom.gl.utils :as glu]
           [thi.ng.glsl.core :as glsl :include-macros true]
           [thi.ng.typedarrays.core :as ta]])))
+
+  <<helpers>>
 
   <<uniforms>>
 
