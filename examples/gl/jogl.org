@@ -172,18 +172,18 @@
                            :height fbo-size
                            :filter glc/linear
                            :wrap   glc/clamp-to-edge})
-          fbo         (-> (buf/make-fbo gl)
-                          (gl/bind)
-                          (gl/set-fbo-color-texture fbo-tex)
-                          (gl/set-fbo-depth-buffer (buf/make-depth-buffer gl fbo-size))
-                          (gl/unbind))
-          image       (-> (image/make-shader-spec
-                           gl {:state    {:tex   fbo-tex
-                                          :blend false}
-                               :shader   img-shader
-                               :viewport view-rect
-                               :width    256
-                               :height   256}))
+          fbo         (buf/make-fbo-with-attachments
+                       gl {:tex fbo-tex
+                           :width fbo-size
+                           :height fbo-size
+                           :depth? true})
+          image       (image/make-shader-spec
+                       gl {:state    {:tex   fbo-tex
+                                      :blend false}
+                           :shader   img-shader
+                           :viewport view-rect
+                           :width    256
+                           :height   256})
           model       (-> (s/sphere 1)
                           (g/as-mesh
                            {:mesh    (glm/indexed-gl-mesh 2048 #{#_:col :vnorm})

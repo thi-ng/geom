@@ -36,13 +36,13 @@
 
     gl/IFramebuffer
     (set-fbo-color-texture
-      [_ {:keys [id]}]
+        [_ {:keys [id]}]
       #?(:clj  (.glFramebufferTexture2D gl glc/framebuffer glc/color-attachment0 glc/texture-2d (.get ^IntBuffer id 0) 0)
          :cljs (.framebufferTexture2D gl glc/framebuffer glc/color-attachment0 glc/texture-2d id 0))
       (check-fbo gl)
       _)
     (set-fbo-depth-buffer
-      [_ {:keys [id]}]
+        [_ {:keys [id]}]
       #?(:clj  (.glFramebufferRenderbuffer gl glc/framebuffer glc/depth-attachment glc/renderbuffer (.get ^IntBuffer id 0))
          :cljs (.framebufferRenderbuffer gl glc/framebuffer glc/depth-attachment glc/renderbuffer id))
       (check-fbo gl)
@@ -72,6 +72,15 @@
      (defn make-fbo
        [^WebGLRenderingContext gl]
        (FBO. gl (.createFramebuffer gl))))
+
+  (defn make-fbo-with-attachments
+    [gl {:keys [tex width height depth?]}]
+    (let [fbo (make-fbo gl)]
+      (gl/bind fbo)
+      (gl/set-fbo-color-texture fbo tex)
+      (when depth?
+        (gl/set-fbo-depth-buffer fbo (make-depth-buffer gl width height)))
+      (gl/unbind fbo)))
 #+END_SRC
 
 ** Render buffer
@@ -242,7 +251,7 @@
        [^GL3 gl opts]
        (let [id   (native/int-buffer 1)
              _    (.glGenTextures gl 1 id)
-             tex  (Texture2D. gl id (opts :target glc/texture-2d))
+             tex  (Texture2D. gl id (get opts :target glc/texture-2d))
              opts (merge {:format glc/rgba :type glc/unsigned-byte} opts)]
          (gl/bind tex)
          (gl/configure tex opts)))
@@ -324,9 +333,9 @@
 
   (declare check-fbo)
 
-  <<fbo>>
+  <<tex>>
 
   <<render-buffer>>
 
-  <<tex>>
+  <<fbo>>
 #+END_SRC
