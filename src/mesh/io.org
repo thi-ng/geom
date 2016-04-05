@@ -58,15 +58,17 @@
      (read-stl in (bm/basic-mesh)))
     ([in mesh]
      (streams/skip in 80)
-     (loop [mesh mesh, i (streams/read-uint32-le in)]
-       (if (pos? i)
-         (let [_ (streams/read-vec3f-le in)
-               a (vec3 (streams/read-vec3f-le in))
-               b (vec3 (streams/read-vec3f-le in))
-               c (vec3 (streams/read-vec3f-le in))]
-           (streams/skip in 2)
-           (recur (g/add-face mesh [[a b c]]) (dec i)))
-         mesh))))
+     (let [numf (streams/read-uint32-le in)
+           mesh (if (fn? mesh) (mesh numf) mesh)]
+       (loop [mesh mesh, i numf]
+         (if (pos? i)
+           (let [_ (streams/read-vec3f-le in)
+                 a (vec3 (streams/read-vec3f-le in))
+                 b (vec3 (streams/read-vec3f-le in))
+                 c (vec3 (streams/read-vec3f-le in))]
+             (streams/skip in 2)
+             (recur (g/add-face mesh [[a b c]]) (dec i)))
+           mesh)))))
 #+END_SRC
 
 ** PLY
