@@ -7,13 +7,13 @@
 
 * Contents                                                         :toc_3_gh:
  - [[#about-the-project][About the project]]
+     - [[#leiningen-coordinates][Leiningen coordinates]]
+         - [[#latest-stable][Latest stable]]
      - [[#overview][Overview]]
+         - [[#example-usage][Example usage]]
          - [[#main-features-non-exhaustive-list][Main features (non-exhaustive list)]]
          - [[#main-geometry-types][Main geometry types]]
          - [[#api-scope][API scope]]
-     - [[#leiningen-coordinates][Leiningen coordinates]]
-         - [[#latest-stable][Latest stable]]
-     - [[#example-usage][Example usage]]
      - [[#project-structure][Project structure]]
          - [[#core][core]]
          - [[#types][types]]
@@ -42,123 +42,61 @@
      - [[#license][License]]
 
 * About the project
-** Overview
-
-Comprehensive and modular geometry & visualization toolkit for
-Clojure/ClojureScript. Developed in a literate programming style and
-in active, regular development since late 2011, currently in its 4th
-iteration/rewrite cycle.
-
-This project is part of the [[https://github.com/thi-ng/][thi.ng]] collection of Clojure &
-Clojurescript libraries.
-
-*** Main features (non-exhaustive list)
-
-- Comprehensive & optimized 2d/3d vector & matrix algebra / transformations
-- Vector swizzling
-- Unified, easy-to-learn core API defined via ~50 polymorphic protocols
-- 35+ custom (mainly immutable) geometry types implementing core protocols
-- Surface area, circumference & volume calculations for all implemented types
-- 2D/3D intersection checks (vs. point, line, ray, shapes)
-- Access entities as graph-like structures (vertices/edges)
-- 2D/3D platonic entity to 3D polygon mesh conversion (w/ many options)
-- 2D shape extrusions as 3D mesh (solid or walled)
-- Parallel-transport frame sweep mesh generation from points (skinning)
-- Basic insetting of simple 2D polygons (no miter support)
-- Shape subdivision (only lines, triangles, rects, quads, tetrahedrons)
-- Subdivision meshes (Catmull-Clark, Doo-Sabin, Butterfly)
-- 3D Boolean (CSG) operations on meshes (union, difference, intersection)
-- 3D geometry export (PLY, STL, OBJ, OFF formats)
-- 3D mesh repair tools (T-junctions, unify vertices etc.)
-- Lightweight WebGL wrapper, shader, buffer & texture utilities
-- WebGL shader presets based on [[http://thi.ng/shadergraph][thi.ng/shadergraph]]
-- Optimized conversions to WebGL meshes (with attributes, indexed, non-indexed)
-- SVG generation API & optional conversion of geom types
-- Basic SVG =<path>= parsing with different segment types
-- 3D SVG mesh renderer with software facet shader support
-- 2D/3D particle based Verlet Physics with customizable behaviors & constraints
-- Tesselation of simple 2D polygons (no holes)
-- 2D Delaunay triangulation
-- Sutherland-Hodgeman clipping of 2D polygons
-- Boundary sampling (at fixed resolution or uniform distance)
-- 2D convex hull
-- 2D/3D quadtree/octree (mutable) for fast spatial indexing
-- Automatic spline generation from list of points
-- Declararitve 2D data visualization module with various modes (area,
-  bar, line, scatter, contours, stacks etc.)
-...
-
-*** Main geometry types
-
-| *2D*           | *3D*                      |
-|----------------+---------------------------|
-| Vec2           | Vec3                      |
-| Matrix32       | Matrix44                  |
-|                | Quaternion                |
-| Line2          | Line3                     |
-| LineStrip2     | LineStrip3                |
-| Bezier2        | Bezier3                   |
-| Circle2        | Sphere                    |
-| Ellipse2 (TBD) | Ellipsoid (TBD)           |
-| Rect2          | AABB                      |
-| Quad2 (TBD)    | Quad3                     |
-|                | Tetrahedron               |
-| Triangle2      | Triangle3                 |
-| Polygon2       | Polygon3 (TBD)            |
-| Path2          | Path3 (TBD)               |
-|                | Plane                     |
-|                | BasicMesh (polygon soup)  |
-|                | GMesh (navigatable)       |
-|                | GLMesh (WebGL)            |
-|                | IndexedGLMesh (WebGL)     |
-| Point quadtree | Point octree              |
-| VerletPhysics  | VerletPhysics             |
-|                | SVO (experimental)        |
-|                | Isosurface (experimental) |
-
-*** API scope
-
-Since the core library does only deal with pure "platonic" geometry,
-it doesn't address any display or rendering functionality at all.
-However a number of support modules are provided, incl. WebGL & SVG
-support. 2D/3D shape/mesh exporters are provided as well and together
-with sister libraries like [[https://github.com/thi-ng/luxor][thi.ng/luxor]], it's also possible to
-generate complete 3D scenes for high quality & high resolution offline
-rendering using [[http://luxrender.net][Luxrender]].
-
-Furthermore, providing all functionality under a common API for both
-Clojure & Clojurescript, makes it trivial to offload heavy operations
-(e.g. large mesh processing) to the server side.
 
 ** Leiningen coordinates
 *** Latest stable
 #+BEGIN_SRC clojure
   [thi.ng/geom "0.0.908"]
 #+END_SRC
+** Overview
 
-** Example usage
+thi.ng/geom is a comprehensive and modular geometry & visualization
+toolkit for Clojure/ClojureScript. It provides a large set of purely
+math & geometry oriented data types, a polymorphic, largely protocol
+based API to transform types and and various ways to create
+interactive visualizations in SVG, WebGL, OpenGL, both in the browser
+and in desktop environments.
 
-Several small examples are still included in this repo under the
-=/examples= directory:
+Embracing Clojure's approach of data transformations, the library's
+core philosophy is based on a functional approach to generative design
+tasks with hundreds of hours spent on refinining & optimizing the core
+API for both Clojure & Clojurescript.
 
-- [[./examples/gl/jogl.org][OpenGL demos]]
-- [[./examples/gl/webgl.org][WebGL demos]] (source + links to live versions)
-- [[./examples/svg/demos.org][SVG examples]]
-- [[./examples/viz/demos.org][Visualization examples]]
-- [[./examples/types/ptf.org][PTF mesh examples]]
-- [[./examples/voxel/demos.org][Voxel examples]]
+Unlike most other open source projects, this project has been
+developed in a literate programming style and is in active, regular
+development since late 2011, currently in its 4th iteration/rewrite
+cycle.
+
+*You're highly encouraged to consult the source code, which contains documentation, examples, diagrams and general usage pattern hints and is increasingly being cross-linked between namespaces.*
+
+This project is part of the [[https://github.com/thi-ng/][thi.ng]] collection of Clojure &
+Clojurescript libraries and makes uses of several other projects in
+this collection (see dependencies further below).
+
+*** Example usage
+
+A growing number (currently 35+) of small examples are included in
+this repo under the =/examples= directory:
+
+- [[./examples/gl/jogl.org][OpenGL demos]] (Clojure)
+- [[./examples/gl/webgl.org][WebGL demos]] (Clojurescript + links to live versions)
+- [[./examples/svg/demos.org][SVG examples]] (incl. 3D rendered meshes in SVG)
+- [[./examples/viz/demos.org][Visualization examples]] (charts, heatmaps, timelines etc.)
+- [[./examples/types/ptf.org][PTF mesh examples]] (mesh skinning & Luxrender)
+- [[./examples/voxel/demos.org][Voxel examples]] (isosurface extraction from volumetric data)
 
 [[https://github.com/thi-ng/demos][Demo repository]] for all thi.ng libraries (early stage):
 
 - [[http://demo.thi.ng/geom/physics/strands.html][SVG physics strands]] (Clojurescript online demo)
 
-Growing list of [[http://workshop.thi.ng/][thi.ng workshop]] repositories (These workshops are running
-on a monthly basis & internationally):
+Growing list of [[http://workshop.thi.ng/][thi.ng workshop]] repositories (These workshops are
+running on a monthly basis & internationally):
 
 - [[http://thi.ng/ws-ldn-1][WS-LDN-1]]
 - [[http://thi.ng/ws-ldn-2][WS-LDN-2]]
 - [[http://thi.ng/ws-bln-1][WS-BLN-1]]
-- WS-LDN-5
+- WS-LDN-5 (forthcoming)
+- WS-LDN-6 (forthcoming)
 
 A preliminary list of other projects using this library:
 
@@ -170,6 +108,95 @@ A preliminary list of other projects using this library:
 - [[http://github.com/thi-ng/luxor][Luxor]]
 - [[http://github.com/thi-ng/morphogen][Morphogen]]
 - [[http://thi.ng/][thi.ng website]]
+
+*** Main features (non-exhaustive list)
+
+- Comprehensive & optimized 2D/3D vector & matrix algebra / transformations
+- Custom, optimized vector types w/ GLSL style vector swizzling & full
+  Clojure sequence API support
+- Unified, easy-to-learn core API defined via ~50 polymorphic protocols
+- Unified OpenGL (v3.3+) & WebGL abstractions of common features,
+  shader, buffer & texture utilities
+- Optional OpenGL/WebGL shader presets based on [[http://thi.ng/shadergraph][thi.ng/shadergraph]]
+- OpenGL helpers for desktop app (wrapping [[http://jogamp.org/jogl][JOGL]])
+- 3D SVG mesh renderer with software facet shader support
+- SVG generation API & optional conversion of geom types
+- Declararitve 2D data visualization module with various modes (area,
+  bar, line, scatter, contours, stacks etc., cartesian/polar axes)
+
+- 35+ custom (mainly immutable) geometry types implementing core protocols
+- Shape analysis (surface area, circumference, distance & volume
+  calculations) for all implemented types
+- 2D/3D intersection & classification checks (vs. point, line, ray, shapes)
+- Access entities as graph-like structures (vertices/edges)
+- 2D/3D platonic entity to 3D polygon mesh conversion (w/ many options)
+- Optimized conversions to OpenGL/WebGL (with attributes, indexed, non-indexed)
+- Flexible & customizable mesh vertex attribute generators
+- Subdivision meshes (Catmull-Clark, Doo-Sabin, Butterfly)
+- Parallel-transport frame sweep mesh generation from point sequences (skinning)
+- 3D Lathe meshes from 2D curves
+- 2D shape extrusions as 3D mesh (solid or walled)
+- 2D Delaunay triangulation
+- Tesselation of simple 2D polygons (no holes)
+- Basic SVG =<path>= parsing with different segment types
+- Basic insetting of simple 2D polygons (no miter support)
+- Shape subdivision (only lines, triangles, rects, quads, tetrahedrons)
+- Shape boundary sampling (at fixed resolution or uniform distance)
+- Sutherland-Hodgeman clipping of 2D polygons
+- 3D Boolean (CSG) operations on meshes (union, difference, intersection)
+- 3D geometry export (PLY, STL, OBJ, OFF formats)
+- 3D mesh repair tools (T-junctions, unify vertices etc.)
+- 2D/3D particle based Verlet Physics with customizable behaviors & constraints
+- 2D convex hull
+- 2D/3D quadtree/octree (mutable) for fast spatial indexing
+- Automatic curve generation from point seqs (cubic, Chaikin etc.)
+...
+
+*** Main geometry types
+
+| *2D*           | *3D*                            |
+|----------------+---------------------------------|
+| Vec2           | Vec3                            |
+| Matrix32       | Matrix44                        |
+|                | Quaternion                      |
+| Line2          | Line3                           |
+| LineStrip2     | LineStrip3                      |
+| Bezier2        | Bezier3                         |
+| Circle2        | Sphere                          |
+| Ellipse2 (TBD) | Ellipsoid (TBD)                 |
+| Rect2          | AABB                            |
+| Quad2 (TBD)    | Quad3                           |
+|                | Tetrahedron                     |
+| Triangle2      | Triangle3                       |
+| Polygon2       | Polygon3 (TBD)                  |
+| Path2          | Path3 (TBD)                     |
+|                | Plane                           |
+|                | BasicMesh (polygon soup)        |
+|                | GMesh (navigatable)             |
+|                | GLMesh (OpenGL/WebGL)           |
+|                | IndexedGLMesh (OpenGL/WebGL)    |
+| Point quadtree | Point octree                    |
+| VerletPhysics  | VerletPhysics                   |
+|                | SVO (experimental)              |
+|                | Isosurface (experimental)       |
+|                | Arcball camera controller       |
+|                | Perspective camera              |
+|                | FBO abstractions (OpenGL/WebGL) |
+|                | Texture2D (OpenGL/WebGL)        |
+
+*** API scope
+
+Since the core library does only deal with pure "platonic" geometry,
+it doesn't directly address any display or rendering functionality at
+all. However a number of support modules are provided, incl. OpenGL
+3/4, WebGL & SVG support. 2D/3D shape/mesh exporters are provided as
+well and together with sister libraries like [[https://github.com/thi-ng/luxor][thi.ng/luxor]], it's also
+possible to generate complete 3D scenes for high quality & high
+resolution offline rendering using [[http://luxrender.net][Luxrender]].
+
+Furthermore, providing all functionality under a common API for both
+Clojure & Clojurescript, makes it trivial to offload heavy operations
+(e.g. large mesh processing) to the server side.
 
 ** Project structure
 
