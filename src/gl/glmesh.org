@@ -5,6 +5,8 @@
      - [[#limitations][Limitations]]
      - [[#constructors][Constructors]]
      - [[#glmesh][GLMesh]]
+         - [[#ibounds][IBounds]]
+         - [[#iboundingsphere][IBoundingSphere]]
          - [[#icenter][ICenter]]
          - [[#ivertexaccess][IVertexAccess]]
          - [[#ifaceaccess][IFaceAccess]]
@@ -16,6 +18,8 @@
          - [[#imutableprops][IMutableProps]]
          - [[#end-of-implementation][End of implementation]]
      - [[#indexedglmesh][IndexedGLMesh]]
+         - [[#ibounds][IBounds]]
+         - [[#iboundingsphere][IBoundingSphere]]
          - [[#icenter][ICenter]]
          - [[#ivertexaccess][IVertexAccess]]
          - [[#ifaceaccess][IFaceAccess]]
@@ -134,6 +138,22 @@ The second arg given is an optional set of vertex attribute buffer IDs
            ^js/Float32Array cols
            ^:mutable id
            attribs])
+#+END_SRC
+
+*** IBounds
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IBounds
+  (bounds [_] (gu/bounding-box (seq (g/vertices _))))
+  (width [_] (gu/axis-range 0 (seq (g/vertices _))))
+  (height [_] (gu/axis-range 1 (seq (g/vertices _))))
+  (depth [_] (gu/axis-range 2 (seq (g/vertices _))))
+#+END_SRC
+
+*** IBoundingSphere
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IBoundingSphere
+  (bounding-sphere
+   [_] (gu/bounding-sphere (g/centroid _) (seq (g/vertices _))))
 #+END_SRC
 
 *** ICenter
@@ -307,6 +327,22 @@ Furthermore, the options map also supports the following other keys:
            ^:mutable index
            ^:mutable id
            ^:mutable fid])
+#+END_SRC
+
+*** IBounds
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IBounds
+  (bounds [_] (gu/bounding-box (seq (g/vertices _))))
+  (width [_] (gu/axis-range 0 (seq (g/vertices _))))
+  (height [_] (gu/axis-range 1 (seq (g/vertices _))))
+  (depth [_] (gu/axis-range 2 (seq (g/vertices _))))
+#+END_SRC
+
+*** IBoundingSphere
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IBoundingSphere
+  (bounding-sphere
+   [_] (gu/bounding-sphere (g/centroid _) (seq (g/vertices _))))
 #+END_SRC
 
 *** ICenter
