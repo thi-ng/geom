@@ -482,7 +482,7 @@ Furthermore, the options map also supports the following other keys:
              (.set vertices (.-buf ^thi.ng.geom.vector.Vec3 (nth verts 2)) (+ idv 6))])
         (when fnormals
           #?(:clj
-             (let [n  (or (get attribs :fnorm) (gu/ortho-normal verts))]
+             (let [n (or (get attribs :fnorm) (gu/ortho-normal verts))]
                (->> idv
                     (gl/into-float-buffer-vec3 n fnormals 3)
                     (gl/into-float-buffer-vec3 n fnormals 3)
@@ -514,7 +514,8 @@ Furthermore, the options map also supports the following other keys:
                (.set uvs (.-buf ^thi.ng.geom.vector.Vec2 (nth uv 1)) (+ iduv 2))
                (.set uvs (.-buf ^thi.ng.geom.vector.Vec2 (nth uv 2)) (+ iduv 4))]))
         (when-let [col (if cols (get attribs :col))]
-          (->> (streams/into-float-buffer (first col) cols 4 idcol)
+          (->> idcol
+               (streams/into-float-buffer (first col) cols 4)
                (streams/into-float-buffer (nth col 1) cols 4)
                (streams/into-float-buffer (nth col 2) cols 4)))
         #?(:clj  (g/set-prop! m :id (inc id))
@@ -580,21 +581,21 @@ Furthermore, the options map also supports the following other keys:
     m)
 
   (defn- transform-vertices
-     #?(:clj [f ^FloatBuffer buf num] :cljs [f buf num])
-     (let [tv (vec3 0)
-           ^doubles tb (.-buf ^thi.ng.geom.vector.Vec3 tv)]
-       #?(:clj (.rewind buf))
-       (loop [i 0]
-         (when (< i num)
-           #?@(:clj
-               [(aset tb 0 (.get buf i))
-                (aset tb 1 (.get buf (unchecked-add-int i 1)))
-                (aset tb 2 (.get buf (unchecked-add-int i 2)))
-                (gl/into-float-buffer-vec3 (f tv) buf 3 i)]
-               :cljs
-               [(.set tb (.slice buf i (+ i 3)) 0)
-                (.set buf (.-buf ^thi.ng.geom.vector.Vec3 (f tv)) i)])
-           (recur (+ i 3))))))
+    #?(:clj [f ^FloatBuffer buf num] :cljs [f buf num])
+    (let [tv (vec3 0)
+          ^doubles tb (.-buf ^thi.ng.geom.vector.Vec3 tv)]
+      #?(:clj (.rewind buf))
+      (loop [i 0]
+        (when (< i num)
+          #?@(:clj
+              [(aset tb 0 (.get buf i))
+               (aset tb 1 (.get buf (unchecked-add-int i 1)))
+               (aset tb 2 (.get buf (unchecked-add-int i 2)))
+               (gl/into-float-buffer-vec3 (f tv) buf 3 i)]
+              :cljs
+              [(.set tb (.slice buf i (+ i 3)) 0)
+               (.set buf (.-buf ^thi.ng.geom.vector.Vec3 (f tv)) i)])
+          (recur (+ i 3))))))
 
   (defn- into-glmesh*
     [^GLMesh dest ^GLMesh src]

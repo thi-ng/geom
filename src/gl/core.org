@@ -736,21 +736,22 @@ using the protocol.
 
 #+BEGIN_SRC clojure :noweb-ref attribs
   #?(:clj
-     (def ^:private buffer-strides
+     (def ^:private buffer-element-sizes
        {glc/array-buffer         4
         glc/element-array-buffer 2}))
 
   #?(:clj
      (defn make-array-buffer
        [^GL3 gl target mode data]
-       (let [size (or (get buffer-strides target)
+       (let [size (or (get buffer-element-sizes target)
                       (err/unsupported! "Buffer type must be array-buffer or element-array-buffer"))
              ^IntBuffer id (native/int-buffer 1)]
-         ;;(prn :capacity (.capacity ^Buffer data))
+         (.rewind ^Buffer data)
          (doto gl
            (.glGenBuffers 1 id)
            (.glBindBuffer target (.get id 0))
-           (.glBufferData target (* size (.capacity ^Buffer data)) data mode))
+           (.glBufferData target (* size (.capacity ^Buffer data)) data mode)
+           (.glBindBuffer target 0))
          id))
      :cljs
      (defn make-array-buffer
@@ -768,7 +769,7 @@ using the protocol.
          (.glBindVertexArray gl (.get id 0))
          (doseq [[attr {:keys [id loc offset size stride]
                         :or   {stride 0 offset 0}}] (:attribs spec)]
-           (let [loc (int (or loc (get-in spec [:shader :attribs attr])))]
+           (let [loc (int (-> spec (get :shader) (get :attribs) (get attr)))]
              (doto gl
                (.glBindBuffer glc/array-buffer (.get ^IntBuffer id 0))
                (.glEnableVertexAttribArray loc)
