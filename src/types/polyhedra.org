@@ -23,7 +23,7 @@ mesh instances for the polyhedra defined below. It takes a polyhedron
 face list generator, mesh scale and optional subdivision scheme and
 returns either a =BasicMesh= or =GMesh= instance.
 
-#+BEGIN_SRC clojure 
+#+BEGIN_SRC clojure
   (require '[thi.ng.geom.core :as g])
   (require '[thi.ng.geom.mesh.polyhedra :as poly])
   (require '[thi.ng.geom.mesh.subdivision :as sd])
@@ -45,7 +45,7 @@ returns either a =BasicMesh= or =GMesh= instance.
     ([f {:keys [scale subdiv iter attribs mesh]}]
      (let [faces (f (or scale 1.0) attribs)]
        (if subdiv
-         (let [m (nth (iterate subdiv (g/into (gm/gmesh) faces)) (or iter 1))]
+         (let [m (d/iterate-n (or iter 1) subdiv (g/into (gm/gmesh) faces))]
            (if mesh (g/into mesh m) m))
          (g/into (or mesh (bm/basic-mesh)) faces)))))
 #+END_SRC
@@ -171,8 +171,8 @@ returns either a =BasicMesh= or =GMesh= instance.
 
 ** Complete namespace definition
 
-#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/mesh/polyhedra.cljc :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.mesh.polyhedra
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/polyhedra.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.polyhedra
     #?(:cljs (:require-macros [thi.ng.math.macros :as mm]))
     (:require
      [thi.ng.geom.core :as g]
@@ -181,6 +181,7 @@ returns either a =BasicMesh= or =GMesh= instance.
      [thi.ng.geom.basicmesh :as bm]
      [thi.ng.geom.gmesh :as gm]
      [thi.ng.math.core :as m :refer [PHI PI SQRT2 SQRT3]]
+     [thi.ng.dstruct.core :as d]
      #?(:clj [thi.ng.math.macros :as mm])))
 
   <<polyhedra>>
