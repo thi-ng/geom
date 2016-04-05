@@ -83,6 +83,8 @@
                  :view view
                  :time t)))))
 
+  (defn dispose [_] (jogl/stop-animator (:anim @app)))
+
   (defn resize
     [_ x y w h]
     (swap! app assoc-in [:model :uniforms :proj] (mat/perspective 45 (/ w h) 0.1 10))
@@ -91,7 +93,7 @@
   (defn key-pressed
     [^KeyEvent e]
     (condp = (.getKeyCode e)
-      KeyEvent/VK_ESCAPE (jogl/dispose-window (:window @app) (:anim @app))
+      KeyEvent/VK_ESCAPE (jogl/destroy-window (:window @app))
       nil))
 
   (defn mouse-moved
@@ -145,6 +147,7 @@
      [thi.ng.geom.gl.buffers :as buf]
      [thi.ng.geom.gl.shaders :as sh]
      [thi.ng.geom.gl.shaders.lambert :as lambert]
+     [thi.ng.geom.gl.shaders.phong :as phong]
      [thi.ng.geom.gl.shaders.image :as image]
      [thi.ng.geom.gl.glmesh :as glm]
      [thi.ng.geom.gl.jogl.core :as jogl]
@@ -157,64 +160,46 @@
 
   (def app (atom nil))
 
-  (def shader-spec
-    {:vs       (->> "void main() {
-        float lam = lambertAbs(surfaceNormal(normal, normalMat), lightDir);
-        vCol = vec4(ambientCol + color.rgb * lightCol * lam, alpha);
-        gl_Position = mvp(position, model, view, proj);
-      }"
-                    (glsl/glsl-spec-plain
-                     [vertex/mvp vertex/surface-normal light/lambert light/lambert-abs])
-                    (glsl/assemble))
-     :fs       "out vec4 fragCol;void main(){fragCol=vCol;}"
-     :version  330
-     :uniforms {:model      [:mat4 mat/M44]
-                :view       :mat4
-                :proj       :mat4
-                :normalMat  :mat4
-                :ambientCol [:vec3 [0 0 0]]
-                :lightCol   [:vec3 [1 1 1]]
-                :lightDir   [:vec3 [0 0 1]]
-                :alpha      [:float 1]}
-     :attribs  {:position   [:vec3 0]
-                :normal     [:vec3 1]
-                :color      [:vec4 2]}
-     :varying  {:vCol       :vec4}
-     :state    {:depth-test true}})
-
   (defn init
     [^GLAutoDrawable drawable]
-    (let [^GL3 gl    (.. drawable getGL getGL3)
-          view-rect  (gl/get-viewport-rect gl)
-          lambert    (sh/make-shader-from-spec gl shader-spec)
-          img-shader (sh/make-shader-from-spec gl (assoc image/shader-spec :version 330))
-          fbo-size   512
-          fbo-tex    (buf/make-texture
-                      gl {:width  fbo-size
-                          :height fbo-size
-                          :filter glc/linear
-                          :wrap   glc/clamp-to-edge})
-          fbo        (-> (buf/make-fbo gl)
-                         (gl/bind)
-                         (gl/set-fbo-color-texture fbo-tex)
-                         (gl/set-fbo-depth-buffer (buf/make-depth-buffer gl fbo-size))
-                         (gl/unbind))
-          image      (-> (image/make-shader-spec
-                          gl {:state    {:tex   fbo-tex
-                                         :blend false}
-                              :shader   img-shader
-                              :viewport view-rect
-                              :width    256
-                              :height   256}))
-          model      (-> (s/sphere 1)
-                         (g/as-mesh
-                          {:mesh    (glm/indexed-gl-mesh 128 #{:col :fnorm})
-                           :attribs {:col (fn [_ _ v _] (col/rgba (m/madd (m/normalize v) 0.5 0.5)))}
-                           :res 8})
-                         (gl/as-gl-buffer-spec {})
-                         (cam/apply (cam/perspective-camera {:eye (v/vec3 0 0 3) :aspect 1.0}))
-                         (assoc :shader lambert)
-                         (gl/make-buffers-in-spec gl glc/static-draw))]
+    (let [^GL3 gl     (.. drawable getGL getGL3)
+          view-rect   (gl/get-viewport-rect gl)
+          main-shader (sh/make-shader-from-spec gl (assoc phong/shader-spec :version 330))
+          img-shader  (sh/make-shader-from-spec gl (assoc image/shader-spec :version 330))
+          fbo-size    512
+          fbo-tex     (buf/make-texture
+                       gl {:width  fbo-size
+                           :height fbo-size
+                           :filter glc/linear
+                           :wrap   glc/clamp-to-edge})
+          fbo         (-> (buf/make-fbo gl)
+                          (gl/bind)
+                          (gl/set-fbo-color-texture fbo-tex)
+                          (gl/set-fbo-depth-buffer (buf/make-depth-buffer gl fbo-size))
+                          (gl/unbind))
+          image       (-> (image/make-shader-spec
+                           gl {:state    {:tex   fbo-tex
+                                          :blend false}
+                               :shader   img-shader
+                               :viewport view-rect
+                               :width    256
+                               :height   256}))
+          model       (-> (s/sphere 1)
+                          (g/as-mesh
+                           {:mesh    (glm/indexed-gl-mesh 2048 #{#_:col :vnorm})
+                            :attribs {;;:col (fn [_ _ v _] (col/rgba (m/madd (m/normalize v) 0.5 0.5)))
+                                      :vnorm (fn [_ _ v _] (m/normalize v))}
+                            :res 24})
+                          (gl/as-gl-buffer-spec {})
+                          (cam/apply (cam/perspective-camera {:eye (v/vec3 0 0 3) :aspect 1.0}))
+                          (update :uniforms merge
+                                  {:lightPos [0 2 2]
+                                   :shininess 10
+                                   :wrap 1
+                                   :ambientCol [0 0.15 0.5]
+                                   :diffuseCol [0.8 0.05 0.25]})
+                          (assoc :shader main-shader)
+                          (gl/make-buffers-in-spec gl glc/static-draw))]
       (pprint model)
       (swap! app assoc
              :model    model
@@ -233,21 +218,27 @@
       (doto gl
         (gl/set-viewport 0 0 fbo-size fbo-size)
         (gl/clear-color-and-depth-buffer col/GRAY 1)
-        (lambert/draw (assoc-in spec [:uniforms :model] model)))
+        (gl/enable glc/cull-face)
+        ;;(.glPolygonMode glc/front-and-back glc/line)
+        (gl/draw-with-shader (assoc-in spec [:uniforms :model] model)))
       (gl/unbind fbo)
       (doto gl
         (gl/set-viewport 0 0 width height)
         (gl/clear-color-and-depth-buffer col/BLACK 1)
+        (gl/disable glc/cull-face)
+        ;;(.glPolygonMode glc/front-and-back glc/fill)
         (image/draw image))))
 
   (defn resize
     [_ x y w h]
     (swap! app assoc :width w :height h))
 
+  (defn dispose [_] (jogl/stop-animator (:anim @app)))
+
   (defn key-pressed
     [^KeyEvent e]
     (condp = (.getKeyCode e)
-      KeyEvent/VK_ESCAPE (jogl/dispose-window (:window @app) (:anim @app))
+      KeyEvent/VK_ESCAPE (jogl/destroy-window (:window @app))
       nil))
 
   (defn -main
@@ -261,6 +252,7 @@
        :fullscreen    false
        :events        {:init    init
                        :display display
+                       :dispose dispose
                        :resize  resize
                        :keys    {:press key-pressed}}}))
     nil)
