@@ -132,7 +132,7 @@ RGBA colors, however the alpha component is discarded.
      :uniforms {:model      [:mat4 M44]
                 :view       :mat4
                 :proj       :mat4
-                :normalMat  :mat4
+                :normalMat  [:mat4 (gl/auto-normal-matrix :model :view)]
                 :ambientCol [:vec3 [0 0 0]]
                 :diffuseCol [:vec3 [1 1 1]]
                 :lightCol   [:vec3 [1 1 1]]
@@ -164,10 +164,6 @@ RGBA colors, however the alpha component is discarded.
          (glsl/minified "
   <<lambert-vs-abs-attr>>"))
         (assoc-in [:attribs :color] [:vec4 2])))
-
-  (defn draw
-    [gl spec]
-    (gl/draw-with-shader gl (gl/inject-normal-matrix spec :model :view :normalMat)))
 #+END_SRC
 
 ** Phong
@@ -234,12 +230,12 @@ RGBA colors, however the alpha component is discarded.
      :uniforms {:view          :mat4
                 :proj          :mat4
                 :model         [:mat4 M44]
-                :normalMat     :mat4
+                :normalMat     [:mat4 (gl/auto-normal-matrix :model :view)]
                 :shininess     [:float 32]
                 :ambientCol    [:vec3 [0 0 0]]
                 :diffuseCol    [:vec3 [0.8 0.8 0.8]]
                 :specularCol   [:vec3 [1 1 1]]
-                :lightPos      [:vec3 [0 0 0]]
+                :lightPos      [:vec3 [0 0 2]]
                 :useBlinnPhong [:bool true]
                 :wrap          [:float 0]}
      :attribs {:position       [:vec3 0]
@@ -248,10 +244,6 @@ RGBA colors, however the alpha component is discarded.
                :vEyePos        :vec3
                :vLightPos      :vec3}
      :state    {:depth-test    true}})
-
-  (defn draw
-    [gl spec]
-    (gl/draw-with-shader gl (gl/inject-normal-matrix spec :model :view :normalMat)))
 #+END_SRC
 
 ** X-Ray
@@ -301,7 +293,7 @@ RGBA colors, however the alpha component is discarded.
   <<xray-fs>>")
      :uniforms {:model      [:mat4 M44]
                 :view       :mat4
-                :normalMat  :mat4
+                :normalMat  [:mat4 (gl/auto-normal-matrix :model :view)]
                 :proj       :mat4
                 :lightCol   [:vec3 [1 1 1]]
                 :alpha      [:float 0.5]}
@@ -312,10 +304,6 @@ RGBA colors, however the alpha component is discarded.
      :state    {:depth-test false
                 :blend      true
                 :blend-func [glc/src-alpha glc/one]}})
-
-  (defn draw
-    [gl spec]
-    (gl/draw-with-shader gl (gl/inject-normal-matrix spec :model :view :normalMat)))
 #+END_SRC
 
 ** Spotlight
@@ -598,7 +586,7 @@ RGBA colors, however the alpha component is discarded.
      (let [r         (or (get opts :rect) (r/rect 1))
            [a b c d] (g/vertices r)
            verts     (#?(:clj native/float-buffer :cljs ta/float32) 8)]
-       (streams/into-float-buffer [a b d c] verts 2 0)
+       (streams/into-float-buffer [d c a b] verts 2 0)
        {:attribs      (gl/make-attribute-buffers
                        gl glc/static-draw
                        {:position {:data verts

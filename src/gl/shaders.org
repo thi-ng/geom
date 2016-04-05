@@ -185,10 +185,10 @@ Special cases:
      {} uniforms))
 
   (defn set-uniform
-    [shader id val]
+    [shader uniforms id val]
     ;;(#?(:clj prn :cljs debug) :uniform id (get-in shader [:uniforms id :loc]) val)
     (if-let [u-spec (-> shader (get :uniforms) (get id))]
-      ((get u-spec :setter) val)
+      ((get u-spec :setter) (if (fn? val) (val shader uniforms) val))
       (#?(:clj prn :cljs warn) "Unknown shader uniform: " id)))
 
   (defn apply-default-uniforms
@@ -197,7 +197,7 @@ Special cases:
      (fn [_ id val]
        (if-not (get uniforms id)
          (if-let [d (get val :default)]
-           (set-uniform shader id d))))
+           (set-uniform shader uniforms id d))))
      nil (get shader :uniforms)))
 #+END_SRC
 

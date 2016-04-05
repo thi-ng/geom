@@ -830,7 +830,7 @@ using the protocol.
     #?(:clj  (.glUseProgram gl (int (get shader :program)))
        :cljs (.useProgram gl (get shader :program)))
     (sh/apply-default-uniforms shader uniforms)
-    (reduce-kv #(sh/set-uniform shader %2 %3) nil uniforms)
+    (reduce-kv #(sh/set-uniform shader uniforms %2 %3) nil uniforms)
     (reduce-kv #(sh/set-attribute gl shader %2 %3) nil attribs)
     (when indices
       #?(:clj  (.glBindBuffer gl glc/element-array-buffer (.get ^IntBuffer (get indices :buffer) 0))
@@ -895,14 +895,21 @@ Currently the following options are supported:
   (defn compute-normal-matrix
     [m v] (-> v (m/* m) (m/invert) (m/transpose)))
 
+  (defn auto-normal-matrix
+    [model-id view-id]
+    (fn [shader uniforms]
+      (compute-normal-matrix
+       (or (get uniforms model-id) (get-in shader [:uniforms model-id :default]))
+       (or (get uniforms view-id) (get-in shader [:uniforms view-id :default])))))
+
   (defn inject-normal-matrix
     [spec model-mat view-mat normal-mat-id]
     (let [model-mat (if (keyword? model-mat)
                       (-> spec :uniforms model-mat)
                       model-mat)
           view-mat (if (keyword? view-mat)
-                      (-> spec :uniforms view-mat)
-                      view-mat)]
+                     (-> spec :uniforms view-mat)
+                     view-mat)]
       (assoc-in
        spec [:uniforms normal-mat-id]
        (compute-normal-matrix model-mat view-mat))))
