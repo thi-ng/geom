@@ -33,7 +33,6 @@
     gl_Position = proj * view * model * vec4(position, 1.0);
   }"
      :fs "out vec4 outCol;
-
   void main() {
     outCol = vCol * texture(tex, vUV);
   }"
@@ -61,10 +60,7 @@
                       (assoc :shader (sh/make-shader-from-spec gl shader))
                       (assoc-in [:shader :state :tex] tex)
                       (gl/make-buffers-in-spec gl glc/static-draw))]
-      (pprint model)
-      (swap! app assoc
-             :model   model
-             :arcball (arc/arcball {}))))
+      (swap! app assoc :model model :arcball (arc/arcball {}))))
 
   (defn display
     [^GLAutoDrawable drawable t]
@@ -75,10 +71,7 @@
           view    (arc/get-view (:arcball @app))]
       (doto gl
         (gl/clear-color-and-depth-buffer 0.3 0.3 0.3 1.0 1.0)
-        (gl/draw-with-shader
-         (update spec :uniforms assoc
-                 :view view
-                 :time t)))))
+        (gl/draw-with-shader (update spec :uniforms assoc :view view :time t)))))
 
   (defn dispose [_] (jogl/stop-animator (:anim @app)))
 
@@ -93,17 +86,11 @@
       KeyEvent/VK_ESCAPE (jogl/destroy-window (:window @app))
       nil))
 
-  (defn mouse-moved
-    [^MouseEvent e] (swap! app assoc :mouse-pos (v/vec2 (.getX e) (.getY e))))
+  (defn mouse-pressed [^MouseEvent e] (swap! app update :arcball arc/down (.getX e) (.getY e)))
 
-  (defn mouse-pressed
-    [^MouseEvent e] (swap! app update :arcball arc/down (.getX e) (.getY e)))
+  (defn mouse-dragged [^MouseEvent e] (swap! app update :arcball arc/drag (.getX e) (.getY e)))
 
-  (defn mouse-dragged
-    [^MouseEvent e] (swap! app update :arcball arc/drag (.getX e) (.getY e)))
-
-  (defn wheel-moved
-    [^MouseEvent e deltas] (swap! app update :arcball arc/zoom-delta (nth deltas 1)))
+  (defn wheel-moved [^MouseEvent e deltas] (swap! app update :arcball arc/zoom-delta (nth deltas 1)))
 
   (defn -main
     [& args]
@@ -151,7 +138,6 @@
      [thi.ng.geom.gl.jogl.core :as jogl]
      [thi.ng.geom.gl.jogl.constants :as glc]
      [thi.ng.glsl.core :as glsl]
-     [clojure.pprint :refer [pprint]]
      [clojure.java.io :as io]))
 
   (def app (atom nil))
@@ -160,8 +146,7 @@
     "Loads STL mesh from given path and fits it into centered bounding box."
     [path bounds]
     (with-open [in (io/input-stream path)]
-      (->> #(glm/gl-mesh % #{:fnorm})
-           (mio/read-stl (mio/wrapped-input-stream in))
+      (->> (mio/read-stl (mio/wrapped-input-stream in) #(glm/gl-mesh % #{:fnorm}))
            vector
            (gu/fit-all-into-bounds (g/center bounds))
            first)))
@@ -183,7 +168,6 @@
                                  :specularCol [0.8 0.3 0.3]})
                         (assoc :shader shader)
                         (gl/make-buffers-in-spec gl glc/static-draw))]
-      (pprint model)
       (swap! app assoc
              :model     model
              :wireframe false
@@ -214,17 +198,11 @@
         \w (swap! app update :wireframe not)
         nil)))
 
-  (defn mouse-moved
-    [^MouseEvent e] (swap! app assoc :mouse-pos (v/vec2 (.getX e) (.getY e))))
+  (defn mouse-pressed [^MouseEvent e] (swap! app update :arcball arc/down (.getX e) (.getY e)))
 
-  (defn mouse-pressed
-    [^MouseEvent e] (swap! app update :arcball arc/down (.getX e) (.getY e)))
+  (defn mouse-dragged [^MouseEvent e] (swap! app update :arcball arc/drag (.getX e) (.getY e)))
 
-  (defn mouse-dragged
-    [^MouseEvent e] (swap! app update :arcball arc/drag (.getX e) (.getY e)))
-
-  (defn wheel-moved
-    [^MouseEvent e deltas] (swap! app update :arcball arc/zoom-delta (nth deltas 1)))
+  (defn wheel-moved [^MouseEvent e deltas] (swap! app update :arcball arc/zoom-delta (nth deltas 1)))
 
   (defn -main
     [& args]
@@ -240,14 +218,13 @@
                        :dispose dispose
                        :resize  resize
                        :keys    {:press key-pressed}
-                       :mouse   {:move  mouse-moved
-                                 :press mouse-pressed
+                       :mouse   {:press mouse-pressed
                                  :drag  mouse-dragged
                                  :wheel wheel-moved}}}))
     nil)
 #+END_SRC
 
-** Example: FBO
+** Example: FBO & FX pipeline
 
 #+BEGIN_SRC clojure :tangle ../../babel/examples/jogl/ex03.clj :mkdirp yes :padline no
   (ns thi.ng.geom.examples.jogl.ex03
@@ -322,27 +299,27 @@
                  :gamma    [:float 1.25]}}))
 
   (def fx-bloom-pipeline-spec
-    {:src-width  1280
-     :src-height 720
-     :fbos       {:src  {:scale 1}
-                  :ping {:scale 8}
-                  :pong {:scale 8}}
-     :shaders    {:threshold threshold-shader-spec
-                  :blur      blur-shader-spec}
-     :passes     [{:id       :threshold
-                   :target   :ping
-                   :shader   :threshold
-                   :tex      :src}
-                  {:id       :blur-h
-                   :target   :pong
-                   :shader   :blur
-                   :tex      :ping
-                   :uniforms {:horizontal true}}
-                  {:id       :blur-v
-                   :target   :ping
-                   :shader   :blur
-                   :tex      :pong
-                   :uniforms {:horizontal false}}]})
+    {:width   1280
+     :height  720
+     :fbos    {:src  {:scale 1}
+               :ping {:scale 8}
+               :pong {:scale 8}}
+     :shaders {:threshold threshold-shader-spec
+               :blur      blur-shader-spec}
+     :passes  [{:id       :threshold
+                :target   :ping
+                :shader   :threshold
+                :tex      :src}
+               {:id       :blur-h
+                :target   :pong
+                :shader   :blur
+                :tex      :ping
+                :uniforms {:horizontal true}}
+               {:id       :blur-v
+                :target   :ping
+                :shader   :blur
+                :tex      :pong
+                :uniforms {:horizontal false}}]})
 
   (defn load-mesh
     "Loads STL mesh from given path and fits it into centered bounding box."
@@ -367,11 +344,11 @@
           img-comp      (d/merge-deep
                          quad
                          {:shader (assoc-in comp-shader [:state :tex]
-                                            [(get-in fx-pipe [:fbos :src :tex])
-                                             (get-in fx-pipe [:fbos :ping :tex])])})
+                                            (fx/resolve-pipeline-textures fx-pipe [:src :ping]))})
           img-orig      (d/merge-deep
                          quad
-                         {:shader (assoc-in pass-shader [:state :tex] (get-in fx-pipe [:fbos :src :tex]))})
+                         {:shader (assoc-in pass-shader [:state :tex]
+                                            (fx/resolve-pipeline-textures fx-pipe :src))})
           model         (-> (load-mesh mesh (a/aabb 2))
                             (gl/as-gl-buffer-spec {})
                             (d/merge-deep
