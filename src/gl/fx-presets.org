@@ -6,6 +6,7 @@
          - [[#threshold][Threshold]]
          - [[#blur][Blur]]
          - [[#composite][Composite]]
+         - [[#namespace-definition][Namespace definition]]
 
 * FX pipeline presets
 
@@ -54,6 +55,7 @@
   #endif
 #+END_SRC
 
+*** Namespace definition
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/gl/fx/bloom.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.gl.fx.bloom
     (:require
