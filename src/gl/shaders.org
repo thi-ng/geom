@@ -352,30 +352,32 @@ shader source before compilation with =compile-shader= below.
 
   #?(:clj
      (defn make-shader-from-spec
-       [^GL3 gl spec]
-       (let [{:keys [vs-src fs-src]} (prepare-shader-sources spec)
-             ^{:tag "[[Ljava.lang.CharSequence;"} vs' (make-array CharSequence 1 1)
-             ^{:tag "[[Ljava.lang.CharSequence;"} fs' (make-array CharSequence 1 1)
-             _       (aset ^{:tag "[Ljava.lang.CharSequence;"} (aget vs' 0) 0 vs-src)
-             _       (aset ^{:tag "[Ljava.lang.CharSequence;"} (aget fs' 0) 0 fs-src)
-             vs      (ShaderCode. GL3/GL_VERTEX_SHADER 1 vs')
-             fs      (ShaderCode. GL3/GL_FRAGMENT_SHADER 1 fs')
-             prog    (doto (ShaderProgram.)
-                       (.add vs)
-                       (.add fs)
-                       (.init gl))
-             prog-id (.program prog)]
-         (bind-attrib-locations gl prog-id (:attribs spec))
-         (if (.link prog gl System/out)
-           (let [attribs  (init-shader-attribs gl prog-id (:attribs spec))
-                 uniforms (init-shader-uniforms gl prog-id (:uniforms spec))]
-             (merge spec
-                    {:program  prog-id
-                     :uniforms uniforms
-                     :attribs  attribs
-                     :vs       vs-src
-                     :fs       fs-src}))
-           (err/throw! (str "Shader failed to link:" (ShaderUtil/getProgramInfoLog gl prog-id))))))
+       ([^GL3 gl spec version]
+        (make-shader-from-spec gl (assoc spec :version version)))
+       ([^GL3 gl spec]
+        (let [{:keys [vs-src fs-src]} (prepare-shader-sources spec)
+              ^{:tag "[[Ljava.lang.CharSequence;"} vs' (make-array CharSequence 1 1)
+              ^{:tag "[[Ljava.lang.CharSequence;"} fs' (make-array CharSequence 1 1)
+              _       (aset ^{:tag "[Ljava.lang.CharSequence;"} (aget vs' 0) 0 vs-src)
+              _       (aset ^{:tag "[Ljava.lang.CharSequence;"} (aget fs' 0) 0 fs-src)
+              vs      (ShaderCode. GL3/GL_VERTEX_SHADER 1 vs')
+              fs      (ShaderCode. GL3/GL_FRAGMENT_SHADER 1 fs')
+              prog    (doto (ShaderProgram.)
+                        (.add vs)
+                        (.add fs)
+                        (.init gl))
+              prog-id (.program prog)]
+          (bind-attrib-locations gl prog-id (:attribs spec))
+          (if (.link prog gl System/out)
+            (let [attribs  (init-shader-attribs gl prog-id (:attribs spec))
+                  uniforms (init-shader-uniforms gl prog-id (:uniforms spec))]
+              (merge spec
+                     {:program  prog-id
+                      :uniforms uniforms
+                      :attribs  attribs
+                      :vs       vs-src
+                      :fs       fs-src}))
+            (err/throw! (str "Shader failed to link:" (ShaderUtil/getProgramInfoLog gl prog-id)))))))
      :cljs
      (defn make-shader-from-spec
        [^WebGLRenderingContext gl spec]
