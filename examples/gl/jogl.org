@@ -257,13 +257,23 @@
     (:require
      [thi.ng.math.core :as m]
      [thi.ng.color.core :as col]
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.dstruct.streams :as streams]
      [thi.ng.geom.core :as g]
+     [thi.ng.geom.version :refer [version]]
+     [thi.ng.geom.attribs :as attr]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.rect :as r]
+     [thi.ng.geom.aabb :as a]
      [thi.ng.geom.sphere :as s]
      [thi.ng.geom.attribs :as attr]
      [thi.ng.geom.vector :as v]
      [thi.ng.geom.matrix :as mat]
+     [thi.ng.geom.quaternion :as q]
+     [thi.ng.geom.mesh.io :as mio]
      [thi.ng.geom.gl.core :as gl]
      [thi.ng.geom.gl.camera :as cam]
+     [thi.ng.geom.gl.arcball :as arc]
      [thi.ng.geom.gl.buffers :as buf]
      [thi.ng.geom.gl.shaders :as sh]
      [thi.ng.geom.gl.shaders.phong :as phong]
@@ -271,83 +281,215 @@
      [thi.ng.geom.gl.glmesh :as glm]
      [thi.ng.geom.gl.jogl.core :as jogl]
      [thi.ng.geom.gl.jogl.constants :as glc]
+     [thi.ng.geom.gl.jogl.buffers :as native]
      [thi.ng.glsl.core :as glsl]
-     [thi.ng.glsl.vertex :as vertex]
-     [thi.ng.glsl.lighting :as light]
+     [thi.ng.glsl.color :as glslcol]
      [clojure.pprint :refer [pprint]]
      [clojure.java.io :as io]))
 
-  (def app (atom nil))
+  (def app
+    (atom
+     {:version    330
+      :fbo-width  1280
+      :fbo-height 720
+      :fx-scale   8}))
+
+  (def passthrough-vs "void main() { vUV = uv; gl_Position = model * vec4(position, 0.0, 1.0); }")
+  (def passthrough-fs "out vec4 fragCol; void main() { fragCol = texture(tex, vUV); }")
+
+  (def passthrough-shader-spec
+    {:vs passthrough-vs
+     :fs passthrough-fs
+     :attribs  {:position  :vec2
+                :uv        :vec2}
+     :varying  {:vUV       :vec2}
+     :uniforms {:model     [:mat4 mat/M44]
+                :tex       [:sampler2D 0]}
+     :state    {:depth-test false}})
+
+  (def threshold-shader-spec
+    (d/merge-deep
+     passthrough-shader-spec
+     {:fs "out vec4 fragCol;
+    void main() {
+      float lum = dot(texture(tex, vUV).rgb, vec3(0.299, 0.587, 0.114));
+      lum = smoothstep(threshold * 0.5, threshold, lum);
+      fragCol = vec4(lum, lum, lum, 1.0);
+    }"
+      :uniforms {:threshold [:float 0.8]}}))
+
+  (def blur-shader-spec
+    (d/merge-deep
+     passthrough-shader-spec
+     {:fs "out vec4 fragCol;
+    const float weights[5] = float[] (0.2270270270, 0.1945945946, 0.1216216216, 0.0540540541, 0.0162162162);
+
+    void main() {
+      vec2 off = 1.0 / textureSize(tex, 0); // size of single texel @ level 0
+      vec3 sum = texture(tex, vUV).rgb * weights[0];
+      if(horizontal) {
+        for(int i = 1; i < 5; i++) {
+          sum += texture(tex, vUV + vec2(off.x * i, 0.0)).rgb * weights[i];
+          sum += texture(tex, vUV - vec2(off.x * i, 0.0)).rgb * weights[i];
+        }
+      } else {
+        for(int i = 1; i < 5; i++) {
+          sum += texture(tex, vUV + vec2(0.0, off.y * i)).rgb * weights[i];
+          sum += texture(tex, vUV - vec2(0.0, off.y * i)).rgb * weights[i];
+        }
+      }
+      fragCol = vec4(sum, 1.0);
+    }"
+      :uniforms {:horizontal :bool}}))
+
+  (def comp-shader-spec
+    (d/merge-deep
+     passthrough-shader-spec
+     {:fs "out vec4 fragCol;
+    void main() {
+      fragCol = vec4((texture(tex, vUV).rgb * (1.0 - blend) + texture(tex2, vUV).rgb * blend) * exposure, 1.0);
+      fragCol = pow(fragCol, vec4(gamma));
+    }"
+      :uniforms {:tex2     [:sampler2D 1]
+                 :blend    [:float 0.35]
+                 :exposure [:float 1.3]
+                 :gamma    [:float 1.25]}}))
+
+  (defn load-mesh
+    "Loads STL mesh from given path and fits it into centered bounding box."
+    [path bounds]
+    (with-open [in (io/input-stream path)]
+      (->> #(glm/gl-mesh % #{:fnorm})
+           (mio/read-stl (mio/wrapped-input-stream in))
+           vector
+           (gu/fit-all-into-bounds (g/center bounds))
+           first)))
+
+  (defn init-render-fbo
+    [^GL3 gl w h]
+    (let [tex (buf/make-texture
+               gl {:width w :height h :filter glc/linear :wrap glc/clamp-to-edge})
+          fbo (buf/make-fbo-with-attachments
+               gl {:tex tex :width w :height h :depth? true})]
+      {:tex tex :fbo fbo :width w :height h}))
+
+  (defn init-fx-fbo
+    [^GL3 gl w h scale]
+    (let [w (int (/ w scale))
+          h (int (/ h scale))
+          tex (buf/make-texture
+               gl {:width w :height h :filter glc/linear :wrap glc/clamp-to-edge})
+          fbo (buf/make-fbo-with-attachments
+               gl {:tex tex :width w :height h})]
+      {:tex tex :fbo fbo :width w :height h}))
+
+  (defn init-fx-quad
+    [^GL3 gl]
+    {:attribs      (gl/make-attribute-buffers
+                    gl glc/static-draw
+                    {:position {:data (native/float-buffer-direct [-1 -1, 1 -1, -1 1 1 1])
+                                :size 2}
+                     :uv       {:data (native/float-buffer [0 0, 1 0, 0 1, 1 1])
+                                :size 2}})
+     :uniforms     {:tex 0}
+     :num-vertices 4
+     :mode         glc/triangle-strip})
+
+  (defn do-fx-pass
+    [^GL3 gl fbo spec]
+    (gl/bind (:fbo fbo))
+    (doto gl
+      (gl/set-viewport 0 0 (:width fbo) (:height fbo))
+      (gl/draw-with-shader spec))
+    (gl/unbind (:fbo fbo)))
 
   (defn init
     [^GLAutoDrawable drawable]
-    (let [^GL3 gl     (.. drawable getGL getGL3)
-          view-rect   (gl/get-viewport-rect gl)
-          main-shader (sh/make-shader-from-spec gl (assoc phong/shader-spec :version 330))
-          img-shader  (sh/make-shader-from-spec gl (assoc image/shader-spec :version 330))
-          fbo-size    512
-          fbo-tex     (buf/make-texture
-                       gl {:width  fbo-size
-                           :height fbo-size
-                           :filter glc/linear
-                           :wrap   glc/clamp-to-edge})
-          fbo         (buf/make-fbo-with-attachments
-                       gl {:tex fbo-tex
-                           :width fbo-size
-                           :height fbo-size
-                           :depth? true})
-          image       (image/make-shader-spec
-                       gl {:state    {:tex   fbo-tex
-                                      :blend false}
-                           :shader   img-shader
-                           :viewport view-rect
-                           :width    256
-                           :height   256})
-          model       (-> (s/sphere 1)
-                          (g/as-mesh
-                           {:mesh    (glm/indexed-gl-mesh 2048 #{:vnorm})
-                            :attribs {:vnorm (fn [_ _ v _] (m/normalize v))}
-                            :res     16})
-                          (gl/as-gl-buffer-spec {})
-                          (cam/apply (cam/perspective-camera {:eye (v/vec3 0 0 3) :aspect 1.0}))
-                          (update :uniforms merge
-                                  {:lightPos [0 2 2]
-                                   :shininess 10
-                                   :wrap 1
-                                   :ambientCol [0 0.15 0.5]
-                                   :diffuseCol [0.8 0.05 0.25]})
-                          (assoc :shader main-shader)
-                          (gl/make-buffers-in-spec gl glc/static-draw))]
-      (pprint model)
-      (swap! app assoc
-             :model    model
-             :fbo      fbo
-             :fbo-size fbo-size
-             :image    image)))
+    (let [{:keys [version fbo-width fbo-height fx-scale]} @app
+          ^GL3 gl       (.. drawable getGL getGL3)
+          view-rect     (gl/get-viewport-rect gl)
+          main-shader   (sh/make-shader-from-spec gl (assoc phong/shader-spec :version version))
+          thresh-shader (sh/make-shader-from-spec gl (assoc threshold-shader-spec :version version))
+          blur-shader   (sh/make-shader-from-spec gl (assoc blur-shader-spec :version version))
+          comp-shader   (sh/make-shader-from-spec gl (assoc comp-shader-spec :version version))
+          pass-shader   (sh/make-shader-from-spec gl (assoc passthrough-shader-spec :version version))
+          fbo1          (init-render-fbo gl fbo-width fbo-height)
+          fbo-ping      (init-fx-fbo gl fbo-width fbo-height fx-scale)
+          fbo-pong      (init-fx-fbo gl fbo-width fbo-height fx-scale)
+          quad          (init-fx-quad gl)
+          img-thresh    (d/merge-deep
+                         quad
+                         {:shader (assoc-in thresh-shader [:state :tex] (:tex fbo1))})
+          img-blur-h    (d/merge-deep
+                         img-thresh
+                         {:shader   (assoc-in blur-shader [:state :tex] (:tex fbo-ping))
+                          :uniforms {:horizontal true}})
+          img-blur-v    (d/merge-deep
+                         img-blur-h
+                         {:shader   {:state {:tex (:tex fbo-pong)}}
+                          :uniforms {:horizontal false}})
+          img-comp      (d/merge-deep
+                         quad
+                         {:shader (assoc-in comp-shader [:state :tex] [(:tex fbo1) (:tex fbo-ping)])})
+          img-orig      (d/merge-deep
+                         quad
+                         {:shader (assoc-in pass-shader [:state :tex] (:tex fbo1))})
+          model         (-> (load-mesh "../assets/suzanne.stl" (a/aabb 2))
+                            (gl/as-gl-buffer-spec {})
+                            (update :uniforms merge
+                                    {:view (mat/look-at (v/vec3 0 0 1) (v/vec3) v/V3Y)
+                                     :lightPos [0 2 0]
+                                     :shininess 10
+                                     :wrap 0
+                                     :ambientCol [0.0 0.1 0.4 0.0]
+                                     :diffuseCol [0.1 0.6 0.8]
+                                     :specularCol [1 1 1]})
+                            (assoc :shader main-shader)
+                            (gl/make-buffers-in-spec gl glc/static-draw))]
+      (swap! app merge
+             {:model      model
+              :fbo-render fbo1
+              :fbo-ping   fbo-ping
+              :fbo-pong   fbo-pong
+              :img-thresh img-thresh
+              :img-blur-h img-blur-h
+              :img-blur-v img-blur-v
+              :img-comp   img-comp
+              :img-orig   img-orig
+              :arcball    (arc/arcball {:init (m/normalize (q/quat 0.0 0.707 0.707 0))})
+              })))
 
   (defn display
     [^GLAutoDrawable drawable t]
     (let [^GL3 gl (.. drawable getGL getGL3)
-          {:keys [model fbo fbo-size image width height]} @app
-          {:keys [shader] :as spec} model
-          t       (* 0.25 t)
-          model   (-> mat/M44 (g/rotate-x t) (g/rotate-y (* t 2)))]
-      (gl/bind fbo)
+          {:keys [model fbo-render fbo-ping fbo-pong
+                  img-orig img-thresh img-blur-h img-blur-v img-comp
+                  width height]} @app
+          mtx       (-> (arc/get-view (:arcball @app)) (m/* (g/translate mat/M44 (v/vec3 0 0 -0.1))))
+          view-rect (r/rect width height)
+          vp        (-> view-rect
+                        (gu/fit-all-into-bounds [(r/rect (:width fbo-render) (:height fbo-render))])
+                        first
+                        (g/center (g/centroid view-rect)))]
+      (gl/bind (:fbo fbo-render))
       (doto gl
-        (gl/set-viewport 0 0 fbo-size fbo-size)
-        (gl/clear-color-and-depth-buffer col/GRAY 1)
-        (gl/draw-with-shader (assoc-in spec [:uniforms :model] model)))
-      (gl/unbind fbo)
+        (gl/set-viewport 0 0 (:width fbo-render) (:height fbo-render))
+        (gl/clear-color-and-depth-buffer (col/hsva 0 0 0.3) 1)
+        (gl/draw-with-shader (assoc-in model [:uniforms :model] mtx)))
+      (gl/unbind (:fbo fbo-render))
       (doto gl
-        (gl/set-viewport 0 0 width height)
+        (do-fx-pass fbo-ping img-thresh)
+        (do-fx-pass fbo-pong img-blur-h)
+        (do-fx-pass fbo-ping img-blur-v))
+      (doto gl
+        (gl/set-viewport vp)
         (gl/clear-color-and-depth-buffer col/BLACK 1)
-        (image/draw image))))
-
-  (defn resize
-    [_ x y w h]
-    (swap! app assoc :width w :height h))
-
-  (defn dispose [_] (jogl/stop-animator (:anim @app)))
+        (gl/draw-with-shader img-comp))
+      (loop [y 0, img [img-blur-h img-blur-v img-thresh img-orig]]
+        (when img
+          (gl/set-viewport gl 0 y 160 90)
+          (gl/draw-with-shader gl (first img))
+          (recur (+ y 90) (next img))))))
 
   (defn key-pressed
     [^KeyEvent e]
@@ -355,19 +497,43 @@
       KeyEvent/VK_ESCAPE (jogl/destroy-window (:window @app))
       nil))
 
+  (defn resize
+    [_ x y w h]
+    (.setTitle ^com.jogamp.newt.opengl.GLWindow _ (str "[thi.ng/geom " version "] - " w "x" h))
+    (swap! app assoc-in [:model :uniforms :proj] (mat/perspective 45 (/ w h) 0.1 10))
+    (swap! app assoc :width w :height h)
+    (swap! app update :arcball arc/resize w h))
+
+  (defn dispose [_] (jogl/stop-animator (:anim @app)))
+
+  (defn mouse-moved
+    [^MouseEvent e] (swap! app assoc :mouse-pos (v/vec2 (.getX e) (.getY e))))
+
+  (defn mouse-pressed
+    [^MouseEvent e] (swap! app update :arcball arc/down (.getX e) (.getY e)))
+
+  (defn mouse-dragged
+    [^MouseEvent e] (swap! app update :arcball arc/drag (.getX e) (.getY e)))
+
+  (defn wheel-moved
+    [^MouseEvent e deltas] (swap! app update :arcball arc/zoom-delta (nth deltas 1)))
+
   (defn -main
     [& args]
-    (reset!
-     app
-     (jogl/gl-window
-      {:profile       :gl3
-       :samples       4
-       :double-buffer true
-       :fullscreen    false
-       :events        {:init    init
-                       :display display
-                       :dispose dispose
-                       :resize  resize
-                       :keys    {:press key-pressed}}}))
+    (swap! app d/merge-deep
+           (jogl/gl-window
+            {:profile       :gl3
+             :samples       4
+             :double-buffer true
+             :fullscreen    false
+             :events        {:init    init
+                             :display display
+                             :dispose dispose
+                             :resize  resize
+                             :keys    {:press key-pressed}
+                             :mouse   {:move  mouse-moved
+                                       :press mouse-pressed
+                                       :drag  mouse-dragged
+                                       :wheel wheel-moved}}}))
     nil)
 #+END_SRC
