@@ -115,6 +115,9 @@
                (if (sequential? tex) tex [tex]))]
       (if (== 1 (count tex)) (first tex) tex)))
 
+  (defn resolve-pipeline-textures
+    [pipe tex] (resolve-textures (get pipe :fbos) tex))
+
   (defn init-pipeline-passes
     [gl fbos shaders passes]
     (let [quad (init-fx-quad gl)]
@@ -129,8 +132,8 @@
        [] passes)))
 
   (defn init-pipeline
-    [gl {:keys [fbos src-width src-height shaders passes version] :as opts}]
-    (let [fbos    (init-pipeline-fbos gl fbos src-width src-height)
+    [gl {:keys [fbos width height shaders passes version] :as opts}]
+    (let [fbos    (init-pipeline-fbos gl fbos width height)
           shaders (init-pipeline-shaders gl shaders version)
           passes  (init-pipeline-passes gl fbos shaders passes)]
       {:fbos    fbos
