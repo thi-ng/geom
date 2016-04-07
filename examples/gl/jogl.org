@@ -38,15 +38,15 @@
 
   (def shader
     {:vs "
-  void main() {
-    vCol = vec4(position.xy * 0.5 + 0.5, fract(time), 1.0);
-    vUV = uv;
-    gl_Position = proj * view * model * vec4(position, 1.0);
-  }"
+    void main() {
+      vCol = vec4(position.xy * 0.5 + 0.5, fract(time), 1.0);
+      vUV = uv;
+      gl_Position = proj * view * model * vec4(position, 1.0);
+    }"
      :fs "out vec4 outCol;
-  void main() {
-    outCol = vCol * texture(tex, vUV);
-  }"
+    void main() {
+      outCol = vCol * texture(tex, vUV);
+    }"
      :version  330
      :attribs  {:position :vec3
                 :uv       :vec2}
@@ -75,14 +75,14 @@
 
   (defn display
     [^GLAutoDrawable drawable t]
-    (let [^GL3 gl (.. drawable getGL getGL3)
-          {:keys [shader] :as spec} (:model @app)
-          unis    (:uniforms shader)
-          t       (* 0.25 t)
-          view    (arc/get-view (:arcball @app))]
+    (let [{:keys [model arcball]} @app
+          ^GL3 gl (.. drawable getGL getGL3)]
       (doto gl
         (gl/clear-color-and-depth-buffer 0.3 0.3 0.3 1.0 1.0)
-        (gl/draw-with-shader (update spec :uniforms assoc :view view :time t)))))
+        (gl/draw-with-shader
+         (update model :uniforms assoc
+                 :view (arc/get-view arcball)
+                 :time (* 0.25 t))))))
 
   (defn dispose [_] (jogl/stop-animator (:anim @app)))
 
@@ -116,8 +116,7 @@
                        :display display
                        :resize  resize
                        :keys    {:press key-pressed}
-                       :mouse   {:move  mouse-moved
-                                 :press mouse-pressed
+                       :mouse   {:press mouse-pressed
                                  :drag  mouse-dragged
                                  :wheel wheel-moved}}}))
     nil)
