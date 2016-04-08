@@ -55,6 +55,7 @@ Then in the browser, using the JS console, the demos can be individually launche
   [thi.ng.geom.matrix :as mat :refer [M44]]
   [thi.ng.geom.aabb :as a]
   [thi.ng.geom.attribs :as attr]
+  [thi.ng.glsl.core :as glsl :include-macros true]
 #+END_SRC
 
 #+BEGIN_SRC clojure :noweb-ref stats
@@ -158,7 +159,7 @@ of its 6 sides. The colors must be specified as RGBA using the
     []
     (let [gl        (gl/gl-context "main")
           view-rect (gl/get-viewport-rect gl)
-          model     (-> (a/aabb 1)
+          model     (-> (a/aabb 0.8)
                         (g/center)
                         (g/as-mesh
                          {:mesh    (glm/indexed-gl-mesh 12 #{:col})
@@ -193,7 +194,7 @@ Same example as above, only this time using basic lambert shading...
     []
     (let [gl        (gl/gl-context "main")
           view-rect (gl/get-viewport-rect gl)
-          model     (-> (a/aabb 1)
+          model     (-> (a/aabb 0.8)
                         (g/center)
                         (g/as-mesh
                          {:mesh    (glm/indexed-gl-mesh 12 #{:col :fnorm})
@@ -374,13 +375,15 @@ Live version: http://demo.thi.ng/geom/webgl/texcube/
   (enable-console-print!)
 
   (def shader-spec
-    {:vs "void main() {
-      vUV = uv;
-      gl_Position = proj * view * model * vec4(position, 1.0);
-      }"
-     :fs "void main() {
-      gl_FragColor = texture2D(tex, vUV);
-      }"
+    {:vs (glsl/minified
+          "void main() {
+             vUV = uv;
+             gl_Position = proj * view * model * vec4(position, 1.0);
+           }")
+     :fs (glsl/minified
+          "void main() {
+             gl_FragColor = texture2D(tex, vUV);
+           }")
      :uniforms {:model    [:mat4 M44]
                 :view     :mat4
                 :proj     :mat4
@@ -430,7 +433,6 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/
      <<default-requires>>
      [thi.ng.geom.circle :as c]
      [thi.ng.geom.ptf :as ptf]
-     [thi.ng.glsl.core :as glsl :include-macros true]
      [thi.ng.glsl.vertex :as vertex]
      [thi.ng.glsl.lighting :as light]
      [thi.ng.glsl.fog :as fog]
@@ -576,34 +578,22 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
      [thi.ng.geom.sphere :as s]
      [thi.ng.geom.gl.shaders.lambert :as lambert]
      [thi.ng.geom.gl.shaders.image :as image]
-     [thi.ng.glsl.core :as glsl :include-macros true]))
+     [thi.ng.geom.gl.fx :as fx]
+     [thi.ng.glsl.vertex :as vertex]))
 
   (def shader-spec
-    {:vs (glsl/minified
-          "vec3 rotateX(vec3 p, float theta) {
-            float s = sin(theta);
-            float c = cos(theta);
-            return vec3(p.x, p.y * c - p.z * s, p.z * c + p.y * s);
-           }
-
-           vec3 rotateY(vec3 p, float theta) {
-            float s = sin(theta);
-            float c = cos(theta);
-            return vec3(p.x * c + p.z * s, p.y, p.z * c - p.x * s);
-           }
-
-           vec3 rotateZ(vec3 p, float theta) {
-            float s = sin(theta);
-            float c = cos(theta);
-            return vec3(p.x * c - p.y * s, p.y * c + p.x * s, p.z);
-           }
-
-           void main() {
-            vUV = uv;
-            vec3 p = rotateZ(position, position.z * sin(time) + time);
-            gl_Position = proj * view * model * vec4(p, 1.0);
-           }")
-     :fs "void main() { gl_FragColor = texture2D(tex, vUV); }"
+    {:vs (->> "void main() {
+                 vUV = uv;
+                 vec3 p = rotateZ(position, position.z * sin(time) + time);
+                 gl_Position = proj * view * model * vec4(p, 1.0);
+               }"
+              (glsl/minified)
+              (glsl/glsl-spec-plain [vertex/rotate-z])
+              (glsl/assemble))
+     :fs (->> "void main(){
+                 gl_FragColor = texture2D(tex, vUV);
+               }"
+              (glsl/minified))
      :uniforms {:model    [:mat4 M44]
                 :view     :mat4
                 :proj     :mat4
@@ -632,12 +622,9 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
                               :width  fbo-size
                               :height fbo-size
                               :depth? true})
-          ov-quad        (image/make-shader-spec
-                          gl {:state    {:tex   fbo-tex
-                                         :blend false}
-                              :viewport view-rect
-                              :width    128
-                              :height   128})
+          quad           (-> (fx/init-fx-quad gl)
+                             (assoc :shader (sh/make-shader-from-spec gl fx/shader-spec))
+                             (assoc-in [:shader :state :tex] fbo-tex))
           model1         (-> (s/sphere 1)
                              (g/as-mesh
                               {:mesh    (glm/gl-mesh 64 #{:col :fnorm})
@@ -681,7 +668,9 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
          (gl/unbind fbo-tex)
 
          ;; render pass #3: Draw FBO texture as 2D image
-         (image/draw gl ov-quad)
+         (doto gl
+           (gl/set-viewport 0 0 128 128)
+           (gl/draw-with-shader quad))
 
          true))))
 #+END_SRC
