@@ -43,9 +43,9 @@
       vUV = uv;
       gl_Position = proj * view * model * vec4(position, 1.0);
     }"
-     :fs "out vec4 outCol;
+     :fs "out vec4 fragColor;
     void main() {
-      outCol = vCol * texture(tex, vUV);
+      fragColor = vCol * texture(tex, vUV);
     }"
      :version  330
      :attribs  {:position :vec3
@@ -391,7 +391,7 @@
     float d = length((mpos - pos) * aspect);
     float l = 1.0 - d * 4.0;
     vec3 col = vec3(l);
-    fragCol = vec4(col, 1.0);
+    fragColor = vec4(col, 1.0);
   }
 #+END_SRC
 
@@ -441,7 +441,7 @@
     coord += time * 0.1;
     float q = cloud(vec3(coord, 0.222));
     vec3 col = vec3(0.2, 0.7, 0.8) + vec3(0.2, 0.4, 0.1) * q;
-    fragCol = vec4(f2(col), 1.0);
+    fragColor = vec4(f2(col), 1.0);
   }
 #+END_SRC
 
@@ -478,7 +478,7 @@
     {:vs fx/passthrough-vs
      :fs "
   //layout(origin_upper_left) in vec4 gl_FragCoord;
-  out vec4 fragCol;
+  out vec4 fragColor;
 
   {{user-code}}
 

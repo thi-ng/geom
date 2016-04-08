@@ -14,15 +14,15 @@
 *** Threshold
 #+BEGIN_SRC glsl :noweb-ref thresh-fs
   #if __VERSION__ >= 300
-  out vec4 fragCol;
+  out vec4 fragColor;
   void main() {
     float c = threshold(texture(tex, vUV).rgb, thresh * 0.5, thresh);
-    fragCol = vec4(c, c, c, 1.0);
+    fragColor = vec4(c, c, c, 1.0);
   }
   #else
   void main() {
     float c = threshold(texture2D(tex, vUV).rgb, thresh * 0.5, thresh);
-    gl_FragCol = vec4(c, c, c, 1.0);
+    gl_FragColor = vec4(c, c, c, 1.0);
   }
   #endif
 #+END_SRC
@@ -30,13 +30,13 @@
 *** Blur
 #+BEGIN_SRC glsl :noweb-ref blur-fs
   #if __VERSION__ >= 300
-  out vec4 fragCol;
+  out vec4 fragColor;
   void main() {
-    fragCol = vec4((horizontal ? blur5H(tex, vUV) : blur5V(tex, vUV)), 1.0);
+    fragColor = vec4((horizontal ? blur5H(tex, vUV) : blur5V(tex, vUV)), 1.0);
   }
   #else
   void main() {
-    gl_FragCol = vec4((horizontal ? blur5H(tex, vUV) : blur5V(tex, vUV)), 1.0);
+    gl_FragColor = vec4((horizontal ? blur5H(tex, vUV) : blur5V(tex, vUV)), 1.0);
   }
   #endif
 #+END_SRC
@@ -44,13 +44,13 @@
 *** Composite
 #+BEGIN_SRC glsl :noweb-ref comp-fs
   #if __VERSION__ >= 300
-  out vec4 fragCol;
+  out vec4 fragColor;
   void main() {
-    fragCol = pow(vec4((texture(tex, vUV).rgb * (1.0 - blend) + texture(tex2, vUV).rgb * blend) * exposure, 1.0), vec4(gamma));
+    fragColor = pow(vec4((texture(tex, vUV).rgb * (1.0 - blend) + texture(tex2, vUV).rgb * blend) * exposure, 1.0), vec4(gamma));
   }
   #else
   void main() {
-    gl_FragCol = pow(vec4((texture(tex, vUV).rgb * (1.0 - blend) + texture(tex2, vUV).rgb * blend) * exposure, 1.0), vec4(gamma));
+    gl_FragColor = pow(vec4((texture2D(tex, vUV).rgb * (1.0 - blend) + texture2D(tex2, vUV).rgb * blend) * exposure, 1.0), vec4(gamma));
   }
   #endif
 #+END_SRC

@@ -36,7 +36,7 @@
                                   "view*model*vec4(position,0.0,1.0)")
                                 ";}")
                  :fs       #?(:clj
-                              (str "out vec4 fragCol;void main(){fragCol="
+                              (str "out vec4 fragColor;void main(){fragColor="
                                    (if attr? "vCol" "color")
                                    ";}")
                               :cljs
@@ -127,7 +127,7 @@ RGBA colors, however the alpha component is discarded.
               (glsl/glsl-spec-plain
                [vertex/mvp vertex/surface-normal light/lambert light/lambert-abs])
               (glsl/assemble))
-     :fs #?(:clj  "out vec4 fragCol;void main(){fragCol=vCol;}"
+     :fs #?(:clj  "out vec4 fragColor;void main(){fragColor=vCol;}"
             :cljs "void main(){gl_FragColor=vCol;}")
      :uniforms {:model      [:mat4 M44]
                 :view       :mat4
@@ -181,7 +181,7 @@ RGBA colors, however the alpha component is discarded.
 
 #+BEGIN_SRC glsl :noweb-ref phong-fs
   #if __VERSION__ >= 300
-  out vec4 fragCol;
+  out vec4 fragColor;
   #endif
 
   void main() {
@@ -200,7 +200,7 @@ RGBA colors, however the alpha component is discarded.
     }
     color += max(pow(specular, shininess), 0.0) * specularCol;
     #if __VERSION__ >= 300
-    fragCol = vec4(color, 1.0);
+    fragColor = vec4(color, 1.0);
     #else
     gl_FragColor = vec4(color, 1.0);
     #endif
@@ -258,14 +258,14 @@ RGBA colors, however the alpha component is discarded.
 
 #+BEGIN_SRC glsl :noweb-ref xray-fs
   #if __VERSION__ >= 300
-  out vec4 fragCol;
+  out vec4 fragColor;
   #endif
 
   void main() {
     float opac = abs(dot(normalize(-vNormal), normalize(-vIncident.xyz)));
     opac = 1.0 - pow(opac, alpha);
     #if __VERSION__ >= 300
-    fragCol = vec4(lightCol * opac, opac);
+    fragColor = vec4(lightCol * opac, opac);
     #else
     gl_FragColor = vec4(lightCol * opac, opac);
     #endif
@@ -318,7 +318,7 @@ RGBA colors, however the alpha component is discarded.
 
 #+BEGIN_SRC glsl :noweb-ref spot-fs
   #if __VERSION__ >= 300
-  out vec4 fragCol;
+  out vec4 fragColor;
   #endif
 
   vec3 gamma(vec3 color){
@@ -338,7 +338,7 @@ RGBA colors, however the alpha component is discarded.
                      spotlightInfluence(lightPosNormal, coneAngle, 10.0) *
                      spotlightAttenuation(lightPos, 10.0));
     #ifdef __VERSION__ >= 300
-    fragCol = vec4(gamma(excident), 1.0);
+    fragColor = vec4(gamma(excident), 1.0);
     #else
     gl_FragColor = vec4(gamma(excident), 1.0);
     #endif
@@ -566,7 +566,7 @@ RGBA colors, however the alpha component is discarded.
 
   (def shader-spec
     {:vs "void main(){vUV=uv;gl_Position=proj*model*vec4(position,0.0,1.0);}"
-     :fs #?(:clj  "out vec4 fragCol;void main(){fragCol=texture(tex,vUV)*tint;}"
+     :fs #?(:clj  "out vec4 fragColor;void main(){fragColor=texture(tex,vUV)*tint;}"
             :cljs "void main(){gl_FragColor=texture2D(tex,vUV)*tint;}")
      :uniforms {:proj       :mat4
                 :model      [:mat4 M44]
