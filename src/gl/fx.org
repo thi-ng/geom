@@ -51,8 +51,8 @@ TODO
     "void main(){vUV=uv;gl_Position=model*vec4(position,0.0,1.0);}")
 
   (def passthrough-fs
-    #?(:clj  "out vec4 fragCol;void main(){fragCol=texture(tex,vUV);}"
-       :cljs "void main(){gl_FragCol=texture(tex,vUV);}"))
+    #?(:clj  "out vec4 fragColor;void main(){fragColor=texture(tex,vUV);}"
+       :cljs "void main(){gl_FragColor=texture2D(tex,vUV);}"))
 
   (def shader-spec
     {:vs passthrough-vs
@@ -72,11 +72,12 @@ TODO
     [gl]
     {:attribs      (gl/make-attribute-buffers
                     gl glc/static-draw
-                    {:position {:data (native/float-buffer-direct [-1 -1, 1 -1, -1 1 1 1])
+                    {:position {:data (#?(:clj  native/float-buffer-direct
+                                          :cljs ta/float32) [-1 -1, 1 -1, -1 1 1 1])
                                 :size 2}
-                     :uv       {:data (native/float-buffer [0 0, 1 0, 0 1, 1 1])
+                     :uv       {:data (#?(:clj  native/float-buffer-direct
+                                          :cljs ta/float32) [0 0, 1 0, 0 1, 1 1])
                                 :size 2}})
-     :uniforms     {:tex 0}
      :num-vertices 4
      :mode         glc/triangle-strip})
 
@@ -110,10 +111,15 @@ TODO
      {} fbos))
 
   (defn init-pipeline-shaders
-    [gl shaders version]
-    (reduce-kv
-     (fn [acc k v] (assoc acc k (sh/make-shader-from-spec gl v version)))
-     {} shaders))
+    ([gl shaders]
+     (reduce-kv
+      (fn [acc k v] (assoc acc k (sh/make-shader-from-spec gl v)))
+      {} shaders))
+    #?(:clj
+       ([gl shaders version]
+        (reduce-kv
+         (fn [acc k v] (assoc acc k (sh/make-shader-from-spec gl v version)))
+         {} shaders))))
 
   (defn init-pipeline-passes
     [gl fbos shaders passes]
@@ -131,7 +137,12 @@ TODO
   (defn init-pipeline
     [gl {:keys [fbos width height shaders passes version] :as opts}]
     (let [fbos    (init-pipeline-fbos gl fbos width height)
-          shaders (init-pipeline-shaders gl shaders version)
+          shaders #?(:clj
+                     (if version
+                       (init-pipeline-shaders gl shaders version)
+                       (init-pipeline-shaders gl shaders))
+                     :cljs
+                     (init-pipeline-shaders gl shaders))
           passes  (init-pipeline-passes gl fbos shaders passes)]
       {:fbos    fbos
        :shaders shaders
@@ -199,7 +210,8 @@ TODO
          [[thi.ng.geom.gl.jogl.buffers :as native]
           [thi.ng.geom.gl.jogl.constants :as glc]]
          :cljs
-         [[thi.ng.geom.gl.webgl.constants :as glc]])))
+         [[thi.ng.geom.gl.webgl.constants :as glc]
+          [thi.ng.typedarrays.core :as ta]])))
 
   <<consts>>
 
