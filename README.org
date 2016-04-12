@@ -42,7 +42,6 @@
      - [[#license][License]]
 
 * About the project
-
 ** Leiningen coordinates
 *** Latest stable
 #+BEGIN_SRC clojure
@@ -63,9 +62,9 @@ tasks with hundreds of hours spent on refinining & optimizing the core
 API for both Clojure & Clojurescript.
 
 Unlike most other open source projects, this project has been
-developed in a literate programming style and is in active, regular
-development since late 2011, currently in its 4th iteration/rewrite
-cycle.
+developed in a literate programming style and has been in active,
+regular development since late 2011, currently in its 4th
+iteration/rewrite cycle.
 
 *You're highly encouraged to consult the source code, which contains documentation, examples, diagrams and general usage pattern hints and is increasingly being cross-linked between namespaces.*
 
@@ -95,8 +94,8 @@ running on a monthly basis & internationally):
 - [[http://thi.ng/ws-ldn-1][WS-LDN-1]]
 - [[http://thi.ng/ws-ldn-2][WS-LDN-2]]
 - [[http://thi.ng/ws-bln-1][WS-BLN-1]]
-- WS-LDN-5 (forthcoming)
-- WS-LDN-6 (forthcoming)
+- WS-LDN-5 (WebGL, source code forthcoming)
+- WS-LDN-6 (Desktop apps, OpenGL/WebGL, source code forthcoming)
 
 A preliminary list of other projects using this library:
 
@@ -115,16 +114,19 @@ A preliminary list of other projects using this library:
 - Comprehensive & optimized 2D/3D vector & matrix algebra / transformations
 - Custom, optimized vector types w/ GLSL style vector swizzling & full
   Clojure sequence API support
-- Unified, easy-to-learn core API defined via ~50 polymorphic protocols
+- Unified, easy-to-learn & extensible core API defined via ~50 polymorphic protocols
 - Unified OpenGL (v3.3+) & WebGL abstractions of common features,
   shader, buffer & texture utilities
+- Declarative GLSL shader specs and code generation
 - Optional OpenGL/WebGL shader presets based on [[http://thi.ng/shadergraph][thi.ng/shadergraph]]
-- OpenGL helpers for desktop app (wrapping [[http://jogamp.org/jogl][JOGL]])
+- Declarative OpenGL/WebGL FBO-based multi-pass shader pipeline
+  creation & execution tools
+- OpenGL helpers for desktop apps (wrapping [[http://jogamp.org/jogl][JOGL]])
+- React.js component helpers for WebGL
 - 3D SVG mesh renderer with software facet shader support
 - SVG generation API & optional conversion of geom types
 - Declararitve 2D data visualization module with various modes (area,
   bar, line, scatter, contours, stacks etc., cartesian/polar axes)
-
 - 35+ custom (mainly immutable) geometry types implementing core protocols
 - Shape analysis (surface area, circumference, distance & volume
   calculations) for all implemented types
@@ -134,10 +136,11 @@ A preliminary list of other projects using this library:
 - Optimized conversions to OpenGL/WebGL (with attributes, indexed, non-indexed)
 - Flexible & customizable mesh vertex attribute generators
 - Subdivision meshes (Catmull-Clark, Doo-Sabin, Butterfly)
-- Parallel-transport frame sweep mesh generation from point sequences (skinning)
+- Parallel-transport frame sweep mesh generation from point sequences
+  (skinning with arbitrary profiles, incl. profile morphing)
 - 3D Lathe meshes from 2D curves
 - 2D shape extrusions as 3D mesh (solid or walled)
-- 2D Delaunay triangulation
+- Delaunay triangulation of 2D point clouds
 - Tesselation of simple 2D polygons (no holes)
 - Basic SVG =<path>= parsing with different segment types
 - Basic insetting of simple 2D polygons (no miter support)
@@ -151,6 +154,7 @@ A preliminary list of other projects using this library:
 - 2D convex hull
 - 2D/3D quadtree/octree (mutable) for fast spatial indexing
 - Automatic curve generation from point seqs (cubic, Chaikin etc.)
+- Unfolding of 3D meshes to 2D (WIP) for digital fabrication
 ...
 
 *** Main geometry types
@@ -187,13 +191,14 @@ A preliminary list of other projects using this library:
 
 *** API scope
 
-Since the core library does only deal with pure "platonic" geometry,
-it doesn't directly address any display or rendering functionality at
-all. However a number of support modules are provided, incl. OpenGL
-3/4, WebGL & SVG support. 2D/3D shape/mesh exporters are provided as
-well and together with sister libraries like [[https://github.com/thi-ng/luxor][thi.ng/luxor]], it's also
-possible to generate complete 3D scenes for high quality & high
-resolution offline rendering using [[http://luxrender.net][Luxrender]].
+Since the core library does only deal with pure "platonic" geometry
+types, it doesn't directly address any display or rendering
+functionality at all. However a number of support modules are
+provided, incl. OpenGL 3/4, WebGL & SVG support, to allow visualizing
+results and/or exporting generated assets. 2D/3D shape/mesh exporters
+are provided as well and together with sister libraries like
+[[https://github.com/thi-ng/luxor][thi.ng/luxor]], it's also possible to generate complete 3D scenes for
+high quality & high resolution non-realtime rendering using [[http://luxrender.net][Luxrender]].
 
 Furthermore, providing all functionality under a common API for both
 Clojure & Clojurescript, makes it trivial to offload heavy operations
@@ -223,11 +228,17 @@ merged:
 | =thi.ng.geom.types.utils=        | =thi.ng.geom.utils= (merged)     |
 | =thi.ng.geom.types.utils.ptf=    | =thi.ng.geom.ptf=                |
 | =thi.ng.geom.webgl.animator=     | =thi.ng.geom.gl.webgl.animator=  |
+| =thi.ng.geom.webgl.buffers=      | =thi.ng.geom.gl.buffers=         |
+| =thi.ng.geom.webgl.core=         | =thi.ng.geom.gl.core=            |
+| =thi.ng.geom.webgl.shaders=      | =thi.ng.geom.gl.shaders=         |
 |----------------------------------+----------------------------------|
 |                                  | =thi.ng.geom.attribs=            |
 |                                  | =thi.ng.geom.indexedmesh=        |
 |                                  | =thi.ng.geom.meshface=           |
+|                                  | =thi.ng.geom.gl.arcball=         |
 |                                  | =thi.ng.geom.gl.camera=          |
+|                                  | =thi.ng.geom.gl.fx=              |
+|                                  | =thi.ng.geom.gl.fx.bloom=        |
 |                                  | =thi.ng.geom.gl.jogl.constants=  |
 |                                  | =thi.ng.geom.gl.webgl.constants= |
 |                                  | =thi.ng.geom.gl.glmesh=          |
