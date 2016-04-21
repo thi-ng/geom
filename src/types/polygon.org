@@ -293,7 +293,7 @@
              (d/successive-nth 2 (conj tpoints3 (tpoints3 0))))
        (when top?
          (if quad?
-           [tpoints3]
+           [[tpoints3]]
            (->> tpoints
                 (tessellate*)
                 (mapv (fn [[a b c]] [[(m/+ off a) (m/+ off b) (m/+ off c)]])))))))))
