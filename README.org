@@ -9,6 +9,8 @@
  - [[#about-the-project][About the project]]
      - [[#leiningen-coordinates][Leiningen coordinates]]
          - [[#latest-stable][Latest stable]]
+         - [[#latest-snapshot][Latest snapshot]]
+         - [[#additional-dependencies-for-jogl][Additional dependencies for JOGL]]
      - [[#overview][Overview]]
          - [[#example-usage][Example usage]]
          - [[#main-features-non-exhaustive-list][Main features (non-exhaustive list)]]
@@ -47,6 +49,37 @@
 #+BEGIN_SRC clojure
   [thi.ng/geom "0.0.908"]
 #+END_SRC
+
+*** Latest snapshot
+#+BEGIN_SRC clojure
+  [thi.ng/geom "0.0.1151-SNAPSHOT"]
+#+END_SRC
+
+*** Additional dependencies for JOGL
+
+If you're intending to use this library's OpenGL functionality under
+Clojure, the following additional dependencies must be added to your
+project (for each platform you intend to use):
+
+#+BEGIN_SRC clojure
+[org.jogamp.gluegen/gluegen-rt "2.3.2" :classifier "natives-macosx-universal"]
+[org.jogamp.jogl/jogl-all "2.3.2" :classifier "natives-macosx-universal"]
+#+END_SRC
+
+The full list of supported platform =:classifier='s:
+
+| natives-android-aarch64.jar  |
+| natives-android-armv6.jar    |
+| natives-linux-amd64.jar      |
+| natives-linux-armv6.jar      |
+| natives-linux-armv6hf.jar    |
+| natives-linux-i586.jar       |
+| natives-macosx-universal.jar |
+| natives-solaris-amd64.jar    |
+| natives-solaris-i586.jar     |
+| natives-windows-amd64.jar    |
+| natives-windows-i586.jar     |
+
 ** Overview
 
 thi.ng/geom is a comprehensive and modular geometry & visualization
