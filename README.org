@@ -58,8 +58,8 @@
 *** Additional dependencies for JOGL
 
 If you're intending to use this library's OpenGL functionality under
-Clojure, the following additional dependencies must be added to your
-project (for each platform you intend to use):
+Clojure, the following additional native dependencies must be added to
+your project (for each platform you intend to use):
 
 #+BEGIN_SRC clojure
 [org.jogamp.gluegen/gluegen-rt "2.3.2" :classifier "natives-macosx-universal"]
