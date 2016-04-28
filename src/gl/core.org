@@ -848,14 +848,17 @@ Shader specs can specify WebGL render state flags which can then be
 automatically setup using the =prepare-render-state= function below.
 Currently the following options are supported:
 
-| *Key*         | *Values*                               | *Description*                  |
-|---------------+----------------------------------------+--------------------------------|
-| =:depth-test= | boolean                                | enabled if true, else disabled |
-| =:blend=      | boolean                                | enabled if true, else disabled |
-| =:blend-fn=   | 2-elem vector =[src-coeff dest-coeff]= | only used if =:blend true=     |
-|               | [[https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendFunc.xml][reference]]                              |                                |
-| =:tex=        | single texture or seq of textures      | binds textures to tex. units   |
-|               |                                        | starting from 0                |
+| *Key*         | *Values*                                     | *Description*                  |
+|---------------+----------------------------------------------+--------------------------------|
+| =:depth-test= | boolean                                      | enabled if true, else disabled |
+| =:blend=      | boolean                                      | enabled if true, else disabled |
+| =:blend-fn=   | 2-elem vector =[src-coeff dest-coeff]=       | blend function coeffs,         |
+|               | [[https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendFunc.xml][reference]]                                    | only used if =:blend true=     |
+| =:blend-eq=   | one of: =glc/func-add=, =glc/func-subtract=, | blend equation mode            |
+|               | =glc/func-reverse-subtract=                  |                                |
+|               | [[https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendEquation.xml][reference]]                                    |                                |
+| =:tex=        | single texture or seq of textures            | binds textures to tex. units   |
+|               |                                              | starting from 0                |
 
 #+BEGIN_SRC clojure :noweb-ref draw
   (defn bind-sequentially
@@ -872,15 +875,16 @@ Currently the following options are supported:
     #?(:clj  [^GL3 gl {:keys [state]}]
        :cljs [^WebGLRenderingContext gl {:keys [state]}])
     (when state
-      (if (get state :depth-test)
+      (if (get state :depth-test true)
         (enable gl glc/depth-test)
         (disable gl glc/depth-test))
       (if (get state :blend)
-        (let [[src dest] (or (get state :blend-fn) [glc/src-alpha glc/one])]
+        (let [[src dest] (or (get state :blend-fn) [glc/src-alpha glc/one])
+              eq         (or (get state :blend-eq glc/func-add))]
           (doto gl
             (enable glc/blend)
-            #?(:clj  (.glBlendFunc src dest)
-               :cljs (.blendFunc src dest))))
+            (#?(:clj .glBlendFunc :cljs .blendFunc) src dest)
+            (#?(:clj .glBlendEquation :cljs .blendEquation) eq)))
         (disable gl glc/blend))
       (when-let [tex (get state :tex)]
         (if (sequential? tex)

@@ -57,7 +57,9 @@
                 :proj  :mat4
                 :tex   [:sampler2D 0]
                 :time  :float}
-     :state    {:depth-test true}})
+     :state    {:depth-test false
+                :blend      true
+                :blend-fn   [glc/src-alpha glc/one]}})
 
   (defn init
     [^GLAutoDrawable drawable]
