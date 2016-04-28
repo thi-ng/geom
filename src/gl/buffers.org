@@ -5,7 +5,7 @@
      - [[#frame-buffer][Frame buffer]]
      - [[#render-buffer][Render buffer]]
      - [[#textures][Textures]]
-         - [[#todo-currently-webgl-only][TODO Currently WebGL only]]
+         - [[#float-textures][Float textures]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
 * thi.ng.geom.gl.buffers
@@ -148,7 +148,6 @@
 #+END_SRC
 
 ** Textures
-*** TODO Currently WebGL only
 
 | *Key*          | *Default*          | *Description*           |
 |----------------+--------------------+-------------------------|
@@ -270,7 +269,6 @@
        ([^WebGLRenderingContext gl canvas opts]
         (->> opts
              (merge {:image       canvas
-                     :format      glc/rgba
                      :filter      [glc/linear glc/linear]
                      :wrap        [glc/clamp-to-edge glc/clamp-to-edge]
                      :flip        false
@@ -311,6 +309,14 @@
                  (when-let [cb (get opts :callback)] (cb tex img))))
          (set! (.-src img) (get opts :src))
          tex)))
+#+END_SRC
+
+*** Float textures
+
+#+BEGIN_SRC clojure
+;; gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.FLOAT, null);
+
+(make-texture gl {:width 512 :height 512 :type glc/float})
 #+END_SRC
 
 ** Complete namespace definition
