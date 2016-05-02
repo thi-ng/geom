@@ -134,7 +134,7 @@ attribute value (and optionally transform it).
     ([h pow2?]
      (let [w  (* h 6)
            tw (if pow2? (m/ceil-pow2 w) w)
-           fw (/ w tw 6.0)]
+           fw (/ (/ w tw) 6.0)]
        (mapv #(uv-rect-for-size h h (* % fw) 0.0 fw 1.0) (range 6)))))
 
   (defn uv-cube-map-v
@@ -142,7 +142,7 @@ attribute value (and optionally transform it).
     ([w pow2?]
      (let [h  (* w 6)
            th (if pow2? (m/ceil-pow2 h) h)
-           fh (/ h th 6.0)]
+           fh (/ (/ h th) 6.0)]
        (mapv #(uv-rect-for-size w w 0.0 (* % fh) 1.0 fh) (range 6)))))
 
   (def uv-default-rect [(vec2) (vec2 1.0 0.0) (vec2 1.0) (vec2 0.0 1.0)])
