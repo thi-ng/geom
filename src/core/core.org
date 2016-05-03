@@ -90,14 +90,14 @@ implemented.
 **** IScale
 #+BEGIN_SRC clojure :noweb-ref protos-tx
   (defprotocol IScale
-    (scale [_ s] [_ a b] [_ a b c])
+    (scale [_ s])
     (scale-size [_ s]))
 #+END_SRC
 
 **** IShear
 #+BEGIN_SRC clojure :noweb-ref protos-tx
   (defprotocol IShear
-    (shear [_ s] [_ sx sy] [_ sx sy sz]))
+    (shear [_ s]))
 #+END_SRC
 
 **** ITransform
@@ -109,7 +109,7 @@ implemented.
 **** ITranslate
 #+BEGIN_SRC clojure :noweb-ref protos-tx
   (defprotocol ITranslate
-    (translate [_ t] [_ x y] [_ x y z]))
+    (translate [_ t]))
 #+END_SRC
 
 **** IVectorTransform

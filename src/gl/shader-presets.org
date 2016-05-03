@@ -611,6 +611,6 @@ RGBA colors, however the alpha component is discarded.
           x       (m/map-interval (nth pos 0) 0 vw -1 1)
           y       (m/map-interval (nth pos 1) 0 vh -1 1)
           s       (vec3 (* 2.0 (/ width vw)) (* 2.0 (/ height vh)) 1.0)
-          spec    (assoc-in spec [:uniforms :model] (-> M44 (g/translate x y 0) (g/scale s)))]
+          spec    (assoc-in spec [:uniforms :model] (-> M44 (g/translate (vec3 x y 0)) (g/scale s)))]
       (gl/draw-with-shader gl spec)))
 #+END_SRC

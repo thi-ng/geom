@@ -121,8 +121,7 @@ them from other templates.
   (replace-regexp-in-string "{{type}}" type
   "g/IRotate
   (rotate
-   [_ theta]
-   ({{type}}. (mapv #(g/rotate % theta) (get _ :points))))")
+   [_ theta] ({{type}}. (mapv #(g/rotate % theta) (get _ :points))))")
 #+END_SRC
 
 ** IRotate3D
@@ -132,14 +131,11 @@ them from other templates.
   (replace-regexp-in-string "{{type}}" type
   "g/IRotate3D
   (rotate-x
-   [_ theta]
-   ({{type}}. (mapv #(g/rotate-x % theta) (get _ :points))))
+   [_ theta] ({{type}}. (mapv #(g/rotate-x % theta) (get _ :points))))
   (rotate-y
-   [_ theta]
-   ({{type}}. (mapv #(g/rotate-y % theta) (get _ :points))))
+   [_ theta] ({{type}}. (mapv #(g/rotate-y % theta) (get _ :points))))
   (rotate-z
-   [_ theta]
-   ({{type}}. (mapv #(g/rotate-z % theta) (get _ :points))))
+   [_ theta] ({{type}}. (mapv #(g/rotate-z % theta) (get _ :points))))
   (rotate-around-axis
    [_ axis theta]
    ({{type}}.
@@ -170,12 +166,7 @@ them from other templates.
   (replace-regexp-in-string "{{type}}" type
   "g/IScale
   (scale
-   ([_ s]
-      ({{type}}. (mapv #(m/* % s) (get _ :points))))
-   ([_ sx sy]
-      ({{type}}. (mapv #(m/* % sx sy) (get _ :points))))
-   ([_ sx sy sz]
-      ({{type}}. (mapv #(m/* % sx sy sz) (get _ :points)))))
+   [_ s] ({{type}}. (mapv #(m/* % s) (get _ :points))))
   (scale-size
    [_ s] ({{type}}. (gu/scale-size s (get _ :points))))")
 #+END_SRC
@@ -187,8 +178,7 @@ them from other templates.
   (replace-regexp-in-string "{{type}}" type
   "g/ITranslate
   (translate
-   [_ t]
-   ({{type}}. (mapv #(m/+ % t) (get _ :points))))")
+   [_ t] ({{type}}. (mapv #(m/+ % t) (get _ :points))))")
 #+END_SRC
 
 ** ITransform
@@ -198,8 +188,7 @@ them from other templates.
   (replace-regexp-in-string "{{type}}" type
   "g/ITransform
   (transform
-   [_ m]
-   ({{type}}. (mapv #(g/transform-vector m %) (get _ :points))))")
+   [_ m] ({{type}}. (mapv #(g/transform-vector m %) (get _ :points))))")
 #+END_SRC
 
 ** IVolume (zero)

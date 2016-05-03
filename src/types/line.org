@@ -155,7 +155,7 @@ further below.
    ([{[p q] :points} o]
     (let [c (m/- o (m/mix p q))]
       ({{type}}. [(m/+ p c) (m/+ q c)]))))
-  (centroid [{p :points}] (m/mix (p 0) (p 1)))"))
+  (centroid [{p :points}] (m/mix (nth p 0) (nth p 1)))"))
 #+END_SRC
 *** IBounds
 #+NAME: tpl-bounds
@@ -164,13 +164,13 @@ further below.
    (replace-regexp-in-string "{{fn}}" fn
   "g/IBounds
   (bounds [_] ({{fn}} (get _ :points)))
-  (width  [{p :points}] (m/abs* (- ((p 0) 0) ((p 1) 0))))
-  (height [{p :points}] (m/abs* (- ((p 0) 1) ((p 1) 1))))"))
+  (width  [{p :points}] (m/abs* (- (nth (nth p 0) 0) (nth (nth p 1) 0))))
+  (height [{p :points}] (m/abs* (- (nth (nth p 0) 1) (nth (nth p 1) 1))))"))
 #+END_SRC
 *** ICircumference
 #+BEGIN_SRC clojure :noweb-ref tpl-circum
   g/ICircumference
-  (circumference [{p :points}] (g/dist (p 0) (p 1)))
+  (circumference [{p :points}] (g/dist (nth p 0) (nth p 1)))
 #+END_SRC
 *** IExtrude
 #+BEGIN_SRC clojure :noweb-ref tpl-extrude
@@ -181,10 +181,10 @@ further below.
      :or {depth 1.0 scale 1.0} :as opts}]
    (let [tpoints (if (= 1.0 scale) points (get (g/scale-size _ scale) :points))
          off     (or offset (vec3 0 0 depth))
-         a       (vec3 (points 0))
-         b       (vec3 (points 1))
-         ta      (m/+ off (tpoints 0))
-         tb      (m/+ off (tpoints 1))]
+         a       (vec3 (nth points 0))
+         b       (vec3 (nth points 1))
+         ta      (m/+ off (nth tpoints 0))
+         tb      (m/+ off (nth tpoints 1))]
      (g/add-face
       (or mesh (bm/basic-mesh))
       (attr/generate-face-attribs [a b tb ta] 0 attribs opts))))
@@ -194,7 +194,7 @@ further below.
   g/IVertexAccess
   (vertices
    ([_] (get _ :points))
-   ([{p :points} res] (gu/sample-segment-with-res (p 0) (p 1) res true)))
+   ([{p :points} res] (gu/sample-segment-with-res (nth p 0) (nth p 1) res true)))
   g/IEdgeAccess
   (edges
    ([_] [(get _ :points)])
@@ -203,13 +203,13 @@ further below.
   (vertex-neighbors
    [{[p q] :points} v] (condp = v, p q, q p, nil))
   (vertex-valence
-   [{p :points} v] (if (or (= v (p 0)) (= v (p 1))) 1 0))
+   [{p :points} v] (if (or (= v (nth p 0)) (= v (nth p 1))) 1 0))
 #+END_SRC
 *** IMagnitude
 #+BEGIN_SRC clojure :noweb-ref tpl-mag
   m/IMagnitude
-  (mag [{p :points}] (g/dist (p 0) (p 1)))
-  (mag-squared [{p :points}] (g/dist-squared (p 0) (p 1)))
+  (mag [{p :points}] (g/dist (nth p 0) (nth p 1)))
+  (mag-squared [{p :points}] (g/dist-squared (nth p 0) (nth p 1)))
 #+END_SRC
 *** TODO INormalize
 #+NAME: tpl-normalize
@@ -247,7 +247,7 @@ further below.
   "g/IRotate
   (rotate
    [{p :points} theta]
-   ({{type}}. [(g/rotate (p 0) theta) (g/rotate (p 1) theta)]))"))
+   ({{type}}. [(g/rotate (nth p 0) theta) (g/rotate (nth p 1) theta)]))"))
 #+END_SRC
 *** ISample
 #+BEGIN_SRC clojure :noweb-ref tpl-sample
@@ -269,18 +269,14 @@ further below.
    (replace-regexp-in-string "{{type}}" type
   "g/IScale
   (scale
-   ([{p :points} s]
-    ({{type}}. [(m/* (p 0) s) (m/* (p 1) s)]))
-   ([{p :points} sx sy]
-    ({{type}}. [(m/* (p 0) sx sy) (m/* (p 1) sx sy)])))
+   [{p :points} s] ({{type}}. [(m/* (nth p 0) s) (m/* (nth p 1) s)]))
   (scale-size
    [{[p q] :points} s]
    (let [c (m/mix p q)]
      ({{type}}. [(m/madd (m/- p c) s c) (m/madd (m/- q c) s c)])))
   g/ITranslate
   (translate
-   [{p :points} t]
-   ({{type}}. [(m/+ (p 0) t) (m/+ (p 1) t)]))
+   [{p :points} t] ({{type}}. [(m/+ (nth p 0) t) (m/+ (nth p 1) t)]))
   g/ITransform
   (transform
    [{p :points} m]
@@ -302,7 +298,7 @@ further below.
 #+BEGIN_SRC clojure :noweb-ref impl2
   g/IBoundary
   (contains-point?
-   [{p :points} q] (m/in-range? 0.0 1.0 (gu/closest-point-coeff (vec2 q) (p 0) (p 1))))
+   [{p :points} q] (m/in-range? 0.0 1.0 (gu/closest-point-coeff (vec2 q) (nth p 0) (nth p 1))))
 #+END_SRC
 **** IBounds                                                       :template:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
@@ -359,7 +355,7 @@ further below.
 #+BEGIN_SRC clojure :noweb-ref impl2
   g/IProximity
   (closest-point
-   [{p :points} q] (gu/closest-point-on-segment (vec2 q) (p 0) (p 1)))
+   [{p :points} q] (gu/closest-point-on-segment (vec2 q) (nth p 0) (nth p 1)))
 #+END_SRC
 **** IReflect                                                      :template:
 #+BEGIN_SRC clojure :noweb-ref impl2 :noweb yes
@@ -395,12 +391,12 @@ further below.
 #+BEGIN_SRC clojure :noweb-ref impl3
   g/IBoundary
   (contains-point?
-   [{p :points} q] (m/in-range? 0.0 1.0 (gu/closest-point-coeff (vec3 q) (p 0) (p 1))))
+   [{p :points} q] (m/in-range? 0.0 1.0 (gu/closest-point-coeff (vec3 q) (nth p 0) (nth p 1))))
 #+END_SRC
 **** IBounds                                                       :template:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
   <<tpl-bounds(fn="gu/bounding-box")>>
-  (depth  [{p :points}] (m/abs* (- ((p 0) 2) ((p 1) 2))))
+  (depth  [{p :points}] (m/abs* (- (nth (nth p 0) 2) (nth (nth p 1) 2))))
 #+END_SRC
 **** IBoundingSphere
 #+BEGIN_SRC clojure :noweb-ref impl3
@@ -453,7 +449,7 @@ further below.
 #+BEGIN_SRC clojure :noweb-ref impl3
   g/IProximity
   (closest-point
-   [{p :points} q] (gu/closest-point-on-segment (vec3 q) (p 0) (p 1)))
+   [{p :points} q] (gu/closest-point-on-segment (vec3 q) (nth p 0) (nth p 1)))
 #+END_SRC
 **** IReflect                                               :verify:template:
 #+BEGIN_SRC clojure :noweb-ref impl3 :noweb yes
@@ -468,18 +464,18 @@ further below.
   g/IRotate3D
   (rotate-x
    [{p :points} theta]
-   (thi.ng.geom.types.Line3. [(g/rotate-x (p 0) theta) (g/rotate-x (p 1) theta)]))
+   (thi.ng.geom.types.Line3. [(g/rotate-x (nth p 0) theta) (g/rotate-x (nth p 1) theta)]))
   (rotate-y
    [{p :points} theta]
-   (thi.ng.geom.types.Line3. [(g/rotate-y (p 0) theta) (g/rotate-y (p 1) theta)]))
+   (thi.ng.geom.types.Line3. [(g/rotate-y (nth p 0) theta) (g/rotate-y (nth p 1) theta)]))
   (rotate-z
    [{p :points} theta]
-   (thi.ng.geom.types.Line3. [(g/rotate-z (p 0) theta) (g/rotate-z (p 1) theta)]))
+   (thi.ng.geom.types.Line3. [(g/rotate-z (nth p 0) theta) (g/rotate-z (nth p 1) theta)]))
   (rotate-around-axis
    [{p :points} axis theta]
    (thi.ng.geom.types.Line3.
-    [(g/rotate-around-axis (p 0) axis theta)
-     (g/rotate-around-axis (p 1) axis theta)]))
+    [(g/rotate-around-axis (nth p 0) axis theta)
+     (g/rotate-around-axis (nth p 1) axis theta)]))
   <<tpl-rotate(type="thi.ng.geom.types.Line3")>>
   <<tpl-tx(type="thi.ng.geom.types.Line3")>>
 #+END_SRC

@@ -378,9 +378,7 @@ of the original with inner sorting over XYZ.
 
   g/IScale
   (scale
-   ([_ s] (thi.ng.geom.types.AABB. (m/* (get _ :p) s) (m/* (get _ :size) s)))
-   ([_ sx sy] (thi.ng.geom.types.AABB. (m/* (get _ :p) sx sy) (m/* (get _ :size) sx sy)))
-   ([_ sx sy sz] (thi.ng.geom.types.AABB. (m/* (get _ :p) sx sy sz) (m/* (get _ :size) sx sy sz))))
+   [_ s] (thi.ng.geom.types.AABB. (m/* (get _ :p) s) (m/* (get _ :size) s)))
   (scale-size
    [_ s]
    (let [s' (m/* (get _ :size) s)]

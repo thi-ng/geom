@@ -292,46 +292,25 @@ Check discrepancy with SVG transforms
   (scale
    [_ s]
    (m/* _ (Matrix32.
-             (if (number? s) s (s 0)) 0.0 0.0
-             0.0 (if (number? s) s (s 1)) 0.0
+             (if (number? s) s (nth s 0)) 0.0 0.0
+             0.0 (if (number? s) s (nth s 1)) 0.0
              nil _meta)))
-  (scale
-   [_ sx sy]
-   (if (number? sx)
-     (if (number? sy)
-       (m/* _ (Matrix32. sx 0.0 0.0, 0.0 sy 0.0 nil _meta))
-       (m/* _ (Matrix32. (* sx (sy 0)) 0.0 0.0, 0.0 (* sx (sy 1)) 0.0 nil _meta)))
-     (if (number? sy)
-       (m/* _ (Matrix32. (* sy (sx 0)) 0.0 0.0, 0.0 (* sy (sx 1)) 0.0 nil _meta))
-       (m/* _ (Matrix32. (* (sx 0) (sy 0)) 0.0 0.0, 0.0 (* (sx 1) (sy 1)) 0.0 nil _meta)))))
 
   g/IShear
   (shear
    [_ s]
    (m/* _ (Matrix32.
-             1.0 (if (number? s) s (s 0)) 0.0,
-             (if (number? s) s (s 1)) 1.0 0.0
+             1.0 (if (number? s) s (nth s 0)) 0.0,
+             (if (number? s) s (nth s 1)) 1.0 0.0
              nil _meta)))
-  (shear
-   [_ sx sy]
-   (m/* _ (Matrix32. 1.0 sx 0.0, sy 1.0 0.0 nil _meta)))
 
   g/ITranslate
   (translate
    [_ t]
    (m/* _ (Matrix32.
-             1.0 0.0 (if (number? t) t (t 0))
-             0.0 1.0 (if (number? t) t (t 1))
+             1.0 0.0 (if (number? t) t (nth t 0))
+             0.0 1.0 (if (number? t) t (nth t 1))
              nil _meta)))
-  (translate
-   [_ tx ty]
-   (if (number? tx)
-     (if (number? ty)
-       (m/* _ (Matrix32. 1.0 0.0 tx, 0.0 1.0 ty nil _meta))
-       (m/* _ (Matrix32. 1.0 0.0 (* tx (ty 0)), 0.0 1.0 (* tx (ty 1)) nil _meta)))
-     (if (number? ty)
-       (m/* _ (Matrix32. 1.0 0.0 (* ty (tx 0)), 0.0 1.0 (* ty (tx 1)) nil _meta))
-       (m/* _ (Matrix32. 1.0 0.0 (* (tx 0) (ty 0)), 0.0 1.0 (* (tx 1) (ty 1)) nil _meta)))))
 
   g/ITransform
   (transform
@@ -670,15 +649,12 @@ ordering (row major).
   (scale
    [_ s]
    (let [[x y z] (if (number? s) [s s s] s)]
-     (g/scale _ x y z)))
-  (scale
-   [_ x y z]
-   (Matrix44.
-    (* m00 x) (* m01 x) (* m02 x) (* m03 x)
-    (* m10 y) (* m11 y) (* m12 y) (* m13 y)
-    (* m20 z) (* m21 z) (* m22 z) (* m23 z)
-    m30 m31 m32 m33
-    nil _meta))
+     (Matrix44.
+      (* m00 x) (* m01 x) (* m02 x) (* m03 x)
+      (* m10 y) (* m11 y) (* m12 y) (* m13 y)
+      (* m20 z) (* m21 z) (* m22 z) (* m23 z)
+      m30 m31 m32 m33
+      nil _meta)))
 
   g/IRotate
   (rotate
@@ -743,18 +719,15 @@ ordering (row major).
   (translate
    [_ t]
    (let [[x y z] (if (number? t) [t t t] t)]
-     (g/translate _ x y z)))
-  (translate
-   [_ x y z]
-   (Matrix44.
-    m00 m01 m02 m03
-    m10 m11 m12 m13
-    m20 m21 m22 m23
-    (mm/madd m00 x m10 y m20 z m30)
-    (mm/madd m01 x m11 y m21 z m31)
-    (mm/madd m02 x m12 y m22 z m32)
-    (mm/madd m03 x m13 y m23 z m33)
-    nil _meta))
+     (Matrix44.
+      m00 m01 m02 m03
+      m10 m11 m12 m13
+      m20 m21 m22 m23
+      (mm/madd m00 x m10 y m20 z m30)
+      (mm/madd m01 x m11 y m21 z m31)
+      (mm/madd m02 x m12 y m22 z m32)
+      (mm/madd m03 x m13 y m23 z m33)
+      nil _meta)))
 
   g/ITransform
   (transform
@@ -989,8 +962,8 @@ https://github.com/stefanmirea/view-frustum-culling/blob/master/lab_camera.hpp#L
      (let [w2 (/ width 2.0)
            h2 (/ height 2.0)]
        (-> M32
-           (g/translate w2 h2)
-           (m/* (g/scale M32 w2 (if invert-y? h2 (- h2))))))))
+           (g/translate (vec2 w2 h2))
+           (m/* (g/scale M32 (vec2 w2 (if invert-y? h2 (- h2)))))))))
 #+END_SRC
 
 *** Projection & un-projection
