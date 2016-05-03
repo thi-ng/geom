@@ -696,17 +696,11 @@
   (scale
    [_ v]
    (vm/v2-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) * buf v _meta))
-  (scale
-   [_ v1 v2]
-   (vm/v2-op1-xy #?(:clj (double-array) :cljs (new js/Float32Array)) * buf v1 v2 1.0 _meta))
 
   g/ITranslate
   (translate
    [_ v]
    (vm/v2-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) + buf v _meta))
-  (translate
-   [_ v1 v2]
-   (vm/v2-op1-xy #?(:clj (double-array) :cljs (new js/Float32Array)) + buf v1 v2 0.0 _meta))
 
   g/IRotate
   (rotate
@@ -1469,23 +1463,11 @@
   (scale
    [_ v]
    (vm/v3-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) * buf v _meta))
-  (scale
-   [_ v1 v2]
-   (vm/v3-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) * * buf v1 v2 1.0 1.0 _meta))
-  (scale
-   [_ x y z]
-   (vm/v3-op1-xyz #?(:clj (double-array) :cljs (new js/Float32Array)) * buf x y z _meta))
 
   g/ITranslate
   (translate
    [_ v]
    (vm/v3-op1 #?(:clj (double-array) :cljs (new js/Float32Array)) + buf v _meta))
-  (translate
-   [_ v1 v2]
-   (vm/v3-op2 #?(:clj (double-array) :cljs (new js/Float32Array)) + + buf v1 v2 0.0 0.0 _meta))
-  (translate
-   [_ x y z]
-   (vm/v3-op1-xyz #?(:clj (double-array) :cljs (new js/Float32Array)) + buf x y z _meta))
 
   g/IRotate
   (rotate [_ theta] (g/rotate-z _ theta))

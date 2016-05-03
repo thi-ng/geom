@@ -390,12 +390,7 @@ of triangles of the subdivided rects.
 
   g/IScale
   (scale
-   ([_ s]
-      (thi.ng.geom.types.Rect2.
-       (m/* (get _ :p) s) (m/* (get _ :size) s)))
-   ([_ a b]
-      (thi.ng.geom.types.Rect2.
-       (m/* (get _ :p) a b) (m/* (get _ :size) a b))))
+   [_ s] (thi.ng.geom.types.Rect2. (m/* (get _ :p) s) (m/* (get _ :size) s)))
   (scale-size
    [_ s]
    (let [s' (m/* (get _ :size) s)]

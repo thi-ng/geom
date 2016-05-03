@@ -181,38 +181,10 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IRotate
   (rotate [_ theta] (g/rotate-z _ theta))
-  g/IRotate3D
-  (rotate-x
-   [_ theta]
-   (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-x % theta) (get _ :points))))
-  (rotate-y
-   [_ theta]
-   (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-y % theta) (get _ :points))))
-  (rotate-z
-   [_ theta]
-   (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-z % theta) (get _ :points))))
-  (rotate-around-axis
-   [_ axis theta]
-   (thi.ng.geom.types.Tetrahedron.
-    (mapv #(g/rotate-around-axis % axis theta) (get _ :points))))
-  g/IScale
-  (scale
-   ([_ s]
-      (thi.ng.geom.types.Tetrahedron. (mapv #(m/* % s) (get _ :points))))
-   ([_ sx sy]
-      (thi.ng.geom.types.Tetrahedron. (mapv #(m/* % sx sy) (get _ :points))))
-   ([_ sx sy sz]
-      (thi.ng.geom.types.Tetrahedron. (mapv #(m/* % sx sy sz) (get _ :points)))))
-  (scale-size
-   [_ s] (thi.ng.geom.types.Tetrahedron. (gu/scale-size s (get _ :points))))
-  g/ITranslate
-  (translate
-   [_ t]
-   (thi.ng.geom.types.Tetrahedron. (mapv #(m/+ % t) (get _ :points))))
-  g/ITransform
-  (transform
-   [_ m]
-   (thi.ng.geom.types.Tetrahedron. (mapv #(g/transform-vector m %) (get _ :points))))
+  <<lob-geom-rotate3d(type="thi.ng.geom.types.Tetrahedron")>>
+  <<lob-geom-scale(type="thi.ng.geom.types.Tetrahedron")>>
+  <<lob-geom-translate(type="thi.ng.geom.types.Tetrahedron")>>
+  <<lob-geom-tx(type="thi.ng.geom.types.Tetrahedron")>>
 #+END_SRC
 **** IVolume
 - http://mathcentral.uregina.ca/QQ/database/QQ.09.03/peter2.html

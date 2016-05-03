@@ -229,8 +229,6 @@ These protocol methods are used internally by =g/into=.
   g/IScale
   (scale
    [_ s] (transform-vertices #(m/*! % s) vertices (* id 9)) _)
-  (scale
-   [_ sx sy sz] (transform-vertices #(m/*! % sx sy sz) vertices (* id 9)) _)
   (scale-size
    [_ s]
    (let [c (g/centroid _)]
@@ -418,8 +416,6 @@ These protocol methods are used internally by =g/into=.
   g/IScale
   (scale
    [_ s] (transform-vertices #(m/*! % s) vertices (* id 3)) _)
-  (scale
-   [_ sx sy sz] (transform-vertices #(m/*! % sx sy sz) vertices (* id 3)) _)
   (scale-size
    [_ s]
    (let [c (g/centroid _)]

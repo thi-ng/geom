@@ -88,7 +88,7 @@
   g/ICenter
   (center
    ([_]   (g/center _ (vec3)))
-   ([_ o] (g/transform _ (g/translate M44 (m/- o (g/centroid _))))))
+   ([_ o] (g/translate _ (m/- o (g/centroid _)))))
   (centroid
    [_]    (gu/centroid (seq (get _ :vertices))))
 #+END_SRC
@@ -196,10 +196,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IScale
   (scale
-   ([_ s]
-      (gu/transform-mesh _ add-face* #(m/* % s)))
-   ([_ sx sy sz]
-      (gu/transform-mesh _ add-face* #(m/* % sx sy sz))))
+   [_ s] (gu/transform-mesh _ add-face* #(m/* % s)))
   (scale-size
    [_ s]
    (let [c (g/centroid _)]

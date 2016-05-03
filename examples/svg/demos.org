@@ -310,12 +310,12 @@ of intersection and then visualize the result in SVG:
            (assoc svg/stroke-round :id "spiral")))
         (svg/instance
          "spiral"
-         {:transform (-> M32 (g/translate 150 150))
+         {:transform (-> M32 (g/translate (vec2 150 150)))
           :stroke "url(#rainbow-rad)"
           :stroke-width 10})
         (svg/instance
          "spiral"
-         {:transform (-> M32 (g/translate 450 150) (g/rotate m/PI))
+         {:transform (-> M32 (g/translate (vec2 450 150)) (g/rotate m/PI))
           :stroke "url(#rainbow-lin)"
           :stroke-width 5}))
        (svg/serialize)

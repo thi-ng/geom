@@ -168,9 +168,7 @@
 #+BEGIN_SRC clojure :noweb-ref impl
   g/IScale
   (scale
-   ([_ s] (plane-with-point (m/* (g/centroid _) s) (get _ :n)))
-   ([_ a b] (plane-with-point (m/* (g/centroid _) a b) (get _ :n)))
-   ([_ a b c] (plane-with-point (m/* (g/centroid _) a b c) (get _ :n))))
+   [_ s] (plane-with-point (m/* (g/centroid _) s) (get _ :n)))
   (scale-size
    ([_ s] _))
   g/ITranslate
