@@ -2,11 +2,11 @@
 
 * Contents                                                         :toc_4_gh:
  - [[#thinggeomglbuffers][thi.ng.geom.gl.buffers]]
-     - [[#frame-buffer][Frame buffer]]
-     - [[#render-buffer][Render buffer]]
-     - [[#textures][Textures]]
-         - [[#float-textures][Float textures]]
-     - [[#complete-namespace-definition][Complete namespace definition]]
+   - [[#frame-buffer][Frame buffer]]
+   - [[#render-buffer][Render buffer]]
+   - [[#textures][Textures]]
+     - [[#float-textures][Float textures]]
+   - [[#complete-namespace-definition][Complete namespace definition]]
 
 * thi.ng.geom.gl.buffers
 
@@ -157,7 +157,7 @@
 | =:type=        | =glc/unsigned-byte= | Encoding                |
 | =:filter=      | nil                | Interpolation [min mag] |
 | =:wrap=        | nil                | Texture wrap mode [s t] |
-| =:filp=        | nil                | Vertical flip?          |
+| =:flip=        | nil                | Vertical flip?          |
 | =:premultiply= | nil                | Premultiplied alpha?    |
 | =:width=       | nil                | Texture width           |
 | =:height=      | nil                | Texture height          |
