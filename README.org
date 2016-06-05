@@ -5,6 +5,8 @@
 
 [[https://gitter.im/thi-ng/geom?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge][https://badges.gitter.im/Join%20Chat.svg]]
 
+[[https://github.com/thi-ng/discussion][Discussion forum]] | [[http://thi.ng/][thi.ng website]] | [[http://workshop.thi.ng/][training workshops]]
+
 * Contents                                                         :toc_3_gh:
  - [[#about-the-project][About the project]]
      - [[#leiningen-coordinates][Leiningen coordinates]]
@@ -52,7 +54,7 @@
 
 *** Latest snapshot
 #+BEGIN_SRC clojure
-  [thi.ng/geom "0.0.1151-SNAPSHOT"]
+  [thi.ng/geom "0.0.1158-SNAPSHOT"]
 #+END_SRC
 
 *** Additional dependencies for JOGL
@@ -524,7 +526,7 @@ target/geom-<<project-version()>>.js
 **** [[https://github.com/thi-ng/typedarrays/][thi.ng/typedarrays]]
 #+NAME: dep-tarrays
 #+BEGIN_SRC clojure
-[thi.ng/typedarrays "0.1.5"]
+[thi.ng/typedarrays "0.1.6-SNAPSHOT"]
 #+END_SRC
 
 **** [[https://github.com/thi-ng/xerror/][thi.ng/xerror]]
