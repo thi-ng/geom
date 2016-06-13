@@ -11,7 +11,6 @@
          - [[#type-specific-operations][Type specific operations]]
          - [[#mutable-property-access][Mutable property access]]
      - [[#constants][Constants]]
-         - [[#default-circle-resolution][Default circle resolution]]
      - [[#complete-namespace-definition][Complete namespace definition]]
 
 * Namespace: thi.ng.geom.core
@@ -435,9 +434,10 @@ protocol consisting of just this one function:
 #+END_SRC
 
 ** Constants
-*** Default circle resolution
 
 #+BEGIN_SRC clojure :noweb-ref constants
+  #?(:cljs (def ^:export native-simd? (not (nil? (aget js/window "SIMD")))))
+
   (def ^:dynamic *resolution* 20)
 #+END_SRC
 
