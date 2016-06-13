@@ -678,6 +678,15 @@ Live version: http://demo.thi.ng/geom/webgl/fbo-rtt/ & http://demo.thi.ng/geom/w
 
 ** Example 7: STL mesh loading
 
+This example shows how to load and parse a binary STL mesh via XHR and
+then interactively control the camera via the arcball controller.
+
+Live demo: http://demo.thi.ng/geom/webgl/stl-mesh/
+
+*Note:* When testing locally, the referenced =suzanne.stl= file must
+be first copied from this project's =/assets= folder to
+=/babel/dev-resources=.
+
 #+BEGIN_SRC clojure :tangle ../../babel/examples/gl/ex07.cljs :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.examples.gl.ex07
     <<require-macros>>
