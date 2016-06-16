@@ -360,17 +360,18 @@ the tree.
 
 [[./src/gl/][source]]
 
-This is a pure CLJS module and provides a common WebGL functionality
-(context creation, shader management & presets, buffer management,
-textures, FBO etc.), as well as a number of optimized mesh types,
-conversion & rendering functions to simplify the use of other geometry
-types defined in this project for use with WebGL.
+This module provides a unified API to common OpenGL/WebGL
+functionality (context creation, shader management & presets, buffer
+management, textures, FBO etc.), as well as a number of optimized mesh
+types, conversion & rendering functions, cameras etc. to simplify the
+use of other geometry types defined in this project with OpenGL, both on
+the desktop and in the browser. The Clojure version wraps JOGL.
 
 ** Status
 
 The project has been in active, regular development since late 2011
 and is currently in its 4th iteration/rewrite cycle. It should still
-be considered BETA quality. On the other hand, the library is matured
+be considered BETA quality. On the other hand, the library is mature
 and has been used successfully in several commercial projects over the
 past 3 years and can be considered stable for most use cases.
 
