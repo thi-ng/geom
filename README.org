@@ -10,8 +10,8 @@
 * Contents                                                         :toc_3_gh:
  - [[#about-the-project][About the project]]
      - [[#leiningen-coordinates][Leiningen coordinates]]
-         - [[#latest-stable][Latest stable]]
          - [[#latest-snapshot][Latest snapshot]]
+         - [[#latest-stable][Latest stable]]
          - [[#additional-dependencies-for-jogl][Additional dependencies for JOGL]]
      - [[#overview][Overview]]
          - [[#example-usage][Example usage]]
@@ -47,14 +47,14 @@
 
 * About the project
 ** Leiningen coordinates
+*** Latest snapshot
+#+BEGIN_SRC clojure
+  [thi.ng/geom "0.0.1173-SNAPSHOT"]
+#+END_SRC
+
 *** Latest stable
 #+BEGIN_SRC clojure
   [thi.ng/geom "0.0.908"]
-#+END_SRC
-
-*** Latest snapshot
-#+BEGIN_SRC clojure
-  [thi.ng/geom "0.0.1158-SNAPSHOT"]
 #+END_SRC
 
 *** Additional dependencies for JOGL
