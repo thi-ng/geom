@@ -436,7 +436,7 @@ protocol consisting of just this one function:
 ** Constants
 
 #+BEGIN_SRC clojure :noweb-ref constants
-  #?(:cljs (def ^:export native-simd? (not (nil? (aget js/window "SIMD")))))
+  #?(:cljs (def ^:export native-simd? (not (nil? (aget js/self "SIMD")))))
 
   (def ^:dynamic *resolution* 20)
 #+END_SRC
