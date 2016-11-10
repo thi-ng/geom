@@ -10,6 +10,7 @@
      - [[#example-3-extruded-2d-polygons-with-blinn-phong-shading][Example 3: Extruded 2D polygons with Blinn-Phong shading]]
      - [[#example-4-unproject--scene-raycasting][Example 4: Unproject & scene raycasting]]
      - [[#example-5-texture-mapping][Example 5: Texture mapping]]
+     - [[#example-5b-multiple-textures][Example 5b: Multiple textures]]
      - [[#example-6-fbo--render-to-texture][Example 6: FBO & Render to texture]]
      - [[#example-7-stl-mesh-loading][Example 7: STL mesh loading]]
      - [[#todo-example-morphogen--shadow-mapping][TODO Example: Morphogen & shadow mapping]]
@@ -564,6 +565,78 @@ Live version: http://demo.thi.ng/geom/webgl/ptf-knot/ & http://demo.thi.ng/geom/
                         :m (+ 0.21 (* 0.2 (Math/sin (* t 0.5))))
                         :model (-> M44 (g/rotate-x (* t 0.36)) (g/rotate-y t)))
                 (gl/inject-normal-matrix :model :view :normalMat))))
+         true))))
+#+END_SRC
+
+** Example 5b: Multiple textures
+
+Live version: http://demo.thi.ng/geom/webgl/multitex/
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/gl/ex05b.cljs :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.gl.ex05b
+    <<require-macros>>
+    (:require
+     <<default-requires>>))
+
+  (enable-console-print!)
+
+  (def shader-spec
+    {:vs (glsl/minified
+          "void main() {
+             vUV = uv;
+             gl_Position = proj * view * model * vec4(position, 1.0);
+           }")
+     :fs (glsl/minified
+          "void main() {
+             gl_FragColor = mix(texture2D(tex1, vUV), texture2D(tex2, vUV), fade);
+           }")
+     :uniforms {:model    [:mat4 M44]
+                :view     :mat4
+                :proj     :mat4
+                :tex1     [:sampler2D 0] ;; bound to tex unit #0
+                :tex2     [:sampler2D 1] ;; bound to tex unit #1
+                :fade     :float}
+     :attribs  {:position :vec3
+                :uv       :vec2}
+     :varying  {:vUV      :vec2}
+     :state    {:depth-test true}})
+
+  (defn ^:export demo
+    []
+    (let [gl        (gl/gl-context "main")
+          view-rect (gl/get-viewport-rect gl)
+          model     (-> (a/aabb 1)
+                        (g/center)
+                        (g/as-mesh
+                         {:mesh    (glm/indexed-gl-mesh 12 #{:uv})
+                          :attribs {:uv (attr/face-attribs (attr/uv-cube-map-v 256 false))}})
+                        (gl/as-gl-buffer-spec {})
+                        (cam/apply (cam/perspective-camera {:eye (vec3 0 0 0.5) :fov 60 :aspect view-rect}))
+                        (assoc :shader (sh/make-shader-from-spec gl shader-spec))
+                        (gl/make-buffers-in-spec gl glc/static-draw))
+          tex-ready (volatile! 0)
+          tex1      (buf/load-texture
+                     gl {:callback (fn [tex img] (vswap! tex-ready inc))
+                         :src      "dev-resources/cubev.png"
+                         :flip     false})
+          tex2      (buf/load-texture
+                     gl {:callback (fn [tex img] (vswap! tex-ready inc))
+                         :src      "dev-resources/lancellotti.jpg"
+                         :flip     false})]
+      (anim/animate
+       (fn [t frame]
+         (when (= @tex-ready 2)
+           ;; bind both textures
+           ;; shader will x-fade between them based on :fade uniform value
+           (gl/bind tex1 0)
+           (gl/bind tex2 1)
+           (doto gl
+             (gl/set-viewport view-rect)
+             (gl/clear-color-and-depth-buffer col/WHITE 1)
+             (gl/draw-with-shader
+              (update model :uniforms merge
+                      {:model (-> M44 (g/rotate-x PI) (g/rotate-y (* t 0.5)))
+                       :fade  (+ 0.5 (* 0.5 (Math/sin (* t 2))))}))))
          true))))
 #+END_SRC
 
