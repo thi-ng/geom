@@ -15,8 +15,8 @@
          - [[#additional-dependencies-for-jogl][Additional dependencies for JOGL]]
      - [[#overview][Overview]]
          - [[#example-usage][Example usage]]
+         - [[#project-structure][Project structure]]
          - [[#main-features-non-exhaustive-list][Main features (non-exhaustive list)]]
-         - [[#main-geometry-types][Main geometry types]]
          - [[#api-scope][API scope]]
      - [[#project-structure][Project structure]]
          - [[#core][core]]
@@ -60,8 +60,9 @@
 *** Additional dependencies for JOGL
 
 If you're intending to use this library's OpenGL functionality under
-Clojure, the following additional native dependencies must be added to
-your project (for each platform you intend to use):
+Clojure (not ClojureScript), the following additional native
+dependencies must be added to your project (for each platform you
+intend to use):
 
 #+BEGIN_SRC clojure
 [org.jogamp.gluegen/gluegen-rt "2.3.2" :classifier "natives-macosx-universal"]
@@ -87,7 +88,7 @@ The full list of supported platform =:classifier='s:
 thi.ng/geom is a comprehensive and modular geometry & visualization
 toolkit for Clojure/ClojureScript. It provides a large set of purely
 math & geometry oriented data types, a polymorphic, largely protocol
-based API to transform types and and various ways to create
+based API to transform/convert types and various ways to create
 interactive visualizations in SVG, WebGL, OpenGL, both in the browser
 and in desktop environments.
 
@@ -101,7 +102,8 @@ developed in a literate programming style and has been in active,
 regular development since late 2011, currently in its 4th
 iteration/rewrite cycle.
 
-*You're highly encouraged to consult the source code, which contains documentation, examples, diagrams and general usage pattern hints and is increasingly being cross-linked between namespaces.*
+*You're highly encouraged to consult the source code, which contains
+documentation, examples, diagrams and general usage pattern hints.*
 
 This project is part of the [[https://github.com/thi-ng/][thi.ng]] collection of Clojure &
 Clojurescript libraries and makes uses of several other projects in
@@ -109,7 +111,7 @@ this collection (see dependencies further below).
 
 *** Example usage
 
-A growing number (currently 35+) of small examples are included in
+A growing number (currently ~40) of small examples are included in
 this repo under the =/examples= directory:
 
 - [[./examples/gl/jogl.org][OpenGL demos]] (Clojure)
@@ -126,8 +128,8 @@ Interactive examples:
 - [[http://demo.thi.ng/ws-ldn-5/][WebGL workshop teaser]]
 - [[http://demo.thi.ng/sjo/][WebGL workshop example]] (early game prototype)
 
-Growing list of [[http://workshop.thi.ng/][thi.ng workshop]] repositories (These workshops are
-running on a monthly basis & internationally):
+Growing list of [[http://workshop.thi.ng/][thi.ng workshop]] repositories (These workshops were
+running on a monthly basis & internationally in 2015/2016):
 
 - [[http://thi.ng/ws-ldn-1][WS-LDN-1]]
 - [[http://thi.ng/ws-ldn-2][WS-LDN-2]]
@@ -147,6 +149,14 @@ A preliminary list of other projects using this library:
 - [[http://github.com/thi-ng/luxor][thi.ng/luxor]]
 - [[http://github.com/thi-ng/morphogen][thi.ng/morphogen]]
 - [[http://thi.ng/][thi.ng website]]
+
+*** Project structure
+
+Use the diagram below to quickly navigate to any namespace in the
+project. Nodes in the graph have tooltips with a brief description of
+each namespace.
+
+[[./assets/overview.svg]]
 
 *** Main features (non-exhaustive list)
 
@@ -196,38 +206,6 @@ A preliminary list of other projects using this library:
 - Unfolding of 3D meshes to 2D (WIP) for digital fabrication
 ...
 
-*** Main geometry types
-
-| *2D*           | *3D*                            |
-|----------------+---------------------------------|
-| Vec2           | Vec3                            |
-| Matrix32       | Matrix44                        |
-|                | Quaternion                      |
-| Line2          | Line3                           |
-| LineStrip2     | LineStrip3                      |
-| Bezier2        | Bezier3                         |
-| Circle2        | Sphere                          |
-| Ellipse2 (TBD) | Ellipsoid (TBD)                 |
-| Rect2          | AABB                            |
-| Quad2 (TBD)    | Quad3                           |
-|                | Tetrahedron                     |
-| Triangle2      | Triangle3                       |
-| Polygon2       | Polygon3 (TBD)                  |
-| Path2          | Path3 (TBD)                     |
-|                | Plane                           |
-|                | BasicMesh (polygon soup)        |
-|                | GMesh (navigatable)             |
-|                | GLMesh (OpenGL/WebGL)           |
-|                | IndexedGLMesh (OpenGL/WebGL)    |
-| Point quadtree | Point octree                    |
-| VerletPhysics  | VerletPhysics                   |
-|                | SVO (experimental)              |
-|                | Isosurface (experimental)       |
-|                | Arcball camera controller       |
-|                | Perspective camera              |
-|                | FBO abstractions (OpenGL/WebGL) |
-|                | Texture2D (OpenGL/WebGL)        |
-
 *** API scope
 
 Since the core library does only deal with pure "platonic" geometry
@@ -244,49 +222,6 @@ Clojure & Clojurescript, makes it trivial to offload heavy operations
 (e.g. large mesh processing) to the server side.
 
 ** Project structure
-
-The project was originally structured into a number of separate
-modules, which have now been consolidated.
-
-*Important note:* For time reasons, the graph below is still
-reflecting the previous structure (up until v0.0.908) - it will be
-updated ASAP. Several namespaces have been added, migrated, renamed or
-merged:
-
-| *Previous*                       | *Current/new*                    |
-|----------------------------------+----------------------------------|
-| =thi.ng.geom.core.vector=        | =thi.ng.geom.vector=             |
-| =thi.ng.geom.core.matrix=        | =thi.ng.geom.matrix=             |
-| =thi.ng.geom.core.quaternion=    | =thi.ng.geom.quaternion=         |
-| =thi.ng.geom.core.utils=         | =thi.ng.geom.utils=              |
-| =thi.ng.geom.core.macros.vector= | =thi.ng.geom.macros.vector=      |
-| =thi.ng.geom.core.macros.matrix= | =thi.ng.geom.macros.matrix=      |
-| =thi.ng.geom.core.intersect=     | =thi.ng.geom.utils.intersect=    |
-| =thi.ng.geom.core.subdiv=        | =thi.ng.geom.utils.subdiv=       |
-| =thi.ng.geom.mesh.delaunay=      | =thi.ng.geom.utils.delaunay=     |
-| =thi.ng.geom.types.utils=        | =thi.ng.geom.utils= (merged)     |
-| =thi.ng.geom.types.utils.ptf=    | =thi.ng.geom.ptf=                |
-| =thi.ng.geom.webgl.animator=     | =thi.ng.geom.gl.webgl.animator=  |
-| =thi.ng.geom.webgl.buffers=      | =thi.ng.geom.gl.buffers=         |
-| =thi.ng.geom.webgl.core=         | =thi.ng.geom.gl.core=            |
-| =thi.ng.geom.webgl.shaders=      | =thi.ng.geom.gl.shaders=         |
-|----------------------------------+----------------------------------|
-|                                  | =thi.ng.geom.attribs=            |
-|                                  | =thi.ng.geom.indexedmesh=        |
-|                                  | =thi.ng.geom.meshface=           |
-|                                  | =thi.ng.geom.gl.arcball=         |
-|                                  | =thi.ng.geom.gl.camera=          |
-|                                  | =thi.ng.geom.gl.fx=              |
-|                                  | =thi.ng.geom.gl.fx.bloom=        |
-|                                  | =thi.ng.geom.gl.jogl.constants=  |
-|                                  | =thi.ng.geom.gl.webgl.constants= |
-|                                  | =thi.ng.geom.gl.glmesh=          |
-
-All examples now share the common ns prefix: =thi.ng.geom.examples.*=
-(sources & docs located in =/examples= dir)
-
-[[./assets/overview.png]]
-
 *** core
 
 [[./src/core/][source]]
@@ -478,6 +413,9 @@ target/geom-<<project-version()>>.js
 
 ** Dependencies
 *** Runtime
+
+(Please also see note about [[#additional-dependencies-for-jogl][optional OpenGL dependencies]])
+
 **** [[https://github.com/clojure/clojure][Clojure]]
 #+NAME: dep-clj
 #+BEGIN_SRC clojure
