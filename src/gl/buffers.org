@@ -307,6 +307,8 @@
                    (gl/bind)
                    (gl/configure (merge {:flip false :image img} opts)))
                  (when-let [cb (get opts :callback)] (cb tex img))))
+         (when-let [ecb (:error-callback opts)]
+           (set! (.-onerror img) ecb))
          (set! (.-src img) (get opts :src))
          tex)))
 #+END_SRC
