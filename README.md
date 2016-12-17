@@ -29,6 +29,21 @@ at least weekly snapshots of all modules to
 [thi.ng/geom "0.0.908"]
 ```
 
+## Getting started
+
+Tutorials are non-existing so far, but are on the TODO list. However for examples, there are various snippets lingering throughout the codebase and various workshop repos:
+
+https://github.com/thi-ng/geom/blob/master/src/index.org#example-usage
+https://github.com/thi-ng/geom/blob/master/geom-viz/src/core.org#example-usage
+https://github.com/thi-ng/geom/blob/master/geom-svg/src/examples.org
+
+https://github.com/thi-ng/ws-ldn-1
+https://github.com/thi-ng/ws-ldn-2
+https://github.com/learn-postspectacular/resonate-workshop-2015
+https://github.com/learn-postspectacular/resonate-workshop-2014
+
+https://github.com/cassiel/thi-ng-geom-starter
+
 ## Project overview
 
 ![project overview](assets/overview.png)
