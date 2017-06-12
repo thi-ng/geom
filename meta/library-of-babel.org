@@ -1,0 +1,200 @@
+#+SETUPFILE: setup.org
+
+* The thing-geom Library of Babel
+
+This file contains shared and configurable code templates for various
+protocol implementations, which only require minor changes for
+different types.
+
+Some types also make use of more type specific templates, however
+these are defined in their own =.org= files. The template names
+defined here are all using the prefix =lob= to clearly differentiate
+them from other templates.
+
+** Master template builder
+
+#+NAME: lob-geom-tpl
+#+BEGIN_SRC emacs-lisp :var bindings=nil :var src=""
+  (reduce
+   (lambda (acc p)
+     (replace-regexp-in-string
+      (concat "{{" (car p) "}}") (car (cdr p)) acc))
+   bindings :initial-value src)
+#+END_SRC
+
+** IArea (zero)
+
+#+NAME: lob-geom-zeroarea
+#+BEGIN_SRC clojure
+  g/IArea
+  (area [_] 0.0)
+#+END_SRC
+
+** IBounds
+
+#+NAME: lob-geom-bounds
+#+BEGIN_SRC emacs-lisp :var fn="" :var depth="no"
+  (let ((body (replace-regexp-in-string "{{fn}}" fn
+  "g/IBounds
+  (bounds [_] ({{fn}} (get _ :points)))
+  (width [_] (gu/axis-range 0 (get _ :points)))
+  (height [_] (gu/axis-range 1 (get _ :points)))")))
+    (if (string= "yes" depth)
+      (concat body "\n(depth [_] (gu/axis-range 2 (get _ :points)))")
+      (concat body "\n(depth [_] 0)")))
+#+END_SRC
+
+** IBoundingCircle
+
+#+NAME: lob-geom-bcircle
+#+BEGIN_SRC clojure
+  g/IBoundingCircle
+  (bounding-circle
+   [_] (gu/bounding-circle (g/centroid _) (get _ :points)))
+#+END_SRC
+
+** IBoundingSphere
+
+#+NAME: lob-geom-bsphere
+#+BEGIN_SRC clojure
+  g/IBoundingSphere
+  (bounding-sphere
+   [_] (gu/bounding-sphere (g/centroid _) (get _ :points)))
+#+END_SRC
+
+** ICenter
+
+#+NAME: lob-geom-center
+#+BEGIN_SRC emacs-lisp :var type="" :var vtype=""
+  (replace-regexp-in-string
+   "{{vtype}}" vtype
+   (replace-regexp-in-string
+    "{{type}}" type
+    "g/ICenter
+  (center
+   ([_] ({{type}}. (gu/center ({{vtype}}) (get _ :points))))
+   ([_ o] ({{type}}. (gu/center (g/centroid _) ({{vtype}} o) (get _ :points)))))"))
+#+END_SRC
+
+** ICircumference
+
+#+NAME: lob-geom-circum
+#+BEGIN_SRC clojure
+  g/ICircumference
+  (circumference
+   [{p :points}] (gu/arc-length (conj p (first p))))
+#+END_SRC
+
+** IFlip
+
+#+NAME: lob-geom-flip
+#+BEGIN_SRC emacs-lisp :var type=""
+  (replace-regexp-in-string "{{type}}" type
+  "g/IFlip
+  (flip
+   [_] ({{type}}. (reverse (get _ :points))))")
+#+END_SRC
+
+** IPolygonConvert
+
+#+NAME: lob-geom-as-polygon
+#+BEGIN_SRC clojure
+  g/IPolygonConvert
+  (as-polygon
+   [_] (thi.ng.geom.types.Polygon2. (get _ :points)))
+#+END_SRC
+
+** IProximity
+
+#+NAME: lob-geom-proxi
+#+BEGIN_SRC clojure
+  g/IProximity
+  (closest-point
+   [_ p]
+   (first (gu/closest-point-on-segments p (g/edges _))))
+#+END_SRC
+
+** IRotate
+
+#+NAME: lob-geom-rotate
+#+BEGIN_SRC emacs-lisp :var type=""
+  (replace-regexp-in-string "{{type}}" type
+  "g/IRotate
+  (rotate
+   [_ theta] ({{type}}. (mapv #(g/rotate % theta) (get _ :points))))")
+#+END_SRC
+
+** IRotate3D
+
+#+NAME: lob-geom-rotate3d
+#+BEGIN_SRC emacs-lisp :var type=""
+  (replace-regexp-in-string "{{type}}" type
+  "g/IRotate3D
+  (rotate-x
+   [_ theta] ({{type}}. (mapv #(g/rotate-x % theta) (get _ :points))))
+  (rotate-y
+   [_ theta] ({{type}}. (mapv #(g/rotate-y % theta) (get _ :points))))
+  (rotate-z
+   [_ theta] ({{type}}. (mapv #(g/rotate-z % theta) (get _ :points))))
+  (rotate-around-axis
+   [_ axis theta]
+   ({{type}}.
+    (mapv #(g/rotate-around-axis % axis theta) (get _ :points))))")
+#+END_SRC
+
+** ISample
+
+#+NAME: lob-geom-sample
+#+BEGIN_SRC emacs-lisp :var n="3"
+  (replace-regexp-in-string "{{n}}" n
+  "g/ISample
+  (point-at
+   [{p :points} t] (gu/point-at t (conj p (first p))))
+  (random-point
+   [{p :points}] (gu/point-at (m/random) (conj p (first p))))
+  (random-point-inside
+   [_] (gu/from-barycentric (get _ :points) (m/normdist-weights {{n}})))
+  (sample-uniform
+   [{p :points} udist include-last?]
+   (gu/sample-uniform udist include-last? (conj p (first p))))")
+#+END_SRC
+
+** IScale
+
+#+NAME: lob-geom-scale
+#+BEGIN_SRC emacs-lisp :var type=""
+  (replace-regexp-in-string "{{type}}" type
+  "g/IScale
+  (scale
+   [_ s] ({{type}}. (mapv #(m/* % s) (get _ :points))))
+  (scale-size
+   [_ s] ({{type}}. (gu/scale-size s (get _ :points))))")
+#+END_SRC
+
+** ITranslate
+
+#+NAME: lob-geom-translate
+#+BEGIN_SRC emacs-lisp :var type=""
+  (replace-regexp-in-string "{{type}}" type
+  "g/ITranslate
+  (translate
+   [_ t] ({{type}}. (mapv #(m/+ % t) (get _ :points))))")
+#+END_SRC
+
+** ITransform
+
+#+NAME: lob-geom-tx
+#+BEGIN_SRC emacs-lisp :var type=""
+  (replace-regexp-in-string "{{type}}" type
+  "g/ITransform
+  (transform
+   [_ m] ({{type}}. (mapv #(g/transform-vector m %) (get _ :points))))")
+#+END_SRC
+
+** IVolume (zero)
+
+#+NAME: lob-geom-zerovol
+#+BEGIN_SRC clojure
+  g/IVolume
+  (volume [_] 0.0)
+#+END_SRC

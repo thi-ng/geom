@@ -1,0 +1,168 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Luxor torus knot examples
+
+The following brief examples demonstrate usage of the =sweep-mesh= and
+=sweep-strand-mesh= functions in combination with [[http://thi.ng/luxor][thi.ng/luxor's]] test scene
+setup. The first example computes a [[https://en.wikipedia.org/wiki/Torus_knot][Cinquefoil knot]] (a (5,2)-torus
+knot) and sweeps a circle along the path using PTF. The second demo
+also uses the same knot as basis, but instead of sweeping it directly,
+first computes N strands, each rotating around the path at
+given radius and /each strand swept as mesh individually/ (then
+combined into a single mesh using =g/into=). Both examples are tangled
+into the =/babel/examples= directory, but will only work in a REPL
+which has both the =geom= and =luxor= libs on its classpath.
+
+[[../../assets/ptf-knot.jpg]]
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/types/ptf_knot.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.types.ptf-knot
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.vector :as v]
+     [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.circle :as c]
+     [thi.ng.geom.ptf :as ptf]
+     [thi.ng.math.core :as m :refer [THIRD_PI TWO_PI]]
+     [thi.ng.luxor.scenes :as scene]
+     [thi.ng.luxor.io :as lio]))
+
+  (defn cinquefoil
+    [t]
+    (let [t  (* t m/TWO_PI)
+          pt (* 2.0 t)
+          qt (* 5.0 t)
+          qc (+ 3.0 (Math/cos qt))]
+      (v/vec3 (* qc (Math/cos pt)) (* qc (Math/sin pt)) (Math/sin qt))))
+
+  (-> (scene/base-scene {:width 640 :height 360})
+      (scene/add-main-mesh
+       (ptf/sweep-mesh
+        (mapv cinquefoil (m/norm-range 400))
+        (g/vertices (c/circle 0.5) 20)
+        {:align? true :loop? true})
+       {:id :knot :bounds (a/aabb 1.5) :target [0 0.5 -2] :rx (- m/THIRD_PI)})
+      (lio/serialize-scene "ptf-knot" false)
+      (lio/export-scene)
+      (dorun))
+#+END_SRC
+
+Some example renders to illustrate the =weave-mesh= approach/function
+with different parameters:
+
+[[../../assets/ptf-knot-weave.jpg]]
+
+[[../../assets/ptf-knot-weave2.jpg]]
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/types/ptf_knot2.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.types.ptf-knot2
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.vector :as v]
+     [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.circle :as c]
+     [thi.ng.geom.ptf :as ptf]
+     [thi.ng.math.core :as m]
+     [thi.ng.luxor.scenes :as scene]
+     [thi.ng.luxor.io :as lio]))
+
+  (defn cinquefoil
+    [t]
+    (let [t  (* t m/TWO_PI)
+          pt (* 2.0 t)
+          qt (* 5.0 t)
+          qc (+ 3.0 (Math/cos qt))]
+      (v/vec3 (* qc (Math/cos pt)) (* qc (Math/sin pt)) (Math/sin qt))))
+
+  (def knot
+    (-> (mapv cinquefoil (m/norm-range 400))
+        (ptf/compute-frames)
+        (ptf/align-frames)))
+
+  (-> (scene/base-scene {:width 640 :height 360})
+      (scene/add-main-mesh
+       (ptf/sweep-strand-mesh knot 0.5 10 7 (g/vertices (c/circle 0.1) 20) {:loop? true})
+        ;;(ptf/sweep-strand-mesh knot 0.8 6 12 (g/vertices (c/circle 0.1) 20))
+       {:id :knot-weave :bounds (a/aabb 1.5) :target [0 0.5 -2] :rx (- m/THIRD_PI)})
+      (lio/serialize-scene "ptf-knot-weave" false)
+      (lio/export-scene)
+      (dorun))
+#+END_SRC
+
+[[../../assets/ptf-knot-weave-spectrum.jpg]]
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/types/ptf_knot3.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.types.ptf-knot3
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.vector :as v]
+     [thi.ng.geom.circle :as c]
+     [thi.ng.geom.ptf :as ptf]
+     [thi.ng.math.core :as m]
+     [thi.ng.luxor.core :as lux]
+     [thi.ng.luxor.scenes :as scene]
+     [thi.ng.luxor.io :as lio]
+     [thi.ng.color.core :as col]))
+
+  (defn cinquefoil
+    [t]
+    (let [t  (* t m/TWO_PI)
+          pt (* 2.0 t)
+          qt (* 5.0 t)
+          qc (+ 3.0 (Math/cos qt))]
+      (v/vec3 (* qc (Math/cos pt)) (* qc (Math/sin pt)) (Math/sin qt))))
+
+  (defn add-meshes
+    [scene meshes opts]
+    (let [hue (/ 1.0 (count meshes))]
+      (reduce
+       (fn [scene [i mesh]]
+         (let [mat (str "matte-hue-" i)]
+           (-> scene
+               (lux/material-matte mat {:diffuse (col/hsva (* i hue) 1.0 0.9)})
+               (scene/add-mesh mesh (assoc opts :material mat :id (str "strand-" i))))))
+       scene (zipmap (range) meshes))))
+
+  (def knot
+    (-> (mapv cinquefoil (m/norm-range 400))
+        (ptf/compute-frames)
+        (ptf/align-frames)))
+
+  (-> (scene/base-scene {:width 640 :height 360})
+      (add-meshes
+       (ptf/sweep-strands knot 0.5 10 7 (g/vertices (c/circle 0.1) 20) {:loop? true})
+       {:tx {:translate [0 0.5 -2] :scale 0.175 :rx -65}})
+      (lio/serialize-scene "ptf-knot-weave-spectrum" false)
+      (lio/export-scene)
+      (dorun))
+#+END_SRC
+
+[[../../assets/ptf-spline.jpg]]
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/types/ptf_spline.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.types.ptf-spline
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.vector :as v]
+     [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.bezier :as b]
+     [thi.ng.geom.circle :as c]
+     [thi.ng.geom.ptf :as ptf]
+     [thi.ng.math.core :as m]
+     [thi.ng.luxor.core :as lux]
+     [thi.ng.luxor.scenes :as scene]
+     [thi.ng.luxor.io :as lio]))
+
+  (-> (scene/base-scene {:width 640 :height 360})
+      (assoc-in [:camera "perspective" :focaldistance 1] 1.4)
+      (scene/add-main-mesh
+       (ptf/sweep-mesh
+        (-> (for [i (range 100)] (v/randvec3))
+            (b/auto-spline3)
+            (g/vertices))
+        (g/vertices (c/circle 0.025) 10))
+       {:id :spline :bounds (a/aabb 1.25) :target [0 0.625 -1.75] :rx (- m/THIRD_PI)})
+      (lio/serialize-scene "ptf-spline" false)
+      (lio/export-scene)
+      (dorun))
+#+END_SRC

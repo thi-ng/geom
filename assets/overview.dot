@@ -1,266 +1,144 @@
 digraph g {
   rankdir=LR;
-  node[color="black",style="filled",fontname="Inconsolata",fontcolor="white",fontsize=9];
-
+  node[color="black",shape="box",margin="0.11",style="filled",fontname="Inconsolata",fontcolor="white",fontsize=9];
+  edge[arrowsize=0.66];
+  
   geom[label="thi.ng/geom"];
-  geomcore[label="thi.ng/geom-core",color="red"];
-  geomtypes[label="thi.ng/geom-types",color="blue"];
-  geommesh[label="thi.ng/geom-mesh",color="#00aa00"];
-  geomsvg[label="thi.ng/geom-svg",color="#ff7700"];
-  geomviz[label="thi.ng/geom-viz",color="#0077ff"];
-  geomphysics[label="thi.ng/geom-physics",color="#ff0077"];
-  geomvoxel[label="thi.ng/geom-voxel",color="#007733"];
-  geomwebgl[label="thi.ng/geom-webgl",color="#7700ff"];
 
-  # core
+  geom->types;
+  types->aabb;
+  types->attribs;
+  types->basicmesh;
+  types->bezier;
+  types->circle;
+  types->cuboid;
+  types->gmesh;
+  types->indexedmesh;
+  types->line;
+  types->matrix;
+  types->meshface;
+  types->path;
+  types->plane;
+  types->polygon;
+  types->polyhedra;
+  types->ptf;
+  types->quad;
+  types->quaternion;
+  types->rect;
+  types->spatialtree;
+  types->sphere;
+  types->tetrahedron;
+  types->triangle;
+  types->vector;
+
+  geom->gl;
+  gl->arcball;
+  gl->buffers;
+  gl->camera;
+  gl->fx->fxcore;
+  fx->fxpresets;
+  gl->glcore;
+  gl->glmesh;
+  gl->jogl->joglbuffers;
+  jogl->joglconst;
+  jogl->joglcore;
+  gl->glshaders;
+  glshaders->glshaderbasic;
+  glshaders->glshaderlambert;
+  glshaders->glshaderphong;
+  glshaders->glshaderxray;
+  gl->glutils;
+  gl->webgl->animator;
+  webgl->constwebgl;
+
+  geom->mesh;
+  mesh->csg;
+  mesh->io;
+  mesh->ops;
+  mesh->meshsubdiv;
+
+  geom->physics->physcore;
+
+  geom->svg->svgadapt;
+  svg->svgcore;
+  svg->svgrenderer;
+  svg->svgshaders;
+
+  geom->viz->vizcore;
+
+  geom->voxel;
+  voxel->svo;
+  voxel->isosurface;
   
-  node[color="red",style="filled",fontname="Inconsolata",fontcolor="white",fontsize=9];
+  geom->utils;
+  utils->delaunay;
+  utils->isec;
+  utils->subdiv;
 
-  geom -> geomcore;
-  core[label="thi.ng.geom.core"];
-  corevec[label="thi.ng.geom.core.vector"];
-  coremat[label="thi.ng.geom.core.matrix"];
-  coreisec[label="thi.ng.geom.core.intersect"];
-  corequat[label="thi.ng.geom.core.quaternion"];
-  coreutils[label="thi.ng.geom.core.utils"];
+  aabb[color="#cc0000",label="thi.ng.geom.aabb",URL="https://github.com/thi-ng/geom/blob/develop/src/types/aabb.org",tooltip="Axis-aligned bounding box"];
+  attribs[color="#cc0000",label="thi.ng.geom.attribs",URL="https://github.com/thi-ng/geom/blob/develop/src/types/attribs.org",tooltip="Mesh vertex attribute generators"];
+  basicmesh[color="#cc0000",label="thi.ng.geom.basicmesh",URL="https://github.com/thi-ng/geom/blob/develop/src/types/basicmesh.org",tooltip="3D mesh type w/o attribute support"];
+  bezier[color="#cc0000",label="thi.ng.geom.bezier",URL="https://github.com/thi-ng/geom/blob/develop/src/types/bezier.org",tooltip="2D/3D spline types"];
+  circle[color="#cc0000",label="thi.ng.geom.circle",URL="https://github.com/thi-ng/geom/blob/develop/src/types/circle.org",tooltip="2D circle type"];
+  cuboid[color="#cc0000",label="thi.ng.geom.cuboid",URL="https://github.com/thi-ng/geom/blob/develop/src/types/cuboid.org",tooltip="Arbitrary 3D box type"];
+  delaunay[color="#cccc00",label="thi.ng.geom.utils.delaunay",URL="https://github.com/thi-ng/geom/blob/develop/src/utils/delaunay.org",tooltip="2D Delaunay triangulation"];
+  gmesh[color="#cc0000",label="thi.ng.geom.gmesh",URL="https://github.com/thi-ng/geom/blob/develop/src/types/gmesh.org",tooltip="3D navigatable graph mesh"];
+  indexedmesh[color="#cc0000",label="thi.ng.geom.indexedmesh",URL="https://github.com/thi-ng/geom/blob/develop/src/types/indexedmesh.org",tooltip="3D mesh w/ vertex attributes"];
+  isec[color="#cccc00",label="thi.ng.geom.utils.intersect",URL="https://github.com/thi-ng/geom/blob/develop/src/utils/intersect.org",tooltip="Various 2D/3D shape intersections"];
+  line[color="#cc0000",label="thi.ng.geom.line",URL="https://github.com/thi-ng/geom/blob/develop/src/types/line.org",tooltip="2D/3D line & poly-line types"];
+  matrix[color="#cc0000",label="thi.ng.geom.matrix",URL="https://github.com/thi-ng/geom/blob/develop/src/core/matrix.org",tooltip="2x3, 4x4 matrix types"];
+  meshface[color="#cc0000",label="thi.ng.geom.meshface",URL="https://github.com/thi-ng/geom/blob/develop/src/types/meshface.org",tooltip="Mesh face types w/ & w/o attrib support"];
+  path[color="#cc0000",label="thi.ng.geom.path",URL="https://github.com/thi-ng/geom/blob/develop/src/types/path.org",tooltip="2D segmented path construction"];
+  plane[color="#cc0000",label="thi.ng.geom.plane",URL="https://github.com/thi-ng/geom/blob/develop/src/types/plane.org",tooltip="3D plane type"];
+  polygon[color="#cc0000",label="thi.ng.geom.polygon",URL="https://github.com/thi-ng/geom/blob/develop/src/types/polygon.org",tooltip="2D polygon type"];
+  polyhedra[color="#cc0000",label="thi.ng.geom.polyhedra",URL="https://github.com/thi-ng/geom/blob/develop/src/types/polyhedra.org",tooltip="3D polyhedra constructions"];
+  ptf[color="#cc0000",label="thi.ng.geom.ptf",URL="https://github.com/thi-ng/geom/blob/develop/src/types/ptf.org",tooltip="3D Parallel-transport frames curve extrusion"];
+  quad[color="#cc0000",label="thi.ng.geom.quad",URL="https://github.com/thi-ng/geom/blob/develop/src/types/quad.org",tooltip="3D freeform quad type"];
+  quaternion[color="#cc0000",label="thi.ng.geom.quaternion",URL="https://github.com/thi-ng/geom/blob/develop/src/core/quaternion.org",tooltip="Quaternion type"];
+  rect[color="#cc0000",label="thi.ng.geom.rect",URL="https://github.com/thi-ng/geom/blob/develop/src/types/rect.org",tooltip="2D axis-aligned rectangle type"];
+  spatialtree[color="#cc0000",label="thi.ng.geom.spatialtree",URL="https://github.com/thi-ng/geom/blob/develop/src/types/spatialtree.org",tooltip="Quadtree & Octree types / tree queries"];
+  sphere[color="#cc0000",label="thi.ng.geom.sphere",URL="https://github.com/thi-ng/geom/blob/develop/src/types/sphere.org",tooltip="3D sphere type"];
+  subdiv[color="#cccc00",label="thi.ng.geom.utils.subdiv",URL="https://github.com/thi-ng/geom/blob/develop/src/utils/subdiv.org",tooltip="2D/3D recursive curve subdivision schemes"];
+  tetrahedron[color="#cc0000",label="thi.ng.geom.tetrahedron",URL="https://github.com/thi-ng/geom/blob/develop/src/types/tetrahedron.org",tooltip="3D tetrahedron type"];
+  triangle[color="#cc0000",label="thi.ng.geom.triangle",URL="https://github.com/thi-ng/geom/blob/develop/src/types/triangle.org",tooltip="2D/3D triangle types"];
+  types[color="#cc0000",label="thi.ng.geom.types",URL="https://github.com/thi-ng/geom/blob/develop/src/types/types.org",tooltip="Shape type declarations"];
+  utils[color="#cccc00",label="thi.ng.geom.utils",URL="https://github.com/thi-ng/geom/blob/develop/src/utils/utils.org",tooltip="Shared low-level utilities"];
+  vector[color="#cc0000",label="thi.ng.geom.vector",URL="https://github.com/thi-ng/geom/blob/develop/src/core/vector.org",tooltip="2D/3D vector types"];
 
-  node[color="#ffffcc",fontcolor="black"];
+  animator[color="#cc0099",label="thi.ng.geom.gl.webgl.animator",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/animator.org",tooltip="WebGL RAF wrapper"];
+  arcball[color="#cc0099",label="thi.ng.geom.gl.arcball",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/arcball.org",tooltip="3D arcball camera controller"];
+  buffers[color="#cc0099",label="thi.ng.geom.gl.buffers",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/buffers.org",tooltip="OpenGL/WebGL buffer types (FBO, textures etc.)"];
+  camera[color="#cc0099",label="thi.ng.geom.gl.camera",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/camera.org",tooltip="3-point camera helpers"];
+  glcore[color="#cc0099",label="thi.ng.geom.gl.core",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/core.org",tooltip="OpenGL/WebGL core namespace"];
+  joglconst[color="#cc0099",label="thi.ng.geom.gl.jogl.constants",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/constants-jogl.org",tooltip="OpenGL constants"];
+  joglbuffers[color="#cc0099",label="thi.ng.geom.gl.jogl.buffers",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/jogl-buffers.org",tooltip="OpenGL buffer helpers"];
+  joglcore[color="#cc0099",label="thi.ng.geom.gl.jogl.core",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/jogl.org",tooltip="OpenGL window setup & helpers"];
+  fxcore[color="#cc0099",label="thi.ng.geom.gl.fx.core",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/fx.org",tooltip="FBO effects pipeline setup"];
+  fxpresets[color="#cc0099",label="thi.ng.geom.gl.fx.bloom",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/fx-presets.org",tooltip="FBO bloom effect pipeline"];
+  glmesh[color="#cc0099",label="thi.ng.geom.gl.glmesh",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/glmesh.org",tooltip="3D mesh type w/ attributes, indexed/unindexed"];
+  glshaders[color="#cc0099",label="thi.ng.geom.gl.shaders",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/shaders.org",tooltip="OpenGL/WebGL shader abstractions/constructions"];
+  glshaderbasic[color="#cc0099",label="thi.ng.geom.gl.shaders.basic",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/shader-presets.org#basic",tooltip="Single color shader preset"];
+  glshaderlambert[color="#cc0099",label="thi.ng.geom.gl.shaders.lambert",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/shader-presets.org#lambert",tooltip="Lambert shader preset"];
+  glshaderphong[color="#cc0099",label="thi.ng.geom.gl.shaders.phong",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/shader-presets.org#phong",tooltip="Phong shader preset"];
+  glshaderxray[color="#cc0099",label="thi.ng.geom.gl.shaders.xray",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/shader-presets.org#x-ray",tooltip="X-ray shader preset"];
+  glutils[color="#cc0099",label="thi.ng.geom.gl.utils",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/utils.org",tooltip="WebGL helpers"];
+  constwebgl[color="#cc0099",label="thi.ng.geom.gl.webgl.constants",URL="https://github.com/thi-ng/geom/blob/develop/src/gl/constants-webgl.org",tooltip="WebGL constants"];
 
-  corelabel[label="Core API (protocols only)"];
-  veclabel[label="2D/3D Vectors"];
-  matlabel[label="2x3, 4x4 Matrices"];
-  iseclabel[label="2D/3D Shape intersections"];
-  quatlabel[label="Quaternion"];
-  cutilslabel[label="2D/3D Point/shape helpers"];
-
-  geomcore -> core;
-  core -> corelabel[style="dashed"];
-  geomcore -> corevec;
-  corevec -> veclabel[style="dashed"];
-  geomcore -> coremat;
-  coremat -> matlabel[style="dashed"];
-  geomcore -> corequat;
-  corequat -> quatlabel[style="dashed"];
-  geomcore -> coreisec;
-  coreisec -> iseclabel[style="dashed"];
-  geomcore -> coreutils;
-  coreutils -> cutilslabel[style="dashed"];
-
-  # types
+  csg[color="#4400ff",label="thi.ng.geom.mesh.csg",URL="https://github.com/thi-ng/geom/blob/develop/src/mesh/csg.org",tooltip="3D boolean mesh operations"];
+  io[color="#4400ff",label="thi.ng.geom.mesh.io",URL="https://github.com/thi-ng/geom/blob/develop/src/mesh/io.org",tooltip="3D mesh import/export (STL, OBJ, PLY, OFF)"];
+  ops[color="#4400ff",label="thi.ng.geom.mesh.ops",URL="https://github.com/thi-ng/geom/blob/develop/src/mesh/ops.org",tooltip="3D mesh repair/cleanup helpers"];
+  meshsubdiv[color="#4400ff",label="thi.ng.geom.mesh.subdivision",URL="https://github.com/thi-ng/geom/blob/develop/src/mesh/subdivision.org",tooltip="3D mesh subdivision schemes"];
   
-  node[color="#0000ff",fontcolor="white"];
-
-  geom -> geomtypes;
-  types[label="thi.ng.geom.types"];
-  typesaabb[label="thi.ng.geom.aabb"];
-  typescircle[label="thi.ng.geom.circle"];
-  typescuboid[label="thi.ng.geom.cuboid"];
-  typesbezier[label="thi.ng.geom.bezier"];
-  typesline[label="thi.ng.geom.line"];
-  typespoly[label="thi.ng.geom.polygon"];
-  typestri[label="thi.ng.geom.triangle"];
-  typesplane[label="thi.ng.geom.plane"];
-  typespath[label="thi.ng.geom.path"];
-  typestetra[label="thi.ng.geom.tetrahedron"];
-  typesquad[label="thi.ng.geom.quad"];
-  typesrect[label="thi.ng.geom.rect"];
-  typesbmesh[label="thi.ng.geom.basicmesh"];
-  typesgmesh[label="thi.ng.geom.gmesh"];
-  typesstree[label="thi.ng.geom.spatialtree"];
-  typessphere[label="thi.ng.geom.sphere"];
-  typesptf[label="thi.ng.geom.types.ptf"];
-  typesutils[label="thi.ng.geom.types.utils"];
-
-  node[color="#ffffcc",fontcolor="black"];
-
-  typeslab[label="Type definitions"];
-  aabblab[label="3D Axis-aligned bounding box"];
-  bezlab[label="2D/3D bezier & auto-splines"];
-  circlab[label="2D Circle"];
-  cublab[label="3D Cuboid"];
-  bmeshlab[label="2D/3D Mesh"];
-  gmeshlab[label="2D/3D Mesh (navigatable graph)"];
-  linelab[label="2D/3D Lines & Linestrips"];
-  pathlab[label="2D Path"];
-  polylab[label="2D Polygon"];
-  planelab[label="3D Plane"];
-  quadlab[label="3D Quad"];
-  tetralab[label="3D Tetrahedron"];
-  trilab[label="2D/3D Triangles"];
-  stlab[label="2D/3D Quadtree / Octree"];
-  tutilslab[label="2D/3D type helpers"];
-  rectlab[label="2D Rectangle"];
-  spherelab[label="3D Sphere"];
-  ptflab[label="3D Parallel Transport Frames"];
+  physcore[color="#00ccff",label="thi.ng.geom.physics.core",URL="https://github.com/thi-ng/geom/blob/develop/src/physics/core.org",tooltip="2D/3D verlet physics engine"];
   
-  geomtypes -> types;
-  types -> typeslab[style="dashed"];
-  geomtypes -> typesaabb;
-  typesaabb -> aabblab[style="dashed"];
-  geomtypes -> typesbezier;
-  typesbezier -> bezlab[style="dashed"];
-  geomtypes -> typesbmesh;
-  typesbmesh -> bmeshlab[style="dashed"];
-  geomtypes -> typescircle;
-  typescircle -> circlab[style="dashed"];
-  geomtypes -> typescuboid;
-  typescuboid -> cublab[style="dashed"];
-  geomtypes -> typesgmesh;
-  typesgmesh -> gmeshlab[style="dashed"];
-  geomtypes -> typesline;
-  typesline -> linelab[style="dashed"];
-  geomtypes -> typespath;
-  typespath -> pathlab[style="dashed"];
-  geomtypes -> typesplane;
-  typesplane -> planelab[style="dashed"];
-  geomtypes -> typespoly;
-  typespoly -> polylab[style="dashed"];
-  geomtypes -> typesquad;
-  typesquad -> quadlab[style="dashed"];
-  geomtypes -> typestetra;
-  typestetra -> tetralab[style="dashed"];
-  geomtypes -> typestri;
-  typestri -> trilab[style="dashed"];
-  geomtypes -> typesrect;
-  typesrect -> rectlab[style="dashed"];
-  geomtypes -> typessphere;
-  typessphere -> spherelab[style="dashed"];
-  geomtypes -> typesstree;
-  typesstree -> stlab[style="dashed"];
-  geomtypes -> typesptf;
-  typesptf -> ptflab[style="dashed"];
-  geomtypes -> typesutils;
-  typesutils -> tutilslab[style="dashed"];
+  svgadapt[color="#0099cc",label="thi.ng.geom.svg.adapter",URL="https://github.com/thi-ng/geom/blob/develop/src/svg/adapter.org",tooltip="SVG shape type conversions"];
+  svgcore[color="#0099cc",label="thi.ng.geom.svg.core",URL="https://github.com/thi-ng/geom/blob/develop/src/svg/core.org",tooltip="SVG generation/core namespace"];
+  svgrenderer[color="#0099cc",label="thi.ng.geom.svg.renderer",URL="https://github.com/thi-ng/geom/blob/develop/src/svg/renderer.org",tooltip="3D mesh renderer for SVG output"];
+  svgshaders[color="#0099cc",label="thi.ng.geom.svg.shaders",URL="https://github.com/thi-ng/geom/blob/develop/src/svg/shaders.org",tooltip="Facet shaders for SVG renderer"];
 
-  # meshops
+  vizcore[color="#00cc99",label="thi.ng.geom.viz.core",URL="https://github.com/thi-ng/geom/blob/develop/src/viz/core.org",tooltip="Declarative 2D charting/data visualization engine"];
   
-  node[color="#00aa00",fontcolor="white"];
-
-  geom -> geommesh;
-
-  meshcsg[label="thi.ng.geom.mesh.csg"];
-  meshio[label="thi.ng.geom.mesh.io"];
-  meshops[label="thi.ng.geom.mesh.ops"];
-  meshsd[label="thi.ng.geom.mesh.subdivision"];
-  meshpoly[label="thi.ng.geom.mesh.polyhedra"];
-
-  node[color="#ffffcc",fontcolor="black"];
-  csglab[label="3D CSG mesh ops"]
-  miolab[label="3D Mesh I/O (STL, PLY, OBJ, OFF)"];
-  mopslab[label="3D mesh manipulation/cleaning"];
-  sdlab[label="3D Subdivision mesh ops"];
-  mpolylab[label="3D Polyhedra"];
-
-  geommesh -> meshcsg;
-  meshcsg -> csglab[style="dashed"];
-  geommesh -> meshio;
-  meshio -> miolab[style="dashed"];
-  geommesh -> meshops;
-  meshops -> mopslab[style="dashed"];
-  geommesh -> meshsd;
-  meshsd -> sdlab[style="dashed"];
-  geommesh -> meshpoly;
-  meshpoly -> mpolylab[style="dashed"];
-
-  # svg
+  svo[color="#66cc00",label="thi.ng.geom.voxel.svo",URL="https://github.com/thi-ng/geom/blob/develop/src/voxel/svo.org",tooltip="3D Voxel tree"];
+  isosurface[color="#66cc00",label="thi.ng.geom.voxel.isosurface",URL="https://github.com/thi-ng/geom/blob/develop/src/voxel/isosurface.org",tooltip="3D mesh extraction from voxel data"];
   
-  node[color="#ff7700",fontcolor="white"];
-
-  geom -> geomsvg;
-
-  svgcore[label="thi.ng.geom.svg.core"];
-  svgadapt[label="thi.ng.geom.svg.adapter"];
-  svgrender[label="thi.ng.geom.svg.renderer"];
-  svgshader[label="thi.ng.geom.svg.shaders"];
-
-  node[color="#ffffcc",fontcolor="black"];
-  svglab[label="SVG primitives & conversion"];
-  svgadaplab[label="SVG thi.ng/geom types adapter"];
-  svgrenderlab[label="3D SVG renderer"];
-  svgshaderlab[label="3D SVG facet shaders"];
-
-  geomsvg -> svgcore;
-  svgcore -> svglab[style="dashed"];
-  geomsvg -> svgadapt;
-  svgadapt -> svgadaplab[style="dashed"];
-  geomsvg -> svgrender;
-  svgrender -> svgrenderlab[style="dashed"];
-  geomsvg -> svgshader;
-  svgshader -> svgshaderlab[style="dashed"];
-
-  # viz
-  
-  node[color="#0077ff",fontcolor="white"];
-
-  geom -> geomviz;
-
-  vizcore[label="thi.ng.geom.viz.core"];
-
-  node[color="#ffffcc",fontcolor="black"];
-  vizlab[label="2D visualization / charting"];
-
-  geomviz -> vizcore;
-  vizcore -> vizlab[style="dashed"];
-
-  # physics
-  
-  node[color="#ff0077",fontcolor="white"];
-
-  geom -> geomphysics;
-
-  physcore[label="thi.ng.geom.physics.core"];
-
-  node[color="#ffffcc",fontcolor="black"];
-  physlab[label="2D/3D Verlet physics & behaviors"];
-
-  geomphysics -> physcore;
-  physcore -> physlab[style="dashed"];
-
-  # voxel
-  
-  node[color="#007733",fontcolor="white"];
-
-  geom -> geomvoxel;
-
-  voxsvo[label="thi.ng.geom.voxel.svo"];
-  voxiso[label="thi.ng.geom.voxel.isosurface"];
-
-  node[color="#ffffcc",fontcolor="black"];
-  svolab[label="3D Sparse Voxel Tree"];
-  isolab[label="3D Isosurface meshing"];
-
-  geomvoxel -> voxsvo;
-  voxsvo -> svolab[style="dashed"];
-  geomvoxel -> voxiso;
-  voxiso -> isolab[style="dashed"];
-
-  # webgl
-  
-  node[color="#7700ff",fontcolor="white"];
-
-  geom -> geomwebgl;
-
-  wglcore[label="thi.ng.geom.webgl.core"];
-  wglanim[label="thi.ng.geom.webgl.animator"];
-  wglbuf[label="thi.ng.geom.webgl.buffers"];
-  wglshader[label="thi.ng.geom.webgl.shaders"];
-  wglutils[label="thi.ng.geom.webgl.utils"];
-
-  node[color="#ffffcc",fontcolor="black"];
-  wcorelab[label="WebGL core API, types & conversion"];
-  wanimlab[label="Canvas animation helper"];
-  wbuflab[label="WebGL buffers, textures"];
-  wshadlab[label="WebGL shader handling & presets"];
-  wutillab[label="Utilities"];
-  
-  geomwebgl -> wglcore;
-  wglcore -> wcorelab;
-  geomwebgl -> wglanim;
-  wglanim -> wanimlab;
-  geomwebgl -> wglbuf;
-  wglbuf -> wbuflab;
-  geomwebgl -> wglshader;
-  wglshader -> wshadlab;
-  geomwebgl -> wglutils;
-  wglutils -> wutillab;
 }

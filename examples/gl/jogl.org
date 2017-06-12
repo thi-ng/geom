@@ -1,0 +1,556 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_3_gh:
+ - [[#jogl-examples][JOGL examples]]
+     - [[#example-textured-cube--arcball][Example: Textured cube & arcball]]
+     - [[#example-stl-mesh-loading][Example: STL mesh loading]]
+     - [[#example-fbo--fx-pipeline][Example: FBO & FX pipeline]]
+     - [[#example-fullscreen-quad-fragment-shader][Example: Fullscreen quad fragment shader]]
+         - [[#basic-circular-gradient-shader][Basic circular gradient shader]]
+         - [[#sky-with-interactive-sun-position][Sky with interactive sun position]]
+
+* JOGL examples
+** Example: Textured cube & arcball
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/jogl/ex01.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.jogl.ex01
+    (:import
+     [com.jogamp.opengl GL3 GLAutoDrawable]
+     [com.jogamp.newt.event MouseEvent KeyEvent])
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.attribs :as attr]
+     [thi.ng.geom.vector :as v]
+     [thi.ng.geom.matrix :as mat]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.arcball :as arc]
+     [thi.ng.geom.gl.buffers :as buf]
+     [thi.ng.geom.gl.shaders :as sh]
+     [thi.ng.geom.gl.glmesh :as glm]
+     [thi.ng.geom.gl.jogl.core :as jogl]
+     [thi.ng.geom.gl.jogl.constants :as glc]
+     [clojure.pprint :refer [pprint]]
+     [clojure.java.io :as io]))
+
+  (def app (atom nil))
+
+  (def shader
+    {:vs "
+    void main() {
+      vCol = vec4(position.xy * 0.5 + 0.5, fract(time), 1.0);
+      vUV = uv;
+      gl_Position = proj * view * model * vec4(position, 1.0);
+    }"
+     :fs "out vec4 fragColor;
+    void main() {
+      fragColor = vCol * texture(tex, vUV);
+    }"
+     :version  330
+     :attribs  {:position :vec3
+                :uv       :vec2}
+     :varying  {:vCol     :vec4
+                :vUV      :vec2}
+     :uniforms {:model [:mat4 mat/M44]
+                :view  :mat4
+                :proj  :mat4
+                :tex   [:sampler2D 0]
+                :time  :float}
+     :state    {:depth-test false
+                :blend      true
+                :blend-fn   [glc/src-alpha glc/one]}})
+
+  (defn init
+    [^GLAutoDrawable drawable]
+    (let [^GL3 gl (.. drawable getGL getGL3)
+          tex     (buf/load-texture gl {:src (io/file "dev-resources/cubev.png")})
+          model   (-> (a/aabb 1)
+                      (g/center)
+                      (g/as-mesh {:mesh    (glm/gl-mesh 12 #{:uv})
+                                  :attribs {:uv (attr/face-attribs (attr/uv-cube-map-v 256 false))}})
+                      (gl/as-gl-buffer-spec {})
+                      (assoc :shader (sh/make-shader-from-spec gl shader))
+                      (assoc-in [:shader :state :tex] tex)
+                      (gl/make-buffers-in-spec gl glc/static-draw))]
+      (swap! app assoc :model model :arcball (arc/arcball {}))))
+
+  (defn display
+    [^GLAutoDrawable drawable t]
+    (let [{:keys [model arcball]} @app
+          ^GL3 gl (.. drawable getGL getGL3)]
+      (doto gl
+        (gl/clear-color-and-depth-buffer 0.3 0.3 0.3 1.0 1.0)
+        (gl/draw-with-shader
+         (update model :uniforms assoc
+                 :view (arc/get-view arcball)
+                 :time (* 0.25 t))))))
+
+  (defn dispose [_] (jogl/stop-animator (:anim @app)))
+
+  (defn resize
+    [_ x y w h]
+    (swap! app assoc-in [:model :uniforms :proj] (mat/perspective 45 (/ w h) 0.1 10))
+    (swap! app update :arcball arc/resize w h))
+
+  (defn key-pressed
+    [^KeyEvent e]
+    (condp = (.getKeyCode e)
+      KeyEvent/VK_ESCAPE (jogl/destroy-window (:window @app))
+      nil))
+
+  (defn mouse-pressed [^MouseEvent e] (swap! app update :arcball arc/down (.getX e) (.getY e)))
+
+  (defn mouse-dragged [^MouseEvent e] (swap! app update :arcball arc/drag (.getX e) (.getY e)))
+
+  (defn wheel-moved [^MouseEvent e deltas] (swap! app update :arcball arc/zoom-delta (nth deltas 1)))
+
+  (defn -main
+    [& args]
+    (reset!
+     app
+     (jogl/gl-window
+      {:profile       :gl3
+       :samples       4
+       :double-buffer true
+       :fullscreen    false
+       :events        {:init    init
+                       :display display
+                       :resize  resize
+                       :keys    {:press key-pressed}
+                       :mouse   {:press mouse-pressed
+                                 :drag  mouse-dragged
+                                 :wheel wheel-moved}}}))
+    nil)
+#+END_SRC
+
+** Example: STL mesh loading
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/jogl/ex02.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.jogl.ex02
+    (:import
+     [com.jogamp.opengl GL3 GLAutoDrawable]
+     [com.jogamp.newt.event MouseEvent KeyEvent])
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.color.core :as col]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.attribs :as attr]
+     [thi.ng.geom.vector :as v]
+     [thi.ng.geom.matrix :as mat]
+     [thi.ng.geom.quaternion :as q]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.mesh.io :as mio]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.arcball :as arc]
+     [thi.ng.geom.gl.shaders :as sh]
+     [thi.ng.geom.gl.shaders.phong :as phong]
+     [thi.ng.geom.gl.glmesh :as glm]
+     [thi.ng.geom.gl.jogl.core :as jogl]
+     [thi.ng.geom.gl.jogl.constants :as glc]
+     [thi.ng.glsl.core :as glsl]
+     [clojure.java.io :as io]))
+
+  (def app (atom nil))
+
+  (defn load-mesh
+    "Loads STL mesh from given path and fits it into centered bounding box."
+    [path bounds]
+    (with-open [in (io/input-stream path)]
+      (->> (mio/read-stl (mio/wrapped-input-stream in) #(glm/gl-mesh % #{:fnorm}))
+           vector
+           (gu/fit-all-into-bounds (g/center bounds))
+           first)))
+
+  (defn init
+    [^GLAutoDrawable drawable]
+    (let [^GL3 gl   (.. drawable getGL getGL3)
+          view-rect (gl/get-viewport-rect gl)
+          shader    (sh/make-shader-from-spec gl (assoc phong/shader-spec :version 330))
+          model     (-> (load-mesh "../assets/suzanne.stl" (a/aabb 2))
+                        (gl/as-gl-buffer-spec {})
+                        (update :uniforms merge
+                                {:lightPos [0 2 2]
+                                 :view (mat/look-at (v/vec3 0 0 1) (v/vec3) v/V3Y)
+                                 :shininess 50
+                                 :wrap 1
+                                 :ambientCol [0.0 0.1 0.4 0.0]
+                                 :diffuseCol [0.1 0.5 0.6]
+                                 :specularCol [0.8 0.3 0.3]})
+                        (assoc :shader shader)
+                        (gl/make-buffers-in-spec gl glc/static-draw))]
+      (swap! app assoc
+             :model     model
+             :wireframe false
+             :arcball   (arc/arcball {:init (m/normalize (q/quat 0.0 0.707 0.707 0))}))))
+
+  (defn display
+    [^GLAutoDrawable drawable t]
+    (let [^GL3 gl (.. drawable getGL getGL3)
+          {:keys [model wireframe arcball]} @app
+          view    (arc/get-view arcball)]
+      (doto gl
+        (gl/clear-color-and-depth-buffer col/GRAY 1)
+        (.glPolygonMode glc/front-and-back (if wireframe glc/line glc/fill))
+        (gl/draw-with-shader (assoc-in model [:uniforms :model] view)))))
+
+  (defn resize
+    [_ x y w h]
+    (swap! app assoc-in [:model :uniforms :proj] (mat/perspective 45 (/ w h) 0.1 10))
+    (swap! app update :arcball arc/resize w h))
+
+  (defn dispose [_] (jogl/stop-animator (:anim @app)))
+
+  (defn key-pressed
+    [^KeyEvent e]
+    (condp = (.getKeyCode e)
+      KeyEvent/VK_ESCAPE (jogl/destroy-window (:window @app))
+      (case (.getKeyChar e)
+        \w (swap! app update :wireframe not)
+        nil)))
+
+  (defn mouse-pressed [^MouseEvent e] (swap! app update :arcball arc/down (.getX e) (.getY e)))
+
+  (defn mouse-dragged [^MouseEvent e] (swap! app update :arcball arc/drag (.getX e) (.getY e)))
+
+  (defn wheel-moved [^MouseEvent e deltas] (swap! app update :arcball arc/zoom-delta (nth deltas 1)))
+
+  (defn -main
+    [& args]
+    (reset!
+     app
+     (jogl/gl-window
+      {:profile       :gl3
+       :samples       4
+       :double-buffer true
+       :fullscreen    false
+       :events        {:init    init
+                       :display display
+                       :dispose dispose
+                       :resize  resize
+                       :keys    {:press key-pressed}
+                       :mouse   {:press mouse-pressed
+                                 :drag  mouse-dragged
+                                 :wheel wheel-moved}}}))
+    nil)
+#+END_SRC
+
+** Example: FBO & FX pipeline
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/jogl/ex03.clj :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.jogl.ex03
+    (:import
+     [com.jogamp.opengl GL3 GLAutoDrawable]
+     [com.jogamp.newt.event MouseEvent KeyEvent])
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.color.core :as col]
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.rect :as r]
+     [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.vector :as v]
+     [thi.ng.geom.matrix :as mat]
+     [thi.ng.geom.quaternion :as q]
+     [thi.ng.geom.mesh.io :as mio]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.arcball :as arc]
+     [thi.ng.geom.gl.fx :as fx]
+     [thi.ng.geom.gl.fx.bloom :as bloom]
+     [thi.ng.geom.gl.glmesh :as glm]
+     [thi.ng.geom.gl.shaders :as sh]
+     [thi.ng.geom.gl.shaders.phong :as phong]
+     [thi.ng.geom.gl.jogl.core :as jogl]
+     [thi.ng.geom.gl.jogl.constants :as glc]
+     [thi.ng.geom.gl.jogl.buffers :as native]
+     [thi.ng.glsl.core :as glsl]
+     [clojure.pprint :refer [pprint]]
+     [clojure.java.io :as io]))
+
+  (def app
+    (atom {:mesh    "dev-resources/suzanne.stl"
+           :version 330}))
+
+  (defn load-mesh
+    "Loads STL mesh from given path and fits it into centered bounding box."
+    [path bounds]
+    (with-open [in (io/input-stream path)]
+      (->> #(glm/gl-mesh % #{:fnorm})
+           (mio/read-stl (mio/wrapped-input-stream in))
+           vector
+           (gu/fit-all-into-bounds (g/center bounds))
+           first)))
+
+  (defn init
+    [^GLAutoDrawable drawable]
+    (let [{:keys [mesh version]} @app
+          ^GL3 gl       (.. drawable getGL getGL3)
+          view-rect     (gl/get-viewport-rect gl)
+          main-shader   (sh/make-shader-from-spec gl phong/shader-spec version)
+          pass-shader   (sh/make-shader-from-spec gl fx/shader-spec version)
+          fx-pipe       (fx/init-pipeline gl (bloom/make-pipeline-spec 1280 720 16 version))
+          quad          (fx/init-fx-quad gl)
+          img-comp      (d/merge-deep
+                         quad
+                         {:shader (assoc-in (get-in fx-pipe [:shaders :final]) [:state :tex]
+                                            (fx/resolve-pipeline-textures fx-pipe [:src :ping]))})
+          img-orig      (d/merge-deep
+                         quad
+                         {:shader (assoc-in pass-shader [:state :tex]
+                                            (fx/resolve-pipeline-textures fx-pipe :src))})
+          model         (-> (load-mesh mesh (a/aabb 2))
+                            (gl/as-gl-buffer-spec {})
+                            (d/merge-deep
+                             {:uniforms {:view        (mat/look-at (v/vec3 0 0 1) (v/vec3) v/V3Y)
+                                         :lightPos    [0 2 0]
+                                         :shininess   10
+                                         :wrap        0
+                                         :ambientCol  [0.0 0.1 0.4 0.0]
+                                         :diffuseCol  [0.1 0.6 0.8]
+                                         :specularCol [1 1 1]}
+                              :shader main-shader})
+                            (gl/make-buffers-in-spec gl glc/static-draw))]
+      (swap! app merge
+             {:model      model
+              :fx-pipe    fx-pipe
+              :img-comp   img-comp
+              :thumbs     (-> fx-pipe :passes butlast reverse vec (conj img-orig))
+              :arcball    (arc/arcball {:init (m/normalize (q/quat 0.0 0.707 0.707 0))})})))
+
+  (defn display
+    [^GLAutoDrawable drawable t]
+    (let [^GL3 gl (.. drawable getGL getGL3)
+          {:keys [model arcball fx-pipe img-comp thumbs width height]} @app
+          src-fbo   (get-in fx-pipe [:fbos :src])
+          view-rect (r/rect width height)
+          vp        (-> view-rect
+                        (gu/fit-all-into-bounds [(r/rect (:width src-fbo) (:height src-fbo))])
+                        first
+                        (g/center (g/centroid view-rect)))
+          fx-pipe   (fx/update-pipeline-pass fx-pipe :final assoc :viewport vp)]
+      (gl/bind (:fbo src-fbo))
+      (doto gl
+        (gl/set-viewport 0 0 (:width src-fbo) (:height src-fbo))
+        (gl/clear-color-and-depth-buffer (col/hsva 0 0 0.3) 1)
+        (gl/draw-with-shader (assoc-in model [:uniforms :model] (arc/get-view arcball))))
+      (gl/unbind (:fbo src-fbo))
+      (fx/execute-pipeline gl fx-pipe)
+      (loop [y 0, thumbs thumbs]
+        (when thumbs
+          (gl/set-viewport gl 0 y 160 90)
+          (gl/draw-with-shader gl (first thumbs))
+          (recur (+ y 90) (next thumbs))))))
+
+  (defn key-pressed
+    [^KeyEvent e]
+    (condp = (.getKeyCode e)
+      KeyEvent/VK_ESCAPE (jogl/destroy-window (:window @app))
+      nil))
+
+  (defn resize
+    [_ x y w h]
+    (swap! app
+           #(-> %
+                (assoc-in [:model :uniforms :proj] (mat/perspective 45 (/ w h) 0.1 10))
+                (assoc :width w :height h)
+                (update :arcball arc/resize w h))))
+
+  (defn dispose [_] (jogl/stop-animator (:anim @app)))
+
+  (defn mouse-pressed [^MouseEvent e] (swap! app update :arcball arc/down (.getX e) (.getY e)))
+
+  (defn mouse-dragged [^MouseEvent e] (swap! app update :arcball arc/drag (.getX e) (.getY e)))
+
+  (defn wheel-moved [^MouseEvent e deltas] (swap! app update :arcball arc/zoom-delta (nth deltas 1)))
+
+  (defn -main
+    [& args]
+    (swap! app d/merge-deep
+           (jogl/gl-window
+            {:profile       :gl3
+             :samples       4
+             :double-buffer true
+             :fullscreen    false
+             :events        {:init    init
+                             :display display
+                             :dispose dispose
+                             :resize  resize
+                             :keys    {:press key-pressed}
+                             :mouse   {:press mouse-pressed
+                                       :drag  mouse-dragged
+                                       :wheel wheel-moved}}}))
+    nil)
+#+END_SRC
+
+** Example: Fullscreen quad fragment shader
+
+*** Basic circular gradient shader
+
+#+BEGIN_SRC glsl :noweb-ref ex-shader-basic
+  void mainImage(vec2 pos, vec2 aspect) {
+    float d = length((mpos - pos) * aspect);
+    float l = 1.0 - d * 4.0;
+    vec3 col = vec3(l);
+    fragColor = vec4(col, 1.0);
+  }
+#+END_SRC
+
+*** Sky with interactive sun position
+
+#+BEGIN_SRC glsl :noweb-ref ex-shader-sky
+  // based on http://glslsandbox.com/e#31148.0
+  float hash(float n) { return fract(sin(n) * 758.5453); }
+
+  float noise(vec3 x) {
+      vec3 p = floor(x);
+      vec3 f = fract(x);
+      // f = f * f * (3.0 - 2.0 * f);
+      float n = p.x + p.y * 57.0 + p.z * 800.0;
+      return mix(mix(mix(hash(n), hash(n + 1.0), f.x), mix(hash(n + 57.0), hash(n + 58.0), f.x), f.y),
+          mix(mix(hash(n + 800.0), hash(n + 801.0), f.x), mix(hash(n + 857.0), hash(n + 858.0), f.x), f.y), f.z);
+  }
+
+  float fbm(vec3 p) {
+      float f = 0.0;
+      f += 0.50000 * noise(p); p *= 2.02;
+      f -= 0.25000 * noise(p); p *= 2.03;
+      f += 0.12500 * noise(p); p *= 2.01;
+      f += 0.06250 * noise(p); p *= 2.04;
+      f -= 0.03125 * noise(p);
+      return f / 0.984375;
+  }
+
+  float cloud(vec3 p) {
+    p -= fbm(vec3(p.x, p.y, 0.0) * 0.5) * 2.25;
+    float a = max(0.0, -(fbm(p * 3.0) * 2.2 - 1.1));
+    return a * a;
+  }
+
+  vec3 f2(vec3 c) {
+    vec2 mp = vec2(mpos.x, 1.0 - mpos.y);
+    c += hash(gl_FragCoord.x + gl_FragCoord.y * 9.9) * 0.01;
+    c *= 0.7 - length(gl_FragCoord.xy / resolution.xy - mp) * 0.5;
+    float w = length(c);
+    return mix(c * vec3(1.0, 1.0, 1.6), vec3(1.4, 1.2, 1.0) * w, w * 1.1 - 0.2);
+  }
+
+  void mainImage(vec2 pos, vec2 aspect) {
+    pos.y += 0.2;
+    vec2 coord = vec2((pos.x - 0.5) / pos.y, 1.0 / (pos.y + 0.2));
+    // coord += fbm(vec3(coord * 18.0, time * 0.001)) * 0.07;
+    coord += time * 0.1;
+    float q = cloud(vec3(coord, 0.222));
+    vec3 col = vec3(0.2, 0.7, 0.8) + vec3(0.2, 0.4, 0.1) * q;
+    fragColor = vec4(f2(col), 1.0);
+  }
+#+END_SRC
+
+#+BEGIN_SRC clojure :tangle ../../babel/examples/jogl/ex04.clj :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.examples.jogl.ex04
+    (:import
+     [com.jogamp.opengl GL3 GLAutoDrawable]
+     [com.jogamp.newt.event MouseEvent KeyEvent])
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.color.core :as col]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.vector :as v]
+     [thi.ng.geom.matrix :as mat]
+     [thi.ng.geom.gl.core :as gl]
+     [thi.ng.geom.gl.fx :as fx]
+     [thi.ng.geom.gl.shaders :as sh]
+     [thi.ng.geom.gl.jogl.core :as jogl]
+     [thi.ng.geom.gl.jogl.constants :as glc]
+     [clojure.string :as str]))
+
+  (def app
+    (atom {:version 330
+           :example-id :sky
+           :mpos (v/vec2)}))
+
+  (def shader-examples
+    {:basic "
+  <<ex-shader-basic>>"
+     :sky "
+  <<ex-shader-sky>>"})
+
+  (def shader-spec
+    {:vs fx/passthrough-vs
+     :fs "
+  //layout(origin_upper_left) in vec4 gl_FragCoord;
+  out vec4 fragColor;
+
+  {{user-code}}
+
+  void main() {
+    vec2 aspect = vec2(1.0, resolution.y / resolution.x);
+    vec2 pos = gl_FragCoord.xy / resolution;
+    mainImage(pos, aspect);
+  }"
+     :uniforms {:tex        [:sampler2D 0]
+                :time       [:float 0]
+                :resolution [:vec2 [1280 720]]
+                :mpos       [:vec2 [0 0]]
+                :model      [:mat4 mat/M44]}
+     :varying  {:vUV :vec2}
+     :attribs  {:position [:vec2 0]
+                :uv       [:vec2 1]}
+     :state    {:depth-test false}})
+
+  (defn prepare-example
+    [id]
+    (update shader-spec :fs str/replace "{{user-code}}" (shader-examples id)))
+
+  (defn init
+    [^GLAutoDrawable drawable]
+    (let [{:keys [example-id version]} @app
+          ^GL3 gl   (.. drawable getGL getGL3)
+          view-rect (gl/get-viewport-rect gl)
+          shader    (sh/make-shader-from-spec gl (prepare-example example-id) version)
+          quad      (assoc (fx/init-fx-quad gl) :shader shader)]
+      (swap! app merge
+             {:quad   quad
+              :shader shader})))
+
+  (defn display
+    [^GLAutoDrawable drawable t]
+    (let [^GL3 gl (.. drawable getGL getGL3)
+          {:keys [quad width height mpos]} @app]
+      (doto gl
+        (gl/set-viewport 0 0 width height)
+        (gl/draw-with-shader
+         (update quad :uniforms merge
+                 {:time       t
+                  :mpos       (m/div mpos width height)
+                  :resolution [width height]})))))
+
+  (defn key-pressed
+    [^KeyEvent e]
+    (condp = (.getKeyCode e)
+      KeyEvent/VK_ESCAPE (jogl/destroy-window (:window @app))
+      nil))
+
+  (defn mouse-moved [^MouseEvent e] (swap! app assoc :mpos (v/vec2 (.getX e) (.getY e))))
+
+  (defn resize [_ x y w h] (swap! app assoc :width w :height h))
+
+  (defn dispose [_] (jogl/stop-animator (:anim @app)))
+
+  (defn -main
+    [& args]
+    (swap! app merge
+           (jogl/gl-window
+            {:profile       :gl3
+             :samples       4
+             :double-buffer true
+             :fullscreen    true
+             :events        {:init    init
+                             :display display
+                             :dispose dispose
+                             :resize  resize
+                             :keys    {:press key-pressed}
+                             :mouse   {:move mouse-moved}}}))
+    nil)
+#+END_SRC

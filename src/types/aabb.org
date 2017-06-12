@@ -1,0 +1,620 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#thinggeomaabb][thi.ng.geom.aabb]]
+     - [[#constructors][Constructors]]
+     - [[#type-specific-functions][Type specific functions]]
+     - [[#protocol-implementations][Protocol implementations]]
+         - [[#iarea][IArea]]
+         - [[#ibounds][IBounds]]
+         - [[#iboundingsphere][IBoundingSphere]]
+         - [[#iboundary][IBoundary]]
+         - [[#icenter][ICenter]]
+         - [[#iclassify][IClassify]]
+         - [[#iedgeaccess-ifaceaccess--ivertexaccess][IEdgeAccess, IFaceAccess & IVertexAccess]]
+         - [[#iintersect][IIntersect]]
+         - [[#imeshconvert][IMeshConvert]]
+         - [[#ipointmap][IPointMap]]
+         - [[#todo-iproximity][TODO IProximity]]
+         - [[#todo-isample][TODO ISample]]
+         - [[#todo-isetops][TODO ISetOps]]
+         - [[#isubdivide][ISubdivide]]
+         - [[#todo-itessellate][TODO ITessellate]]
+             - [[#todo-only-keep-faces-on-the-surface-of-the-original-box-no-inside-walls][TODO Only keep faces on the surface of the original box (no inside walls)]]
+         - [[#transformations][Transformations]]
+         - [[#ivolume][IVolume]]
+         - [[#end-of-implementation][End of implementation]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+     - [[#tests][Tests]]
+         - [[#todo-add-rotate-tests][TODO add rotate tests]]
+         - [[#todo-add-isec-tests][TODO add isec tests]]
+         - [[#protocol-impls][Protocol impls]]
+         - [[#proximity][Proximity]]
+         - [[#test-namespace-definition][Test namespace definition]]
+
+* thi.ng.geom.aabb
+** Constructors
+
+#+BEGIN_SRC clojure :noweb-ref ctors
+  (defn aabb
+    ([] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 1.0)))
+    ([size] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 size)))
+    ([o size] (thi.ng.geom.types.AABB. (vec3 o) (vec3 size)))
+    ([sx sy sz] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 sx sy sz))))
+  
+  (defn aabb-from-minmax
+    [p q]
+    (let [p (vec3 p)
+          q (vec3 q)
+          p (m/min p q)]
+      (thi.ng.geom.types.AABB. p (m/- (m/max p q) p))))
+#+END_SRC
+
+** Type specific functions
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+
+#+END_SRC
+
+** Protocol implementations
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  (extend-type thi.ng.geom.types.AABB
+#+END_SRC
+
+*** IArea
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IArea
+  (area [{[w h d] :size}] (* 2.0 (mm/madd w h d h w d)))
+#+END_SRC
+
+*** IBounds
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IBounds
+  (bounds [_] _)
+  (width  [_] (nth (get _ :size) 0))
+  (height [_] (nth (get _ :size) 1))
+  (depth  [_] (nth (get _ :size) 2))
+#+END_SRC
+
+*** IBoundingSphere
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IBoundingSphere
+  (bounding-sphere
+   [_]
+   (let [ext (m/* (get _ :size) 0.5)]
+     (gu/bounding-sphere (m/+ (get _ :p) ext) (m/mag ext))))
+#+END_SRC
+
+*** IBoundary
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IBoundary
+  (contains-point?
+   [{[px py pz] :p s :size} q]
+   (and (m/in-range? px (+ px (nth s 0)) (nth q 0))
+        (m/in-range? py (+ py (nth s 1)) (nth q 1))
+        (m/in-range? pz (+ pz (nth s 2)) (nth q 2))))
+#+END_SRC
+
+*** ICenter
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/ICenter
+  (center
+   ([{size :size}]
+      (thi.ng.geom.types.AABB. (m/* size -0.5) size))
+   ([{size :size} q]
+      (thi.ng.geom.types.AABB. (m/madd size -0.5 q) size)))
+  (centroid
+   [_] (m/madd (get _ :size) 0.5 (get _ :p)))
+#+END_SRC
+
+*** IClassify
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IClassify
+  (classify-point
+   [_ [x y z]]
+   (let [[x1 y1 z1 :as p] (get _ :p)
+         [x2 y2 z2] (m/+ p (get _ :size))
+         on-plane? (fn [[minp maxp p min1 max1 min2 max2 c1 c2]]
+                     (and (or (m/delta= minp p *eps*)
+                              (m/delta= maxp p *eps*))
+                          (m/in-range? min1 max1 c1)
+                          (m/in-range? min2 max2 c2)))]
+     (if (some on-plane?
+               [[x1 x2 x y1 y2 z1 z2 y z]
+                [y1 y2 y x1 x2 z1 z2 x z]
+                [z1 z2 z x1 x2 y1 y2 x y]])
+       0
+       (if (and (m/in-range? x1 x2 x)
+                (m/in-range? y1 y2 y)
+                (m/in-range? z1 z2 z))
+         1 -1))))
+#+END_SRC
+
+*** IEdgeAccess, IFaceAccess & IVertexAccess                         :verify:
+
+  : e +----+ h
+  :   |\   :\
+  :   |f+----+ g
+  :   | |  : |
+  : a +-|--+d|
+  :    \|   \|
+  :   b +----+ c
+
+Faces are always returned in this order: east, west, north, south,
+front, back - assuming the vertex order given in the diagram.
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IVertexAccess
+  (vertices
+   [_]
+   (let [[x1 y1 z1 :as a] (get _ :p)
+         [x2 y2 z2 :as g] (m/+ a (get _ :size))]
+     [a (vec3 x1 y1 z2) (vec3 x2 y1 z2) (vec3 x2 y1 z1)
+      (vec3 x1 y2 z1) (vec3 x1 y2 z2) g (vec3 x2 y2 z1)]))
+  g/IEdgeAccess
+  (edges
+   [_]
+   (let [[a b c d e f g h] (g/vertices _)]
+     [[a b] [b c] [c d] [d a] ;; bottom
+      [e f] [f g] [g h] [h e] ;; top
+      [a e] [b f]             ;; left
+      [c g] [d h]             ;; right
+      ]))
+  g/IFaceAccess
+  (faces
+   [_]
+   (let [[a b c d e f g h] (g/vertices _)]
+     [[c d h g]
+      [a b f e]
+      [f g h e]
+      [a d c b]
+      [b c g f]
+      [d a e h]]))
+#+END_SRC
+
+*** IIntersect                                                       :verify:
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IIntersect
+  (intersect-shape
+   [_ s]
+   (cond
+    (instance? thi.ng.geom.types.AABB s)
+      (isec/intersect-aabb-aabb? _ s)
+    (instance? thi.ng.geom.types.Sphere s)
+      (isec/intersect-aabb-sphere? _ s)
+    :else (err/type-error! "AABB" s)))
+#+END_SRC
+
+*** IMeshConvert
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IMeshConvert
+  (as-mesh
+   ([_] (g/as-mesh _ {}))
+   ([_ {:keys [mesh flags attribs] :or {flags "nsewfb"}}]
+      (let [[a b c d e f g h] (g/vertices _)
+            [north south east west front back] (d/demunge-flags-seq flags "nsewfb")]
+        (->> [(if east (attr/generate-face-attribs [c d h g] 0 attribs nil))
+              (if west (attr/generate-face-attribs [a b f e] 1 attribs nil))
+              (if north (attr/generate-face-attribs [f g h e] 2 attribs nil))
+              (if south (attr/generate-face-attribs [a d c b] 3 attribs nil))
+              (if front (attr/generate-face-attribs [b c g f] 4 attribs nil))
+              (if back (attr/generate-face-attribs [d a e h] 5 attribs nil))]
+             (eduction (filter identity))
+             (g/into (or mesh (bm/basic-mesh)))))))
+#+END_SRC
+
+*** IPointMap
+
+- =map-point= takes an AABB and 3D point, returns the point in
+  normalized UVW coords in local box space, where [0,0,0] is
+  equivalent to the AABB's min point and [1,1,1] the point diagonally
+  opposite. If any of the resulting coordinates is outside the 0.0 ..
+  1.0 interval, the orginal point was outside the box.
+
+- =unmap-point= is the inverse operation of =map-point=. It maps a
+  point in local UVW coordinates to its world position.
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IPointMap
+  (map-point
+   [{:keys [p size]} q]
+   (vec3
+    (mm/subdiv (nth q 0) (nth p 0) (nth size 0))
+    (mm/subdiv (nth q 1) (nth p 1) (nth size 1))
+    (mm/subdiv (nth q 2) (nth p 2) (nth size 2))))
+  (unmap-point
+   [_ q] (m/madd q (get _ :size) (get _ :p)))
+#+END_SRC
+
+*** TODO IProximity
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IProximity
+  (closest-point
+   [{[px py pz] :p size :size} q]
+   (vec3
+    (m/clamp (nth q 0) px (+ px (nth size 0)))
+    (m/clamp (nth q 1) py (+ py (nth size 1)))
+    (m/clamp (nth q 2) pz (+ pz (nth size 2)))))
+#+END_SRC
+
+*** TODO ISample
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/ISample
+  (random-point-inside
+   [_]
+   (let [[x1 y1 z1 :as p] (get _ :p)
+         [x2 y2 z2]       (m/+ p (get _ :size))]
+     (vec3 (m/random x1 x2) (m/random y1 y2) (m/random z1 z2))))
+  (random-point
+   [_]
+   (let [[x1 y1 z1 :as p] (get _ :p)
+         [x2 y2 z2]       (m/+ p (get _ :size))
+         id               (int (m/random 6))]
+     (cond
+       (< id 2) (vec3 (if (zero? id) x1 x2) (m/random y1 y2) (m/random z1 z2))
+       (< id 4) (vec3 (m/random x1 x2) (if (= 2 id) y1 y2) (m/random z1 z2))
+       :else    (vec3 (m/random x1 x2) (m/random y1 y2) (if (= 4 id) z1 z2)))))
+#+END_SRC
+
+*** TODO ISetOps
+    - Note taken on [2015-03-15 Sun 00:50] \\
+      Maybe `difference` isn't suitable here and should only implement ops which retain AABB type. Difference already implemented in csg ns
+
+The implementations for this protocol are only intended to work with
+other AABBs and no type checking is done.
+
+- =union= returns the union box of both args
+- =intersection= returns the AABB of the intersection volume of both
+  args or =nil= if there's no overlap. Intersection is defined also
+  for touching boxes or if overlap is only a single point (in which
+  case the size of the resulting AABB will be zero)
+- =difference= (still missing) will return a mesh of the remaining
+  volume after the 2nd box has been subtracted from the first (or
+  =nil= in case of no overlap)
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  m/ISetOps
+  (union
+   [_ b]
+   (let [pa (get _ :p)
+         pb (get b :p)
+         p  (m/min pa pb)]
+     (thi.ng.geom.types.AABB. p (m/- (m/max (m/+ pa (get _ :size)) (m/+ pb (get b :size))) p))))
+  (intersection
+   [_ b]
+   (let [pa (get _ :p)
+         qa (m/+ pa (get _ :size))
+         pb (get b :p)
+         qb (m/+ pb (get b :size))
+         p' (m/max pa pb)
+         q' (m/min qa qb)
+         s' (m/- q' p')]
+     (if (every? #(>= % 0.0) s')
+       (thi.ng.geom.types.AABB. p' s'))))
+#+END_SRC
+  
+*** ISubdivide
+
+An AABB can be subdivided into smaller ones, i.e. to create a seq of
+uniform grid cells. The following options can be given as a 2nd
+argument map:
+
+| Key       | Description                                                          | Default |
+|-----------+----------------------------------------------------------------------+---------|
+| =:num=    | number of cols/rows/slices the box will be uniformly subdivided into |       1 |
+| =:cols=   | number of times the box will be subdivided along the X-axis          |       1 |
+| =:rows=   | number of times the box will be subdivided along the Y-axis          |       1 |
+| =:slices= | number of times the box will be subdivided along the Z-axis          |       1 |
+
+When =:num= is given, the resulting AABBs will retain the aspect ratio
+of the original. If specified, =:cols=, =:rows= and =:slices= will
+take precedence over =:num=, but the latter will be used as default
+for missing args. AABBs are returned as a lazyseq starting from =:p=
+of the original with inner sorting over XYZ.
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/ISubdivide
+  (subdivide
+   ([_] (g/subdivide _ {}))
+   ([_ {:keys [num cols rows slices] :or {num 1}}]
+    (let [sx   (or cols num)
+          sy   (or rows num)
+          sz   (or slices num)
+          p    (get _ :p)
+          size (get _ :size)
+          s    (m/div size sx sy sz)]
+        (for [z (butlast (m/norm-range sz))
+              y (butlast (m/norm-range sy))
+              x (butlast (m/norm-range sx))]
+          (thi.ng.geom.types.AABB. (m/madd (vec3 x y z) size p) s)))))
+#+END_SRC
+
+*** TODO ITessellate
+**** TODO Only keep faces on the surface of the original box (no inside walls)
+    - Note taken on [2015-03-15 Sun 00:55] \\
+      could use Quad3 face tessellation, but would require moving Q3's subdivision into utils ns to avoid circular dependency.
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/ITessellate
+  (tessellate
+   ([_] (g/tessellate _ {}))
+   ([_ {f :fn :or {f gu/tessellate-3} :as opts}]
+      (->> (if (some #{:num :cols :rows :slices} (keys opts))
+             (g/subdivide _ opts)
+             [_])
+           (sequence
+            (comp
+             (mapcat g/faces)
+             (mapcat f))))))
+#+END_SRC
+
+*** Transformations                                                  :verify:
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IRotate
+  (rotate
+   [_ theta] (g/rotate-z (cu/cuboid (get _ :p) (get _ :size)) theta))
+
+  g/IRotate3D
+  (rotate-x
+   [_ theta] (g/rotate-x (cu/cuboid (get _ :p) (get _ :size)) theta))
+  (rotate-y
+   [_ theta] (g/rotate-y (cu/cuboid (get _ :p) (get _ :size)) theta))
+  (rotate-z
+   [_ theta] (g/rotate-z (cu/cuboid (get _ :p) (get _ :size)) theta))
+  (rotate-around-axis
+   [_ axis theta] (g/rotate-around-axis (cu/cuboid (get _ :p) (get _ :size)) axis theta))
+
+  g/IScale
+  (scale
+   [_ s] (thi.ng.geom.types.AABB. (m/* (get _ :p) s) (m/* (get _ :size) s)))
+  (scale-size
+   [_ s]
+   (let [s' (m/* (get _ :size) s)]
+     (thi.ng.geom.types.AABB. (m/madd (m/- s' (get _ :size)) -0.5 (get _ :p)) s')))
+
+  g/ITranslate
+  (translate
+   [_ t] (thi.ng.geom.types.AABB. (m/+ (get _ :p) t) (get _ :size)))
+
+  g/ITransform
+  (transform
+   [_ m] (g/transform (cu/cuboid (get _ :p) (get _ :size)) m))
+#+END_SRC
+
+*** IVolume
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  g/IVolume
+  (volume [{[w h d] :size}] (mm/mul w h d))
+#+END_SRC
+
+*** End of implementation                                          :noexport:
+
+#+BEGIN_SRC clojure :noweb-ref impl
+  )
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/aabb.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.aabb
+    #?(:cljs
+       (:require-macros
+        [thi.ng.math.macros :as mm]))
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.utils.intersect :as isec]
+     [thi.ng.geom.vector :as v :refer [vec3]]
+     [thi.ng.geom.matrix :refer [M44]]
+     [thi.ng.geom.cuboid :as cu]
+     [thi.ng.geom.basicmesh :as bm]
+     [thi.ng.geom.attribs :as attr]
+     [thi.ng.geom.types]
+     [thi.ng.dstruct.core :as d]
+     [thi.ng.xerror.core :as err]
+     [thi.ng.math.core :as m :refer [*eps*]]
+     #?(:clj [thi.ng.math.macros :as mm])))
+
+  <<ctors>>
+
+  <<helpers>>
+
+  <<impl>>
+#+END_SRC
+
+** Tests
+*** TODO add rotate tests
+*** TODO add isec tests
+
+#+BEGIN_SRC clojure :noweb-ref tests
+  (deftest test-ctors
+    (is (= (a/aabb [100 200 300] [10 20 30])
+           (a/aabb-from-minmax [100 200 300] [110 220 330]))
+        "aabb-from-minmax")
+    (is (= (a/aabb [0 0 0] [10 10 10]) (a/aabb 10))
+        "aabb n")
+    (is (= (a/aabb [0 0 0] [10 20 30]) (a/aabb 10 20 30))
+        "aabb sz sy sz"))
+#+END_SRC
+
+*** Protocol impls
+
+#+BEGIN_SRC clojure :noweb-ref tests
+  (deftest test-impls
+    (let [[px py pz :as p] (vec3 100 200 300)
+          [w h d :as s]    (vec3 10 20 30)
+          [qx qy qz :as q] (m/+ p s)
+          c (m/madd s 0.5 p)
+          a (a/aabb p s)]
+      (is (== (* 2 (+ (* w h) (* w d) (* h d))) (g/area a)) "area")
+      (is (== (* w h d) (g/volume a)) "volume")
+      (is (= a (g/bounds a)) "bounds")
+      (is (= w (g/width a)) "width")
+      (is (= h (g/height a)) "height")
+      (is (= d (g/depth a)) "depth")
+      (is (= (s/sphere c (g/dist c (m/+ p s))) (g/bounding-sphere a)) "bounding sphere")
+      (is (= c (g/centroid a)) "centroid")
+      (is (= (vec3) (g/centroid (g/center a))) "center + centroid")
+      (is (= (vec3 -1 -2 -3) (g/centroid (g/center a (vec3 -1 -2 -3)))) "center p + centroid")
+      (is (= 8 (count (g/vertices a))) "vert count")
+      (is (= 6 (count (g/faces a))) "face count")
+      (is (= 12 (count (g/edges a))) "edge count")
+      (is (instance? thi.ng.geom.types.BasicMesh (g/as-mesh a)) "as bmesh")
+      (is (instance? thi.ng.geom.types.GMesh (g/as-mesh a {:mesh (gm/gmesh)})) "as gmesh")
+      (is (= 1 (count (g/faces (g/as-mesh a {:flags :n})))))
+      (is (= 1 (count (g/faces (g/as-mesh a {:flags :s})))))
+      (is (= 1 (count (g/faces (g/as-mesh a {:flags :e})))))
+      (is (= 1 (count (g/faces (g/as-mesh a {:flags :w})))))
+      (is (= 1 (count (g/faces (g/as-mesh a {:flags :f})))))
+      (is (= 1 (count (g/faces (g/as-mesh a {:flags :b})))))
+      (is (every? #(g/contains-point? a %)
+                  (take 1000 (repeatedly #(g/random-point-inside a))))
+          "random-p-inside contains")
+      (is (every? pos?
+                  (take 1000 (repeatedly #(g/classify-point a (g/random-point-inside a)))))
+          "random-p-inside classify")
+      (is (every? zero?
+                  (take 1000 (repeatedly #(g/classify-point a (g/random-point a)))))
+          "random-p classify on surface")
+      (is (= 27 (count (g/subdivide a {:num 3}))) "subdiv :num")
+      (is (= 6 (count (g/subdivide a {:cols 3 :rows 2}))) "subdiv :cols :rows")
+      (is (= 12 (count (g/subdivide a {:cols 3 :rows 2 :slices 2}))) "subdiv :cols :rows :slices")
+      (is (= 12 (count (g/tessellate a))) "tessellate")
+      (is (= (a/aabb s) (g/translate a (m/- p))) "translate")
+      (is (= (a/aabb (m/* p 2) (m/* s 2)) (g/scale a 2)) "scale")
+      (is (= (a/aabb (m/madd s -0.5 p) (m/* s 2)) (g/scale-size a 2)) "scale-size")
+      (is (= (cu/cuboid (vec3) s) (g/transform a (g/translate M44 (m/- p)))) "translate via mat")
+      (is (= (cu/cuboid (m/* p 2) (m/* s 2)) (g/transform a (g/scale M44 2))) "scale via mat")
+      (is (= (a/aabb [-1 -2 -3] [3 5 7]) (m/union (a/aabb [-1 -2 -3] 1) (a/aabb [1 2 3] 1))) "union")
+      (is (= (a/aabb) (m/union (a/aabb) (a/aabb))) "union self")
+      (is (= (a/aabb 0.5 0.5) (m/intersection (a/aabb) (a/aabb 0.5 1))) "intersection aabb 1")
+      (is (= (a/aabb 1 0) (m/intersection (a/aabb) (a/aabb 1 1))) "intersection aabb 2")
+      (is (= (vec3) (g/map-point a p)) "map-point 1")
+      (is (= (vec3 1) (g/map-point a q)) "map-point 2")
+      (is (= (vec3 0 1 1) (g/map-point a (vec3 px qy qz))) "map-point 3")
+      (is (= (vec3 1 0 1) (g/map-point a (vec3 qx py qz))) "map-point 4")
+      (is (= (vec3 1 1 0) (g/map-point a (vec3 qx qy pz))) "map-point 5")
+      (is (= (vec3 0.5) (g/map-point a (g/centroid a))) "map-point centroid")
+      (is (= p (g/unmap-point a (vec3))) "unmap-point 1")
+      (is (= q (g/unmap-point a (vec3 1))) "unmap-point 2")
+      (is (= c (g/unmap-point a (vec3 0.5))) "unmap-point 3")))
+#+END_SRC
+
+*** Proximity
+
+There're 26 distinct cases for producing the closest point on an AABB to a given random point:
+
+- 6 sides
+- 12 edges
+- 8 corners
+
+#+BEGIN_SRC clojure :noweb-ref tests
+  (deftest test-proximity
+    (let [box       (a/aabb 1)
+          sectors   (->> (for [z (range -1 2) y (range -1 2) x (range -1 2)
+                               :when (not (and (zero? x) (zero? y) (zero? z)))
+                               :let [kx ({-1 '-x 0 "-0" 1 '+x} x)
+                                     ky ({-1 '-y 0 "-0" 1 '+y} y)
+                                     kz ({-1 '-z 0 "-0" 1 '+z} z)
+                                     id (keyword (str kx ky kz))]]
+                           [id (a/aabb [x y z] 1)])
+                         (into {}))
+          samples   1000
+          on-plane? (fn [p n secid]
+                      (let [pl  (pl/plane-with-point p n)
+                            sec (sectors secid)]
+                        (prn :sector-plane sec)
+                        (every?
+                         (fn [q]
+                           (let [cp  (g/closest-point box q)
+                                 res (g/classify-point pl cp)]
+                             (or (zero? res) (prn :fail q :cp cp :res res))))
+                         (repeatedly samples #(g/random-point-inside sec)))))
+          on-edge?  (fn [a b secid]
+                      (let [sec (sectors secid)]
+                        (prn :sector-edge sec)
+                        (every?
+                         (fn [q]
+                           (let [cp  (g/closest-point box q)
+                                 cp' (gu/closest-point-on-line cp a b)
+                                 d   (g/dist-squared cp cp')]
+                             (or (m/delta= 0 d) (prn :fail q :cp cp :dist d))))
+                         (repeatedly samples #(g/random-point-inside sec)))))
+          is-point? (fn [p secid]
+                      (let [sec (sectors secid)]
+                        (prn :sector-point sec)
+                        (every?
+                         (fn [q]
+                           (let [cp (g/closest-point box q)]
+                             (or (m/delta= p cp) (prn :fail q :cp cp))))
+                         (repeatedly samples #(g/random-point-inside sec)))))]
+      (is (== 26 (count sectors)))
+      (is (on-plane? (vec3 1 0 0) (vec3 1 0 0) :+x-0-0))
+      (is (on-plane? (vec3 0 0 0) (vec3 -1 0 0) :-x-0-0))
+      (is (on-plane? (vec3 0 1 0) (vec3 0 1 0) :-0+y-0))
+      (is (on-plane? (vec3 0 0 0) (vec3 0 -1 0) :-0-y-0))
+      (is (on-plane? (vec3 0 0 1) (vec3 0 0 1) :-0-0+z))
+      (is (on-plane? (vec3 0 0 0) (vec3 0 0 -1) :-0-0-z))
+      (is (on-edge? (vec3 0 0 0) (vec3 1 0 0) :-0-y-z))
+      (is (on-edge? (vec3 0 1 0) (vec3 1 1 0) :-0+y-z))
+      (is (on-edge? (vec3 0 0 1) (vec3 1 0 1) :-0-y+z))
+      (is (on-edge? (vec3 0 1 1) (vec3 1 1 1) :-0+y+z))
+      (is (on-edge? (vec3 0 0 0) (vec3 0 1 0) :-x-0-z))
+      (is (on-edge? (vec3 1 0 0) (vec3 1 1 0) :+x-0-z))
+      (is (on-edge? (vec3 0 0 1) (vec3 0 1 1) :-x-0+z))
+      (is (on-edge? (vec3 1 0 1) (vec3 1 1 1) :+x-0+z))
+      (is (on-edge? (vec3 0 0 0) (vec3 0 0 1) :-x-y-0))
+      (is (on-edge? (vec3 1 0 0) (vec3 1 0 1) :+x-y-0))
+      (is (on-edge? (vec3 0 1 0) (vec3 0 1 1) :-x+y-0))
+      (is (on-edge? (vec3 1 1 0) (vec3 1 1 1) :+x+y-0))
+      (is (is-point? (vec3 0 0 0) :-x-y-z))
+      (is (is-point? (vec3 1 0 0) :+x-y-z))
+      (is (is-point? (vec3 0 1 0) :-x+y-z))
+      (is (is-point? (vec3 1 1 0) :+x+y-z))
+      (is (is-point? (vec3 0 0 1) :-x-y+z))
+      (is (is-point? (vec3 1 0 1) :+x-y+z))
+      (is (is-point? (vec3 0 1 1) :-x+y+z))
+      (is (is-point? (vec3 1 1 1) :+x+y+z))))
+#+END_SRC
+
+*** Test namespace definition
+
+#+BEGIN_SRC clojure :tangle ../../babel/test/thi/ng/geom/test/types/aabb.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.test.types.aabb
+    #?(:cljs
+       (:require-macros
+        [cemerick.cljs.test :refer (is deftest with-test run-tests testing)]))
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.vector :refer [vec3]]
+     [thi.ng.geom.matrix :refer [M44]]
+     [thi.ng.geom.types]
+     [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.plane :as pl]
+     [thi.ng.geom.cuboid :as cu]
+     [thi.ng.geom.sphere :as s]
+     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.basicmesh :as bm]
+     [thi.ng.geom.triangle :as t]
+     #?(:clj
+        [clojure.test :refer :all]
+        :cljs
+        [cemerick.cljs.test])))
+
+  <<tests>>
+#+END_SRC

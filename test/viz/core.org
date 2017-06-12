@@ -1,0 +1,32 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* thi.ng.geom.test.viz.core
+** Constants & helpers
+
+#+BEGIN_SRC clojure :noweb-ref helpers
+
+#+END_SRC
+
+** Main
+#+BEGIN_SRC clojure :noweb-ref tests
+  (deftest test-main
+    (is true "is true"))
+#+END_SRC
+
+** Namespace declaration
+#+BEGIN_SRC clojure :tangle ../../babel/test/thi/ng/geom/test/viz/core.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.test.viz.core
+    (:require
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.viz.core :as viz]
+     [thi.ng.geom.svg.core :as svg]
+     [thi.ng.math.core :as m]
+     #?(:clj
+        [clojure.test :refer :all]
+        :cljs
+        [cemerick.cljs.test :refer-macros [is deftest]])))
+
+  <<helpers>>
+
+  <<tests>>
+#+END_SRC
