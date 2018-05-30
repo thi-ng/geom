@@ -1,0 +1,74 @@
+(ns thi.ng.geom.svg.shaders
+  (:require
+   [thi.ng.math.core :as m]
+   [thi.ng.geom.core :as g]
+   [thi.ng.geom.utils :as gu]
+   [thi.ng.geom.vector :refer [vec3 V3Z]]
+   [thi.ng.geom.matrix :as mat :refer [M44]]
+   [thi.ng.color.core :as col]))
+
+(defprotocol IShader
+  (uniforms [_])
+  (solid? [_])
+  (shade-facet [_ f f' z]))
+
+(defn normal-rgb
+  ([] (normal-rgb M44))
+  ([tx]
+   (fn [f _ _]
+     (-> (gu/ortho-normal f)
+         (g/transform tx)
+         (m/madd 0.5 0.5)))))
+
+(defn translucent
+  [shader alpha]
+  (fn [f f' z] (conj (vec (shader f f' z)) alpha)))
+
+(defn shader
+  [{:keys [fill stroke uniforms flags]}]
+  (reify
+    IShader
+    (shade-facet [_ f f' z]
+      (cond-> {}
+        fill   (assoc :fill   (col/rgba (if (fn? fill) (fill f f' z) fill)))
+        stroke (assoc :stroke (col/rgba (if (fn? stroke) (stroke f f' z) stroke)))))
+    (uniforms [_] uniforms)
+    (solid? [_] (get flags :solid true))))
+
+(defn lambert
+  [{:keys [view light-dir light-col diffuse ambient]}]
+  (let [light-col (vec3 light-col)
+        light-dir (m/normalize (vec3 light-dir))
+        diffuse   (if (fn? diffuse) diffuse (vec3 diffuse))
+        ambient   (if (fn? ambient) ambient (vec3 ambient))
+        nmat      (m/transpose (m/invert view))]
+    (fn [f f' z]
+      (let [n       (g/transform-vector nmat (gu/ortho-normal f))
+            lambert (max 0.0 (m/dot n light-dir))
+            diffuse (if (fn? diffuse) (diffuse f f' z) diffuse)
+            ambient (if (fn? ambient) (ambient f f' z) ambient)]
+        (-> (m/* diffuse light-col)
+            (m/madd lambert (m/* ambient light-col)))))))
+
+(defn phong
+  [{:keys [model view light-pos light-col
+           diffuse specular ambient shininess]}]
+  (let [light-col (vec3 light-col)
+        light-pos (g/transform-vector view (vec3 light-pos))
+        diffuse   (if (fn? diffuse) diffuse (vec3 diffuse))
+        ambient   (if (fn? ambient) ambient (vec3 ambient))
+        specular  (vec3 specular)
+        mv        (m/* view model)
+        nmat      (m/transpose (m/invert view))]
+    (fn [f f' z]
+      (let [eye-pos (g/transform-vector mv (gu/centroid f))
+            n       (m/normalize (g/transform-vector nmat (gu/ortho-normal f)))
+            l       (m/normalize (m/- light-pos eye-pos))
+            e       (m/normalize (m/- eye-pos))
+            lambert (max 0.0 (m/dot n l))
+            diffuse (if (fn? diffuse) (diffuse f f' z) diffuse)
+            ambient (if (fn? ambient) (ambient f f' z) ambient)
+            spec    (max (Math/pow (m/dot (m/normalize (m/+ l e)) n) shininess) 0.0)]
+        (-> (m/* diffuse light-col)
+            (m/madd lambert (m/+ (m/* ambient light-col) (m/* specular spec)))
+            (m/min [1.0 1.0 1.0]))))))
