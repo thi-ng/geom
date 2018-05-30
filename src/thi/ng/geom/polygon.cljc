@@ -98,7 +98,7 @@
         nv (count points)
         verts (vec (if (pos? area) (range nv) (range (dec nv) -1 -1)))]
     (loop [result [], verts verts, v (dec nv), nv nv, cnt (dec (* 2 nv))]
-      (prn :cnt cnt nv verts)
+      ;; (prn :cnt cnt nv verts)
       (if (= nv 2)
         result
         (when (pos? cnt)
@@ -108,7 +108,7 @@
                 a (points (verts u))
                 b (points (verts v))
                 c (points (verts w))]
-            (prn :uvw u v w)
+            ;; (prn :uvw u v w)
             (if (snip points a b c nv verts)
               (let [result (conj result [a b c])
                     verts (vec (concat (subvec verts 0 v) (subvec verts (inc v))))
