@@ -1,4 +1,4 @@
-(defproject thi.ng/geom "0.0.1191-dirty"
+(defproject thi.ng/geom "1.0.0-RC1"
   :description  "thi.ng geometry kit - meta project spec including all modules"
   :url          "https://github.com/thi-ng/geom"
   :license      {:name "Apache Software License"
@@ -9,8 +9,8 @@
 
   :min-lein-version "2.4.0"
 
-  :dependencies  [[org.clojure/clojure "1.8.0"]
-                  [org.clojure/clojurescript "1.9.89"]
+  :dependencies  [[org.clojure/clojure "1.9.0"]
+                  [org.clojure/clojurescript "1.10.238"]
                   [thi.ng/color "1.2.0"]
                   [thi.ng/dstruct "0.2.1"]
                   [thi.ng/math "0.2.1"]
@@ -21,13 +21,15 @@
                   [thi.ng/xerror "0.1.0"]
                   [org.jogamp.gluegen/gluegen-rt "2.3.2"]
                   [org.jogamp.jogl/jogl-all "2.3.2"]
+                  ;; [org.jogamp.gluegen/gluegen-rt "2.3.2" :classifier "natives-macosx-universal"]
+                  ;; [org.jogamp.jogl/jogl-all "2.3.2" :classifier "natives-macosx-universal"]
                   [cljs-log "0.2.2"]
                   [hiccup "1.0.5"]]
 
   :perforate    {:environments [{:namespaces [thi.ng.geom.bench.core.vector]}]}
 
   :profiles     {:dev   {:dependencies      [[criterium "0.4.4"]]
-                         :plugins           [[lein-cljsbuild "1.1.3"]
+                         :plugins           [[lein-cljsbuild "1.1.7"]
                                              [com.cemerick/clojurescript.test "0.3.3"]]
                          :node-dependencies [[benchmark "1.0.0"]]
                          :global-vars       {*warn-on-reflection* true}
@@ -42,26 +44,26 @@
                           [{:id             "bench"
                             :source-paths   ["src" "test" "benchmarks"]
                             :notify-command ["node" "target/cljs/benchmark.js"]
-                            :compiler       {:target        :nodejs
+                            :compiler       {:target       :nodejs
                                              :output-to     "target/cljs/benchmark.js"
                                              :optimizations :simple
                                              :pretty-print  true}}]
-                          :test-commands {"unit-tests" ["phantomjs" :runner "target/geom-0.0.1191-dirty.js"]}}}}
+                          :test-commands {"unit-tests" ["phantomjs" :runner "target/geom.js"]}}}}
 
   :cljsbuild    {:builds [{:id           "simple"
                            :source-paths ["src" "test" "examples/gl"]
-                           :compiler     {:output-to     "target/geom-0.0.1191-dirty.js"
+                           :compiler     {:output-to     "target/geom.js"
                                           :optimizations :whitespace
                                           :pretty-print  true}}
                           {:source-paths ["src" "examples/gl"]
                            :id           "prod"
-                           :compiler     {:output-to      "target/geom-0.0.1191-dirty.js"
+                           :compiler     {:output-to      "target/geom.js"
                                           :optimizations  :advanced
                                           :pretty-print   false}}]
-                 :test-commands {"unit-tests" ["phantomjs" :runner "target/geom-0.0.1191-dirty.js"]}}
+                 :test-commands {"unit-tests" ["phantomjs" :runner "target/geom.js"]}}
 
   :pom-addition [:developers
                  [:developer
                   [:name "Karsten Schmidt"]
-                  [:url "http://postspectacular.com"]
+                  [:url "http://thi.ng"]
                   [:timezone "0"]]])
