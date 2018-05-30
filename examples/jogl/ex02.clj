@@ -39,7 +39,7 @@
   (let [^GL3 gl   (.. drawable getGL getGL3)
         view-rect (gl/get-viewport-rect gl)
         shader    (sh/make-shader-from-spec gl (assoc phong/shader-spec :version 330))
-        model     (-> (load-mesh "../assets/suzanne.stl" (a/aabb 2))
+        model     (-> (load-mesh "assets/suzanne.stl" (a/aabb 2))
                       (gl/as-gl-buffer-spec {})
                       (update :uniforms merge
                               {:lightPos [0 2 2]
