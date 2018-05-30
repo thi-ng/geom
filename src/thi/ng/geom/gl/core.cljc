@@ -514,13 +514,16 @@
      ([canvas attribs]
       (let [canvas (if (string? canvas) (.getElementById js/document canvas) canvas)
             attribs (clj->js (merge context-default-attribs attribs))
+            getctx #(try
+                      (let [ctx (.getContext canvas % attribs)]
+                        (set! (.-onselectstart canvas) (constantly false))
+                        ctx)
+                      (catch js/Error e nil))
             ctx (loop [ids ["webgl" "experimental-webgl" "webkit-3d" "moz-webgl"]]
                   (when ids
-                    (try
-                      (let [ctx (.getContext canvas (first ids) attribs)]
-                        (set! (.-onselectstart canvas) (constantly false))
-                        (if ctx ctx (recur (next ids))))
-                      (catch js/Error e (recur (next ids))))))]
+                    (if-let [ctx (getctx (first ids))]
+                      ctx
+                      (recur (next ids)))))]
         (or ctx (err/unsupported! "WebGL not available"))))))
 
 ;; Context manipulation functions
