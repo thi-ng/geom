@@ -10,8 +10,25 @@
    [thi.ng.color.core :as col]
    #?(:clj [hiccup.core :refer [html]])))
 
+;; This namespace provides the core functionality to efficiently create
+;; SVG representations of the types defined in the geom library. Please
+;; consult the various examples for concrete usage information &
+;; potential:
+;;
+;; - `examples/svg/*.clj` - SVG demos
+;; - `examples/viz/*.clj` - SVG visualization/charting examples
+
+;; Constants & presets
+
 (def stroke-round {:stroke-linecap "round" :stroke-linejoin "round"})
 (def xml-preamble "<?xml version=\"1.0\"?>\n")
+
+;; Formatters
+;;
+;; SVG expresses coordinates and various other numeric attributes in text
+;; form. The SVG element functions defined in this namespace all make use
+;; of the formatters below. By dynamically re-binding the following vars,
+;; SVG formatting can be customized as needed.
 
 (def ^:dynamic *ff* (f/float 2))
 (def ^:dynamic *fmt-vec* (fn [p] (str (*ff* (first p)) "," (*ff* (nth p 1)))))
@@ -47,7 +64,19 @@
    :z ["z"]})
 
 (defprotocol ISVGConvert
+  "This protocol is implemented by types which can directly convert
+  themselves into an SVG representation. Note, that currently these
+  implementations are only made available when the
+  `thi.ng.svg.adapter` namespace is loaded."
   (as-svg [_ opts]))
+
+;; Actual conversion to SVG XML strings is only directly supported for
+;; the Clojure version using James Reeve's
+;; https://github.com/weavejester/hiccup library. For ClojureScript it
+;; is more likely (and efficient) to directly translate a SVG data
+;; structure into a DOM tree for which there're many different
+;; libraries available and we don't want to be prescriptive here and
+;; introduce unnecessary dependencies.
 
 #?(:clj
    (defn serialize
@@ -57,6 +86,21 @@
    (defn serialize-as-byte-array
      ^bytes [svg] (.getBytes (serialize svg) "UTF-8")))
 
+;; Attribute conversion
+
+;; Colors in SVG need to be defined as CSS color strings and hence are
+;; completely opaque to other parts of the code base and which might
+;; deal with the dynamic generation of color values. Therefore we
+;; allow the `:stroke` and `:fill` attributes to be defined as any
+;; color type defined by the http://thi.ng/color library (RGB, HSV,
+;; HSL, CMYK, YUV etc.). If these attributes are present and *not*
+;; already a string value, they will be converted into a CSS color
+;; automatically (using the polymorphic `as-css` protocol method of
+;; thi.ng/color).
+;;
+;; *Note:* The same applies to specifying colors in gradients (see
+;; `linear-gradient` and `radial-gradient` functions below).
+
 (defn color-attrib
   [attribs id]
   (if-let [att (get attribs id)]
@@ -64,6 +108,13 @@
       attribs
       (assoc attribs id @(col/as-css att)))
     attribs))
+
+;; Transforms
+;;
+;; Many SVG elements support the attachment of local coordinate
+;; transformations. If a `:transform` attribute has a non-string
+;; value, it will be interpreted as a `Matrix32` or equivalent
+;; 6-element vector and will be automatically converted.
 
 (defn matrix-attrib
   [attribs id]
@@ -73,6 +124,8 @@
       (let [[a c e b d f] mat]
         (assoc attribs id (apply f/format *fmt-matrix* [a b c d e f]))))
     attribs))
+
+;; Attribute processing
 
 (defn filter-attribs
   [attribs]
@@ -92,6 +145,8 @@
         (matrix-attrib :transform)
         (into base))
     base))
+
+;; SVG primitives
 
 (defn svg
   [attribs & body]
@@ -231,6 +286,8 @@
    (instance id nil))
   ([id attribs]
    [:use (svg-attribs attribs {"xlink:href" (str "#" id)})]))
+
+;; Decorators
 
 (defn arrow-head
   ([len theta solid?]

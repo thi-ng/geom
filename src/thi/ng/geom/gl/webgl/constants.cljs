@@ -1,6 +1,8 @@
 (ns thi.ng.geom.gl.webgl.constants
   (:refer-clojure :exclude [byte float int short keep repeat replace]))
 
+;; WebGL 1.0 constants
+
 (def active-attributes 0x8b89)
 (def active-texture 0x84e0)
 (def active-uniforms 0x8b86)

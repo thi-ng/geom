@@ -16,6 +16,37 @@
        [[thi.ng.geom.gl.webgl.constants :as glc]
         [thi.ng.typedarrays.core :as ta]])))
 
+(comment
+
+  ;; Example FX pipeline spec
+  
+  {:src-width  1280
+   :src-height 720
+   :version    330
+   :fbos       {:src  {:scale 1}
+                :ping {:scale 8}
+                :pong {:scale 8}}
+   :shaders    {:threshold threshold-shader-spec
+                :blur      blur-shader-spec
+                :comp      comp-shader-spec}
+   :passes     [{:id       :threshold
+                 :target   :ping
+                 :shader   :threshold
+                 :tex      :src}
+                {:id       :blur-h
+                 :target   :pong
+                 :shader   :blur
+                 :tex      :ping
+                 :uniforms {:horizontal true}}
+                {:id       :blur-v
+                 :target   :ping
+                 :shader   :blur
+                 :tex      :pong
+                 :uniforms {:horizontal false}}]}
+  )
+
+;; FX Shader template
+
 (def passthrough-vs
   "void main(){vUV=uv;gl_Position=model*vec4(position,0.0,1.0);}")
 
@@ -33,6 +64,8 @@
               :tex       [:sampler2D 0]}
    :state    {:depth-test false}})
 
+;; Helpers
+
 (defn resolve-textures
   [fbos tex]
   (let [tex (mapv
@@ -42,6 +75,8 @@
 
 (defn resolve-pipeline-textures
   [pipe tex] (resolve-textures (get pipe :fbos) tex))
+
+;; FX pipeline creation
 
 (defn init-fx-quad
   [gl]
@@ -122,6 +157,8 @@
     {:fbos    fbos
      :shaders shaders
      :passes  passes}))
+
+;; FX pipeline processing
 
 (defn draw-fx-pass
   [^GL3 gl spec]

@@ -8,10 +8,15 @@
    [thi.ng.math.core :as m]
    #?(:clj [thi.ng.geom.macros.voxel :refer [not-cond->]])))
 
+;; Marching cube lookup tables
+;; Edge offset table
+
 (def edge-offsets
   [[0 0 0 0] [1 0 0 2] [0 0 1 0] [0 0 0 2]
    [0 1 0 0] [1 1 0 2] [0 1 1 0] [0 1 0 2]
    [0 0 0 1] [1 0 0 1] [1 0 1 1] [0 0 1 1]])
+
+;; Triangles per cube index
 
 (def cell-triangles
   [[]
@@ -271,6 +276,8 @@
    [[0 3 8]]
    []])
 
+;; Edges per cube index
+
 (def compute-edges
   [0 7 1 6 0 7 1 6 4 3 5 2 4 3 5 2
    2 5 3 4 2 5 3 4 6 1 7 0 6 1 7 0
@@ -288,6 +295,8 @@
    2 5 3 4 2 5 3 4 6 1 7 0 6 1 7 0
    0 7 1 6 0 7 1 6 4 3 5 2 4 3 5 2
    2 5 3 4 2 5 3 4 6 1 7 0 6 1 7 0])
+
+;; Voxel lookups
 
 (defn voxel-id-front
   (^long
@@ -342,6 +351,8 @@
         :when (if (> id 0) (< id 0xff))]
     [id (* 3 idx) idx (voxel-cell config idx)]))
 
+;; Isosurface computation
+
 (defn- cell-vertice-builder
   [size iso iso*]
   (fn [vertices cell]
@@ -355,19 +366,34 @@
               vertices (if (> (bit-and eflags 0x01) 0)
                          (if (nil? (vertices vid))
                            (assoc! vertices vid
-                                   (vec3 (if (zero? (bit-and voxel-id 0x02)) (+ x delta) (- x delta)) y z))
+                                   (vec3
+                                    (if (zero? (bit-and voxel-id 0x02))
+                                      (+ x delta)
+                                      (- x delta))
+                                    y
+                                    z))
                            vertices)
                          vertices)
               vertices (if (> (bit-and eflags 0x02) 0)
                          (if (nil? (vertices vid1))
                            (assoc! vertices vid1
-                                   (vec3 x (if (zero? (bit-and voxel-id 0x10)) (+ y delta) (- y delta)) z))
+                                   (vec3
+                                    x
+                                    (if (zero? (bit-and voxel-id 0x10))
+                                      (+ y delta)
+                                      (- y delta))
+                                    z))
                            vertices)
                          vertices)]
           (if (> (bit-and eflags 0x04) 0)
             (if (nil? (vertices vid2))
               (assoc! vertices vid2
-                      (vec3 x y (if (zero? (bit-and voxel-id 0x08)) (+ z delta) (- z delta))))
+                      (vec3
+                       x
+                       y
+                       (if (zero? (bit-and voxel-id 0x08))
+                         (+ z delta)
+                         (- z delta))))
               vertices)
             vertices))
         vertices))))

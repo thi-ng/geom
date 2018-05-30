@@ -7,6 +7,10 @@
    [thi.ng.glsl.color :as col]
    [thi.ng.glsl.texture :as tex]))
 
+;; Bloom filter FX pipeline preset
+
+;; Threshold pass
+
 (def threshold-shader-spec
   (d/merge-deep
    fx/shader-spec
@@ -27,6 +31,8 @@ void main() {
              (glsl/assemble))
     :uniforms {:thresh [:float 0.8]}}))
 
+;; Blur pass
+
 (def blur-shader-spec
   (d/merge-deep
    fx/shader-spec
@@ -44,6 +50,8 @@ void main() {
              (glsl/glsl-spec-plain [tex/blur5-h tex/blur5-v])
              (glsl/assemble))
     :uniforms {:horizontal :bool}}))
+
+;; Composite pass
 
 (def comp-shader-spec
   (d/merge-deep
@@ -63,6 +71,8 @@ void main() {
                :blend    [:float 0.35]
                :exposure [:float 1.3]
                :gamma    [:float 1.25]}}))
+
+;; Constructor / factory
 
 (defn make-pipeline-spec
   [w h scale version]

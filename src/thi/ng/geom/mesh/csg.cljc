@@ -12,6 +12,39 @@
    [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]]
    #?(:clj [thi.ng.math.macros :as mm])))
 
+;; Parts of the functionality in this namespace are originally based
+;; on an early implementation of csg.js and have been ported to
+;; Clojure and the geometry types of this library. Meanwhile several
+;; additions & changes have been made to address both performance &
+;; resulting quality of meshes.
+
+;; Guidance & known issues
+;;
+;; Only fully closed meshes (i.e. enclosing solid volumes) can be used
+;; for CSG operations, or else results will be undefined.
+;;
+;; As with many other polygon based CSG implementations, this one uses
+;; a Binary Space Partitioning (BSP) tree, constructed from all facets
+;; of the input meshes. Therefore it's best to keep meshes fairly
+;; simple/small and avoid too many randomly aligned planes in the
+;; geometry.
+;;
+;; Many resulting meshes after a CSG operation will lose their "water
+;; tightness" feature and will exhibit so called T-Junctions. Such
+;; meshes usually cause issues with later mesh processing (e.g.
+;; subdivisions) and also cannot be directly used for 3D printing
+;; without repair. In this case, use the `repair-tjunctions` function
+;; in the `geom.mesh.ops` namespace as postprocessing step.
+;;
+;; In some cases a CSG operation might fail and produce a stack
+;; overflow error, either caused by too complex input meshes and/or
+;; floating point precision errors (especially for CLJS). In the
+;; latter case, you can try to remedy these by adjusting the scale (in
+;; magnitudes) of your geometry and/or wrapping the entirety of your
+;; CSG calls in a `binding` form to use a custom ε (epsilon) value:
+;;
+;; `(binding [thi.ng.math.core/*eps* 1e-3] ...)`
+
 (declare csg-polygon)
 
 (defrecord CSGNode [plane polygons front back])

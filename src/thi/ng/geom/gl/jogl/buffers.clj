@@ -3,6 +3,9 @@
    [com.jogamp.opengl.util GLBuffers]
    [java.nio Buffer DoubleBuffer FloatBuffer ShortBuffer IntBuffer]))
 
+;; Native buffer wrappers for Clojure / JOGL
+;; TODO refactor to avoid 2x copy via array, fill directly
+
 (defn ^FloatBuffer float-buffer
   [n-or-coll]
   (if (number? n-or-coll)

@@ -26,6 +26,33 @@
 
 (declare into-float-buffer-vec3)
 
+;; This protocol is implemented by types which can produce an
+;; OpenGL/WebGL representation of their data. Implementations must
+;; create a hash map (from here on called "GL model spec") of the
+;; following format:
+;;
+;; example GL model spec (for Clojure) defining:
+;; - 2 attribute buffers defining position & color for 3 vertices
+;; - 1 index buffer defining a single triangle (optional)
+;; - number of indices (only required if :indices given)
+;; - number of vertices
+;; - GL draw mode
+;;
+;; ```
+;; {:attribs      {:position {:data (native/float-buffer [0 0 0,   1 0 0,   0 1 0])   :size 3}
+;;                 :color    {:data (native/float-buffer [1 0 0 1, 0 1 0 1, 0 0 1 1]) :size 4}}
+;;  :indices      {:data (native/short-buffer [0 1 2])}
+;;  :num-items    3
+;;  :num-vertices 3
+;;  :mode         glc/triangles}
+;; ```
+;;
+;; *Important:* The collections for `:data` and `:indices` keys MUST
+;; be native buffers (in Clojure) or JS Typed Arrays (Clojurescript).
+;; These can be created using helper functions in the
+;; `thi.ng.geom.gl.jogl.buffers` or the `thi.ng.typedarrays.core`
+;; namespaces respectively.
+
 (defprotocol IGLConvert
   (as-gl-buffer-spec [_ opts]))
 
@@ -204,6 +231,15 @@
              (recur (+ idx 9) (next faces))))
         buf))))
 
+;; Attribute buffer generation
+;; 
+;; This needs more work: Colors & UVs might/will be based on vertices,
+;; but vertex buffer contains copies of each vertex due to unrolling
+;; and use of non-indexed VBOs.
+;;
+;; Therefore, currently only normals & single color options are
+;; properly supported.
+
 (defn common-attrib-buffer-specs
   [{:keys [num-vertices] :as acc} {:keys [normals fixed-normal uv colors fixed-color]}]
   (let [c-stride (if colors
@@ -246,6 +282,15 @@
                0 fixed-color num-vertices c-stride)
         :size c-stride}))))
 
+;; GL buffer conversions
+;;
+;; Vec2 & Vec3
+;;
+;; In addition to the protocol implementation we also provide the same
+;; functionality as standalone function. This is meant for special
+;; cases where we know an item is a `Vec3` and want to avoid the
+;; overhead of using the protocol.
+
 #?(:clj
    (defn into-float-buffer-vec2
      [^thi.ng.geom.vector.Vec2 v ^FloatBuffer buf stride idx]
@@ -272,6 +317,8 @@
      [^thi.ng.geom.vector.Vec3 v buf stride idx]
      (.set buf (.-buf v) idx)
      (+ idx stride)))
+
+;; PersistentVector
 
 (extend-type
     #?(:clj clojure.lang.PersistentVector
@@ -307,6 +354,8 @@
             (recur (into* (first xs) buf stride idx) (next xs))
             idx))))))
 
+;; LineStrip2
+
 (extend-type thi.ng.geom.types.LineStrip2
 
   IGLConvert
@@ -323,6 +372,8 @@
         :num-vertices numv}
        spec))))
 
+;; LineStrip3
+
 (extend-type thi.ng.geom.types.LineStrip3
   IGLConvert
   (as-gl-buffer-spec
@@ -337,6 +388,8 @@
         :mode         glc/line-strip
         :num-vertices numv}
        spec))))
+
+;; Rect2
 
 (extend-type thi.ng.geom.types.Rect2
   IGLConvert
@@ -354,6 +407,8 @@
        (if normals
          (-> spec (assoc :fixed-normal V3Z) (dissoc :normals))
          spec)))))
+
+;; Polygon2
 
 (extend-type thi.ng.geom.types.Polygon2
   IGLConvert
@@ -386,6 +441,8 @@
           :num-vertices num-verts}
          (dissoc spec :normals))))))
 
+;; BasicMesh
+
 (extend-type thi.ng.geom.types.BasicMesh
   IGLConvert
   (as-gl-buffer-spec
@@ -406,6 +463,8 @@
         :num-vertices num-verts
         :num-faces    num-faces}
        (assoc spec :normals (if fnormals (mesh-face-normals-buffer m)))))))
+
+;; GMesh
 
 (extend-type thi.ng.geom.types.GMesh
   IGLConvert
@@ -432,6 +491,10 @@
         :num-faces    num-faces}
        (assoc spec :normals normals)))))
 
+;; WegGL context
+
+;; Default configuration
+
 #?(:cljs
    (def context-default-attribs
      {:alpha                                true
@@ -442,6 +505,8 @@
       :premultiplied-alpha                  true
       :preserve-drawing-buffer              false
       :stencil                              false}))
+
+;; Context creation
 
 #?(:cljs
    (defn gl-context
@@ -457,6 +522,8 @@
                         (if ctx ctx (recur (next ids))))
                       (catch js/Error e (recur (next ids))))))]
         (or ctx (err/unsupported! "WebGL not available"))))))
+
+;; Context manipulation functions
 
 #?(:clj
    (defn clear-color-buffer
@@ -585,6 +652,8 @@
 
 (def ortho mat/ortho)
 
+;; WebGL extensions
+
 (def ^:private float-ext-ids
   ["OES_texture_float"
    "OES_texture_half_float"
@@ -625,6 +694,8 @@
    (defn get-supported-extensions
      [^WebGLRenderingContext gl]
      (.getSupportedExtensions gl)))
+
+;; Attribute buffers
 
 #?(:clj
    (def ^:private buffer-element-sizes
@@ -713,6 +784,8 @@
        (.bufferData gl target data buffer-mode)
        gl)))
 
+;; Shader usage
+
 (defn begin-shader
   #?(:clj  [^GL3 gl shader uniforms attribs indices]
      :cljs [^WebGLRenderingContext gl shader uniforms attribs indices])
@@ -730,6 +803,27 @@
      :cljs [^WebGLRenderingContext gl shader])
   (reduce #(sh/disable-attribute gl shader (key %2)) nil (get shader :attribs)))
 
+;; Shading state preparation
+;;
+;; Shader specs can specify WebGL render state flags which can then be
+;; automatically setup using the `prepare-render-state` function below.
+;; Currently the following options are supported:
+;; 
+;; | *Key*         | *Values*                                     | *Description*                  |
+;; |---------------+----------------------------------------------+--------------------------------|
+;; | `:depth-test` | boolean                                      | enabled if true, else disabled |
+;; | `:blend`      | boolean                                      | enabled if true, else disabled |
+;; | `:blend-fn`   | 2-elem vector `[src-coeff dest-coeff]`       | blend function coeffs,         |
+;; |               | reference[1]                                 | only used if `:blend true`     |
+;; | `:blend-eq`   | one of: `glc/func-add`, `glc/func-subtract`, | blend equation mode            |
+;; |               | `glc/func-reverse-subtract`                  |                                |
+;; |               | reference[2]                                 |                                |
+;; | `:tex`        | single texture or seq of textures            | binds textures to tex. units   |
+;; |               |                                              | starting from 0                |
+;; 
+;; [1] https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendFunc.xml
+;; [2] https://www.khronos.org/opengles/sdk/docs/man/xhtml/glBlendEquation.xml
+                                   
 (defn bind-sequentially
   [coll]
   (loop [i 0, coll coll]
@@ -761,6 +855,8 @@
         (bind tex 0))))
   gl)
 
+;; Drawing helpers
+
 (defn compute-normal-matrix
   [m v] (-> v (m/* m) (m/invert) (m/transpose)))
 
@@ -782,6 +878,8 @@
     (assoc-in
      spec [:uniforms normal-mat-id]
      (compute-normal-matrix model-mat view-mat))))
+
+;; Drawing
 
 #?(:clj
    (defn draw

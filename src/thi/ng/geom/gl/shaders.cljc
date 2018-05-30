@@ -24,10 +24,28 @@
         [thi.ng.glsl.core :as glsl :include-macros true]
         [thi.ng.typedarrays.core :as ta]])))
 
+;; Shader spec format
+;;
+;; | *Key*       | *Description*                                           |
+;; |-------------+---------------------------------------------------------|
+;; | `:vs`       | Vertex shader source                                    |
+;; | `:fs`       | Fragment shader source                                  |
+;; | `:attribs`  | User attributes                                         |
+;; | `:uniforms` | Shader uniform specification & defaults                 |
+;; | `:varying`  | Shader internal bridge variables                        |
+;; | `:prelude`  | GLSL source code to prepend (e.g. =#define= directives) |
+;; | `:version`  | GLSL version number (generates =#version= directive)    |
+;; | `:state`    | OpenGL state flags to initialize when shader is used    |
+;;
+;; TODO sample shader spec
+
 (defn bool->int [x] (if x 1 0))
 
 (defn bool->ivec
   [coll] (#?(:clj native/int-buffer :cljs ta/int32) (mapv bool->int coll)))
+
+;; Shader uniforms
+;; Supported types
 
 (def uniform-types
   #?(:clj  {:float       [#(.glUniform1f ^GL3 % %2 %3) float 1]
@@ -64,6 +82,40 @@
             :mat4        ["Matrix4fv" ta/float32 16]
             :sampler2D   ["1i" int]
             :samplerCube ["1i" int]}))
+
+;; Uniform setup & handling
+;;
+;; Shader specs define uniforms as a map under the `:uniforms` key. In
+;; this map, each of the shader's uniform names must be stated as keys
+;; and their types as values. Default values can be given by using a
+;; vector of `[type default]`. Default values are only used when a user
+;; doesn't specify a uniform in their model spec. The example below
+;; defines default values for the `:ambient`, `:model` and `:texture`
+;; uniforms:
+;;
+;; ```
+;; :uniforms {:alpha    :float
+;;            :diffuse  :vec3
+;;            :ambient  [:vec3 [0.1 0.1 0.1]]
+;;            :texture  [:sampler2D 0]
+;;            :modelMat [:mat4 M44]
+;;            :viewMat  :mat4
+;;            :projMat  :mat4}
+;; ```
+;;
+;; Special cases:
+;;
+;; - Setters for `:vec2` uniforms expect a 2-element vector or a number.
+;;   If the latter, it is interpreted as `[n n]`.
+;; - Setters for `:vec3` uniforms expect a 3-element vector, a
+;;   thi.ng/color type or an integer. If the latter, it is interpreted as
+;;   24bit RGB value and converted into a normalized RGB vector (`[r g b]`).
+;; - Setters for `:vec4` uniforms expect a 4-element vector, color type,
+;;   an integer or a CSS color string in `#hex`, `rgba()` or `hsla()`
+;;   form, which is then converted into a normalized RGBA vector (`[r g b
+;;   a]`)
+;; - Values for Matrix uniforms can be specified as vector `[mat default transpose?]`
+;;   to indicate given matrix should be transposed
 
 (defn init-shader-uniforms
   #?(:clj  [^GL3 gl prog uniforms]
@@ -160,6 +212,8 @@
          (set-uniform shader uniforms id d))))
    nil (get shader :uniforms)))
 
+;; Shader attributes
+
 (defn init-shader-attribs
   #?(:clj  [^GL3 gl prog attribs]
      :cljs [^WebGLRenderingContext gl prog attribs])
@@ -195,6 +249,13 @@
     (do (#?(:clj .glDisableVertexAttribArray :cljs .disableVertexAttribArray) gl loc) gl)
     (#?(:clj println :cljs warn) (str "Unknown shader attribute: " id))))
 
+;; Shader creation
+;;
+;; Header injection
+;;
+;; These boilerplate `#define`s are prepended by default to any given
+;; shader source before compilation with `compile-shader` below.
+
 (def default-prelude
   "#ifdef GL_FRAGMENT_PRECISION_HIGH
   precision highp int;
@@ -216,6 +277,8 @@
   #define RAD     0.008726646259972
   #endif
   ")
+
+;; Creation, compilation & linking
 
 (defn compile-glsl-vars
   [qualifier coll]

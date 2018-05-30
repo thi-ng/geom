@@ -17,6 +17,46 @@
        [[thi.ng.geom.gl.webgl.constants :as glc]
         [thi.ng.typedarrays.core :as ta]])))
 
+;; This namespace provides speed optimized, *mutable* mesh
+;; implementations primarily intended for display purposes via OpenGL
+;; / WebGL. Both the `GLMesh` and `IndexedGLMesh` types have the
+;; following features:
+;;
+;; - optional vertex attributes: face normals, vertex normals,
+;;   texture coordinates & colors
+;; - native storage in `java.nio` buffers or JS typed arrays
+;; - automatic triangle tessellation when adding mesh faces
+;; - automatic face normal calculation when adding faces (and face
+;;   normals are enabled)
+;; - customizable attribute names when calling `gl/as-gl-buffer-spec`
+;;   (see further below)
+;;
+;; The `IndexedGLMesh` furthermore does automatic indexing based on
+;; unique vertex values (and their attributes) and therefore reduces
+;; the amount of data needing to be sent and processed by the GPU.
+;;
+;; On the other hand the `GLMesh` builds flattened attribute buffers,
+;; is faster to construct and too allows for bigger meshes, since the
+;; 16bit element index limitation of OpenGL does not apply here.
+;;
+;; Limitations
+;;
+;; - Meshes are not resizable (due to fixed length buffers)
+;; - Max. 65536 unique vertices (OpenGL limitation, `IndexedGLMesh` only)
+;; - No support for vertex normal calculation. V-normals must be pre-assigned
+;; - Currently only partial support for mesh analysis and transformations
+;;
+;; Constructors
+;;
+;; Since the meshes are built on JS typed arrays, the number of faces
+;; must be known at construction time. This doesn't need to (but
+;; generally should) be the exact number, as long as it's at least the
+;; number of faces going to be added. The meshes internally keep track
+;; of the actual elements used, but *do no bounds checking*.
+;;
+;; The second arg given is an optional set of vertex attribute buffer
+;; IDs (see tables under `IGLConvert` further below for details).
+
 (declare gl-mesh indexed-gl-mesh)
 
 (declare add-face* add-face-indexed* into-glmesh* into-iglmesh* transform-vertices)
@@ -169,6 +209,9 @@
   (centroid
     [_] (gu/centroid (g/vertices _)))
 
+  ;; The `g/vertices` implementation returns the set of unique
+  ;; vertices in the mesh (without their attributes, only positions).
+
   g/IVertexAccess
   (vertices
     [_]
@@ -200,6 +243,8 @@
       (into-iglmesh* _ m)
       (gu/into-mesh _ add-face-indexed* m)))
 
+  ;; These protocol methods are used internally by `g/into`.
+
   g/IClear
   (clear*
     [_] (indexed-gl-mesh (int (/ #?(:clj (.capacity vertices) :cljs (.-length vertices)) 9)) attribs))
@@ -221,6 +266,37 @@
   g/ITransform
   (transform
     [_ tx] (transform-vertices #(g/transform-vector tx %) vertices (* id 3)) _)
+
+  ;; Since a `GLMesh` holds all its data in typed arrays, conversion
+  ;; into a readily usable format for display purposes is reduced to a
+  ;; straight forward re-formatting into GL spec map. By supplying an
+  ;; `:attribs` map in the 2nd arg (options map), all mesh attributes
+  ;; can be renamed in the spec map. The default attribute names are:
+  ;;
+  ;; | *Key*       | *Default value* | *Description*     |
+  ;; |-------------+-----------------+-------------------|
+  ;; | `:position` | `:position`     | vertex positions  |
+  ;; | `:fnorm`    | `:normal`       | face normals      |
+  ;; | `:vnorm`    | `:normal`       | vertex normals    |
+  ;; | `:uv`       | `:uv`           | UV texture coords |
+  ;; | `:col`      | `:color`        | vertex colors     |
+  ;;
+  ;; *Note:* As mentioned above, the `GLMesh` is *not* able to compute
+  ;; vertex normals itself.
+  ;;
+  ;; If a shader requires that an attribute must be renamed in the
+  ;; resulting spec map, call the function like this:
+  ;;
+  ;; rename :position & :uv attribs in result spec:
+  ;; ```
+  ;; (gl/as-gl-buffer-spec mesh {:attribs {:uv :texcoord, :position :pos}})
+  ;; ```
+  ;;
+  ;; Furthermore, the options map also supports the following other
+  ;; keys:
+  ;;
+  ;; - `:mode` - GL draw mode (default: `glc/triangles`)
+  ;; - `:num-vertices` - number of vertices to draw (default: number mesh verts)
 
   gl/IGLConvert
   (as-gl-buffer-spec

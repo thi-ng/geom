@@ -15,6 +15,21 @@
 
 (declare check-fbo)
 
+;; Textures
+;;
+;; | *Key*          | *Default*           | *Description*             |
+;; |----------------+---------------------+---------------------------|
+;; | `:image`       | `nil`               | HTML image or canvas      |
+;; | `:pixels`      | `nil`               | Image data array          |
+;; | `:format`      | `glc/rgba`          | Texture color format      |
+;; | `:type`        | `glc/unsigned-byte` | Encoding                  |
+;; | `:filter`      | `nil`               | Interpolation `[min mag]` |
+;; | `:wrap`        | `nil`               | Texture wrap mode `[s t]` |
+;; | `:flip`        | `nil`               | Vertical flip?            |
+;; | `:premultiply` | `nil`               | Premultiplied alpha?      |
+;; | `:width`       | `nil`               | Texture width             |
+;; | `:height`      | `nil`               | Texture height            |
+
 (defrecord Texture2D
     #?(:clj  [^GL3 gl ^IntBuffer id target]
        :cljs [^WebGLRenderingContext gl id target])
@@ -118,6 +133,11 @@
        (gl/bind tex)
        (gl/configure tex opts))))
 
+(comment
+  ;; Float textures
+  (make-texture gl {:width 512 :height 512 :type glc/float})
+  )
+
 #?(:cljs
    (defn make-canvas-texture
      ([^WebGLRenderingContext gl canvas]
@@ -168,6 +188,8 @@
          (set! (.-onerror img) ecb))
        (set! (.-src img) (get opts :src))
        tex)))
+
+;; RenderBuffer
 
 (defrecord RenderBuffer
     #?(:clj  [^GL3 gl ^IntBuffer id format width height]
@@ -230,6 +252,8 @@
       (make-depth-buffer gl size size))
      ([^WebGLRenderingContext gl width height]
       (make-render-buffer gl {:format glc/depth-component16 :width width :height height}))))
+
+;; Frame buffer
 
 (defrecord FBO
     #?(:clj [^GL3 gl ^IntBuffer id]

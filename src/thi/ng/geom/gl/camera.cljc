@@ -5,6 +5,18 @@
    [thi.ng.geom.vector :as v :refer [vec3]]
    [thi.ng.geom.matrix :as mat]))
 
+;; Perspective camera
+;;
+;; | *Key*     | *Type*        |      *Default* | *Description*                           |
+;; |-----------+---------------+----------------+-----------------------------------------|
+;; | `:eye`    | vec3          |          `nil` | Camera position                         |
+;; | `:target` | vec3          |     `(vec3 0)` | Camera target (center of view)          |
+;; | `:up`     | vec3          | `(vec3 0 1 0)` | Camera up axis                          |
+;; | `:fov`    | float         |             45 | Vertical FOV in degrees                 |
+;; | `:aspect` | float or rect |           16:9 | Camera aspect ratio (or view rectangle) |
+;; | `:near`   | float         |            0.1 | Camera near clipping distance           |
+;; | `:far`    | float         |            100 | Camera far clipping distance            |
+
 (defn apply
   "Takes a GL model spec map & camera, injects :view & :proj
   uniforms into spec."

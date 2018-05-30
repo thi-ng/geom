@@ -12,6 +12,11 @@
 
 (declare update-view)
 
+;; Based on "ARCBALL: A User Interface for Specifying
+;; Three-Dimensional Orientation Using a Mouse" by Ken Shoemake
+;;
+;; http://www.talisman.org/~erlkonig/misc/shoemake92-arcball.pdf
+
 (defn arcball
   [{:keys [init dist min-dist max-dist radius center] :as ab}]
   (let [dist     (or dist 2.0)
@@ -29,6 +34,8 @@
           :click-rot curr-rot})
         update-view)))
 
+;; Helpers
+
 (defn- sphere-position
   [{:keys [center radius]} x y]
   (let [v (vec3 (mm/subdiv x (v/x center) radius) (mm/subdiv y (v/y center) radius) 0)
@@ -36,6 +43,8 @@
     (if (> m 1.0)
       (m/normalize v)
       (assoc v :z (Math/sqrt (- 1.0 m))))))
+
+;; Event handlers & arcball operations
 
 (defn down
   [ab x y]

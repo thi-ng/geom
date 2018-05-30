@@ -13,6 +13,8 @@
    [thi.ng.dstruct.core :as d]
    [clojure.set :as set]))
 
+;; Cleanup & repair utilities for GMesh types
+
 (defn find-in-tree
   "Takes a query radius `eps`, returns a fn which queries an octree
   with a spherical region around `p` using the pre-configured radius.

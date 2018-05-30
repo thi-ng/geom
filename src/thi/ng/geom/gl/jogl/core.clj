@@ -13,6 +13,27 @@
    [thi.ng.geom.vector :as v]
    [thi.ng.geom.matrix :as mat]))
 
+;; Application / window management
+;;
+;; | *Key*              | *Default*  | *Description*                               |
+;; |--------------------+------------+---------------------------------------------|
+;; | `:always-on-top`   | false      | floating window on/off                      |
+;; | `:chrome`          | true       | window decoration on/off                    |
+;; | `:double-buffer`   | false      | use double buffering                        |
+;; | `:events`          | nil        | app event handler map (see below)           |
+;; | `:fullscreen`      | false      | fullscreen window                           |
+;; | `:height`          | 720        | window height                               |
+;; | `:pointer-locked`  | false      | lock mouse cursor                           |
+;; | `:pointer-visible` | true       | mouse cursor visible                        |
+;; | `:profile`         | :gl3       | OpenGL profile (:gl2, :gl3 or :gl4)         |
+;; | `:samples`         | 0          | MSAA super sampling / anti-aliasing samples |
+;; | `:screen`          | 0          | Target screen index (only if multi-screen)  |
+;; | `:title`           | "GLWindow" | window title                                |
+;; | `:visible`         | true       | window visible                              |
+;; | `:width`           | 1280       | window width                                |
+;; | `:x`               | 50         | window x position                           |
+;; | `:y`               | 50         | window y position|
+
 (defn gl-event-proxy
   [{:keys [init dispose resize display]}]
   (let [t0 (System/nanoTime)]

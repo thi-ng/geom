@@ -12,7 +12,11 @@
      (:import
       [java.io OutputStream InputStream])))
 
+;; Configuration parameters
+
 (def ^:dynamic *precision* 5)
+
+;; Stream wrappers
 
 (def wrapped-output-stream
   "Alias for thi.ng.dstruct.streams/output-stream"
@@ -21,6 +25,8 @@
 (def wrapped-input-stream
   "Alias for thi.ng.dstruct.streams/input-stream"
   streams/input-stream)
+
+;; STL
 
 (defn write-stl
   "Writes the given mesh as binary STL to output stream wrapper.
@@ -59,6 +65,8 @@
            (recur (g/add-face mesh [[a b c]]) (dec i)))
          mesh)))))
 
+;; Stanford PLY
+
 (defn write-ply
   "Writes the given mesh as binary PLY to output stream wrapper.
   For compatibility with some external tools, the mesh should already have been
@@ -95,6 +103,8 @@
       (doseq [v fverts]
         (streams/write-uint32-le out (get vindex v))))
     out))
+
+;; Wavefront OBJ
 
 (defn- obj-fmt2
   [prefix]
@@ -202,6 +212,8 @@
             out (obj-fmt-face-v
                  (mapv inc (.-vertices f)))))))
      out)))
+
+;; OFF
 
 (defn write-off
   "Writes mesh as OFF format to output stream wrapper.

@@ -8,6 +8,8 @@
    [thi.ng.geom.vector :as v :refer [vec3 V3Z]]
    [thi.ng.geom.matrix :as mat :refer [M44]]))
 
+;; 3D to 2D projection
+
 (defn project-face
   [mvp vtx points]
   (mapv #(mat/project-point-z % mvp vtx) points))
@@ -34,6 +36,9 @@
 (defn z-sort-faces
   [z-fn faces]
   (reverse (sort-by z-fn faces)))
+
+;; Render functions
+;; TODO add attribute support (at least colors)
 
 (defn mesh
   [mesh mvp screen shader]

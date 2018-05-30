@@ -9,6 +9,22 @@
      (:import
       [thi.ng.geom.types Circle2 Line2 LineStrip2 Polygon2 Rect2 Triangle2])))
 
+;; SVG conversions for geom.types
+;;
+;; This namespace provides some simple wrappers to allow direct use of
+;; the shape entities defined in `src/types.cljc`, without having to
+;; manually convert them into their SVG representations.
+;;
+;; The adapters work by providing implementations of the `ISVGConvert`
+;; protocol for all built-in 2D types and a simple helper function to
+;; recursively transform any such types used within an SVG scene.
+;;
+;; Any 3D entities (e.g. meshes) need to be processed via the
+;; `thi.ng.geom.svg.renderer` namespace.
+
+
+;; Adapter implementations
+
 (extend-protocol svg/ISVGConvert
 
   thi.ng.geom.types.Line2
@@ -46,6 +62,8 @@
   (d/postwalk
    (fn [x] (if (satisfies? svg/ISVGConvert x) (svg/as-svg x (meta x)) x))
    form))
+
+;; React.js :key prop injection
 
 (defn key-attrib-injector
   "To be used with inject-element-attribs, generates an unique :key

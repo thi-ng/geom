@@ -1,6 +1,54 @@
 (ns thi.ng.geom.gl.jogl.constants
   (:refer-clojure
-   :exclude [byte compile double filter float int load max min reduce set short keep repeat replace and or type]))
+   :exclude [byte compile double filter float
+             int load max min reduce set short
+             keep repeat replace and or type]))
+
+;; Constant extraction from JOGL sources
+;;
+;; The code below is used to extract and convert OpenGL constants from
+;; the Java JOGL sources in order to provide a better user experience
+;; from Clojure. This is a superset of the WebGL constants defined in
+;; `src/gl/webgl/constants.cljs`.
+;;
+;; The resulting constants are all in kebab case naming convention
+;; with their `gl-` prefix removed, unless it would result in a symbol
+;; with leading digits (in which case the `gl-` remains intact)
+
+(comment
+
+  (defn keep-gl?
+    [x]
+    (or (re-find #"^GL_[0-9]+" x)
+        (= "GL_FALSE" x)
+        (= "GL_TRUE" x)))
+
+  (defn snake->kebab
+    [x]
+    (let [x (if (keep-gl? x) x (subs x 3))]
+      (-> x str/lower-case (str/replace "_" "-"))))
+
+  (defn extract-constants-from-file
+    [path]
+    (->> path
+         (io/reader)
+         (line-seq)
+         (mapcat #(re-seq #"([A-Z0-9x_]+)\s*=\s*(0x[0-9a-f]+)" %))
+         (filter identity)
+         (map (fn [[_ k v]] (str "(def " (snake->kebab k) " " v ")")))))
+
+  ;; jogl-all-2.3.2-sources/com/jogamp/opengl/
+  (defn extract-constants
+    [base]
+    (->> ["GL" "GL2" "GL2ES1" "GL2ES2" "GL2ES3" "GL2GL3" "GL3" "GL3ES3" "GL4" "GL4ES3"]
+         (mapcat #(extract-constants-from-file (str base % ".java")))
+         (into #{})
+         (sort)
+         (interpose "\n")
+         (apply str)))
+  )
+
+;; OpenGL constants (combined versions 1.2 - 4.0)
 
 (def abgr-ext 0x8000)
 (def accum 0x100)

@@ -7,6 +7,8 @@
    [thi.ng.dstruct.core :as d]
    #?(:clj [thi.ng.math.macros :as mm])))
 
+;; Protocols
+
 (defprotocol ITimeStep
   (timestep [_ delta]))
 
@@ -51,6 +53,8 @@
     (when ps
       (apply-to-particle (first ps) delta fns)
       (recur (next ps)))))
+
+;; Type implementations
 
 (deftype VerletParticle
     #?@(:clj
@@ -155,6 +159,8 @@
       :behaviors behaviors
       :constraints constraints})))
 
+;; Spring types
+
 (defrecord Spring
     [^VerletParticle a
      ^VerletParticle b
@@ -198,6 +204,8 @@
             (set-position a (m/madd diff (* nd aw) pa)))
           (if-not (locked? b)
             (set-position b (m/madd! diff (* (- nd) bw) pb))))))))
+
+;; VerletPhysics sim
 
 (defrecord VerletPhysics
     [particles springs behaviors constraints listeners drag]
@@ -252,6 +260,8 @@
           (recur (dec i)))))
     _))
 
+;; Constructors
+
 (defn physics
   [{:keys [particles springs behaviors constraints drag listeners]
     :or   {particles [], springs [], behaviors {}, constraints {}
@@ -270,6 +280,8 @@
 (defn spring
   [a b rlen strength]
   (Spring. a b (double rlen) (double strength)))
+
+;; Behaviors
 
 (defn gravity
   [force]
@@ -301,6 +313,8 @@
   [vel strength]
   (fn [p delta]
     (add-force p (m/subm vel (velocity p) (* strength delta)))))
+
+;; Constraints
 
 (defn shape-constraint*
   [pred shape]

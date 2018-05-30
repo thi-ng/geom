@@ -10,6 +10,8 @@
    [thi.ng.xerror.core :as err]
    [clojure.core.reducers :as r]))
 
+;; Shared helpers
+
 (defn fold-into-map
   [coll] (r/fold (r/monoid into hash-map) conj coll))
 
@@ -18,6 +20,16 @@
   successive point triples: [prev curr next]"
   [f]
   (->> f (first) (conj f) (cons (peek f)) (d/successive-nth 3)))
+
+;; All subdivision methods as implemented here will currently only
+;; function with the default mesh type (GMesh). Support for other mesh
+;; types is planned, pending some further refactoring of existing mesh
+;; graph functions.
+;;
+;; Catmull-Clark
+;;
+;; Based on reference:
+;; https://en.wikipedia.org/wiki/Catmull%25E2%2580%2593Clark_subdivision_surface
 
 (defn cc-face-points
   "Takes a seq of faces and returns map with faces as keys and their
@@ -75,6 +87,8 @@
     (->> (cc-subdiv-faces f-points e-points)
          (cc-replace-vertices mesh f-points e-points)
          (g/into (g/clear* mesh)))))
+
+;; Doo-Sabin
 
 (defn ds-edge-midpoints
   [edges]
@@ -160,6 +174,16 @@
       (g/into (g/clear* mesh) (concat (if f* f-faces) e-faces v-faces)))))
 
 (def doo-sabin (custom-doo-sabin nil))
+
+;; Butterfly
+;;
+;; This subdivision scheme will only work with pre-triangulated meshes.
+;; The implementation does not check for this for speed reasons. If
+;; you're not sure your mesh contains only triangles, pass it through
+;; `g/tessellate` first...
+;;
+;; Reference:
+;; http://graphics.stanford.edu/courses/cs468-10-fall/LectureSlides/10_Subdivision.pdf
 
 ;; TODO move into tri or gmesh ns?
 (defn other-point-in-opp-tri

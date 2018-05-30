@@ -5,6 +5,8 @@
    [thi.ng.geom.vector :as v :refer [vec3 V3]])
   #?(:clj (:import [thi.ng.geom.vector Vec3])))
 
+;; Constants
+
 (def depth-size
   (mapv #(long (Math/pow 8 %)) (range 16)))
 
@@ -18,6 +20,8 @@
   Only checks 8bit range (0 - 255)."
   (let [xf (fn [x] (vec (eduction (filter #(pos? (bit-and x (bit-vals %)))) (range 8))))]
     (into [] (map xf) (range 0x100))))
+
+;; Helper & index functions
 
 (defn node-id
   (^long
@@ -67,6 +71,8 @@
 (defn size-at-depth
   "Returns node size at depth for given tree bounds."
   (^double [^double dim ^long depth] (/ dim (bit-shift-left 1 depth))))
+
+;; SVO implementation & operations
 
 (defrecord SVO [data dim max-depth prec branches])
 
