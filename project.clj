@@ -1,4 +1,4 @@
-(defproject thi.ng/geom "1.0.0-RC1"
+(defproject thi.ng/geom "1.0.0-RC2"
   :description  "thi.ng geometry kit - meta project spec including all modules"
   :url          "https://github.com/thi-ng/geom"
   :license      {:name "Apache Software License"

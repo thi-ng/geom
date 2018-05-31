@@ -1,3 +1,3 @@
 (ns thi.ng.geom.version)
 
-(def ^:export version "1.0.0-RC1")
+(def ^:export version "1.0.0-RC2")
