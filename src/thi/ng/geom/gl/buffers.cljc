@@ -186,6 +186,8 @@
                (when-let [cb (get opts :callback)] (cb tex img))))
        (when-let [ecb (:error-callback opts)]
          (set! (.-onerror img) ecb))
+       (when-let [cors (:cors opts)]
+         (set! (.-crossOrigin img) cors))
        (set! (.-src img) (get opts :src))
        tex)))
 
