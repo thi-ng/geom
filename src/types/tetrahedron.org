@@ -107,8 +107,9 @@
    [[a b] [b c] [c a] [a d] [b d] [c d]])
   g/IFaceAccess
   (faces
-   [{[a b c d] :points}]
-   [[a b c] [a d b] [b d c] [c d a]])
+   ([t _] (g/faces t))
+   ([{[a b c d] :points}]
+    [[[a b c]] [[a d b]] [[b d c]] [[c d a]]]))
   g/IGraph
   (vertex-neighbors
    [{[a b c d] :points} v]
