@@ -436,7 +436,7 @@ protocol consisting of just this one function:
 ** Constants
 
 #+BEGIN_SRC clojure :noweb-ref constants
-  #?(:cljs (def ^:export native-simd? (not (nil? (aget js/self "SIMD")))))
+  #?(:cljs (def ^:export native-simd? (not (nil? (gobj/get (and (exists? js/self) js/self) "SIMD")))))
 
   (def ^:dynamic *resolution* 20)
 #+END_SRC
@@ -445,7 +445,8 @@ protocol consisting of just this one function:
 
 #+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core.cljc :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.core
-    (:refer-clojure :exclude [into]))
+    (:refer-clojure :exclude [into])
+    #?(:cljs (require [goog.object :as gobj])))
 
   <<constants>>
 
