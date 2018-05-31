@@ -340,9 +340,11 @@
 
 (defn lin-tick-marks
   [[d1 d2] delta]
-  (let [dr (- d2 d1)
-        d1' (m/roundto d1 delta)]
-    (filter #(m/in-range? d1 d2 %) (range d1' (+ d2 delta) delta))))
+  (if (m/delta= delta 0.0 m/*eps*)
+    '()
+    (let [dr (- d2 d1)
+          d1' (m/roundto d1 delta)]
+      (filter #(m/in-range? d1 d2 %) (range d1' (+ d2 delta) delta)))))
 
 (defn linear-axis
   [{:keys [domain range major minor] :as spec}]
