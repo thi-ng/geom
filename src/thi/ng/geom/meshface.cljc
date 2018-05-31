@@ -12,7 +12,9 @@
          :cljs [^:mutable _hash])]
 
   g/IVertexAccess
-  (vertices [_ _] vertices)
+  (vertices
+    ([_] vertices)
+    ([_ _] vertices))
 
   g/IAttributeAccess
   (attribs [_ _] nil)
@@ -28,7 +30,7 @@
         [_ o]
         (and (instance? MeshFace o)
              (clojure.lang.Util/equals vertices (.-vertices ^MeshFace o))))
-       
+
        Comparable
        (compareTo [_ o] (compare vertices (.-vertices ^MeshFace o)))
 
@@ -85,7 +87,7 @@
         (and (instance? IndexedMeshFace o)
              (clojure.lang.Util/equals vertices (.-vertices ^IndexedMeshFace o))
              (clojure.lang.Util/equals attribs (.-attribs ^IndexedMeshFace o))))
-       
+
        Comparable
        (compareTo
         [_ o]
