@@ -1,8 +1,6 @@
 (ns thi.ng.geom.core
   (:refer-clojure :exclude [into]))
 
-#?(:cljs (def ^:export native-simd? (not (nil? (aget js/self "SIMD")))))
-
 (def ^:dynamic *resolution* 20)
 
 (defprotocol IDistance
