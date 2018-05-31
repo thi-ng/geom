@@ -33,6 +33,7 @@
          - [[#pvolume][PVolume]]
          - [[#end-of-implementations][End of implementations]]
      - [[#namespace-declaration][Namespace declaration]]
+     - [[#tests][Tests]]
 
 * thi.ng.geom.polygon
 
@@ -486,4 +487,27 @@
   <<helpers>>
 
   <<impl>>
+#+END_SRC
+** Tests
+#+BEGIN_SRC clojure :tangle ../babel/test/thi/ng/geom/types/test/polygon.cljc :noweb yes :mkdirp yes :padline no
+(ns thi.ng.geom.types.test.polygon
+  #?(:cljs
+     (:require-macros
+      [cemerick.cljs.test :refer (is deftest)]))
+  (:require
+   [thi.ng.geom.core :as g]
+   [thi.ng.geom.core.vector :refer [vec2]]
+   [thi.ng.geom.types]
+   [thi.ng.geom.polygon :as p]
+   #?(:clj
+      [clojure.test :refer :all]
+      :cljs
+      [cemerick.cljs.test])))
+
+(deftest test-flip
+  (let [poly (p/polygon2 [[0 0] [1 0] [1 1] [0 1]])
+        flipped-poly (g/flip poly)]
+    (is (= (-> poly g/as-mesh g/faces count)
+           (-> flipped-poly g/as-mesh g/faces count))
+        "flipped polygon tesselates to same number of faces"))) 
 #+END_SRC

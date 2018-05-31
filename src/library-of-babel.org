@@ -92,7 +92,7 @@ them from other templates.
   (replace-regexp-in-string "{{type}}" type
   "g/PFlip
   (flip
-   [_] ({{type}}. (reverse (:points _))))")
+   [_] ({{type}}. (into (empty (:points _)) (reverse (:points _)))))")
 #+END_SRC
 
 ** PPolygonConvert
