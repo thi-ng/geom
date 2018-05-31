@@ -1,0 +1,463 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_3_gh:
+ - [[#namespace-thinggeomcore][Namespace: thi.ng.geom.core]]
+     - [[#protocols][Protocols]]
+         - [[#vector-operations][Vector operations]]
+         - [[#spatial-transform-operations][Spatial transform operations]]
+         - [[#graph-operations][Graph operations]]
+         - [[#sub-shape-accessors][Sub-shape accessors]]
+         - [[#shape-based--structural-operations][Shape based & structural operations]]
+         - [[#type-specific-operations][Type specific operations]]
+         - [[#mutable-property-access][Mutable property access]]
+     - [[#constants][Constants]]
+     - [[#complete-namespace-definition][Complete namespace definition]]
+
+* Namespace: thi.ng.geom.core
+** Protocols
+*** Vector operations
+**** IDistance
+#+BEGIN_SRC clojure :noweb-ref protos-math
+  (defprotocol IDistance
+    (dist [_ a])
+    (dist-squared [_ a]))
+#+END_SRC
+
+**** IHeading
+#+BEGIN_SRC clojure :noweb-ref protos-math
+  (defprotocol IHeading
+    (heading [_])
+    (heading-xy [_])
+    (heading-xz [_])
+    (heading-yz [_])
+    (angle-between [_ a])
+    (slope-xy [_])
+    (slope-xz [_])
+    (slope-yz [_]))
+#+END_SRC
+
+**** INormal
+#+BEGIN_SRC clojure :noweb-ref protos-math
+  (defprotocol INormal
+    (normal [_] [_ a]))
+#+END_SRC
+
+**** IPolar
+#+BEGIN_SRC clojure :noweb-ref protos-math
+  (defprotocol IPolar
+    (as-polar [_])
+    (as-cartesian [_]))
+#+END_SRC
+
+**** IReflect
+#+BEGIN_SRC clojure :noweb-ref protos-math
+  (defprotocol IReflect
+    (reflect [_ r]))
+#+END_SRC
+
+**** Vector reduction
+#+BEGIN_SRC clojure :noweb-ref protos-math
+  (defprotocol IVectorReduce
+    (reduce-vector [_ f xs] [_ f f2 xs]))
+#+END_SRC
+
+*** Spatial transform operations
+
+The position, size and orientation of spatial entities can
+usually be manipulated via the three basic operations: rotate,
+scale & translate. Other, more complex transformations can be
+achieved through combination and repetition of these.
+
+**** IRotate & IRotate3D
+
+Rotation is always relative to the world origin. For 2D
+implementations, the rotation angle \theta (theta) is always
+interpreted clockwise and only the =rotate= method is
+implemented.
+
+#+BEGIN_SRC clojure :noweb-ref protos-tx
+  (defprotocol IRotate
+    (rotate [_ t]))
+
+  (defprotocol IRotate3D
+    (rotate-x [_ t])
+    (rotate-y [_ t])
+    (rotate-z [_ t])
+    (rotate-around-axis [_ a t]))
+#+END_SRC
+
+**** IScale
+#+BEGIN_SRC clojure :noweb-ref protos-tx
+  (defprotocol IScale
+    (scale [_ s])
+    (scale-size [_ s]))
+#+END_SRC
+
+**** IShear
+#+BEGIN_SRC clojure :noweb-ref protos-tx
+  (defprotocol IShear
+    (shear [_ s]))
+#+END_SRC
+
+**** ITransform
+#+BEGIN_SRC clojure :noweb-ref protos-tx
+  (defprotocol ITransform
+    (transform [_ tx]))
+#+END_SRC
+
+**** ITranslate
+#+BEGIN_SRC clojure :noweb-ref protos-tx
+  (defprotocol ITranslate
+    (translate [_ t]))
+#+END_SRC
+
+**** IVectorTransform
+#+BEGIN_SRC clojure :noweb-ref protos-tx
+  (defprotocol IVectorTransform
+    (transform-vector [_ v]))
+#+END_SRC
+
+**** IMatrixConvert
+#+BEGIN_SRC clojure :noweb-ref protos-tx
+  (defprotocol IMatrixConvert
+    (as-matrix [_] [_ opts]))
+#+END_SRC
+
+*** Graph operations
+
+Most geometric shape constructs can be understood as an undirected
+graph of vertices, connected by edges. This protocol provides read
+access to entities in this context.
+
+**** IGraph
+
+#+BEGIN_SRC clojure :noweb-ref protos-graph
+  (defprotocol IGraph
+    (connected-components [_])
+    (cyclic? [_])
+    (vertex-valence [_ v])
+    (vertex-neighbors [_ v])
+    (remove-vertex [_ v])
+    (replace-vertex [_ a b])
+    (merge-vertices [_ a b]))
+#+END_SRC
+
+**** IDirectedGraph
+
+#+BEGIN_SRC clojure :noweb-ref protos-graph
+  (defprotocol IDirectedGraph
+    (in-vertices [_ v])
+    (out-vertices [_ v]))
+#+END_SRC
+
+**** IGraphConvert
+
+#+BEGIN_SRC clojure :noweb-ref protos-graph
+  (defprotocol IGraphConvert
+    (as-graph [_] [_ opts]))
+#+END_SRC
+
+*** Sub-shape accessors
+**** IVertexAccess
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IVertexAccess
+    (vertices [_] [_ opts]))
+#+END_SRC
+
+**** IEdgeAccess
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IEdgeAccess
+    (edges [_] [_ opts]))
+#+END_SRC
+
+**** IFaceAccess
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IFaceAccess
+    (add-face [_ face]
+      "Adds a new face to a mesh. The face arg is a 2-element vector
+      of [vertices attributes], where attributes is a map of arbitrary
+      vertex attributes. E.g. (g/add-face m [verts {:uv [[0 0] [1 0] [1 1]]}])")
+    (faces [_] [_ opts]
+      "Returns a mesh's face collection. If called without opts arg,
+      returns faces directly as used internally by the mesh. If opts is
+      truthy, returns each face as vector with a vector of face vertices
+      as its first element. If the mesh supports vertex attributes,
+      they're returned as the 2nd element in each face vector.")
+    (remove-face [_ fverts]
+      "Takes a vector of vertices defining a face in the mesh and
+      returns updated mesh without that face.")
+    (vertex-faces [_ v]
+      "Returns seq of faces the given vertex is part of."))
+#+END_SRC
+
+**** INormalAccess
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol INormalAccess
+    (compute-face-normals [_])
+    (compute-vertex-normals [_])
+    (face-normals [_ force?])
+    (face-normal [_ f])
+    (vertex-normals [_ force?])
+    (vertex-normal [_ v]))
+#+END_SRC
+
+**** IAttributeAccess
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IAttributeAccess
+    (attribs [_ ctx] [_ ctx attr]))
+#+END_SRC
+
+**** IRawAccess
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IRawAccess
+    (raw [_ ctx]))
+#+END_SRC
+
+*** Shape based & structural operations
+**** IAlign
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IAlign
+    (align-with [_ x opts]
+      "Returns updated entity aligned with `x` in the specified manner"))
+#+END_SRC
+
+**** IArea
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IArea
+    (area [_]
+      "Returns an entity's total surface area"))
+#+END_SRC
+
+**** IBoundary
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IBoundary
+    (contains-entity? [_ s])
+    (contains-point? [_ p]))
+#+END_SRC
+
+**** IBoundingCircle
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IBoundingCircle
+    (bounding-circle [_]))
+#+END_SRC
+
+**** IBoundingSphere
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IBoundingSphere
+    (bounding-sphere [_]))
+#+END_SRC
+
+**** IBounds
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IBounds
+    (bounds [_]
+      "Returns bounding rect for 2d entities or box for 3d")
+    (depth [_]
+      "Returns entity's extent along Z (zero for 2d)")
+    (height [_]
+      "Returns entity's extent along Y axis")
+    (width [_]
+      "Returns entity's extent along X axis"))
+#+END_SRC
+
+**** ICenter
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol ICenter
+    (center [_] [_ p]
+      "Returns updated entity centered around world origin or given point")
+    (centroid [_]
+      "Returns centroid of entity"))
+#+END_SRC
+
+**** ICircumference
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol ICircumference
+    (circumference [_]
+      "Returns an entity's circumference"))
+#+END_SRC
+
+**** IClassify
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IClassify
+    (classify-point [_ p]))
+#+END_SRC
+
+**** IClear
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IClear
+    (clear* [_])
+    (clear! [_]))
+#+END_SRC
+
+**** TODO IClip
+***** TODO remove protocol, method is already part of ISetOps
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IClip
+    (clip-with [_ s]))
+#+END_SRC
+
+**** TODO IConvexHull
+***** TODO rename into IConvex, add convex? method
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IConvexHull
+    (convex-hull [_]))
+#+END_SRC
+
+**** IExtrude
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IExtrude
+    (extrude [_ opts])
+    (extrude-shell [_ opts]))
+#+END_SRC
+
+**** IFlip
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IFlip
+    (flip [_]))
+#+END_SRC
+
+**** IGeomContainer
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IGeomContainer
+    (into [_ m]))
+#+END_SRC
+
+**** IInset
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IInset
+    (inset [_ inset]))
+#+END_SRC
+
+**** IIntersect
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IIntersect
+    (intersect-line [_ l] [_ p q])
+    (intersect-ray [_ r] [_ p dir])
+    (intersect-shape [_ s]))
+#+END_SRC
+
+**** IMeshConvert
+
+Anything which can be turned into a 2D or 3D mesh will implement this
+protocol consisting of just this one function:
+
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IMeshConvert
+    (as-mesh [_] [_ opts]
+      "Transforms the current enitity into a mesh instance"))
+ #+END_SRC
+
+**** IPointMap
+
+This protocol is intended to provide domain transfers of points from
+one shape into another.
+
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IPointMap
+    (map-point [_ p])
+    (unmap-point [_ p]))
+#+END_SRC
+
+**** IPolygonConvert
+
+Anything which can be turned into a 2D polygon will implement this
+protocol consisting of just this one function:
+
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IPolygonConvert
+    (as-polygon [_] [_ res]
+      "Transforms current entity into a Polygon2 instance"))
+#+END_SRC
+
+**** IProximity
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IProximity
+    (closest-point [_ p]))
+#+END_SRC
+
+**** ISample
+***** TODO move random-point-inside into IBoundary
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol ISample
+    (point-at [_ t] [_ u v])
+    (random-point [_])
+    (random-point-inside [_])
+    (sample-uniform [_ dist include-last?])
+    (sample-with-resolution [_ res]))
+#+END_SRC
+
+**** ISlice
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol ISlice
+    (slice-with [_ e] [_ e classifier] [_ e classifier parts]))
+#+END_SRC
+
+**** ISubdivide
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol ISubdivide
+    (subdivide [_] [_ opts])
+    (subdivide-edge [_ a b splits])
+    (subdivide-face [_ f p displace splits]))
+#+END_SRC
+
+**** ITessellate
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol ITessellate
+    (tessellate [_] [_ opts]))
+#+END_SRC
+
+**** IVolume
+#+BEGIN_SRC clojure :noweb-ref protos-shape
+  (defprotocol IVolume
+    (volume [_] "Returns an entity's inner volume.")
+    (signed-volume [_]))
+#+END_SRC
+
+*** Type specific operations
+**** TODO ISpatialTree
+***** TODO refactor to use conj & disj?
+***** TODO extract more general tree protocol?
+#+BEGIN_SRC clojure :noweb-ref protos-types
+  (defprotocol ISpatialTree
+    (add-point [_ p d])
+    (delete-point [_ p])
+    (get-point [_])
+    (get-point-data [_]))
+#+END_SRC
+
+*** Mutable property access
+#+BEGIN_SRC clojure :noweb-ref protos-special
+  (defprotocol IMutableProps
+    (get-prop [_ k])
+    (set-prop! [_ k v])
+    (update-prop! [_ k f]))
+#+END_SRC
+
+** Constants
+
+#+BEGIN_SRC clojure :noweb-ref constants
+  #?(:cljs (def ^:export native-simd? (not (nil? (aget js/self "SIMD")))))
+
+  (def ^:dynamic *resolution* 20)
+#+END_SRC
+
+** Complete namespace definition
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/core.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.core
+    (:refer-clojure :exclude [into]))
+
+  <<constants>>
+
+  <<protos-math>>
+
+  <<protos-tx>>
+
+  <<protos-graph>>
+
+  <<protos-shape>>
+
+  <<protos-types>>
+
+  <<protos-special>>
+#+END_SRC

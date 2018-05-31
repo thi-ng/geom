@@ -1,0 +1,201 @@
+#+SETUPFILE: ../../meta/setup.org
+
+* Contents                                                         :toc_4_gh:
+ - [[#namespace-thinggeommeshops][Namespace: thi.ng.geom.mesh.ops]]
+     - [[#cleanup--repair-utilities-for-gmesh-types][Cleanup & repair utilities for GMesh types]]
+         - [[#repair-t-junctions][Repair T-Junctions]]
+     - [[#namespace-declaration][Namespace declaration]]
+
+* Namespace: thi.ng.geom.mesh.ops                                       :fix:
+
+** Cleanup & repair utilities for GMesh types
+
+#+BEGIN_SRC clojure :noweb-ref ops
+  (defn find-in-tree
+    "Takes a query radius `eps`, returns a fn which queries an octree
+    with a spherical region around `p` using the pre-configured radius.
+    Returns the closest point found (if any)."
+    [eps]
+    (fn [tree p]
+      (->> (st/select-with-sphere tree p eps)
+           (sort-by #(g/dist-squared p %))
+           (first))))
+
+  (defn unique-point-tree
+    [points eps]
+    (let [finder (find-in-tree eps)
+          [tree dupes] (reduce
+                        (fn [[t dupes :as state] p]
+                          (if (finder t p)
+                            [t (conj! dupes p)]
+                            [(g/add-point t p p) dupes]))
+                        [(st/octree (gu/bounding-box (seq points))) (transient [])]
+                        points)]
+      [tree (persistent! dupes)]))
+
+  (defn collapse-edges
+    [m eps]
+    (let [eps* (* eps eps)]
+      (->> (get m :edges)
+           (keys)
+           (filter (fn [e] (let [[a b] (seq e)] (< (g/dist-squared a b) eps*))))
+           (reduce
+            (fn [m e] (if (-> m (get :edges) (get e)) (gm/merge-vertices* m (first e) (second e)) m))
+            m))))
+
+  (defn canonicalize-vertices
+    [mesh eps]
+    (let [[tree dupes] (unique-point-tree (g/vertices mesh) eps)
+          finder (find-in-tree eps)]
+      [(reduce (fn [m f] (g/add-face m (mapv #(finder tree %) f))) (g/clear* mesh) (g/faces mesh))
+       ;;(g/into (g/clear* mesh) (map (fn [f] (mapv #(finder tree %) f)) (g/faces mesh)))
+       dupes]))
+
+  (defn face-permutations
+    [f] (take (count f) (iterate #(d/rotate-left 1 %) f)))
+
+  (defn remove-internal
+    "Takes a mesh and removes all faces which have coincident vertices,
+    but opposite orientation. Returns updated mesh."
+    [mesh]
+    (->> (g/faces mesh)
+         (reduce
+          (fn [acc f]
+            (let [dupes (filter acc (face-permutations (reverse f)))]
+              (if (seq dupes)
+                (reduce disj acc (cons f dupes))
+                acc)))
+          (set (g/faces mesh)))
+         (assoc mesh :faces)))
+
+  (defn remove-internal-with-edges
+    [mesh]
+    (let [mesh (g/compute-face-normals mesh)]
+      (->> (g/edges mesh)
+           (reduce
+            (fn [acc e]
+              (let [ef (-> mesh :edges e)]
+                (if (> (count ef) 1)
+                  (let [efn (select-keys (get mesh :fnormals) ef)
+                        ef (set ef)
+                        acc (reduce
+                             (fn [acc [f n]]
+                               (let [ni (m/- n)
+                                     dup (filter #(m/delta= ni (efn %)) (disj ef f))]
+                                 (if (seq dup) (apply disj acc dup) acc)))
+                             acc efn)]
+                    acc)
+                  acc)))
+            (set (g/faces mesh)))
+           (assoc mesh :faces))))
+
+  (defn make-watertight
+    [{:keys [vertices edges] :as m} eps]
+    (let [split-face (fn [v e [fa fb fc :as f]]
+                       (cond
+                        (= e #{fa fb}) [f [fa v fc] [v fb fc]]
+                        (= e #{fb fc}) [f [fa fb v] [v fc fa]]
+                        :default [f [fc v fb] [v fa fb]]))
+          update-face (fn [m [f f1 f2]]
+                        (-> (g/remove-face m f)
+                            (g/add-face f1)
+                            (g/add-face f2)))
+          eps* (* eps eps)]
+      (reduce
+       (fn [m v]
+         (let [vedges (into #{} (map (fn [n] #{v n}) (g/vertex-neighbors m v)))
+               coeff #(gu/closest-point-coeff v % %2)
+               v-on-edge? (fn [a b]
+                            (let [t (coeff a b)
+                                  p (if (m/in-range? 0.01 0.99 t) (m/mix a b t))]
+                              (if (and p (< (g/dist-squared v p) eps*)) p)))]
+           (loop [edges (set/difference (into #{} (keys (get m :edges))) vedges)]
+             (if-let [e (first edges)]
+               (let [[a b] (seq e) p (v-on-edge? a b)]
+                 (if p
+                   (reduce update-face m (map #(split-face v e %) (-> m :edges e)))
+                   (recur (rest edges))))
+               m))))
+       m (keys vertices))))
+#+END_SRC
+
+*** Repair T-Junctions
+
+#+BEGIN_SRC clojure :noweb-ref t-junctions
+  (defn edges-without-v
+    "Takes gmesh and vertex, returns lazyseq of all edges NOT related to v."
+    [m v] (filter #(not (% v)) (g/edges m)))
+
+  (defn dist-to-edge
+    "Takes a vertex and edge, returns distance between v & e."
+    [v e]
+    (let [[a b] (seq e)
+          coeff (gu/closest-point-coeff v a b)]
+      (if (m/in-range? 1e-6 0.999999 coeff)
+        (g/dist v (m/mix a b coeff))
+        m/INF+)))
+
+  (defn t-junction?
+    "Takes gmesh and a vertex. Returns a vector, describing a T-junction
+    edge/face pair (or nil, if vertex is properly connected)"
+    [m v]
+    (let [edges (get m :edges)]
+      (->> (edges-without-v m v)
+           (map (fn [e] [v e (dist-to-edge v e)]))
+           (filter #(m/delta= (peek %) 0.0))
+           (mapcat (fn [[v e]] (map (fn [f] [v e f]) (get edges e))))
+           set
+           first)))
+
+  (defn t-junctions
+    "Takes gmesh and returns lazyseq of t-junctions (each a 3-elem
+    vector of [vertex edge face])."
+    [m]
+    (sequence (comp (map #(t-junction? m %)) (filter identity)) (g/vertices m)))
+
+  (defn split-tface
+    "Takes a vertex, edge and face (triangle) to be split. Returns
+    vector of 2 new faces."
+    [v e fverts]
+    (let [[a b] (seq e)
+          c     (first (remove e fverts))
+          [a b] (if (pos? (m/dot (gu/ortho-normal fverts) (gu/ortho-normal a v c))) [a b] [b a])]
+      [[[a v c]] [[v b c]]]))
+
+  (defn repair-tjunctions
+    "Takes a gmesh, finds all t-junction? and repairs them by
+    introducing new edges/faces. Returns updated mesh."
+    [m]
+    (->> m
+         t-junctions
+         (reduce
+          (fn [m [v e f]]
+            (->> m
+                 (g/vertices f)
+                 (split-tface v e)
+                 (g/into (g/remove-face m f))))
+          m)))
+#+END_SRC
+
+** Namespace declaration
+
+#+BEGIN_SRC clojure :tangle ../../babel/src/thi/ng/geom/mesh/ops.cljc :noweb yes :mkdirp yes :padline no
+  (ns thi.ng.geom.mesh.ops
+    (:require
+     [thi.ng.math.core :as m]
+     [thi.ng.geom.core :as g]
+     [thi.ng.geom.utils :as gu]
+     [thi.ng.geom.utils.intersect :as isec]
+     [thi.ng.geom.vector :as v :refer [vec2 vec3]]
+     [thi.ng.geom.aabb :as a]
+     [thi.ng.geom.sphere :as s]
+     [thi.ng.geom.line :as l]
+     [thi.ng.geom.gmesh :as gm]
+     [thi.ng.geom.spatialtree :as st]
+     [thi.ng.dstruct.core :as d]
+     [clojure.set :as set]))
+
+  <<ops>>
+
+  <<t-junctions>>
+#+END_SRC

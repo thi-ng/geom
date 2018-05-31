@@ -3,9 +3,7 @@
 
 [[./assets/svo-d7.jpg]]
 
-[[https://gitter.im/thi-ng/geom?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge][https://badges.gitter.im/Join%20Chat.svg]]
-
-[[https://github.com/thi-ng/discussion][Discussion forum]] | [[http://thi.ng/][thi.ng website]] | [[http://workshop.thi.ng/][training workshops]]
+[[https://discord.gg/JhYcmBw][https://img.shields.io/discord/445761008837984256.svg]]
 
 * Contents                                                         :toc_3_gh:
  - [[#about-the-project][About the project]]
@@ -29,18 +27,6 @@
          - [[#voxel][voxel]]
          - [[#opengl--webgl][OpenGL & WebGL]]
      - [[#status][Status]]
- - [[#project-definition][Project definition]]
-     - [[#building--testing-this-project][Building & testing this project]]
-         - [[#testing][Testing]]
-         - [[#working-with-the-repl][Working with the REPL]]
-     - [[#injected-properties][Injected properties]]
-     - [[#dependencies][Dependencies]]
-         - [[#runtime][Runtime]]
-         - [[#development][Development]]
-     - [[#leiningen-project-file][Leiningen project file]]
-     - [[#clojurescript-html-harness][ClojureScript HTML harness]]
-     - [[#accessing-library-version-during-runtime][Accessing library version during runtime]]
-         - [[#version-namespace][Version namespace]]
      - [[#release-history--changelog][Release history & changelog]]
      - [[#contributors][Contributors]]
      - [[#license][License]]
@@ -94,7 +80,7 @@ and in desktop environments.
 
 Embracing Clojure's approach of data transformations, the library's
 core philosophy is based on a functional approach to generative design
-tasks with hundreds of hours spent on refinining & optimizing the core
+tasks with hundreds of hours spent on refining & optimizing the core
 API for both Clojure & Clojurescript.
 
 Unlike most other open source projects, this project has been
@@ -114,12 +100,12 @@ this collection (see dependencies further below).
 A growing number (currently ~40) of small examples are included in
 this repo under the =/examples= directory:
 
-- [[./examples/gl/jogl.org][OpenGL demos]] (Clojure)
-- [[./examples/gl/webgl.org][WebGL demos]] (Clojurescript + links to live versions)
-- [[./examples/svg/demos.org][SVG examples]] (incl. 3D rendered meshes in SVG)
-- [[./examples/viz/demos.org][Visualization examples]] (charts, heatmaps, timelines etc.)
-- [[./examples/types/ptf.org][PTF mesh examples]] (mesh skinning & Luxrender)
-- [[./examples/voxel/demos.org][Voxel examples]] (isosurface extraction from volumetric data)
+- [[./org/examples/gl/jogl.org][OpenGL demos]] (Clojure)
+- [[./org/examples/gl/webgl.org][WebGL demos]] (Clojurescript + links to live versions)
+- [[./org/examples/svg/demos.org][SVG examples]] (incl. 3D rendered meshes in SVG)
+- [[./org/examples/viz/demos.org][Visualization examples]] (charts, heatmaps, timelines etc.)
+- [[./org/examples/types/ptf.org][PTF mesh examples]] (mesh skinning & Luxrender)
+- [[./org/examples/voxel/demos.org][Voxel examples]] (isosurface extraction from volumetric data)
 
 Interactive examples:
 
@@ -306,11 +292,17 @@ the desktop and in the browser. The Clojure version wraps JOGL.
 
 ** Status
 
-The project has been in active, regular development since late 2011
-and is currently in its 4th iteration/rewrite cycle. It should still
-be considered BETA quality. On the other hand, the library is mature
-and has been used successfully in several commercial projects over the
-past 3 years and can be considered stable for most use cases.
+The project was in active, regular development from late 2011 - summer
+2016 during its 4th iteration/rewrite cycle. Originally developed in a
+Literate Programming style using Emacs & Org-mode, it has recently (May
+2018) been decided to revert to a traditional Clojure project setup to
+encourage more contributions from other interested parties. The original
+ORG source files are kept for reference in the [[./org/]] directory
+until further notice.
+
+The library is mature and has been used successfully in several
+commercial projects over the past 5 years and can be considered stable
+for most use cases.
 
 A full test suite, website & tutorials are actively being worked on
 and the various examples are used as test cases as well.
@@ -319,361 +311,43 @@ and the various examples are used as test cases as well.
 of recent Clojure & Clojurescript versions and therefore is *not
 compatible with Clojure versions < 1.7.0*...
 
-* Project definition
-** Building & testing this project
-
-This project is written in a literate programming format and requires
-[[https://www.gnu.org/software/emacs/][Emacs]] & [[http://orgmode.org][Org-mode]] to generate usable source code. Assuming both tools
-are installed, the easiest way to generate a working project is via
-command line (make sure =emacs= is on your path or else edit its path
-in =tangle.sh=):
-
-#+BEGIN_SRC bash
-  git clone https://github.com/thi-ng/geom.git
-  cd geom
-
-  # tangle all modules...
-  ./tangle-all.sh
-
-  # tangle a single module
-  ./tangle-module.sh svg
-
-  # ...or just tangle selected files
-  ./tangle.sh geom-core/src/*.org geom-core/test/*.org
-
-  # ...or individual file
-  ./tangle.sh geom-core/src/utils.org
-#+END_SRC
-
-Tangling is the process of extracting & combining source blocks from
-=.org= files into an actual working project/source tree. This project
-currently consists of 30+ namespaces and 13,000+ lines of code
-(excluding examples), the tangling of which takes approx. 2 mins on a
-2010 MBP...
-
-Once tangling is complete, you can =cd= into the generated project
-directory of a module (=babel= in this case) and then use =lein= as usual.
-
-*** Testing
-
-The =project.clj= files of each module define an alias to trigger a
-complete build & tests for both CLJ & CLJS versions.
-
-#+BEGIN_SRC bash
-  cd <<module-name>>/babel
-  lein cleantest # some tests currently fail due to still missing protocol impls
-#+END_SRC
-
-*Important note:* Due to the newness of the conditional reader
-expressions and the CLJC file format introduced with Clojure 1.7, the
-=lein test= task does currently *not* find any of the Clojure tests
-automatically and you'll need to specify them manually as argument to
-this command. E.g. like this:
-
-#+BEGIN_SRC
-lein test thi.ng.geom.core.test.core
-#+END_SRC
-
-Afterwards, to build the Clojurescript version simply run =lein
-cljsbuild test= from the same directory. A small HTML harness for the
-resulting JS file is also located in that folder (=babel/index.html=),
-allowing for further experimentation in the browser.
-
-*** Working with the REPL
-
-Editing code blocks / files in Org-mode, then re-loading & testing
-changes is quite trivial. Simply launch a REPL (via lein or Emacs) as
-usual. Everytime you've made changes to an =.org= file, re-tangle it
-from Emacs or =tangle.sh=, then reload the namespace in the REPL via
-=(require 'thi.ng.geom... :reload)= or similar.
-
-** Injected properties                                             :noexport:
-
-#+BEGIN_SRC clojure :exports none :noweb-ref project-name
-thi.ng/geom
-#+END_SRC
-
-#+NAME: project-url
-#+BEGIN_SRC clojure
-https://github.com/thi-ng/geom
-#+END_SRC
-
-#+BEGIN_SRC clojure :exports none :noweb yes :noweb-ref cljs-artefact-path
-target/geom-<<project-version()>>.js
-#+END_SRC
-
-#+NAME: project-version
-#+BEGIN_SRC emacs-lisp
-  (concat
-   "0.0."
-   (replace-regexp-in-string
-    "\\`[ \t\n]*" ""
-    (replace-regexp-in-string
-     "[ \t\n]*\\'" ""
-     (shell-command-to-string "git describe --match 'v0.0' --dirty | cut -d '-' -f 2,4"))))
-#+END_SRC
-
-** Dependencies
-*** Runtime
-
-(Please also see note about [[#additional-dependencies-for-jogl][optional OpenGL dependencies]])
-
-**** [[https://github.com/clojure/clojure][Clojure]]
-#+NAME: dep-clj
-#+BEGIN_SRC clojure
-[org.clojure/clojure "1.8.0"]
-#+END_SRC
-
-**** [[https://github.com/clojure/clojurescript][ClojureScript]]
-#+NAME: dep-cljs
-#+BEGIN_SRC clojure
-[org.clojure/clojurescript "1.9.89"]
-#+END_SRC
-
-**** [[https://github.com/thi-ng/color/][thi.ng/color]]
-#+NAME: dep-color
-#+BEGIN_SRC clojure
-[thi.ng/color "1.2.0"]
-#+END_SRC
-
-**** [[https://github.com/thi-ng/dstruct][thi.ng/dstruct]]
-#+NAME: dep-dstruct
-#+BEGIN_SRC clojure
-[thi.ng/dstruct "0.2.1"]
-#+END_SRC
-
-**** [[https://github.com/thi-ng/math][thi.ng/math]]
-#+NAME: dep-math
-#+BEGIN_SRC clojure
-[thi.ng/math "0.2.1"]
-#+END_SRC
-
-**** [[https://github.com/thi-ng/ndarray/][thi.ng/ndarray]]
-#+NAME: dep-ndarray
-#+BEGIN_SRC clojure
-[thi.ng/ndarray "0.3.2"]
-#+END_SRC
-
-**** [[http://thi.ng/shadergraph][thi.ng/shadergraph]]
-#+BEGIN_SRC clojure :exports none :noweb-ref dep-shadergraph
-[thi.ng/shadergraph "0.3.0-SNAPSHOT"]
-#+END_SRC
-
-**** [[https://github.com/thi-ng/strf][thi.ng/strf]]
-#+NAME: dep-strf
-#+BEGIN_SRC clojure
-[thi.ng/strf "0.2.2"]
-#+END_SRC
-
-**** [[https://github.com/thi-ng/typedarrays/][thi.ng/typedarrays]]
-#+NAME: dep-tarrays
-#+BEGIN_SRC clojure
-[thi.ng/typedarrays "0.1.6"]
-#+END_SRC
-
-**** [[https://github.com/thi-ng/xerror/][thi.ng/xerror]]
-#+NAME: dep-xerror
-#+BEGIN_SRC clojure
-[thi.ng/xerror "0.1.0"]
-#+END_SRC
-
-**** [[http://jogamp.org/jogl/www/][JOGL]]
-#+BEGIN_SRC clojure :exports none :noweb-ref dep-jogl
-[org.jogamp.gluegen/gluegen-rt "2.3.2"]
-[org.jogamp.jogl/jogl-all "2.3.2"]
-#+END_SRC
-
-**** [[https://github.com/postspectacular/cljs-log][cljs-log]]
-#+BEGIN_SRC clojure :exports none :noweb-ref dep-cljs-log
-[cljs-log "0.2.2"]
-#+END_SRC
-
-**** [[https://github.com/weavejester/hiccup][hiccup]]
-#+BEGIN_SRC clojure :exports none :noweb-ref dep-hiccup
-[hiccup "1.0.5"]
-#+END_SRC
-
-*** Development
-**** [[https://github.com/emezeske/lein-cljsbuild][Cljsbuild]]
-#+NAME: dep-cljsbuild
-#+BEGIN_SRC clojure
-[lein-cljsbuild "1.1.3"]
-#+END_SRC
-
-**** [[https://github.com/hugoduncan/criterium][Criterium]]
-#+NAME: dep-criterium
-#+BEGIN_SRC clojure
-[criterium "0.4.4"]
-#+END_SRC
-
-**** [[https://github.com/cemerick/clojurescript.test][clojurescript.test]]
-#+NAME: dep-cljs-test
-#+BEGIN_SRC clojure
-[com.cemerick/clojurescript.test "0.3.3"]
-#+END_SRC
-
-**** [[https://github.com/davidsantiago/perforate][perforate]]
-#+NAME: dep-perforate
-#+BEGIN_SRC clojure
-[perforate "0.3.4"]
-#+END_SRC
-
-**** [[https://github.com/postspectacular/perforate-x][perforate-x]]
-#+NAME: dep-perforate-x
-#+BEGIN_SRC clojure
-[perforate-x "0.1.0"]
-#+END_SRC
-
-**** [[https://github.com/RyanMcG/lein-npm][lein-npm]]
-#+NAME: dep-lein-npm
-#+BEGIN_SRC clojure
-[lein-npm "0.6.2"]
-#+END_SRC
-
-**** [[https://www.npmjs.com/package/benchmark][node benchmark]]
-#+NAME: dep-npm-benchmark
-#+BEGIN_SRC clojure
-[benchmark "1.0.0"]
-#+END_SRC
-
-** Leiningen project file                                          :noexport:
-
-#+BEGIN_SRC clojure :tangle ./babel/project.clj :noweb yes :mkdirp yes :padline no
-  (defproject <<project-name>> "<<project-version()>>"
-    :description  "thi.ng geometry kit - meta project spec including all modules"
-    :url          "<<project-url>>"
-    :license      {:name "Apache Software License"
-                   :url  "http://www.apache.org/licenses/LICENSE-2.0"
-                   :distribution :repo}
-    :scm          {:name "git"
-                   :url  "<<project-url>>"}
-
-    :min-lein-version "2.4.0"
-
-    :dependencies  [<<dep-clj>>
-                    <<dep-cljs>>
-                    <<dep-color>>
-                    <<dep-dstruct>>
-                    <<dep-math>>
-                    <<dep-ndarray>>
-                    <<dep-shadergraph>>
-                    <<dep-strf>>
-                    <<dep-tarrays>>
-                    <<dep-xerror>>
-                    <<dep-jogl>>
-                    <<dep-cljs-log>>
-                    <<dep-hiccup>>]
-
-    :perforate    {:environments [{:namespaces [thi.ng.geom.bench.core.vector]}]}
-
-    :profiles     {:dev   {:dependencies      [<<dep-criterium>>]
-                           :plugins           [<<dep-cljsbuild>>
-                                               <<dep-cljs-test>>]
-                           :node-dependencies [<<dep-npm-benchmark>>]
-                           :global-vars       {*warn-on-reflection* true}
-                           :jvm-opts          ^:replace ["-Dclojure.compiler.direct-linking=false"]
-                           :aliases           {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]
-                                               "bench" ["with-profile" "bench" "do" "clean," "perforate," "cljsbuild" "test"]}}
-                   :bench {:dependencies [<<dep-perforate-x>>]
-                           :plugins      [<<dep-perforate>>
-                                          <<dep-lein-npm>>]
-                           :cljsbuild
-                           {:builds
-                            [{:id             "bench"
-                              :source-paths   ["src" "test" "benchmarks"]
-                              :notify-command ["node" "target/cljs/benchmark.js"]
-                              :compiler       {:target        :nodejs
-                                               :output-to     "target/cljs/benchmark.js"
-                                               :optimizations :simple
-                                               :pretty-print  true}}]
-                            :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}}}}
-
-    :cljsbuild    {:builds [{:id           "simple"
-                             :source-paths ["src" "test" "examples/gl"]
-                             :compiler     {:output-to     "<<cljs-artefact-path>>"
-                                            :optimizations :whitespace
-                                            :pretty-print  true}}
-                            {:source-paths ["src" "examples/gl"]
-                             :id           "prod"
-                             :compiler     {:output-to      "<<cljs-artefact-path>>"
-                                            :optimizations  :advanced
-                                            :pretty-print   false}}]
-                   :test-commands {"unit-tests" ["phantomjs" :runner "<<cljs-artefact-path>>"]}}
-
-    :pom-addition [:developers
-                   [:developer
-                    [:name "Karsten Schmidt"]
-                    [:url "http://postspectacular.com"]
-                    [:timezone "0"]]])
-#+END_SRC
-
-** ClojureScript HTML harness                                      :noexport:
-
-#+BEGIN_SRC html :tangle ./babel/index.html :noweb yes :mkdirp yes :padline no
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
-      <title><<project-name>> <<project-version()>> test</title>
-      <style type="text/css" media="screen">
-        .stats { position: fixed; top: 0px; left: 0px; }
-      </style>
-    </head>
-    <body>
-      <canvas id="main" width="1280" height="720"></canvas>
-      <script type="text/javascript" src="dev-resources/stats.js"></script>
-      <script type="text/javascript" src="dev-resources/webgl-texture-float-extension-shims.js"></script>
-      <script type="text/javascript" src="<<cljs-artefact-path>>"></script>
-    </body>
-  </html>
-#+END_SRC
-
-** Accessing library version during runtime
-
-The autogenerated namespace =thi.ng.geom.version= contains a single
-symbol =version= holding the version string defined above:
-
-#+BEGIN_SRC clojure :noweb yes
-  (use 'thi.ng.geom.version)
-  
-  (prn version)
-  ; "<<project-version()>>"
-#+END_SRC
-
-*** Version namespace                                              :noexport:
-
-#+BEGIN_SRC clojure :tangle ./babel/src/thi/ng/geom/version.cljc :noweb yes :mkdirp yes :padline no
-  (ns thi.ng.geom.version)
-  (def version "<<project-version()>>")
-#+END_SRC
-
 ** Release history & changelog
 
 See [[../CHANGELOG.org][CHANGELOG.org]] for further details.
 
-| *Version* | *Released* | *Lein coordinates*        | *Tagged Github URL* |
-|-----------+------------+---------------------------+---------------------|
-|   0.0.908 | 2015-11-08 | =[thi.ng/geom "0.0.908"]= | [[https://github.com/thi-ng/geom/tree/r908][r908]]                |
-|   0.0.881 | 2015-06-21 | =[thi.ng/geom "0.0.881"]= | [[https://github.com/thi-ng/geom/tree/r881][r881]]                |
-|   0.0.859 | 2015-06-15 | =[thi.ng/geom "0.0.859"]= | [[https://github.com/thi-ng/geom/tree/r856][r859]]                |
-|   0.0.856 | 2015-06-14 | =[thi.ng/geom "0.0.856"]= | [[https://github.com/thi-ng/geom/tree/r856][r856]]                |
-|   0.0.815 | 2015-06-01 | =[thi.ng/geom "0.0.815"]= | [[https://github.com/thi-ng/geom/tree/r815][r815]]                |
-|   0.0.803 | 2015-05-26 | =[thi.ng/geom "0.0.803"]= | [[https://github.com/thi-ng/geom/tree/r803][r803]]                |
-|   0.0.783 | 2015-04-27 | =[thi.ng/geom "0.0.783"]= | [[https://github.com/thi-ng/geom/tree/r783][r783]]                |
-|   0.0.770 | 2015-03-29 | =[thi.ng/geom "0.0.770"]= | [[https://github.com/thi-ng/geom/tree/r770][r770]]                |
-|   0.0.743 | 2015-03-23 | =[thi.ng/geom "0.0.743"]= | [[https://github.com/thi-ng/geom/tree/r743][r743]]                |
-|   0.0.737 | 2015-03-22 | =[thi.ng/geom "0.0.737"]= | [[https://github.com/thi-ng/geom/tree/r737][r737]]                |
-|   0.0-725 | 2015-03-15 | =[thi.ng/geom "0.0-725"]= | [[https://github.com/thi-ng/geom/tree/r725][r725]]                |
-|   0.0-715 | 2015-02-25 | =[thi.ng/geom "0.0-715"]= | [[https://github.com/thi-ng/geom/tree/r715][r715]]                |
-|   0.0-709 | 2015-02-22 | =[thi.ng/geom "0.0-709"]= | [[https://github.com/thi-ng/geom/tree/r709][r709]]                |
-|     0.2.0 | 2014-03-10 | =[thi.ng/geom "0.2.0"]=   | [[https://github.com/thi-ng/geom/tree/0.2.0][0.2.0]]               |
+| *Version* | *Released* | *Lein coordinates*          | *Tagged Github URL* |
+|-----------+------------+-----------------------------+---------------------|
+| 1.0.0-RC1 | 2018-05-31 | =[thi.ng/geom "1.0.0-RC1"]= | [[https://github.com/thi-ng/geom/tree/1.0.0-RC1][1.0.0-RC1]]           |
+|   0.0.908 | 2015-11-08 | =[thi.ng/geom "0.0.908"]=   | [[https://github.com/thi-ng/geom/tree/r908][r908]]                |
+|   0.0.881 | 2015-06-21 | =[thi.ng/geom "0.0.881"]=   | [[https://github.com/thi-ng/geom/tree/r881][r881]]                |
+|   0.0.859 | 2015-06-15 | =[thi.ng/geom "0.0.859"]=   | [[https://github.com/thi-ng/geom/tree/r856][r859]]                |
+|   0.0.856 | 2015-06-14 | =[thi.ng/geom "0.0.856"]=   | [[https://github.com/thi-ng/geom/tree/r856][r856]]                |
+|   0.0.815 | 2015-06-01 | =[thi.ng/geom "0.0.815"]=   | [[https://github.com/thi-ng/geom/tree/r815][r815]]                |
+|   0.0.803 | 2015-05-26 | =[thi.ng/geom "0.0.803"]=   | [[https://github.com/thi-ng/geom/tree/r803][r803]]                |
+|   0.0.783 | 2015-04-27 | =[thi.ng/geom "0.0.783"]=   | [[https://github.com/thi-ng/geom/tree/r783][r783]]                |
+|   0.0.770 | 2015-03-29 | =[thi.ng/geom "0.0.770"]=   | [[https://github.com/thi-ng/geom/tree/r770][r770]]                |
+|   0.0.743 | 2015-03-23 | =[thi.ng/geom "0.0.743"]=   | [[https://github.com/thi-ng/geom/tree/r743][r743]]                |
+|   0.0.737 | 2015-03-22 | =[thi.ng/geom "0.0.737"]=   | [[https://github.com/thi-ng/geom/tree/r737][r737]]                |
+|   0.0-725 | 2015-03-15 | =[thi.ng/geom "0.0-725"]=   | [[https://github.com/thi-ng/geom/tree/r725][r725]]                |
+|   0.0-715 | 2015-02-25 | =[thi.ng/geom "0.0-715"]=   | [[https://github.com/thi-ng/geom/tree/r715][r715]]                |
+|   0.0-709 | 2015-02-22 | =[thi.ng/geom "0.0-709"]=   | [[https://github.com/thi-ng/geom/tree/r709][r709]]                |
+|     0.2.0 | 2014-03-10 | =[thi.ng/geom "0.2.0"]=     | [[https://github.com/thi-ng/geom/tree/0.2.0][0.2.0]]               |
 
 ** Contributors
 
-| *Name*          | *Role*                          | *Website*           |
-| [[mailto:k@thi.ng][Karsten Schmidt]] | initiator & principal developer | [[http://postspectacular.com][postspectacular.com]] |
-|                 |                                 | [[http://thi.ng][thi.ng]]              |
+- [[https://github.com/postspectacular][@postspectacular]]
+- [[https://github.com/vl4dimir][@vl4dimir]]
+- [[https://github.com/skrat][@skrat]]
+- [[https://github.com/acron0][@acron0]]
+- [[https://github.com/arichiardi][@arichiardi]]
+- [[https://github.com/Rovanion][@Rovanion]]
+- [[https://github.com/reitzensteinm][@reitzensteinm]]
+- [[https://github.com/stwind][@stwind]]
+- [[https://github.com/fdb][@fdb]]
+- [[https://github.com/jgmize][@jgmize]]
 
 ** License
+
+(c) 2013 - 2018 Karsten Schmidt
 
 This project is open source and licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache Software License 2.0]].
