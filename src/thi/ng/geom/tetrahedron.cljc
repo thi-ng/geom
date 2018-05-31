@@ -76,8 +76,9 @@
 
   g/IFaceAccess
   (faces
-    [{[a b c d] :points}]
-    [[a b c] [a d b] [b d c] [c d a]])
+    ([t _] (g/faces t))
+    ([{[a b c d] :points}]
+     [[[a b c]] [[a d b]] [[b d c]] [[c d a]]]))
 
   g/IGraph
   (vertex-neighbors
@@ -165,7 +166,7 @@
     [_ m] (thi.ng.geom.types.Tetrahedron. (mapv #(g/transform-vector m %) (get _ :points))))
 
   ;; http://mathcentral.uregina.ca/QQ/database/QQ.09.03/peter2.html
-  
+
   g/IVolume
   (volume
     [{[a b c d] :points}]
