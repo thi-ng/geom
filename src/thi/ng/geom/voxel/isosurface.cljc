@@ -398,35 +398,49 @@
             vertices))
         vertices))))
 
-(defn surface-mesh
-  "Computes a triangle mesh of a voxel tree's iso surface
-  at the given tree depth and iso value (between 0.0 ... 1.0)"
+(defn surface-faces
+  "Computes mesh faces of a voxel tree's iso surface at the given tree depth and iso value
+  (between 0.0 ... 1.0)"
   [{:keys [dim maxdepth] :as tree} depth iso-val]
   (let [{:keys [depth size stride stride-z] :as config} (voxel-config-at-depth tree depth)
-        kernel     [-1 0 1]
-        offsets    (vec (for [z kernel y kernel x kernel] (cell-index stride stride-z x y z)))
-        indexed-eo (mapv (fn [[x y z w]] (+ (* 3 (cell-index stride stride-z x y z)) w)) edge-offsets)
-        iso        (* size iso-val)
-        iso*       (- iso size)
-        voxels     (select-cells tree depth)
-        ;;_ (prn "orig voxels" (count voxels))
+        kernel [-1 0 1]
+        offsets (vec (for [z kernel y kernel x kernel] (cell-index stride stride-z x y z)))
+        indexed-eo (mapv (fn [[x y z w]]
+                           (+ (* 3 (cell-index stride stride-z x y z)) w)) edge-offsets)
+        iso (* size iso-val)
+        iso* (- iso size)
+        voxels (select-cells tree depth)
         ;; select boundary voxels
-        cells      (->> voxels
-                        (boundary-voxels config)
-                        (thicken-boundary offsets)
-                        (precompute-cells voxels config))
-        ;;_ (prn "filtered" (count cells))
-        vertices   (persistent! (reduce (cell-vertice-builder size iso iso*) (transient {}) cells))]
-    ;; (prn "creating mesh...")
-    (->> cells
-         (eduction
-          (mapcat
-           (fn [[vid eid]]
-             (eduction
-              (map
-               (fn [t]
-                 [[(vertices (+ eid (indexed-eo (t 0)))) ;; TODO add attrib support
-                   (vertices (+ eid (indexed-eo (t 2))))
-                   (vertices (+ eid (indexed-eo (t 1))))]]))
-              (cell-triangles vid)))))
-         (g/into (bm/basic-mesh)))))
+        cells (->> voxels
+                   (boundary-voxels config)
+                   (thicken-boundary offsets)
+                   (precompute-cells voxels config))
+        vertices (persistent! (reduce (cell-vertice-builder size iso iso*) (transient {}) cells))]
+    (eduction
+     (mapcat
+      (fn [[vid eid]]
+        (eduction
+         (map
+          (fn [t]
+            [[(vertices (+ eid (indexed-eo (t 0))))
+              (vertices (+ eid (indexed-eo (t 2))))
+              (vertices (+ eid (indexed-eo (t 1))))]]))
+         (cell-triangles vid))))
+     cells)))
+
+(defn surface-mesh
+  "Computes a triangle mesh of a voxel tree's iso surface at the given tree depth and iso value
+  (between 0.0 ... 1.0)"
+  [tree depth iso-val]
+  (g/into (bm/basic-mesh) (surface-faces tree depth iso-val)))
+
+(extend-type thi.ng.geom.voxel.tree.SVO
+  g/IMeshConvert
+  (as-mesh
+    ([tree] (g/as-mesh tree {}))
+    ([tree {:keys [mesh attribs depth iso-value] :as options}]
+     (let [faces (sequence (surface-faces tree depth (or iso-value 0.5)))
+           target-mesh (or mesh (glm/gl-mesh (count faces) (set (keys attribs))))
+           attr-fn (fn [i [verts]] (attr/generate-face-attribs verts i attribs options))
+           attributed-faces (map-indexed attr-fn faces)]
+       (g/into target-mesh attributed-faces)))))
