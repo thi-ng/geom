@@ -1,5 +1,6 @@
 (ns thi.ng.geom.svg.core
   (:require
+   [clojure.string :refer [starts-with?]]
    [thi.ng.math.core :as m]
    [thi.ng.geom.core :as g]
    [thi.ng.geom.utils :as gu]
@@ -134,7 +135,9 @@
   (loop [acc (transient attribs), ks (keys attribs)]
     (if ks
       (recur
-       (if (= "__" (subs (name (first ks)) 0 2)) (dissoc! acc (first ks)) acc)
+       (if (starts-with? (name (first ks)) "__")
+         (dissoc! acc (first ks))
+         acc)
        (next ks))
       (persistent! acc))))
 
