@@ -51,6 +51,8 @@
          (repeat n)
          (interpose " "))))
 
+;; TODO add missing path segment types (Q, T)
+
 (def path-segment-formats
   {:M ["M" *fmt-vec* " "]
    :m ["m" *fmt-vec* " "]
@@ -211,6 +213,15 @@
      attribs
      {:cx (*ff* (first p)) :cy (*ff* (nth p 1)) :r radius})]))
 
+(defn ellipse
+  ([p rx ry]
+   (ellipse p rx ry nil))
+  ([p rx ry attribs]
+   [:ellipse
+    (svg-attribs
+     attribs
+     {:cx (*ff* (first p)) :cy (*ff* (nth p 1)) :rx rx :ry ry})]))
+
 (defn arc-segment
   [center radius theta1 theta2 great? ccw?]
   (let [radius (vec2 radius)
@@ -271,6 +282,11 @@
       (if start (start (nth points 1) (first points) 0 attribs))
       (if seg   (map-indexed (fn [i [p q]] (seg p q i attribs)) (partition 2 1 points)))
       (if end   (end (points (dec n)) (peek points) n attribs))))))
+
+;; provide aliases
+
+(def polyline line-strip)
+(def polyline-decorated line-strip-decorated)
 
 (defn polygon
   ([points]
