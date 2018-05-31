@@ -6,7 +6,7 @@
    [thi.ng.geom.utils.intersect :as isec]
    [thi.ng.geom.aabb :as a]
    [thi.ng.geom.rect :as r]
-   [thi.ng.geom.types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [AABB Rect2]])
    [thi.ng.math.core :as m :refer [*eps* delta=]])
   #?(:clj (:import [thi.ng.geom.types AABB Rect2])))
 
@@ -200,7 +200,7 @@
     (if bounds
       bounds
       (set! bounds
-            (thi.ng.geom.types.Rect2.
+            (Rect2.
              (vec2 x y) (vec2 (* w 2.0) (* h 2.0))))))
 
   Object
@@ -280,7 +280,7 @@
     (if bounds
       bounds
       (set! bounds
-            (thi.ng.geom.types.AABB.
+            (AABB.
              (vec3 x y z) (vec3 (* w 2.0) (* h 2.0) (* d 2.0))))))
 
   Object

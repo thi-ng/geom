@@ -8,23 +8,21 @@
    [thi.ng.geom.triangle :as t]
    [thi.ng.geom.basicmesh :as bm]
    [thi.ng.geom.attribs :as attr]
-   [thi.ng.geom.types :as types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [Circle2 Polygon2]])
    [thi.ng.dstruct.core :as d]
    [thi.ng.math.core :as m :refer [PI HALF_PI THREE_HALVES_PI *eps*]])
-  #?(:clj
-     (:import
-      [thi.ng.geom.types Circle2 Line2 Rect2 Polygon2])))
+  #?(:clj (:import [thi.ng.geom.types Circle2 Polygon2])))
 
 (defn polygon2
-  ([points] (thi.ng.geom.types.Polygon2. (mapv vec2 points)))
-  ([p q & more] (thi.ng.geom.types.Polygon2. (mapv vec2 (cons p (cons q more))))))
+  ([points] (Polygon2. (mapv vec2 points)))
+  ([p q & more] (Polygon2. (mapv vec2 (cons p (cons q more))))))
 
 (defn cog
   [radius teeth profile]
-  (-> (thi.ng.geom.types.Circle2. (vec2) radius)
+  (-> (Circle2. (vec2) radius)
       (g/vertices (* teeth (count profile)))
       (->> (mapv (fn [p v] (m/* v p)) (cycle profile))
-           (thi.ng.geom.types.Polygon2.))))
+           (Polygon2.))))
 
 ;; Sutherland-Hodgeman convex clipping
 ;; http://en.wikipedia.org/wiki/Sutherland-Hodgman_algorithm
@@ -92,7 +90,7 @@
 
 (defn tessellate*
   [p]
-  (let [[points area] (if (instance? thi.ng.geom.types.Polygon2 p)
+  (let [[points area] (if (instance? Polygon2 p)
                         [(get p :points) (g/area p)]
                         [(vec p) (g/area (polygon2 p))])
         nv (count points)
@@ -142,7 +140,7 @@
 (defn smooth
   [{points :points :as _} amp base-weight]
   (let [pc (g/centroid _)]
-    (thi.ng.geom.types.Polygon2.
+    (Polygon2.
      (mapv
       (fn [[p c n]]
         (let [d (m/+ (m/- p c) (m/- n c))
@@ -150,7 +148,7 @@
           (m/madd d amp c)))
       (d/successive-nth 3 (d/wrap-seq points [(peek points)] [(first points)]))))))
 
-(extend-type thi.ng.geom.types.Polygon2
+(extend-type Polygon2
 
   g/IArea
   (area
@@ -186,8 +184,8 @@
 
   g/ICenter
   (center
-    ([_] (thi.ng.geom.types.Polygon2. (gu/center (vec2) (get _ :points))))
-    ([_ o] (thi.ng.geom.types.Polygon2. (gu/center (g/centroid _) (vec2 o) (get _ :points)))))
+    ([_] (Polygon2. (gu/center (vec2) (get _ :points))))
+    ([_ o] (Polygon2. (gu/center (g/centroid _) (vec2 o) (get _ :points)))))
   (centroid
     [{points :points :as _}]
     (let [c (->> points
@@ -315,7 +313,7 @@
 
   g/IFlip
   (flip
-    [_] (thi.ng.geom.types.Polygon2. (vec (rseq (:points _)))))
+    [_] (Polygon2. (vec (rseq (:points _)))))
 
   g/IVertexAccess
   (vertices
@@ -377,21 +375,21 @@
 
   g/IRotate
   (rotate
-    [_ theta] (thi.ng.geom.types.Polygon2. (mapv #(g/rotate % theta) (get _ :points))))
+    [_ theta] (Polygon2. (mapv #(g/rotate % theta) (get _ :points))))
 
   g/IScale
   (scale
-    [_ s] (thi.ng.geom.types.Polygon2. (mapv #(m/* % s) (get _ :points))))
+    [_ s] (Polygon2. (mapv #(m/* % s) (get _ :points))))
   (scale-size
-    [_ s] (thi.ng.geom.types.Polygon2. (gu/scale-size s (get _ :points))))
+    [_ s] (Polygon2. (gu/scale-size s (get _ :points))))
 
   g/ITranslate
   (translate
-    [_ t] (thi.ng.geom.types.Polygon2. (mapv #(m/+ % t) (get _ :points))))
+    [_ t] (Polygon2. (mapv #(m/+ % t) (get _ :points))))
 
   g/ITransform
   (transform
-    [_ m] (thi.ng.geom.types.Polygon2. (mapv #(g/transform-vector m %) (get _ :points))))
+    [_ m] (Polygon2. (mapv #(g/transform-vector m %) (get _ :points))))
 
   g/IVolume
   (volume [_] 0.0))

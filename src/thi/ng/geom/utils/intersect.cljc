@@ -63,7 +63,7 @@
 
 (comment
   ;; example usage
-  
+
   (isec/intersect-aabb-frustum?
    box-p box-size
    (mat/frustum-planes view-mat proj-mat)))

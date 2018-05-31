@@ -8,30 +8,31 @@
    [thi.ng.geom.quaternion :as q]
    [thi.ng.geom.basicmesh :as bm]
    [thi.ng.geom.attribs :as attr]
-   [thi.ng.geom.types :as types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [AABB Plane Sphere]])
    [thi.ng.xerror.core :as err]
    [thi.ng.math.core :as m :refer [*eps* INF+]]
-   #?(:clj [thi.ng.math.macros :as mm])))
+   #?(:clj [thi.ng.math.macros :as mm]))
+   #?(:clj (:import [thi.ng.geom.types AABB Plane Sphere])))
 
 ;; A plane in cartesian 3D space can be defined as a point `p` lying
 ;; on the plane and normal vector `n` standing perpendicular on the
 ;; plane. The latter defines the plane's orientation in space.
 
 (defn plane
-  [n w] (thi.ng.geom.types.Plane. (m/normalize (vec3 n)) w))
+  [n w] (Plane. (m/normalize (vec3 n)) w))
 
 (defn plane-with-point
   [p n]
   (let [n (m/normalize (vec3 n))]
-    (thi.ng.geom.types.Plane. n (- (m/dot n p)))))
+    (Plane. n (- (m/dot n p)))))
 
 (defn plane-from-points
   ([[a b c]] (plane-from-points a b c))
   ([a b c]
    (let [n (gu/ortho-normal a b c)]
-     (thi.ng.geom.types.Plane. n (- (m/dot n a))))))
+     (Plane. n (- (m/dot n a))))))
 
-(extend-type thi.ng.geom.types.Plane
+(extend-type Plane
 
   g/IArea
   (area [_] INF+)
@@ -40,7 +41,7 @@
   (bounds
     [_]
     (let [s (vec3 (g/width _) (g/height _) (g/depth _))]
-      (thi.ng.geom.types.AABB. (m/madd s -0.5 (g/centroid _)) s)))
+      (AABB. (m/madd s -0.5 (g/centroid _)) s)))
   (width
     [_] (if (m/delta= (m/abs (get _ :n)) v/V3X *eps*) 0.0 INF+))
   (height
@@ -50,11 +51,11 @@
 
   g/IBoundingSphere
   (bounding-sphere
-    [_] (thi.ng.geom.types.Sphere. (g/centroid _) INF+))
+    [_] (Sphere. (g/centroid _) INF+))
 
   g/ICenter
   (center
-    ([_] (thi.ng.geom.types.Plane. (get _ :n) 0))
+    ([_] (Plane. (get _ :n) 0))
     ([_ o] (plane-with-point o (get _ :n))))
   (centroid
     ([_] (m/* (get _ :n) (- (get _ :w)))))
@@ -75,7 +76,7 @@
 
   g/IFlip
   (flip
-    [_] (thi.ng.geom.types.Plane. (m/- (get _ :n)) (- (get _ :w))))
+    [_] (Plane. (m/- (get _ :n)) (- (get _ :w))))
 
   g/IIntersect
   (intersect-line
@@ -93,9 +94,9 @@
   (intersect-shape
     [_ s]
     (cond
-      (instance? thi.ng.geom.types.Plane s)
+      (instance? Plane s)
       (isec/intersect-plane-plane? (get _ :n) (get _ :w) (get s :n) (get s :w))
-      (instance? thi.ng.geom.types.Sphere s)
+      (instance? Sphere s)
       (isec/intersect-plane-sphere? (get _ :n) (get _ :w) (get s :p) (get s :r))
       :default (err/illegal-arg! s)))
 

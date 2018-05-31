@@ -5,7 +5,8 @@
    [thi.ng.geom.vector :as v :refer [vec3]]
    [thi.ng.geom.attribs :as attr]
    [thi.ng.geom.basicmesh :as bm]
-   [thi.ng.geom.voxel.svo :as svo :refer [cell-index select-cells voxel-cell voxel-config-at-depth]]
+   [thi.ng.geom.voxel.svo :refer [cell-index select-cells voxel-cell voxel-config-at-depth]]
+   #?(:cljs [thi.ng.geom.voxel.svo :refer [SVO]])
    [thi.ng.math.core :as m]
    #?(:clj [thi.ng.geom.macros.voxel :refer [not-cond->]]))
   #?(:clj (:import [thi.ng.geom.voxel.svo SVO])))
@@ -436,7 +437,7 @@
   [tree depth iso-val]
   (g/into (bm/basic-mesh) (surface-faces tree depth iso-val)))
 
-(extend-type thi.ng.geom.voxel.svo.SVO
+(extend-type SVO
   g/IMeshConvert
   (as-mesh
     ([tree] (g/as-mesh tree {}))

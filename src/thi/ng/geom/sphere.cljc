@@ -8,21 +8,19 @@
    [thi.ng.geom.utils.intersect :as isec]
    [thi.ng.geom.basicmesh :as bm]
    [thi.ng.geom.attribs :as attr]
-   [thi.ng.geom.types :as types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [AABB Plane Sphere]])
    [thi.ng.xerror.core :as err]
    [thi.ng.math.core :as m :refer [TWO_PI PI *eps*]]
    #?(:clj [thi.ng.math.macros :as mm]
       :cljs [thi.ng.typedarrays.core :as ta]))
-  #?(:clj
-     (:import
-      [thi.ng.geom.types AABB Sphere])))
+  #?(:clj (:import [thi.ng.geom.types AABB Plane Sphere])))
 
 (defn sphere
-  ([] (thi.ng.geom.types.Sphere. (vec3) 1.0))
-  ([r] (thi.ng.geom.types.Sphere. (vec3) #?(:clj (double r) :cljs r)))
-  ([p r] (thi.ng.geom.types.Sphere. (vec3 p) #?(:clj (double r) :cljs r))))
+  ([] (Sphere. (vec3) 1.0))
+  ([r] (Sphere. (vec3) #?(:clj (double r) :cljs r)))
+  ([p r] (Sphere. (vec3 p) #?(:clj (double r) :cljs r))))
 
-(extend-type thi.ng.geom.types.Sphere
+(extend-type Sphere
 
   g/IArea
   (area
@@ -34,7 +32,7 @@
 
   g/IBounds
   (bounds
-    [_] (thi.ng.geom.types.AABB. (m/- (get _ :p) (get _ :r)) (vec3 (* 2 (get _ :r)))))
+    [_] (AABB. (m/- (get _ :p) (get _ :r)) (vec3 (* 2 (get _ :r)))))
   (width  [_] (* 2.0 (get _ :r)))
   (height [_] (* 2.0 (get _ :r)))
   (depth  [_] (* 2.0 (get _ :r)))
@@ -44,8 +42,8 @@
 
   g/ICenter
   (center
-    ([_] (thi.ng.geom.types.Sphere. (vec3) (get _ :r)))
-    ([_ p] (thi.ng.geom.types.Sphere. (vec3 p) (get _ :r))))
+    ([_] (Sphere. (vec3) (get _ :r)))
+    ([_ p] (Sphere. (vec3 p) (get _ :r))))
   (centroid [_] (get _ :p))
 
   g/IClassify
@@ -77,11 +75,11 @@
   (intersect-shape
     [_ s]
     (cond
-      (instance? thi.ng.geom.types.AABB s)
+      (instance? AABB s)
       (isec/intersect-aabb-sphere? s _)
-      (instance? thi.ng.geom.types.Sphere s)
+      (instance? Sphere s)
       (isec/intersect-sphere-sphere? _ s)
-      (instance? thi.ng.geom.types.Plane s)
+      (instance? Plane s)
       (isec/intersect-plane-sphere? (get s :n) (get s :w) (get _ :p) (get _ :r))
       :default (err/type-error! "Sphere" s)))
 
@@ -149,28 +147,28 @@
 
   g/IRotate
   (rotate
-    [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-z (get _ :p) theta) (get _ :r)))
+    [_ theta] (Sphere. (g/rotate-z (get _ :p) theta) (get _ :r)))
 
   g/IRotate3D
   (rotate-x
-    [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-x (get _ :p) theta) (get _ :r)))
+    [_ theta] (Sphere. (g/rotate-x (get _ :p) theta) (get _ :r)))
   (rotate-y
-    [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-y (get _ :p) theta) (get _ :r)))
+    [_ theta] (Sphere. (g/rotate-y (get _ :p) theta) (get _ :r)))
   (rotate-z
-    [_ theta] (thi.ng.geom.types.Sphere. (g/rotate-z (get _ :p) theta) (get _ :r)))
+    [_ theta] (Sphere. (g/rotate-z (get _ :p) theta) (get _ :r)))
   (rotate-around-axis
     [_ axis theta]
-    (thi.ng.geom.types.Sphere.
+    (Sphere.
      (g/rotate-around-axis (get _ :p) axis theta) (get _ :r)))
 
   ;; FIXME scale with non-uniform values should return Ellipsoid
 
   g/IScale
-  (scale [_ s] (thi.ng.geom.types.Sphere. (m/* (get _ :p) s) (* (get _ :r) s)))
-  (scale-size [_ s] (thi.ng.geom.types.Sphere. (get _ :p) (* (get _ :r) s)))
+  (scale [_ s] (Sphere. (m/* (get _ :p) s) (* (get _ :r) s)))
+  (scale-size [_ s] (Sphere. (get _ :p) (* (get _ :r) s)))
 
   g/ITranslate
-  (translate [_ t] (thi.ng.geom.types.Sphere. (m/+ (get _ :p) t) (get _ :r)))
+  (translate [_ t] (Sphere. (m/+ (get _ :p) t) (get _ :r)))
 
   g/IVolume
   (volume [{r :r}] (mm/mul (/ 4.0 3.0) PI r r r)))

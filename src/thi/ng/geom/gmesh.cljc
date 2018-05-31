@@ -5,11 +5,12 @@
    [thi.ng.geom.vector :as v :refer [vec2 vec3]]
    [thi.ng.geom.matrix :refer [M44]]
    [thi.ng.geom.meshface :as mf]
-   [thi.ng.geom.types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [AABB GMesh]])
    [thi.ng.dstruct.core :as d]
    [thi.ng.math.core :as m :refer [*eps*]]
    [clojure.core.reducers :as r]
-   [clojure.set :as set]))
+   [clojure.set :as set])
+   #?(:clj (:import [thi.ng.geom.types AABB GMesh])))
 
 (defn- add-face*
   [{:keys [vertices edges faces] :as mesh} [verts]]
@@ -92,7 +93,7 @@
   "Builds a new 3d mesh data structure and (optionally) populates it with
   the given items (a seq of existing meshes and/or faces). Faces are defined
   as vectors of their vertices."
-  [] (thi.ng.geom.types.GMesh. {} #{} {} {} {} #{}))
+  [] (GMesh. {} #{} {} {} {} #{}))
 
 ;; *** Creating a mesh from a lathe
 ;;
@@ -171,14 +172,14 @@
   (let [sv (vec3 s)]
     (reduce
      (fn [m [p flags]]
-       (gu/into-mesh m add-face* (g/as-mesh (thi.ng.geom.types.AABB p s) {:flags flags})))
+       (gu/into-mesh m add-face* (g/as-mesh (AABB. p s) {:flags flags})))
      (gmesh)
      [[(vec3) :ewsfb]
       [(vec3 0 s 0) :wfb]
       [(vec3 s s 0) :ensfb]
       [(vec3 0 (* s 2) 0) :ewnfb]])))
 
-(extend-type thi.ng.geom.types.GMesh
+(extend-type GMesh
 
   g/IArea
   (area

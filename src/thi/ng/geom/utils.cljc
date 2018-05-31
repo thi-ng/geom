@@ -5,10 +5,11 @@
   (:require
    [thi.ng.geom.core :as g]
    [thi.ng.geom.vector :as v :refer [vec2 vec3 V2 V3]]
-   [thi.ng.geom.types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [AABB Circle2 Rect2 Sphere]])
    [thi.ng.dstruct.core :as d]
    [thi.ng.math.core :as m :refer [*eps*]]
-   #?(:clj [thi.ng.math.macros :as mm])))
+   #?(:clj [thi.ng.math.macros :as mm]))
+   #?(:clj (:import [thi.ng.geom.types AABB Circle2 Rect2 Sphere])))
 
 (declare tri-area3)
 
@@ -390,26 +391,26 @@
 (defn bounding-rect
   [points]
   (let [[p size] (bounding-rect-raw points)]
-    (if p (thi.ng.geom.types.Rect2. p size))))
+    (if p (Rect2. p size))))
 
 (defn bounding-box
   [points]
   (let [[p size] (bounding-box-raw points)]
-    (if p (thi.ng.geom.types.AABB. p size))))
+    (if p (AABB. p size))))
 
 (defn bounding-circle
   ([points]
    (bounding-circle (centroid points) points))
   ([c r-or-points]
    (let [[c r] (radial-bounds vec2 c r-or-points)]
-     (thi.ng.geom.types.Circle2. c r))))
+     (Circle2. c r))))
 
 (defn bounding-sphere
   ([points]
    (bounding-sphere (centroid points) points))
   ([c r-or-points]
    (let [[c r] (radial-bounds vec3 c r-or-points)]
-     (thi.ng.geom.types.Sphere. c r))))
+     (Sphere. c r))))
 
 (defn coll-bounds
   "Takes a seq of shape entities, calls g/bounds on each and returns

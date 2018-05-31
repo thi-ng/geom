@@ -7,34 +7,32 @@
    [thi.ng.geom.vector :as v :refer [vec2 vec3 V3Z]]
    [thi.ng.geom.attribs :as attr]
    [thi.ng.geom.basicmesh :as bm]
-   [thi.ng.geom.types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [Circle2 Polygon2 Triangle2 Triangle3]])
    [thi.ng.dstruct.core :as d]
    [thi.ng.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
    [thi.ng.xerror.core :as err]
    #?(:clj [thi.ng.math.macros :as mm]))
-  #?(:clj
-     (:import
-      [thi.ng.geom.types Circle2 Rect2 Polygon2 Triangle2 Triangle3])))
+  #?(:clj (:import [thi.ng.geom.types Circle2 Polygon2 Triangle2 Triangle3])))
 
 (defn triangle2
   ([t]
    (cond
-     (map? t)        (thi.ng.geom.types.Triangle2.
+     (map? t)        (Triangle2.
                       [(vec2 (get t :a)) (vec2 (get t :b)) (vec2 (get t :c))])
-     (sequential? t) (thi.ng.geom.types.Triangle2.
+     (sequential? t) (Triangle2.
                       [(vec2 (first t)) (vec2 (nth t 1)) (vec2 (nth t 2))])
      :default (err/illegal-arg! t)))
-  ([a b c] (thi.ng.geom.types.Triangle2. [(vec2 a) (vec2 b) (vec2 c)])))
+  ([a b c] (Triangle2. [(vec2 a) (vec2 b) (vec2 c)])))
 
 (defn triangle3
   ([t]
    (cond
-     (map? t)        (thi.ng.geom.types.Triangle3.
+     (map? t)        (Triangle3.
                       [(vec3 (get t :a)) (vec3 (get t :b)) (vec3 (get t :c))])
-     (sequential? t) (thi.ng.geom.types.Triangle3.
+     (sequential? t) (Triangle3.
                       [(vec3 (first t)) (vec3 (nth t 1)) (vec3 (nth t 2))])
      :default (err/illegal-arg! t)))
-  ([a b c] (thi.ng.geom.types.Triangle3. [(vec3 a) (vec3 b) (vec3 c)])))
+  ([a b c] (Triangle3. [(vec3 a) (vec3 b) (vec3 c)])))
 
 (defn equilateral2
   ([l]
@@ -57,7 +55,7 @@
         dir (m/- b a)
         n (m/normalize (m/cross dir n))
         c (-> n (m/normalize (mm/mul (m/mag dir) SQRT3 0.5)) (m/+ (m/mix a b)))]
-    (thi.ng.geom.types.Triangle3. [a b c])))
+    (Triangle3. [a b c])))
 
 (defn other-point-in-tri
   [[ta tb tc] a b]
@@ -164,9 +162,9 @@
   ([t] (circumcircle (get t :a) (get t :b) (get t :c)))
   ([a b c]
    (let [[o r] (circumcircle-raw a b c)]
-     (thi.ng.geom.types.Circle2. o r))))
+     (Circle2. o r))))
 
-(extend-type thi.ng.geom.types.Triangle2
+(extend-type Triangle2
 
   g/IArea
   (area [_] (apply gu/tri-area2 (get _ :points)))
@@ -193,8 +191,8 @@
 
   g/ICenter
   (center
-    ([_] (thi.ng.geom.types.Triangle2. (gu/center (vec2) (get _ :points))))
-    ([_ o] (thi.ng.geom.types.Triangle2. (gu/center (g/centroid _) (vec2 o) (get _ :points)))))
+    ([_] (Triangle2. (gu/center (vec2) (get _ :points))))
+    ([_ o] (Triangle2. (gu/center (g/centroid _) (vec2 o) (get _ :points)))))
   (centroid [_] (centroid (get _ :points)))
 
   g/ICircumference
@@ -207,7 +205,7 @@
 
   g/IFlip
   (flip
-    [_] (thi.ng.geom.types.Triangle2. (reverse (get _ :points))))
+    [_] (Triangle2. (reverse (get _ :points))))
 
   g/IVertexAccess
   (vertices
@@ -246,7 +244,7 @@
 
   g/IPolygonConvert
   (as-polygon
-    [_] (thi.ng.geom.types.Polygon2. (get _ :points)))
+    [_] (Polygon2. (get _ :points)))
 
   g/IProximity
   (closest-point
@@ -275,33 +273,33 @@
   (subdivide
     [_] (->> (get _ :points)
              (gu/tessellate-with-point)
-             (map #(thi.ng.geom.types.Triangle2. %))))
+             (map #(Triangle2. %))))
 
   g/ITessellate
   (tessellate [_] [_])
 
   g/IRotate
   (rotate
-    [_ theta] (thi.ng.geom.types.Triangle2. (mapv #(g/rotate % theta) (get _ :points))))
+    [_ theta] (Triangle2. (mapv #(g/rotate % theta) (get _ :points))))
 
   g/IScale
   (scale
-    [_ s] (thi.ng.geom.types.Triangle2. (mapv #(m/* % s) (get _ :points))))
+    [_ s] (Triangle2. (mapv #(m/* % s) (get _ :points))))
   (scale-size
-    [_ s] (thi.ng.geom.types.Triangle2. (gu/scale-size s (get _ :points))))
+    [_ s] (Triangle2. (gu/scale-size s (get _ :points))))
 
   g/ITranslate
   (translate
-    [_ t] (thi.ng.geom.types.Triangle2. (mapv #(m/+ % t) (get _ :points))))
+    [_ t] (Triangle2. (mapv #(m/+ % t) (get _ :points))))
 
   g/ITransform
   (transform
-    [_ m] (thi.ng.geom.types.Triangle2. (mapv #(g/transform-vector m %) (get _ :points))))
+    [_ m] (Triangle2. (mapv #(g/transform-vector m %) (get _ :points))))
 
   g/IVolume
   (volume [_] 0.0))
 
-(extend-type thi.ng.geom.types.Triangle3
+(extend-type Triangle3
 
   g/IArea
   (area [_] (apply gu/tri-area3 (get _ :points)))
@@ -321,8 +319,8 @@
 
   g/ICenter
   (center
-    ([_] (thi.ng.geom.types.Triangle3. (gu/center (vec3) (get _ :points))))
-    ([_ o] (thi.ng.geom.types.Triangle3. (gu/center (g/centroid _) (vec3 o) (get _ :points)))))
+    ([_] (Triangle3. (gu/center (vec3) (get _ :points))))
+    ([_ o] (Triangle3. (gu/center (g/centroid _) (vec3 o) (get _ :points)))))
   (centroid [_] (centroid (get _ :points)))
 
   g/ICircumference
@@ -343,7 +341,7 @@
 
   g/IFlip
   (flip
-    [_] (thi.ng.geom.types.Triangle3. (reverse (get _ :points))))
+    [_] (Triangle3. (reverse (get _ :points))))
 
   g/IVertexAccess
   (vertices
@@ -401,40 +399,40 @@
   (subdivide
     [_] (->> (get _ :points)
              (gu/tessellate-with-point)
-             (map #(thi.ng.geom.types.Triangle3. %))))
+             (map #(Triangle3. %))))
 
   g/ITessellate
   (tessellate [_] [_])
 
   g/IRotate
   (rotate
-    [_ theta] (thi.ng.geom.types.Triangle3. (mapv #(g/rotate % theta) (get _ :points))))
+    [_ theta] (Triangle3. (mapv #(g/rotate % theta) (get _ :points))))
 
   g/IRotate3D
   (rotate-x
-    [_ theta] (thi.ng.geom.types.Triangle3. (mapv #(g/rotate-x % theta) (get _ :points))))
+    [_ theta] (Triangle3. (mapv #(g/rotate-x % theta) (get _ :points))))
   (rotate-y
-    [_ theta] (thi.ng.geom.types.Triangle3. (mapv #(g/rotate-y % theta) (get _ :points))))
+    [_ theta] (Triangle3. (mapv #(g/rotate-y % theta) (get _ :points))))
   (rotate-z
-    [_ theta] (thi.ng.geom.types.Triangle3. (mapv #(g/rotate-z % theta) (get _ :points))))
+    [_ theta] (Triangle3. (mapv #(g/rotate-z % theta) (get _ :points))))
   (rotate-around-axis
     [_ axis theta]
-    (thi.ng.geom.types.Triangle3.
+    (Triangle3.
      (mapv #(g/rotate-around-axis % axis theta) (get _ :points))))
 
   g/IScale
   (scale
-    [_ s] (thi.ng.geom.types.Triangle3. (mapv #(m/* % s) (get _ :points))))
+    [_ s] (Triangle3. (mapv #(m/* % s) (get _ :points))))
   (scale-size
-    [_ s] (thi.ng.geom.types.Triangle3. (gu/scale-size s (get _ :points))))
+    [_ s] (Triangle3. (gu/scale-size s (get _ :points))))
 
   g/ITranslate
   (translate
-    [_ t] (thi.ng.geom.types.Triangle3. (mapv #(m/+ % t) (get _ :points))))
+    [_ t] (Triangle3. (mapv #(m/+ % t) (get _ :points))))
 
   g/ITransform
   (transform
-    [_ m] (thi.ng.geom.types.Triangle3. (mapv #(g/transform-vector m %) (get _ :points))))
+    [_ m] (Triangle3. (mapv #(g/transform-vector m %) (get _ :points))))
 
   ;; Signed volume impl based on:
   ;; https://web.archive.org/web/20090320013931/http://amp.ece.cmu.edu/Publication/Cha/icip01_Cha.pdf

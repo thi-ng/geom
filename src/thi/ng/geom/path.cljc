@@ -3,17 +3,18 @@
    [thi.ng.math.core :as m]
    [thi.ng.geom.core :as g :refer [*resolution*]]
    [thi.ng.geom.vector :as v :refer [vec2]]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [Path2]])
    [thi.ng.geom.utils :as gu]
    [thi.ng.geom.bezier :as b]
    [thi.ng.xerror.core :as err]
    #?(:clj [clojure.xml :as xml]))
-  #?(:clj (:import [thi.ng.geom.types Line2 Path2])))
+  #?(:clj (:import [thi.ng.geom.types Path2])))
 
 (defn path2
   ([segments]
-   (thi.ng.geom.types.Path2. (vec segments)))
+   (Path2. (vec segments)))
   ([s1 s2 & segments]
-   (thi.ng.geom.types.Path2. (vec (cons s1 (cons s2 segments))))))
+   (Path2. (vec (cons s1 (cons s2 segments))))))
 
 (defmulti sample-segment (fn [s res last?] (get s :type)))
 
@@ -92,7 +93,7 @@
           (mapv #(parse-svg-path (-> % (get :attrs) (get :d))))
           (map path2))))
 
-(extend-type thi.ng.geom.types.Path2
+(extend-type Path2
 
   g/IArea
   (area [_])

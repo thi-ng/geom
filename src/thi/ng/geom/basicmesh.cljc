@@ -5,17 +5,18 @@
    [thi.ng.geom.vector :as v :refer [vec2 vec3]]
    [thi.ng.geom.matrix :refer [M44]]
    [thi.ng.geom.meshface :as mf]
-   [thi.ng.geom.types :as types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [BasicMesh]])
    [thi.ng.dstruct.core :as d]
    [thi.ng.math.core :as m :refer [*eps*]]
    [thi.ng.xerror.core :as err]
-   [clojure.core.reducers :as r]))
+   [clojure.core.reducers :as r])
+   #?(:clj (:import [thi.ng.geom.types BasicMesh])))
 
 (declare basic-mesh)
 
 (defn- add-face*
   [mesh [fverts]]
-  (thi.ng.geom.types.BasicMesh.
+  (BasicMesh.
    (into (get mesh :vertices) fverts)
    (conj (get mesh :faces) (thi.ng.geom.meshface.MeshFace. fverts nil))
    (get mesh :fnormals)))
@@ -24,9 +25,9 @@
   "Builds a new 3d mesh data structure and (optionally) populates it with
   the given items (a seq of existing meshes and/or faces). Faces are defined
   as vectors of their vertices."
-  [] (thi.ng.geom.types.BasicMesh. #{} #{} {}))
+  [] (BasicMesh. #{} #{} {}))
 
-(extend-type thi.ng.geom.types.BasicMesh
+(extend-type BasicMesh
 
   g/IArea
   (area

@@ -3,10 +3,11 @@
    [thi.ng.geom.core :as g :refer [*resolution*]]
    [thi.ng.geom.vector :as v :refer [vec2 vec3]]
    [thi.ng.geom.utils :as gu]
-   [thi.ng.geom.types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [Bezier2 Bezier3]])
    [thi.ng.geom.ptf :as ptf]
    [thi.ng.dstruct.core :as d]
-   [thi.ng.math.core :as m]))
+   [thi.ng.math.core :as m])
+   #?(:clj (:import [thi.ng.geom.types Bezier2 Bezier3])))
 
 (defn bernstein
   [t]
@@ -76,14 +77,14 @@
 ;; ** Constructors
 
 (defn bezier2
-  [points] (thi.ng.geom.types.Bezier2. (mapv vec2 points)))
+  [points] (Bezier2. (mapv vec2 points)))
 
 (defn auto-spline2
   ([points]
    (->> points
         (find-cpoints* vec2 0.25)
         (auto-spline* points)
-        (thi.ng.geom.types.Bezier2.)))
+        (Bezier2.)))
   ([points closed?]
    (auto-spline2
     (if closed?
@@ -91,14 +92,14 @@
       points))))
 
 (defn bezier3
-  [points] (thi.ng.geom.types.Bezier3. (mapv vec3 points)))
+  [points] (Bezier3. (mapv vec3 points)))
 
 (defn auto-spline3
   ([points]
    (->> points
         (find-cpoints* vec3 0.25)
         (auto-spline* points)
-        (thi.ng.geom.types.Bezier3.)))
+        (Bezier3.)))
   ([points closed?]
    (auto-spline3
     (if closed?
@@ -107,7 +108,7 @@
 
 ;; ** Type implementations
 
-(extend-type thi.ng.geom.types.Bezier2
+(extend-type Bezier2
 
   g/IVertexAccess
   (vertices
@@ -154,7 +155,7 @@
     [_ udist include-last?]
     (gu/sample-uniform udist include-last? (g/vertices _))))
 
-(extend-type thi.ng.geom.types.Bezier3
+(extend-type Bezier3
 
   g/IVertexAccess
   (vertices

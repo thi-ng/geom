@@ -8,31 +8,31 @@
    [thi.ng.geom.aabb :as a]
    [thi.ng.geom.attribs :as attr]
    [thi.ng.geom.basicmesh :as bm]
-   [thi.ng.geom.types :as types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [AABB Circle2 Line2 Polygon2 Rect2 Triangle2]])
    [thi.ng.dstruct.core :as d]
    [thi.ng.xerror.core :as err]
    [thi.ng.math.core :as m :refer [*eps*]]
    #?(:clj [thi.ng.math.macros :as mm]))
   #?(:clj
      (:import
-      [thi.ng.geom.types AABB Circle2 Polygon2 Rect2])))
+      [thi.ng.geom.types AABB Circle2 Line2 Polygon2 Rect2 Triangle2])))
 
 (defn rect
-  ([] (thi.ng.geom.types.Rect2. (vec2) (vec2 1.0)))
-  ([w] (thi.ng.geom.types.Rect2. (vec2) (vec2 w)))
+  ([] (Rect2. (vec2) (vec2 1.0)))
+  ([w] (Rect2. (vec2) (vec2 w)))
   ([p q]
    (if (coll? p)
      (if (coll? q)
        (let [p (vec2 p) q (vec2 q)
              [p q] [(m/min p q) (m/max p q)]]
-         (thi.ng.geom.types.Rect2. p (m/- q p)))
-       (thi.ng.geom.types.Rect2. (vec2 p) (vec2 q)))
-     (thi.ng.geom.types.Rect2. (vec2) (vec2 p q))))
+         (Rect2. p (m/- q p)))
+       (Rect2. (vec2 p) (vec2 q)))
+     (Rect2. (vec2) (vec2 p q))))
   ([x y w]
    (if (number? x)
-     (thi.ng.geom.types.Rect2. (vec2 x y) (vec2 w))
-     (thi.ng.geom.types.Rect2. (vec2 x) (vec2 y w))))
-  ([x y w h] (thi.ng.geom.types.Rect2. (vec2 x y) (vec2 w h))))
+     (Rect2. (vec2 x y) (vec2 w))
+     (Rect2. (vec2 x) (vec2 y w))))
+  ([x y w h] (Rect2. (vec2 x y) (vec2 w h))))
 
 (defn union
   [{p :p [w h] :size} {q :p [qw qh] :size}]
@@ -41,7 +41,7 @@
         y2 (max (+ (p 1) h) (+ (q 1) qh))
         w (- x2 x1)
         h (- y2 y1)]
-    (thi.ng.geom.types.Rect2. p' (vec2 w h))))
+    (Rect2. p' (vec2 w h))))
 
 (defn left [r] (v/x (get r :p)))
 
@@ -55,7 +55,7 @@
 
 (defn top-right [r] (m/+ (get r :p) (get r :size)))
 
-(extend-type thi.ng.geom.types.Rect2
+(extend-type Rect2
 
   g/IArea
   (area [_] (reduce * (get _ :size)))
@@ -80,9 +80,9 @@
   g/ICenter
   (center
     ([{s :size}]
-     (thi.ng.geom.types.Rect2. (m/* s -0.5) s))
+     (Rect2. (m/* s -0.5) s))
     ([{s :size} o]
-     (thi.ng.geom.types.Rect2. (m/madd s -0.5 o) s)))
+     (Rect2. (m/madd s -0.5 o) s)))
   (centroid
     [_] (m/madd (get _ :size) 0.5 (get _ :p)))
 
@@ -122,7 +122,7 @@
     [_ {:keys [depth scale offset] :or {depth 1.0 scale 1.0} :as opts}]
     (if (and (== scale 1.0) (nil? offset))
       (g/as-mesh
-       (thi.ng.geom.types.AABB. (vec3 (get _ :p)) (vec3 (get _ :size) depth)) opts)
+       (AABB. (vec3 (get _ :p)) (vec3 (get _ :size) depth)) opts)
       (g/extrude (g/as-polygon _) opts)))
   (extrude-shell
     [_ opts] (g/extrude-shell (g/as-polygon _) opts))
@@ -163,9 +163,9 @@
   (intersect-shape
     [_ s]
     (cond
-      (instance? thi.ng.geom.types.Line2 s) (g/intersect-line _ s)
-      (instance? thi.ng.geom.types.Rect2 s) (isec/intersect-rect-rect? _ s)
-      (instance? thi.ng.geom.types.Circle2 s) (isec/intersect-aabb-sphere? _ s)
+      (instance? Line2 s) (g/intersect-line _ s)
+      (instance? Rect2 s) (isec/intersect-rect-rect? _ s)
+      (instance? Circle2 s) (isec/intersect-aabb-sphere? _ s)
       :default (err/unsupported! (str "can't intersect w/ " s))))
 
   g/IMeshConvert
@@ -199,7 +199,7 @@
 
   g/IPolygonConvert
   (as-polygon
-    [_] (thi.ng.geom.types.Polygon2. (g/vertices _)))
+    [_] (Polygon2. (g/vertices _)))
 
   g/IProximity
   (closest-point
@@ -236,7 +236,7 @@
   (union
     [{pa :p sa :size} {pb :p sb :size}]
     (let [p (m/min pa pb)]
-      (thi.ng.geom.types.Rect2. p (m/- (m/max (m/+ pa sa) (m/+ pb sb)) p))))
+      (Rect2. p (m/- (m/max (m/+ pa sa) (m/+ pb sb)) p))))
   (intersection
     [_ r]
     (let [pa (get _ :p) qa (m/+ pa (get _ :size))
@@ -245,7 +245,7 @@
           q' (m/min qa qb)
           s  (m/- q' p')]
       (if (every? #(>= % 0) s)
-        (thi.ng.geom.types.Rect2. p' s))))
+        (Rect2. p' s))))
 
   ;; A rectangle can be subdivided into smaller ones, i.e. to create a
   ;; list of uniform grid cells. The following options can be given as
@@ -276,7 +276,7 @@
              :let [[px py] (g/unmap-point _ (vec2 x y))
                    px (m/roundto px *eps*)
                    py (m/roundto py *eps*)]]
-         (thi.ng.geom.types.Rect2. (vec2 px py) s)))))
+         (Rect2. (vec2 px py) s)))))
 
   ;; A rectangle can be tessellated into a number of triangles. When
   ;; called without options map as 2nd argument, the rect will be
@@ -289,14 +289,14 @@
   (tessellate
     ([_]
      (let [[a b c d] (g/vertices _)]
-       [(thi.ng.geom.types.Triangle2. [a b c])
-        (thi.ng.geom.types.Triangle2. [a c d])]))
+       [(Triangle2. [a b c])
+        (Triangle2. [a c d])]))
     ([_ {tess-fn :fn :or {tess-fn gu/tessellate-3} :as opts}]
      (->> (g/subdivide _ opts)
           (sequence
            (comp
             (mapcat #(tess-fn (g/vertices %)))
-            (map #(thi.ng.geom.types.Triangle2. %)))))))
+            (map #(Triangle2. %)))))))
 
   g/IRotate
   (rotate
@@ -304,16 +304,16 @@
 
   g/IScale
   (scale
-    [_ s] (thi.ng.geom.types.Rect2. (m/* (get _ :p) s) (m/* (get _ :size) s)))
+    [_ s] (Rect2. (m/* (get _ :p) s) (m/* (get _ :size) s)))
   (scale-size
     [_ s]
     (let [s' (m/* (get _ :size) s)]
-      (thi.ng.geom.types.Rect2.
+      (Rect2.
        (m/madd s' -0.5 (g/centroid _)) s')))
 
   g/ITranslate
   (translate
-    [_ t] (thi.ng.geom.types.Rect2. (m/+ (get _ :p) t) (get _ :size)))
+    [_ t] (Rect2. (m/+ (get _ :p) t) (get _ :size)))
 
   g/ITransform
   (transform

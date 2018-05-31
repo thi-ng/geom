@@ -12,7 +12,8 @@
    [thi.ng.geom.matrix :as mat]
    [thi.ng.geom.gmesh :as gm]
    [thi.ng.geom.rect :as r]
-   [thi.ng.geom.types]
+   #?(:clj [thi.ng.geom.types]
+      :cljs [thi.ng.geom.types :refer [LineStrip2 LineStrip3 Polygon2 Rect2 BasicMesh GMesh]])
    [thi.ng.geom.gl.shaders :as sh]
    [thi.ng.color.core :as col]
    [thi.ng.dstruct.streams :as streams]
@@ -22,7 +23,8 @@
         [thi.ng.geom.gl.jogl.constants :as glc]]
        :cljs
        [[thi.ng.geom.gl.webgl.constants :as glc]
-        [thi.ng.typedarrays.core :as ta]])))
+        [thi.ng.typedarrays.core :as ta]]))
+    #?(:clj (:import [thi.ng.geom.types LineStrip2 LineStrip3 Polygon2 Rect2 BasicMesh GMesh])))
 
 (declare into-float-buffer-vec3)
 
@@ -356,7 +358,7 @@
 
 ;; LineStrip2
 
-(extend-type thi.ng.geom.types.LineStrip2
+(extend-type LineStrip2
 
   IGLConvert
   (as-gl-buffer-spec
@@ -374,7 +376,7 @@
 
 ;; LineStrip3
 
-(extend-type thi.ng.geom.types.LineStrip3
+(extend-type LineStrip3
   IGLConvert
   (as-gl-buffer-spec
     [{:keys [points]} {:keys [stride] :or {stride 3} :as spec}]
@@ -391,7 +393,7 @@
 
 ;; Rect2
 
-(extend-type thi.ng.geom.types.Rect2
+(extend-type Rect2
   IGLConvert
   (as-gl-buffer-spec
     [r {:keys [stride normals] :or {stride 2} :as spec}]
@@ -410,7 +412,7 @@
 
 ;; Polygon2
 
-(extend-type thi.ng.geom.types.Polygon2
+(extend-type Polygon2
   IGLConvert
   (as-gl-buffer-spec
     [_ {:keys [normals stride mode] :or {stride 2, normals true, mode glc/triangles} :as spec}]
@@ -443,7 +445,7 @@
 
 ;; BasicMesh
 
-(extend-type thi.ng.geom.types.BasicMesh
+(extend-type BasicMesh
   IGLConvert
   (as-gl-buffer-spec
     [_ {:keys [fnormals tessellate stride]
@@ -466,7 +468,7 @@
 
 ;; GMesh
 
-(extend-type thi.ng.geom.types.GMesh
+(extend-type GMesh
   IGLConvert
   (as-gl-buffer-spec
     [_ {:keys [vnormals fnormals tessellate stride]

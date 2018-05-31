@@ -5,23 +5,24 @@
    [thi.ng.geom.vector :as v :refer [vec2 vec3]]
    [thi.ng.geom.matrix :refer [M44]]
    [thi.ng.geom.meshface :as mf]
-   [thi.ng.geom.types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [IndexedMesh]])
    [thi.ng.dstruct.core :as d]
    [thi.ng.dstruct.bidirindex :as idx]
    [thi.ng.math.core :as m :refer [*eps*]]
    [thi.ng.xerror.core :as err]
    [clojure.core.reducers :as r]
-   [clojure.set :as set]))
+   [clojure.set :as set])
+   #?(:clj (:import [thi.ng.geom.types IndexedMesh])))
 
 (defn indexed-mesh
-  [] (thi.ng.geom.types.IndexedMesh. (idx/monotonic-index) [] {}))
+  [] (IndexedMesh. (idx/monotonic-index) [] {}))
 
 (defn- add-face*
   [mesh [verts attribs]]
   ;; (prn :add-face verts :attr attribs)
   (let [[vindex vids] (idx/index-coll (get mesh :vertices) verts)
         [aindex aids] (idx/index-attribs (get mesh :attribs) attribs)]
-    (thi.ng.geom.types.IndexedMesh.
+    (IndexedMesh.
      vindex
      (conj (get mesh :faces) (thi.ng.geom.meshface.IndexedMeshFace. vids aids nil))
      aindex)))
@@ -31,7 +32,7 @@
   [(vec (rseq verts))
    (reduce-kv (fn [acc k v] (assoc acc k (vec (rseq v)))) attribs attribs)])
 
-(extend-type thi.ng.geom.types.IndexedMesh
+(extend-type IndexedMesh
 
   g/IArea
   (area
@@ -57,7 +58,7 @@
   g/IFlip
   (flip
     [_]
-    (thi.ng.geom.types.IndexedMesh.
+    (IndexedMesh.
      (get _ :vertices)
      (mapv flip-face* (get _ :faces))
      (dissoc (get _ :attribs) :fnormals :vnormals)))
@@ -142,7 +143,7 @@
              fnorms
              (conj! faces' (thi.ng.geom.meshface.IndexedMeshFace. (.-vertices f) fattr nil))
              (next faces)))
-          (thi.ng.geom.types.IndexedMesh.
+          (IndexedMesh.
            vertices
            (persistent! faces')
            (assoc (get _ :attribs) :fnorm fnorms))))))

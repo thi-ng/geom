@@ -10,14 +10,12 @@
    [thi.ng.geom.basicmesh :as bm]
    [thi.ng.geom.plane :as p]
    [thi.ng.geom.tetrahedron :as tetra]
-   [thi.ng.geom.types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [Cuboid]])
    [thi.ng.dstruct.core :as d]
    [thi.ng.xerror.core :as err]
    [thi.ng.math.core :as m :refer [*eps*]]
    #?(:clj [thi.ng.math.macros :as mm]))
-  #?(:clj
-     (:import
-      [thi.ng.geom.types AABB Cuboid Sphere])))
+  #?(:clj (:import [thi.ng.geom.types Cuboid])))
 
 ;; Unlike an axis-aligned bounding box (AABB), this type specifies a
 ;; freeform box/cuboid, defined by its 8 vertices and which can be
@@ -28,13 +26,13 @@
 (defn cuboid
   ([] (cuboid 1.0))
   ([a b c d e f g h]
-   (thi.ng.geom.types.Cuboid. (mapv vec3 [a b c d e f g h])))
+   (Cuboid. (mapv vec3 [a b c d e f g h])))
   ([x]
    (cond
      (number? x)     (cuboid (vec3) x)
      (map? x)        (cuboid (get x :p) (get x :size))
      (sequential? x) (if (== 8 (count x))
-                       (thi.ng.geom.types.Cuboid. (mapv vec3 x))
+                       (Cuboid. (mapv vec3 x))
                        (err/illegal-arg!
                         "Wrong number of points, expected 8 but got"
                         (count x)))
@@ -45,9 +43,9 @@
          b (vec3 x1 y1 z2) c (vec3 x2 y1 z2)
          d (vec3 x2 y1 z1) e (vec3 x1 y2 z1)
          f (vec3 x1 y2 z2) h (vec3 x2 y2 z1)]
-     (thi.ng.geom.types.Cuboid. [a b c d e f g h]))))
+     (Cuboid. [a b c d e f g h]))))
 
-(extend-type thi.ng.geom.types.Cuboid
+(extend-type Cuboid
 
   g/IArea
   (area
@@ -69,8 +67,8 @@
 
   g/ICenter
   (center
-    ([_] (thi.ng.geom.types.Cuboid. (gu/center (vec3) (get _ :points))))
-    ([_ o] (thi.ng.geom.types.Cuboid. (gu/center (g/centroid _) (vec3 o) (get _ :points)))))
+    ([_] (Cuboid. (gu/center (vec3) (get _ :points))))
+    ([_ o] (Cuboid. (gu/center (g/centroid _) (vec3 o) (get _ :points)))))
   (centroid
     [_] (gu/centroid (get _ :points)))
 
@@ -231,7 +229,7 @@
                         (mapv #(m/roundto % *eps*))
                         (vec3)))]
        (for [[w1 w2] rw, [v1 v2] rv, [u1 u2] ru]
-         (thi.ng.geom.types.Cuboid.
+         (Cuboid.
           (mapv map-p [[u1 v1 w1] [u1 v1 w2] [u2 v1 w2] [u2 v1 w1]
                        [u1 v2 w1] [u1 v2 w2] [u2 v2 w2] [u2 v2 w1]]))))))
 
@@ -253,29 +251,29 @@
 
   g/IRotate3D
   (rotate-x
-    [_ theta] (thi.ng.geom.types.Cuboid. (mapv #(g/rotate-x % theta) (get _ :points))))
+    [_ theta] (Cuboid. (mapv #(g/rotate-x % theta) (get _ :points))))
   (rotate-y
-    [_ theta] (thi.ng.geom.types.Cuboid. (mapv #(g/rotate-y % theta) (get _ :points))))
+    [_ theta] (Cuboid. (mapv #(g/rotate-y % theta) (get _ :points))))
   (rotate-z
-    [_ theta] (thi.ng.geom.types.Cuboid. (mapv #(g/rotate-z % theta) (get _ :points))))
+    [_ theta] (Cuboid. (mapv #(g/rotate-z % theta) (get _ :points))))
   (rotate-around-axis
     [_ axis theta]
-    (thi.ng.geom.types.Cuboid.
+    (Cuboid.
      (mapv #(g/rotate-around-axis % axis theta) (get _ :points))))
 
   g/IScale
   (scale
-    [_ s] (thi.ng.geom.types.Cuboid. (mapv #(m/* % s) (get _ :points))))
+    [_ s] (Cuboid. (mapv #(m/* % s) (get _ :points))))
   (scale-size
-    [_ s] (thi.ng.geom.types.Cuboid. (gu/scale-size s (get _ :points))))
+    [_ s] (Cuboid. (gu/scale-size s (get _ :points))))
 
   g/ITranslate
   (translate
-    [_ t] (thi.ng.geom.types.Cuboid. (mapv #(m/+ % t) (get _ :points))))
+    [_ t] (Cuboid. (mapv #(m/+ % t) (get _ :points))))
 
   g/ITransform
   (transform
-    [_ m] (thi.ng.geom.types.Cuboid. (mapv #(g/transform-vector m %) (get _ :points))))
+    [_ m] (Cuboid. (mapv #(g/transform-vector m %) (get _ :points))))
 
   ;; https://www.math.ucdavis.edu/~deloera/CURRENT_INTERESTS/small.cubes.ps
   ;; http://www.ics.uci.edu/~eppstein/projects/tetra/

@@ -11,27 +11,28 @@
    [thi.ng.geom.cuboid :as cu]
    [thi.ng.geom.basicmesh :as bm]
    [thi.ng.geom.attribs :as attr]
-   [thi.ng.geom.types]
    [thi.ng.dstruct.core :as d]
    [thi.ng.xerror.core :as err]
    [thi.ng.math.core :as m :refer [*eps*]]
-   #?(:clj [thi.ng.math.macros :as mm])))
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [AABB Sphere]])
+   #?(:clj [thi.ng.math.macros :as mm]))
+   #?(:clj (:import [thi.ng.geom.types AABB Sphere])))
 
 (defn aabb
   "Creates a new axis-aligned bounding box."
-  ([] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 1.0)))
-  ([size] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 size)))
-  ([o size] (thi.ng.geom.types.AABB. (vec3 o) (vec3 size)))
-  ([sx sy sz] (thi.ng.geom.types.AABB. (vec3 0.0) (vec3 sx sy sz))))
+  ([] (AABB. (vec3 0.0) (vec3 1.0)))
+  ([size] (AABB. (vec3 0.0) (vec3 size)))
+  ([o size] (AABB. (vec3 o) (vec3 size)))
+  ([sx sy sz] (AABB. (vec3 0.0) (vec3 sx sy sz))))
 
 (defn aabb-from-minmax
   [p q]
   (let [p (vec3 p)
         q (vec3 q)
         p (m/min p q)]
-    (thi.ng.geom.types.AABB. p (m/- (m/max p q) p))))
+    (AABB. p (m/- (m/max p q) p))))
 
-(extend-type thi.ng.geom.types.AABB
+(extend-type AABB
 
   g/IArea
   (area [{[w h d] :size}] (* 2.0 (mm/madd w h d h w d)))
@@ -57,9 +58,9 @@
   g/ICenter
   (center
     ([{size :size}]
-     (thi.ng.geom.types.AABB. (m/* size -0.5) size))
+     (AABB. (m/* size -0.5) size))
     ([{size :size} q]
-     (thi.ng.geom.types.AABB. (m/madd size -0.5 q) size)))
+     (AABB. (m/madd size -0.5 q) size)))
   (centroid
     [_] (m/madd (get _ :size) 0.5 (get _ :p)))
 
@@ -127,9 +128,9 @@
   (intersect-shape
     [_ s]
     (cond
-      (instance? thi.ng.geom.types.AABB s)
+      (instance? AABB s)
       (isec/intersect-aabb-aabb? _ s)
-      (instance? thi.ng.geom.types.Sphere s)
+      (instance? Sphere s)
       (isec/intersect-aabb-sphere? _ s)
       :else (err/type-error! "AABB" s)))
 
@@ -213,7 +214,7 @@
     (let [pa (get _ :p)
           pb (get b :p)
           p  (m/min pa pb)]
-      (thi.ng.geom.types.AABB.
+      (AABB.
        p (m/- (m/max (m/+ pa (get _ :size)) (m/+ pb (get b :size))) p))))
   (intersection
     [_ b]
@@ -225,7 +226,7 @@
           q' (m/min qa qb)
           s' (m/- q' p')]
       (if (every? #(>= % 0.0) s')
-        (thi.ng.geom.types.AABB. p' s'))))
+        (AABB. p' s'))))
 
   ;; An AABB can be subdivided into smaller ones, i.e. to create a seq of
   ;; uniform grid cells. The following options can be given as a 2nd
@@ -257,7 +258,7 @@
        (for [z (butlast (m/norm-range sz))
              y (butlast (m/norm-range sy))
              x (butlast (m/norm-range sx))]
-         (thi.ng.geom.types.AABB. (m/madd (vec3 x y z) size p) s)))))
+         (AABB. (m/madd (vec3 x y z) size p) s)))))
 
   ;; TODO Only keep faces on the surface of the original box (no inside walls)
   ;; could use Quad3 face tessellation, but would require moving Q3's
@@ -291,15 +292,15 @@
 
   g/IScale
   (scale
-    [_ s] (thi.ng.geom.types.AABB. (m/* (get _ :p) s) (m/* (get _ :size) s)))
+    [_ s] (AABB. (m/* (get _ :p) s) (m/* (get _ :size) s)))
   (scale-size
     [_ s]
     (let [s' (m/* (get _ :size) s)]
-      (thi.ng.geom.types.AABB. (m/madd (m/- s' (get _ :size)) -0.5 (get _ :p)) s')))
+      (AABB. (m/madd (m/- s' (get _ :size)) -0.5 (get _ :p)) s')))
 
   g/ITranslate
   (translate
-    [_ t] (thi.ng.geom.types.AABB. (m/+ (get _ :p) t) (get _ :size)))
+    [_ t] (AABB. (m/+ (get _ :p) t) (get _ :size)))
 
   g/ITransform
   (transform

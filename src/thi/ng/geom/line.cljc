@@ -9,32 +9,32 @@
    [thi.ng.geom.vector :as v :refer [vec2 vec3]]
    [thi.ng.geom.attribs :as attr]
    [thi.ng.geom.basicmesh :as bm]
-   [thi.ng.geom.types :as types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [Circle2 Line2 Line3 LineStrip2 LineStrip3]])
    [thi.ng.dstruct.core :as d]
    [thi.ng.math.core :as m :refer [*eps*]]
    #?(:clj [thi.ng.math.macros :as mm]))
   #?(:clj
      (:import
-      [thi.ng.geom.types Circle2 Line2 Line3 LineStrip2])))
+      [thi.ng.geom.types Circle2 Line2 Line3 LineStrip2 LineStrip3])))
 
 (defn line2
-  ([[p q]] (thi.ng.geom.types.Line2. [(vec2 p) (vec2 q)]))
-  ([p q] (thi.ng.geom.types.Line2. [(vec2 p) (vec2 q)]))
-  ([px py qx qy] (thi.ng.geom.types.Line2. [(vec2 px py) (vec2 qx qy)])))
+  ([[p q]] (Line2. [(vec2 p) (vec2 q)]))
+  ([p q] (Line2. [(vec2 p) (vec2 q)]))
+  ([px py qx qy] (Line2. [(vec2 px py) (vec2 qx qy)])))
 
 (defn line3
-  ([[p q]] (thi.ng.geom.types.Line3. [(vec3 p) (vec3 q)]))
-  ([p q] (thi.ng.geom.types.Line3. [(vec3 p) (vec3 q)]))
-  ([px py qx qy] (thi.ng.geom.types.Line3. [(vec3 px py) (vec3 qx qy)]))
-  ([px py pz qx qy qz] (thi.ng.geom.types.Line3. [(vec3 px py pz) (vec3 qx qy qz)])))
+  ([[p q]] (Line3. [(vec3 p) (vec3 q)]))
+  ([p q] (Line3. [(vec3 p) (vec3 q)]))
+  ([px py qx qy] (Line3. [(vec3 px py) (vec3 qx qy)]))
+  ([px py pz qx qy qz] (Line3. [(vec3 px py pz) (vec3 qx qy qz)])))
 
 (defn linestrip2
-  ([points] (thi.ng.geom.types.LineStrip2. (mapv vec2 points)))
-  ([p q & more] (thi.ng.geom.types.LineStrip2. (mapv vec2 (cons p (cons q more))))))
+  ([points] (LineStrip2. (mapv vec2 points)))
+  ([p q & more] (LineStrip2. (mapv vec2 (cons p (cons q more))))))
 
 (defn linestrip3
-  ([points] (thi.ng.geom.types.LineStrip3. (mapv vec3 points)))
-  ([p q & more] (thi.ng.geom.types.LineStrip3. (mapv vec3 (cons p (cons q more))))))
+  ([points] (LineStrip3. (mapv vec3 points)))
+  ([p q & more] (LineStrip3. (mapv vec3 (cons p (cons q more))))))
 
 ;; These functions are used for both 2D/3D implementations:
 
@@ -48,7 +48,7 @@
   [ctor p q rp rq]
   (reflect-on-ray ctor p q (m/mix rp rq) (m/normalize (m/- rq rp))))
 
-(extend-type thi.ng.geom.types.Line2
+(extend-type Line2
 
   g/IArea
   (area [_] 0)
@@ -66,16 +66,16 @@
   g/IBoundingCircle
   (bounding-circle
     [{[p q] :points}]
-    (thi.ng.geom.types.Circle2. (m/mix p q) (* 0.5 (g/dist p q))))
+    (Circle2. (m/mix p q) (* 0.5 (g/dist p q))))
 
   g/ICenter
   (center
     ([{[p q] :points}]
      (let [c (m/mix p q)]
-       (thi.ng.geom.types.Line2. [(m/- p c) (m/- q c)])))
+       (Line2. [(m/- p c) (m/- q c)])))
     ([{[p q] :points} o]
      (let [c (m/- o (m/mix p q))]
-       (thi.ng.geom.types.Line2. [(m/+ p c) (m/+ q c)]))))
+       (Line2. [(m/+ p c) (m/+ q c)]))))
   (centroid [{p :points}] (m/mix (nth p 0) (nth p 1)))
 
   g/ICircumference
@@ -131,10 +131,10 @@
   (normalize
     ([{[p q] :points}]
      (let [d (m/normalize (m/- q p))]
-       (thi.ng.geom.types.Line2. [p (m/+ p d)])))
+       (Line2. [p (m/+ p d)])))
     ([{[p q] :points} n]
      (let [d (m/normalize (m/- q p) n)]
-       (thi.ng.geom.types.Line2. [p (m/+ p d)]))))
+       (Line2. [p (m/+ p d)]))))
   (normalized? [_] (m/delta= 1.0 (m/mag-squared _)))
 
   g/IProximity
@@ -144,9 +144,9 @@
   g/IReflect
   (reflect
     [{[p q] :points} r]
-    (if (instance? thi.ng.geom.types.Line2 r)
+    (if (instance? Line2 r)
       (let [[pr qr] (get r :points)] (reflect-on-line line2 p q pr qr))
-      (thi.ng.geom.types.Line2. [(g/reflect p r) (g/reflect q r)])))
+      (Line2. [(g/reflect p r) (g/reflect q r)])))
   g/ISample
   (point-at
     [{p :points} t] (m/mix (p 0) (p 1) t))
@@ -161,30 +161,30 @@
   g/IRotate
   (rotate
     [{p :points} theta]
-    (thi.ng.geom.types.Line2. [(g/rotate (nth p 0) theta) (g/rotate (nth p 1) theta)]))
+    (Line2. [(g/rotate (nth p 0) theta) (g/rotate (nth p 1) theta)]))
 
   g/IScale
   (scale
-    [{p :points} s] (thi.ng.geom.types.Line2. [(m/* (nth p 0) s) (m/* (nth p 1) s)]))
+    [{p :points} s] (Line2. [(m/* (nth p 0) s) (m/* (nth p 1) s)]))
   (scale-size
     [{[p q] :points} s]
     (let [c (m/mix p q)]
-      (thi.ng.geom.types.Line2. [(m/madd (m/- p c) s c) (m/madd (m/- q c) s c)])))
+      (Line2. [(m/madd (m/- p c) s c) (m/madd (m/- q c) s c)])))
 
   g/ITranslate
   (translate
-    [{p :points} t] (thi.ng.geom.types.Line2. [(m/+ (nth p 0) t) (m/+ (nth p 1) t)]))
+    [{p :points} t] (Line2. [(m/+ (nth p 0) t) (m/+ (nth p 1) t)]))
 
   g/ITransform
   (transform
     [{p :points} m]
-    (thi.ng.geom.types.Line2.
+    (Line2.
      [(g/transform-vector m (p 0)) (g/transform-vector m (p 1))]))
 
   g/IVolume
   (volume [_] 0.0))
 
-(extend-type thi.ng.geom.types.Line3
+(extend-type Line3
 
   g/IArea
   (area [_] 0.0)
@@ -208,10 +208,10 @@
   (center
     ([{[p q] :points}]
      (let [c (m/mix p q)]
-       (thi.ng.geom.types.Line3. [(m/- p c) (m/- q c)])))
+       (Line3. [(m/- p c) (m/- q c)])))
     ([{[p q] :points} o]
      (let [c (m/- o (m/mix p q))]
-       (thi.ng.geom.types.Line3. [(m/+ p c) (m/+ q c)]))))
+       (Line3. [(m/+ p c) (m/+ q c)]))))
   (centroid [{p :points}] (m/mix (nth p 0) (nth p 1)))
 
   g/ICircumference
@@ -268,10 +268,10 @@
   (normalize
     ([{[p q] :points}]
      (let [d (m/normalize (m/- q p))]
-       (thi.ng.geom.types.Line3. [p (m/+ p d)])))
+       (Line3. [p (m/+ p d)])))
     ([{[p q] :points} n]
      (let [d (m/normalize (m/- q p) n)]
-       (thi.ng.geom.types.Line3. [p (m/+ p d)]))))
+       (Line3. [p (m/+ p d)]))))
   (normalized? [_] (m/delta= 1.0 (m/mag-squared _)))
 
   g/IProximity
@@ -281,9 +281,9 @@
   g/IReflect
   (reflect
     [{[p q] :points} r]
-    (if (instance? thi.ng.geom.types.Line3 r)
+    (if (instance? Line3 r)
       (let [[pr qr] (get r :points)] (reflect-on-line line3 p q pr qr))
-      (thi.ng.geom.types.Line3. [(g/reflect p r) (g/reflect q r)])))
+      (Line3. [(g/reflect p r) (g/reflect q r)])))
 
   g/ISample
   (point-at
@@ -299,46 +299,46 @@
   g/IRotate3D
   (rotate-x
     [{p :points} theta]
-    (thi.ng.geom.types.Line3. [(g/rotate-x (nth p 0) theta) (g/rotate-x (nth p 1) theta)]))
+    (Line3. [(g/rotate-x (nth p 0) theta) (g/rotate-x (nth p 1) theta)]))
   (rotate-y
     [{p :points} theta]
-    (thi.ng.geom.types.Line3. [(g/rotate-y (nth p 0) theta) (g/rotate-y (nth p 1) theta)]))
+    (Line3. [(g/rotate-y (nth p 0) theta) (g/rotate-y (nth p 1) theta)]))
   (rotate-z
     [{p :points} theta]
-    (thi.ng.geom.types.Line3. [(g/rotate-z (nth p 0) theta) (g/rotate-z (nth p 1) theta)]))
+    (Line3. [(g/rotate-z (nth p 0) theta) (g/rotate-z (nth p 1) theta)]))
   (rotate-around-axis
     [{p :points} axis theta]
-    (thi.ng.geom.types.Line3.
+    (Line3.
      [(g/rotate-around-axis (nth p 0) axis theta)
       (g/rotate-around-axis (nth p 1) axis theta)]))
 
   g/IRotate
   (rotate
     [{p :points} theta]
-    (thi.ng.geom.types.Line3. [(g/rotate (nth p 0) theta) (g/rotate (nth p 1) theta)]))
+    (Line3. [(g/rotate (nth p 0) theta) (g/rotate (nth p 1) theta)]))
 
   g/IScale
   (scale
-    [{p :points} s] (thi.ng.geom.types.Line3. [(m/* (nth p 0) s) (m/* (nth p 1) s)]))
+    [{p :points} s] (Line3. [(m/* (nth p 0) s) (m/* (nth p 1) s)]))
   (scale-size
     [{[p q] :points} s]
     (let [c (m/mix p q)]
-      (thi.ng.geom.types.Line3. [(m/madd (m/- p c) s c) (m/madd (m/- q c) s c)])))
+      (Line3. [(m/madd (m/- p c) s c) (m/madd (m/- q c) s c)])))
 
   g/ITranslate
   (translate
-    [{p :points} t] (thi.ng.geom.types.Line3. [(m/+ (nth p 0) t) (m/+ (nth p 1) t)]))
+    [{p :points} t] (Line3. [(m/+ (nth p 0) t) (m/+ (nth p 1) t)]))
 
   g/ITransform
   (transform
     [{p :points} m]
-    (thi.ng.geom.types.Line3.
+    (Line3.
      [(g/transform-vector m (p 0)) (g/transform-vector m (p 1))]))
 
   g/IVolume
   (volume [_] 0.0))
 
-(extend-type thi.ng.geom.types.LineStrip2
+(extend-type LineStrip2
 
   g/IArea
   (area [_] 0.0)
@@ -358,8 +358,8 @@
 
   g/ICenter
   (center
-    ([_] (thi.ng.geom.types.LineStrip2. (gu/center (vec2) (get _ :points))))
-    ([_ o] (thi.ng.geom.types.LineStrip2. (gu/center (g/centroid _) (vec2 o) (get _ :points)))))
+    ([_] (LineStrip2. (gu/center (vec2) (get _ :points))))
+    ([_ o] (LineStrip2. (gu/center (g/centroid _) (vec2 o) (get _ :points)))))
   (centroid
     [_] (gu/centroid (get _ :points)))
 
@@ -423,7 +423,7 @@
   g/IReflect
   (reflect
     [_ r]
-    (thi.ng.geom.types.LineStrip2. (mapv #(g/reflect % r) (get _ :points))))
+    (LineStrip2. (mapv #(g/reflect % r) (get _ :points))))
 
   g/ISample
   (point-at
@@ -438,26 +438,26 @@
 
   g/IRotate
   (rotate
-    [_ theta] (thi.ng.geom.types.LineStrip2. (mapv #(g/rotate % theta) (get _ :points))))
+    [_ theta] (LineStrip2. (mapv #(g/rotate % theta) (get _ :points))))
 
   g/IScale
   (scale
-    [_ s] (thi.ng.geom.types.LineStrip2. (mapv #(m/* % s) (get _ :points))))
+    [_ s] (LineStrip2. (mapv #(m/* % s) (get _ :points))))
   (scale-size
-    [_ s] (thi.ng.geom.types.LineStrip2. (gu/scale-size s (get _ :points))))
+    [_ s] (LineStrip2. (gu/scale-size s (get _ :points))))
 
   g/ITranslate
   (translate
-    [_ t] (thi.ng.geom.types.LineStrip2. (mapv #(m/+ % t) (get _ :points))))
+    [_ t] (LineStrip2. (mapv #(m/+ % t) (get _ :points))))
 
   g/ITransform
   (transform
-    [_ m] (thi.ng.geom.types.LineStrip2. (mapv #(g/transform-vector m %) (get _ :points))))
+    [_ m] (LineStrip2. (mapv #(g/transform-vector m %) (get _ :points))))
 
   g/IVolume
   (volume [_] 0.0))
 
-(extend-type thi.ng.geom.types.LineStrip3
+(extend-type LineStrip3
 
   g/IArea
   (area [_] 0.0)
@@ -477,8 +477,8 @@
 
   g/ICenter
   (center
-    ([_] (thi.ng.geom.types.LineStrip3. (gu/center (vec3) (get _ :points))))
-    ([_ o] (thi.ng.geom.types.LineStrip3. (gu/center (g/centroid _) (vec3 o) (get _ :points)))))
+    ([_] (LineStrip3. (gu/center (vec3) (get _ :points))))
+    ([_ o] (LineStrip3. (gu/center (g/centroid _) (vec3 o) (get _ :points)))))
   (centroid
     [_] (gu/centroid (get _ :points)))
 
@@ -541,7 +541,7 @@
   g/IReflect
   (reflect
     [_ r]
-    (thi.ng.geom.types.LineStrip3. (mapv #(g/reflect % r) (get _ :points))))
+    (LineStrip3. (mapv #(g/reflect % r) (get _ :points))))
 
   g/ISample
   (point-at
@@ -556,33 +556,33 @@
 
   g/IRotate
   (rotate
-    [_ theta] (thi.ng.geom.types.LineStrip3. (mapv #(g/rotate % theta) (get _ :points))))
+    [_ theta] (LineStrip3. (mapv #(g/rotate % theta) (get _ :points))))
 
   g/IRotate3D
   (rotate-x
-    [_ theta] (thi.ng.geom.types.LineStrip3. (mapv #(g/rotate-x % theta) (get _ :points))))
+    [_ theta] (LineStrip3. (mapv #(g/rotate-x % theta) (get _ :points))))
   (rotate-y
-    [_ theta] (thi.ng.geom.types.LineStrip3. (mapv #(g/rotate-y % theta) (get _ :points))))
+    [_ theta] (LineStrip3. (mapv #(g/rotate-y % theta) (get _ :points))))
   (rotate-z
-    [_ theta] (thi.ng.geom.types.LineStrip3. (mapv #(g/rotate-z % theta) (get _ :points))))
+    [_ theta] (LineStrip3. (mapv #(g/rotate-z % theta) (get _ :points))))
   (rotate-around-axis
     [_ axis theta]
-    (thi.ng.geom.types.LineStrip3.
+    (LineStrip3.
      (mapv #(g/rotate-around-axis % axis theta) (get _ :points))))
 
   g/IScale
   (scale
-    [_ s] (thi.ng.geom.types.LineStrip3. (mapv #(m/* % s) (get _ :points))))
+    [_ s] (LineStrip3. (mapv #(m/* % s) (get _ :points))))
   (scale-size
-    [_ s] (thi.ng.geom.types.LineStrip3. (gu/scale-size s (get _ :points))))
+    [_ s] (LineStrip3. (gu/scale-size s (get _ :points))))
 
   g/ITranslate
   (translate
-    [_ t] (thi.ng.geom.types.LineStrip3. (mapv #(m/+ % t) (get _ :points))))
+    [_ t] (LineStrip3. (mapv #(m/+ % t) (get _ :points))))
 
   g/ITransform
   (transform
-    [_ m] (thi.ng.geom.types.LineStrip3. (mapv #(g/transform-vector m %) (get _ :points))))
+    [_ m] (LineStrip3. (mapv #(g/transform-vector m %) (get _ :points))))
 
   g/IVolume
   (volume [_] 0.0))

@@ -7,11 +7,12 @@
    [thi.ng.geom.vector :as v :refer [vec3]]
    [thi.ng.geom.triangle :as t]
    [thi.ng.geom.basicmesh :as bm]
-   [thi.ng.geom.types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [Tetrahedron]])
    [thi.ng.dstruct.core :as d]
    [thi.ng.xerror.core :as err]
    [thi.ng.math.core :as m :refer [PI HALF_PI THIRD SQRT3 *eps*]]
-   #?(:clj [thi.ng.math.macros :as mm])))
+   #?(:clj [thi.ng.math.macros :as mm]))
+   #?(:clj (:import [thi.ng.geom.types Tetrahedron])))
 
 (defn orient-tetra
   "Takes a seq of 4 3D points, returns them as vector in the order so
@@ -23,11 +24,11 @@
 
 (defn tetrahedron
   ([points]
-   (thi.ng.geom.types.Tetrahedron.
+   (Tetrahedron.
     (orient-tetra (mapv vec3 points))))
   ([a b c d] (tetrahedron [a b c d])))
 
-(extend-type thi.ng.geom.types.Tetrahedron
+(extend-type Tetrahedron
 
   g/IArea
   (area
@@ -57,13 +58,13 @@
 
   g/ICenter
   (center
-    ([_] (thi.ng.geom.types.Tetrahedron. (gu/center v/V3 (get _ :points))))
-    ([_ o] (thi.ng.geom.types.Tetrahedron. (gu/center o (get _ :points)))))
+    ([_] (Tetrahedron. (gu/center v/V3 (get _ :points))))
+    ([_ o] (Tetrahedron. (gu/center o (get _ :points)))))
   (centroid [_] (gu/centroid (get _ :points)))
 
   g/IFlip
   (flip
-    [{[a b c d] :points}] (thi.ng.geom.types.Tetrahedron. [b a c d]))
+    [{[a b c d] :points}] (Tetrahedron. [b a c d]))
 
   g/IVertexAccess
   (vertices
@@ -96,7 +97,7 @@
   (intersect-shape
     [_ s]
     (cond
-      (instance? thi.ng.geom.types.Tetrahedron s)
+      (instance? Tetrahedron s)
       (isec/intersect-tetrahedra?
        (orient-tetra (g/vertices _)) (orient-tetra (g/vertices s)))
       (and (sequential? s) (= 4 (count s)))
@@ -141,29 +142,29 @@
 
   g/IRotate3D
   (rotate-x
-    [_ theta] (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-x % theta) (get _ :points))))
+    [_ theta] (Tetrahedron. (mapv #(g/rotate-x % theta) (get _ :points))))
   (rotate-y
-    [_ theta] (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-y % theta) (get _ :points))))
+    [_ theta] (Tetrahedron. (mapv #(g/rotate-y % theta) (get _ :points))))
   (rotate-z
-    [_ theta] (thi.ng.geom.types.Tetrahedron. (mapv #(g/rotate-z % theta) (get _ :points))))
+    [_ theta] (Tetrahedron. (mapv #(g/rotate-z % theta) (get _ :points))))
   (rotate-around-axis
     [_ axis theta]
-    (thi.ng.geom.types.Tetrahedron.
+    (Tetrahedron.
      (mapv #(g/rotate-around-axis % axis theta) (get _ :points))))
 
   g/IScale
   (scale
-    [_ s] (thi.ng.geom.types.Tetrahedron. (mapv #(m/* % s) (get _ :points))))
+    [_ s] (Tetrahedron. (mapv #(m/* % s) (get _ :points))))
   (scale-size
-    [_ s] (thi.ng.geom.types.Tetrahedron. (gu/scale-size s (get _ :points))))
+    [_ s] (Tetrahedron. (gu/scale-size s (get _ :points))))
 
   g/ITranslate
   (translate
-    [_ t] (thi.ng.geom.types.Tetrahedron. (mapv #(m/+ % t) (get _ :points))))
+    [_ t] (Tetrahedron. (mapv #(m/+ % t) (get _ :points))))
 
   g/ITransform
   (transform
-    [_ m] (thi.ng.geom.types.Tetrahedron. (mapv #(g/transform-vector m %) (get _ :points))))
+    [_ m] (Tetrahedron. (mapv #(g/transform-vector m %) (get _ :points))))
 
   ;; http://mathcentral.uregina.ca/QQ/database/QQ.09.03/peter2.html
 

@@ -7,21 +7,19 @@
    [thi.ng.geom.basicmesh :as bm]
    [thi.ng.geom.line :as l]
    [thi.ng.geom.triangle :as t]
-   [thi.ng.geom.types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [Quad3 Triangle3 Line3]])
    [thi.ng.dstruct.core :as d]
    [thi.ng.xerror.core :as err]
    [thi.ng.math.core :as m :refer [*eps*]])
-  #?(:clj
-     (:import
-      [thi.ng.geom.types Quad3 Triangle3 Line3])))
+  #?(:clj (:import [thi.ng.geom.types Quad3 Triangle3 Line3])))
 
 (defn quad3
   ([] (quad3 1.0))
   ([w] (cond
-         (and (sequential? w) (= 4 (count w))) (thi.ng.geom.types.Quad3. (mapv vec3 w))
-         (number? w) (thi.ng.geom.types.Quad3. [(vec3) (vec3 w 0.0 0.0) (vec3 w w 0.0) (vec3 0.0 w 0.0)])
+         (and (sequential? w) (= 4 (count w))) (Quad3. (mapv vec3 w))
+         (number? w) (Quad3. [(vec3) (vec3 w 0.0 0.0) (vec3 w w 0.0) (vec3 0.0 w 0.0)])
          :default (err/illegal-arg! w)))
-  ([a b c d] (thi.ng.geom.types.Quad3. [(vec3 a) (vec3 b) (vec3 c) (vec3 d)])))
+  ([a b c d] (Quad3. [(vec3 a) (vec3 b) (vec3 c) (vec3 d)])))
 
 ;; The following functions can be used to inset the edges of a convex
 ;; quad.
@@ -48,7 +46,7 @@
      (inset-corner b c c d iu iv)
      (inset-corner a d c d nu iv)]))
 
-(extend-type thi.ng.geom.types.Quad3
+(extend-type Quad3
 
   g/IArea
   (area
@@ -71,8 +69,8 @@
 
   g/ICenter
   (center
-    ([_] (thi.ng.geom.types.Quad3. (gu/center (vec3) (get _ :points))))
-    ([_ o] (thi.ng.geom.types.Quad3. (gu/center (g/centroid _) (vec3 o) (get _ :points)))))
+    ([_] (Quad3. (gu/center (vec3) (get _ :points))))
+    ([_ o] (Quad3. (gu/center (g/centroid _) (vec3 o) (get _ :points)))))
   (centroid [_] (gu/centroid (get _ :points)))
 
   g/ICircumference
@@ -82,7 +80,7 @@
   g/IClassify
   (classify-point
     [_ p]
-    (transduce (map #(g/classify-point (thi.ng.geom.types.Line3. %) p)) min (g/edges _)))
+    (transduce (map #(g/classify-point (Line3. %) p)) min (g/edges _)))
 
   ;; Extruding a quad along an axis vector results in a 3D quad mesh.
   ;; The `extrude` function supports the following options, given as
@@ -133,7 +131,7 @@
 
   g/IFlip
   (flip
-    [_] (thi.ng.geom.types.Quad3. (reverse (get _ :points))))
+    [_] (Quad3. (reverse (get _ :points))))
 
   g/IVertexAccess
   (vertices
@@ -151,7 +149,7 @@
 
   g/IInset
   (inset
-    [_ inset] (thi.ng.geom.types.Quad3. (inset-quad (get _ :points) inset)))
+    [_ inset] (Quad3. (inset-quad (get _ :points) inset)))
 
   g/IIntersect
   (intersect-line
@@ -231,7 +229,7 @@
            rv (d/successive-nth 2 (m/norm-range (or rows num)))
            map-p (fn [p] (->> p (gu/map-bilinear points) (mapv #(m/roundto % *eps*)) vec3))]
        (for [[v1 v2] rv, [u1 u2] ru]
-         (thi.ng.geom.types.Quad3.
+         (Quad3.
           [(map-p [u1 v1]) (map-p [u2 v1]) (map-p [u2 v2]) (map-p [u1 v2])])))))
 
   ;; A quad can be tessellated into a number of triangles. When called
@@ -244,44 +242,44 @@
   g/ITessellate
   (tessellate
     ([{[a b c d] :points}]
-     [(thi.ng.geom.types.Triangle3. [a b c])
-      (thi.ng.geom.types.Triangle3. [a c d])])
+     [(Triangle3. [a b c])
+      (Triangle3. [a c d])])
     ([_ {tess-fn :fn :or {tess-fn gu/tessellate-3} :as opts}]
      (->> (g/subdivide _ opts)
           (sequence
            (comp
             (mapcat #(tess-fn (get % :points)))
-            (map #(thi.ng.geom.types.Triangle3. %)))))))
+            (map #(Triangle3. %)))))))
 
   g/IRotate
   (rotate
-    [_ theta] (thi.ng.geom.types.Quad3. (mapv #(g/rotate % theta) (get _ :points))))
+    [_ theta] (Quad3. (mapv #(g/rotate % theta) (get _ :points))))
 
   g/IRotate3D
   (rotate-x
-    [_ theta] (thi.ng.geom.types.Quad3. (mapv #(g/rotate-x % theta) (get _ :points))))
+    [_ theta] (Quad3. (mapv #(g/rotate-x % theta) (get _ :points))))
   (rotate-y
-    [_ theta] (thi.ng.geom.types.Quad3. (mapv #(g/rotate-y % theta) (get _ :points))))
+    [_ theta] (Quad3. (mapv #(g/rotate-y % theta) (get _ :points))))
   (rotate-z
-    [_ theta] (thi.ng.geom.types.Quad3. (mapv #(g/rotate-z % theta) (get _ :points))))
+    [_ theta] (Quad3. (mapv #(g/rotate-z % theta) (get _ :points))))
   (rotate-around-axis
     [_ axis theta]
-    (thi.ng.geom.types.Quad3.
+    (Quad3.
      (mapv #(g/rotate-around-axis % axis theta) (get _ :points))))
 
   g/IScale
   (scale
-    [_ s] (thi.ng.geom.types.Quad3. (mapv #(m/* % s) (get _ :points))))
+    [_ s] (Quad3. (mapv #(m/* % s) (get _ :points))))
   (scale-size
-    [_ s] (thi.ng.geom.types.Quad3. (gu/scale-size s (get _ :points))))
+    [_ s] (Quad3. (gu/scale-size s (get _ :points))))
 
   g/ITranslate
   (translate
-    [_ t] (thi.ng.geom.types.Quad3. (mapv #(m/+ % t) (get _ :points))))
+    [_ t] (Quad3. (mapv #(m/+ % t) (get _ :points))))
 
   g/ITransform
   (transform
-    [_ m] (thi.ng.geom.types.Quad3. (mapv #(g/transform-vector m %) (get _ :points))))
+    [_ m] (Quad3. (mapv #(g/transform-vector m %) (get _ :points))))
 
   g/IVolume
   (volume [_] 0.0))

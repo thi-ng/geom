@@ -19,7 +19,7 @@
 (comment
 
   ;; Example FX pipeline spec
-  
+
   {:src-width  1280
    :src-height 720
    :version    330

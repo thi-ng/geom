@@ -4,10 +4,7 @@
    [thi.ng.geom.core :as g]
    [thi.ng.geom.triangle :refer [circumcircle-raw triangle2]]
    [thi.ng.math.core :as m :refer [*eps* delta=]]
-   #?(:clj [thi.ng.math.macros :as mm]))
-  #?(:clj
-     (:import
-      [thi.ng.geom.types Triangle2])))
+   #?(:clj [thi.ng.math.macros :as mm])))
 
 (defn- add-unique-edge!
   [edges p q]

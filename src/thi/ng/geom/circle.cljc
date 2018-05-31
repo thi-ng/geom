@@ -6,18 +6,18 @@
    [thi.ng.geom.utils :as gu]
    [thi.ng.geom.utils.intersect :as isec]
    [thi.ng.geom.basicmesh :as bm]
-   [thi.ng.geom.types :as types]
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [Circle2 Polygon2 Rect2 Triangle2]])
    [thi.ng.xerror.core :as err]
    [thi.ng.math.core :as m :refer [PI TWO_PI *eps*]])
   #?(:clj
      (:import
-      [thi.ng.geom.types Circle2 Line2 Polygon2 Rect2 Triangle2])))
+      [thi.ng.geom.types Circle2 Polygon2 Rect2 Triangle2])))
 
 (defn circle
-  ([] (thi.ng.geom.types.Circle2. (vec2) 1.0))
-  ([r] (thi.ng.geom.types.Circle2. (vec2) r))
-  ([p r] (thi.ng.geom.types.Circle2. (vec2 p) r))
-  ([x y r] (thi.ng.geom.types.Circle2. (vec2 x y) r)))
+  ([] (Circle2. (vec2) 1.0))
+  ([r] (Circle2. (vec2) r))
+  ([p r] (Circle2. (vec2 p) r))
+  ([x y r] (Circle2. (vec2 x y) r)))
 
 (defn tangent-points
   [{p :p :as _} q]
@@ -27,14 +27,14 @@
 ;; Even though a circle is a specialization of an ellipse, we define
 ;; an extra type for performance reasons.
 
-(extend-type thi.ng.geom.types.Circle2
+(extend-type Circle2
 
   g/IArea
   (area [{r :r}] (* PI (* r r)))
 
   g/IBounds
   (bounds
-    [{p :p r :r}] (thi.ng.geom.types.Rect2. (m/- p r) (vec2 (* 2.0 r))))
+    [{p :p r :r}] (Rect2. (m/- p r) (vec2 (* 2.0 r))))
   (width  [_] (* 2.0 (get _ :r)))
   (height [_] (* 2.0 (get _ :r)))
   (depth  [_] 0)
@@ -49,8 +49,8 @@
 
   g/ICenter
   (center
-    ([_] (thi.ng.geom.types.Circle2. (vec2) (get _ :r)))
-    ([_ p] (thi.ng.geom.types.Circle2. (vec2 p) (get _ :r))))
+    ([_] (Circle2. (vec2) (get _ :r)))
+    ([_ p] (Circle2. (vec2 p) (get _ :r))))
   (centroid [_] (get _ :p))
 
   g/ICircumference
@@ -109,8 +109,8 @@
   (intersect-shape
     [_ s]
     (cond
-      (instance? thi.ng.geom.types.Circle2 s) (isec/intersect-circle-circle? _ s)
-      (instance? thi.ng.geom.types.Rect2 s)   (isec/intersect-rect-circle? s _)
+      (instance? Circle2 s) (isec/intersect-circle-circle? _ s)
+      (instance? Rect2 s)   (isec/intersect-rect-circle? s _)
       :else                                   (err/type-error! "Circle2" s)))
 
   g/IMeshConvert
@@ -132,7 +132,7 @@
   g/IPolygonConvert
   (as-polygon
     ([_] (g/as-polygon _ *resolution*))
-    ([_ res] (thi.ng.geom.types.Polygon2. (vec (g/vertices _ res)))))
+    ([_ res] (Polygon2. (vec (g/vertices _ res)))))
 
   g/IProximity
   (closest-point
@@ -165,21 +165,21 @@
      (->> res
           (g/vertices _)
           (gu/tessellate-with-point p)
-          (map #(thi.ng.geom.types.Triangle2. %)))))
+          (map #(Triangle2. %)))))
 
   ;; TODO scale with non-uniform values should return Ellipse
   ;; Since transforming a circle with a matrix can produce non-circular
   ;; results, the `transform` implementation returns a polygon.
 
   g/IRotate
-  (rotate [_ theta] (thi.ng.geom.types.Circle2. (g/rotate (get _ :p) theta) (get _ :r)))
+  (rotate [_ theta] (Circle2. (g/rotate (get _ :p) theta) (get _ :r)))
 
   g/IScale
-  (scale [_ s] (thi.ng.geom.types.Circle2. (m/* (get _ :p) s) (* (get _ :r) s)))
-  (scale-size [_ s] (thi.ng.geom.types.Circle2. (get _ :p) (* (get _ :r) s)))
+  (scale [_ s] (Circle2. (m/* (get _ :p) s) (* (get _ :r) s)))
+  (scale-size [_ s] (Circle2. (get _ :p) (* (get _ :r) s)))
 
   g/ITranslate
-  (translate [_ t] (thi.ng.geom.types.Circle2. (m/+ (get _ :p) t) (get _ :r)))
+  (translate [_ t] (Circle2. (m/+ (get _ :p) t) (get _ :r)))
 
   g/ITransform
   (transform [_ m] (g/transform (g/as-polygon _) m))

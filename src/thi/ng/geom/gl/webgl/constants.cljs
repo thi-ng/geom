@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [byte float int short keep repeat replace]))
 
 ;; WebGL 1.0 constants
+;; see: thi.ng.geom.gl.jogl.constants for further details
 
 (def active-attributes 0x8b89)
 (def active-texture 0x84e0)
