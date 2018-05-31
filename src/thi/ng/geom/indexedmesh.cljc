@@ -18,7 +18,7 @@
 
 (defn- add-face*
   [mesh [verts attribs]]
-  #_(prn :add-face verts :attr attribs)
+  ;; (prn :add-face verts :attr attribs)
   (let [[vindex vids] (idx/index-coll (get mesh :vertices) verts)
         [aindex aids] (idx/index-attribs (get mesh :attribs) attribs)]
     (thi.ng.geom.types.IndexedMesh.
