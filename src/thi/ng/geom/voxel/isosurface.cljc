@@ -3,10 +3,12 @@
   (:require
    [thi.ng.geom.core :as g]
    [thi.ng.geom.vector :as v :refer [vec3]]
+   [thi.ng.geom.attribs :as attr]
    [thi.ng.geom.basicmesh :as bm]
    [thi.ng.geom.voxel.svo :as svo :refer [cell-index select-cells voxel-cell voxel-config-at-depth]]
    [thi.ng.math.core :as m]
-   #?(:clj [thi.ng.geom.macros.voxel :refer [not-cond->]])))
+   #?(:clj [thi.ng.geom.macros.voxel :refer [not-cond->]]))
+  #?(:clj (:import [thi.ng.geom.voxel.svo SVO])))
 
 ;; Marching cube lookup tables
 ;; Edge offset table
@@ -434,13 +436,13 @@
   [tree depth iso-val]
   (g/into (bm/basic-mesh) (surface-faces tree depth iso-val)))
 
-(extend-type thi.ng.geom.voxel.tree.SVO
+(extend-type thi.ng.geom.voxel.svo.SVO
   g/IMeshConvert
   (as-mesh
     ([tree] (g/as-mesh tree {}))
-    ([tree {:keys [mesh attribs depth iso-value] :as options}]
+    ([tree {:keys [mesh attribs depth iso-value] :as opts}]
      (let [faces (sequence (surface-faces tree depth (or iso-value 0.5)))
-           target-mesh (or mesh (glm/gl-mesh (count faces) (set (keys attribs))))
-           attr-fn (fn [i [verts]] (attr/generate-face-attribs verts i attribs options))
+           target-mesh (or mesh (bm/basic-mesh)) ;; (glm/gl-mesh (count faces) (set (keys attribs))))
+           attr-fn (fn [i [verts]] (attr/generate-face-attribs verts i attribs opts))
            attributed-faces (map-indexed attr-fn faces)]
        (g/into target-mesh attributed-faces)))))
