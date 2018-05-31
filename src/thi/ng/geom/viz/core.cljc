@@ -739,8 +739,8 @@
   [{:keys [major minor attribs label-style]} axis tick1-fn tick2-fn label-fn]
   (svg/group
    (merge {:stroke "#000"} attribs)
-   (map tick1-fn major)
-   (map tick2-fn minor)
+   (seq (map tick1-fn major))
+   (seq (map tick2-fn minor))
    (apply svg/group (merge {:stroke "none"} label-style) (mapv label-fn major))
    axis))
 
