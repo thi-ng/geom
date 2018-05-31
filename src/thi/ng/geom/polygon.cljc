@@ -315,7 +315,7 @@
 
   g/IFlip
   (flip
-    [_] (thi.ng.geom.types.Polygon2. (reverse (get _ :points))))
+    [_] (thi.ng.geom.types.Polygon2. (vec (rseq (:points _)))))
 
   g/IVertexAccess
   (vertices
