@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.gl.ex01
+(ns thi.ng.geom.examples.gl.gears2d
   (:require-macros
    [thi.ng.math.macros :as mm])
   (:require
@@ -23,18 +23,6 @@
    [thi.ng.geom.circle :as c]
    [thi.ng.geom.polygon :as poly]))
 
-(defn init-stats
-  []
-  (let [stats (js/Stats.)
-        sdom  (.call (aget stats "getDomElement") stats)]
-    (.appendChild (.-body js/document) sdom)
-    (.setAttribute sdom "class" "stats")
-    stats))
-
-(defn update-stats
-  [stats]
-  (.call (aget stats "update") stats))
-
 (defn ^:export demo
   []
   (enable-console-print!)
@@ -47,8 +35,7 @@
                       (gl/as-gl-buffer-spec {:normals false :fixed-color [1 0 0 1]})
                       (gl/make-buffers-in-spec gl glc/static-draw)
                       (assoc-in [:uniforms :proj] (gl/ortho view-rect))
-                      (time))
-        stats     (init-stats)]
+                      (time))]
     (anim/animate
      (fn [t frame]
        (gl/set-viewport gl view-rect)
@@ -67,5 +54,4 @@
                (assoc :shader shader2)
                (assoc-in [:uniforms :model]
                          (-> M44 (g/translate (vec3 0.48 0 0)) (g/rotate (- (+ t (/ HALF_PI teeth))))))))
-       (update-stats stats)
        true))))

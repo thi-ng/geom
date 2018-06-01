@@ -14,10 +14,30 @@
 </head>
 
 <body>
+    <div>
+        <select id="chooser">
+            <option value="">Choose example...</option>
+        </select>
+    </div>
     <canvas id="main" width="1280" height="720"></canvas>
     <script type="text/javascript" src="dev-resources/stats.js"></script>
-    <script type="text/javascript" src="dev-resources/webgl-texture-float-extension-shims.js"></script>
     <script type="text/javascript" src="target/geom.js"></script>
+    <script>
+        const chooser = document.getElementById("chooser");
+        for (let id of Object.keys(thi.ng.geom.examples.gl).sort()) {
+            const opt = document.createElement("option");
+            opt.setAttribute("value", id);
+            opt.appendChild(document.createTextNode(id.replace(/_/g, " ")));
+            chooser.appendChild(opt);
+        }
+        chooser.addEventListener("change", (e) => {
+            const id = e.target.value;
+            if (id != "") {
+                chooser.remove();
+                thi.ng.geom.examples.gl[id].demo();
+            }
+        });
+    </script>
 </body>
 
 </html>

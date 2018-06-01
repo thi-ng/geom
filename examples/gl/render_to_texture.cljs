@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.gl.ex06
+(ns thi.ng.geom.examples.gl.render-to-texture
   (:require-macros
    [thi.ng.math.macros :as mm])
   (:require

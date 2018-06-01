@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.gl.ex02a
+(ns thi.ng.geom.examples.gl.shaded-cube
   (:require-macros
    [thi.ng.math.macros :as mm])
   (:require

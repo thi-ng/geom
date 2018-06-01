@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.gl.ex02
+(ns thi.ng.geom.examples.gl.colored-cube
   (:require-macros
    [thi.ng.math.macros :as mm])
   (:require

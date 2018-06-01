@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.gl.ex03
+(ns thi.ng.geom.examples.gl.gears3d
   (:require-macros
    [thi.ng.math.macros :as mm])
   (:require
@@ -22,18 +22,6 @@
    [thi.ng.geom.gl.shaders.phong :as phong]
    [thi.ng.geom.circle :as c]
    [thi.ng.geom.polygon :as poly]))
-
-(defn init-stats
-  []
-  (let [stats (js/Stats.)
-        sdom  (.call (aget stats "getDomElement") stats)]
-    (.appendChild (.-body js/document) sdom)
-    (.setAttribute sdom "class" "stats")
-    stats))
-
-(defn update-stats
-  [stats]
-  (.call (aget stats "update") stats))
 
 (defn ^:export demo
   []
@@ -59,8 +47,7 @@
                                :wrap          0
                                :useBlinnPhong true})
                       (gl/make-buffers-in-spec gl glc/static-draw)
-                      (time))
-        stats     (init-stats)]
+                      (time))]
     (anim/animate
      (fn [t frame]
        (let [rot (g/rotate-y M44 (* t 0.5))
@@ -80,5 +67,4 @@
             (-> model
                 (assoc-in [:uniforms :model] tx2)
                 (assoc-in [:uniforms :diffuseCol] 0x33ff80))))
-         (update-stats stats)
          true)))))

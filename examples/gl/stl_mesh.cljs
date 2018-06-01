@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.gl.ex07
+(ns thi.ng.geom.examples.gl.stl-mesh
   (:require-macros
    [thi.ng.math.macros :as mm])
   (:require

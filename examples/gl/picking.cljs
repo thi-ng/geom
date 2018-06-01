@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.gl.ex04
+(ns thi.ng.geom.examples.gl.picking
   (:require-macros
    [thi.ng.math.macros :as mm])
   (:require

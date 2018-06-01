@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.gl.ex05b
+(ns thi.ng.geom.examples.gl.textured-cube
   (:require-macros
    [thi.ng.math.macros :as mm])
   (:require
@@ -30,14 +30,12 @@
          }")
    :fs (glsl/minified
         "void main() {
-           gl_FragColor = mix(texture2D(tex1, vUV), texture2D(tex2, vUV), fade);
+           gl_FragColor = texture2D(tex, vUV);
          }")
    :uniforms {:model    [:mat4 M44]
               :view     :mat4
               :proj     :mat4
-              :tex1     [:sampler2D 0] ;; bound to tex unit #0
-              :tex2     [:sampler2D 1] ;; bound to tex unit #1
-              :fade     :float}
+              :tex      :sampler2D}
    :attribs  {:position :vec3
               :uv       :vec2}
    :varying  {:vUV      :vec2}
@@ -53,30 +51,22 @@
                        {:mesh    (glm/indexed-gl-mesh 12 #{:uv})
                         :attribs {:uv (attr/face-attribs (attr/uv-cube-map-v 256 false))}})
                       (gl/as-gl-buffer-spec {})
-                      (cam/apply (cam/perspective-camera {:eye (vec3 0 0 0.5) :fov 60 :aspect view-rect}))
+                      (cam/apply (cam/perspective-camera {:eye (vec3 0 0 0.5) :fov 90 :aspect view-rect}))
                       (assoc :shader (sh/make-shader-from-spec gl shader-spec))
                       (gl/make-buffers-in-spec gl glc/static-draw))
-        tex-ready (volatile! 0)
-        tex1      (buf/load-texture
-                   gl {:callback (fn [tex img] (vswap! tex-ready inc))
-                       :src      "dev-resources/cubev.png"
-                       :flip     false})
-        tex2      (buf/load-texture
-                   gl {:callback (fn [tex img] (vswap! tex-ready inc))
-                       :src      "dev-resources/lancellotti.jpg"
+        tex-ready (volatile! false)
+        tex       (buf/load-texture
+                   gl {:callback (fn [tex img] (vreset! tex-ready true))
+                       :src      "assets/cubev.png"
                        :flip     false})]
     (anim/animate
      (fn [t frame]
-       (when (= @tex-ready 2)
-         ;; bind both textures
-         ;; shader will x-fade between them based on :fade uniform value
-         (gl/bind tex1 0)
-         (gl/bind tex2 1)
+       (when @tex-ready
+         (gl/bind tex 0)
          (doto gl
            (gl/set-viewport view-rect)
            (gl/clear-color-and-depth-buffer col/WHITE 1)
            (gl/draw-with-shader
-            (update model :uniforms merge
-                    {:model (-> M44 (g/rotate-x PI) (g/rotate-y (* t 0.5)))
-                     :fade  (+ 0.5 (* 0.5 (Math/sin (* t 2))))}))))
+            (assoc-in model [:uniforms :model]
+                      (-> M44 (g/rotate-x PI) (g/rotate-y (* t 2)))))))
        true))))
