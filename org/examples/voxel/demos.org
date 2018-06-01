@@ -1,5 +1,7 @@
 #+SETUPFILE: ../../meta/setup.org
 
+*This file is archived and only kept for reference - DO NOT edit*
+
 * Contents                                                         :toc_3_gh:
  - [[#geomvoxel-examples][geom.voxel examples]]
      - [[#namespaces-used-by-all-the-examples][Namespaces used by all the examples]]
@@ -25,7 +27,7 @@
 
 This is a render of the voxel mesh generated with the code below:
 
-[[../../assets/svo-d7.jpg]]
+[[../../../assets/svo-d7.jpg]]
 
 #+BEGIN_SRC clojure :tangle ../../babel/examples/voxel/ex01.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.examples.voxel.ex01
@@ -89,7 +91,7 @@ This is a render of the voxel mesh generated with the code below:
 
 ** Example: Sphere erosion
 
-[[../../assets/svo-sphere-erosion.jpg]]
+[[../../../assets/svo-sphere-erosion.jpg]]
 
 #+BEGIN_SRC clojure :tangle ../../babel/examples/voxel/ex02.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.examples.voxel.ex02
@@ -130,7 +132,7 @@ This is a render of the voxel mesh generated with the code below:
 
 ** Example: 3D Gradient Noise
 
-[[../../assets/svo-simplexnoise.jpg]]
+[[../../../assets/svo-simplexnoise.jpg]]
 
 #+BEGIN_SRC clojure :tangle ../../babel/examples/voxel/ex03.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.examples.voxel.ex03

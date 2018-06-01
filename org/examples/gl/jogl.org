@@ -1,5 +1,7 @@
 #+SETUPFILE: ../../meta/setup.org
 
+*This file is archived and only kept for reference - DO NOT edit*
+
 * Contents                                                         :toc_3_gh:
  - [[#jogl-examples][JOGL examples]]
      - [[#example-textured-cube--arcball][Example: Textured cube & arcball]]
@@ -64,7 +66,7 @@
   (defn init
     [^GLAutoDrawable drawable]
     (let [^GL3 gl (.. drawable getGL getGL3)
-          tex     (buf/load-texture gl {:src (io/file "dev-resources/cubev.png")})
+          tex     (buf/load-texture gl {:src (io/file "../assets/cubev.png")})
           model   (-> (a/aabb 1)
                       (g/center)
                       (g/as-mesh {:mesh    (glm/gl-mesh 12 #{:uv})

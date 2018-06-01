@@ -1,5 +1,7 @@
 #+SETUPFILE: ../../meta/setup.org
 
+*This file is archived and only kept for reference - DO NOT edit*
+
 * Luxor torus knot examples
 
 The following brief examples demonstrate usage of the =sweep-mesh= and
@@ -13,7 +15,7 @@ combined into a single mesh using =g/into=). Both examples are tangled
 into the =/babel/examples= directory, but will only work in a REPL
 which has both the =geom= and =luxor= libs on its classpath.
 
-[[../../assets/ptf-knot.jpg]]
+[[../../../assets/ptf-knot.jpg]]
 
 #+BEGIN_SRC clojure :tangle ../../babel/examples/types/ptf_knot.clj :mkdirp yes :padline no
   (ns thi.ng.geom.examples.types.ptf-knot
@@ -50,9 +52,9 @@ which has both the =geom= and =luxor= libs on its classpath.
 Some example renders to illustrate the =weave-mesh= approach/function
 with different parameters:
 
-[[../../assets/ptf-knot-weave.jpg]]
+[[../../../assets/ptf-knot-weave.jpg]]
 
-[[../../assets/ptf-knot-weave2.jpg]]
+[[../../../assets/ptf-knot-weave2.jpg]]
 
 #+BEGIN_SRC clojure :tangle ../../babel/examples/types/ptf_knot2.clj :mkdirp yes :padline no
   (ns thi.ng.geom.examples.types.ptf-knot2
@@ -89,7 +91,7 @@ with different parameters:
       (dorun))
 #+END_SRC
 
-[[../../assets/ptf-knot-weave-spectrum.jpg]]
+[[../../../assets/ptf-knot-weave-spectrum.jpg]]
 
 #+BEGIN_SRC clojure :tangle ../../babel/examples/types/ptf_knot3.clj :mkdirp yes :padline no
   (ns thi.ng.geom.examples.types.ptf-knot3
@@ -137,7 +139,7 @@ with different parameters:
       (dorun))
 #+END_SRC
 
-[[../../assets/ptf-spline.jpg]]
+[[../../../assets/ptf-spline.jpg]]
 
 #+BEGIN_SRC clojure :tangle ../../babel/examples/types/ptf_spline.clj :mkdirp yes :padline no
   (ns thi.ng.geom.examples.types.ptf-spline

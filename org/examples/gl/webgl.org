@@ -1,5 +1,7 @@
 #+SETUPFILE: ../../meta/setup.org
 
+*This file is archived and only kept for reference - DO NOT edit*
+
 * Contents                                                         :toc_4_gh:
  - [[#webgl-examples--test-scenes][WebGL examples & test scenes]]
      - [[#usage][Usage]]
@@ -411,7 +413,7 @@ Live version: http://demo.thi.ng/geom/webgl/texcube/
           tex-ready (volatile! false)
           tex       (buf/load-texture
                      gl {:callback (fn [tex img] (vreset! tex-ready true))
-                         :src      "dev-resources/cubev.png"
+                         :src      "../assets/cubev.png"
                          :flip     false})]
       (anim/animate
        (fn [t frame]
@@ -617,11 +619,11 @@ Live version: http://demo.thi.ng/geom/webgl/multitex/
           tex-ready (volatile! 0)
           tex1      (buf/load-texture
                      gl {:callback (fn [tex img] (vswap! tex-ready inc))
-                         :src      "dev-resources/cubev.png"
+                         :src      "../assets/cubev.png"
                          :flip     false})
           tex2      (buf/load-texture
                      gl {:callback (fn [tex img] (vswap! tex-ready inc))
-                         :src      "dev-resources/lancellotti.jpg"
+                         :src      "../assets/lancellotti.jpg"
                          :flip     false})]
       (anim/animate
        (fn [t frame]
