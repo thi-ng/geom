@@ -26,14 +26,19 @@
 
   :perforate    {:environments [{:namespaces [thi.ng.geom.bench.core.vector]}]}
 
-  :profiles     {:dev   {:dependencies      [[criterium "0.4.4"]]
+  :profiles     {:dev   {:dependencies      [[criterium "0.4.4"]
+                                             [org.jogamp.gluegen/gluegen-rt "2.3.2" :classifier "natives-macosx-universal"]
+                                             [org.jogamp.jogl/jogl-all "2.3.2" :classifier "natives-macosx-universal"]
+                                             [org.jogamp.gluegen/gluegen-rt "2.3.2" :classifier "natives-windows-amd64"]
+                                             [org.jogamp.jogl/jogl-all "2.3.2" :classifier "natives-windows-amd64"]
+                                             [org.jogamp.gluegen/gluegen-rt "2.3.2" :classifier "natives-linux-amd64"]
+                                             [org.jogamp.jogl/jogl-all "2.3.2" :classifier "natives-linux-amd64"]]
                          :plugins           [[lein-cljsbuild "1.1.7"]
                                              [com.cemerick/clojurescript.test "0.3.3"]]
                          :node-dependencies [[benchmark "1.0.0"]]
                          :global-vars       {*warn-on-reflection* true}
                          :jvm-opts          ^:replace ["-Dclojure.compiler.direct-linking=false"]
-                         :aliases           {"cleantest" ["do" "clean," "test," "cljsbuild" "test"]
-                                             "bench" ["with-profile" "bench" "do" "clean," "perforate," "cljsbuild" "test"]}}
+                         :aliases           {"bench" ["with-profile" "bench" "do" "clean," "perforate," "cljsbuild" "test"]}}
                  :bench {:dependencies [[perforate-x "0.1.0"]]
                          :plugins      [[perforate "0.3.4"]
                                         [lein-npm "0.6.2"]]
