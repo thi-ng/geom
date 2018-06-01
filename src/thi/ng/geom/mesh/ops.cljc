@@ -51,13 +51,13 @@
   [mesh eps]
   (let [[tree dupes] (unique-point-tree (g/vertices mesh) eps)
         finder (find-in-tree eps)]
-    [(reduce (fn [m f] (g/add-face m (mapv #(finder tree %) f))) (g/clear* mesh) (g/faces mesh))
-     ;;(g/into (g/clear* mesh) (map (fn [f] (mapv #(finder tree %) f)) (g/faces mesh)))
+    [(reduce (fn [m [f]] (g/add-face m [(mapv #(finder tree %) f)])) (g/clear* mesh) (g/faces mesh true))
      dupes]))
 
 (defn face-permutations
   [f] (take (count f) (iterate #(d/rotate-left 1 %) f)))
 
+;; FIXME currently broken to due MeshFace wrapper
 (defn remove-internal
   "Takes a mesh and removes all faces which have coincident vertices,
   but opposite orientation. Returns updated mesh."
@@ -72,6 +72,7 @@
         (set (g/faces mesh)))
        (assoc mesh :faces)))
 
+;; FIXME currently broken to due MeshFace wrapper
 (defn remove-internal-with-edges
   [mesh]
   (let [mesh (g/compute-face-normals mesh)]
