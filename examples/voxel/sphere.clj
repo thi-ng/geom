@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.voxel.ex02
+(ns thi.ng.geom.examples.voxel.sphere
   (:require
    [thi.ng.geom.core :as g]
    [thi.ng.geom.vector :refer [vec3]]
@@ -34,7 +34,7 @@
         (m/random 4 8)))))))
 
 (time
- (with-open [o (io/output-stream "sphere.stl")]
+ (with-open [o (io/output-stream "out/voxel-sphere.stl")]
    (mio/write-stl
     (mio/wrapped-output-stream o)
     (g/tessellate (iso/surface-mesh v 10 0.5)))))

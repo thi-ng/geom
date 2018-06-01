@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.svg.ex04
+(ns thi.ng.geom.examples.svg.spiral
   (:require
    [thi.ng.geom.core :as g]
    [thi.ng.geom.vector :refer [vec2]]
@@ -26,4 +26,4 @@
               :stroke "url(#rainbow)"
               :stroke-width 10)))
      (svg/serialize)
-     (spit "svgdemo04-spiral.svg"))
+     (spit "out/svg-spiral.svg"))

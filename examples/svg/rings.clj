@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.svg.ex03
+(ns thi.ng.geom.examples.svg.rings
   (:require
    [thi.ng.geom.core :as g]
    [thi.ng.geom.vector :refer [vec3]]
@@ -94,12 +94,12 @@
          (svg/serialize)
          (spit path))))
 
-(render-svg "svgdemo03-diffuse.svg"
+(render-svg "out/svg-rings-diffuse.svg"
             mesh mvp shader-diffuse width height
             ["Shader" "Normal/RGB"])
-(render-svg "svgdemo03-lambert.svg"
+(render-svg "out/svg-rings-lambert.svg"
             mesh mvp shader-lambert width height
             ["Shader" "Lambert"])
-(render-svg "svgdemo03-phong.svg"
+(render-svg "out/svg-rings-phong.svg"
             mesh mvp shader-phong width height
             ["Shader" "Blinn-Phong"])

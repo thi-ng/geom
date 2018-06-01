@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.svg.ex01
+(ns thi.ng.geom.examples.svg.circles
   (:require
    [thi.ng.math.core :as m]
    [thi.ng.geom.core :as g]
@@ -33,6 +33,6 @@
       (mapcat labeled-dot [a b c d] ["A" "B" "C" "D"])))))
 
 (->> scene
-     (adapt/all-as-svg)              ;; transform all scene elements
-     (svg/serialize)                 ;; serialize as SVG XML string
-     (spit "svgdemo01-circles.svg")) ;; write to disk
+     (adapt/all-as-svg)                  ;; transform all scene elements
+     (svg/serialize)                     ;; serialize as SVG XML string
+     (spit "out/svg-circles.svg")) ;; write to disk

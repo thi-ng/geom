@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.svg.ex05
+(ns thi.ng.geom.examples.svg.instancing
   (:require
    [thi.ng.geom.core :as g]
    [thi.ng.geom.vector :refer [vec2]]
@@ -36,4 +36,4 @@
         :stroke "url(#rainbow-lin)"
         :stroke-width 5}))
      (svg/serialize)
-     (spit "svgdemo05-instancing.svg"))
+     (spit "out/svg-instancing.svg"))

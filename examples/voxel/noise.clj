@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.voxel.ex03
+(ns thi.ng.geom.examples.voxel.noise
   (:require
    [thi.ng.geom.core :as g]
    [thi.ng.geom.vector :refer [vec3]]
@@ -21,7 +21,7 @@
          (svo/apply-voxels svo/set-at (svo/voxeltree 32 res)))))
 
 (time
- (with-open [o (io/output-stream "noise.stl")]
+ (with-open [o (io/output-stream "out/voxel-noise.stl")]
    (mio/write-stl
     (mio/wrapped-output-stream o)
     (g/tessellate (iso/surface-mesh v 10 iso-val)))))

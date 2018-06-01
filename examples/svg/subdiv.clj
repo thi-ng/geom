@@ -7,15 +7,15 @@
 
 (defn demo
   [points [id col]]
-  (->> (range 1 6)
-       (map
-        #(let [p (->> points
-                      (mapv #(m/+ % (* (dec %) 120) 0))
-                      (d/iterate-n % (partial sd/subdivide-closed (id sd/schemes))))]
-           (svg/group
-            {:stroke col}
-            (svg/polygon p)
-            (map #(svg/circle % 1.5) p))))))
+  (for [i (range 1 6)]
+    (let [off-x (* 120 (dec i))
+          pts   (->> points
+                     (mapv #(m/+ % off-x 0))
+                     (d/iterate-n i (partial sd/subdivide-closed (id sd/schemes))))]
+      (svg/group
+       {:stroke col}
+       (svg/polygon pts)
+       (map #(svg/circle % 1.5) pts)))))
 
 (def points
   (mapv vec2
@@ -30,4 +30,4 @@
             (svg/text [300 170] ":chaikin" {:fill "red"})
             (svg/text [300 186] ":cubic-bezier" {:fill "blue"}))
      (svg/serialize)
-     (spit "sd-compare.svg"))
+     (spit "out/svg-subdiv-curves.svg"))

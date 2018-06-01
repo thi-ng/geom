@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.svg.ex02
+(ns thi.ng.geom.examples.svg.stl-mesh
   (:require
    [thi.ng.geom.core :as g]
    [thi.ng.geom.matrix :as mat]
@@ -32,7 +32,7 @@
     :flags    {:solid true}}))
 
 (def mesh
-  (with-open [in (io/input-stream "dev-resources/suzanne.stl")]
+  (with-open [in (io/input-stream "assets/suzanne.stl")]
     (-> in
         (mio/wrapped-input-stream)
         (mio/read-stl)
@@ -48,4 +48,4 @@
          (svg/serialize)
          (spit path))))
 
-(render-svg "svgdemo02-suzanne.svg" mesh mvp width height)
+(render-svg "out/svg-stl-mesh.svg" mesh mvp width height)

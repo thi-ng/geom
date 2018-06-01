@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.svg.ex06
+(ns thi.ng.geom.examples.svg.decorators
   (:require
    [thi.ng.geom.core :as g]
    [thi.ng.geom.matrix :refer [M32]]
@@ -30,4 +30,4 @@
          :__label ["Jan 2014" "Feb 2014" "Mar 2014"]}))
      (adapt/all-as-svg)
      (svg/serialize)
-     (spit "svgdemo06-decorators.svg"))
+     (spit "out/svg-decorators.svg"))

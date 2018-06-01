@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.voxel.ex01
+(ns thi.ng.geom.examples.voxel.gyroid
   (:require
    [thi.ng.geom.core :as g]
    [thi.ng.geom.vector :refer [vec3]]
@@ -57,7 +57,7 @@
     v3 [[svo/delete-at (range 9 26 res) (range 9 26 res) (range 18 26 res)]])))
 
 (time
- (with-open [o (io/output-stream "voxel.stl")]
+ (with-open [o (io/output-stream "out/voxel-gyroid.stl")]
    (mio/write-stl
     (mio/wrapped-output-stream o)
     (g/tessellate (iso/surface-mesh v4 11 0.5)))))
