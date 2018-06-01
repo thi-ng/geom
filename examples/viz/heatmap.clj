@@ -41,8 +41,8 @@
        (svg/serialize)
        (spit (str prefix "-" (name id) ".svg"))))
 
-(cartesian-viz "hm" :rainbow2)
-(cartesian-viz "hm" :orange-blue)
+(cartesian-viz "out/hm" :rainbow2)
+(cartesian-viz "out/hm" :orange-blue)
 
 (defn polar-viz
   [prefix id & [opts]]
@@ -66,10 +66,10 @@
        (svg/serialize)
        (spit (str prefix "-" (name id) ".svg"))))
 
-(polar-viz "hmp" :yellow-magenta-cyan)
-(polar-viz "hmp" :green-magenta)
+(polar-viz "out/hmp" :yellow-magenta-cyan)
+(polar-viz "out/hmp" :green-magenta)
 
 ;; using custom shape function applied for each matrix cell
 ;; (a circle fitting within the 4 points defining a grid cell)
-(cartesian-viz "hms" :rainbow2 {:shape viz/circle-cell})
-(polar-viz "hmsp" :rainbow2 {:shape viz/circle-cell})
+(cartesian-viz "out/hms" :rainbow2 {:shape viz/circle-cell})
+(polar-viz "out/hmsp" :rainbow2 {:shape viz/circle-cell})

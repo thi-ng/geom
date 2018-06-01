@@ -38,9 +38,9 @@
 (-> viz-spec
     (assoc :data [((bar-spec 1 20) 0 "#0af")])
     (viz/svg-plot2d-cartesian)
-    (export-viz "bars.svg"))
+    (export-viz "out/bars.svg"))
 
 (-> viz-spec
     (assoc :data (map-indexed (bar-spec 3 6) ["#0af" "#fa0" "#f0a"]))
     (viz/svg-plot2d-cartesian)
-    (export-viz "bars-interleave.svg"))
+    (export-viz "out/bars-interleave.svg"))

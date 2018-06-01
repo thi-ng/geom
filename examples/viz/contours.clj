@@ -47,10 +47,10 @@
 (defn export-viz
   [viz path] (->> viz (svg/svg {:width 600 :height 600}) (svg/serialize) (spit path)))
 
-(->> {"contours-outline.svg"     [viz-spec false]
-      "contours.svg"             [viz-spec true]
-      "contours-log-outline.svg" [viz-spec-log false]
-      "contours-log.svg"         [viz-spec-log true]}
+(->> {"out/contours-outline.svg"     [viz-spec false]
+      "out/contours.svg"             [viz-spec true]
+      "out/contours-log-outline.svg" [viz-spec-log false]
+      "out/contours-log.svg"         [viz-spec-log true]}
      (run!
       (fn [[path [spec fill?]]]
         (-> (if fill? (assoc-in spec [:data 0 :attribs] fill-attribs) spec)

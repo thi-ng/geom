@@ -114,7 +114,7 @@
       {:width 960 :height 200}
       (apply svg/defs (map make-gradient item-type-colors)))
      (svg/serialize)
-     (spit "timeline.svg"))
+     (spit "out/timeline.svg"))
 
 ;; Create stacked timeline vertically grouped by item type
 (->> {:x-axis (viz/linear-axis
@@ -138,4 +138,4 @@
       {:width 960 :height 245}
       (apply svg/defs (map make-gradient item-type-colors)))
      (svg/serialize)
-     (spit "timeline-separate.svg"))
+     (spit "out/timeline-separate.svg"))

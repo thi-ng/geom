@@ -76,4 +76,4 @@
        (viz/svg-plot2d-cartesian)
        (svg/svg {:width (+ 70 max-x) :height 120})
        (svg/serialize)
-       (spit "commit-history.svg")))
+       (spit "out/commit-history.svg")))

@@ -21,4 +21,4 @@
      (viz/svg-plot2d-cartesian)
      (svg/svg {:width 600 :height 200})
      (svg/serialize)
-     (spit "intervals.svg"))
+     (spit "out/intervals.svg"))

@@ -36,7 +36,7 @@
              :shape   (viz/svg-triangle-down 6)
              :layout  viz/svg-scatter-plot}]})
 
-(export-viz spec "scatter-linear.svg")
+(export-viz spec "out/scatter-linear.svg")
 
 (-> spec
     (assoc :y-axis (viz/log-axis
@@ -45,4 +45,4 @@
                      :pos         50
                      :label-dist  15
                      :label-style {:text-anchor "end"}}))
-    (export-viz "scatter-log.svg"))
+    (export-viz "out/scatter-log.svg"))

@@ -33,13 +33,13 @@
 
 (-> viz-spec
     (viz/svg-plot2d-cartesian)
-    (export-viz "lineplot.svg"))
+    (export-viz "out/lineplot.svg"))
 
 ;; same spec, just update style attribs & layout method
 (-> viz-spec
     (update-in [:data 0] merge {:attribs {:fill "#0af"} :layout viz/svg-area-plot})
     (viz/svg-plot2d-cartesian)
-    (export-viz "areaplot.svg"))
+    (export-viz "out/areaplot.svg"))
 
 (def viz-spec-polar
   {:x-axis (viz/linear-axis
@@ -62,10 +62,10 @@
              :attribs {:fill "none" :stroke "#0af"}
              :layout  viz/svg-line-plot}]})
 
-(-> viz-spec-polar (viz/svg-plot2d-polar) (export-viz "lineplot-polar.svg"))
+(-> viz-spec-polar (viz/svg-plot2d-polar) (export-viz "out/lineplot-polar.svg"))
 
 ;; same spec, just update style attribs & layout method
 (-> viz-spec-polar
     (update-in [:data 0] merge {:attribs {:fill "#0af"} :res 20 :layout viz/svg-area-plot})
     (viz/svg-plot2d-polar)
-    (export-viz "areaplot-polar.svg"))
+    (export-viz "out/areaplot-polar.svg"))

@@ -52,10 +52,10 @@
      (viz/svg-plot2d-polar)
      (svg/svg {:width 600 :height 600})
      (svg/serialize)
-     (spit "radarplot.svg"))
+     (spit "out/radarplot.svg"))
 
 (->> (assoc viz-spec :data (mapv random-radar-spec-minmax [[0 0.66 1 0.33] [1 0.5 0 0.33] [1 0 0.8 0.33]]))
      (viz/svg-plot2d-polar)
      (svg/svg {:width 600 :height 600})
      (svg/serialize)
-     (spit "radarplot-minmax.svg"))
+     (spit "out/radarplot-minmax.svg"))
