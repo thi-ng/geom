@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.jogl.ex03
+(ns thi.ng.geom.examples.jogl.fx-pipeline
   (:import
    [com.jogamp.opengl GL3 GLAutoDrawable]
    [com.jogamp.newt.event MouseEvent KeyEvent])
@@ -29,7 +29,7 @@
    [clojure.java.io :as io]))
 
 (def app
-  (atom {:mesh    "dev-resources/suzanne.stl"
+  (atom {:mesh    "assets/suzanne.stl"
          :version 330}))
 
 (defn load-mesh

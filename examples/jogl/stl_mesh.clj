@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.jogl.ex02
+(ns thi.ng.geom.examples.jogl.stl-mesh
   (:import
    [com.jogamp.opengl GL3 GLAutoDrawable]
    [com.jogamp.newt.event MouseEvent KeyEvent])

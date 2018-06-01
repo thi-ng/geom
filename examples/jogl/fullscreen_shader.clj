@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.jogl.ex04
+(ns thi.ng.geom.examples.jogl.fullscreen-shader
   (:import
    [com.jogamp.opengl GL3 GLAutoDrawable]
    [com.jogamp.newt.event MouseEvent KeyEvent])
@@ -23,8 +23,10 @@
 (def shader-examples
   {:basic "
 void mainImage(vec2 pos, vec2 aspect) {
-  float d = length((mpos - pos) * aspect);
-  float l = 1.0 - d * 4.0;
+  vec2 mp = vec2(mpos.x, 1.0 - mpos.y);
+  float d = length((mp - pos) * aspect);
+  float amp = sin(time) * 2.0 + 4.0;
+  float l = 1.0 - d * amp;
   vec3 col = vec3(l);
   fragColor = vec4(col, 1.0);
 }"

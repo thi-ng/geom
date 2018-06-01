@@ -1,4 +1,4 @@
-(ns thi.ng.geom.examples.jogl.ex01
+(ns thi.ng.geom.examples.jogl.textured-cube
   (:import
    [com.jogamp.opengl GL3 GLAutoDrawable]
    [com.jogamp.newt.event MouseEvent KeyEvent])
@@ -49,7 +49,7 @@
 (defn init
   [^GLAutoDrawable drawable]
   (let [^GL3 gl (.. drawable getGL getGL3)
-        tex     (buf/load-texture gl {:src (io/file "dev-resources/cubev.png")})
+        tex     (buf/load-texture gl {:src (io/file "assets/cubev.png")})
         model   (-> (a/aabb 1)
                     (g/center)
                     (g/as-mesh {:mesh    (glm/gl-mesh 12 #{:uv})
