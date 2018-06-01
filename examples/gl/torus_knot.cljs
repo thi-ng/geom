@@ -130,8 +130,8 @@
   []
   (let [gl        (gl/gl-context "main")
         view-rect (gl/get-viewport-rect gl)
-        model     (-> #_(knot-simple)
-                      (knot-nested 8 7)
+        model     (-> (knot-simple)
+                      #_(knot-nested 8 7)
                       (gl/as-gl-buffer-spec {})
                       (cam/apply (cam/perspective-camera {:eye (vec3 0 0 5) :fov 90 :aspect view-rect}))
                       (assoc :shader (sh/make-shader-from-spec gl shader-spec))
