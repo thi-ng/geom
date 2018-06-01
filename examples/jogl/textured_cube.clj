@@ -107,3 +107,5 @@
                                :drag  mouse-dragged
                                :wheel wheel-moved}}}))
   nil)
+
+(-main)

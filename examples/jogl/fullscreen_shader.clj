@@ -154,3 +154,5 @@ void main() {
                            :keys    {:press key-pressed}
                            :mouse   {:move mouse-moved}}}))
   nil)
+
+(-main)
