@@ -12,9 +12,8 @@
          :cljs [^:mutable _hash])]
 
   g/IVertexAccess
-  (vertices
-    ([_] vertices)
-    ([_ _] vertices))
+  (vertices [_] vertices)
+  (vertices [_ _] vertices)
 
   g/IAttributeAccess
   (attribs [_ _] nil)
