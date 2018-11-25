@@ -782,9 +782,9 @@
         scale-y (:scale y-axis)]
     (svg/group
      (merge {:stroke "#ccc" :stroke-dasharray "1 1"} attribs)
-     (if (:visible x-axis)
+     (if minor-x
        (map #(let [x (scale-x %)] (svg/line (vec2 x y1) (vec2 x y2))) (select-ticks x-axis minor-x)))
-     (if (:visible y-axis)
+     (if minor-y
        (map #(let [y (scale-y %)] (svg/line (vec2 x1 y) (vec2 x2 y))) (select-ticks y-axis minor-y))))))
 
 (defn svg-plot2d-cartesian
@@ -848,11 +848,11 @@
         great?  (> (m/abs-diff x1 x2) m/PI)]
     (svg/group
      (merge {:stroke "#ccc" :stroke-dasharray "1 1"} attribs)
-     (if (:visible x-axis)
+     (if minor-x
        (map
         #(let [x (scale-x %)] (svg/line (project [x y1]) (project [x y2])))
         (select-ticks x-axis minor-x)))
-     (if (:visible y-axis)
+     (if minor-y
        (map
         #(let [y (scale-y %)]
            (if circle
