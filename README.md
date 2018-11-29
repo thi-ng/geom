@@ -2,7 +2,8 @@
 
 ![SVO mesh created with geom-voxel module](assets/svo-d7.jpg)
 
-[![Join the chat at https://gitter.im/thi-ng/geom](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/thi-ng/geom?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+(https://conventionalcommits.org/)
+[![Discord chat](https://img.shields.io/discord/445761008837984256.svg)](https://discord.gg/JhYcmBw)
 
 Comprehensive and modular geometry toolkit for Clojure/ClojureScript
 developed in a literate programming style.
@@ -17,16 +18,22 @@ and therefore is **not compatible with Clojure versions < 1.7.0**...
 
 ## Description & usage
 
-See [index.org](src/index.org) for details. Also please note, the
+~~See [index.org](src/index.org) for details. Also please note, the
 [dev branch](https://github.com/thi-ng/geom/tree/develop) is (as one
 might expect) often quite a bit ahead of master and I'm aiming to push
 at least weekly snapshots of all modules to
-[clojars.org](http://clojars.org)...
+[clojars.org](http://clojars.org)...~~
+
+Update 2018: I gave in to community demand and have converted the project to use
+standard CLJC sources and **NOT** rely on org-mode any longer. This
+version also constitutes the currently latest version and can be found
+in the [no-org branch](https://github.com/thi-ng/geom/tree/feature/no-org/)
+of this repo.
 
 ## Current Leiningen coordinates
 
 ```clj
-[thi.ng/geom "0.0.908"]
+[thi.ng/geom "1.0.0-RC3"]
 ```
 
 ## Getting started
