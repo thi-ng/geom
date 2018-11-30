@@ -77,7 +77,7 @@
 ;; | `:range`       | vec of range bounds  | Y          | nil                                    | Lower & upper bound of projected coordinates                             |
 ;; | `:pos`         | number               | Y          | nil                                    | Draw position of the axis (ypos for X-axis, xpos for Y-axis)             |
 ;; | `:major`       | seq of domain values | N          | nil                                    | Seq of domain positions at which to draw labeled tick marks              |
-;; | `:minor`       | seq of domain values | N          | nil                                    | Seq of domain positions at which                                         |
+;; | `:minor`       | seq of domain values | N          | nil                                    | Seq of domain positions at which to draw minor tick marks                |
 ;; | `:major-size`  | number               | N          | 10                                     | Length of major tick marks                                               |
 ;; | `:minor-size`  | number               | N          | 5                                      | Length of minor tick marks                                               |
 ;; | `:label`       | function             | N          | =(default-svg-label (value-format 2))= | Function to format & emit tick labels                                    |
@@ -122,7 +122,9 @@
 ;; *** Axis grid definition (:grid)
 ;;
 ;; *Note:* If no `:grid` spec is given in the main spec, no background
-;; *grid will be displayed...
+;; *grid will be displayed. If the axis is not `:visible`, the grid
+;; *will still be displayed as long as either `:major` or `:minor`
+;; *ticks are defined in the axis spec.
 ;;
 ;; | *Key*      | *Value* | *Required* | *Default*       | *Description*                                            |
 ;; |------------+---------+------------+-----------------+----------------------------------------------------------|
@@ -782,9 +784,9 @@
         scale-y (:scale y-axis)]
     (svg/group
      (merge {:stroke "#ccc" :stroke-dasharray "1 1"} attribs)
-     (if minor-x
+     (if (or (:major x-axis) (:minor x-axis))
        (map #(let [x (scale-x %)] (svg/line (vec2 x y1) (vec2 x y2))) (select-ticks x-axis minor-x)))
-     (if minor-y
+     (if (or (:major y-axis) (:minor y-axis))
        (map #(let [y (scale-y %)] (svg/line (vec2 x1 y) (vec2 x2 y))) (select-ticks y-axis minor-y))))))
 
 (defn svg-plot2d-cartesian
