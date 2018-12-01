@@ -850,11 +850,11 @@
         great?  (> (m/abs-diff x1 x2) m/PI)]
     (svg/group
      (merge {:stroke "#ccc" :stroke-dasharray "1 1"} attribs)
-     (if minor-x
+     (if (or (:major x-axis) (:minor x-axis))
        (map
         #(let [x (scale-x %)] (svg/line (project [x y1]) (project [x y2])))
         (select-ticks x-axis minor-x)))
-     (if minor-y
+     (if (or (:major y-axis) (:minor y-axis))
        (map
         #(let [y (scale-y %)]
            (if circle
