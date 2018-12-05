@@ -346,7 +346,7 @@
     '()
     (let [dr (- d2 d1)
           d1' (m/roundto d1 delta)]
-      (filter #(m/in-range? d1 d2 %) (range d1' (+ d2 delta) delta)))))
+      (filter #(m/in-range? d1 d2 (m/roundto % m/*eps*)) (range d1' (+ d2 delta) delta)))))
 
 (defn linear-axis
   [{:keys [domain range major minor] :as spec}]
