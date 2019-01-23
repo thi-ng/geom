@@ -267,11 +267,11 @@
   (subdivide
     ([_] (g/subdivide _ {}))
     ([_ {:keys [num cols rows] :or {num 2}}]
-     (let [dx (/ 1.0 (or cols num))
-           dy (/ 1.0 (or rows num))
-           rx (range 0.0 1.0 dx)
-           ry (range 0.0 1.0 dy)
-           s (m/* (get _ :size) dx dy)]
+     (let [dx (or cols num)
+           dy (or rows num)
+           rx (butlast (m/norm-range dx))
+           ry (butlast (m/norm-range dy))
+           s (m/div (get _ :size) dx dy)]
        (for [y ry x rx
              :let [[px py] (g/unmap-point _ (vec2 x y))
                    px (m/roundto px *eps*)
