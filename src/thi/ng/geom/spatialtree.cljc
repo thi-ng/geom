@@ -150,7 +150,9 @@
         ^:mutable bounds])
 
   g/ISpatialTree
-  (add-point [_ p d] (add-point* _ p d) _)
+  (add-point [_ p d]
+    (when (g/contains-point? (g/bounds _) p)
+      (add-point* _ p d) _))
   (delete-point [_ p] (delete-point* _ p))
   (get-point [_] point)
   (get-point-data [_] data)
@@ -228,7 +230,9 @@
         ^:mutable bounds])
 
   g/ISpatialTree
-  (add-point [_ p d] (add-point* _ p d) _)
+  (add-point [_ p d]
+    (when (g/contains-point? (g/bounds _) p)
+      (add-point* _ p d) _))
   (delete-point [_ p] (delete-point* _ p))
   (get-point [_] point)
   (get-point-data [_] data)
