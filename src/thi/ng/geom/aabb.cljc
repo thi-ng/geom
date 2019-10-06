@@ -16,7 +16,7 @@
    [thi.ng.math.core :as m :refer [*eps*]]
    #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [AABB Sphere]])
    #?(:clj [thi.ng.math.macros :as mm]))
-   #?(:clj (:import [thi.ng.geom.types AABB Sphere])))
+  #?(:clj (:import [thi.ng.geom.types AABB Sphere])))
 
 (defn aabb
   "Creates a new axis-aligned bounding box."
@@ -68,12 +68,12 @@
   (classify-point
     [_ [x y z]]
     (let [[x1 y1 z1 :as p] (get _ :p)
-          [x2 y2 z2] (m/+ p (get _ :size))
-          on-plane? (fn [[minp maxp p min1 max1 min2 max2 c1 c2]]
-                      (and (or (m/delta= minp p *eps*)
-                               (m/delta= maxp p *eps*))
-                           (m/in-range? min1 max1 c1)
-                           (m/in-range? min2 max2 c2)))]
+          [x2 y2 z2]       (m/+ p (get _ :size))
+          on-plane?        (fn [[minp maxp p min1 max1 min2 max2 c1 c2]]
+                             (and (or (m/delta= minp p *eps*)
+                                      (m/delta= maxp p *eps*))
+                                  (m/in-range? min1 max1 c1)
+                                  (m/in-range? min2 max2 c2)))]
       (if (some on-plane?
                 [[x1 x2 x y1 y2 z1 z2 y z]
                  [y1 y2 y x1 x2 z1 z2 x z]
@@ -117,12 +117,13 @@
   (faces
     [_]
     (let [[a b c d e f g h] (g/vertices _)]
-      [[c d h g]
-       [a b f e]
-       [f g h e]
-       [a d c b]
-       [b c g f]
-       [d a e h]]))
+      [[c d h g] ;; east
+       [a b f e] ;; west
+       [f g h e] ;; north
+       [a d c b] ;; south
+       [b c g f] ;; front
+       [d a e h] ;; back
+       ]))
 
   g/IIntersect
   (intersect-shape
@@ -138,14 +139,14 @@
   (as-mesh
     ([_] (g/as-mesh _ {}))
     ([_ {:keys [mesh flags attribs] :or {flags "nsewfb"}}]
-     (let [[a b c d e f g h] (g/vertices _)
+     (let [[a b c d e f g h]                  (g/vertices _)
            [north south east west front back] (d/demunge-flags-seq flags "nsewfb")]
-       (->> [(if east (attr/generate-face-attribs [c d h g] 0 attribs nil))
-             (if west (attr/generate-face-attribs [a b f e] 1 attribs nil))
+       (->> [(if east  (attr/generate-face-attribs [c d h g] 0 attribs nil))
+             (if west  (attr/generate-face-attribs [a b f e] 1 attribs nil))
              (if north (attr/generate-face-attribs [f g h e] 2 attribs nil))
              (if south (attr/generate-face-attribs [a d c b] 3 attribs nil))
              (if front (attr/generate-face-attribs [b c g f] 4 attribs nil))
-             (if back (attr/generate-face-attribs [d a e h] 5 attribs nil))]
+             (if back  (attr/generate-face-attribs [d a e h] 5 attribs nil))]
             (eduction (filter identity))
             (g/into (or mesh (bm/basic-mesh)))))))
 

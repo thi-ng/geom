@@ -10,7 +10,7 @@
    [thi.ng.math.core :as m :refer [*eps*]]
    [clojure.core.reducers :as r]
    [clojure.set :as set])
-   #?(:clj (:import [thi.ng.geom.types AABB GMesh])))
+  #?(:clj (:import [thi.ng.geom.types AABB GMesh])))
 
 (defn- add-face*
   [{:keys [vertices edges faces] :as mesh} [verts]]
@@ -79,11 +79,12 @@
 (defn merge-vertices*
   [mesh a b]
   (if ((vertex-neighbors* mesh a) b)
-    (let [fa (vertex-faces* mesh a) fb (vertex-faces* mesh b)
+    (let [fa      (vertex-faces* mesh a)
+          fb      (vertex-faces* mesh b)
           ab-isec (set/intersection fa fb)
-          a-xor (set/difference fa ab-isec)
-          b-xor (set/difference fb ab-isec)
-          mp (m/mix a b)]
+          a-xor   (set/difference fa ab-isec)
+          b-xor   (set/difference fb ab-isec)
+          mp      (m/mix a b)]
       (-> (reduce g/remove-face mesh (set/union ab-isec a-xor b-xor))
           (replace-vertex* a mp a-xor)
           (replace-vertex* b mp b-xor)))
@@ -187,9 +188,9 @@
 
   g/IBounds
   (bounds [_] (gu/bounding-box (keys (get _ :vertices))))
-  (width [_] (gu/axis-range 0 (keys (get _ :vertices))))
+  (width [_]  (gu/axis-range 0 (keys (get _ :vertices))))
   (height [_] (gu/axis-range 1 (keys (get _ :vertices))))
-  (depth [_] (gu/axis-range 2 (keys (get _ :vertices))))
+  (depth [_]  (gu/axis-range 2 (keys (get _ :vertices))))
 
   g/IBoundingSphere
   (bounding-sphere

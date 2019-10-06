@@ -40,9 +40,12 @@
   ([o size]
    (let [[x1 y1 z1 :as a] (vec3 o)
          [x2 y2 z2 :as g] (m/+ a size)
-         b (vec3 x1 y1 z2) c (vec3 x2 y1 z2)
-         d (vec3 x2 y1 z1) e (vec3 x1 y2 z1)
-         f (vec3 x1 y2 z2) h (vec3 x2 y2 z1)]
+         b                (vec3 x1 y1 z2)
+         c                (vec3 x2 y1 z2)
+         d                (vec3 x2 y1 z1)
+         e                (vec3 x1 y2 z1)
+         f                (vec3 x1 y2 z2)
+         h                (vec3 x2 y2 z1)]
      (Cuboid. [a b c d e f g h]))))
 
 (extend-type Cuboid
@@ -125,12 +128,13 @@
   (faces
     [_]
     (let [[a b c d e f g h] (get _ :points)]
-      [[c d h g]
-       [a b f e]
-       [f g h e]
-       [a d c b]
-       [b c g f]
-       [d a e h]]))
+      [[c d h g] ;; east
+       [a b f e] ;; west
+       [f g h e] ;; north
+       [a d c b] ;; south
+       [b c g f] ;; front
+       [d a e h] ;; back
+       ]))
 
   g/IIntersect
   (intersect-shape
@@ -142,12 +146,12 @@
     ([_ {:keys [mesh flags attribs] :or {flags "nsewfb"}}]
      (let [[a b c d e f g h] (g/vertices _)
            [north south east west front back] (d/demunge-flags-seq flags "nsewfb")]
-       (->> [(if east (attr/generate-face-attribs [c d h g] 0 attribs nil))
-             (if west (attr/generate-face-attribs [a b f e] 1 attribs nil))
+       (->> [(if east  (attr/generate-face-attribs [c d h g] 0 attribs nil))
+             (if west  (attr/generate-face-attribs [a b f e] 1 attribs nil))
              (if north (attr/generate-face-attribs [f g h e] 2 attribs nil))
              (if south (attr/generate-face-attribs [a d c b] 3 attribs nil))
              (if front (attr/generate-face-attribs [b c g f] 4 attribs nil))
-             (if back (attr/generate-face-attribs [d a e h] 5 attribs nil))]
+             (if back  (attr/generate-face-attribs [d a e h] 5 attribs nil))]
             (sequence (filter identity))
             (g/into (or mesh (bm/basic-mesh)))))))
 
