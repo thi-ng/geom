@@ -1,4 +1,4 @@
-(defproject thi.ng/geom "1.0.0-RC3"
+(defproject thi.ng/geom "1.0.0-RC4"
   :description  "thi.ng geometry kit - meta project spec including all modules"
   :url          "https://github.com/thi-ng/geom"
   :license      {:name "Apache Software License"
@@ -11,9 +11,9 @@
 
   :dependencies  [[org.clojure/clojure "1.9.0"]
                   [org.clojure/clojurescript "1.10.238"]
-                  [thi.ng/color "1.2.0"]
+                  [thi.ng/color "1.4.0"]
                   [thi.ng/dstruct "0.2.1"]
-                  [thi.ng/math "0.2.1"]
+                  [thi.ng/math "0.3.0"]
                   [thi.ng/ndarray "0.3.2"]
                   [thi.ng/shadergraph "0.3.0"]
                   [thi.ng/strf "0.2.2"]
@@ -32,7 +32,8 @@
                                              [org.jogamp.gluegen/gluegen-rt "2.3.2" :classifier "natives-windows-amd64"]
                                              [org.jogamp.jogl/jogl-all "2.3.2" :classifier "natives-windows-amd64"]
                                              [org.jogamp.gluegen/gluegen-rt "2.3.2" :classifier "natives-linux-amd64"]
-                                             [org.jogamp.jogl/jogl-all "2.3.2" :classifier "natives-linux-amd64"]]
+                                             [org.jogamp.jogl/jogl-all "2.3.2" :classifier "natives-linux-amd64"]
+                                             [com.postspectacular/piksel "0.1.4"]]
                          :plugins           [[lein-cljsbuild "1.1.7"]
                                              [com.cemerick/clojurescript.test "0.3.3"]]
                          :node-dependencies [[benchmark "1.0.0"]]
