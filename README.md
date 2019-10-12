@@ -33,7 +33,7 @@ of this repo.
 ## Current Leiningen coordinates
 
 ```clj
-[thi.ng/geom "1.0.0-RC3"]
+[thi.ng/geom "1.0.0-RC4"]
 ```
 
 ## Getting started
