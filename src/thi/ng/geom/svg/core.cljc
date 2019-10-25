@@ -52,8 +52,6 @@
          (repeat n)
          (interpose " "))))
 
-;; TODO add missing path segment types (Q, T)
-
 (def path-segment-formats
   {:M ["M" *fmt-vec* " "]
    :m ["m" *fmt-vec* " "]
@@ -61,6 +59,12 @@
    :l ["l" *fmt-vec* " "]
    :C ["C" *fmt-vec* " " *fmt-vec* " " *fmt-vec* " "]
    :c ["c" *fmt-vec* " " *fmt-vec* " " *fmt-vec* " "]
+   :Q ["Q" *fmt-vec* " " *fmt-vec* " "]
+   :q ["q" *fmt-vec* " " *fmt-vec* " "]
+   :S ["S" *fmt-vec* " " *fmt-vec* " "]
+   :s ["s" *fmt-vec* " " *fmt-vec* " "]
+   :T ["T" *fmt-vec* " "]
+   :t ["t" *fmt-vec* " "]
    :A ["A" *fmt-vec* " " *ff* " " str " " str " " *fmt-vec* " "]
    :a ["a" *fmt-vec* " " *ff* " " str " " str " " *fmt-vec* " "]
    :Z ["Z"]
