@@ -193,6 +193,31 @@
   (into [:g (svg-attribs attribs nil)] body))
 
 (defn path
+  "Represents an SVG path element.
+  `segments` is a sequence of path segments, in the format
+  [<command> & args]
+  that corresponds to the SVG path language, eg.
+
+  (path [[:M [0 0]] [:l [20 30]] [:Z]]
+        {:fill \"red\"})
+
+  For reference, the available commands are as follows.
+  Each has an uppercase (absolute coordinates)
+  and lowercase (relative coordinates) variant.
+
+  | Command | Name                     | Arguments                                             |
+  |---------+--------------------------+-------------------------------------------------------|
+  | M/m     | moveto                   | [pt]                                                  |
+  | L/l     | lineto                   | [pt]                                                  |
+  | H/h     | horizontal lineto        | [x]                                                   |
+  | V/v     | vertical lineto          | [y]                                                   |
+  | C/c     | cubic curveto            | [pt1 pt2 endpt]                                       |
+  | S/s     | smooth cubic curveto     | [pt2 endpt]                                           |
+  | Q/q     | quadratic curveto        | [pt1 endpt]                                           |
+  | T/t     | smooth quadratic curveto | [endpt]                                               |
+  | A/a     | elliptical arc           | [rx ry x-axis-rotation large-arc-flag sweep-flag x y] |
+  | Z/z     | closepath                | []                                                    |
+  "
   ([segments]
    (path segments nil))
   ([segments attribs]
