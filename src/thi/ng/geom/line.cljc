@@ -101,6 +101,10 @@
        (or mesh (bm/basic-mesh))
        (attr/generate-face-attribs [a b tb ta] 0 attribs opts))))
 
+  g/IFlip
+  (flip [_]
+    (Line2. (vec (rseq (get _ :points)))))
+
   g/IVertexAccess
   (vertices
     ([_] (get _ :points))
@@ -235,6 +239,10 @@
       (g/add-face
        (or mesh (bm/basic-mesh))
        (attr/generate-face-attribs [a b tb ta] 0 attribs opts))))
+
+  g/IFlip
+  (flip [_]
+    (Line3. (vec (rseq (get _ :points)))))
 
   g/IVertexAccess
   (vertices
