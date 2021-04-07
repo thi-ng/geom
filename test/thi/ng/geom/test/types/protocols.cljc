@@ -102,13 +102,13 @@
        {
         ;; 2d
         thi.ng.geom.types.Bezier2
-        (-> shape-common-2d (disj :poly :tess) (conj :isec :prox))
+        (-> shape-common-2d (disj :poly :tess) (conj :flip :isec :prox))
 
         thi.ng.geom.types.Circle2
         (conj shape-common-2d :isec :prox)
 
         thi.ng.geom.types.Line2
-        (-> shape-common-2d (disj :poly :mesh :tess) (conj :isec :prox))
+        (-> shape-common-2d (disj :poly :mesh :tess) (conj :flip :isec :prox))
 
         thi.ng.geom.types.Polygon2
         (conj shape-common-2d :chull :clip :flip :isec :prox)
@@ -122,7 +122,7 @@
         ;; 3d
 
         thi.ng.geom.types.Bezier3
-        (-> shape-common-3d (disj :poly :tess) (conj :isec :prox))
+        (-> shape-common-3d (disj :poly :tess) (conj :flip :isec :prox))
 
         thi.ng.geom.types.AABB
         (conj shape-common-3d :isec :prox :subdiv)
@@ -131,7 +131,7 @@
         (conj shape-common-3d :isec :prox :subdiv)
 
         thi.ng.geom.types.Line3
-        (-> shape-common-3d (disj :mesh :tess) (conj :isec :prox))
+        (-> shape-common-3d (disj :mesh :tess) (conj :flip :isec :prox))
 
         thi.ng.geom.types.Plane
         (-> shape-common-3d (disj :edge :tess :vert) (conj :flip :isec :prox))
