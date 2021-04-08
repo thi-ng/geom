@@ -109,6 +109,9 @@
 ;; ** Type implementations
 
 (extend-type Bezier2
+  g/IFlip
+  (flip [_]
+    (Bezier2. (reverse (get _ :points))))
 
   g/IVertexAccess
   (vertices
@@ -156,6 +159,9 @@
     (gu/sample-uniform udist include-last? (g/vertices _))))
 
 (extend-type Bezier3
+  g/IFlip
+  (flip [_]
+    (Bezier3. (reverse (get _ :points))))
 
   g/IVertexAccess
   (vertices
