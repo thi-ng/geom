@@ -170,11 +170,10 @@
 (defn random-point-in-triangle2
   "Randomly generate a point inside a 2d triangle with uniform distribution."
   [_]
-  (let [points (get _ :points)
-        [a b] [(m/random) (m/random)]
-        [s t] (if (<= a b) [a b] [b a])
+  (let [[a b] [(m/random) (m/random)]
+        [s t] (if (< a b) [a b] [b a])
         weighting [s (- t s) (- 1 t)]]
-    (apply m/+ (map m/* points weighting))))
+    (gu/from-barycentric (get _ :points) weighting)))
 
 (extend-type Triangle2
 
