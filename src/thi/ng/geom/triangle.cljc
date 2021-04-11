@@ -171,7 +171,8 @@
   "Randomly generate a point inside a 2d triangle with uniform distribution."
   [_]
   (let [points (get _ :points)
-        [s t] (sort [(rand) (rand)])
+        [a b] [(m/random) (m/random)]
+        [s t] (if (<= a b) [a b] [b a])
         weighting [s (- t s) (- 1 t)]]
     (apply m/+ (map m/* points weighting))))
 
