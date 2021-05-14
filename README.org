@@ -207,7 +207,7 @@ provided, incl. OpenGL 3/4, WebGL & SVG support, to allow visualizing
 results and/or exporting generated assets. 2D/3D shape/mesh exporters
 are provided as well and together with sister libraries like
 [[https://github.com/thi-ng/luxor][thi.ng/luxor]], it's also possible to generate complete 3D scenes for
-high quality & high resolution non-realtime rendering using [[http://luxrender.net][Luxrender]].
+high quality & high resolution non-realtime rendering using [[https://github.com/LuxRender][Luxrender]] now [[https://luxcorerender.org/][LuxCoreRender]].
 
 Furthermore, providing all functionality under a common API for both
 Clojure & Clojurescript, makes it trivial to offload heavy operations
@@ -216,7 +216,7 @@ Clojure & Clojurescript, makes it trivial to offload heavy operations
 ** Project structure
 *** core
 
-[[./src/core/][source]]
+[[./src/thi/ng/geom/core/][source]]
 
 These namespaces define the core functionality of this library,
 including the approx. 50 protocols and implementations of fundamental
@@ -225,7 +225,7 @@ quaternion (+ related convenience constructors & conversions)
 
 *** types
 
-[[./src/types/][source]]
+[[./src/thi/ng/geom/][source]]
 
 This directory contains all high-level 2d/3d data types with their
 implementations of the various core protocols. From a user
@@ -234,7 +234,7 @@ project's core functionality.
 
 *** utils
 
-[[./src/utils/][source]]
+[[./src/thi/ng/geom/utils/][source]]
 
 A number of often needed utility functions to deal with point
 collections, normals, path sampling, triangle properties etc. Also
@@ -243,7 +243,7 @@ Delaunay triangulation.
 
 *** mesh
 
-[[./src/mesh/][source]]
+[[./src/thi/ng/geom/mesh/][source]]
 
 Several tools & operations related to working with 3d meshes, incl.
 I/O, subdivisions, repair / cleaning, CSG / Boolean mesh merge,
@@ -251,7 +251,7 @@ mesh generators (polyhedra, lathe etc.)
 
 *** physics
 
-[[./src/physics/][source]]
+[[./src/thi/ng/geom/physics/][source]]
 
 This module provides a simple 2d/3d particle-based physics engine with
 Verlet integration and support for custom behaviors and constaints,
@@ -261,7 +261,7 @@ positive or negative force fields (attractors).
 
 *** svg
 
-[[./src/svg/][source]]
+[[./src/thi/ng/geom/svg/][source]]
 
 A module to help with building SVG based visualizations of geom
 entities using hiccup compatible syntax. Includes a customizable 3D
@@ -269,7 +269,7 @@ mesh renderer w/ software shader support.
 
 *** viz
 
-[[./src/viz/][source]]
+[[./src/thi/ng/geom/viz/][source]]
 
 Declarative, highly customizable 2D data visualization module with ~10
 different layout methods, 3 axis types, cartesian and polar domain
@@ -277,7 +277,7 @@ support. Currently SVG only, but planned to be format-independent.
 
 *** voxel
 
-[[./src/voxel/][source]]
+[[./src/thi/ng/geom/voxel/][source]]
 
 An experimental implementation of a in-memory sparse voxel tree (SVO)
 and related functionality to extract isosurface polygon meshes from
@@ -285,7 +285,7 @@ the tree.
 
 *** OpenGL & WebGL
 
-[[./src/gl/][source]]
+[[./src/thi/ng/geom/gl/][source]]
 
 This module provides a unified API to common OpenGL/WebGL
 functionality (context creation, shader management & presets, buffer
@@ -317,7 +317,7 @@ compatible with Clojure versions < 1.7.0*...
 
 ** Release history & changelog
 
-See [[../CHANGELOG.org][CHANGELOG.org]] for further details.
+See [[./CHANGELOG.org][CHANGELOG.org]] for further details.
 
 | *Version* | *Released* | *Lein coordinates*          | *Tagged Github URL* |
 |-----------+------------+-----------------------------+---------------------|
