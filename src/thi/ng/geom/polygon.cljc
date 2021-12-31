@@ -8,10 +8,10 @@
    [thi.ng.geom.triangle :as t]
    [thi.ng.geom.basicmesh :as bm]
    [thi.ng.geom.attribs :as attr]
-   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [Circle2 Polygon2]])
+   #?(:clj [thi.ng.geom.types] :cljs [thi.ng.geom.types :refer [Circle2 Polygon2 Triangle2]])
    [thi.ng.dstruct.core :as d]
    [thi.ng.math.core :as m :refer [PI HALF_PI THREE_HALVES_PI *eps*]])
-  #?(:clj (:import [thi.ng.geom.types Circle2 Polygon2])))
+  #?(:clj (:import [thi.ng.geom.types Circle2 Polygon2 Triangle2])))
 
 (defn polygon2
   ([points] (Polygon2. (mapv vec2 points)))
@@ -371,7 +371,7 @@
 
   g/ITessellate
   (tessellate
-    [_] (tessellate* _))
+    [_] (map #(Triangle2. %) (tessellate* _)))
 
   g/IRotate
   (rotate
