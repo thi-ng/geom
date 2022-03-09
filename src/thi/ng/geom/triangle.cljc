@@ -159,7 +159,17 @@
         [o (g/dist o b)]))))
 
 (defn circumcircle
-  ([t] (circumcircle (get t :a) (get t :b) (get t :c)))
+  ([t]
+   (cond (instance? Triangle2 t)
+         (let [{[a b c] :points} t]
+           (circumcircle a b c))
+         (map? t)
+         (let [{:keys [a b c]} t]
+           (circumcircle a b c))
+         (sequential? t)
+         (let [[a b c] t]
+           (circumcircle a b c))
+         :else (err/illegal-arg! t)))
   ([a b c]
    (let [[o r] (circumcircle-raw a b c)]
      (Circle2. o r))))
