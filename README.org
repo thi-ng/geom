@@ -33,18 +33,9 @@
 
 * About the project
 ** Leiningen coordinates
-*** Latest snapshot
-#+BEGIN_SRC clojure
-  [thi.ng/geom "1.0.0-RC4"]
-#+END_SRC
 
 #+BEGIN_SRC clojure
-  [thi.ng/geom "0.0.1178-SNAPSHOT"]
-#+END_SRC
-
-*** Latest stable
-#+BEGIN_SRC clojure
-  [thi.ng/geom "0.0.908"]
+  [thi.ng/geom "1.0.0-RC5"]
 #+END_SRC
 
 *** Additional dependencies for JOGL
@@ -321,6 +312,8 @@ See [[./CHANGELOG.org][CHANGELOG.org]] for further details.
 
 | *Version* | *Released* | *Lein coordinates*          | *Tagged Github URL* |
 |-----------+------------+-----------------------------+---------------------|
+| 1.0.0-RC5 | 2022-04-23 | =[thi.ng/geom "1.0.0-RC5"]= | [[https://github.com/thi-ng/geom/tree/1.0.0-RC5][1.0.0-RC5]]           |
+| 1.0.0-RC4 | 2019-10-07 | =[thi.ng/geom "1.0.0-RC4"]= | [[https://github.com/thi-ng/geom/tree/1.0.0-RC4][1.0.0-RC4]]           |
 | 1.0.0-RC3 | 2018-06-01 | =[thi.ng/geom "1.0.0-RC3"]= | [[https://github.com/thi-ng/geom/tree/1.0.0-RC3][1.0.0-RC3]]           |
 | 1.0.0-RC2 | 2018-06-01 | =[thi.ng/geom "1.0.0-RC2"]= | [[https://github.com/thi-ng/geom/tree/1.0.0-RC2][1.0.0-RC2]]           |
 | 1.0.0-RC1 | 2018-05-31 | =[thi.ng/geom "1.0.0-RC1"]= | [[https://github.com/thi-ng/geom/tree/1.0.0-RC1][1.0.0-RC1]]           |
@@ -355,6 +348,6 @@ See [[./CHANGELOG.org][CHANGELOG.org]] for further details.
 
 ** License
 
-(c) 2013 - 2018 Karsten Schmidt
+(c) 2013 - 2022 Karsten Schmidt
 
 This project is open source and licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache Software License 2.0]].

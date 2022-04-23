@@ -1,4 +1,4 @@
-(defproject thi.ng/geom "1.0.0-RC4"
+(defproject thi.ng/geom "1.0.0-RC5"
   :description  "thi.ng geometry kit - meta project spec including all modules"
   :url          "https://github.com/thi-ng/geom"
   :license      {:name "Apache Software License"
@@ -9,15 +9,15 @@
 
   :min-lein-version "2.4.0"
 
-  :dependencies  [[org.clojure/clojure "1.9.0"]
-                  [org.clojure/clojurescript "1.10.238"]
-                  [thi.ng/color "1.4.0"]
-                  [thi.ng/dstruct "0.2.1"]
-                  [thi.ng/math "0.3.0"]
-                  [thi.ng/ndarray "0.3.2"]
-                  [thi.ng/shadergraph "0.3.0"]
-                  [thi.ng/strf "0.2.2"]
-                  [thi.ng/typedarrays "0.1.6"]
+  :dependencies  [[org.clojure/clojure "1.11.1"]
+                  [org.clojure/clojurescript "1.11.4"]
+                  [thi.ng/color "1.5.0"]
+                  [thi.ng/dstruct "0.2.2"]
+                  [thi.ng/math "0.3.1"]
+                  [thi.ng/ndarray "0.3.3"]
+                  [thi.ng/shadergraph "0.3.1"]
+                  [thi.ng/strf "0.2.3"]
+                  [thi.ng/typedarrays "0.1.7"]
                   [thi.ng/xerror "0.1.0"]
                   [org.jogamp.gluegen/gluegen-rt "2.3.2"]
                   [org.jogamp.jogl/jogl-all "2.3.2"]
@@ -69,5 +69,5 @@
   :pom-addition [:developers
                  [:developer
                   [:name "Karsten Schmidt"]
-                  [:url "http://thi.ng"]
-                  [:timezone "0"]]])
+                  [:url "https://thi.ng"]
+                  [:timezone "1"]]])
