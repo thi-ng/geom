@@ -1,5 +1,5 @@
 (ns thi.ng.geom.gl.camera
-  (:refer-clojure :exclude [apply])
+  (:refer-clojure :exclude [apply update-keys])
   (:require
    [thi.ng.math.core :as m]
    [thi.ng.geom.vector :as v :refer [vec3]]
