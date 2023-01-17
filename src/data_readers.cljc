@@ -1,0 +1,26 @@
+{thi.ng/vec2 thi.ng.geom.vector/vec2
+ thi.ng/vec3 thi.ng.geom.vector/vec3
+ thi.ng.geom.types.AABB thi.ng.geom.types/map->AABB
+ thi.ng.geom.types.BasicMesh thi.ng.geom.types/map->BasicMesh
+ thi.ng.geom.types.Bezier2 thi.ng.geom.types/map->Bezier2
+ thi.ng.geom.types.Bezier3 thi.ng.geom.types/map->Bezier3
+ thi.ng.geom.types.Circle2 thi.ng.geom.types/map->Circle2
+ thi.ng.geom.types.Cuboid thi.ng.geom.types/map->Cuboid
+ thi.ng.geom.types.Ellipse2 thi.ng.geom.types/map->Ellipse2
+ thi.ng.geom.types.GMesh thi.ng.geom.types/map->GMesh
+ thi.ng.geom.types.Graph thi.ng.geom.types/map->Graph
+ thi.ng.geom.types.IndexedMesh thi.ng.geom.types/map->IndexedMesh
+ thi.ng.geom.types.Line2 thi.ng.geom.types/map->Line2
+ thi.ng.geom.types.Line3 thi.ng.geom.types/map->Line3
+ thi.ng.geom.types.LineStrip2 thi.ng.geom.types/map->LineStrip2
+ thi.ng.geom.types.LineStrip3 thi.ng.geom.types/map->LineStrip3
+ thi.ng.geom.types.Mesh2 thi.ng.geom.types/map->Mesh2
+ thi.ng.geom.types.Path2 thi.ng.geom.types/map->Path2
+ thi.ng.geom.types.Plane thi.ng.geom.types/map->Plane
+ thi.ng.geom.types.Polygon2 thi.ng.geom.types/map->Polygon2
+ thi.ng.geom.types.Quad3 thi.ng.geom.types/map->Quad3
+ thi.ng.geom.types.Rect2 thi.ng.geom.types/map->Rect2
+ thi.ng.geom.types.Sphere thi.ng.geom.types/map->Sphere
+ thi.ng.geom.types.Tetrahedron thi.ng.geom.types/map->Tetrahedron
+ thi.ng.geom.types.Triangle2 thi.ng.geom.types/map->Triangle2
+ thi.ng.geom.types.Triangle3 thi.ng.geom.types/map->Triangle3}
