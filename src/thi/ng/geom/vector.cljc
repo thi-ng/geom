@@ -361,7 +361,7 @@
        IPrintWithWriter
        (-pr-writer
         [_ writer opts]
-        (pr-sequential-writer writer pr-writer "#vec2 [" " " "]" opts (seq _)))
+        (pr-sequential-writer writer pr-writer "#thi.ng/vec2 [" " " "]" opts (seq _)))
        ])
 
   Object
@@ -1060,7 +1060,7 @@
        IPrintWithWriter
        (-pr-writer
         [_ writer opts]
-        (pr-sequential-writer writer pr-writer "#vec3 [" " " "]" opts (seq _)))])
+        (pr-sequential-writer writer pr-writer "#thi.ng/vec3 [" " " "]" opts (seq _)))])
 
   Object
   (toString
@@ -1628,3 +1628,11 @@
 (defn randvec3
   ([] (m/normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm))))
   ([n] (m/normalize (vec3 (m/randnorm) (m/randnorm) (m/randnorm)) n)))
+
+#?(:clj
+   (defmethod print-method thi.ng.geom.vector.Vec2 [a ^java.io.Writer w]
+     (.write w (print-str "#thi.ng/vec2" (.toString a))))   )
+
+#?(:clj
+   (defmethod print-method thi.ng.geom.vector.Vec3 [a ^java.io.Writer w]
+     (.write w (print-str "#thi.ng/vec3" (.toString a)))))
