@@ -3,10 +3,9 @@
 
 [[./assets/svo-d7.jpg]]
 
-[[https://discord.gg/JhYcmBw][https://img.shields.io/discord/445761008837984256.svg]]
-
 * Contents                                                         :toc_3_gh:
  - [[#about-the-project][About the project]]
+     - [[#status][Status]]
      - [[#leiningen-coordinates][Leiningen coordinates]]
          - [[#latest-snapshot][Latest snapshot]]
          - [[#latest-stable][Latest stable]]
@@ -26,16 +25,29 @@
          - [[#viz][viz]]
          - [[#voxel][voxel]]
          - [[#opengl--webgl][OpenGL & WebGL]]
-     - [[#status][Status]]
      - [[#release-history--changelog][Release history & changelog]]
      - [[#contributors][Contributors]]
      - [[#license][License]]
 
 * About the project
+
+** Status
+
+The project was in active, almost daily development from late 2011 - summer 2016
+during its 4th iteration/rewrite cycle. Originally developed in a Literate
+Programming style using Emacs & Org-mode, in May 2018 it was decided to revert
+to a traditional Clojure project setup to encourage more contributions from
+other interested parties. The original .org source files are kept for reference
+in the [[./org/]] directory until further notice.
+
+Regardless of version number, the library is mature and has been used
+successfully in several commercial projects over the past 10 years and can be
+considered stable for most use cases.
+
 ** Leiningen coordinates
 
 #+BEGIN_SRC clojure
-  [thi.ng/geom "1.0.0-RC5"]
+  [thi.ng/geom "1.0.0"]
 #+END_SRC
 
 *** Additional dependencies for JOGL
@@ -284,27 +296,6 @@ management, textures, FBO etc.), as well as a number of optimized mesh
 types, conversion & rendering functions, cameras etc. to simplify the
 use of other geometry types defined in this project with OpenGL, both on
 the desktop and in the browser. The Clojure version wraps JOGL.
-
-** Status
-
-The project was in active, regular development from late 2011 - summer
-2016 during its 4th iteration/rewrite cycle. Originally developed in a
-Literate Programming style using Emacs & Org-mode, it has recently (May
-2018) been decided to revert to a traditional Clojure project setup to
-encourage more contributions from other interested parties. The original
-ORG source files are kept for reference in the [[./org/]] directory
-until further notice.
-
-The library is mature and has been used successfully in several
-commercial projects over the past 5 years and can be considered stable
-for most use cases.
-
-A full test suite, website & tutorials are actively being worked on
-and the various examples are used as test cases as well.
-
-*Note:* This library heavily relies on the conditional reader syntax
-of recent Clojure & Clojurescript versions and therefore is *not
-compatible with Clojure versions < 1.7.0*...
 
 ** Release history & changelog
 
