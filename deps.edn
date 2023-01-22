@@ -1,14 +1,14 @@
 {:paths ["src"]
 
- :deps {org.clojure/clojure {:mvn/version "1.9.0"}
-        org.clojure/clojurescript {:mvn/version "1.10.238"}
-        thi.ng/color {:mvn/version "1.4.0"}
-        thi.ng/dstruct {:mvn/version "0.2.1"}
-        thi.ng/math {:mvn/version "0.3.0"}
-        thi.ng/ndarray {:mvn/version "0.3.2"}
-        thi.ng/shadergraph {:mvn/version "0.3.0"}
-        thi.ng/strf {:mvn/version "0.2.2"}
-        thi.ng/typedarrays {:mvn/version "0.1.6"}
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        org.clojure/clojurescript {:mvn/version "1.11.60"}
+        thi.ng/color {:mvn/version "1.5.0"}
+        thi.ng/dstruct {:mvn/version "0.2.2"}
+        thi.ng/math {:mvn/version "0.3.1"}
+        thi.ng/ndarray {:mvn/version "0.3.3"}
+        thi.ng/shadergraph {:mvn/version "0.3.1"}
+        thi.ng/strf {:mvn/version "0.2.3"}
+        thi.ng/typedarrays {:mvn/version "0.1.7"}
         thi.ng/xerror {:mvn/version "0.1.0"}
         org.jogamp.gluegen/gluegen-rt {:mvn/version "2.3.2"}
         org.jogamp.jogl/jogl-all {:mvn/version "2.3.2"}
