@@ -76,11 +76,11 @@
    })
 
 (def shape-common
-  #{:area :bounds :boundary :center :class :edge :graph :mesh
+  #{:area :bounds :boundary :center :class :edge :mesh
     :rotate :sample :scale :tess :translate :tx :vert :vol})
 
 (def shape-common-2d
-  (conj shape-common :bcircle :circum :ext :poly))
+  (conj shape-common :circum :poly))
 
 (def shape-common-3d
   (conj shape-common :bsphere))
@@ -102,50 +102,50 @@
        {
         ;; 2d
         thi.ng.geom.types.Bezier2
-        (-> shape-common-2d (disj :poly :tess) (conj :flip :isec :prox))
+        (-> shape-common-2d (disj :bounds :boundary :circum :class :poly :rotate :tess) (conj :flip :graph :prox))
 
         thi.ng.geom.types.Circle2
-        (conj shape-common-2d :isec :prox)
+        (conj shape-common-2d :bcircle :ext :isec :prox)
 
         thi.ng.geom.types.Line2
-        (-> shape-common-2d (disj :poly :mesh :tess) (conj :flip :isec :prox))
+        (-> shape-common-2d (disj :poly :mesh :tess) (conj :bcircle :ext :flip :graph :isec :prox))
 
         thi.ng.geom.types.Polygon2
-        (conj shape-common-2d :chull :clip :flip :isec :prox)
+        (conj shape-common-2d :bcircle :chull :clip :ext :flip :graph :isec :prox)
 
         thi.ng.geom.types.Rect2
-        (conj shape-common-2d :isec :prox :subdiv)
+        (conj shape-common-2d :bcircle :ext :graph :isec :prox :subdiv)
 
         thi.ng.geom.types.Triangle2
-        (conj shape-common-2d :flip :isec :prox :subdiv)
+        (conj shape-common-2d :bcircle :ext :flip :graph :isec :prox :subdiv)
 
         ;; 3d
 
-        thi.ng.geom.types.Bezier3
-        (-> shape-common-3d (disj :poly :tess) (conj :flip :isec :prox))
-
         thi.ng.geom.types.AABB
         (conj shape-common-3d :isec :prox :subdiv)
+
+        thi.ng.geom.types.Bezier3
+        (-> shape-common-3d (disj :bounds :boundary :bsphere :circum :class :poly :rotate :tess) (conj :flip :graph :prox))
 
         thi.ng.geom.types.Cuboid
         (conj shape-common-3d :isec :prox :subdiv)
 
         thi.ng.geom.types.Line3
-        (-> shape-common-3d (disj :mesh :tess) (conj :flip :isec :prox))
+        (-> shape-common-3d (disj :mesh :tess) (conj :ext :flip :graph :isec :prox))
 
         thi.ng.geom.types.Plane
-        (-> shape-common-3d (disj :edge :tess :vert) (conj :flip :isec :prox))
+        (-> shape-common-3d (disj :boundary :edge :rotate :sample :tess :vert) (conj :ext :flip :isec :prox))
 
         thi.ng.geom.types.Quad3
-        (conj shape-common-3d :flip :isec :prox :subdiv)
+        (conj shape-common-3d :ext :flip :graph :isec :prox :subdiv)
 
         thi.ng.geom.types.Sphere
-        (conj shape-common-3d :isec :prox)
+        (-> shape-common-3d (disj :edge :vert :tx) (conj :isec :prox))
 
         thi.ng.geom.types.Tetrahedron
-        (conj shape-common-3d :flip :isec :prox :subdiv)
+        (conj shape-common-3d :flip :graph :isec :prox :subdiv)
 
         thi.ng.geom.types.Triangle3
-        (conj shape-common-3d :flip :isec :prox :subdiv)
+        (conj shape-common-3d :ext :flip :graph :isec :prox :subdiv)
 
         }))))
