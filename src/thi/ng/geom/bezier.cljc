@@ -109,6 +109,16 @@
 ;; ** Type implementations
 
 (extend-type Bezier2
+  g/IArea
+  (area [_] 0.0)
+
+  g/ICenter
+  (center
+    ([_] (Bezier2. (gu/center (vec2) (get _ :points))))
+    ([_ o] (Bezier2. (gu/center (g/centroid _) (vec2 o) (get _ :points)))))
+  (centroid
+    [_] (gu/centroid (get _ :points)))
+
   g/IFlip
   (flip [_]
     (Bezier2. (reverse (get _ :points))))
@@ -156,9 +166,40 @@
     [_] (g/random-point _))
   (sample-uniform
     [_ udist include-last?]
-    (gu/sample-uniform udist include-last? (g/vertices _))))
+    (gu/sample-uniform udist include-last? (g/vertices _)))
+
+  g/IRotate
+  (rotate
+    [_ theta] (Bezier2. (mapv #(g/rotate % theta) (get _ :points))))
+
+  g/IScale
+  (scale
+    [_ s] (Bezier2. (mapv #(m/* % s) (get _ :points))))
+  (scale-size
+    [_ s] (Bezier2. (gu/scale-size s (get _ :points))))
+
+  g/ITranslate
+  (translate
+    [_ t] (Bezier2. (mapv #(m/+ % t) (get _ :points))))
+
+  g/ITransform
+  (transform
+    [_ m] (Bezier2. (mapv #(g/transform-vector m %) (get _ :points))))
+
+  g/IVolume
+  (volume [_] 0.0))
 
 (extend-type Bezier3
+  g/IArea
+  (area [_] 0.0)
+
+  g/ICenter
+  (center
+    ([_] (Bezier3. (gu/center (vec2) (get _ :points))))
+    ([_ o] (Bezier3. (gu/center (g/centroid _) (vec2 o) (get _ :points)))))
+  (centroid
+    [_] (gu/centroid (get _ :points)))
+
   g/IFlip
   (flip [_]
     (Bezier3. (reverse (get _ :points))))
@@ -206,4 +247,25 @@
     [_] (g/random-point _))
   (sample-uniform
     [_ udist include-last?]
-    (gu/sample-uniform udist include-last? (g/vertices _))))
+    (gu/sample-uniform udist include-last? (g/vertices _)))
+
+ g/IRotate
+  (rotate
+    [_ theta] (Bezier3. (mapv #(g/rotate % theta) (get _ :points))))
+
+  g/IScale
+  (scale
+    [_ s] (Bezier3. (mapv #(m/* % s) (get _ :points))))
+  (scale-size
+    [_ s] (Bezier3. (gu/scale-size s (get _ :points))))
+
+  g/ITranslate
+  (translate
+    [_ t] (Bezier3. (mapv #(m/+ % t) (get _ :points))))
+
+  g/ITransform
+  (transform
+    [_ m] (Bezier3. (mapv #(g/transform-vector m %) (get _ :points))))
+
+  g/IVolume
+  (volume [_] 0.0))

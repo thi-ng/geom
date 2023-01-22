@@ -51,7 +51,7 @@
 (extend-type Line2
 
   g/IArea
-  (area [_] 0)
+  (area [_] 0.0)
 
   g/IBoundary
   (contains-point?
