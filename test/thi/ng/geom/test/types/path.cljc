@@ -4,7 +4,7 @@
   (:require
    [thi.ng.math.core :as m]
    [thi.ng.geom.core :as g]
-   [thi.ng.geom.types]
+   [thi.ng.geom.types :as types]
    [thi.ng.geom.line :as l]
    [thi.ng.geom.vector :as v]
    [thi.ng.geom.path :as p]
@@ -14,11 +14,14 @@
       [cemerick.cljs.test])))
 
 (def svg-path-examples
-  "Examples of path definitions for various commands taken from MDN:
+  "Examples of path definitions for various commands taken from MDN + W3C:
 
   https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Paths
-  https://developer.mozilla.org/en-US/docs/Web/SVG/Element/path"
-  [;; square
+  https://developer.mozilla.org/en-US/docs/Web/SVG/Element/path
+  https://www.w3.org/TR/SVG11/paths.html#PathElement"
+  [;; triangle
+   "M 100 100 L 300 100 L 200 300 z"
+   ;; square
    "M 10 10 H 90 V 90 H 10 L 10 10"
    ;; heart
    "M 10,30
@@ -26,6 +29,7 @@ A 20,20 0,0,1 50,30
 A 20,20 0,0,1 90,30
 Q 90,60 50,90
 Q 10,60 10,30 z"
+
    ;; cubic curves
    "M 10 10 C 20 20, 40 20, 50 10"
    "M 70 10 C 70 20, 110 20, 110 10"
@@ -70,9 +74,20 @@ L 275 230 Z"
    ]
   )
 
+(defn num-commands [path-str]
+  (count (re-seq #"[MmLlHhVvCcSsQqAaTt]\s+" path-str)))
+
 (deftest svg-path-parse
   (testing "parsing SVG path definitions")
   (doseq [ex svg-path-examples]
     (testing (str ex)
-      (is (some? (p/parse-svg-path ex))
-          "SVG path should parse into geometry type"))))
+      (let [parsed (p/parse-svg-path ex)
+            n-commands (num-commands ex)
+            path-geom (types/->Path2 parsed)]
+        (is (some? parsed)
+            "SVG path should parse into segment definitions")
+        (is (some? (:segments path-geom))
+            "SVG path should parse into geometry object")
+        (is (= n-commands
+               (count (:segments path-geom)))
+            "Geometry should have the same number of segments as the number of path commands")))))
