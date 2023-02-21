@@ -10,6 +10,7 @@
    [thi.ng.geom.path :as p]
    #?(:clj
       [clojure.test :refer :all]
+      [clojure.string :as str]
       :cljs
       [cemerick.cljs.test])))
 
@@ -29,6 +30,14 @@ A 20,20 0,0,1 50,30
 A 20,20 0,0,1 90,30
 Q 90,60 50,90
 Q 10,60 10,30 z"
+   ;; implicit polyline after moveto command
+   ;; this invalidates the test defined using the command count function below
+   "M 10,80 20,20 40,40 0,10 Z"
+   ;; relative equivalent of above shape
+   "m 10 80 10 -60 l 20 20 l -40 -30 z"
+
+   ;; implicit move + explicit polyline
+   "m 10 80 10 -60 l 20 20 l -40 -30 v 10 l 5 5 5 10 20 10"
 
    ;; cubic curves
    "M 10 10 C 20 20, 40 20, 50 10"
@@ -71,6 +80,12 @@ L 125 230 Z"
    "M 230 230
 A 45 45, 0, 1, 1, 275 275
 L 275 230 Z"
+
+   ;; incorrect / pathological / flawed examples
+   ;;                         ↓ extra coordinate not in a pair
+   "m 10 80 l 20 20 l -40 -30 20 v 10 l 5 5 5 10 20 10"
+   "M 100-200" ; lack of space after coordinate
+   "M 0.6.5" ; multiple decimals within coordinate
    ]
   )
 
@@ -78,16 +93,26 @@ L 275 230 Z"
   (count (re-seq #"[MmLlHhVvCcSsQqAaTt]\s+" path-str)))
 
 (deftest svg-path-parse
-  (testing "parsing SVG path definitions")
-  (doseq [ex svg-path-examples]
-    (testing (str ex)
-      (let [parsed (p/parse-svg-path ex)
-            n-commands (num-commands ex)
-            path-geom (types/->Path2 parsed)]
-        (is (some? parsed)
-            "SVG path should parse into segment definitions")
-        (is (some? (:segments path-geom))
-            "SVG path should parse into geometry object")
-        (is (= n-commands
-               (count (:segments path-geom)))
-            "Geometry should have the same number of segments as the number of path commands")))))
+  (testing "coordinate parsing"
+    (is (= [(v/vec2 0.6 0.5)] (p/parse-svg-coords "0.6.5")))
+    (is (= [(v/vec2 100 -200)] (p/parse-svg-coords "100-200")))
+    )
+
+  (testing "parsing SVG path definitions"
+    (doseq [ex svg-path-examples]
+      (testing (str ex)
+        (let [segments (p/parse-svg-path ex)
+              n-commands (num-commands ex)
+              path-geom (types/->Path2 segments)
+              no-commas (str/replace ex #"\," "")]
+          (is (some? segments)
+              "SVG path should parse into segment definitions")
+          (is (some? (:segments path-geom))
+              "SVG path should parse into geometry object")
+          (is (= n-commands
+                 (count (:segments path-geom)))
+              "Geometry should have the same number of segments as the number of path commands")
+
+          (is (= segments (p/parse-svg-path no-commas))
+              "Comma placement should be irrelevant to parsing")
+          )))))

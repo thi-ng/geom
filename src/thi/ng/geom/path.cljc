@@ -44,10 +44,12 @@
       (conj paths curr)
       paths)))
 
+(def coordinate-regex #"[\-\+]?[0-9]+\.?[0-9]*|\.[0-9]+")
+
 (defn parse-svg-coords
   [coords]
   (->> coords
-       (re-seq #"[0-9\.\-\+]+")
+       (re-seq coordinate-regex)
        #?(:clj (map #(Double/parseDouble %)) :cljs (map js/parseFloat))
        (partition 2)
        (mapv vec2)))
