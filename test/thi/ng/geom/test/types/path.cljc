@@ -14,6 +14,12 @@
       :cljs
       [cemerick.cljs.test])))
 
+;; idea: store all of these examples in an actual SVG document
+;; they can be moved with a transform operation so they don't overlap
+;; and metadata about each one can be stored as XML properties
+
+;; will it work for invalid paths that also need to be tested?
+
 (def svg-path-examples
   "Examples of path definitions for various commands taken from MDN + W3C:
 
@@ -98,15 +104,15 @@ L 275 230 Z"
     (is (= [(v/vec2 100 -200)] (p/parse-svg-coords "100-200")))
     )
 
-  (testing "parsing SVG path definitions"
+  (testing "parsing SVG path definitions\n\n"
     (doseq [ex svg-path-examples]
       (testing (str ex)
         (let [segments (p/parse-svg-path ex)
               n-commands (num-commands ex)
               path-geom (types/->Path2 segments)
-              no-commas (str/replace ex #"\," "")]
-          (is (some? segments)
-              "SVG path should parse into segment definitions")
+              no-commas (str/replace ex #"\," " ")]
+          (is (seq? segments)
+              "SVG path should parse into a sequence of segment definitions")
           (is (some? (:segments path-geom))
               "SVG path should parse into geometry object")
           (is (= n-commands

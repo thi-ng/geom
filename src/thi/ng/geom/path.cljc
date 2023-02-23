@@ -54,36 +54,138 @@
        (partition 2)
        (mapv vec2)))
 
+;; the general parsing strategy is designed to line up with the intended output:
+;; a sequence of segments.
+;; 1. use command regex to generate a partially parsed sequence of commands
+;; 2. loop through this sequence while holding on to some "current position"
+;;    state information to ensure the segments begin and end correctly
+
+
+
+;; regex to separate by command indicators; supporting an arbitrary number of
+;; coordinate pairs
+
+;; used to generate the sequence of path commands
+(def ^:private cmd-regex #"(?i)([achlmqstvz])([^achlmqstvz]*)")
+
+(comment
+  (parse-svg-coords "40,40")
+
+  (parse-svg-path
+   "M 10,80 20,20 40,40 0,10 Z")
+
+  (re-seq #"(?i)([achlmqstvz])([^achlmqstvz]+)"
+          "M 10 80 10 -60 l 20 20 l -40 -30 v 10 l 5 5 5 10 20 10")
+
+  (re-seq cmd-regex
+          "M 10 80 10 -60 l 20 20 l -40 -30 v 10 l 5 5 5 10 20 10 Z")
+
+  (re-seq cmd-regex "M 10,80 20,20 40,40 0,10 Z")
+
+  )
+
+(defn move-to [cmd current-pos [start-pt & line-coords]]
+  ;; implicit line: return the segment and the current position
+  ;; (as described by the final point in the line)
+  (if line-coords
+    (let [line (reduce (fn [pts nxt] (conj pts (vec2 nxt)))
+                       [start-pt]
+                       line-coords)]
+      [{:type :line :points line}
+       (peek line)])
+    ;; standard move: return only the current position
+    [nil start-pt]))
+
+(defn line-to [cmd current-pos [next-pt & pts]]
+  (if pts
+    [{:type :line-string :points (reduce conj [current-pos next-pt] pts)}
+     (peek pts)]
+    [{:type :line :points [current-pos next-pt]}
+     next-pt]))
+
 (defn parse-svg-path
-  ([svg]
+  ([path-str]
    (parse-svg-path
-    (->> svg
-         (re-seq #"([MLCZz])\s*(((([0-9\.\-]+)\,?){2}\s*){0,3})")
-         (map (fn [[_ t c]]
-                [t (parse-svg-coords c)])))
-    [0 0] [0 0]))
-  ([[[type points :as seg] & more] p0 pc]
+    (map (fn parse-coords [[_m cmd coord-str]]
+           [cmd (parse-svg-coords coord-str)])
+         (re-seq cmd-regex path-str))
+    {:origin [0 0]
+     :current [0 0]}))
+  ([[[cmd coords :as seg] & more]
+    {:keys [current origin]
+     :as pts}]
    (when seg
-     (cond
-       (= "M" type)
-       (let [p (first points)] (recur more p p))
+     (case cmd
+       "M"
+       (let [[new-segment new-pos]
+             (move-to cmd current coords)]
+         (if new-segment
+           (lazy-seq
+            (cons new-segment
+                  (parse-svg-path more (assoc pts :current new-pos))))
+           (recur more (assoc pts :current new-pos))))
+       "m"
+       (let [[line-segment new-pos]
+             (move-to cmd current coords)]
+         (if line-segment
+           (lazy-seq
+            (cons line-segment
+                  (parse-svg-path
+                   more
+                   (assoc pts :current new-pos))))
+           (recur more (assoc pts :current new-pos))))
+       "L" (let [[line-segment new-pos] (line-to cmd current coords)]
+             (lazy-seq
+              (cons line-segment
+                    (parse-svg-path more (assoc pts :current new-pos)))))
+       "l" (let [[line-segment new-pos] (line-to cmd current coords)]
+             (lazy-seq
+              (cons line-segment
+                    (parse-svg-path more (assoc pts :current new-pos)))))
+       ;; "H"  (h-line-to cmd current-pos coords)
+       ;; "h"  (h-line-to cmd current-pos coords)
+       ;; "V"  (v-line-to cmd current-pos coords)
+       ;; "v"  (v-line-to cmd current-pos coords)
+       ;; "C"  (cubic-to cmd current-pos coords)
+       ;; "c"  (cubic-to cmd current-pos coords)
+       ;; "S" nil
+       ;; "s" nil
+       "Z" (lazy-seq (cons {:type :close :points [current origin]}
+                           (parse-svg-path more (assoc pts :current origin))))
+       nil
+       ))))
 
-       (= "L" type)
-       (let [p (first points)]
-         (lazy-seq (cons {:type :line :points [pc p]}
-                         (parse-svg-path more p0 p))))
+(comment
+  (defn parse-svg-path
+    ([svg]
+     (parse-svg-path
+      (->> svg
+           (re-seq #"([MLCZz])\s*(((([0-9\.\-]+)\,?){2}\s*){0,3})")
+           (map (fn [[_ t c]]
+                  [t (parse-svg-coords c)])))
+      [0 0] [0 0]))
+    ([[[type points :as seg] & more] p0 pc]
+     (when seg
+       (cond
+         (= "M" type)
+         (let [p (first points)] (recur more p p))
 
-       (= "C" type)
-       (let [p (last points)]
-         (lazy-seq (cons {:type :bezier :points (cons pc points)}
-                         (parse-svg-path more p0 p))))
+         (= "L" type)
+         (let [p (first points)]
+           (lazy-seq (cons {:type :line :points [pc p]}
+                           (parse-svg-path more p0 p))))
 
-       (or (= "Z" type) (= "z" type))
-       (lazy-seq (cons {:type :close :points [pc p0]}
-                       (parse-svg-path more p0 p0)))
+         (= "C" type)
+         (let [p (last points)]
+           (lazy-seq (cons {:type :bezier :points (cons pc points)}
+                           (parse-svg-path more p0 p))))
 
-       :default
-       (err/unsupported! (str "Unsupported path segment type" type))))))
+         (or (= "Z" type) (= "z" type))
+         (lazy-seq (cons {:type :close :points [pc p0]}
+                         (parse-svg-path more p0 p0)))
+
+         :default
+         (err/unsupported! (str "Unsupported path segment type" type)))))))
 
 #?(:clj
    (defn parse-svg
