@@ -152,6 +152,8 @@
        ;; "s" nil
        "Z" (lazy-seq (cons {:type :close :points [current origin]}
                            (parse-svg-path more (assoc pts :current origin))))
+       "z" (lazy-seq (cons {:type :close :points [current origin]}
+                           (parse-svg-path more (assoc pts :current origin))))
        nil
        ))))
 
