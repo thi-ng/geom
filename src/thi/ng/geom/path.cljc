@@ -46,13 +46,15 @@
 
 (def coordinate-regex #"[\-\+]?[0-9]+\.?[0-9]*|\.[0-9]+")
 
+
 (defn parse-svg-coords
   [coords]
   (->> coords
        (re-seq coordinate-regex)
-       #?(:clj (map #(Double/parseDouble %)) :cljs (map js/parseFloat))
-       (partition 2)
-       (mapv vec2)))
+       #?(:clj (mapv #(Double/parseDouble %)) :cljs (map js/parseFloat))))
+
+(defn svg-coord-pairs [parsed-coords]
+  (mapv vec2 (partition 2 parsed-coords)))
 
 ;; the general parsing strategy is designed to line up with the intended output:
 ;; a sequence of segments.
@@ -73,12 +75,6 @@
 
   (parse-svg-path
    "M 10,80 20,20 40,40 0,10 Z")
-
-  (re-seq #"(?i)([achlmqstvz])([^achlmqstvz]+)"
-          "M 10 80 10 -60 l 20 20 l -40 -30 v 10 l 5 5 5 10 20 10")
-
-  (re-seq cmd-regex
-          "M 10 80 10 -60 l 20 20 l -40 -30 v 10 l 5 5 5 10 20 10 Z")
 
   (re-seq cmd-regex "M 10,80 20,20 40,40 0,10 Z")
 

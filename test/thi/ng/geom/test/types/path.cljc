@@ -2,6 +2,7 @@
   #?(:cljs
      (:require-macros [cemerick.cljs.test :refer (is deftest)]))
   (:require
+   [clojure.string :as str]
    [thi.ng.math.core :as m]
    [thi.ng.geom.core :as g]
    [thi.ng.geom.types :as types]
@@ -156,8 +157,8 @@ L 275 230 Z"
 
 (deftest svg-path-parse
   (testing "coordinate parsing"
-    (is (= [(v/vec2 0.6 0.5)] (p/parse-svg-coords "0.6.5")))
-    (is (= [(v/vec2 100 -200)] (p/parse-svg-coords "100-200")))
+    (is (= [0.6 0.5] (p/parse-svg-coords "0.6.5")))
+    (is (= [100.0 -200.0] (p/parse-svg-coords "100-200") ))
     )
 
   (testing "parsing SVG path definitions -"
@@ -179,8 +180,7 @@ L 275 230 Z"
                 "Geometry should have the same number of segments as the number of path commands")
 
           (is (= segments (p/parse-svg-path no-commas))
-              "Comma placement should be irrelevant to parsing")
-          )))))
+              "Comma placement should be irrelevant to parsing"))))))
 
 
 (defn path-svg-grid
