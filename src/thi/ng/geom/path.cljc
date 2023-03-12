@@ -142,7 +142,8 @@
   ([[[cmd coords :as seg] & more]
     {:keys [current origin]
      :as pts}]
-   (when seg
+   (if (nil? seg)
+     '()
      (case cmd
        "M"
        (let [[new-segment new-pos]
@@ -265,6 +266,7 @@
          (err/unsupported! (str "Unsupported path segment type" type))))))
 
   (parse-svg-path-old "M 10 10 C 20 20, 40 20, 50 10")
+  (parse-svg-path-old "M 10 10 ")
 
   )
 

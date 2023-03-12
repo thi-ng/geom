@@ -140,16 +140,21 @@ L 275 230"
     :description "arc"
     :num-segments 2}
 
+   ;; move only, no lines
+   {:path "m 10 10"
+    :description "move command without lines"
+    :num-segments 0}
+
    ;; incorrect / pathological / flawed examples
    {:path "m 10 80 l 20 20 l -40 -30 20 v 10 l 5 5 5 10 20 10"
     :description "extra coordinate not in an appropriate pair for line command"
     :num-segments 4}
-   {:path "M 100-200"
+   {:path "M 10 10 L 100-200"
     :description "no whitespace following coordinate"
-    :num-segments 0}
-   {:path "M 0.6.5"
+    :num-segments 1}
+   {:path "M 10 10 L 0.6.5"
     :description "multiple decimals within coordinate"
-    :num-segments 0}]
+    :num-segments 1}]
   )
 
 (deftest svg-path-parse
@@ -229,6 +234,8 @@ L 275 230"
 
   (p/parse-svg-path "m 10 80 l 20 20 l -40 -30 20 v 10 l 5 5 5 10 20 10")
   (p/parse-svg-path "m 10 80 10 -60 l 20 20 l -40 -30 z")
+
+  (p/parse-svg-path "M 100-200")
 
   (let [[a b & rest] [1 2 3 4 5 6 7]]
     (peek rest))
