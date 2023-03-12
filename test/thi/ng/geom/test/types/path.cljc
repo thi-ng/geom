@@ -154,17 +154,15 @@ L 275 230"
     :num-segments 1}
    {:path "M 10 10 L 0.6.5"
     :description "multiple decimals within coordinate"
-    :num-segments 1}]
-  )
+    :num-segments 1}])
 
 (deftest svg-path-parse
   (testing "coordinate parsing"
     (is (= [0.6 0.5] (p/parse-svg-coords "0.6.5")))
-    (is (= [100.0 -200.0] (p/parse-svg-coords "100-200") ))
-    )
+    (is (= [100.0 -200.0] (p/parse-svg-coords "100-200"))))
 
   (testing "individual commands"
-    (let [[{:keys [type points]}]  (p/move-to "m" [0 0] [[10 80] [10 -60] [10 -90]]) ]
+    (let [[{:keys [type points]}]  (p/move-to "m" [0 0] [[10 80] [10 -60] [10 -90]])]
       (is (= :line type))
       (is (= 3 (count points))
           "Polyline should be produced from move command when defined")))
@@ -182,13 +180,10 @@ L 275 230"
               "SVG path should parse into the correct number of segments for the given shape")
           (is (some? (:segments path-geom))
               "SVG path should parse into geometry object")
-          #_(is (= n-commands
-                   (count (:segments path-geom)))
-                "Geometry should have the same number of segments as the number of path commands")
-
+          (is (some? (g/sample-uniform path-geom 1.0 true))
+              "Geometry object should be functional")
           (is (= segments (p/parse-svg-path no-commas))
               "Comma placement should be irrelevant to parsing"))))))
-
 
 (defn path-svg-grid
   "Generate Hiccup data for SVG export from example paths according a simple grid layout."
@@ -215,8 +210,7 @@ L 275 230"
                                              (* x x-interval)
                                              (* y y-interval))
                           :data-description description
-                          :data-num-segments num-segments}]
-                  )))
+                          :data-num-segments num-segments}])))
          (reduce conj [:svg {:id "svg-path-test-data"
                              :width width
                              :height height}]))))
@@ -225,19 +219,30 @@ L 275 230"
 
   ;; generate SVG for visual inspection from example paths
   (spit "assets/test-path-grid.svg"
-        (html {:mode :xml} (path-svg-grid svg-path-examples {:width 1000 :height 1000}))
-        )
+        (html {:mode :xml} (path-svg-grid svg-path-examples {:width 1000 :height 1000})))
 
+  (g/sample-uniform
+   (types/->Path2 (p/parse-svg-path-old "M 10 10 L 20 20"))  2.5 true)
 
+  (g/sample-uniform (p/path2 (first (p/parse-svg-path-old "M 10 10 L 20 20")))
+                    2.5 true)
+
+  (g/random-point
+   (types/->Path2 (p/parse-svg-path-old "M 10 10 L 10 10")))
+
+  (count svg-path-examples)
   (p/parse-svg-path (:path (first svg-path-examples)))
   (p/parse-svg-path (:path (nth svg-path-examples 1)))
 
   (p/parse-svg-path "m 10 80 l 20 20 l -40 -30 20 v 10 l 5 5 5 10 20 10")
-  (p/parse-svg-path "m 10 80 10 -60 l 20 20 l -40 -30 z")
-
-  (p/parse-svg-path "M 100-200")
+  (-> "M 10 315
+L 110 215
+A 36 60 0 0 1 150.71 170.29
+L 172.55 152.45
+A 30 50 -45 0 1 215.1 109.9
+L 315 10"
+      (p/parse-svg-path)
+      types/->Path2)
 
   (let [[a b & rest] [1 2 3 4 5 6 7]]
-    (peek rest))
-
-  )
+    (peek rest)))
