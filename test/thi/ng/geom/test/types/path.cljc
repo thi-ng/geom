@@ -47,7 +47,7 @@ Q 10,60 10,30 z"
     :description "implicit polyline after move command"
     :num-segments 2}
    ;; relative equivalent of above shape
-   {:path "m 10 80 10 -60 l 20 20 l -40 -30 z"
+   {:path "m 10,80 20,20 40,40 0,10 z"
     :description "implicit polyline after move command (relative)"
     :num-segments 2}
 
@@ -120,23 +120,23 @@ L 315 10"
 A 45 45, 0, 0, 0, 125 125
 L 125 80 Z"
     :description "arc"
-    :num-segments 2}
+    :num-segments 3}
    {:path
     "M 230 80
 A 45 45, 0, 1, 0, 275 125
 L 275 80 Z"
     :description "arc"
-    :num-segments 2}
+    :num-segments 3}
    {:path
     "M 80 230
 A 45 45, 0, 0, 1, 125 275
 L 125 230 Z"
     :description "arc"
-    :num-segments 2}
+    :num-segments 3}
    {:path
     "M 230 230
 A 45 45, 0, 1, 1, 275 275
-L 275 230 Z"
+L 275 230"
     :description "arc"
     :num-segments 2}
 
@@ -152,21 +152,23 @@ L 275 230 Z"
     :num-segments 0}]
   )
 
-(defn num-commands [path-str]
-  (count (re-seq #"[MmLlHhVvCcSsQqAaTt]\s+" path-str)))
-
 (deftest svg-path-parse
   (testing "coordinate parsing"
     (is (= [0.6 0.5] (p/parse-svg-coords "0.6.5")))
     (is (= [100.0 -200.0] (p/parse-svg-coords "100-200") ))
     )
 
+  (testing "individual commands"
+    (let [[{:keys [type points]}]  (p/move-to "m" [0 0] [[10 80] [10 -60] [10 -90]]) ]
+      (is (= :line type))
+      (is (= 3 (count points))
+          "Polyline should be produced from move command when defined")))
+
   (testing "parsing SVG path definitions -"
     (doseq [{:keys [path description num-segments] :as ex}
             svg-path-examples]
       (testing (str description ":\n" path)
         (let [segments (p/parse-svg-path path)
-              n-commands (num-commands path)
               path-geom (types/->Path2 segments)
               no-commas (str/replace path #"\," " ")]
           (is (seq? segments)
@@ -221,5 +223,14 @@ L 275 230 Z"
         (html {:mode :xml} (path-svg-grid svg-path-examples {:width 1000 :height 1000}))
         )
 
+
+  (p/parse-svg-path (:path (first svg-path-examples)))
+  (p/parse-svg-path (:path (nth svg-path-examples 1)))
+
+  (p/parse-svg-path "m 10 80 l 20 20 l -40 -30 20 v 10 l 5 5 5 10 20 10")
+  (p/parse-svg-path "m 10 80 10 -60 l 20 20 l -40 -30 z")
+
+  (let [[a b & rest] [1 2 3 4 5 6 7]]
+    (peek rest))
 
   )

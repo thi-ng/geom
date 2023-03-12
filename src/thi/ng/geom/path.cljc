@@ -92,18 +92,50 @@
     ;; standard move: return only the current position
     [nil start-pt]))
 
-(defn line-to [cmd current-pos [next-pt & pts]]
-  (if pts
-    [{:type :line-string :points (reduce conj [current-pos next-pt] pts)}
+(defn line-to [cmd current-pos pts]
+  (if (not= 1 (count pts))
+    [{:type :line-string :points (reduce conj [current-pos] pts)}
      (peek pts)]
-    [{:type :line :points [current-pos next-pt]}
-     next-pt]))
+    [{:type :line :points [current-pos (first pts)]}
+     (first pts)]))
+
+(defn h-line-to [cmd [cx cy :as current-pos] [next-x & xs]]
+  (if xs
+    [{:type :line-string
+      :points (reduce (fn [pts x] (conj pts (vec2 x cy)))
+                      [current-pos (vec2 next-x cy)]
+                      xs)}
+     (vec2 (peek xs) cy)]
+    [{:type :line :points [current-pos (vec2 next-x cy)]}
+     (vec2 next-x cy)]))
+
+(defn v-line-to [cmd [cx cy :as current-pos] [next-y & ys]]
+  (if ys
+    [{:type :line-string
+      :points (reduce (fn [pts y] (conj pts (vec2 cx y)))
+                      [current-pos (vec2 cx next-y)]
+                      ys)}
+     (vec2 cx (peek ys))]
+    [{:type :line :points [current-pos (vec2 cx next-y)]}
+     (vec2 cx next-y)]))
+
+(defn bezier-to [cmd current-pos pts]
+  [{:type :bezier :points (reduce conj [current-pos] pts)}
+   (peek pts)])
+
+(defn arc-to [cmd current-pos pts]
+  [{:type :arc :points (reduce conj [current-pos] [pts])}
+   (peek pts)])
 
 (defn parse-svg-path
   ([path-str]
    (parse-svg-path
     (map (fn parse-coords [[_m cmd coord-str]]
-           [cmd (parse-svg-coords coord-str)])
+           [cmd
+            (let [parsed (parse-svg-coords coord-str)]
+              ;; don't partition coordinates into pairs for 1d line commands
+              (if (#{"V" "v" "H" "h"} cmd) parsed
+                  (svg-coord-pairs parsed)))])
          (re-seq cmd-regex path-str))
     {:origin [0 0]
      :current [0 0]}))
@@ -138,25 +170,72 @@
              (lazy-seq
               (cons line-segment
                     (parse-svg-path more (assoc pts :current new-pos)))))
-       ;; "H"  (h-line-to cmd current-pos coords)
-       ;; "h"  (h-line-to cmd current-pos coords)
-       ;; "V"  (v-line-to cmd current-pos coords)
-       ;; "v"  (v-line-to cmd current-pos coords)
-       ;; "C"  (cubic-to cmd current-pos coords)
-       ;; "c"  (cubic-to cmd current-pos coords)
-       ;; "S" nil
-       ;; "s" nil
+       "H"  (let [[line-segment new-pos] (h-line-to cmd current coords)]
+              (lazy-seq
+               (cons line-segment
+                     (parse-svg-path more (assoc pts :current new-pos)))))
+       "h"  (let [[line-segment new-pos] (h-line-to cmd current coords)]
+              (lazy-seq
+               (cons line-segment
+                     (parse-svg-path more (assoc pts :current new-pos)))))
+       "V"  (let [[line-segment new-pos] (h-line-to cmd current coords)]
+              (lazy-seq
+               (cons line-segment
+                     (parse-svg-path more (assoc pts :current new-pos)))))
+       "v"  (let [[line-segment new-pos] (h-line-to cmd current coords)]
+              (lazy-seq
+               (cons line-segment
+                     (parse-svg-path more (assoc pts :current new-pos)))))
+       "Q" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+             (lazy-seq
+              (cons line-segment
+                    (parse-svg-path more (assoc pts :current new-pos)))))
+       "q" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+             (lazy-seq
+              (cons line-segment
+                    (parse-svg-path more (assoc pts :current new-pos)))))
+       "T" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+             (lazy-seq
+              (cons line-segment
+                    (parse-svg-path more (assoc pts :current new-pos)))))
+       "t" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+             (lazy-seq
+              (cons line-segment
+                    (parse-svg-path more (assoc pts :current new-pos)))))
+       "C" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+             (lazy-seq
+              (cons line-segment
+                    (parse-svg-path more (assoc pts :current new-pos)))))
+       "c" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+             (lazy-seq
+              (cons line-segment
+                    (parse-svg-path more (assoc pts :current new-pos)))))
+       "S" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+             (lazy-seq
+              (cons line-segment
+                    (parse-svg-path more (assoc pts :current new-pos)))))
+       "s" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+             (lazy-seq
+              (cons line-segment
+                    (parse-svg-path more (assoc pts :current new-pos)))))
+       "A" (let [[line-segment new-pos] (arc-to cmd current coords)]
+             (lazy-seq
+              (cons line-segment
+                    (parse-svg-path more (assoc pts :current new-pos)))))
+       "a" (let [[line-segment new-pos] (arc-to cmd current coords)]
+             (lazy-seq
+              (cons line-segment
+                    (parse-svg-path more (assoc pts :current new-pos)))))
        "Z" (lazy-seq (cons {:type :close :points [current origin]}
                            (parse-svg-path more (assoc pts :current origin))))
        "z" (lazy-seq (cons {:type :close :points [current origin]}
                            (parse-svg-path more (assoc pts :current origin))))
-       nil
-       ))))
+       nil))))
 
 (comment
-  (defn parse-svg-path
+  (defn parse-svg-path-old
     ([svg]
-     (parse-svg-path
+     (parse-svg-path-old
       (->> svg
            (re-seq #"([MLCZz])\s*(((([0-9\.\-]+)\,?){2}\s*){0,3})")
            (map (fn [[_ t c]]
@@ -171,19 +250,23 @@
          (= "L" type)
          (let [p (first points)]
            (lazy-seq (cons {:type :line :points [pc p]}
-                           (parse-svg-path more p0 p))))
+                           (parse-svg-path-old more p0 p))))
 
          (= "C" type)
          (let [p (last points)]
            (lazy-seq (cons {:type :bezier :points (cons pc points)}
-                           (parse-svg-path more p0 p))))
+                           (parse-svg-path-old more p0 p))))
 
          (or (= "Z" type) (= "z" type))
          (lazy-seq (cons {:type :close :points [pc p0]}
-                         (parse-svg-path more p0 p0)))
+                         (parse-svg-path-old more p0 p0)))
 
          :default
-         (err/unsupported! (str "Unsupported path segment type" type)))))))
+         (err/unsupported! (str "Unsupported path segment type" type))))))
+
+  (parse-svg-path-old "M 10 10 C 20 20, 40 20, 50 10")
+
+  )
 
 #?(:clj
    (defn parse-svg
