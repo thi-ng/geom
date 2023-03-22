@@ -93,39 +93,53 @@
     [nil start-pt]))
 
 (defn line-to [cmd current-pos pts]
-  (if (not= 1 (count pts))
-    [{:type :line-string :points (reduce conj [current-pos] pts)}
-     (peek pts)]
-    [{:type :line :points [current-pos (first pts)]}
-     (first pts)]))
+  (let [rel (= "l" cmd)]
+    (if (not= 1 (count pts))
+      [{:type :line-string :points (reduce conj [current-pos] pts)
+        :relative? rel}
+       (peek pts)]
+      [{:type :line :points [current-pos (first pts)]
+        :relative? rel}
+       (first pts)])))
 
 (defn h-line-to [cmd [cx cy :as current-pos] [next-x & xs]]
-  (if xs
-    [{:type :line-string
-      :points (reduce (fn [pts x] (conj pts (vec2 x cy)))
-                      [current-pos (vec2 next-x cy)]
-                      xs)}
-     (vec2 (peek xs) cy)]
-    [{:type :line :points [current-pos (vec2 next-x cy)]}
-     (vec2 next-x cy)]))
+  (let [rel (= "h" cmd)]
+    (if xs
+      [{:type :line-string
+        :points (reduce (fn [pts x] (conj pts (vec2 x cy)))
+                        [current-pos (vec2 next-x cy)]
+                        xs)
+        :relative? rel}
+       (vec2 (peek xs) cy)]
+      [{:type :line :points [current-pos (vec2 next-x cy)]
+        :relative? rel}
+       (vec2 next-x cy)])))
 
 (defn v-line-to [cmd [cx cy :as current-pos] [next-y & ys]]
-  (if ys
-    [{:type :line-string
-      :points (reduce (fn [pts y] (conj pts (vec2 cx y)))
-                      [current-pos (vec2 cx next-y)]
-                      ys)}
-     (vec2 cx (peek ys))]
-    [{:type :line :points [current-pos (vec2 cx next-y)]}
-     (vec2 cx next-y)]))
+  (let [rel (= "v" cmd)]
+    (if ys
+      [{:type :line-string
+        :points (reduce (fn [pts y] (conj pts (vec2 cx y)))
+                        [current-pos (vec2 cx next-y)]
+                        ys)
+        :relative? rel}
+       (vec2 cx (peek ys))]
+      [{:type :line :points [current-pos (vec2 cx next-y)]
+        :relative? rel}
+       (vec2 cx next-y)])))
 
 (defn bezier-to [cmd current-pos pts]
-  [{:type :bezier :points (reduce conj [current-pos] pts)}
-   (peek pts)])
+  (let [rel (some? (#{"c" "s" "q" "t"} cmd))]
+    [{:type :bezier :points (reduce conj [current-pos] pts)
+      :relative? rel}
+     (peek pts)]))
 
 (defn arc-to [cmd current-pos pts]
-  [{:type :arc :points (reduce conj [current-pos] [pts])}
-   (peek pts)])
+  (let [rel (= "a" cmd)]
+    [{:type :arc :points (reduce conj [current-pos] [pts])
+      :relative? rel}
+     (peek pts)]))
+
 
 (defn parse-svg-path
   ([path-str]
@@ -183,7 +197,7 @@
               (lazy-seq
                (cons line-segment
                      (parse-svg-path more (assoc pts :current new-pos)))))
-       "v"  (let [[line-segment new-pos] (h-line-to cmd current coords)]
+       "v"  (let [[line-segment new-pos] (v-line-to cmd current coords)]
               (lazy-seq
                (cons line-segment
                      (parse-svg-path more (assoc pts :current new-pos)))))
