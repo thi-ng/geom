@@ -128,9 +128,27 @@
         :relative? rel}
        (vec2 cx next-y)])))
 
-(defn bezier-to [cmd current-pos pts]
-  (let [rel (some? (#{"c" "s" "q" "t"} cmd))]
-    [{:type :bezier :points (reduce conj [current-pos] pts)
+(defn cubic-to [cmd current-pos pts]
+  (let [rel (= "c" cmd)]
+    [{:type :cubic :points (reduce conj [current-pos] pts)
+      :relative? rel}
+     (peek pts)]))
+
+(defn cubic-chain-to [cmd current-pos pts]
+  (let [rel (= "s" cmd)]
+    [{:type :cubic-chain :points (reduce conj [current-pos] pts)
+      :relative? rel}
+     (peek pts)]))
+
+(defn quadratic-to [cmd current-pos pts]
+  (let [rel (= "q" cmd)]
+    [{:type :quadratic :points (reduce conj [current-pos] pts)
+      :relative? rel}
+     (peek pts)]))
+
+(defn quadratic-chain-to [cmd current-pos pts]
+  (let [rel (= "t" cmd)]
+    [{:type :quadratic-chain :points (reduce conj [current-pos] pts)
       :relative? rel}
      (peek pts)]))
 
