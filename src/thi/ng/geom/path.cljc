@@ -22,11 +22,33 @@
   [{[a b] :points} res last?]
   (gu/sample-segment-with-res a b res last?))
 
+#_(defmethod sample-segment :line-strip
+    [{points :points} res last?]
+    (gu/sample-uniform res))
+
 (defmethod sample-segment :close
   [{[a b] :points} res last?]
   (gu/sample-segment-with-res a b res last?))
 
-(defmethod sample-segment :bezier
+;; Implementing geometry capabilities for the elliptical arc command
+;; will involve building out geometry capabilities for the currently
+;; largely unimplemented Ellipse2 type
+#_(defmethod sample-segment :arc
+    nil)
+
+(defmethod sample-segment :cubic
+  [{points :points} res last?]
+  (b/sample-with-res res last? points))
+
+(defmethod sample-segment :cubic-chain
+  [{points :points} res last?]
+  (b/sample-with-res res last? points))
+
+(defmethod sample-segment :quadratic
+  [{points :points} res last?]
+  (b/sample-with-res res last? points))
+
+(defmethod sample-segment :quadratic-chain
   [{points :points} res last?]
   (b/sample-with-res res last? points))
 
@@ -95,7 +117,7 @@
 (defn line-to [cmd current-pos pts]
   (let [rel (= "l" cmd)]
     (if (not= 1 (count pts))
-      [{:type :line-string :points (reduce conj [current-pos] pts)
+      [{:type :line-strip :points (reduce conj [current-pos] pts)
         :relative? rel}
        (peek pts)]
       [{:type :line :points [current-pos (first pts)]
@@ -105,7 +127,7 @@
 (defn h-line-to [cmd [cx cy :as current-pos] [next-x & xs]]
   (let [rel (= "h" cmd)]
     (if xs
-      [{:type :line-string
+      [{:type :line-strip
         :points (reduce (fn [pts x] (conj pts (vec2 x cy)))
                         [current-pos (vec2 next-x cy)]
                         xs)
@@ -118,7 +140,7 @@
 (defn v-line-to [cmd [cx cy :as current-pos] [next-y & ys]]
   (let [rel (= "v" cmd)]
     (if ys
-      [{:type :line-string
+      [{:type :line-strip
         :points (reduce (fn [pts y] (conj pts (vec2 cx y)))
                         [current-pos (vec2 cx next-y)]
                         ys)
