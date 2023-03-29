@@ -28,133 +28,62 @@
   https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Paths
   https://developer.mozilla.org/en-US/docs/Web/SVG/Element/path
   https://www.w3.org/TR/SVG11/paths.html#PathElement"
-  [{:path "M 100 100 L 300 100 L 200 300 z"
-    :description "triangle"
+  [{:path "M 100 100 L 300 100 L 200 300 z", :description "triangle", :num-segments 4}
+   {:path "M 10 10 H 90 V 90 H 10 L 10 10", :description "square", :num-segments 5}
+   {:path "M 10,30\nA 20,20 0,0,1 50,30\nA 20,20 0,0,1 90,30\nQ 90,60 50,90\nQ 10,60 10,30 z",
+    :description "heart", :num-segments 6}
+   {:path "M 10,80 20,20 40,40 0,10 Z",
+    :description "implicit polyline after move command", :num-segments 2}
+   {:path "m 10,80 20,20 40,40 0,10 z",
+    :description "implicit polyline after move command (relative)", :num-segments 2}
+   {:path "m 10 80 10 -60 l 20 20 l -40 -30 v 10 l 5 5 5 10 20 10",
+    :description "implicit polyline after move command + explicit polyline", :num-segments 5}
+   {:path "M 10 10 C 20 20, 40 20, 50 10",
+    :description "cubic curve", :num-segments 2}
+   {:path "M 70 10 C 70 20, 110 20, 110 10",
+    :description "cubic curve", :num-segments 2}
+   {:path "M 130 10 C 120 20, 180 20, 170 10",
+    :description "cubic curve", :num-segments 2}
+   {:path "M 10 60 C 20 80, 40 80, 50 60",
+    :description "cubic curve", :num-segments 2}
+   {:path "M 70 60 C 70 80, 110 80, 110 60",
+    :description "cubic curve", :num-segments 2}
+   {:path "M 130 60 C 120 80, 180 80, 170 60",
+    :description "cubic curve", :num-segments 2}
+   {:path "M 10 110 C 20 140, 40 140, 50 110",
+    :description "cubic curve", :num-segments 2}
+   {:path "M 70 110 C 70 140, 110 140, 110 110",
+    :description "cubic curve", :num-segments 2}
+   {:path "M 130 110 C 120 140, 180 140, 170 110",
+    :description "cubic curve", :num-segments 2}
+   {:path "M 10 80 C 40 10, 65 10, 95 80 S 150 150, 180 80",
+    :description "smooth cubic curve",
     :num-segments 3}
-   {:path "M 10 10 H 90 V 90 H 10 L 10 10"
-    :description "square"
+   {:path "M 10 80 Q 95 10 180 80", :description "quadratic curve", :num-segments 2}
+   {:path "M 10 80 Q 52.5 10, 95 80 T 180 80", :description "quadratic curve (shorthand)",
+    :num-segments 3}
+   {:path "M 10 315\nL 110 215\nA 30 50 0 0 1 162.55 162.45\nL 172.55 152.45\nA 30 50 -45 0 1 215.1 109.9\nL 315 10", :description "arc",
+    :num-segments 6}
+   {:path "M 10 315\nL 110 215\nA 36 60 0 0 1 150.71 170.29\nL 172.55 152.45\nA 30 50 -45 0 1 215.1 109.9\nL 315 10", :description "arc",
+    :num-segments 6}
+   {:path "M 80 80\nA 45 45, 0, 0, 0, 125 125\nL 125 80 Z", :description "arc",
     :num-segments 4}
-   ;; heart
-   {:path
-    "M 10,30
-A 20,20 0,0,1 50,30
-A 20,20 0,0,1 90,30
-Q 90,60 50,90
-Q 10,60 10,30 z"
-    :description "heart"
-    :num-segments 5}
-   {:path "M 10,80 20,20 40,40 0,10 Z"
-    :description "implicit polyline after move command"
-    :num-segments 2}
-   ;; relative equivalent of above shape
-   {:path "m 10,80 20,20 40,40 0,10 z"
-    :description "implicit polyline after move command (relative)"
-    :num-segments 2}
-
-   ;; implicit move + explicit polyline
-   {:path "m 10 80 10 -60 l 20 20 l -40 -30 v 10 l 5 5 5 10 20 10"
-    :description "implicit polyline after move command + explicit polyline"
-    :num-segments 5}
-
-   ;; cubic curves
-   {:path "M 10 10 C 20 20, 40 20, 50 10"
-    :description "cubic curve"
-    :num-segments 1}
-   {:path "M 70 10 C 70 20, 110 20, 110 10"
-    :description "cubic curve"
-    :num-segments 1}
-   {:path "M 130 10 C 120 20, 180 20, 170 10"
-    :description "cubic curve"
-    :num-segments 1}
-   {:path "M 10 60 C 20 80, 40 80, 50 60"
-    :description "cubic curve"
-    :num-segments 1}
-   {:path "M 70 60 C 70 80, 110 80, 110 60"
-    :description "cubic curve"
-    :num-segments 1}
-   {:path "M 130 60 C 120 80, 180 80, 170 60"
-    :description "cubic curve"
-    :num-segments 1}
-   {:path "M 10 110 C 20 140, 40 140, 50 110"
-    :description "cubic curve"
-    :num-segments 1}
-   {:path "M 70 110 C 70 140, 110 140, 110 110"
-    :description "cubic curve"
-    :num-segments 1}
-   {:path "M 130 110 C 120 140, 180 140, 170 110"
-    :description "cubic curve"
-    :num-segments 1}
-   ;; smooth cubic
-   {:path "M 10 80 C 40 10, 65 10, 95 80 S 150 150, 180 80"
-    :description "smooth cubic curve"
-    :num-segments 2}
-   ;; quadratic
-   {:path "M 10 80 Q 95 10 180 80"
-    :description "quadratic curve"
-    :num-segments 1}
-   ;; quadratic shorthand
-   {:path "M 10 80 Q 52.5 10, 95 80 T 180 80"
-    :description "quadratic curve (shorthand)"
-    :num-segments 2}
-   ;; arcs
-   {:path
-    "M 10 315
-L 110 215
-A 30 50 0 0 1 162.55 162.45
-L 172.55 152.45
-A 30 50 -45 0 1 215.1 109.9
-L 315 10"
-    :description "arc"
-    :num-segments 5}
-   {:path
-    "M 10 315
-L 110 215
-A 36 60 0 0 1 150.71 170.29
-L 172.55 152.45
-A 30 50 -45 0 1 215.1 109.9
-L 315 10"
-    :description "arc"
-    :num-segments 5}
-   {:path
-    "M 80 80
-A 45 45, 0, 0, 0, 125 125
-L 125 80 Z"
-    :description "arc"
-    :num-segments 3}
-   {:path
-    "M 230 80
-A 45 45, 0, 1, 0, 275 125
-L 275 80 Z"
-    :description "arc"
-    :num-segments 3}
-   {:path
-    "M 80 230
-A 45 45, 0, 0, 1, 125 275
-L 125 230 Z"
-    :description "arc"
-    :num-segments 3}
-   {:path
-    "M 230 230
-A 45 45, 0, 1, 1, 275 275
-L 275 230"
-    :description "arc"
-    :num-segments 2}
-
-   ;; move only, no lines
-   {:path "m 10 10"
-    :description "move command without lines"
-    :num-segments 0}
-
-   ;; incorrect / pathological / flawed examples
-   {:path "m 10 80 l 20 20 l -40 -30 20 v 10 l 5 5 5 10 20 10"
-    :description "extra coordinate not in an appropriate pair for line command"
+   {:path "M 230 80\nA 45 45, 0, 1, 0, 275 125\nL 275 80 Z", :description "arc",
     :num-segments 4}
-   {:path "M 10 10 L 100-200"
-    :description "no whitespace following coordinate"
+   {:path "M 80 230\nA 45 45, 0, 0, 1, 125 275\nL 125 230 Z", :description "arc",
+    :num-segments 4}
+   {:path "M 230 230\nA 45 45, 0, 1, 1, 275 275\nL 275 230", :description "arc",
+    :num-segments 3}
+   {:path "m 10 10", :description "move command without lines",
     :num-segments 1}
-   {:path "M 10 10 L 0.6.5"
-    :description "multiple decimals within coordinate"
-    :num-segments 1}])
+   {:path "m 10 80 l 20 20 l -40 -30 20 v 10 l 5 5 5 10 20 10",
+    :description "extra coordinate not in an appropriate pair for line command",
+    :num-segments 5}
+   {:path "M 10 10 L 100-200", :description "no whitespace following coordinate",
+    :num-segments 2}
+   {:path "M 10 10 L 0.6.5", :description "multiple decimals within coordinate",
+    :num-segments 2}]
+  )
 
 (deftest svg-path-parse
   (testing "coordinate parsing"

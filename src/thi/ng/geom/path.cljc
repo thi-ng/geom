@@ -18,13 +18,17 @@
 
 (defmulti sample-segment (fn [s res last?] (get s :type)))
 
+(defmethod sample-segment :move
+  [{pt :point} res last?]
+  (gu/sample-uniform res last? [pt]))
+
 (defmethod sample-segment :line
   [{[a b] :points} res last?]
   (gu/sample-segment-with-res a b res last?))
 
-#_(defmethod sample-segment :line-strip
-    [{points :points} res last?]
-    (gu/sample-uniform res))
+(defmethod sample-segment :line-strip
+  [{points :points} res last?]
+  (gu/sample-uniform res last? points))
 
 (defmethod sample-segment :close
   [{[a b] :points} res last?]
@@ -32,7 +36,7 @@
 
 ;; Implementing geometry capabilities for the elliptical arc command
 ;; will involve building out geometry capabilities for the currently
-;; largely unimplemented Ellipse2 type
+;; largely unimplemented Ellipse2 type - or an Arc2 type
 #_(defmethod sample-segment :arc
     nil)
 
@@ -98,6 +102,9 @@
   (parse-svg-path
    "M 10,80 20,20 40,40 0,10 Z")
 
+  (parse-svg-path "m 10 80")
+  (parse-svg-path "M 10 80")
+
   (re-seq cmd-regex "M 10,80 20,20 40,40 0,10 Z")
 
   )
@@ -112,7 +119,8 @@
       [{:type :line :points line}
        (peek line)])
     ;; standard move: return only the current position
-    [nil start-pt]))
+    [{:type :move :point start-pt}
+     start-pt]))
 
 (defn line-to [cmd current-pos pts]
   (let [rel (= "l" cmd)]
@@ -241,35 +249,35 @@
               (lazy-seq
                (cons line-segment
                      (parse-svg-path more (assoc pts :current new-pos)))))
-       "Q" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+       "Q" (let [[line-segment new-pos] (quadratic-to cmd current coords)]
              (lazy-seq
               (cons line-segment
                     (parse-svg-path more (assoc pts :current new-pos)))))
-       "q" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+       "q" (let [[line-segment new-pos] (quadratic-to cmd current coords)]
              (lazy-seq
               (cons line-segment
                     (parse-svg-path more (assoc pts :current new-pos)))))
-       "T" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+       "T" (let [[line-segment new-pos] (quadratic-chain-to cmd current coords)]
              (lazy-seq
               (cons line-segment
                     (parse-svg-path more (assoc pts :current new-pos)))))
-       "t" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+       "t" (let [[line-segment new-pos] (quadratic-chain-to cmd current coords)]
              (lazy-seq
               (cons line-segment
                     (parse-svg-path more (assoc pts :current new-pos)))))
-       "C" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+       "C" (let [[line-segment new-pos] (cubic-to cmd current coords)]
              (lazy-seq
               (cons line-segment
                     (parse-svg-path more (assoc pts :current new-pos)))))
-       "c" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+       "c" (let [[line-segment new-pos] (cubic-to cmd current coords)]
              (lazy-seq
               (cons line-segment
                     (parse-svg-path more (assoc pts :current new-pos)))))
-       "S" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+       "S" (let [[line-segment new-pos] (cubic-chain-to cmd current coords)]
              (lazy-seq
               (cons line-segment
                     (parse-svg-path more (assoc pts :current new-pos)))))
-       "s" (let [[line-segment new-pos] (bezier-to cmd current coords)]
+       "s" (let [[line-segment new-pos] (cubic-chain-to cmd current coords)]
              (lazy-seq
               (cons line-segment
                     (parse-svg-path more (assoc pts :current new-pos)))))
@@ -321,6 +329,8 @@
 
   (parse-svg-path-old "M 10 10 C 20 20, 40 20, 50 10")
   (parse-svg-path-old "M 10 10 ")
+
+  (gu/sample-uniform 1.0 true [(vec2 10 10)])
 
   )
 
