@@ -1,4 +1,4 @@
-(defproject thi.ng/geom "1.0.0"
+(defproject thi.ng/geom "1.0.1"
   :description  "thi.ng geometry kit - meta project spec including all modules"
   :url          "https://github.com/thi-ng/geom"
   :license      {:name "Apache Software License"
@@ -10,13 +10,13 @@
   :min-lein-version "2.4.0"
 
   :dependencies  [[org.clojure/clojure "1.11.1"]
-                  [org.clojure/clojurescript "1.11.60"]
-                  [thi.ng/color "1.5.0"]
+                  [org.clojure/clojurescript "1.11.121"]
+                  [thi.ng/color "1.5.1"]
                   [thi.ng/dstruct "0.2.2"]
-                  [thi.ng/math "0.3.1"]
+                  [thi.ng/math "0.3.2"]
                   [thi.ng/ndarray "0.3.3"]
                   [thi.ng/shadergraph "0.3.1"]
-                  [thi.ng/strf "0.2.3"]
+                  [thi.ng/strf "0.2.4"]
                   [thi.ng/typedarrays "0.1.7"]
                   [thi.ng/xerror "0.1.0"]
                   [org.jogamp.gluegen/gluegen-rt "2.3.2"]
