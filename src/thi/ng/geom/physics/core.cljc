@@ -275,7 +275,7 @@
   ([pos weight]
    (particle pos weight false))
   ([pos weight lock?]
-   (VerletParticle. pos (g/clear* pos) (g/clear* pos) lock? nil nil (/ 1.0 weight) nil)))
+   (VerletParticle. pos pos (g/clear* pos) lock? nil nil (/ 1.0 weight) nil)))
 
 (defn spring
   [a b rlen strength]
