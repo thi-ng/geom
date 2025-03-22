@@ -301,10 +301,10 @@
 ;; The two animations below show the effect of individually adjusting
 ;; the focus and lens strength:
 ;;
-;; http://media.thi.ng/geom/viz/lens-focus-2.gif
+;; https://raw.githubusercontent.com/thi-ng/geom/refs/heads/feature/no-org/assets/viz/lens-focus-2.gif
 ;; Focus shift, constant strength = 0.5
 ;;
-;; http://media.thi.ng/geom/viz/lens-strength-4.gif
+;; https://raw.githubusercontent.com/thi-ng/geom/refs/heads/feature/no-org/assets/viz/lens-strength-4.gif
 ;; Lens strength adjustment, constant focus = 0.0
 
 (defn lens-scale

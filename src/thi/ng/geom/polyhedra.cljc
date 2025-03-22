@@ -35,7 +35,7 @@
 ;;        (mio/write-stl (mio/wrapped-output-stream o))))
 ;; ```
 ;;
-;; Result: http://media.thi.ng/geom/mesh/icosphere.svg
+;; Result: https://raw.githubusercontent.com/thi-ng/geom/refs/heads/feature/no-org/assets/svg/icosphere.svg
 
 (defn polyhedron-mesh
   ([f] (polyhedron-mesh f nil))
