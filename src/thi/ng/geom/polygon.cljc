@@ -3,6 +3,7 @@
    [thi.ng.geom.core :as g]
    [thi.ng.geom.utils :as gu]
    [thi.ng.geom.utils.intersect :as isec]
+   [thi.ng.geom.utils.probability :as prob]
    [thi.ng.geom.vector :as v :refer [vec2 vec3]]
    [thi.ng.geom.line :as l]
    [thi.ng.geom.triangle :as t]
@@ -364,7 +365,19 @@
     [{points :points} t] (gu/point-at t (conj points (first points))))
   (random-point
     [_] (g/point-at _ (m/random)))
-  (random-point-inside [_] nil) ; TODO
+  ;; Uniformly sample point from tessellated triangles of polygon
+  ;; https://blogs.sas.com/content/iml/2020/10/21/random-points-in-polygon.html
+  ;; https://observablehq.com/@scarysize/finding-random-points-in-a-polygon
+  (random-point-inside
+    [_]
+    "Uniformly sample point from inside polygon
+
+    Tessellates into triangles, randomly selects a triangle weighted by area,
+    and then samples a point inside of that triangle uniformly."
+    (->> (g/tessellate _)
+         (map t/triangle2)
+         (prob/rand-weighted-by g/area)
+         t/random-point-in-triangle2))
   (sample-uniform
     [{points :points} udist include-last?]
     (gu/sample-uniform udist include-last? (conj points (first points))))

@@ -24,6 +24,15 @@
   (let [m (m/mix p q)]
     (isec/intersect-circle-circle? _ (circle m (g/dist m p)))))
 
+;; https://stats.stackexchange.com/questions/481543/generating-random-points-uniformly-on-a-disk
+(defn random-point-in-circle
+  "Randomly generate a point inside of circle with uniform distribution."
+  [{p :p r :r}]
+  (-> (vec2 (* r (Math/sqrt (m/random)))
+            (* m/TWO_PI (m/random)))
+      g/as-cartesian
+      (m/+ p)))
+
 ;; Even though a circle is a specialization of an ellipse, we define
 ;; an extra type for performance reasons.
 

@@ -164,6 +164,17 @@
    (let [[o r] (circumcircle-raw a b c)]
      (Circle2. o r))))
 
+;; Kraemer Method
+;; http://extremelearning.com.au/evenly-distributing-points-in-a-triangle/
+;; https://stackoverflow.com/questions/47410054/generate-random-locations-within-a-triangular-domain/47418580#47418580
+(defn random-point-in-triangle2
+  "Randomly generate a point inside a 2d triangle with uniform distribution."
+  [_]
+  (let [[a b] [(m/random) (m/random)]
+        [s t] (if (< a b) [a b] [b a])
+        weighting [s (- t s) (- 1 t)]]
+    (gu/from-barycentric (get _ :points) weighting)))
+
 (extend-type Triangle2
 
   g/IArea
