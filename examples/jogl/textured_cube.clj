@@ -49,7 +49,7 @@
 (defn init
   [^GLAutoDrawable drawable]
   (let [^GL3 gl (.. drawable getGL getGL3)
-        tex     (buf/load-texture gl {:src (io/file "assets/cubev.png")})
+        tex     (buf/load-texture gl {:src (io/file "assets/gl/cubev.png")})
         model   (-> (a/aabb 1)
                     (g/center)
                     (g/as-mesh {:mesh    (glm/gl-mesh 12 #{:uv})

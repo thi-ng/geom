@@ -32,7 +32,7 @@
     :flags    {:solid true}}))
 
 (def mesh
-  (with-open [in (io/input-stream "assets/suzanne.stl")]
+  (with-open [in (io/input-stream "assets/mesh/suzanne.stl")]
     (-> in
         (mio/wrapped-input-stream)
         (mio/read-stl)

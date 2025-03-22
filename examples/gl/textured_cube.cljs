@@ -57,7 +57,7 @@
         tex-ready (volatile! false)
         tex       (buf/load-texture
                    gl {:callback (fn [tex img] (vreset! tex-ready true))
-                       :src      "assets/cubev.png"
+                       :src      "assets/gl/cubev.png"
                        :flip     false})]
     (anim/animate
      (fn [t frame]

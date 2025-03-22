@@ -28,7 +28,7 @@
              :pos         50
              :label-dist  15
              :label-style {:text-anchor "end"}})
-   :data   [{:matrix          (load-image "assets/california-detail-gis.png")
+   :data   [{:matrix          (load-image "assets/viz/california-detail-gis.png")
              :value-domain    [0.0 255.0]
              :attribs         {:fill "none"}
              :palette         (->> :orange-blue grad/cosine-schemes (grad/cosine-gradient 100))

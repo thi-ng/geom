@@ -59,11 +59,11 @@
         tex-ready (volatile! 0)
         tex1      (buf/load-texture
                    gl {:callback (fn [tex img] (vswap! tex-ready inc))
-                       :src      "assets/cubev.png"
+                       :src      "assets/gl/cubev.png"
                        :flip     false})
         tex2      (buf/load-texture
                    gl {:callback (fn [tex img] (vswap! tex-ready inc))
-                       :src      "assets/lancellotti.jpg"
+                       :src      "assets/gl/lancellotti.jpg"
                        :flip     false})]
     (anim/animate
      (fn [t frame]

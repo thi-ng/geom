@@ -86,7 +86,7 @@
   (let [gl    (gl/gl-context "main")
         vrect (gl/get-viewport-rect gl)]
     (load-binary
-     "assets/suzanne.stl"
+     "assets/mesh/suzanne.stl"
      (fn [buf] (init-model gl vrect buf))
      (fn [req e] (prn "error loading model")))
     (init-arcball (.getElementById js/document "main") vrect)

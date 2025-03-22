@@ -29,7 +29,7 @@
    [clojure.java.io :as io]))
 
 (def app
-  (atom {:mesh    "assets/suzanne.stl"
+  (atom {:mesh    "assets/mesh/suzanne.stl"
          :version 330}))
 
 (defn load-mesh

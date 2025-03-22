@@ -66,7 +66,7 @@
   (defn init
     [^GLAutoDrawable drawable]
     (let [^GL3 gl (.. drawable getGL getGL3)
-          tex     (buf/load-texture gl {:src (io/file "../assets/cubev.png")})
+          tex     (buf/load-texture gl {:src (io/file "../assets/gl/cubev.png")})
           model   (-> (a/aabb 1)
                       (g/center)
                       (g/as-mesh {:mesh    (glm/gl-mesh 12 #{:uv})
@@ -170,7 +170,7 @@
     (let [^GL3 gl   (.. drawable getGL getGL3)
           view-rect (gl/get-viewport-rect gl)
           shader    (sh/make-shader-from-spec gl (assoc phong/shader-spec :version 330))
-          model     (-> (load-mesh "../assets/suzanne.stl" (a/aabb 2))
+          model     (-> (load-mesh "../assets/mesh/suzanne.stl" (a/aabb 2))
                         (gl/as-gl-buffer-spec {})
                         (update :uniforms merge
                                 {:lightPos [0 2 2]

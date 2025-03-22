@@ -25,7 +25,7 @@ is defined in its own namespace and can be loaded from the REPL via:
 In the example below we construct three circles, compute their points
 of intersection and then visualize the result in SVG:
 
-[[http://media.thi.ng/geom/svg/svgdemo01-circles.svg]]
+[[../../../assets/svg/svgdemo01-circles.svg]]
 
 #+BEGIN_SRC clojure :tangle ../../babel/examples/svg/ex01.clj :noweb yes :mkdirp yes :padline no
   (ns thi.ng.geom.examples.svg.ex01
@@ -70,7 +70,7 @@ of intersection and then visualize the result in SVG:
 
 ** STL mesh import (Blender's Suzanne)
 
-[[http://media.thi.ng/geom/svg/svgdemo02-suzanne.svg]]
+[[../../../assets/svg/svgdemo02-suzanne.svg]]
 
 #+BEGIN_SRC clojure :tangle ../../babel/examples/svg/ex02.clj :mkdirp yes :padline no
   (ns thi.ng.geom.examples.svg.ex02
@@ -128,7 +128,7 @@ of intersection and then visualize the result in SVG:
 
 ** Dynamic mesh & shader comparison
 
-| [[http://media.thi.ng/geom/svg/svgdemo03-diffuse.svg]] | [[http://media.thi.ng/geom/svg/svgdemo03-lambert.svg]] | [[http://media.thi.ng/geom/svg/svgdemo03-phong.svg]] |
+| [[../../../assets/svg/svgdemo03-diffuse.svg]] | [[../../../assets/svg/svgdemo03-lambert.svg]] | [[../../../assets/svg/svgdemo03-phong.svg]] |
 | *Diffuse:* Normal XYZ > RGB                        | *Diffuse:* Normal XYZ > RGB                        | *Diffuse:* Normal XYZ > RGB                      |
 |                                                    | *Ambient:* [0.1 0.1 0.1]                           | *Ambient:* [0.05 0.05 0.2]                       |
 |                                                    |                                                    | *Specular:* [0.8 0.8 0.8]                        |
@@ -244,7 +244,7 @@ of intersection and then visualize the result in SVG:
 
 ** Gradient spiral example
 
-[[http://media.thi.ng/geom/svg/svgdemo04-spiral.svg]]
+[[../../../assets/svg/svgdemo04-spiral.svg]]
 
 #+BEGIN_SRC clojure :tangle ../../babel/examples/svg/ex04.clj :mkdirp yes :padline no
   (ns thi.ng.geom.examples.svg.ex04
@@ -280,7 +280,7 @@ of intersection and then visualize the result in SVG:
 
 ** Gradient spirals with instancing
 
-[[http://media.thi.ng/geom/svg/svgdemo05-instancing.svg]]
+[[../../../assets/svg/svgdemo05-instancing.svg]]
 
 #+BEGIN_SRC clojure :tangle ../../babel/examples/svg/ex05.clj :mkdirp yes :padline no
   (ns thi.ng.geom.examples.svg.ex05
@@ -326,7 +326,7 @@ of intersection and then visualize the result in SVG:
 
 ** Line decorators
 
-[[http://media.thi.ng/geom/svg/svgdemo06-decorators.svg]]
+[[../../../assets/svg/svgdemo06-decorators.svg]]
 
 #+BEGIN_SRC clojure :tangle ../../babel/examples/svg/ex06.clj :mkdirp yes :padline no
   (ns thi.ng.geom.examples.svg.ex06

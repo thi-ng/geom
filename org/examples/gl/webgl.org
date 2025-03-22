@@ -413,7 +413,7 @@ Live version: http://demo.thi.ng/geom/webgl/texcube/
           tex-ready (volatile! false)
           tex       (buf/load-texture
                      gl {:callback (fn [tex img] (vreset! tex-ready true))
-                         :src      "../assets/cubev.png"
+                         :src      "../assets/gl/cubev.png"
                          :flip     false})]
       (anim/animate
        (fn [t frame]
@@ -619,11 +619,11 @@ Live version: http://demo.thi.ng/geom/webgl/multitex/
           tex-ready (volatile! 0)
           tex1      (buf/load-texture
                      gl {:callback (fn [tex img] (vswap! tex-ready inc))
-                         :src      "../assets/cubev.png"
+                         :src      "../assets/gl/cubev.png"
                          :flip     false})
           tex2      (buf/load-texture
                      gl {:callback (fn [tex img] (vswap! tex-ready inc))
-                         :src      "../assets/lancellotti.jpg"
+                         :src      "../assets/gl/lancellotti.jpg"
                          :flip     false})]
       (anim/animate
        (fn [t frame]
