@@ -39,6 +39,10 @@
   (as-svg
     [_ opts] (svg/circle (get _ :p) (get _ :r) opts))
 
+   Ellipse2
+   (as-svg 
+    [_ opts] (svg/ellipse (get _ :p) (get _ :rx) (get _ :ry) opts))
+
   LineStrip2
   (as-svg
     [{:keys [points]} {:keys [__start __segment __end] :as opts}]
